@@ -1,17 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Ban,
-  Check,
-  Download,
-  KeyRound,
-  Pause,
-  Play,
-  Plus,
-  RefreshCw,
-  ShieldCheck,
-  Upload,
-  X,
-} from "lucide-react";
+import { Ban, Check, Download, KeyRound, Pause, Play, Plus, RefreshCw, ShieldCheck, Upload, X } from "lucide-react";
 
 import type {
   CreateReceiptTrustAnchorSource,
@@ -115,31 +103,23 @@ export default function ReceiptTrustPanel({
   onAnchors: (anchors: ReceiptTrustAnchor[]) => void;
 }) {
   const [label, setLabel] = useState("");
-  const [sourceType, setSourceType] =
-    useState<CreateReceiptTrustAnchorSource["type"]>("environment");
+  const [sourceType, setSourceType] = useState<CreateReceiptTrustAnchorSource["type"]>("environment");
   const [environmentVariable, setEnvironmentVariable] = useState("");
   const [publicKeySpki, setPublicKeySpki] = useState("");
   const [busyId, setBusyId] = useState<string>();
   const [pendingRevokeId, setPendingRevokeId] = useState<string>();
-  const [verification, setVerification] =
-    useState<TrustedReceiptVerification>();
-  const [directoryVerification, setDirectoryVerification] =
-    useState<ReceiptTrustAnchorDirectoryVerification>();
-  const [directoryDiscovery, setDirectoryDiscovery] =
-    useState<ReceiptTrustAnchorDirectoryDiscovery>();
+  const [verification, setVerification] = useState<TrustedReceiptVerification>();
+  const [directoryVerification, setDirectoryVerification] = useState<ReceiptTrustAnchorDirectoryVerification>();
+  const [directoryDiscovery, setDirectoryDiscovery] = useState<ReceiptTrustAnchorDirectoryDiscovery>();
   const [directoryMetadataVerification, setDirectoryMetadataVerification] =
     useState<ReceiptTrustAnchorDirectoryMetadataVerification>();
   const [directorySourceUrl, setDirectorySourceUrl] = useState("");
-  const [directorySubscriptionLabel, setDirectorySubscriptionLabel] =
-    useState("");
-  const [directorySubscriptions, setDirectorySubscriptions] = useState<
-    ReceiptTrustAnchorDirectorySubscription[]
-  >([]);
-  const [directoryQuorum, setDirectoryQuorum] =
-    useState<ReceiptTrustAnchorDirectoryQuorum>();
-  const [promotionBaselines, setPromotionBaselines] = useState<
-    ReceiptTrustAnchorDirectoryQuorumPromotionBaseline[]
-  >([]);
+  const [directorySubscriptionLabel, setDirectorySubscriptionLabel] = useState("");
+  const [directorySubscriptions, setDirectorySubscriptions] = useState<ReceiptTrustAnchorDirectorySubscription[]>([]);
+  const [directoryQuorum, setDirectoryQuorum] = useState<ReceiptTrustAnchorDirectoryQuorum>();
+  const [promotionBaselines, setPromotionBaselines] = useState<ReceiptTrustAnchorDirectoryQuorumPromotionBaseline[]>(
+    [],
+  );
   const [baselineVerification, setBaselineVerification] =
     useState<ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification>();
   const [baselineImportResult, setBaselineImportResult] =
@@ -148,99 +128,47 @@ export default function ReceiptTrustPanel({
     useState<SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult>();
   const [baselineActivationHistory, setBaselineActivationHistory] =
     useState<ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory>();
-  const [
-    baselineActivationHistoryVerification,
-    setBaselineActivationHistoryVerification,
-  ] =
+  const [baselineActivationHistoryVerification, setBaselineActivationHistoryVerification] =
     useState<ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification>();
-  const [
-    baselineActivationSelectionState,
-    setBaselineActivationSelectionState,
-  ] = useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionState>();
-  const [
-    baselineActivationSelectionDriftAudit,
-    setBaselineActivationSelectionDriftAudit,
-  ] = useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit>();
-  const [
-    baselineActivationRotationReview,
-    setBaselineActivationRotationReview,
-  ] = useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview>();
-  const [
-    baselineActivationRotationProposal,
-    setBaselineActivationRotationProposal,
-  ] =
+  const [baselineActivationSelectionState, setBaselineActivationSelectionState] =
+    useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionState>();
+  const [baselineActivationSelectionDriftAudit, setBaselineActivationSelectionDriftAudit] =
+    useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit>();
+  const [baselineActivationRotationReview, setBaselineActivationRotationReview] =
+    useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview>();
+  const [baselineActivationRotationProposal, setBaselineActivationRotationProposal] =
     useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>();
-  const [
-    baselineActivationRotationProposalEnvelope,
-    setBaselineActivationRotationProposalEnvelope,
-  ] =
-    useState<
-      TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>
-    >();
-  const [
-    baselineActivationRotationProposalPreflight,
-    setBaselineActivationRotationProposalPreflight,
-  ] =
+  const [baselineActivationRotationProposalEnvelope, setBaselineActivationRotationProposalEnvelope] =
+    useState<TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>>();
+  const [baselineActivationRotationProposalPreflight, setBaselineActivationRotationProposalPreflight] =
     useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight>();
-  const [
-    baselineActivationSelectionCheckpoint,
-    setBaselineActivationSelectionCheckpoint,
-  ] =
+  const [baselineActivationSelectionCheckpoint, setBaselineActivationSelectionCheckpoint] =
     useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint>();
-  const [
-    baselineActivationSelectionCheckpointVerification,
-    setBaselineActivationSelectionCheckpointVerification,
-  ] =
+  const [baselineActivationSelectionCheckpointVerification, setBaselineActivationSelectionCheckpointVerification] =
     useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification>();
-  const [
-    baselineActivationSelectionCheckpointEnvelope,
-    setBaselineActivationSelectionCheckpointEnvelope,
-  ] =
-    useState<
-      TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint>
-    >();
-  const [
-    baselineActivationSelectionCheckpointDiscovery,
-    setBaselineActivationSelectionCheckpointDiscovery,
-  ] =
+  const [baselineActivationSelectionCheckpointEnvelope, setBaselineActivationSelectionCheckpointEnvelope] =
+    useState<TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint>>();
+  const [baselineActivationSelectionCheckpointDiscovery, setBaselineActivationSelectionCheckpointDiscovery] =
     useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery>();
-  const [
-    checkpointRegistryQuorum,
-    setCheckpointRegistryQuorum,
-  ] =
+  const [checkpointRegistryQuorum, setCheckpointRegistryQuorum] =
     useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum>();
-  const [
-    checkpointRegistryQuorumBaseline,
-    setCheckpointRegistryQuorumBaseline,
-  ] =
+  const [checkpointRegistryQuorumBaseline, setCheckpointRegistryQuorumBaseline] =
     useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline>();
-  const [
-    checkpointRegistryQuorumBaselineVerification,
-    setCheckpointRegistryQuorumBaselineVerification,
-  ] =
+  const [checkpointRegistryQuorumBaselineVerification, setCheckpointRegistryQuorumBaselineVerification] =
     useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineVerification>();
-  const [
-    checkpointRegistryQuorumBaselineImportResult,
-    setCheckpointRegistryQuorumBaselineImportResult,
-  ] =
+  const [checkpointRegistryQuorumBaselineImportResult, setCheckpointRegistryQuorumBaselineImportResult] =
     useState<ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult>();
-  const [
-    checkpointSubscriptions,
-    setCheckpointSubscriptions,
-  ] = useState<
+  const [checkpointSubscriptions, setCheckpointSubscriptions] = useState<
     ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription[]
   >([]);
   const [expectedAnchorSetSha256, setExpectedAnchorSetSha256] = useState("");
   const [checkpointSourceUrl, setCheckpointSourceUrl] = useState("");
-  const [checkpointSubscriptionLabel, setCheckpointSubscriptionLabel] =
-    useState("");
+  const [checkpointSubscriptionLabel, setCheckpointSubscriptionLabel] = useState("");
   const [expectedCheckpointSha256, setExpectedCheckpointSha256] = useState("");
-  const [externalDirectory, setExternalDirectory] =
-    useState<ReceiptTrustAnchorDirectory>();
+  const [externalDirectory, setExternalDirectory] = useState<ReceiptTrustAnchorDirectory>();
   const [externalDirectoryPolicy, setExternalDirectoryPolicy] =
     useState<ReceiptTrustAnchorDirectoryVerificationPolicy>();
-  const [externalDirectorySubscriptionId, setExternalDirectorySubscriptionId] =
-    useState<string>();
+  const [externalDirectorySubscriptionId, setExternalDirectorySubscriptionId] = useState<string>();
   const [error, setError] = useState<string>();
   const canCreate =
     Boolean(label.trim()) &&
@@ -252,30 +180,22 @@ export default function ReceiptTrustPanel({
     directorySourceUrl,
     expectedAnchorSetSha256,
   );
-  const subscriptionRequest =
-    qualifyReceiptTrustAnchorDirectorySubscriptionRequest(
-      threadId,
-      directorySubscriptionLabel,
-      directorySourceUrl,
-      expectedAnchorSetSha256,
-    );
+  const subscriptionRequest = qualifyReceiptTrustAnchorDirectorySubscriptionRequest(
+    threadId,
+    directorySubscriptionLabel,
+    directorySourceUrl,
+    expectedAnchorSetSha256,
+  );
   const canDiscover = Boolean(discoveryRequest) && !busyId;
   const canSubscribe = Boolean(subscriptionRequest) && !busyId;
   const canSignDirectoryMetadata =
     Boolean(selectedAnchorId) &&
     anchors.some(
-      (anchor) =>
-        anchor.id === selectedAnchorId &&
-        anchor.status === "trusted" &&
-        Boolean(anchor.signingSource),
+      (anchor) => anchor.id === selectedAnchorId && anchor.status === "trusted" && Boolean(anchor.signingSource),
     ) &&
     !busyId;
   const baselineActivation = useMemo(
-    () =>
-      projectReceiptTrustDirectoryBaselineActivation(
-        promotionBaselines,
-        directorySubscriptions,
-      ),
+    () => projectReceiptTrustDirectoryBaselineActivation(promotionBaselines, directorySubscriptions),
     [promotionBaselines, directorySubscriptions],
   );
   const latestBaseline = baselineActivation.latestBaseline;
@@ -283,48 +203,32 @@ export default function ReceiptTrustPanel({
     Boolean(latestBaseline) &&
     Boolean(selectedAnchorId) &&
     anchors.some(
-      (anchor) =>
-        anchor.id === selectedAnchorId &&
-        anchor.status === "trusted" &&
-        Boolean(anchor.signingSource),
+      (anchor) => anchor.id === selectedAnchorId && anchor.status === "trusted" && Boolean(anchor.signingSource),
     ) &&
     !busyId;
   const latestApprovedActivationRecord = useMemo(
-    () =>
-      baselineActivationHistory?.records
-        .filter((record) => record.envelope.receipt.decision === "approved")
-        .at(-1),
+    () => baselineActivationHistory?.records.filter((record) => record.envelope.receipt.decision === "approved").at(-1),
     [baselineActivationHistory],
   );
-  const canApplyActivationSelection =
-    Boolean(latestApprovedActivationRecord) && !busyId;
-  const canReviewActivationSelectionRotation =
-    Boolean(latestApprovedActivationRecord) && !busyId;
+  const canApplyActivationSelection = Boolean(latestApprovedActivationRecord) && !busyId;
+  const canReviewActivationSelectionRotation = Boolean(latestApprovedActivationRecord) && !busyId;
   const canSignActivationSelectionRotationProposal =
     Boolean(latestApprovedActivationRecord) &&
     baselineActivationRotationProposal?.status === "proposed" &&
     Boolean(selectedAnchorId) &&
     anchors.some(
-      (anchor) =>
-        anchor.id === selectedAnchorId &&
-        anchor.status === "trusted" &&
-        Boolean(anchor.signingSource),
+      (anchor) => anchor.id === selectedAnchorId && anchor.status === "trusted" && Boolean(anchor.signingSource),
     ) &&
     !busyId;
   const canPreflightActivationSelectionRotationProposal =
-    Boolean(latestApprovedActivationRecord) &&
-    Boolean(baselineActivationRotationProposalEnvelope) &&
-    !busyId;
+    Boolean(latestApprovedActivationRecord) && Boolean(baselineActivationRotationProposalEnvelope) && !busyId;
   const selectedTrustedAnchorKeyId = anchors.find(
     (anchor) => anchor.id === selectedAnchorId && anchor.status === "trusted",
   )?.keyId;
   const canSignActivationSelectionCheckpoint =
     Boolean(selectedAnchorId) &&
     anchors.some(
-      (anchor) =>
-        anchor.id === selectedAnchorId &&
-        anchor.status === "trusted" &&
-        Boolean(anchor.signingSource),
+      (anchor) => anchor.id === selectedAnchorId && anchor.status === "trusted" && Boolean(anchor.signingSource),
     ) &&
     !busyId;
   const checkpointDiscoveryRequest =
@@ -336,8 +240,7 @@ export default function ReceiptTrustPanel({
       externalDirectory,
       externalDirectoryPolicy,
     );
-  const canDiscoverActivationSelectionCheckpoint =
-    Boolean(checkpointDiscoveryRequest) && !busyId;
+  const canDiscoverActivationSelectionCheckpoint = Boolean(checkpointDiscoveryRequest) && !busyId;
   const checkpointSubscriptionRequest =
     qualifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest(
       threadId,
@@ -347,16 +250,12 @@ export default function ReceiptTrustPanel({
       baselineActivationSelectionCheckpoint,
       selectedTrustedAnchorKeyId,
     );
-  const canSubscribeActivationSelectionCheckpoint =
-    Boolean(checkpointSubscriptionRequest) && !busyId;
+  const canSubscribeActivationSelectionCheckpoint = Boolean(checkpointSubscriptionRequest) && !busyId;
   const canPromoteCheckpointRegistryQuorum =
     checkpointSubscriptions.length > 0 &&
     Boolean(selectedAnchorId) &&
     anchors.some(
-      (anchor) =>
-        anchor.id === selectedAnchorId &&
-        anchor.status === "trusted" &&
-        Boolean(anchor.signingSource),
+      (anchor) => anchor.id === selectedAnchorId && anchor.status === "trusted" && Boolean(anchor.signingSource),
     ) &&
     !busyId;
 
@@ -388,25 +287,15 @@ export default function ReceiptTrustPanel({
           setPromotionBaselines(baselines);
           setBaselineActivationHistory(activationHistory);
           setBaselineActivationSelectionState(activationSelectionState);
-          setBaselineActivationSelectionDriftAudit(
-            activationSelectionDriftAudit,
-          );
-          setBaselineActivationSelectionCheckpoint(
-            activationSelectionCheckpoint,
-          );
+          setBaselineActivationSelectionDriftAudit(activationSelectionDriftAudit);
+          setBaselineActivationSelectionCheckpoint(activationSelectionCheckpoint);
           setCheckpointSubscriptions(activationSelectionCheckpointSubscriptions);
-          setCheckpointRegistryQuorumBaseline(
-            checkpointRegistryQuorumBaselines.at(-1),
-          );
+          setCheckpointRegistryQuorumBaseline(checkpointRegistryQuorumBaselines.at(-1));
           const active = subscriptions
             .filter(
-              (subscription) =>
-                subscription.status === "active" &&
-                Boolean(subscription.lastGoodDiscovery?.directory),
+              (subscription) => subscription.status === "active" && Boolean(subscription.lastGoodDiscovery?.directory),
             )
-            .sort((left, right) =>
-              right.updatedAt.localeCompare(left.updatedAt),
-            )
+            .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
             .at(0);
           if (active) activateSubscription(active);
         },
@@ -435,9 +324,7 @@ export default function ReceiptTrustPanel({
               }
             : { type: "public_key", publicKeySpki: publicKeySpki.trim() },
       });
-      const next = [...anchors, anchor].sort((left, right) =>
-        left.createdAt.localeCompare(right.createdAt),
-      );
+      const next = [...anchors, anchor].sort((left, right) => left.createdAt.localeCompare(right.createdAt));
       onAnchors(next);
       if (anchor.signingSource) onSelect(anchor.id);
       setLabel("");
@@ -455,17 +342,10 @@ export default function ReceiptTrustPanel({
     setError(undefined);
     try {
       const updated = await revokeReceiptTrustAnchor(anchorId, threadId);
-      const next = anchors.map((anchor) =>
-        anchor.id === updated.id ? updated : anchor,
-      );
+      const next = anchors.map((anchor) => (anchor.id === updated.id ? updated : anchor));
       onAnchors(next);
       if (selectedAnchorId === updated.id) {
-        onSelect(
-          next.find(
-            (anchor) =>
-              anchor.status === "trusted" && Boolean(anchor.signingSource),
-          )?.id ?? "",
-        );
+        onSelect(next.find((anchor) => anchor.status === "trusted" && Boolean(anchor.signingSource))?.id ?? "");
       }
       setPendingRevokeId(undefined);
     } catch (revokeError) {
@@ -485,13 +365,7 @@ export default function ReceiptTrustPanel({
         throw new Error(copy.lab.trust.errors.tooLarge);
       }
       const envelope = JSON.parse(await file.text()) as unknown;
-      setVerification(
-        await verifyTrustedReceipt(
-          envelope,
-          externalDirectory,
-          externalDirectoryPolicy,
-        ),
-      );
+      setVerification(await verifyTrustedReceipt(envelope, externalDirectory, externalDirectoryPolicy));
     } catch (verifyError) {
       setError(toErrorMessage(verifyError));
     } finally {
@@ -504,10 +378,7 @@ export default function ReceiptTrustPanel({
     setError(undefined);
     try {
       const directory = await getReceiptTrustAnchorDirectory();
-      downloadJson(
-        directory,
-        `napier-receipt-trust-anchor-directory-${directory.anchorSetSha256.slice(0, 12)}.json`,
-      );
+      downloadJson(directory, `napier-receipt-trust-anchor-directory-${directory.anchorSetSha256.slice(0, 12)}.json`);
     } catch (directoryError) {
       setError(toErrorMessage(directoryError));
     } finally {
@@ -525,10 +396,7 @@ export default function ReceiptTrustPanel({
         trustAnchorId: selectedAnchorId,
         publisher: copy.lab.trust.directoryMetadataPublisher,
       });
-      downloadJson(
-        envelope,
-        `napier-signed-anchor-directory-metadata-${envelope.contentSha256.slice(0, 12)}.json`,
-      );
+      downloadJson(envelope, `napier-signed-anchor-directory-metadata-${envelope.contentSha256.slice(0, 12)}.json`);
     } catch (signError) {
       setError(toErrorMessage(signError));
     } finally {
@@ -553,9 +421,7 @@ export default function ReceiptTrustPanel({
       setDirectoryDiscovery(undefined);
       setDirectoryVerification(nextVerification);
       setExternalDirectory(
-        nextVerification.status === "valid"
-          ? (directory as ReceiptTrustAnchorDirectory)
-          : undefined,
+        nextVerification.status === "valid" ? (directory as ReceiptTrustAnchorDirectory) : undefined,
       );
       setExternalDirectoryPolicy(undefined);
       setExternalDirectorySubscriptionId(undefined);
@@ -566,9 +432,7 @@ export default function ReceiptTrustPanel({
     }
   }
 
-  async function verifyDirectoryMetadataFile(
-    file: File | undefined,
-  ): Promise<void> {
+  async function verifyDirectoryMetadataFile(file: File | undefined): Promise<void> {
     if (!file) return;
     setBusyId("verify-directory-metadata");
     setError(undefined);
@@ -578,20 +442,15 @@ export default function ReceiptTrustPanel({
         throw new Error(copy.lab.trust.errors.tooLarge);
       }
       const envelope = JSON.parse(await file.text()) as unknown;
-      const directory =
-        externalDirectory ?? (await getReceiptTrustAnchorDirectory());
+      const directory = externalDirectory ?? (await getReceiptTrustAnchorDirectory());
       const verification = await verifyReceiptTrustAnchorDirectoryMetadata({
         envelope,
         directory,
-        ...(externalDirectoryPolicy
-          ? { directoryPolicy: externalDirectoryPolicy }
-          : {}),
+        ...(externalDirectoryPolicy ? { directoryPolicy: externalDirectoryPolicy } : {}),
         ...(externalDirectory
           ? {
               trustDirectory: externalDirectory,
-              ...(externalDirectoryPolicy
-                ? { trustDirectoryPolicy: externalDirectoryPolicy }
-                : {}),
+              ...(externalDirectoryPolicy ? { trustDirectoryPolicy: externalDirectoryPolicy } : {}),
             }
           : {}),
       });
@@ -611,16 +470,12 @@ export default function ReceiptTrustPanel({
     setDirectoryVerification(undefined);
     setDirectoryMetadataVerification(undefined);
     try {
-      const discovery =
-        await discoverReceiptTrustAnchorDirectory(discoveryRequest);
+      const discovery = await discoverReceiptTrustAnchorDirectory(discoveryRequest);
       setDirectoryDiscovery(discovery);
       setDirectoryVerification(discovery.verification);
-      const acceptedDirectory =
-        discovery.status === "valid" ? discovery.directory : undefined;
+      const acceptedDirectory = discovery.status === "valid" ? discovery.directory : undefined;
       setExternalDirectory(acceptedDirectory);
-      setExternalDirectoryPolicy(
-        acceptedDirectory ? discoveryRequest.policy : undefined,
-      );
+      setExternalDirectoryPolicy(acceptedDirectory ? discoveryRequest.policy : undefined);
       setExternalDirectorySubscriptionId(undefined);
     } catch (discoveryError) {
       setExternalDirectory(undefined);
@@ -636,10 +491,7 @@ export default function ReceiptTrustPanel({
     setBusyId("subscribe-directory");
     setError(undefined);
     try {
-      const subscription =
-        await createReceiptTrustAnchorDirectorySubscription(
-          subscriptionRequest,
-        );
+      const subscription = await createReceiptTrustAnchorDirectorySubscription(subscriptionRequest);
       upsertDirectorySubscription(subscription);
       setDirectoryQuorum(undefined);
       clearBaselineActivationEvidence();
@@ -652,9 +504,7 @@ export default function ReceiptTrustPanel({
     }
   }
 
-  async function refreshDirectorySubscription(
-    subscription: ReceiptTrustAnchorDirectorySubscription,
-  ): Promise<void> {
+  async function refreshDirectorySubscription(subscription: ReceiptTrustAnchorDirectorySubscription): Promise<void> {
     setBusyId(`refresh-subscription:${subscription.id}`);
     setError(undefined);
     try {
@@ -670,10 +520,7 @@ export default function ReceiptTrustPanel({
         setDirectoryDiscovery(result.discovery);
         setDirectoryVerification(result.discovery.verification);
       }
-      if (
-        result.subscription.status === "active" &&
-        result.subscription.lastGoodDiscovery?.directory
-      ) {
+      if (result.subscription.status === "active" && result.subscription.lastGoodDiscovery?.directory) {
         activateSubscription(result.subscription);
       }
     } catch (refreshError) {
@@ -683,20 +530,15 @@ export default function ReceiptTrustPanel({
     }
   }
 
-  async function toggleDirectorySubscription(
-    subscription: ReceiptTrustAnchorDirectorySubscription,
-  ): Promise<void> {
+  async function toggleDirectorySubscription(subscription: ReceiptTrustAnchorDirectorySubscription): Promise<void> {
     setBusyId(`toggle-subscription:${subscription.id}`);
     setError(undefined);
     try {
-      const updated = await updateReceiptTrustAnchorDirectorySubscription(
-        subscription.id,
-        {
-          threadId: subscription.auditThreadId,
-          expectedRevision: subscription.revision,
-          status: subscription.status === "active" ? "paused" : "active",
-        },
-      );
+      const updated = await updateReceiptTrustAnchorDirectorySubscription(subscription.id, {
+        threadId: subscription.auditThreadId,
+        expectedRevision: subscription.revision,
+        status: subscription.status === "active" ? "paused" : "active",
+      });
       upsertDirectorySubscription(updated);
       setDirectoryQuorum(undefined);
       clearBaselineActivationEvidence();
@@ -713,8 +555,7 @@ export default function ReceiptTrustPanel({
   }
 
   async function createCheckpointSubscription(): Promise<void> {
-    if (!checkpointSubscriptionRequest || !canSubscribeActivationSelectionCheckpoint)
-      return;
+    if (!checkpointSubscriptionRequest || !canSubscribeActivationSelectionCheckpoint) return;
     setBusyId("subscribe-activation-selection-checkpoint");
     setError(undefined);
     try {
@@ -724,16 +565,10 @@ export default function ReceiptTrustPanel({
         );
       upsertCheckpointSubscription(subscription);
       setCheckpointRegistryQuorum(undefined);
-      setBaselineActivationSelectionCheckpointDiscovery(
-        subscription.lastGoodDiscovery,
-      );
+      setBaselineActivationSelectionCheckpointDiscovery(subscription.lastGoodDiscovery);
       if (subscription.lastGoodDiscovery?.envelope) {
-        setBaselineActivationSelectionCheckpointEnvelope(
-          subscription.lastGoodDiscovery.envelope,
-        );
-        setBaselineActivationSelectionCheckpoint(
-          subscription.lastGoodDiscovery.envelope.receipt,
-        );
+        setBaselineActivationSelectionCheckpointEnvelope(subscription.lastGoodDiscovery.envelope);
+        setBaselineActivationSelectionCheckpoint(subscription.lastGoodDiscovery.envelope.receipt);
       }
       setCheckpointSubscriptionLabel("");
     } catch (subscriptionError) {
@@ -759,17 +594,11 @@ export default function ReceiptTrustPanel({
       setCheckpointRegistryQuorum(undefined);
       if (result.discovery) {
         setBaselineActivationSelectionCheckpointDiscovery(result.discovery);
-        setBaselineActivationSelectionCheckpointVerification(
-          result.discovery.checkpointVerification,
-        );
+        setBaselineActivationSelectionCheckpointVerification(result.discovery.checkpointVerification);
         if (result.discovery.envelope) {
-          setBaselineActivationSelectionCheckpointEnvelope(
-            result.discovery.envelope,
-          );
+          setBaselineActivationSelectionCheckpointEnvelope(result.discovery.envelope);
           if (result.discovery.status === "valid") {
-            setBaselineActivationSelectionCheckpoint(
-              result.discovery.envelope.receipt,
-            );
+            setBaselineActivationSelectionCheckpoint(result.discovery.envelope.receipt);
           }
         }
       }
@@ -826,12 +655,10 @@ export default function ReceiptTrustPanel({
     setCheckpointRegistryQuorumBaselineImportResult(undefined);
     try {
       const result =
-        await promoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
-          {
-            threadId,
-            trustAnchorId: selectedAnchorId,
-          },
-        );
+        await promoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline({
+          threadId,
+          trustAnchorId: selectedAnchorId,
+        });
       setCheckpointRegistryQuorumBaseline(result.baseline);
       setCheckpointRegistryQuorum(result.baseline.envelope.receipt);
       downloadJson(
@@ -852,19 +679,15 @@ export default function ReceiptTrustPanel({
     setCheckpointRegistryQuorumBaselineVerification(undefined);
     try {
       const verification =
-        await verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
-          {
-            baseline: checkpointRegistryQuorumBaseline,
-            ...(externalDirectory
-              ? {
-                  trustDirectory: externalDirectory,
-                  ...(externalDirectoryPolicy
-                    ? { trustDirectoryPolicy: externalDirectoryPolicy }
-                    : {}),
-                }
-              : {}),
-          },
-        );
+        await verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline({
+          baseline: checkpointRegistryQuorumBaseline,
+          ...(externalDirectory
+            ? {
+                trustDirectory: externalDirectory,
+                ...(externalDirectoryPolicy ? { trustDirectoryPolicy: externalDirectoryPolicy } : {}),
+              }
+            : {}),
+        });
       setCheckpointRegistryQuorumBaselineVerification(verification);
     } catch (verifyError) {
       setError(toErrorMessage(verifyError));
@@ -873,9 +696,7 @@ export default function ReceiptTrustPanel({
     }
   }
 
-  async function importCheckpointRegistryQuorumBaselineFile(
-    file: File | undefined,
-  ): Promise<void> {
+  async function importCheckpointRegistryQuorumBaselineFile(file: File | undefined): Promise<void> {
     if (!file) return;
     setBusyId("import-checkpoint-registry-quorum-baseline");
     setError(undefined);
@@ -887,29 +708,23 @@ export default function ReceiptTrustPanel({
       }
       const baseline = JSON.parse(await file.text()) as unknown;
       const result =
-        await importReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
-          {
-            baseline,
-            threadId,
-            expectedCurrentBaselineSha256:
-              checkpointRegistryQuorumBaseline?.contentSha256 ?? "",
-            ...(externalDirectory
-              ? {
-                  trustDirectory: externalDirectory,
-                  ...(externalDirectoryPolicy
-                    ? { trustDirectoryPolicy: externalDirectoryPolicy }
-                    : {}),
-                }
-              : {}),
-          },
-        );
+        await importReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline({
+          baseline,
+          threadId,
+          expectedCurrentBaselineSha256: checkpointRegistryQuorumBaseline?.contentSha256 ?? "",
+          ...(externalDirectory
+            ? {
+                trustDirectory: externalDirectory,
+                ...(externalDirectoryPolicy ? { trustDirectoryPolicy: externalDirectoryPolicy } : {}),
+              }
+            : {}),
+        });
       setCheckpointRegistryQuorumBaselineImportResult(result);
       setCheckpointRegistryQuorumBaselineVerification(result.verification);
       if (
         result.imported ||
         !checkpointRegistryQuorumBaseline ||
-        result.baseline.contentSha256 ===
-          checkpointRegistryQuorumBaseline.contentSha256
+        result.baseline.contentSha256 === checkpointRegistryQuorumBaseline.contentSha256
       ) {
         setCheckpointRegistryQuorumBaseline(result.baseline);
         setCheckpointRegistryQuorum(result.baseline.envelope.receipt);
@@ -921,9 +736,7 @@ export default function ReceiptTrustPanel({
     }
   }
 
-  function activateSubscription(
-    subscription: ReceiptTrustAnchorDirectorySubscription,
-  ): void {
+  function activateSubscription(subscription: ReceiptTrustAnchorDirectorySubscription): void {
     const discovery = subscription.lastGoodDiscovery;
     if (!discovery?.directory) return;
     setExternalDirectory(discovery.directory);
@@ -951,18 +764,15 @@ export default function ReceiptTrustPanel({
     setError(undefined);
     setBaselineVerification(undefined);
     try {
-      const verification =
-        await verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline({
-          baseline: latestBaseline,
-          ...(externalDirectory
-            ? {
-                trustDirectory: externalDirectory,
-                ...(externalDirectoryPolicy
-                  ? { trustDirectoryPolicy: externalDirectoryPolicy }
-                  : {}),
-              }
-            : {}),
-        });
+      const verification = await verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline({
+        baseline: latestBaseline,
+        ...(externalDirectory
+          ? {
+              trustDirectory: externalDirectory,
+              ...(externalDirectoryPolicy ? { trustDirectoryPolicy: externalDirectoryPolicy } : {}),
+            }
+          : {}),
+      });
       setBaselineVerification(verification);
     } catch (verifyError) {
       setError(toErrorMessage(verifyError));
@@ -971,9 +781,7 @@ export default function ReceiptTrustPanel({
     }
   }
 
-  async function importQuorumBaselineFile(
-    file: File | undefined,
-  ): Promise<void> {
+  async function importQuorumBaselineFile(file: File | undefined): Promise<void> {
     if (!file) return;
     setBusyId("import-quorum-baseline");
     setError(undefined);
@@ -983,28 +791,23 @@ export default function ReceiptTrustPanel({
       if (file.size > MAX_TRUSTED_RECEIPT_FILE_BYTES) {
         throw new Error(copy.lab.trust.errors.tooLarge);
       }
-      const baseline = JSON.parse(
-        await file.text(),
-      ) as ReceiptTrustAnchorDirectoryQuorumPromotionBaseline;
-      const result =
-        await importReceiptTrustAnchorDirectoryQuorumPromotionBaseline({
+      const baseline = JSON.parse(await file.text()) as ReceiptTrustAnchorDirectoryQuorumPromotionBaseline;
+      const result = await importReceiptTrustAnchorDirectoryQuorumPromotionBaseline({
+        baseline,
+        threadId,
+        expectedCurrentBaselineSha256: latestBaseline?.contentSha256 ?? "",
+        importPolicy: buildReceiptTrustDirectoryBaselineImportPolicy(
           baseline,
-          threadId,
-          expectedCurrentBaselineSha256: latestBaseline?.contentSha256 ?? "",
-          importPolicy: buildReceiptTrustDirectoryBaselineImportPolicy(
-            baseline,
-            directorySubscriptions,
-            externalDirectory,
-          ),
-          ...(externalDirectory
-            ? {
-                trustDirectory: externalDirectory,
-                ...(externalDirectoryPolicy
-                  ? { trustDirectoryPolicy: externalDirectoryPolicy }
-                  : {}),
-              }
-            : {}),
-        });
+          directorySubscriptions,
+          externalDirectory,
+        ),
+        ...(externalDirectory
+          ? {
+              trustDirectory: externalDirectory,
+              ...(externalDirectoryPolicy ? { trustDirectoryPolicy: externalDirectoryPolicy } : {}),
+            }
+          : {}),
+      });
       setBaselineImportResult(result);
       setBaselineActivationDecision(undefined);
       setBaselineVerification(result.verification);
@@ -1023,25 +826,22 @@ export default function ReceiptTrustPanel({
     setBaselineActivationDecision(undefined);
     setBaselineActivationHistoryVerification(undefined);
     try {
-      const result =
-        await signReceiptTrustAnchorDirectoryQuorumActivationDecision({
-          threadId,
-          trustAnchorId: selectedAnchorId,
-          baselineId: latestBaseline.id,
-          importPolicy: buildReceiptTrustDirectoryBaselineImportPolicy(
-            latestBaseline,
-            directorySubscriptions,
-            externalDirectory,
-          ),
-          ...(externalDirectory
-            ? {
-                trustDirectory: externalDirectory,
-                ...(externalDirectoryPolicy
-                  ? { trustDirectoryPolicy: externalDirectoryPolicy }
-                  : {}),
-              }
-            : {}),
-        });
+      const result = await signReceiptTrustAnchorDirectoryQuorumActivationDecision({
+        threadId,
+        trustAnchorId: selectedAnchorId,
+        baselineId: latestBaseline.id,
+        importPolicy: buildReceiptTrustDirectoryBaselineImportPolicy(
+          latestBaseline,
+          directorySubscriptions,
+          externalDirectory,
+        ),
+        ...(externalDirectory
+          ? {
+              trustDirectory: externalDirectory,
+              ...(externalDirectoryPolicy ? { trustDirectoryPolicy: externalDirectoryPolicy } : {}),
+            }
+          : {}),
+      });
       setBaselineActivationDecision(result);
       setBaselineVerification(result.verification);
       downloadJson(
@@ -1061,8 +861,7 @@ export default function ReceiptTrustPanel({
   }
 
   async function refreshBaselineActivationHistory(): Promise<ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory> {
-    const history =
-      await getReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory();
+    const history = await getReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory();
     setBaselineActivationHistory(history);
     return history;
   }
@@ -1082,10 +881,7 @@ export default function ReceiptTrustPanel({
   }
 
   async function reviewActivationSelectionRotation(): Promise<void> {
-    if (
-      !latestApprovedActivationRecord ||
-      !canReviewActivationSelectionRotation
-    ) {
+    if (!latestApprovedActivationRecord || !canReviewActivationSelectionRotation) {
       return;
     }
     setBusyId("review-activation-selection-rotation");
@@ -1095,17 +891,11 @@ export default function ReceiptTrustPanel({
     setBaselineActivationRotationProposalEnvelope(undefined);
     setBaselineActivationRotationProposalPreflight(undefined);
     try {
-      const review =
-        await reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
-          {
-            activationDecisionRecordId: latestApprovedActivationRecord.id,
-            expectedCurrentSelectionSha256:
-              baselineActivationSelectionState?.currentSelectionSha256 ?? "",
-            ...(checkpointSubscriptions.length > 0
-              ? { checkpointRegistryQuorumPolicy: {} }
-              : {}),
-          },
-        );
+      const review = await reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation({
+        activationDecisionRecordId: latestApprovedActivationRecord.id,
+        expectedCurrentSelectionSha256: baselineActivationSelectionState?.currentSelectionSha256 ?? "",
+        ...(checkpointSubscriptions.length > 0 ? { checkpointRegistryQuorumPolicy: {} } : {}),
+      });
       setBaselineActivationRotationReview(review);
       setBaselineActivationSelectionDriftAudit(review.driftAudit);
       if (review.checkpointRegistryQuorum) {
@@ -1119,10 +909,7 @@ export default function ReceiptTrustPanel({
   }
 
   async function proposeActivationSelectionRotation(): Promise<void> {
-    if (
-      !latestApprovedActivationRecord ||
-      !canReviewActivationSelectionRotation
-    ) {
+    if (!latestApprovedActivationRecord || !canReviewActivationSelectionRotation) {
       return;
     }
     setBusyId("propose-activation-selection-rotation");
@@ -1131,34 +918,22 @@ export default function ReceiptTrustPanel({
     setBaselineActivationRotationProposalEnvelope(undefined);
     setBaselineActivationRotationProposalPreflight(undefined);
     try {
-      const proposal =
-        await proposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
-          {
-            activationDecisionRecordId: latestApprovedActivationRecord.id,
-            expectedCurrentSelectionSha256:
-              baselineActivationSelectionState?.currentSelectionSha256 ?? "",
-            ...(checkpointRegistryQuorumBaseline
-              ? {
-                  checkpointRegistryQuorumBaselineId:
-                    checkpointRegistryQuorumBaseline.id,
-                  expectedCheckpointRegistryQuorumBaselineSha256:
-                    checkpointRegistryQuorumBaseline.contentSha256,
-                }
-              : {}),
-            ...(checkpointSubscriptions.length > 0
-              ? { checkpointRegistryQuorumPolicy: {} }
-              : {}),
-          },
-        );
+      const proposal = await proposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation({
+        activationDecisionRecordId: latestApprovedActivationRecord.id,
+        expectedCurrentSelectionSha256: baselineActivationSelectionState?.currentSelectionSha256 ?? "",
+        ...(checkpointRegistryQuorumBaseline
+          ? {
+              checkpointRegistryQuorumBaselineId: checkpointRegistryQuorumBaseline.id,
+              expectedCheckpointRegistryQuorumBaselineSha256: checkpointRegistryQuorumBaseline.contentSha256,
+            }
+          : {}),
+        ...(checkpointSubscriptions.length > 0 ? { checkpointRegistryQuorumPolicy: {} } : {}),
+      });
       setBaselineActivationRotationProposal(proposal);
       setBaselineActivationRotationReview(proposal.rotationReview);
-      setBaselineActivationSelectionDriftAudit(
-        proposal.rotationReview.driftAudit,
-      );
+      setBaselineActivationSelectionDriftAudit(proposal.rotationReview.driftAudit);
       if (proposal.rotationReview.checkpointRegistryQuorum) {
-        setCheckpointRegistryQuorum(
-          proposal.rotationReview.checkpointRegistryQuorum,
-        );
+        setCheckpointRegistryQuorum(proposal.rotationReview.checkpointRegistryQuorum);
       }
     } catch (proposalError) {
       setError(toErrorMessage(proposalError));
@@ -1180,27 +955,19 @@ export default function ReceiptTrustPanel({
     setBaselineActivationRotationProposalEnvelope(undefined);
     setBaselineActivationRotationProposalPreflight(undefined);
     try {
-      const envelope =
-        await signReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal(
-          {
-            threadId,
-            trustAnchorId: selectedAnchorId,
-            activationDecisionRecordId: latestApprovedActivationRecord.id,
-            expectedCurrentSelectionSha256:
-              baselineActivationSelectionState?.currentSelectionSha256 ?? "",
-            ...(checkpointRegistryQuorumBaseline
-              ? {
-                  checkpointRegistryQuorumBaselineId:
-                    checkpointRegistryQuorumBaseline.id,
-                  expectedCheckpointRegistryQuorumBaselineSha256:
-                    checkpointRegistryQuorumBaseline.contentSha256,
-                }
-              : {}),
-            ...(checkpointSubscriptions.length > 0
-              ? { checkpointRegistryQuorumPolicy: {} }
-              : {}),
-          },
-        );
+      const envelope = await signReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal({
+        threadId,
+        trustAnchorId: selectedAnchorId,
+        activationDecisionRecordId: latestApprovedActivationRecord.id,
+        expectedCurrentSelectionSha256: baselineActivationSelectionState?.currentSelectionSha256 ?? "",
+        ...(checkpointRegistryQuorumBaseline
+          ? {
+              checkpointRegistryQuorumBaselineId: checkpointRegistryQuorumBaseline.id,
+              expectedCheckpointRegistryQuorumBaselineSha256: checkpointRegistryQuorumBaseline.contentSha256,
+            }
+          : {}),
+        ...(checkpointSubscriptions.length > 0 ? { checkpointRegistryQuorumPolicy: {} } : {}),
+      });
       setBaselineActivationRotationProposalEnvelope(envelope);
       setBaselineActivationRotationProposal(envelope.receipt);
       downloadJson(
@@ -1226,16 +993,12 @@ export default function ReceiptTrustPanel({
     setError(undefined);
     setBaselineActivationRotationProposalPreflight(undefined);
     try {
-      const preflight =
-        await preflightReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal(
-          {
-            threadId,
-            activationDecisionRecordId: latestApprovedActivationRecord.id,
-            expectedCurrentSelectionSha256:
-              baselineActivationSelectionState?.currentSelectionSha256 ?? "",
-            rotationProposalEnvelope: baselineActivationRotationProposalEnvelope,
-          },
-        );
+      const preflight = await preflightReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal({
+        threadId,
+        activationDecisionRecordId: latestApprovedActivationRecord.id,
+        expectedCurrentSelectionSha256: baselineActivationSelectionState?.currentSelectionSha256 ?? "",
+        rotationProposalEnvelope: baselineActivationRotationProposalEnvelope,
+      });
       setBaselineActivationRotationProposalPreflight(preflight);
     } catch (preflightError) {
       setError(toErrorMessage(preflightError));
@@ -1248,8 +1011,7 @@ export default function ReceiptTrustPanel({
     setBusyId("export-activation-selection-checkpoint");
     setError(undefined);
     try {
-      const checkpoint =
-        await getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint();
+      const checkpoint = await getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint();
       setBaselineActivationSelectionCheckpoint(checkpoint);
       downloadJson(
         checkpoint,
@@ -1262,9 +1024,7 @@ export default function ReceiptTrustPanel({
     }
   }
 
-  async function verifyActivationSelectionTransparencyCheckpointFile(
-    file: File | undefined,
-  ): Promise<void> {
+  async function verifyActivationSelectionTransparencyCheckpointFile(file: File | undefined): Promise<void> {
     if (!file) return;
     setBusyId("verify-activation-selection-checkpoint");
     setError(undefined);
@@ -1274,10 +1034,9 @@ export default function ReceiptTrustPanel({
         throw new Error(copy.lab.trust.errors.tooLarge);
       }
       const checkpoint = JSON.parse(await file.text()) as unknown;
-      const verification =
-        await verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(
-          { checkpoint },
-        );
+      const verification = await verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint({
+        checkpoint,
+      });
       setBaselineActivationSelectionCheckpointVerification(verification);
     } catch (checkpointError) {
       setError(toErrorMessage(checkpointError));
@@ -1292,13 +1051,10 @@ export default function ReceiptTrustPanel({
     setError(undefined);
     setBaselineActivationSelectionCheckpointEnvelope(undefined);
     try {
-      const envelope =
-        await signReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(
-          {
-            threadId,
-            trustAnchorId: selectedAnchorId,
-          },
-        );
+      const envelope = await signReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint({
+        threadId,
+        trustAnchorId: selectedAnchorId,
+      });
       setBaselineActivationSelectionCheckpoint(
         envelope.receipt as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
       );
@@ -1315,8 +1071,7 @@ export default function ReceiptTrustPanel({
   }
 
   async function discoverActivationSelectionTransparencyCheckpoint(): Promise<void> {
-    if (!checkpointDiscoveryRequest || !canDiscoverActivationSelectionCheckpoint)
-      return;
+    if (!checkpointDiscoveryRequest || !canDiscoverActivationSelectionCheckpoint) return;
     setBusyId("discover-activation-selection-checkpoint");
     setError(undefined);
     setBaselineActivationSelectionCheckpointDiscovery(undefined);
@@ -1326,9 +1081,7 @@ export default function ReceiptTrustPanel({
           checkpointDiscoveryRequest,
         );
       setBaselineActivationSelectionCheckpointDiscovery(discovery);
-      setBaselineActivationSelectionCheckpointVerification(
-        discovery.checkpointVerification,
-      );
+      setBaselineActivationSelectionCheckpointVerification(discovery.checkpointVerification);
       if (discovery.envelope) {
         setBaselineActivationSelectionCheckpointEnvelope(discovery.envelope);
       }
@@ -1349,19 +1102,16 @@ export default function ReceiptTrustPanel({
     setBusyId("apply-baseline-activation-selection");
     setError(undefined);
     try {
-      const result =
-        await applyReceiptTrustAnchorDirectoryQuorumActivationSelection({
-          threadId,
-          activationDecisionRecordId: latestApprovedActivationRecord.id,
-          expectedCurrentSelectionSha256:
-            baselineActivationSelectionState?.currentSelectionSha256 ?? "",
-          ...(baselineActivationRotationProposalEnvelope
-            ? {
-                rotationProposalEnvelope:
-                  baselineActivationRotationProposalEnvelope,
-              }
-            : {}),
-        });
+      const result = await applyReceiptTrustAnchorDirectoryQuorumActivationSelection({
+        threadId,
+        activationDecisionRecordId: latestApprovedActivationRecord.id,
+        expectedCurrentSelectionSha256: baselineActivationSelectionState?.currentSelectionSha256 ?? "",
+        ...(baselineActivationRotationProposalEnvelope
+          ? {
+              rotationProposalEnvelope: baselineActivationRotationProposalEnvelope,
+            }
+          : {}),
+      });
       setBaselineActivationSelectionState(result.selectionState);
       setBaselineActivationRotationReview(undefined);
       setBaselineActivationRotationProposal(undefined);
@@ -1389,10 +1139,7 @@ export default function ReceiptTrustPanel({
     setError(undefined);
     try {
       const history = await refreshBaselineActivationHistory();
-      downloadJson(
-        history,
-        `napier-quorum-baseline-activation-history-${history.contentSha256.slice(0, 12)}.json`,
-      );
+      downloadJson(history, `napier-quorum-baseline-activation-history-${history.contentSha256.slice(0, 12)}.json`);
     } catch (historyError) {
       setError(toErrorMessage(historyError));
     } finally {
@@ -1400,9 +1147,7 @@ export default function ReceiptTrustPanel({
     }
   }
 
-  async function verifyBaselineActivationHistoryFile(
-    file: File | undefined,
-  ): Promise<void> {
+  async function verifyBaselineActivationHistoryFile(file: File | undefined): Promise<void> {
     if (!file) return;
     setBusyId("verify-baseline-activation-history");
     setError(undefined);
@@ -1412,10 +1157,9 @@ export default function ReceiptTrustPanel({
         throw new Error(copy.lab.trust.errors.tooLarge);
       }
       const history = JSON.parse(await file.text()) as unknown;
-      const verification =
-        await verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory({
-          history,
-        });
+      const verification = await verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory({
+        history,
+      });
       setBaselineActivationHistoryVerification(verification);
     } catch (historyError) {
       setError(toErrorMessage(historyError));
@@ -1424,14 +1168,11 @@ export default function ReceiptTrustPanel({
     }
   }
 
-  function upsertDirectorySubscription(
-    subscription: ReceiptTrustAnchorDirectorySubscription,
-  ): void {
+  function upsertDirectorySubscription(subscription: ReceiptTrustAnchorDirectorySubscription): void {
     setDirectorySubscriptions((current) =>
-      [
-        ...current.filter((candidate) => candidate.id !== subscription.id),
-        subscription,
-      ].sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
+      [...current.filter((candidate) => candidate.id !== subscription.id), subscription].sort((left, right) =>
+        left.createdAt.localeCompare(right.createdAt),
+      ),
     );
   }
 
@@ -1439,21 +1180,17 @@ export default function ReceiptTrustPanel({
     subscription: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   ): void {
     setCheckpointSubscriptions((current) =>
-      [
-        ...current.filter((candidate) => candidate.id !== subscription.id),
-        subscription,
-      ].sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
+      [...current.filter((candidate) => candidate.id !== subscription.id), subscription].sort((left, right) =>
+        left.createdAt.localeCompare(right.createdAt),
+      ),
     );
   }
 
-  function upsertPromotionBaseline(
-    baseline: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
-  ): void {
+  function upsertPromotionBaseline(baseline: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline): void {
     setPromotionBaselines((current) =>
-      [
-        ...current.filter((candidate) => candidate.id !== baseline.id),
-        baseline,
-      ].sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
+      [...current.filter((candidate) => candidate.id !== baseline.id), baseline].sort((left, right) =>
+        left.createdAt.localeCompare(right.createdAt),
+      ),
     );
   }
 
@@ -1486,10 +1223,7 @@ export default function ReceiptTrustPanel({
   }
 
   return (
-    <section
-      className="receipt-trust-panel"
-      aria-labelledby="receipt-trust-title"
-    >
+    <section className="receipt-trust-panel" aria-labelledby="receipt-trust-title">
       <header>
         <div>
           <span>{copy.lab.trust.eyebrow}</span>
@@ -1511,10 +1245,7 @@ export default function ReceiptTrustPanel({
                 const signing = Boolean(anchor.signingSource);
                 const selected = selectedAnchorId === anchor.id;
                 return (
-                  <li
-                    key={anchor.id}
-                    className={`receipt-anchor receipt-anchor-${anchor.status}`}
-                  >
+                  <li key={anchor.id} className={`receipt-anchor receipt-anchor-${anchor.status}`}>
                     <label>
                       <input
                         type="radio"
@@ -1525,29 +1256,17 @@ export default function ReceiptTrustPanel({
                       />
                       <span>
                         <strong>{anchor.label}</strong>
-                        <small>
-                          {signing
-                            ? copy.lab.trust.signing
-                            : copy.lab.trust.verifyOnly}
-                        </small>
+                        <small>{signing ? copy.lab.trust.signing : copy.lab.trust.verifyOnly}</small>
                       </span>
                     </label>
-                    <code title={anchor.keyId}>
-                      {anchor.keyId.slice(0, 16)}
-                    </code>
-                    <span
-                      className={`receipt-anchor-state state-${anchor.status}`}
-                    >
+                    <code title={anchor.keyId}>{anchor.keyId.slice(0, 16)}</code>
+                    <span className={`receipt-anchor-state state-${anchor.status}`}>
                       {copy.lab.trust.statuses[anchor.status]}
                     </span>
                     {anchor.status === "trusted" ? (
                       pendingRevokeId === anchor.id ? (
                         <span className="receipt-anchor-confirm">
-                          <button
-                            type="button"
-                            disabled={Boolean(busyId)}
-                            onClick={() => void revokeAnchor(anchor.id)}
-                          >
+                          <button type="button" disabled={Boolean(busyId)} onClick={() => void revokeAnchor(anchor.id)}>
                             <Ban size={10} aria-hidden="true" />
                             {copy.lab.trust.confirmRevoke}
                           </button>
@@ -1561,11 +1280,7 @@ export default function ReceiptTrustPanel({
                           </button>
                         </span>
                       ) : (
-                        <button
-                          type="button"
-                          disabled={Boolean(busyId)}
-                          onClick={() => setPendingRevokeId(anchor.id)}
-                        >
+                        <button type="button" disabled={Boolean(busyId)} onClick={() => setPendingRevokeId(anchor.id)}>
                           {copy.lab.trust.revoke}
                         </button>
                       )
@@ -1601,11 +1316,7 @@ export default function ReceiptTrustPanel({
             <span>{copy.lab.trust.source}</span>
             <select
               value={sourceType}
-              onChange={(event) =>
-                setSourceType(
-                  event.target.value as CreateReceiptTrustAnchorSource["type"],
-                )
-              }
+              onChange={(event) => setSourceType(event.target.value as CreateReceiptTrustAnchorSource["type"])}
             >
               <option value="environment">{copy.lab.trust.environment}</option>
               <option value="public_key">{copy.lab.trust.publicKey}</option>
@@ -1619,9 +1330,7 @@ export default function ReceiptTrustPanel({
                 spellCheck="false"
                 value={environmentVariable}
                 placeholder="NAPIER_RELEASE_SIGNING_KEY"
-                onChange={(event) =>
-                  setEnvironmentVariable(event.target.value.toUpperCase())
-                }
+                onChange={(event) => setEnvironmentVariable(event.target.value.toUpperCase())}
               />
             </label>
           ) : (
@@ -1647,11 +1356,7 @@ export default function ReceiptTrustPanel({
       <section className="receipt-verifier">
         <div>
           <strong>{copy.lab.trust.verifier}</strong>
-          <small>
-            {externalDirectory
-              ? copy.lab.trust.externalDirectoryActive
-              : copy.lab.trust.verifierBody}
-          </small>
+          <small>{externalDirectory ? copy.lab.trust.externalDirectoryActive : copy.lab.trust.verifierBody}</small>
         </div>
         <form
           className="receipt-directory-discovery"
@@ -1667,9 +1372,7 @@ export default function ReceiptTrustPanel({
               maxLength={100}
               value={directorySubscriptionLabel}
               placeholder={copy.lab.trust.subscriptionLabelPlaceholder}
-              onChange={(event) =>
-                setDirectorySubscriptionLabel(event.target.value)
-              }
+              onChange={(event) => setDirectorySubscriptionLabel(event.target.value)}
             />
           </label>
           <label>
@@ -1691,23 +1394,15 @@ export default function ReceiptTrustPanel({
               spellCheck="false"
               value={expectedAnchorSetSha256}
               placeholder={copy.lab.trust.expectedAnchorSetPlaceholder}
-              onChange={(event) =>
-                setExpectedAnchorSetSha256(event.target.value)
-              }
+              onChange={(event) => setExpectedAnchorSetSha256(event.target.value)}
             />
           </label>
           <span className="receipt-directory-actions">
             <button type="submit" disabled={!canDiscover}>
               <ShieldCheck size={11} aria-hidden="true" />
-              {busyId === "discover-directory"
-                ? copy.lab.trust.discoveringDirectory
-                : copy.lab.trust.discoverDirectory}
+              {busyId === "discover-directory" ? copy.lab.trust.discoveringDirectory : copy.lab.trust.discoverDirectory}
             </button>
-            <button
-              type="button"
-              disabled={!canSubscribe}
-              onClick={() => void createDirectorySubscription()}
-            >
+            <button type="button" disabled={!canSubscribe} onClick={() => void createDirectorySubscription()}>
               <Plus size={11} aria-hidden="true" />
               {busyId === "subscribe-directory"
                 ? copy.lab.trust.subscribingDirectory
@@ -1716,90 +1411,51 @@ export default function ReceiptTrustPanel({
           </span>
         </form>
         {directorySubscriptions.length ? (
-          <section
-            className="receipt-directory-subscriptions"
-            aria-labelledby="receipt-directory-subscriptions-title"
-          >
+          <section className="receipt-directory-subscriptions" aria-labelledby="receipt-directory-subscriptions-title">
             <header>
-              <strong id="receipt-directory-subscriptions-title">
-                {copy.lab.trust.directorySubscriptions}
-              </strong>
-              <button
-                type="button"
-                disabled={Boolean(busyId)}
-                onClick={() => void evaluateDirectoryQuorum()}
-              >
+              <strong id="receipt-directory-subscriptions-title">{copy.lab.trust.directorySubscriptions}</strong>
+              <button type="button" disabled={Boolean(busyId)} onClick={() => void evaluateDirectoryQuorum()}>
                 <ShieldCheck size={10} aria-hidden="true" />
-                {busyId === "directory-quorum"
-                  ? copy.lab.trust.evaluatingQuorum
-                  : copy.lab.trust.evaluateQuorum}
+                {busyId === "directory-quorum" ? copy.lab.trust.evaluatingQuorum : copy.lab.trust.evaluateQuorum}
               </button>
-              <code>
-                {directorySubscriptions.length.toString().padStart(2, "0")}
-              </code>
+              <code>{directorySubscriptions.length.toString().padStart(2, "0")}</code>
             </header>
             <ol>
               {directorySubscriptions.map((subscription) => {
-                const selected =
-                  externalDirectorySubscriptionId === subscription.id;
+                const selected = externalDirectorySubscriptionId === subscription.id;
                 return (
-                  <li
-                    key={subscription.id}
-                    className={`directory-subscription state-${subscription.status}`}
-                  >
+                  <li key={subscription.id} className={`directory-subscription state-${subscription.status}`}>
                     <span>
                       <strong>{subscription.label}</strong>
                       <small>
-                        {
-                          copy.lab.trust.subscriptionStatuses[
-                            subscription.status
-                          ]
-                        }{" "}
+                        {copy.lab.trust.subscriptionStatuses[subscription.status]}{" "}
                         {subscription.lastRefreshStatus
-                          ? `· ${
-                              copy.lab.trust.subscriptionRefreshStatuses[
-                                subscription.lastRefreshStatus
-                              ]
-                            } `
+                          ? `· ${copy.lab.trust.subscriptionRefreshStatuses[subscription.lastRefreshStatus]} `
                           : ""}
-                        · {copy.lab.trust.nextRefresh}{" "}
-                        {subscription.nextRefreshAt
-                          .slice(0, 16)
-                          .replace("T", " ")}
+                        · {copy.lab.trust.nextRefresh} {subscription.nextRefreshAt.slice(0, 16).replace("T", " ")}
                       </small>
                     </span>
-                    <code title={subscription.sourceUrlSha256}>
-                      {subscription.sourceUrlSha256.slice(0, 12)}
-                    </code>
+                    <code title={subscription.sourceUrlSha256}>{subscription.sourceUrlSha256.slice(0, 12)}</code>
                     {subscription.transparencyTailSha256 ? (
                       <code title={subscription.transparencyTailSha256}>
-                        {copy.lab.trust.transparencyTail}{" "}
-                        {subscription.transparencyTailSha256.slice(0, 8)}
+                        {copy.lab.trust.transparencyTail} {subscription.transparencyTailSha256.slice(0, 8)}
                       </code>
                     ) : null}
                     <span className="receipt-directory-actions">
                       <button
                         type="button"
-                        disabled={
-                          Boolean(busyId) ||
-                          selected ||
-                          !subscription.lastGoodDiscovery?.directory
-                        }
+                        disabled={Boolean(busyId) || selected || !subscription.lastGoodDiscovery?.directory}
                         aria-pressed={selected}
                         onClick={() => activateSubscription(subscription)}
                       >
                         <ShieldCheck size={10} aria-hidden="true" />
-                        {selected
-                          ? copy.lab.trust.subscriptionInUse
-                          : copy.lab.trust.useSubscription}
+                        {selected ? copy.lab.trust.subscriptionInUse : copy.lab.trust.useSubscription}
                       </button>
                       <button
                         type="button"
                         aria-label={copy.lab.trust.refreshSubscription}
                         disabled={Boolean(busyId)}
-                        onClick={() =>
-                          void refreshDirectorySubscription(subscription)
-                        }
+                        onClick={() => void refreshDirectorySubscription(subscription)}
                       >
                         <RefreshCw size={10} aria-hidden="true" />
                       </button>
@@ -1811,9 +1467,7 @@ export default function ReceiptTrustPanel({
                             : copy.lab.trust.resumeSubscription
                         }
                         disabled={Boolean(busyId)}
-                        onClick={() =>
-                          void toggleDirectorySubscription(subscription)
-                        }
+                        onClick={() => void toggleDirectorySubscription(subscription)}
                       >
                         {subscription.status === "active" ? (
                           <Pause size={10} aria-hidden="true" />
@@ -1827,23 +1481,14 @@ export default function ReceiptTrustPanel({
               })}
             </ol>
             {directoryQuorum ? (
-              <output
-                className={`receipt-directory-quorum quorum-${directoryQuorum.status}`}
-                aria-live="polite"
-              >
+              <output className={`receipt-directory-quorum quorum-${directoryQuorum.status}`} aria-live="polite">
                 <ShieldCheck size={11} aria-hidden="true" />
                 <span>
-                  <strong>
-                    {copy.lab.trust.quorumStatuses[directoryQuorum.status]}
-                  </strong>
+                  <strong>{copy.lab.trust.quorumStatuses[directoryQuorum.status]}</strong>
                   <small>
-                    {directoryQuorum.agreementCount}/
-                    {directoryQuorum.sourceCount}{" "}
-                    {copy.lab.trust.quorumAgreement} ·{" "}
-                    {directoryQuorum.agreementWeight}{" "}
-                    {copy.lab.trust.quorumWeight} ·{" "}
-                    {directoryQuorum.agreementMetadataPublisherCount}{" "}
-                    {copy.lab.trust.quorumPublishers}
+                    {directoryQuorum.agreementCount}/{directoryQuorum.sourceCount} {copy.lab.trust.quorumAgreement} ·{" "}
+                    {directoryQuorum.agreementWeight} {copy.lab.trust.quorumWeight} ·{" "}
+                    {directoryQuorum.agreementMetadataPublisherCount} {copy.lab.trust.quorumPublishers}
                   </small>
                 </span>
                 {directoryQuorum.selectedAnchorSetSha256 ? (
@@ -1851,27 +1496,18 @@ export default function ReceiptTrustPanel({
                     {directoryQuorum.selectedAnchorSetSha256.slice(0, 12)}
                   </code>
                 ) : null}
-                <code title={directoryQuorum.contentSha256}>
-                  {directoryQuorum.contentSha256.slice(0, 12)}
-                </code>
+                <code title={directoryQuorum.contentSha256}>{directoryQuorum.contentSha256.slice(0, 12)}</code>
               </output>
             ) : null}
           </section>
         ) : null}
-        <section
-          className="receipt-baseline-workbench"
-          aria-labelledby="receipt-baseline-workbench-title"
-        >
+        <section className="receipt-baseline-workbench" aria-labelledby="receipt-baseline-workbench-title">
           <header>
             <span>
-              <strong id="receipt-baseline-workbench-title">
-                {copy.lab.trust.baselineWorkbench}
-              </strong>
+              <strong id="receipt-baseline-workbench-title">{copy.lab.trust.baselineWorkbench}</strong>
               <small>{copy.lab.trust.baselineWorkbenchBody}</small>
             </span>
-            <code>
-              {baselineActivation.baselineCount.toString().padStart(2, "0")}
-            </code>
+            <code>{baselineActivation.baselineCount.toString().padStart(2, "0")}</code>
           </header>
           {latestBaseline ? (
             <>
@@ -1880,26 +1516,18 @@ export default function ReceiptTrustPanel({
                 <span>
                   <strong>{copy.lab.trust.latestBaseline}</strong>
                   <small>
-                    {baselineActivation.alignedSourceCount}/
-                    {baselineActivation.selectedSourceOriginSha256s.length}{" "}
-                    {copy.lab.trust.baselineSourcesAligned} ·{" "}
-                    {baselineActivation.metadataPublisherSha256s.length}{" "}
+                    {baselineActivation.alignedSourceCount}/{baselineActivation.selectedSourceOriginSha256s.length}{" "}
+                    {copy.lab.trust.baselineSourcesAligned} · {baselineActivation.metadataPublisherSha256s.length}{" "}
                     {copy.lab.trust.quorumPublishers}
                   </small>
                 </span>
-                <code title={latestBaseline.contentSha256}>
-                  {latestBaseline.contentSha256.slice(0, 12)}
-                </code>
+                <code title={latestBaseline.contentSha256}>{latestBaseline.contentSha256.slice(0, 12)}</code>
                 <code title={latestBaseline.selectedDirectorySha256}>
                   {latestBaseline.selectedDirectorySha256.slice(0, 12)}
                 </code>
               </output>
               <div className="receipt-baseline-actions">
-                <button
-                  type="button"
-                  disabled={Boolean(busyId)}
-                  onClick={() => void verifyLatestBaseline()}
-                >
+                <button type="button" disabled={Boolean(busyId)} onClick={() => void verifyLatestBaseline()}>
                   <ShieldCheck size={10} aria-hidden="true" />
                   {busyId === "verify-quorum-baseline"
                     ? copy.lab.trust.verifyingBaseline
@@ -1937,26 +1565,14 @@ export default function ReceiptTrustPanel({
               {baselineActivation.sourceProjections.length ? (
                 <ol className="receipt-baseline-sources">
                   {baselineActivation.sourceProjections.map((source) => (
-                    <li
-                      key={source.sourceOriginSha256}
-                      className={`baseline-source source-${source.status}`}
-                    >
+                    <li key={source.sourceOriginSha256} className={`baseline-source source-${source.status}`}>
                       <span>
-                        <strong>
-                          {source.subscriptionLabel ??
-                            copy.lab.trust.baselineUnknownSource}
-                        </strong>
-                        <small>
-                          {copy.lab.trust.baselineSourceStatuses[source.status]}
-                        </small>
+                        <strong>{source.subscriptionLabel ?? copy.lab.trust.baselineUnknownSource}</strong>
+                        <small>{copy.lab.trust.baselineSourceStatuses[source.status]}</small>
                       </span>
-                      <code title={source.sourceOriginSha256}>
-                        {source.sourceOriginSha256.slice(0, 12)}
-                      </code>
+                      <code title={source.sourceOriginSha256}>{source.sourceOriginSha256.slice(0, 12)}</code>
                       {source.currentDirectorySha256 ? (
-                        <code title={source.currentDirectorySha256}>
-                          {source.currentDirectorySha256.slice(0, 8)}
-                        </code>
+                        <code title={source.currentDirectorySha256}>{source.currentDirectorySha256.slice(0, 8)}</code>
                       ) : null}
                     </li>
                   ))}
@@ -1973,13 +1589,7 @@ export default function ReceiptTrustPanel({
                     <ShieldCheck size={11} aria-hidden="true" />
                   )}
                   <span>
-                    <strong>
-                      {
-                        copy.lab.trust.baselineVerificationStatuses[
-                          baselineVerification.status
-                        ]
-                      }
-                    </strong>
+                    <strong>{copy.lab.trust.baselineVerificationStatuses[baselineVerification.status]}</strong>
                     <small>
                       {baselineVerification.diagnostics.length > 0
                         ? baselineVerification.diagnostics.join(", ")
@@ -1990,9 +1600,7 @@ export default function ReceiptTrustPanel({
                     {baselineVerification.contentSha256.slice(0, 12)}
                   </code>
                   {baselineVerification.keyId ? (
-                    <code title={baselineVerification.keyId}>
-                      {baselineVerification.keyId.slice(0, 12)}
-                    </code>
+                    <code title={baselineVerification.keyId}>{baselineVerification.keyId.slice(0, 12)}</code>
                   ) : null}
                 </output>
               ) : null}
@@ -2003,32 +1611,18 @@ export default function ReceiptTrustPanel({
                 >
                   <ShieldCheck size={11} aria-hidden="true" />
                   <span>
-                    <strong>
-                      {
-                        copy.lab.trust.baselinePolicyStatuses[
-                          baselineImportResult.policyReview.status
-                        ]
-                      }
-                    </strong>
+                    <strong>{copy.lab.trust.baselinePolicyStatuses[baselineImportResult.policyReview.status]}</strong>
                     <small>
                       {baselineImportResult.policyReview.diagnostics.length > 0
-                        ? baselineImportResult.policyReview.diagnostics.join(
-                            ", ",
-                          )
+                        ? baselineImportResult.policyReview.diagnostics.join(", ")
                         : copy.lab.trust.noDiagnostics}
                     </small>
                   </span>
                   <code title={baselineImportResult.policyReview.policySha256}>
-                    {baselineImportResult.policyReview.policySha256.slice(
-                      0,
-                      12,
-                    )}
+                    {baselineImportResult.policyReview.policySha256.slice(0, 12)}
                   </code>
                   <code title={baselineImportResult.policyReview.contentSha256}>
-                    {baselineImportResult.policyReview.contentSha256.slice(
-                      0,
-                      12,
-                    )}
+                    {baselineImportResult.policyReview.contentSha256.slice(0, 12)}
                   </code>
                 </output>
               ) : null}
@@ -2047,40 +1641,23 @@ export default function ReceiptTrustPanel({
                       }
                     </strong>
                     <small>
-                      {baselineActivationDecision.envelope.receipt.diagnostics
-                        .length > 0
-                        ? baselineActivationDecision.envelope.receipt.diagnostics.join(
-                            ", ",
-                          )
+                      {baselineActivationDecision.envelope.receipt.diagnostics.length > 0
+                        ? baselineActivationDecision.envelope.receipt.diagnostics.join(", ")
                         : copy.lab.trust.noDiagnostics}
                     </small>
                   </span>
-                  <code
-                    title={
-                      baselineActivationDecision.envelope.receipt.contentSha256
-                    }
-                  >
-                    {baselineActivationDecision.envelope.receipt.contentSha256.slice(
-                      0,
-                      12,
-                    )}
+                  <code title={baselineActivationDecision.envelope.receipt.contentSha256}>
+                    {baselineActivationDecision.envelope.receipt.contentSha256.slice(0, 12)}
                   </code>
-                  <code
-                    title={baselineActivationDecision.envelope.contentSha256}
-                  >
-                    {baselineActivationDecision.envelope.contentSha256.slice(
-                      0,
-                      12,
-                    )}
+                  <code title={baselineActivationDecision.envelope.contentSha256}>
+                    {baselineActivationDecision.envelope.contentSha256.slice(0, 12)}
                   </code>
                 </output>
               ) : null}
             </>
           ) : (
             <>
-              <p className="receipt-trust-empty">
-                {copy.lab.trust.baselineWorkbenchEmpty}
-              </p>
+              <p className="receipt-trust-empty">{copy.lab.trust.baselineWorkbenchEmpty}</p>
               <div className="receipt-baseline-actions">
                 <label>
                   <Upload size={10} aria-hidden="true" />
@@ -2116,12 +1693,8 @@ export default function ReceiptTrustPanel({
                 type="text"
                 maxLength={100}
                 value={checkpointSubscriptionLabel}
-                placeholder={
-                  copy.lab.trust.checkpointSubscriptionLabelPlaceholder
-                }
-                onChange={(event) =>
-                  setCheckpointSubscriptionLabel(event.target.value)
-                }
+                placeholder={copy.lab.trust.checkpointSubscriptionLabelPlaceholder}
+                onChange={(event) => setCheckpointSubscriptionLabel(event.target.value)}
               />
             </label>
             <label>
@@ -2131,9 +1704,7 @@ export default function ReceiptTrustPanel({
                 maxLength={2048}
                 spellCheck="false"
                 value={checkpointSourceUrl}
-                placeholder={
-                  copy.lab.trust.activationSelectionCheckpointSourcePlaceholder
-                }
+                placeholder={copy.lab.trust.activationSelectionCheckpointSourcePlaceholder}
                 onChange={(event) => setCheckpointSourceUrl(event.target.value)}
               />
             </label>
@@ -2144,19 +1715,12 @@ export default function ReceiptTrustPanel({
                 maxLength={64}
                 spellCheck="false"
                 value={expectedCheckpointSha256}
-                placeholder={
-                  copy.lab.trust.expectedActivationSelectionCheckpointPlaceholder
-                }
-                onChange={(event) =>
-                  setExpectedCheckpointSha256(event.target.value)
-                }
+                placeholder={copy.lab.trust.expectedActivationSelectionCheckpointPlaceholder}
+                onChange={(event) => setExpectedCheckpointSha256(event.target.value)}
               />
             </label>
             <span className="receipt-directory-actions">
-              <button
-                type="submit"
-                disabled={!canDiscoverActivationSelectionCheckpoint}
-              >
+              <button type="submit" disabled={!canDiscoverActivationSelectionCheckpoint}>
                 <ShieldCheck size={10} aria-hidden="true" />
                 {busyId === "discover-activation-selection-checkpoint"
                   ? copy.lab.trust.discoveringActivationSelectionCheckpoint
@@ -2228,9 +1792,7 @@ export default function ReceiptTrustPanel({
             <button
               type="button"
               disabled={!canPreflightActivationSelectionRotationProposal}
-              onClick={() =>
-                void preflightActivationSelectionRotationProposal()
-              }
+              onClick={() => void preflightActivationSelectionRotationProposal()}
             >
               <ShieldCheck size={10} aria-hidden="true" />
               {busyId === "preflight-activation-selection-rotation-proposal"
@@ -2240,9 +1802,7 @@ export default function ReceiptTrustPanel({
             <button
               type="button"
               disabled={Boolean(busyId)}
-              onClick={() =>
-                void exportActivationSelectionTransparencyCheckpoint()
-              }
+              onClick={() => void exportActivationSelectionTransparencyCheckpoint()}
             >
               <Download size={10} aria-hidden="true" />
               {busyId === "export-activation-selection-checkpoint"
@@ -2252,9 +1812,7 @@ export default function ReceiptTrustPanel({
             <button
               type="button"
               disabled={!canSignActivationSelectionCheckpoint}
-              onClick={() =>
-                void signActivationSelectionTransparencyCheckpoint()
-              }
+              onClick={() => void signActivationSelectionTransparencyCheckpoint()}
             >
               <ShieldCheck size={10} aria-hidden="true" />
               {busyId === "sign-activation-selection-checkpoint"
@@ -2275,17 +1833,11 @@ export default function ReceiptTrustPanel({
                 onChange={(event) => {
                   const file = event.target.files?.[0];
                   event.target.value = "";
-                  void verifyActivationSelectionTransparencyCheckpointFile(
-                    file,
-                  );
+                  void verifyActivationSelectionTransparencyCheckpointFile(file);
                 }}
               />
             </label>
-            <button
-              type="button"
-              disabled={Boolean(busyId)}
-              onClick={() => void exportBaselineActivationHistory()}
-            >
+            <button type="button" disabled={Boolean(busyId)} onClick={() => void exportBaselineActivationHistory()}>
               <Download size={10} aria-hidden="true" />
               {busyId === "export-baseline-activation-history"
                 ? copy.lab.trust.exportingBaselineActivationHistory
@@ -2317,31 +1869,15 @@ export default function ReceiptTrustPanel({
                 <strong>{copy.lab.trust.activeBaselineActivation}</strong>
                 <small>
                   {copy.lab.trust.activeBaselineActivationBody} ·{" "}
-                  {
-                    baselineActivationSelectionState.selection.selectedDirectory
-                      .trustedCount
-                  }{" "}
+                  {baselineActivationSelectionState.selection.selectedDirectory.trustedCount}{" "}
                   {copy.lab.trust.externalTrustedKeys}
                 </small>
               </span>
-              <code
-                title={baselineActivationSelectionState.selection.contentSha256}
-              >
-                {baselineActivationSelectionState.selection.contentSha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={baselineActivationSelectionState.selection.contentSha256}>
+                {baselineActivationSelectionState.selection.contentSha256.slice(0, 12)}
               </code>
-              <code
-                title={
-                  baselineActivationSelectionState.selection
-                    .selectedDirectorySha256
-                }
-              >
-                {baselineActivationSelectionState.selection.selectedDirectorySha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={baselineActivationSelectionState.selection.selectedDirectorySha256}>
+                {baselineActivationSelectionState.selection.selectedDirectorySha256.slice(0, 12)}
               </code>
             </output>
           ) : null}
@@ -2349,59 +1885,34 @@ export default function ReceiptTrustPanel({
             <output className="receipt-baseline-policy" aria-live="polite">
               <ShieldCheck size={11} aria-hidden="true" />
               <span>
-                <strong>
-                  {copy.lab.trust.activationSelectionCheckpoint}
-                </strong>
+                <strong>{copy.lab.trust.activationSelectionCheckpoint}</strong>
                 <small>
                   {baselineActivationSelectionCheckpoint.selectionCount}{" "}
                   {copy.lab.trust.activationSelectionCheckpointEntries} ·{" "}
-                  {
-                    copy.lab.trust.activationSelectionDriftStatuses[
-                      baselineActivationSelectionCheckpoint.driftStatus
-                    ]
-                  }
+                  {copy.lab.trust.activationSelectionDriftStatuses[baselineActivationSelectionCheckpoint.driftStatus]}
                 </small>
               </span>
               <code title={baselineActivationSelectionCheckpoint.contentSha256}>
-                {baselineActivationSelectionCheckpoint.contentSha256.slice(
-                  0,
-                  12,
-                )}
+                {baselineActivationSelectionCheckpoint.contentSha256.slice(0, 12)}
               </code>
               {baselineActivationSelectionCheckpoint.selectionChainTailSha256 ? (
-                <code
-                  title={
-                    baselineActivationSelectionCheckpoint.selectionChainTailSha256
-                  }
-                >
-                  {baselineActivationSelectionCheckpoint.selectionChainTailSha256.slice(
-                    0,
-                    12,
-                  )}
+                <code title={baselineActivationSelectionCheckpoint.selectionChainTailSha256}>
+                  {baselineActivationSelectionCheckpoint.selectionChainTailSha256.slice(0, 12)}
                 </code>
               ) : null}
-              <code
-                title={baselineActivationSelectionCheckpoint.selectionSetSha256}
-              >
-                {baselineActivationSelectionCheckpoint.selectionSetSha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={baselineActivationSelectionCheckpoint.selectionSetSha256}>
+                {baselineActivationSelectionCheckpoint.selectionSetSha256.slice(0, 12)}
               </code>
             </output>
           ) : null}
           {baselineActivationSelectionCheckpointDiscovery ? (
             <output
               className={`receipt-baseline-policy policy-${
-                baselineActivationSelectionCheckpointDiscovery.status ===
-                "valid"
-                  ? "approved"
-                  : "rejected"
+                baselineActivationSelectionCheckpointDiscovery.status === "valid" ? "approved" : "rejected"
               }`}
               aria-live="polite"
             >
-              {baselineActivationSelectionCheckpointDiscovery.status ===
-              "valid" ? (
+              {baselineActivationSelectionCheckpointDiscovery.status === "valid" ? (
                 <Check size={11} aria-hidden="true" />
               ) : (
                 <ShieldCheck size={11} aria-hidden="true" />
@@ -2409,59 +1920,29 @@ export default function ReceiptTrustPanel({
               <span>
                 <strong>
                   {
-                    copy.lab.trust
-                      .activationSelectionCheckpointDiscoveryStatuses[
+                    copy.lab.trust.activationSelectionCheckpointDiscoveryStatuses[
                       baselineActivationSelectionCheckpointDiscovery.status
                     ]
                   }
                 </strong>
                 <small>
-                  {baselineActivationSelectionCheckpointDiscovery.diagnostics
-                    .length > 0
-                    ? baselineActivationSelectionCheckpointDiscovery.diagnostics.join(
-                        ", ",
-                      )
+                  {baselineActivationSelectionCheckpointDiscovery.diagnostics.length > 0
+                    ? baselineActivationSelectionCheckpointDiscovery.diagnostics.join(", ")
                     : copy.lab.trust.hashOnlyRemoteSource}
                 </small>
               </span>
-              <code
-                title={
-                  baselineActivationSelectionCheckpointDiscovery.sourceUrlSha256
-                }
-              >
-                {baselineActivationSelectionCheckpointDiscovery.sourceUrlSha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={baselineActivationSelectionCheckpointDiscovery.sourceUrlSha256}>
+                {baselineActivationSelectionCheckpointDiscovery.sourceUrlSha256.slice(0, 12)}
               </code>
-              <code
-                title={
-                  baselineActivationSelectionCheckpointDiscovery.responseBodySha256
-                }
-              >
-                {baselineActivationSelectionCheckpointDiscovery.responseBodySha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={baselineActivationSelectionCheckpointDiscovery.responseBodySha256}>
+                {baselineActivationSelectionCheckpointDiscovery.responseBodySha256.slice(0, 12)}
               </code>
-              <code
-                title={baselineActivationSelectionCheckpointDiscovery.policySha256}
-              >
-                {baselineActivationSelectionCheckpointDiscovery.policySha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={baselineActivationSelectionCheckpointDiscovery.policySha256}>
+                {baselineActivationSelectionCheckpointDiscovery.policySha256.slice(0, 12)}
               </code>
               {baselineActivationSelectionCheckpointDiscovery.checkpointSha256 ? (
-                <code
-                  title={
-                    baselineActivationSelectionCheckpointDiscovery.checkpointSha256
-                  }
-                >
-                  {baselineActivationSelectionCheckpointDiscovery.checkpointSha256.slice(
-                    0,
-                    12,
-                  )}
+                <code title={baselineActivationSelectionCheckpointDiscovery.checkpointSha256}>
+                  {baselineActivationSelectionCheckpointDiscovery.checkpointSha256.slice(0, 12)}
                 </code>
               ) : null}
             </output>
@@ -2483,13 +1964,10 @@ export default function ReceiptTrustPanel({
                 <button
                   type="button"
                   disabled={!canPromoteCheckpointRegistryQuorum}
-                  onClick={() =>
-                    void promoteCheckpointRegistryQuorumBaseline()
-                  }
+                  onClick={() => void promoteCheckpointRegistryQuorumBaseline()}
                 >
                   <ShieldCheck size={10} aria-hidden="true" />
-                  {busyId ===
-                  "promote-checkpoint-registry-quorum-baseline"
+                  {busyId === "promote-checkpoint-registry-quorum-baseline"
                     ? copy.lab.trust.promotingCheckpointRegistryQuorumBaseline
                     : copy.lab.trust.promoteCheckpointRegistryQuorumBaseline}
                 </button>
@@ -2499,27 +1977,15 @@ export default function ReceiptTrustPanel({
                   <span>
                     <strong>{subscription.label}</strong>
                     <small>
-                      {
-                        copy.lab.trust.subscriptionStatuses[
-                          subscription.status
-                        ]
-                      }{" "}
-                      · {subscription.lastRefreshStatus ?? "pending"} ·{" "}
-                      {subscription.transparencyEntryCount}{" "}
+                      {copy.lab.trust.subscriptionStatuses[subscription.status]} ·{" "}
+                      {subscription.lastRefreshStatus ?? "pending"} · {subscription.transparencyEntryCount}{" "}
                       {copy.lab.trust.transparencyTail}
                     </small>
                   </span>
-                  <code title={subscription.sourceUrlSha256}>
-                    {subscription.sourceUrlSha256.slice(0, 12)}
-                  </code>
+                  <code title={subscription.sourceUrlSha256}>{subscription.sourceUrlSha256.slice(0, 12)}</code>
                   {subscription.lastGoodDiscovery?.checkpointSha256 ? (
-                    <code
-                      title={subscription.lastGoodDiscovery.checkpointSha256}
-                    >
-                      {subscription.lastGoodDiscovery.checkpointSha256.slice(
-                        0,
-                        12,
-                      )}
+                    <code title={subscription.lastGoodDiscovery.checkpointSha256}>
+                      {subscription.lastGoodDiscovery.checkpointSha256.slice(0, 12)}
                     </code>
                   ) : null}
                   <button
@@ -2528,8 +1994,7 @@ export default function ReceiptTrustPanel({
                     onClick={() => void refreshCheckpointSubscription(subscription)}
                   >
                     <RefreshCw size={10} aria-hidden="true" />
-                    {busyId ===
-                    `refresh-checkpoint-subscription:${subscription.id}`
+                    {busyId === `refresh-checkpoint-subscription:${subscription.id}`
                       ? copy.lab.trust.refreshingCheckpointSubscription
                       : copy.lab.trust.refreshCheckpointSubscription}
                   </button>
@@ -2543,8 +2008,7 @@ export default function ReceiptTrustPanel({
                     ) : (
                       <Play size={10} aria-hidden="true" />
                     )}
-                    {busyId ===
-                    `toggle-checkpoint-subscription:${subscription.id}`
+                    {busyId === `toggle-checkpoint-subscription:${subscription.id}`
                       ? copy.lab.trust.updatingCheckpointSubscription
                       : subscription.status === "active"
                         ? copy.lab.trust.pauseSubscription
@@ -2587,9 +2051,7 @@ export default function ReceiptTrustPanel({
           {checkpointRegistryQuorum ? (
             <output
               className={`receipt-baseline-policy policy-${
-                checkpointRegistryQuorum.status === "agreed"
-                  ? "approved"
-                  : "rejected"
+                checkpointRegistryQuorum.status === "agreed" ? "approved" : "rejected"
               }`}
               aria-live="polite"
             >
@@ -2599,13 +2061,7 @@ export default function ReceiptTrustPanel({
                 <ShieldCheck size={11} aria-hidden="true" />
               )}
               <span>
-                <strong>
-                  {
-                    copy.lab.trust.checkpointRegistryQuorumStatuses[
-                      checkpointRegistryQuorum.status
-                    ]
-                  }
-                </strong>
+                <strong>{copy.lab.trust.checkpointRegistryQuorumStatuses[checkpointRegistryQuorum.status]}</strong>
                 <small>
                   {checkpointRegistryQuorum.diagnostics.length > 0
                     ? checkpointRegistryQuorum.diagnostics.join(", ")
@@ -2620,10 +2076,7 @@ export default function ReceiptTrustPanel({
               </code>
               {checkpointRegistryQuorum.selectedCheckpointSha256 ? (
                 <code title={checkpointRegistryQuorum.selectedCheckpointSha256}>
-                  {checkpointRegistryQuorum.selectedCheckpointSha256.slice(
-                    0,
-                    12,
-                  )}
+                  {checkpointRegistryQuorum.selectedCheckpointSha256.slice(0, 12)}
                 </code>
               ) : null}
             </output>
@@ -2632,97 +2085,56 @@ export default function ReceiptTrustPanel({
             <output className="receipt-baseline-policy" aria-live="polite">
               <ShieldCheck size={11} aria-hidden="true" />
               <span>
-                <strong>
-                  {copy.lab.trust.checkpointRegistryQuorumBaseline}
-                </strong>
+                <strong>{copy.lab.trust.checkpointRegistryQuorumBaseline}</strong>
                 <small>
                   {checkpointRegistryQuorumBaseline.envelope.receipt.status} ·{" "}
-                  {checkpointRegistryQuorumBaseline.envelope.receipt.agreementCount}{" "}
-                  {copy.lab.trust.quorumAgreement}
+                  {checkpointRegistryQuorumBaseline.envelope.receipt.agreementCount} {copy.lab.trust.quorumAgreement}
                 </small>
               </span>
               <code title={checkpointRegistryQuorumBaseline.contentSha256}>
                 {checkpointRegistryQuorumBaseline.contentSha256.slice(0, 12)}
               </code>
-              <code
-                title={checkpointRegistryQuorumBaseline.envelope.contentSha256}
-              >
-                {checkpointRegistryQuorumBaseline.envelope.contentSha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={checkpointRegistryQuorumBaseline.envelope.contentSha256}>
+                {checkpointRegistryQuorumBaseline.envelope.contentSha256.slice(0, 12)}
               </code>
-              <code
-                title={
-                  checkpointRegistryQuorumBaseline.selectedCheckpointSha256
-                }
-              >
-                {checkpointRegistryQuorumBaseline.selectedCheckpointSha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={checkpointRegistryQuorumBaseline.selectedCheckpointSha256}>
+                {checkpointRegistryQuorumBaseline.selectedCheckpointSha256.slice(0, 12)}
               </code>
             </output>
           ) : null}
           {checkpointRegistryQuorumBaselineVerification ? (
             <output
               className={`receipt-baseline-policy policy-${
-                checkpointRegistryQuorumBaselineVerification.status ===
-                "trusted"
-                  ? "approved"
-                  : "rejected"
+                checkpointRegistryQuorumBaselineVerification.status === "trusted" ? "approved" : "rejected"
               }`}
               aria-live="polite"
             >
-              {checkpointRegistryQuorumBaselineVerification.status ===
-              "trusted" ? (
+              {checkpointRegistryQuorumBaselineVerification.status === "trusted" ? (
                 <Check size={11} aria-hidden="true" />
               ) : (
                 <ShieldCheck size={11} aria-hidden="true" />
               )}
               <span>
                 <strong>
-                  {
-                    copy.lab.trust.baselineVerificationStatuses[
-                      checkpointRegistryQuorumBaselineVerification.status
-                    ]
-                  }
+                  {copy.lab.trust.baselineVerificationStatuses[checkpointRegistryQuorumBaselineVerification.status]}
                 </strong>
                 <small>
-                  {checkpointRegistryQuorumBaselineVerification.diagnostics
-                    .length > 0
-                    ? checkpointRegistryQuorumBaselineVerification.diagnostics.join(
-                        ", ",
-                      )
+                  {checkpointRegistryQuorumBaselineVerification.diagnostics.length > 0
+                    ? checkpointRegistryQuorumBaselineVerification.diagnostics.join(", ")
                     : copy.lab.trust.noDiagnostics}
                 </small>
               </span>
-              <code
-                title={checkpointRegistryQuorumBaselineVerification.contentSha256}
-              >
-                {checkpointRegistryQuorumBaselineVerification.contentSha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={checkpointRegistryQuorumBaselineVerification.contentSha256}>
+                {checkpointRegistryQuorumBaselineVerification.contentSha256.slice(0, 12)}
               </code>
               {checkpointRegistryQuorumBaselineVerification.baselineSha256 ? (
-                <code
-                  title={
-                    checkpointRegistryQuorumBaselineVerification.baselineSha256
-                  }
-                >
-                  {checkpointRegistryQuorumBaselineVerification.baselineSha256.slice(
-                    0,
-                    12,
-                  )}
+                <code title={checkpointRegistryQuorumBaselineVerification.baselineSha256}>
+                  {checkpointRegistryQuorumBaselineVerification.baselineSha256.slice(0, 12)}
                 </code>
               ) : null}
               {checkpointRegistryQuorumBaselineVerification.keyId ? (
                 <code title={checkpointRegistryQuorumBaselineVerification.keyId}>
-                  {checkpointRegistryQuorumBaselineVerification.keyId.slice(
-                    0,
-                    12,
-                  )}
+                  {checkpointRegistryQuorumBaselineVerification.keyId.slice(0, 12)}
                 </code>
               ) : null}
             </output>
@@ -2737,41 +2149,22 @@ export default function ReceiptTrustPanel({
               <span>
                 <strong>
                   {checkpointRegistryQuorumBaselineImportResult.imported
-                    ? copy.lab.trust
-                        .checkpointRegistryQuorumBaselineImported
-                    : copy.lab.trust
-                        .checkpointRegistryQuorumBaselineAlreadyImported}
+                    ? copy.lab.trust.checkpointRegistryQuorumBaselineImported
+                    : copy.lab.trust.checkpointRegistryQuorumBaselineAlreadyImported}
                 </strong>
                 <small>
                   {
                     copy.lab.trust.baselineVerificationStatuses[
-                      checkpointRegistryQuorumBaselineImportResult.verification
-                        .status
+                      checkpointRegistryQuorumBaselineImportResult.verification.status
                     ]
                   }
                 </small>
               </span>
-              <code
-                title={
-                  checkpointRegistryQuorumBaselineImportResult.baseline
-                    .contentSha256
-                }
-              >
-                {checkpointRegistryQuorumBaselineImportResult.baseline.contentSha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={checkpointRegistryQuorumBaselineImportResult.baseline.contentSha256}>
+                {checkpointRegistryQuorumBaselineImportResult.baseline.contentSha256.slice(0, 12)}
               </code>
-              <code
-                title={
-                  checkpointRegistryQuorumBaselineImportResult.verification
-                    .contentSha256
-                }
-              >
-                {checkpointRegistryQuorumBaselineImportResult.verification.contentSha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={checkpointRegistryQuorumBaselineImportResult.verification.contentSha256}>
+                {checkpointRegistryQuorumBaselineImportResult.verification.contentSha256.slice(0, 12)}
               </code>
             </output>
           ) : null}
@@ -2779,53 +2172,28 @@ export default function ReceiptTrustPanel({
             <output className="receipt-baseline-policy" aria-live="polite">
               <ShieldCheck size={11} aria-hidden="true" />
               <span>
-                <strong>
-                  {copy.lab.trust.signedActivationSelectionCheckpoint}
-                </strong>
+                <strong>{copy.lab.trust.signedActivationSelectionCheckpoint}</strong>
                 <small>
-                  {
-                    baselineActivationSelectionCheckpointEnvelope.receiptKind
-                  }{" "}
-                  ·{" "}
-                  {
-                    baselineActivationSelectionCheckpointEnvelope.signature
-                      .keyId
-                  }
+                  {baselineActivationSelectionCheckpointEnvelope.receiptKind} ·{" "}
+                  {baselineActivationSelectionCheckpointEnvelope.signature.keyId}
                 </small>
               </span>
-              <code
-                title={baselineActivationSelectionCheckpointEnvelope.contentSha256}
-              >
-                {baselineActivationSelectionCheckpointEnvelope.contentSha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={baselineActivationSelectionCheckpointEnvelope.contentSha256}>
+                {baselineActivationSelectionCheckpointEnvelope.contentSha256.slice(0, 12)}
               </code>
-              <code
-                title={
-                  baselineActivationSelectionCheckpointEnvelope.signature
-                    .receiptArtifactSha256
-                }
-              >
-                {baselineActivationSelectionCheckpointEnvelope.signature.receiptArtifactSha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={baselineActivationSelectionCheckpointEnvelope.signature.receiptArtifactSha256}>
+                {baselineActivationSelectionCheckpointEnvelope.signature.receiptArtifactSha256.slice(0, 12)}
               </code>
             </output>
           ) : null}
           {baselineActivationSelectionCheckpointVerification ? (
             <output
               className={`receipt-baseline-policy policy-${
-                baselineActivationSelectionCheckpointVerification.status ===
-                "valid"
-                  ? "approved"
-                  : "rejected"
+                baselineActivationSelectionCheckpointVerification.status === "valid" ? "approved" : "rejected"
               }`}
               aria-live="polite"
             >
-              {baselineActivationSelectionCheckpointVerification.status ===
-              "valid" ? (
+              {baselineActivationSelectionCheckpointVerification.status === "valid" ? (
                 <Check size={11} aria-hidden="true" />
               ) : (
                 <ShieldCheck size={11} aria-hidden="true" />
@@ -2833,49 +2201,29 @@ export default function ReceiptTrustPanel({
               <span>
                 <strong>
                   {
-                    copy.lab.trust
-                      .activationSelectionCheckpointVerificationStatuses[
+                    copy.lab.trust.activationSelectionCheckpointVerificationStatuses[
                       baselineActivationSelectionCheckpointVerification.status
                     ]
                   }
                 </strong>
                 <small>
-                  {baselineActivationSelectionCheckpointVerification.diagnostics
-                    .length > 0
-                    ? baselineActivationSelectionCheckpointVerification.diagnostics.join(
-                        ", ",
-                      )
+                  {baselineActivationSelectionCheckpointVerification.diagnostics.length > 0
+                    ? baselineActivationSelectionCheckpointVerification.diagnostics.join(", ")
                     : copy.lab.trust.noDiagnostics}
                 </small>
               </span>
-              <code
-                title={
-                  baselineActivationSelectionCheckpointVerification.contentSha256
-                }
-              >
-                {baselineActivationSelectionCheckpointVerification.contentSha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={baselineActivationSelectionCheckpointVerification.contentSha256}>
+                {baselineActivationSelectionCheckpointVerification.contentSha256.slice(0, 12)}
               </code>
-              <code
-                title={
-                  baselineActivationSelectionCheckpointVerification.currentContentSha256
-                }
-              >
-                {baselineActivationSelectionCheckpointVerification.currentContentSha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={baselineActivationSelectionCheckpointVerification.currentContentSha256}>
+                {baselineActivationSelectionCheckpointVerification.currentContentSha256.slice(0, 12)}
               </code>
             </output>
           ) : null}
           {baselineActivationSelectionDriftAudit ? (
             <output
               className={`receipt-baseline-policy policy-${
-                baselineActivationSelectionDriftAudit.status === "aligned"
-                  ? "approved"
-                  : "rejected"
+                baselineActivationSelectionDriftAudit.status === "aligned" ? "approved" : "rejected"
               }`}
               aria-live="polite"
             >
@@ -2885,49 +2233,23 @@ export default function ReceiptTrustPanel({
                 <ShieldCheck size={11} aria-hidden="true" />
               )}
               <span>
-                <strong>
-                  {copy.lab.trust.activationSelectionDriftAudit}
-                </strong>
+                <strong>{copy.lab.trust.activationSelectionDriftAudit}</strong>
                 <small>
-                  {
-                    copy.lab.trust.activationSelectionDriftStatuses[
-                      baselineActivationSelectionDriftAudit.status
-                    ]
-                  }{" "}
-                  ·{" "}
+                  {copy.lab.trust.activationSelectionDriftStatuses[baselineActivationSelectionDriftAudit.status]} ·{" "}
                   {baselineActivationSelectionDriftAudit.diagnostics.length > 0
-                    ? baselineActivationSelectionDriftAudit.diagnostics.join(
-                        ", ",
-                      )
+                    ? baselineActivationSelectionDriftAudit.diagnostics.join(", ")
                     : copy.lab.trust.noDiagnostics}
                 </small>
               </span>
-              <code
-                title={baselineActivationSelectionDriftAudit.contentSha256}
-              >
-                {baselineActivationSelectionDriftAudit.contentSha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={baselineActivationSelectionDriftAudit.contentSha256}>
+                {baselineActivationSelectionDriftAudit.contentSha256.slice(0, 12)}
               </code>
-              <code
-                title={baselineActivationSelectionDriftAudit.currentQuorumSha256}
-              >
-                {baselineActivationSelectionDriftAudit.currentQuorumSha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={baselineActivationSelectionDriftAudit.currentQuorumSha256}>
+                {baselineActivationSelectionDriftAudit.currentQuorumSha256.slice(0, 12)}
               </code>
               {baselineActivationSelectionDriftAudit.currentDirectorySha256 ? (
-                <code
-                  title={
-                    baselineActivationSelectionDriftAudit.currentDirectorySha256
-                  }
-                >
-                  {baselineActivationSelectionDriftAudit.currentDirectorySha256.slice(
-                    0,
-                    12,
-                  )}
+                <code title={baselineActivationSelectionDriftAudit.currentDirectorySha256}>
+                  {baselineActivationSelectionDriftAudit.currentDirectorySha256.slice(0, 12)}
                 </code>
               ) : null}
             </output>
@@ -2935,9 +2257,7 @@ export default function ReceiptTrustPanel({
           {baselineActivationRotationProposal ? (
             <output
               className={`receipt-baseline-policy policy-${
-                baselineActivationRotationProposal.status === "proposed"
-                  ? "approved"
-                  : "rejected"
+                baselineActivationRotationProposal.status === "proposed" ? "approved" : "rejected"
               }`}
               aria-live="polite"
             >
@@ -2947,9 +2267,7 @@ export default function ReceiptTrustPanel({
                 <ShieldCheck size={11} aria-hidden="true" />
               )}
               <span>
-                <strong>
-                  {copy.lab.trust.activationSelectionRotationProposal}
-                </strong>
+                <strong>{copy.lab.trust.activationSelectionRotationProposal}</strong>
                 <small>
                   {
                     copy.lab.trust.activationSelectionRotationProposalStatuses[
@@ -2965,37 +2283,16 @@ export default function ReceiptTrustPanel({
               <code title={baselineActivationRotationProposal.contentSha256}>
                 {baselineActivationRotationProposal.contentSha256.slice(0, 12)}
               </code>
-              <code
-                title={
-                  baselineActivationRotationProposal.rotationReviewSha256
-                }
-              >
-                {baselineActivationRotationProposal.rotationReviewSha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={baselineActivationRotationProposal.rotationReviewSha256}>
+                {baselineActivationRotationProposal.rotationReviewSha256.slice(0, 12)}
               </code>
               {baselineActivationRotationProposal.checkpointRegistryQuorumBaselineSha256 ? (
-                <code
-                  title={
-                    baselineActivationRotationProposal.checkpointRegistryQuorumBaselineSha256
-                  }
-                >
-                  {baselineActivationRotationProposal.checkpointRegistryQuorumBaselineSha256.slice(
-                    0,
-                    12,
-                  )}
+                <code title={baselineActivationRotationProposal.checkpointRegistryQuorumBaselineSha256}>
+                  {baselineActivationRotationProposal.checkpointRegistryQuorumBaselineSha256.slice(0, 12)}
                 </code>
               ) : null}
-              <code
-                title={
-                  baselineActivationRotationProposal.currentCheckpointSha256
-                }
-              >
-                {baselineActivationRotationProposal.currentCheckpointSha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={baselineActivationRotationProposal.currentCheckpointSha256}>
+                {baselineActivationRotationProposal.currentCheckpointSha256.slice(0, 12)}
               </code>
             </output>
           ) : null}
@@ -3003,104 +2300,62 @@ export default function ReceiptTrustPanel({
             <output className="receipt-baseline-policy" aria-live="polite">
               <ShieldCheck size={11} aria-hidden="true" />
               <span>
-                <strong>
-                  {copy.lab.trust.signedActivationSelectionRotationProposal}
-                </strong>
+                <strong>{copy.lab.trust.signedActivationSelectionRotationProposal}</strong>
                 <small>
                   {baselineActivationRotationProposalEnvelope.receiptKind} ·{" "}
                   {baselineActivationRotationProposalEnvelope.signature.keyId}
                 </small>
               </span>
-              <code
-                title={baselineActivationRotationProposalEnvelope.contentSha256}
-              >
-                {baselineActivationRotationProposalEnvelope.contentSha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={baselineActivationRotationProposalEnvelope.contentSha256}>
+                {baselineActivationRotationProposalEnvelope.contentSha256.slice(0, 12)}
               </code>
-              <code
-                title={
-                  baselineActivationRotationProposalEnvelope.signature
-                    .receiptArtifactSha256
-                }
-              >
-                {baselineActivationRotationProposalEnvelope.signature.receiptArtifactSha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={baselineActivationRotationProposalEnvelope.signature.receiptArtifactSha256}>
+                {baselineActivationRotationProposalEnvelope.signature.receiptArtifactSha256.slice(0, 12)}
               </code>
             </output>
           ) : null}
           {baselineActivationRotationProposalPreflight ? (
             <output
               className={`receipt-baseline-policy policy-${
-                baselineActivationRotationProposalPreflight.status ===
-                "rejected"
-                  ? "rejected"
-                  : "approved"
+                baselineActivationRotationProposalPreflight.status === "rejected" ? "rejected" : "approved"
               }`}
               aria-live="polite"
             >
-              {baselineActivationRotationProposalPreflight.status ===
-              "rejected" ? (
+              {baselineActivationRotationProposalPreflight.status === "rejected" ? (
                 <ShieldCheck size={11} aria-hidden="true" />
               ) : (
                 <Check size={11} aria-hidden="true" />
               )}
               <span>
-                <strong>
-                  {copy.lab.trust.activationSelectionRotationProposalPreflight}
-                </strong>
+                <strong>{copy.lab.trust.activationSelectionRotationProposalPreflight}</strong>
                 <small>
                   {
-                    copy.lab.trust
-                      .activationSelectionRotationProposalPreflightStatuses[
+                    copy.lab.trust.activationSelectionRotationProposalPreflightStatuses[
                       baselineActivationRotationProposalPreflight.status
                     ]
                   }{" "}
                   ·{" "}
-                  {baselineActivationRotationProposalPreflight.diagnostics
-                    .length > 0
-                    ? baselineActivationRotationProposalPreflight.diagnostics.join(
-                        ", ",
-                      )
+                  {baselineActivationRotationProposalPreflight.diagnostics.length > 0
+                    ? baselineActivationRotationProposalPreflight.diagnostics.join(", ")
                     : copy.lab.trust.noDiagnostics}
                 </small>
               </span>
-              <code
-                title={
-                  baselineActivationRotationProposalPreflight.contentSha256
-                }
-              >
-                {baselineActivationRotationProposalPreflight.contentSha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={baselineActivationRotationProposalPreflight.contentSha256}>
+                {baselineActivationRotationProposalPreflight.contentSha256.slice(0, 12)}
               </code>
               {baselineActivationRotationProposalPreflight.rotationProposalEnvelopeSha256 ? (
-                <code
-                  title={
-                    baselineActivationRotationProposalPreflight.rotationProposalEnvelopeSha256
-                  }
-                >
-                  {baselineActivationRotationProposalPreflight.rotationProposalEnvelopeSha256.slice(
-                    0,
-                    12,
-                  )}
+                <code title={baselineActivationRotationProposalPreflight.rotationProposalEnvelopeSha256}>
+                  {baselineActivationRotationProposalPreflight.rotationProposalEnvelopeSha256.slice(0, 12)}
                 </code>
               ) : null}
               {baselineActivationRotationProposalPreflight.trustedReceiptVerificationStatus ? (
                 <code
                   title={
                     baselineActivationRotationProposalPreflight.trustedReceiptVerificationReason ??
-                    baselineActivationRotationProposalPreflight
-                      .trustedReceiptVerificationStatus
-                  }
-                >
-                  {
                     baselineActivationRotationProposalPreflight.trustedReceiptVerificationStatus
                   }
+                >
+                  {baselineActivationRotationProposalPreflight.trustedReceiptVerificationStatus}
                 </code>
               ) : null}
             </output>
@@ -3108,9 +2363,7 @@ export default function ReceiptTrustPanel({
           {baselineActivationRotationReview ? (
             <output
               className={`receipt-baseline-policy policy-${
-                baselineActivationRotationReview.status === "eligible"
-                  ? "approved"
-                  : "rejected"
+                baselineActivationRotationReview.status === "eligible" ? "approved" : "rejected"
               }`}
               aria-live="polite"
             >
@@ -3120,16 +2373,9 @@ export default function ReceiptTrustPanel({
                 <ShieldCheck size={11} aria-hidden="true" />
               )}
               <span>
-                <strong>
-                  {copy.lab.trust.activationSelectionRotationReview}
-                </strong>
+                <strong>{copy.lab.trust.activationSelectionRotationReview}</strong>
                 <small>
-                  {
-                    copy.lab.trust.activationSelectionRotationStatuses[
-                      baselineActivationRotationReview.status
-                    ]
-                  }{" "}
-                  ·{" "}
+                  {copy.lab.trust.activationSelectionRotationStatuses[baselineActivationRotationReview.status]} ·{" "}
                   {baselineActivationRotationReview.diagnostics.length > 0
                     ? baselineActivationRotationReview.diagnostics.join(", ")
                     : copy.lab.trust.noDiagnostics}
@@ -3138,13 +2384,8 @@ export default function ReceiptTrustPanel({
               <code title={baselineActivationRotationReview.contentSha256}>
                 {baselineActivationRotationReview.contentSha256.slice(0, 12)}
               </code>
-              <code
-                title={baselineActivationRotationReview.driftAudit.contentSha256}
-              >
-                {baselineActivationRotationReview.driftAudit.contentSha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={baselineActivationRotationReview.driftAudit.contentSha256}>
+                {baselineActivationRotationReview.driftAudit.contentSha256.slice(0, 12)}
               </code>
             </output>
           ) : null}
@@ -3154,10 +2395,8 @@ export default function ReceiptTrustPanel({
               <span>
                 <strong>{copy.lab.trust.baselineActivationHistory}</strong>
                 <small>
-                  {baselineActivationHistory.approvedCount}/
-                  {baselineActivationHistory.decisionCount}{" "}
-                  {copy.lab.trust.baselineActivationHistoryApproved} ·{" "}
-                  {baselineActivationHistory.distinctBaselineCount}{" "}
+                  {baselineActivationHistory.approvedCount}/{baselineActivationHistory.decisionCount}{" "}
+                  {copy.lab.trust.baselineActivationHistoryApproved} · {baselineActivationHistory.distinctBaselineCount}{" "}
                   {copy.lab.trust.baselineActivationHistoryBaselines}
                 </small>
               </span>
@@ -3166,9 +2405,7 @@ export default function ReceiptTrustPanel({
               </code>
               {baselineActivationHistory.latestDecisionAt ? (
                 <code title={baselineActivationHistory.latestDecisionAt}>
-                  {baselineActivationHistory.latestDecisionAt
-                    .slice(0, 16)
-                    .replace("T", " ")}
+                  {baselineActivationHistory.latestDecisionAt.slice(0, 16).replace("T", " ")}
                 </code>
               ) : null}
             </output>
@@ -3176,9 +2413,7 @@ export default function ReceiptTrustPanel({
           {baselineActivationHistoryVerification ? (
             <output
               className={`receipt-baseline-policy policy-${
-                baselineActivationHistoryVerification.status === "valid"
-                  ? "approved"
-                  : "rejected"
+                baselineActivationHistoryVerification.status === "valid" ? "approved" : "rejected"
               }`}
               aria-live="polite"
             >
@@ -3190,35 +2425,22 @@ export default function ReceiptTrustPanel({
               <span>
                 <strong>
                   {
-                    copy.lab.trust
-                      .baselineActivationHistoryVerificationStatuses[
+                    copy.lab.trust.baselineActivationHistoryVerificationStatuses[
                       baselineActivationHistoryVerification.status
                     ]
                   }
                 </strong>
                 <small>
                   {baselineActivationHistoryVerification.diagnostics.length > 0
-                    ? baselineActivationHistoryVerification.diagnostics.join(
-                        ", ",
-                      )
+                    ? baselineActivationHistoryVerification.diagnostics.join(", ")
                     : copy.lab.trust.noDiagnostics}
                 </small>
               </span>
               <code title={baselineActivationHistoryVerification.contentSha256}>
-                {baselineActivationHistoryVerification.contentSha256.slice(
-                  0,
-                  12,
-                )}
+                {baselineActivationHistoryVerification.contentSha256.slice(0, 12)}
               </code>
-              <code
-                title={
-                  baselineActivationHistoryVerification.currentContentSha256
-                }
-              >
-                {baselineActivationHistoryVerification.currentContentSha256.slice(
-                  0,
-                  12,
-                )}
+              <code title={baselineActivationHistoryVerification.currentContentSha256}>
+                {baselineActivationHistoryVerification.currentContentSha256.slice(0, 12)}
               </code>
             </output>
           ) : null}
@@ -3229,13 +2451,10 @@ export default function ReceiptTrustPanel({
             <span>
               <strong>{copy.lab.trust.externalDirectoryReady}</strong>
               <small>
-                {externalDirectory.trustedCount}{" "}
-                {copy.lab.trust.externalTrustedKeys}
+                {externalDirectory.trustedCount} {copy.lab.trust.externalTrustedKeys}
               </small>
             </span>
-            <code title={externalDirectory.anchorSetSha256}>
-              {externalDirectory.anchorSetSha256.slice(0, 12)}
-            </code>
+            <code title={externalDirectory.anchorSetSha256}>{externalDirectory.anchorSetSha256.slice(0, 12)}</code>
             <button
               type="button"
               aria-label={copy.lab.trust.clearExternalDirectory}
@@ -3248,11 +2467,7 @@ export default function ReceiptTrustPanel({
         ) : null}
         <label>
           <Upload size={11} aria-hidden="true" />
-          <span>
-            {busyId === "verify"
-              ? copy.lab.trust.verifying
-              : copy.lab.trust.chooseReceipt}
-          </span>
+          <span>{busyId === "verify" ? copy.lab.trust.verifying : copy.lab.trust.chooseReceipt}</span>
           <input
             type="file"
             accept="application/json,.json"
@@ -3264,21 +2479,11 @@ export default function ReceiptTrustPanel({
             }}
           />
         </label>
-        <button
-          type="button"
-          disabled={Boolean(busyId)}
-          onClick={() => void exportDirectory()}
-        >
+        <button type="button" disabled={Boolean(busyId)} onClick={() => void exportDirectory()}>
           <Download size={11} aria-hidden="true" />
-          {busyId === "directory"
-            ? copy.lab.trust.exportingDirectory
-            : copy.lab.trust.exportDirectory}
+          {busyId === "directory" ? copy.lab.trust.exportingDirectory : copy.lab.trust.exportDirectory}
         </button>
-        <button
-          type="button"
-          disabled={!canSignDirectoryMetadata}
-          onClick={() => void signDirectoryMetadata()}
-        >
+        <button type="button" disabled={!canSignDirectoryMetadata} onClick={() => void signDirectoryMetadata()}>
           <ShieldCheck size={11} aria-hidden="true" />
           {busyId === "sign-directory-metadata"
             ? copy.lab.trust.signingDirectoryMetadata
@@ -3287,9 +2492,7 @@ export default function ReceiptTrustPanel({
         <label>
           <Upload size={11} aria-hidden="true" />
           <span>
-            {busyId === "verify-directory"
-              ? copy.lab.trust.verifyingDirectory
-              : copy.lab.trust.chooseDirectory}
+            {busyId === "verify-directory" ? copy.lab.trust.verifyingDirectory : copy.lab.trust.chooseDirectory}
           </span>
           <input
             type="file"
@@ -3321,112 +2524,68 @@ export default function ReceiptTrustPanel({
           />
         </label>
         {directoryDiscovery ? (
-          <output
-            className={`receipt-verification verification-${directoryDiscovery.status}`}
-            aria-live="polite"
-          >
+          <output className={`receipt-verification verification-${directoryDiscovery.status}`} aria-live="polite">
             {directoryDiscovery.status === "valid" ? (
               <Check size={11} aria-hidden="true" />
             ) : (
               <ShieldCheck size={11} aria-hidden="true" />
             )}
             <span>
-              <strong>
-                {
-                  copy.lab.trust.directoryDiscoveryStatuses[
-                    directoryDiscovery.status
-                  ]
-                }
-              </strong>
+              <strong>{copy.lab.trust.directoryDiscoveryStatuses[directoryDiscovery.status]}</strong>
               <small>{copy.lab.trust.hashOnlyRemoteSource}</small>
             </span>
-            <code title={directoryDiscovery.sourceUrlSha256}>
-              {directoryDiscovery.sourceUrlSha256.slice(0, 12)}
-            </code>
+            <code title={directoryDiscovery.sourceUrlSha256}>{directoryDiscovery.sourceUrlSha256.slice(0, 12)}</code>
             <code title={directoryDiscovery.responseBodySha256}>
               {directoryDiscovery.responseBodySha256.slice(0, 12)}
             </code>
           </output>
         ) : null}
         {verification ? (
-          <output
-            className={`receipt-verification verification-${verification.status}`}
-            aria-live="polite"
-          >
+          <output className={`receipt-verification verification-${verification.status}`} aria-live="polite">
             {verification.status === "trusted" ? (
               <Check size={11} aria-hidden="true" />
             ) : (
               <ShieldCheck size={11} aria-hidden="true" />
             )}
             <span>
-              <strong>
-                {copy.lab.trust.verificationStatuses[verification.status]}
-              </strong>
+              <strong>{copy.lab.trust.verificationStatuses[verification.status]}</strong>
               <small>{verification.reason}</small>
             </span>
-            {verification.keyId ? (
-              <code title={verification.keyId}>
-                {verification.keyId.slice(0, 16)}
-              </code>
-            ) : null}
+            {verification.keyId ? <code title={verification.keyId}>{verification.keyId.slice(0, 16)}</code> : null}
             {verification.anchorDirectorySource ? (
               <code title={verification.anchorDirectorySource}>
-                {
-                  copy.lab.trust.verificationDirectorySources[
-                    verification.anchorDirectorySource
-                  ]
-                }
+                {copy.lab.trust.verificationDirectorySources[verification.anchorDirectorySource]}
               </code>
             ) : null}
             {verification.anchorDirectorySha256 ? (
-              <code title={verification.anchorDirectorySha256}>
-                {verification.anchorDirectorySha256.slice(0, 12)}
-              </code>
+              <code title={verification.anchorDirectorySha256}>{verification.anchorDirectorySha256.slice(0, 12)}</code>
             ) : null}
           </output>
         ) : null}
         {directoryVerification ? (
-          <output
-            className={`receipt-verification verification-${directoryVerification.status}`}
-            aria-live="polite"
-          >
+          <output className={`receipt-verification verification-${directoryVerification.status}`} aria-live="polite">
             {directoryVerification.status === "valid" ? (
               <Check size={11} aria-hidden="true" />
             ) : (
               <ShieldCheck size={11} aria-hidden="true" />
             )}
             <span>
-              <strong>
-                {
-                  copy.lab.trust.directoryVerificationStatuses[
-                    directoryVerification.status
-                  ]
-                }
-              </strong>
+              <strong>{copy.lab.trust.directoryVerificationStatuses[directoryVerification.status]}</strong>
               <small>
                 {directoryVerification.diagnostics.length > 0
                   ? directoryVerification.diagnostics.join(", ")
                   : copy.lab.trust.noDiagnostics}
               </small>
             </span>
-            <code title={directoryVerification.contentSha256}>
-              {directoryVerification.contentSha256.slice(0, 16)}
-            </code>
+            <code title={directoryVerification.contentSha256}>{directoryVerification.contentSha256.slice(0, 16)}</code>
             {directoryVerification.directoryAgeMs !== undefined ? (
-              <code
-                title={
-                  copy.lab.trust.directoryAge +
-                  ": " +
-                  directoryVerification.directoryAgeMs.toString()
-                }
-              >
+              <code title={copy.lab.trust.directoryAge + ": " + directoryVerification.directoryAgeMs.toString()}>
                 {formatDirectoryAge(directoryVerification.directoryAgeMs)}
               </code>
             ) : null}
             {directoryVerification.policySha256 ? (
               <code title={directoryVerification.policySha256}>
-                {copy.lab.trust.policyHash}{" "}
-                {directoryVerification.policySha256.slice(0, 8)}
+                {copy.lab.trust.policyHash} {directoryVerification.policySha256.slice(0, 8)}
               </code>
             ) : null}
           </output>
@@ -3443,11 +2602,7 @@ export default function ReceiptTrustPanel({
             )}
             <span>
               <strong>
-                {
-                  copy.lab.trust.directoryMetadataVerificationStatuses[
-                    directoryMetadataVerification.status
-                  ]
-                }
+                {copy.lab.trust.directoryMetadataVerificationStatuses[directoryMetadataVerification.status]}
               </strong>
               <small>
                 {directoryMetadataVerification.diagnostics.length > 0

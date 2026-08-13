@@ -1,20 +1,12 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Activity, BookOpen, Download, Scale, ShieldCheck, Upload } from "lucide-react";
 
-import type {
-  ModelSummary,
-  RunComparison,
-  RunEvaluationRecord,
-  RunRecord,
-} from "@napier/contracts";
+import type { ModelSummary, RunComparison, RunEvaluationRecord, RunRecord } from "@napier/contracts";
 
 import { copy } from "./copy";
 import { runConfigurationFieldCopy } from "./run-configuration-copy";
 import type { WebThreadDetail } from "./api";
-import type {
-  FixtureTransferReceipt,
-  RunReplayVerificationReceipt,
-} from "./use-workspace-view-model";
+import type { FixtureTransferReceipt, RunReplayVerificationReceipt } from "./use-workspace-view-model";
 import { importProvenanceReceiptView } from "./use-workspace-view-model";
 import { selectedModelAvailability } from "./model-selection-view-model";
 import {
@@ -26,15 +18,9 @@ import {
 } from "./trace-event-summary-view";
 
 const LazyEvaluationSuitePanel = lazy(() => import("./EvaluationSuitePanel"));
-const LazyAgentMessageExperimentDesk = lazy(
-  () => import("./AgentMessageExperimentDesk"),
-);
-const LazyModelInvocationExperimentDesk = lazy(
-  () => import("./ModelInvocationExperimentDesk"),
-);
-const LazyToolInvocationExperimentDesk = lazy(
-  () => import("./ToolInvocationExperimentDesk"),
-);
+const LazyAgentMessageExperimentDesk = lazy(() => import("./AgentMessageExperimentDesk"));
+const LazyModelInvocationExperimentDesk = lazy(() => import("./ModelInvocationExperimentDesk"));
+const LazyToolInvocationExperimentDesk = lazy(() => import("./ToolInvocationExperimentDesk"));
 
 export default function RunLabPanel({
   detail,
@@ -87,38 +73,23 @@ export default function RunLabPanel({
   onRefresh: () => Promise<void>;
   onUseTaskPrompt(prompt: string): void;
 }) {
-  const canCompare =
-    runs.length >= 2 &&
-    Boolean(leftRunId) &&
-    Boolean(rightRunId) &&
-    leftRunId !== rightRunId;
+  const canCompare = runs.length >= 2 && Boolean(leftRunId) && Boolean(rightRunId) && leftRunId !== rightRunId;
   const selectedModel = selectedModelAvailability(models, selectedModelKey);
   const canEvaluate = canCompare && selectedModel.configured;
   const latestEvaluation = evaluations
     .slice()
     .reverse()
-    .find(
-      (evaluation) =>
-        evaluation.leftRunId === leftRunId &&
-        evaluation.rightRunId === rightRunId,
-    );
+    .find((evaluation) => evaluation.leftRunId === leftRunId && evaluation.rightRunId === rightRunId);
   const eventDeltas = comparison
     ? Object.entries(comparison.eventTypeDelta)
         .filter(([, delta]) => delta !== 0)
         .sort((left, right) => Math.abs(right[1]) - Math.abs(left[1]))
         .slice(0, 8)
     : [];
-  const traceSummaryCoverageDelta = comparison
-    ? traceSummaryCoverageDeltaView(
-        comparison.left.events,
-        comparison.right.events,
-      )
-    : undefined;
+  const traceSummaryCoverageDelta = comparison ? traceSummaryCoverageDeltaView(comparison.left.events, comparison.right.events) : undefined;
   const traceSummaryBoundaryDelta = comparison?.traceSummaryBoundaryDelta;
-  const [traceSummaryReceipt, setTraceSummaryReceipt] =
-    useState<TraceSummaryCoverageDeltaReceipt>();
-  const [traceSummaryReceiptVerification, setTraceSummaryReceiptVerification] =
-    useState<TraceSummaryCoverageReceiptVerification>();
+  const [traceSummaryReceipt, setTraceSummaryReceipt] = useState<TraceSummaryCoverageDeltaReceipt>();
+  const [traceSummaryReceiptVerification, setTraceSummaryReceiptVerification] = useState<TraceSummaryCoverageReceiptVerification>();
 
   useEffect(() => {
     let active = true;
@@ -129,15 +100,12 @@ export default function RunLabPanel({
         active = false;
       };
     }
-    void traceSummaryCoverageDeltaReceipt(traceSummaryCoverageDelta).then(
-      async (receipt) => {
-        const verification =
-          await verifyTraceSummaryCoverageDeltaReceipt(receipt);
-        if (!active) return;
-        setTraceSummaryReceipt(receipt);
-        setTraceSummaryReceiptVerification(verification);
-      },
-    );
+    void traceSummaryCoverageDeltaReceipt(traceSummaryCoverageDelta).then(async (receipt) => {
+      const verification = await verifyTraceSummaryCoverageDeltaReceipt(receipt);
+      if (!active) return;
+      setTraceSummaryReceipt(receipt);
+      setTraceSummaryReceiptVerification(verification);
+    });
     return () => {
       active = false;
     };
@@ -186,11 +154,7 @@ export default function RunLabPanel({
         />
       ) : null}
 
-      <RunReplayVerifier
-        busyAction={busyAction}
-        receipt={replayVerificationReceipt}
-        onVerify={onVerifyReplay}
-      />
+      <RunReplayVerifier busyAction={busyAction} receipt={replayVerificationReceipt} onVerify={onVerifyReplay} />
 
       {detail ? (
         <Suspense
@@ -211,16 +175,10 @@ export default function RunLabPanel({
             detail={detail}
             running={running}
             selectedModelKey={selectedModelKey}
-            selectedModelEligible={
-              selectedModel.configured && selectedModelKey !== "napier/demo"
-            }
+            selectedModelEligible={selectedModel.configured && selectedModelKey !== "napier/demo"}
             onOpenThread={onOpenThread}
           />
-          <LazyToolInvocationExperimentDesk
-            detail={detail}
-            running={running}
-            onOpenThread={onOpenThread}
-          />
+          <LazyToolInvocationExperimentDesk detail={detail} running={running} onOpenThread={onOpenThread} />
         </Suspense>
       ) : null}
 
@@ -249,24 +207,13 @@ export default function RunLabPanel({
             />
           </div>
           <div className="lab-actions">
-            <button
-              type="button"
-              disabled={!canCompare || Boolean(busyAction)}
-              onClick={onCompare}
-            >
+            <button type="button" disabled={!canCompare || Boolean(busyAction)} onClick={onCompare}>
               <Activity size={12} aria-hidden="true" />
               {busyAction === "compare" ? copy.lab.comparing : copy.lab.compare}
             </button>
-            <button
-              className="lab-evaluate"
-              type="button"
-              disabled={!canEvaluate || Boolean(busyAction)}
-              onClick={onEvaluate}
-            >
+            <button className="lab-evaluate" type="button" disabled={!canEvaluate || Boolean(busyAction)} onClick={onEvaluate}>
               <Scale size={12} aria-hidden="true" />
-              {busyAction === "evaluate"
-                ? copy.lab.evaluating
-                : copy.lab.evaluate}
+              {busyAction === "evaluate" ? copy.lab.evaluating : copy.lab.evaluate}
             </button>
           </div>
 
@@ -279,124 +226,57 @@ export default function RunLabPanel({
       )}
 
       {comparison ? (
-        <section
-          className="comparison-sheet"
-          aria-labelledby="comparison-title"
-        >
+        <section className="comparison-sheet" aria-labelledby="comparison-title">
           <header>
             <div>
               <span>{copy.lab.metricDelta}</span>
               <h3 id="comparison-title">
-                {shortId(comparison.left.run.id)} {"->"}{" "}
-                {shortId(comparison.right.run.id)}
+                {shortId(comparison.left.run.id)} {"->"} {shortId(comparison.right.run.id)}
               </h3>
             </div>
-            <span
-              className={`output-change ${comparison.outputChanged ? "is-changed" : ""}`}
-            >
-              {copy.lab.output}:{" "}
-              {comparison.outputChanged ? copy.lab.changed : copy.lab.unchanged}
+            <span className={`output-change ${comparison.outputChanged ? "is-changed" : ""}`}>
+              {copy.lab.output}: {comparison.outputChanged ? copy.lab.changed : copy.lab.unchanged}
             </span>
           </header>
           <div className="comparison-metrics">
-            <MetricDelta
-              label={copy.lab.duration}
-              value={formatSignedDuration(comparison.metricDelta.durationMs)}
-            />
-            <MetricDelta
-              label={copy.lab.events}
-              value={formatSignedNumber(comparison.metricDelta.eventCount)}
-            />
-            <MetricDelta
-              label={copy.lab.tokens}
-              value={formatSignedNumber(
-                comparison.metricDelta.inputTokens +
-                  comparison.metricDelta.outputTokens,
-              )}
-            />
-            <MetricDelta
-              label={copy.lab.tools}
-              value={formatSignedNumber(comparison.metricDelta.toolCallCount)}
-            />
-            <MetricDelta
-              label={copy.lab.contextEnvelopes}
-              value={formatSignedNumber(
-                comparison.metricDelta.modelContextEnvelopeCount,
-              )}
-            />
-            <MetricDelta
-              label={copy.lab.embeddedContextEnvelopes}
-              value={formatSignedNumber(
-                comparison.metricDelta.embeddedModelContextEnvelopeCount,
-              )}
-            />
-            <MetricDelta
-              label={copy.lab.contextBindings}
-              value={formatSignedNumber(
-                comparison.metricDelta.modelContextBoundResponseCount,
-              )}
-            />
-            <MetricDelta
-              label={copy.lab.contextMisses}
-              value={formatSignedNumber(
-                comparison.metricDelta.modelContextUnboundResponseCount,
-              )}
-            />
-            <MetricDelta
-              label={copy.lab.cost}
-              value={formatSignedCost(comparison.metricDelta.costUsd)}
-            />
+            <MetricDelta label={copy.lab.duration} value={formatSignedDuration(comparison.metricDelta.durationMs)} />
+            <MetricDelta label={copy.lab.events} value={formatSignedNumber(comparison.metricDelta.eventCount)} />
+            <MetricDelta label={copy.lab.tokens} value={formatSignedNumber(comparison.metricDelta.inputTokens + comparison.metricDelta.outputTokens)} />
+            <MetricDelta label={copy.lab.tools} value={formatSignedNumber(comparison.metricDelta.toolCallCount)} />
+            <MetricDelta label={copy.lab.contextEnvelopes} value={formatSignedNumber(comparison.metricDelta.modelContextEnvelopeCount)} />
+            <MetricDelta label={copy.lab.embeddedContextEnvelopes} value={formatSignedNumber(comparison.metricDelta.embeddedModelContextEnvelopeCount)} />
+            <MetricDelta label={copy.lab.contextBindings} value={formatSignedNumber(comparison.metricDelta.modelContextBoundResponseCount)} />
+            <MetricDelta label={copy.lab.contextMisses} value={formatSignedNumber(comparison.metricDelta.modelContextUnboundResponseCount)} />
+            <MetricDelta label={copy.lab.cost} value={formatSignedCost(comparison.metricDelta.costUsd)} />
           </div>
-          <div
-            className={`configuration-drift ${contextCoverageClassName(
-              comparison.contextCoverageDelta.status,
-            )}`}
-          >
+          <div className={`configuration-drift ${contextCoverageClassName(comparison.contextCoverageDelta.status)}`}>
             <div className="configuration-drift-heading">
               <span>{copy.lab.contextCoverage}</span>
-              <strong>
-                {contextCoverageStatusLabel(
-                  comparison.contextCoverageDelta.status,
-                )}
-              </strong>
+              <strong>{contextCoverageStatusLabel(comparison.contextCoverageDelta.status)}</strong>
             </div>
             <div className="configuration-hashes">
               <code>
-                {copy.lab.left}{" "}
-                {formatPercent(
-                  comparison.contextCoverageDelta.left.coverageRate,
-                )}
+                {copy.lab.left} {formatPercent(comparison.contextCoverageDelta.left.coverageRate)}
               </code>
               <code>
-                {copy.lab.right}{" "}
-                {formatPercent(
-                  comparison.contextCoverageDelta.right.coverageRate,
-                )}
+                {copy.lab.right} {formatPercent(comparison.contextCoverageDelta.right.coverageRate)}
               </code>
               <code>
-                {copy.lab.contextCoverageDelta}{" "}
-                {formatSignedPercent(
-                  comparison.contextCoverageDelta.coverageRateDelta,
-                )}
+                {copy.lab.contextCoverageDelta} {formatSignedPercent(comparison.contextCoverageDelta.coverageRateDelta)}
               </code>
               <code>
-                {copy.lab.embeddedContextEnvelopes}{" "}
-                {formatSignedNumber(
-                  comparison.contextCoverageDelta.embeddedEnvelopeDelta,
-                )}
+                {copy.lab.embeddedContextEnvelopes} {formatSignedNumber(comparison.contextCoverageDelta.embeddedEnvelopeDelta)}
               </code>
             </div>
             {comparison.contextCoverageDelta.diagnostics.length > 0 ? (
               <>
                 <p>{copy.lab.contextCoverageDiagnostics}</p>
                 <ul>
-                  {comparison.contextCoverageDelta.diagnostics.map(
-                    (diagnostic) => (
-                      <li key={diagnostic}>
-                        <code>{diagnostic}</code>
-                      </li>
-                    ),
-                  )}
+                  {comparison.contextCoverageDelta.diagnostics.map((diagnostic) => (
+                    <li key={diagnostic}>
+                      <code>{diagnostic}</code>
+                    </li>
+                  ))}
                 </ul>
               </>
             ) : (
@@ -404,54 +284,36 @@ export default function RunLabPanel({
             )}
           </div>
           {traceSummaryBoundaryDelta ? (
-            <div
-              className={`configuration-drift ${traceSummaryCoverageClassName(
-                traceSummaryBoundaryDelta.status,
-              )}`}
-            >
+            <div className={`configuration-drift ${traceSummaryCoverageClassName(traceSummaryBoundaryDelta.status)}`}>
               <div className="configuration-drift-heading">
                 <span>{copy.lab.traceSummaryCoverage}</span>
-                <strong>
-                  {traceSummaryCoverageStatusLabel(
-                    traceSummaryBoundaryDelta.status,
-                  )}
-                </strong>
+                <strong>{traceSummaryCoverageStatusLabel(traceSummaryBoundaryDelta.status)}</strong>
               </div>
               <div className="configuration-hashes">
                 <code>
-                  {copy.lab.left} {copy.lab.traceSummaryGeneric}{" "}
-                  {traceSummaryBoundaryDelta.left.generic}
+                  {copy.lab.left} {copy.lab.traceSummaryGeneric} {traceSummaryBoundaryDelta.left.generic}
                 </code>
                 <code>
-                  {copy.lab.right} {copy.lab.traceSummaryGeneric}{" "}
-                  {traceSummaryBoundaryDelta.right.generic}
+                  {copy.lab.right} {copy.lab.traceSummaryGeneric} {traceSummaryBoundaryDelta.right.generic}
                 </code>
                 <code>
-                  {copy.lab.traceSummaryGenericDelta}{" "}
-                  {formatSignedNumber(traceSummaryBoundaryDelta.genericDelta)}
+                  {copy.lab.traceSummaryGenericDelta} {formatSignedNumber(traceSummaryBoundaryDelta.genericDelta)}
                 </code>
                 <code>
-                  {copy.lab.traceSummaryDedicatedDelta}{" "}
-                  {formatSignedNumber(traceSummaryBoundaryDelta.dedicatedDelta)}
+                  {copy.lab.traceSummaryDedicatedDelta} {formatSignedNumber(traceSummaryBoundaryDelta.dedicatedDelta)}
                 </code>
                 {traceSummaryReceipt ? (
                   <code title={traceSummaryReceipt.contentSha256}>
-                    {copy.lab.traceSummaryReceipt}{" "}
-                    {traceSummaryReceipt.contentSha256.slice(0, 12)}
+                    {copy.lab.traceSummaryReceipt} {traceSummaryReceipt.contentSha256.slice(0, 12)}
                   </code>
                 ) : null}
                 {traceSummaryReceiptVerification ? (
                   <code
                     className={`receipt-verification-pill status-${traceSummaryReceiptVerification.status}`}
-                    title={
-                      traceSummaryReceiptVerification.observedContentSha256 ??
-                      traceSummaryReceiptVerification.declaredContentSha256
-                    }
+                    title={traceSummaryReceiptVerification.observedContentSha256 ?? traceSummaryReceiptVerification.declaredContentSha256}
                   >
                     {copy.lab.traceSummaryVerification}{" "}
-                    {traceSummaryReceiptVerification.status === "valid"
-                      ? copy.lab.traceSummaryVerified
-                      : copy.lab.traceSummaryInvalid}
+                    {traceSummaryReceiptVerification.status === "valid" ? copy.lab.traceSummaryVerified : copy.lab.traceSummaryInvalid}
                   </code>
                 ) : null}
               </div>
@@ -501,23 +363,19 @@ export default function RunLabPanel({
               <>
                 {comparison.configurationDelta.changedFields.length > 0 ? (
                   <ul>
-                    {comparison.configurationDelta.changedFields.map(
-                      (field) => (
-                        <li key={field}>{runConfigurationFieldCopy[field]}</li>
-                      ),
-                    )}
+                    {comparison.configurationDelta.changedFields.map((field) => (
+                      <li key={field}>{runConfigurationFieldCopy[field]}</li>
+                    ))}
                   </ul>
                 ) : (
                   <p>{copy.lab.configurationUnchanged}</p>
                 )}
                 <div className="configuration-hashes">
                   <code>
-                    {copy.lab.left}{" "}
-                    {comparison.configurationDelta.leftSha256?.slice(0, 12)}
+                    {copy.lab.left} {comparison.configurationDelta.leftSha256?.slice(0, 12)}
                   </code>
                   <code>
-                    {copy.lab.right}{" "}
-                    {comparison.configurationDelta.rightSha256?.slice(0, 12)}
+                    {copy.lab.right} {comparison.configurationDelta.rightSha256?.slice(0, 12)}
                   </code>
                 </div>
               </>
@@ -542,25 +400,14 @@ export default function RunLabPanel({
       ) : null}
 
       {runs.length >= 2 ? (
-        <section
-          className="evaluation-sheet"
-          aria-labelledby="evaluation-title"
-        >
+        <section className="evaluation-sheet" aria-labelledby="evaluation-title">
           <header>
             <div>
               <span>{copy.lab.verdict}</span>
-              <h3 id="evaluation-title">
-                {latestEvaluation
-                  ? copy.lab.verdicts[latestEvaluation.verdict]
-                  : copy.lab.noVerdict}
-              </h3>
+              <h3 id="evaluation-title">{latestEvaluation ? copy.lab.verdicts[latestEvaluation.verdict] : copy.lab.noVerdict}</h3>
             </div>
             {latestEvaluation ? (
-              <span
-                className={`verdict-stamp verdict-${latestEvaluation.verdict}`}
-              >
-                {copy.lab.verdicts[latestEvaluation.verdict]}
-              </span>
+              <span className={`verdict-stamp verdict-${latestEvaluation.verdict}`}>{copy.lab.verdicts[latestEvaluation.verdict]}</span>
             ) : null}
           </header>
           {latestEvaluation ? (
@@ -584,9 +431,7 @@ export default function RunLabPanel({
                   </thead>
                   <tbody>
                     {latestEvaluation.rubric.criteria.map((criterion) => {
-                      const score = latestEvaluation.scores.find(
-                        (candidate) => candidate.criterionId === criterion.id,
-                      );
+                      const score = latestEvaluation.scores.find((candidate) => candidate.criterionId === criterion.id);
                       return (
                         <tr key={criterion.id} title={score?.reason}>
                           <th scope="row">{criterion.name}</th>
@@ -601,64 +446,35 @@ export default function RunLabPanel({
               <div className="evaluation-hashes">
                 <span>{copy.lab.hashes}</span>
                 <code>
-                  {copy.lab.left}{" "}
-                  {latestEvaluation.leftSnapshotSha256.slice(0, 12)}
+                  {copy.lab.left} {latestEvaluation.leftSnapshotSha256.slice(0, 12)}
                 </code>
                 <code>
-                  {copy.lab.right}{" "}
-                  {latestEvaluation.rightSnapshotSha256.slice(0, 12)}
+                  {copy.lab.right} {latestEvaluation.rightSnapshotSha256.slice(0, 12)}
                 </code>
                 {latestEvaluation.comparisonGovernance ? (
                   <>
                     <code>
-                      {copy.lab.governance}{" "}
-                      {latestEvaluation.comparisonGovernance.contentSha256.slice(
-                        0,
-                        12,
-                      )}
+                      {copy.lab.governance} {latestEvaluation.comparisonGovernance.contentSha256.slice(0, 12)}
                     </code>
                     <code>
-                      {copy.lab.contextCoverage}{" "}
-                      {contextCoverageStatusLabel(
-                        latestEvaluation.comparisonGovernance
-                          .contextCoverageStatus,
-                      )}
+                      {copy.lab.contextCoverage} {contextCoverageStatusLabel(latestEvaluation.comparisonGovernance.contextCoverageStatus)}
                     </code>
                     <code>
-                      {copy.lab.contextCoverageDiagnostics}{" "}
-                      {latestEvaluation.comparisonGovernance.contextCoverageDiagnosticsSha256.slice(
-                        0,
-                        12,
-                      )}
+                      {copy.lab.contextCoverageDiagnostics} {latestEvaluation.comparisonGovernance.contextCoverageDiagnosticsSha256.slice(0, 12)}
                     </code>
-                    {latestEvaluation.comparisonGovernance
-                      .traceSummaryBoundaryStatus ? (
+                    {latestEvaluation.comparisonGovernance.traceSummaryBoundaryStatus ? (
                       <code>
-                        {copy.lab.traceSummaryCoverage}{" "}
-                        {traceSummaryCoverageStatusLabel(
-                          latestEvaluation.comparisonGovernance
-                            .traceSummaryBoundaryStatus,
-                        )}
+                        {copy.lab.traceSummaryCoverage} {traceSummaryCoverageStatusLabel(latestEvaluation.comparisonGovernance.traceSummaryBoundaryStatus)}
                       </code>
                     ) : null}
-                    {latestEvaluation.comparisonGovernance
-                      .traceSummaryBoundaryDiagnosticsSha256 ? (
+                    {latestEvaluation.comparisonGovernance.traceSummaryBoundaryDiagnosticsSha256 ? (
                       <code>
-                        {copy.lab.traceSummaryDiagnostics}{" "}
-                        {latestEvaluation.comparisonGovernance.traceSummaryBoundaryDiagnosticsSha256.slice(
-                          0,
-                          12,
-                        )}
+                        {copy.lab.traceSummaryDiagnostics} {latestEvaluation.comparisonGovernance.traceSummaryBoundaryDiagnosticsSha256.slice(0, 12)}
                       </code>
                     ) : null}
-                    {latestEvaluation.comparisonGovernance
-                      .traceSummaryBoundaryDeltaSha256 ? (
+                    {latestEvaluation.comparisonGovernance.traceSummaryBoundaryDeltaSha256 ? (
                       <code>
-                        {copy.lab.traceSummaryDelta}{" "}
-                        {latestEvaluation.comparisonGovernance.traceSummaryBoundaryDeltaSha256.slice(
-                          0,
-                          12,
-                        )}
+                        {copy.lab.traceSummaryDelta} {latestEvaluation.comparisonGovernance.traceSummaryBoundaryDeltaSha256.slice(0, 12)}
                       </code>
                     ) : null}
                   </>
@@ -714,10 +530,7 @@ function RunReplayVerifier({
   const fileInput = useRef<HTMLInputElement>(null);
   const busy = Boolean(busyAction);
   return (
-    <section
-      className="fixture-docket replay-verifier-card"
-      aria-labelledby="run-replay-verify-title"
-    >
+    <section className="fixture-docket replay-verifier-card" aria-labelledby="run-replay-verify-title">
       <header>
         <div>
           <span>{copy.lab.replay.eyebrow}</span>
@@ -727,16 +540,9 @@ function RunReplayVerifier({
       </header>
       <p>{copy.lab.replay.body}</p>
       <div className="fixture-actions replay-actions">
-        <button
-          className="fixture-verify"
-          type="button"
-          disabled={busy}
-          onClick={() => fileInput.current?.click()}
-        >
+        <button className="fixture-verify" type="button" disabled={busy} onClick={() => fileInput.current?.click()}>
           <Upload size={12} aria-hidden="true" />
-          {busyAction === "run-replay-verify"
-            ? copy.lab.replay.verifying
-            : copy.lab.replay.verify}
+          {busyAction === "run-replay-verify" ? copy.lab.replay.verifying : copy.lab.replay.verify}
         </button>
         <input
           ref={fileInput}
@@ -753,33 +559,17 @@ function RunReplayVerifier({
         />
       </div>
       {receipt ? (
-        <output
-          className={`fixture-receipt status-${receipt.status}`}
-          aria-live="polite"
-        >
-          <span>
-            {receipt.status === "valid"
-              ? copy.lab.replay.verified
-              : copy.lab.replay.invalid}
-          </span>
-          {receipt.contentSha256 ? (
-            <code>{receipt.contentSha256.slice(0, 12)}</code>
-          ) : null}
+        <output className={`fixture-receipt status-${receipt.status}`} aria-live="polite">
+          <span>{receipt.status === "valid" ? copy.lab.replay.verified : copy.lab.replay.invalid}</span>
+          {receipt.contentSha256 ? <code>{receipt.contentSha256.slice(0, 12)}</code> : null}
           <small>
-            {receipt.eventCount.toLocaleString()} {copy.lab.fixture.events} ·{" "}
-            {receipt.subagentCount.toLocaleString()} {copy.lab.replay.subagents}
+            {receipt.eventCount.toLocaleString()} {copy.lab.fixture.events} · {receipt.subagentCount.toLocaleString()} {copy.lab.replay.subagents}
           </small>
           <small>
-            {receipt.modelContextEnvelopeCount.toLocaleString()}{" "}
-            {copy.lab.fixture.contextEnvelopes} ·{" "}
-            {receipt.embeddedModelContextEnvelopeCount.toLocaleString()}{" "}
-            {copy.lab.fixture.embeddedEnvelopes}
+            {receipt.modelContextEnvelopeCount.toLocaleString()} {copy.lab.fixture.contextEnvelopes} ·{" "}
+            {receipt.embeddedModelContextEnvelopeCount.toLocaleString()} {copy.lab.fixture.embeddedEnvelopes}
           </small>
-          <small className="fixture-diagnostics">
-            {receipt.diagnostics.length > 0
-              ? receipt.diagnostics.join(", ")
-              : copy.lab.fixture.noDiagnostics}
-          </small>
+          <small className="fixture-diagnostics">{receipt.diagnostics.length > 0 ? receipt.diagnostics.join(", ") : copy.lab.fixture.noDiagnostics}</small>
         </output>
       ) : null}
     </section>
@@ -838,32 +628,19 @@ function FixtureLedgerCard({
       {provenance ? (
         <div className="fixture-origin">
           <span>{copy.lab.fixture.importedSource}</span>
-          <code title={provenance.sourceContentSha256}>
-            {provenance.sourceContentSha256.slice(0, 12)}
-          </code>
+          <code title={provenance.sourceContentSha256}>{provenance.sourceContentSha256.slice(0, 12)}</code>
           <small>
-            {provenance.sourceEventCount.toLocaleString()}{" "}
-            {copy.lab.fixture.sourceEvents} ·{" "}
-            {(
-              provenance.localImportedThroughSeq ?? provenance.sourceEventCount
-            ).toLocaleString()}{" "}
-            {copy.lab.fixture.localImportedCutoff}
+            {provenance.sourceEventCount.toLocaleString()} {copy.lab.fixture.sourceEvents} ·{" "}
+            {(provenance.localImportedThroughSeq ?? provenance.sourceEventCount).toLocaleString()} {copy.lab.fixture.localImportedCutoff}
           </small>
           <small>
-            {(provenance.sourceModelContextEnvelopeCount ?? 0).toLocaleString()}{" "}
-            {copy.lab.fixture.contextEnvelopes} ·{" "}
-            {(
-              provenance.sourceEmbeddedModelContextEnvelopeCount ?? 0
-            ).toLocaleString()}{" "}
-            {copy.lab.fixture.embeddedEnvelopes}
+            {(provenance.sourceModelContextEnvelopeCount ?? 0).toLocaleString()} {copy.lab.fixture.contextEnvelopes} ·{" "}
+            {(provenance.sourceEmbeddedModelContextEnvelopeCount ?? 0).toLocaleString()} {copy.lab.fixture.embeddedEnvelopes}
           </small>
           {importReceipt ? (
             <small>
-              {copy.lab.fixture.importReceipt}{" "}
-              {importReceipt.seq.toLocaleString()} ·{" "}
-              <code title={importReceipt.payloadSha256}>
-                {importReceipt.payloadSha256.slice(0, 12)}
-              </code>
+              {copy.lab.fixture.importReceipt} {importReceipt.seq.toLocaleString()} ·{" "}
+              <code title={importReceipt.payloadSha256}>{importReceipt.payloadSha256.slice(0, 12)}</code>
             </small>
           ) : null}
         </div>
@@ -871,31 +648,15 @@ function FixtureLedgerCard({
       <div className="fixture-actions">
         <button type="button" disabled={busy} onClick={onExport}>
           <Download size={12} aria-hidden="true" />
-          {busyAction === "fixture-export"
-            ? copy.lab.fixture.exporting
-            : copy.lab.fixture.export}
+          {busyAction === "fixture-export" ? copy.lab.fixture.exporting : copy.lab.fixture.export}
         </button>
-        <button
-          className="fixture-verify"
-          type="button"
-          disabled={busy}
-          onClick={() => verifyInput.current?.click()}
-        >
+        <button className="fixture-verify" type="button" disabled={busy} onClick={() => verifyInput.current?.click()}>
           <ShieldCheck size={12} aria-hidden="true" />
-          {busyAction === "fixture-verify"
-            ? copy.lab.fixture.verifying
-            : copy.lab.fixture.verify}
+          {busyAction === "fixture-verify" ? copy.lab.fixture.verifying : copy.lab.fixture.verify}
         </button>
-        <button
-          className="fixture-import"
-          type="button"
-          disabled={busy}
-          onClick={() => fileInput.current?.click()}
-        >
+        <button className="fixture-import" type="button" disabled={busy} onClick={() => fileInput.current?.click()}>
           <Upload size={12} aria-hidden="true" />
-          {busyAction === "fixture-import"
-            ? copy.lab.fixture.importing
-            : copy.lab.fixture.import}
+          {busyAction === "fixture-import" ? copy.lab.fixture.importing : copy.lab.fixture.import}
         </button>
         <input
           ref={fileInput}
@@ -929,12 +690,7 @@ function FixtureLedgerCard({
         {copy.lab.fixture.safety}
       </p>
       {receipt ? (
-        <output
-          className={`fixture-receipt ${
-            receipt.action === "verified" ? `status-${receipt.status}` : ""
-          }`}
-          aria-live="polite"
-        >
+        <output className={`fixture-receipt ${receipt.action === "verified" ? `status-${receipt.status}` : ""}`} aria-live="polite">
           <span>
             {receipt.action === "verified"
               ? receipt.status === "valid"
@@ -942,28 +698,17 @@ function FixtureLedgerCard({
                 : copy.lab.fixture.receipts.invalid
               : copy.lab.fixture.receipts[receipt.action]}
           </span>
-          {receipt.contentSha256 ? (
-            <code>{receipt.contentSha256.slice(0, 12)}</code>
-          ) : null}
+          {receipt.contentSha256 ? <code>{receipt.contentSha256.slice(0, 12)}</code> : null}
           <small>
-            {receipt.eventCount.toLocaleString()} {copy.lab.fixture.events} ·{" "}
-            {receipt.runCount.toLocaleString()} {copy.lab.fixture.runs} ·{" "}
-            {receipt.planCount.toLocaleString()} {copy.lab.fixture.plans} ·{" "}
-            {receipt.evaluationCount.toLocaleString()}{" "}
-            {copy.lab.fixture.evaluations}
+            {receipt.eventCount.toLocaleString()} {copy.lab.fixture.events} · {receipt.runCount.toLocaleString()} {copy.lab.fixture.runs} ·{" "}
+            {receipt.planCount.toLocaleString()} {copy.lab.fixture.plans} · {receipt.evaluationCount.toLocaleString()} {copy.lab.fixture.evaluations}
           </small>
           <small>
-            {receipt.modelContextEnvelopeCount.toLocaleString()}{" "}
-            {copy.lab.fixture.contextEnvelopes} ·{" "}
-            {receipt.embeddedModelContextEnvelopeCount.toLocaleString()}{" "}
-            {copy.lab.fixture.embeddedEnvelopes}
+            {receipt.modelContextEnvelopeCount.toLocaleString()} {copy.lab.fixture.contextEnvelopes} ·{" "}
+            {receipt.embeddedModelContextEnvelopeCount.toLocaleString()} {copy.lab.fixture.embeddedEnvelopes}
           </small>
           {receipt.action === "verified" ? (
-            <small className="fixture-diagnostics">
-              {receipt.diagnostics.length > 0
-                ? receipt.diagnostics.join(", ")
-                : copy.lab.fixture.noDiagnostics}
-            </small>
+            <small className="fixture-diagnostics">{receipt.diagnostics.length > 0 ? receipt.diagnostics.join(", ") : copy.lab.fixture.noDiagnostics}</small>
           ) : null}
         </output>
       ) : null}
@@ -994,17 +739,11 @@ function RunPicker({
         {side}
       </span>
       <span>{label}</span>
-      <select
-        aria-label={label}
-        value={value}
-        disabled={busy}
-        onChange={(event) => onChange(event.target.value)}
-      >
+      <select aria-label={label} value={value} disabled={busy} onChange={(event) => onChange(event.target.value)}>
         <option value="">{copy.lab.selectRun}</option>
         {runs.map((run, index) => (
           <option key={run.id} value={run.id}>
-            {String(index + 1).padStart(2, "0")} ·{" "}
-            {settledRunStatusLabel(run.status)} · {shortId(run.id)}
+            {String(index + 1).padStart(2, "0")} · {settledRunStatusLabel(run.status)} · {shortId(run.id)}
           </option>
         ))}
       </select>
@@ -1048,8 +787,7 @@ function formatSignedNumber(value: number): string {
 
 function formatSignedDuration(value: number): string {
   const absolute = Math.abs(value);
-  const amount =
-    absolute >= 1_000 ? `${(absolute / 1_000).toFixed(1)}s` : `${absolute}ms`;
+  const amount = absolute >= 1_000 ? `${(absolute / 1_000).toFixed(1)}s` : `${absolute}ms`;
   if (value === 0) return amount;
   return `${value > 0 ? "+" : "-"}${amount}`;
 }
@@ -1068,41 +806,31 @@ function formatSignedPercent(value: number): string {
   return `${value > 0 ? "+" : "-"}${formatPercent(Math.abs(value))}`;
 }
 
-function contextCoverageStatusLabel(
-  status: RunComparison["contextCoverageDelta"]["status"],
-): string {
+function contextCoverageStatusLabel(status: RunComparison["contextCoverageDelta"]["status"]): string {
   if (status === "clean") return copy.lab.contextCoverageClean;
   if (status === "partial") return copy.lab.contextCoveragePartial;
   if (status === "missing") return copy.lab.contextCoverageMissing;
   return copy.lab.contextCoverageRegressed;
 }
 
-function contextCoverageClassName(
-  status: RunComparison["contextCoverageDelta"]["status"],
-): string {
+function contextCoverageClassName(status: RunComparison["contextCoverageDelta"]["status"]): string {
   if (status === "clean") return "is-unchanged";
   if (status === "partial") return "is-unavailable";
   return "is-changed";
 }
 
-function traceSummaryCoverageStatusLabel(
-  status: RunComparison["traceSummaryBoundaryDelta"]["status"],
-): string {
+function traceSummaryCoverageStatusLabel(status: RunComparison["traceSummaryBoundaryDelta"]["status"]): string {
   if (status === "clean") return copy.lab.traceSummaryClean;
   if (status === "generic_present") return copy.lab.traceSummaryGenericPresent;
   return copy.lab.traceSummaryRegressed;
 }
 
-function traceSummaryCoverageClassName(
-  status: RunComparison["traceSummaryBoundaryDelta"]["status"],
-): string {
+function traceSummaryCoverageClassName(status: RunComparison["traceSummaryBoundaryDelta"]["status"]): string {
   if (status === "clean") return "is-unchanged";
   if (status === "generic_present") return "is-unavailable";
   return "is-changed";
 }
 
 function shortId(value: string): string {
-  return value.length > 15
-    ? `${value.slice(0, 7)}...${value.slice(-5)}`
-    : value;
+  return value.length > 15 ? `${value.slice(0, 7)}...${value.slice(-5)}` : value;
 }

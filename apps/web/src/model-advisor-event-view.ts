@@ -57,21 +57,14 @@ export interface ModelAdvisorEventTraceView {
   envelopeSha256?: string;
 }
 
-const MODEL_ADVISOR_EVENT =
-  /^model\.advisor\.(notice|blocked|independent\.reviewed|correction\.(requested|outcome))$/u;
+const MODEL_ADVISOR_EVENT = /^model\.advisor\.(notice|blocked|independent\.reviewed|correction\.(requested|outcome))$/u;
 const SAFE_TOKEN = /^[A-Za-z0-9_.:-]{1,120}$/u;
 const SHA256 = /^[a-f0-9]{64}$/u;
 const MODEL_ADVISOR_RECEIPT_SUMMARY = "model advisor receipt";
 
-export function modelAdvisorEventTraceView(
-  event: RunEvent,
-): ModelAdvisorEventTraceView | undefined {
+export function modelAdvisorEventTraceView(event: RunEvent): ModelAdvisorEventTraceView | undefined {
   if (!MODEL_ADVISOR_EVENT.test(event.type)) return undefined;
-  if (
-    !event.payload ||
-    typeof event.payload !== "object" ||
-    Array.isArray(event.payload)
-  ) {
+  if (!event.payload || typeof event.payload !== "object" || Array.isArray(event.payload)) {
     return undefined;
   }
   const modelContextEnvelope = record(event.payload["modelContextEnvelope"])
@@ -82,18 +75,12 @@ export function modelAdvisorEventTraceView(
     : record(event.payload["evidenceSummary"])
       ? event.payload["evidenceSummary"]
       : {};
-  const diagnostics = Array.isArray(event.payload["diagnostics"])
-    ? event.payload["diagnostics"]
-    : undefined;
+  const diagnostics = Array.isArray(event.payload["diagnostics"]) ? event.payload["diagnostics"] : undefined;
   const diagnosticCodes = Array.isArray(event.payload["diagnosticCodes"])
     ? event.payload["diagnosticCodes"]
     : undefined;
-  const issues = Array.isArray(event.payload["issues"])
-    ? event.payload["issues"]
-    : undefined;
-  const blockerRuleIds = Array.isArray(event.payload["blockerRuleIds"])
-    ? event.payload["blockerRuleIds"]
-    : undefined;
+  const issues = Array.isArray(event.payload["issues"]) ? event.payload["issues"] : undefined;
+  const blockerRuleIds = Array.isArray(event.payload["blockerRuleIds"]) ? event.payload["blockerRuleIds"] : undefined;
   const status = safeToken(event.payload["status"]);
   const source = safeToken(event.payload["source"]);
   const turnSource = safeToken(event.payload["turnSource"]);
@@ -102,84 +89,36 @@ export function modelAdvisorEventTraceView(
   const score = nonNegativeInteger(event.payload["score"]);
   const attempt = nonNegativeInteger(event.payload["attempt"]);
   const maxAttempts = nonNegativeInteger(event.payload["maxAttempts"]);
-  const verificationToolCompleted = booleanValue(
-    evidence["verificationToolCompleted"],
-  );
-  const verificationToolPassed = booleanValue(
-    evidence["verificationToolPassed"],
-  );
-  const workspaceWriteCompleted = booleanValue(
-    evidence["workspaceWriteCompleted"],
-  );
-  const verificationToolPassedAfterWorkspaceWrite = booleanValue(
-    evidence["verificationToolPassedAfterWorkspaceWrite"],
-  );
+  const verificationToolCompleted = booleanValue(evidence["verificationToolCompleted"]);
+  const verificationToolPassed = booleanValue(evidence["verificationToolPassed"]);
+  const workspaceWriteCompleted = booleanValue(evidence["workspaceWriteCompleted"]);
+  const verificationToolPassedAfterWorkspaceWrite = booleanValue(evidence["verificationToolPassedAfterWorkspaceWrite"]);
   const planCompleted = booleanValue(evidence["planCompleted"]);
   const planArtifactVerified = booleanValue(evidence["planArtifactVerified"]);
   const goalSatisfied = booleanValue(evidence["goalSatisfied"]);
   const recoveryCompleted = booleanValue(evidence["recoveryCompleted"]);
   const evaluationCompleted = booleanValue(evidence["evaluationCompleted"]);
   const evaluationPassed = booleanValue(evidence["evaluationPassed"]);
-  const planCompletedAfterWorkspaceWrite = booleanValue(
-    evidence["planCompletedAfterWorkspaceWrite"],
-  );
-  const planArtifactVerifiedAfterWorkspaceWrite = booleanValue(
-    evidence["planArtifactVerifiedAfterWorkspaceWrite"],
-  );
-  const goalSatisfiedAfterWorkspaceWrite = booleanValue(
-    evidence["goalSatisfiedAfterWorkspaceWrite"],
-  );
-  const recoveryCompletedAfterInterruption = booleanValue(
-    evidence["recoveryCompletedAfterInterruption"],
-  );
-  const evaluationCompletedAfterWorkspaceWrite = booleanValue(
-    evidence["evaluationCompletedAfterWorkspaceWrite"],
-  );
-  const evaluationPassedAfterWorkspaceWrite = booleanValue(
-    evidence["evaluationPassedAfterWorkspaceWrite"],
-  );
-  const latestWorkspaceWriteSeq = nonNegativeInteger(
-    evidence["latestWorkspaceWriteSeq"],
-  );
-  const latestPassedVerificationSeq = nonNegativeInteger(
-    evidence["latestPassedVerificationSeq"],
-  );
-  const latestPlanCompletedSeq = nonNegativeInteger(
-    evidence["latestPlanCompletedSeq"],
-  );
-  const latestPlanInvalidatedSeq = nonNegativeInteger(
-    evidence["latestPlanInvalidatedSeq"],
-  );
-  const latestPlanArtifactVerifiedSeq = nonNegativeInteger(
-    evidence["latestPlanArtifactVerifiedSeq"],
-  );
-  const latestPlanArtifactInvalidatedSeq = nonNegativeInteger(
-    evidence["latestPlanArtifactInvalidatedSeq"],
-  );
-  const latestGoalSatisfiedSeq = nonNegativeInteger(
-    evidence["latestGoalSatisfiedSeq"],
-  );
-  const latestGoalInvalidatedSeq = nonNegativeInteger(
-    evidence["latestGoalInvalidatedSeq"],
-  );
-  const latestRecoveryCompletedSeq = nonNegativeInteger(
-    evidence["latestRecoveryCompletedSeq"],
-  );
-  const latestRunInterruptedSeq = nonNegativeInteger(
-    evidence["latestRunInterruptedSeq"],
-  );
-  const latestRecoveryInvalidatedSeq = nonNegativeInteger(
-    evidence["latestRecoveryInvalidatedSeq"],
-  );
-  const latestEvaluationCompletedSeq = nonNegativeInteger(
-    evidence["latestEvaluationCompletedSeq"],
-  );
-  const latestEvaluationPassedSeq = nonNegativeInteger(
-    evidence["latestEvaluationPassedSeq"],
-  );
-  const latestEvaluationPassInvalidatedSeq = nonNegativeInteger(
-    evidence["latestEvaluationPassInvalidatedSeq"],
-  );
+  const planCompletedAfterWorkspaceWrite = booleanValue(evidence["planCompletedAfterWorkspaceWrite"]);
+  const planArtifactVerifiedAfterWorkspaceWrite = booleanValue(evidence["planArtifactVerifiedAfterWorkspaceWrite"]);
+  const goalSatisfiedAfterWorkspaceWrite = booleanValue(evidence["goalSatisfiedAfterWorkspaceWrite"]);
+  const recoveryCompletedAfterInterruption = booleanValue(evidence["recoveryCompletedAfterInterruption"]);
+  const evaluationCompletedAfterWorkspaceWrite = booleanValue(evidence["evaluationCompletedAfterWorkspaceWrite"]);
+  const evaluationPassedAfterWorkspaceWrite = booleanValue(evidence["evaluationPassedAfterWorkspaceWrite"]);
+  const latestWorkspaceWriteSeq = nonNegativeInteger(evidence["latestWorkspaceWriteSeq"]);
+  const latestPassedVerificationSeq = nonNegativeInteger(evidence["latestPassedVerificationSeq"]);
+  const latestPlanCompletedSeq = nonNegativeInteger(evidence["latestPlanCompletedSeq"]);
+  const latestPlanInvalidatedSeq = nonNegativeInteger(evidence["latestPlanInvalidatedSeq"]);
+  const latestPlanArtifactVerifiedSeq = nonNegativeInteger(evidence["latestPlanArtifactVerifiedSeq"]);
+  const latestPlanArtifactInvalidatedSeq = nonNegativeInteger(evidence["latestPlanArtifactInvalidatedSeq"]);
+  const latestGoalSatisfiedSeq = nonNegativeInteger(evidence["latestGoalSatisfiedSeq"]);
+  const latestGoalInvalidatedSeq = nonNegativeInteger(evidence["latestGoalInvalidatedSeq"]);
+  const latestRecoveryCompletedSeq = nonNegativeInteger(evidence["latestRecoveryCompletedSeq"]);
+  const latestRunInterruptedSeq = nonNegativeInteger(evidence["latestRunInterruptedSeq"]);
+  const latestRecoveryInvalidatedSeq = nonNegativeInteger(evidence["latestRecoveryInvalidatedSeq"]);
+  const latestEvaluationCompletedSeq = nonNegativeInteger(evidence["latestEvaluationCompletedSeq"]);
+  const latestEvaluationPassedSeq = nonNegativeInteger(evidence["latestEvaluationPassedSeq"]);
+  const latestEvaluationPassInvalidatedSeq = nonNegativeInteger(evidence["latestEvaluationPassInvalidatedSeq"]);
   const textSha256 = sha256(event.payload["textSha256"]);
   const candidateTextSha256 = sha256(event.payload["candidateTextSha256"]);
   const diagnosticSetSha256 = sha256(event.payload["diagnosticSetSha256"]);
@@ -213,76 +152,36 @@ export function modelAdvisorEventTraceView(
     ...(maxAttempts !== undefined ? { maxAttempts } : {}),
     ...(textSha256 ? { textSha256 } : {}),
     ...(candidateTextSha256 ? { candidateTextSha256 } : {}),
-    ...(verificationToolCompleted !== undefined
-      ? { verificationToolCompleted }
-      : {}),
+    ...(verificationToolCompleted !== undefined ? { verificationToolCompleted } : {}),
     ...(verificationToolPassed !== undefined ? { verificationToolPassed } : {}),
-    ...(workspaceWriteCompleted !== undefined
-      ? { workspaceWriteCompleted }
-      : {}),
-    ...(verificationToolPassedAfterWorkspaceWrite !== undefined
-      ? { verificationToolPassedAfterWorkspaceWrite }
-      : {}),
+    ...(workspaceWriteCompleted !== undefined ? { workspaceWriteCompleted } : {}),
+    ...(verificationToolPassedAfterWorkspaceWrite !== undefined ? { verificationToolPassedAfterWorkspaceWrite } : {}),
     ...(planCompleted !== undefined ? { planCompleted } : {}),
     ...(planArtifactVerified !== undefined ? { planArtifactVerified } : {}),
     ...(goalSatisfied !== undefined ? { goalSatisfied } : {}),
     ...(recoveryCompleted !== undefined ? { recoveryCompleted } : {}),
     ...(evaluationCompleted !== undefined ? { evaluationCompleted } : {}),
     ...(evaluationPassed !== undefined ? { evaluationPassed } : {}),
-    ...(planCompletedAfterWorkspaceWrite !== undefined
-      ? { planCompletedAfterWorkspaceWrite }
-      : {}),
-    ...(planArtifactVerifiedAfterWorkspaceWrite !== undefined
-      ? { planArtifactVerifiedAfterWorkspaceWrite }
-      : {}),
-    ...(goalSatisfiedAfterWorkspaceWrite !== undefined
-      ? { goalSatisfiedAfterWorkspaceWrite }
-      : {}),
-    ...(recoveryCompletedAfterInterruption !== undefined
-      ? { recoveryCompletedAfterInterruption }
-      : {}),
-    ...(evaluationCompletedAfterWorkspaceWrite !== undefined
-      ? { evaluationCompletedAfterWorkspaceWrite }
-      : {}),
-    ...(evaluationPassedAfterWorkspaceWrite !== undefined
-      ? { evaluationPassedAfterWorkspaceWrite }
-      : {}),
-    ...(latestWorkspaceWriteSeq !== undefined
-      ? { latestWorkspaceWriteSeq }
-      : {}),
-    ...(latestPassedVerificationSeq !== undefined
-      ? { latestPassedVerificationSeq }
-      : {}),
+    ...(planCompletedAfterWorkspaceWrite !== undefined ? { planCompletedAfterWorkspaceWrite } : {}),
+    ...(planArtifactVerifiedAfterWorkspaceWrite !== undefined ? { planArtifactVerifiedAfterWorkspaceWrite } : {}),
+    ...(goalSatisfiedAfterWorkspaceWrite !== undefined ? { goalSatisfiedAfterWorkspaceWrite } : {}),
+    ...(recoveryCompletedAfterInterruption !== undefined ? { recoveryCompletedAfterInterruption } : {}),
+    ...(evaluationCompletedAfterWorkspaceWrite !== undefined ? { evaluationCompletedAfterWorkspaceWrite } : {}),
+    ...(evaluationPassedAfterWorkspaceWrite !== undefined ? { evaluationPassedAfterWorkspaceWrite } : {}),
+    ...(latestWorkspaceWriteSeq !== undefined ? { latestWorkspaceWriteSeq } : {}),
+    ...(latestPassedVerificationSeq !== undefined ? { latestPassedVerificationSeq } : {}),
     ...(latestPlanCompletedSeq !== undefined ? { latestPlanCompletedSeq } : {}),
-    ...(latestPlanInvalidatedSeq !== undefined
-      ? { latestPlanInvalidatedSeq }
-      : {}),
-    ...(latestPlanArtifactVerifiedSeq !== undefined
-      ? { latestPlanArtifactVerifiedSeq }
-      : {}),
-    ...(latestPlanArtifactInvalidatedSeq !== undefined
-      ? { latestPlanArtifactInvalidatedSeq }
-      : {}),
+    ...(latestPlanInvalidatedSeq !== undefined ? { latestPlanInvalidatedSeq } : {}),
+    ...(latestPlanArtifactVerifiedSeq !== undefined ? { latestPlanArtifactVerifiedSeq } : {}),
+    ...(latestPlanArtifactInvalidatedSeq !== undefined ? { latestPlanArtifactInvalidatedSeq } : {}),
     ...(latestGoalSatisfiedSeq !== undefined ? { latestGoalSatisfiedSeq } : {}),
-    ...(latestGoalInvalidatedSeq !== undefined
-      ? { latestGoalInvalidatedSeq }
-      : {}),
-    ...(latestRecoveryCompletedSeq !== undefined
-      ? { latestRecoveryCompletedSeq }
-      : {}),
+    ...(latestGoalInvalidatedSeq !== undefined ? { latestGoalInvalidatedSeq } : {}),
+    ...(latestRecoveryCompletedSeq !== undefined ? { latestRecoveryCompletedSeq } : {}),
     ...(latestRunInterruptedSeq !== undefined ? { latestRunInterruptedSeq } : {}),
-    ...(latestRecoveryInvalidatedSeq !== undefined
-      ? { latestRecoveryInvalidatedSeq }
-      : {}),
-    ...(latestEvaluationCompletedSeq !== undefined
-      ? { latestEvaluationCompletedSeq }
-      : {}),
-    ...(latestEvaluationPassedSeq !== undefined
-      ? { latestEvaluationPassedSeq }
-      : {}),
-    ...(latestEvaluationPassInvalidatedSeq !== undefined
-      ? { latestEvaluationPassInvalidatedSeq }
-      : {}),
+    ...(latestRecoveryInvalidatedSeq !== undefined ? { latestRecoveryInvalidatedSeq } : {}),
+    ...(latestEvaluationCompletedSeq !== undefined ? { latestEvaluationCompletedSeq } : {}),
+    ...(latestEvaluationPassedSeq !== undefined ? { latestEvaluationPassedSeq } : {}),
+    ...(latestEvaluationPassInvalidatedSeq !== undefined ? { latestEvaluationPassInvalidatedSeq } : {}),
     ...(diagnosticSetSha256 ? { diagnosticSetSha256 } : {}),
     ...(issueSetSha256 ? { issueSetSha256 } : {}),
     ...(evidenceSha256 ? { evidenceSha256 } : {}),
@@ -296,9 +195,7 @@ export function modelAdvisorEventTraceView(
   };
 }
 
-export function modelAdvisorEventTraceSummary(
-  event: RunEvent,
-): string | undefined {
+export function modelAdvisorEventTraceSummary(event: RunEvent): string | undefined {
   if (!MODEL_ADVISOR_EVENT.test(event.type)) return undefined;
   const view = modelAdvisorEventTraceView(event);
   if (!view) return MODEL_ADVISOR_RECEIPT_SUMMARY;
@@ -310,40 +207,22 @@ export function modelAdvisorEventTraceSummary(
     ...(view.verdict ? [`verdict ${view.verdict}`] : []),
     ...(view.risk ? [`risk ${view.risk}`] : []),
     ...(view.score !== undefined ? [`score ${view.score}`] : []),
-    ...(view.diagnosticCount !== undefined
-      ? [`diagnostics ${view.diagnosticCount}`]
-      : []),
+    ...(view.diagnosticCount !== undefined ? [`diagnostics ${view.diagnosticCount}`] : []),
     ...(view.issueCount !== undefined ? [`issues ${view.issueCount}`] : []),
-    ...(view.blockerCount !== undefined
-      ? [`blockers ${view.blockerCount}`]
-      : []),
+    ...(view.blockerCount !== undefined ? [`blockers ${view.blockerCount}`] : []),
     ...(view.attempt !== undefined
-      ? [
-          `attempt ${view.attempt}${
-            view.maxAttempts !== undefined ? `/${view.maxAttempts}` : ""
-          }`,
-        ]
+      ? [`attempt ${view.attempt}${view.maxAttempts !== undefined ? `/${view.maxAttempts}` : ""}`]
       : view.maxAttempts !== undefined
         ? [`max-attempts ${view.maxAttempts}`]
         : []),
     ...(view.verificationToolCompleted !== undefined
-      ? [
-          view.verificationToolCompleted
-            ? "verification completed"
-            : "verification missing",
-        ]
+      ? [view.verificationToolCompleted ? "verification completed" : "verification missing"]
       : []),
     ...(view.verificationToolPassed !== undefined
-      ? [
-          view.verificationToolPassed
-            ? "verification passed"
-            : "verification not-passed",
-        ]
+      ? [view.verificationToolPassed ? "verification passed" : "verification not-passed"]
       : []),
     ...(view.workspaceWriteCompleted ? ["workspace-write"] : []),
-    ...(view.latestWorkspaceWriteSeq !== undefined
-      ? [`workspace-write-seq ${view.latestWorkspaceWriteSeq}`]
-      : []),
+    ...(view.latestWorkspaceWriteSeq !== undefined ? [`workspace-write-seq ${view.latestWorkspaceWriteSeq}`] : []),
     ...(view.latestPassedVerificationSeq !== undefined
       ? [`passed-verification-seq ${view.latestPassedVerificationSeq}`]
       : []),
@@ -356,32 +235,20 @@ export function modelAdvisorEventTraceSummary(
               : "verification-not-current",
         ]
       : []),
-    ...(view.planCompleted !== undefined
-      ? [view.planCompleted ? "plan-completed" : "plan-not-completed"]
-      : []),
-    ...(view.latestPlanCompletedSeq !== undefined
-      ? [`plan-completed-seq ${view.latestPlanCompletedSeq}`]
-      : []),
-    ...(view.latestPlanInvalidatedSeq !== undefined
-      ? [`plan-invalidated-seq ${view.latestPlanInvalidatedSeq}`]
-      : []),
+    ...(view.planCompleted !== undefined ? [view.planCompleted ? "plan-completed" : "plan-not-completed"] : []),
+    ...(view.latestPlanCompletedSeq !== undefined ? [`plan-completed-seq ${view.latestPlanCompletedSeq}`] : []),
+    ...(view.latestPlanInvalidatedSeq !== undefined ? [`plan-invalidated-seq ${view.latestPlanInvalidatedSeq}`] : []),
     ...(view.planCompletedAfterWorkspaceWrite !== undefined
       ? [
           view.planCompletedAfterWorkspaceWrite
             ? "plan-completion-current"
-            : view.planCompleted &&
-                (view.workspaceWriteCompleted ||
-                  view.latestPlanInvalidatedSeq !== undefined)
+            : view.planCompleted && (view.workspaceWriteCompleted || view.latestPlanInvalidatedSeq !== undefined)
               ? "plan-completion-stale"
               : "plan-completion-not-current",
         ]
       : []),
     ...(view.planArtifactVerified !== undefined
-      ? [
-          view.planArtifactVerified
-            ? "artifact-verified"
-            : "artifact-not-verified",
-        ]
+      ? [view.planArtifactVerified ? "artifact-verified" : "artifact-not-verified"]
       : []),
     ...(view.latestPlanArtifactVerifiedSeq !== undefined
       ? [`artifact-verified-seq ${view.latestPlanArtifactVerifiedSeq}`]
@@ -394,45 +261,30 @@ export function modelAdvisorEventTraceSummary(
           view.planArtifactVerifiedAfterWorkspaceWrite
             ? "artifact-verification-current"
             : view.planArtifactVerified &&
-                (view.workspaceWriteCompleted ||
-                  view.latestPlanArtifactInvalidatedSeq !== undefined)
+                (view.workspaceWriteCompleted || view.latestPlanArtifactInvalidatedSeq !== undefined)
               ? "artifact-verification-stale"
               : "artifact-verification-not-current",
         ]
       : []),
-    ...(view.goalSatisfied !== undefined
-      ? [view.goalSatisfied ? "goal-satisfied" : "goal-not-satisfied"]
-      : []),
-    ...(view.latestGoalSatisfiedSeq !== undefined
-      ? [`goal-satisfied-seq ${view.latestGoalSatisfiedSeq}`]
-      : []),
-    ...(view.latestGoalInvalidatedSeq !== undefined
-      ? [`goal-invalidated-seq ${view.latestGoalInvalidatedSeq}`]
-      : []),
+    ...(view.goalSatisfied !== undefined ? [view.goalSatisfied ? "goal-satisfied" : "goal-not-satisfied"] : []),
+    ...(view.latestGoalSatisfiedSeq !== undefined ? [`goal-satisfied-seq ${view.latestGoalSatisfiedSeq}`] : []),
+    ...(view.latestGoalInvalidatedSeq !== undefined ? [`goal-invalidated-seq ${view.latestGoalInvalidatedSeq}`] : []),
     ...(view.goalSatisfiedAfterWorkspaceWrite !== undefined
       ? [
           view.goalSatisfiedAfterWorkspaceWrite
             ? "goal-satisfaction-current"
-            : view.goalSatisfied &&
-                (view.workspaceWriteCompleted ||
-                  view.latestGoalInvalidatedSeq !== undefined)
+            : view.goalSatisfied && (view.workspaceWriteCompleted || view.latestGoalInvalidatedSeq !== undefined)
               ? "goal-satisfaction-stale"
               : "goal-satisfaction-not-current",
         ]
       : []),
     ...(view.recoveryCompleted !== undefined
-      ? [
-          view.recoveryCompleted
-            ? "recovery-completed"
-            : "recovery-not-completed",
-        ]
+      ? [view.recoveryCompleted ? "recovery-completed" : "recovery-not-completed"]
       : []),
     ...(view.latestRecoveryCompletedSeq !== undefined
       ? [`recovery-completed-seq ${view.latestRecoveryCompletedSeq}`]
       : []),
-    ...(view.latestRunInterruptedSeq !== undefined
-      ? [`run-interrupted-seq ${view.latestRunInterruptedSeq}`]
-      : []),
+    ...(view.latestRunInterruptedSeq !== undefined ? [`run-interrupted-seq ${view.latestRunInterruptedSeq}`] : []),
     ...(view.latestRecoveryInvalidatedSeq !== undefined
       ? [`recovery-invalidated-seq ${view.latestRecoveryInvalidatedSeq}`]
       : []),
@@ -441,18 +293,13 @@ export function modelAdvisorEventTraceSummary(
           view.recoveryCompletedAfterInterruption
             ? "recovery-completion-current"
             : view.recoveryCompleted &&
-                (view.latestRunInterruptedSeq !== undefined ||
-                  view.latestRecoveryInvalidatedSeq !== undefined)
+                (view.latestRunInterruptedSeq !== undefined || view.latestRecoveryInvalidatedSeq !== undefined)
               ? "recovery-completion-stale"
               : "recovery-completion-not-current",
         ]
       : []),
     ...(view.evaluationCompleted !== undefined
-      ? [
-          view.evaluationCompleted
-            ? "evaluation-completed"
-            : "evaluation-not-completed",
-        ]
+      ? [view.evaluationCompleted ? "evaluation-completed" : "evaluation-not-completed"]
       : []),
     ...(view.latestEvaluationCompletedSeq !== undefined
       ? [`evaluation-completed-seq ${view.latestEvaluationCompletedSeq}`]
@@ -473,58 +320,35 @@ export function modelAdvisorEventTraceSummary(
       ? [`evaluation-passed-seq ${view.latestEvaluationPassedSeq}`]
       : []),
     ...(view.latestEvaluationPassInvalidatedSeq !== undefined
-      ? [
-          `evaluation-pass-invalidated-seq ${view.latestEvaluationPassInvalidatedSeq}`,
-        ]
+      ? [`evaluation-pass-invalidated-seq ${view.latestEvaluationPassInvalidatedSeq}`]
       : []),
     ...(view.evaluationPassedAfterWorkspaceWrite !== undefined
       ? [
           view.evaluationPassedAfterWorkspaceWrite
             ? "evaluation-pass-current"
             : view.evaluationPassed &&
-                (view.workspaceWriteCompleted ||
-                  view.latestEvaluationPassInvalidatedSeq !== undefined)
+                (view.workspaceWriteCompleted || view.latestEvaluationPassInvalidatedSeq !== undefined)
               ? "evaluation-pass-stale"
               : "evaluation-pass-not-current",
         ]
       : []),
     ...(view.textSha256 ? [`text ${view.textSha256.slice(0, 12)}`] : []),
-    ...(view.candidateTextSha256
-      ? [`candidate ${view.candidateTextSha256.slice(0, 12)}`]
-      : []),
-    ...(view.diagnosticSetSha256
-      ? [`diagnostics ${view.diagnosticSetSha256.slice(0, 12)}`]
-      : []),
-    ...(view.issueSetSha256
-      ? [`issue-set ${view.issueSetSha256.slice(0, 12)}`]
-      : []),
-    ...(view.evidenceSha256
-      ? [`evidence ${view.evidenceSha256.slice(0, 12)}`]
-      : []),
+    ...(view.candidateTextSha256 ? [`candidate ${view.candidateTextSha256.slice(0, 12)}`] : []),
+    ...(view.diagnosticSetSha256 ? [`diagnostics ${view.diagnosticSetSha256.slice(0, 12)}`] : []),
+    ...(view.issueSetSha256 ? [`issue-set ${view.issueSetSha256.slice(0, 12)}`] : []),
+    ...(view.evidenceSha256 ? [`evidence ${view.evidenceSha256.slice(0, 12)}`] : []),
     ...(view.inputSha256 ? [`input ${view.inputSha256.slice(0, 12)}`] : []),
     ...(view.promptSha256 ? [`prompt ${view.promptSha256.slice(0, 12)}`] : []),
-    ...(view.responseSha256
-      ? [`response ${view.responseSha256.slice(0, 12)}`]
-      : []),
-    ...(view.requestContentSha256
-      ? [`request ${view.requestContentSha256.slice(0, 12)}`]
-      : []),
-    ...(view.responseTextSha256
-      ? [`response-text ${view.responseTextSha256.slice(0, 12)}`]
-      : []),
-    ...(view.envelopeSha256
-      ? [`envelope ${view.envelopeSha256.slice(0, 12)}`]
-      : []),
-    ...(view.contentSha256
-      ? [`receipt ${view.contentSha256.slice(0, 12)}`]
-      : []),
+    ...(view.responseSha256 ? [`response ${view.responseSha256.slice(0, 12)}`] : []),
+    ...(view.requestContentSha256 ? [`request ${view.requestContentSha256.slice(0, 12)}`] : []),
+    ...(view.responseTextSha256 ? [`response-text ${view.responseTextSha256.slice(0, 12)}`] : []),
+    ...(view.envelopeSha256 ? [`envelope ${view.envelopeSha256.slice(0, 12)}`] : []),
+    ...(view.contentSha256 ? [`receipt ${view.contentSha256.slice(0, 12)}`] : []),
   ].join(" / ");
 }
 
 function safeToken(value: unknown): string | undefined {
-  return typeof value === "string" && SAFE_TOKEN.test(value)
-    ? value
-    : undefined;
+  return typeof value === "string" && SAFE_TOKEN.test(value) ? value : undefined;
 }
 
 function sha256(value: unknown): string | undefined {
@@ -532,9 +356,7 @@ function sha256(value: unknown): string | undefined {
 }
 
 function nonNegativeInteger(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0
-    ? value
-    : undefined;
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : undefined;
 }
 
 function booleanValue(value: unknown): boolean | undefined {

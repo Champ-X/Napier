@@ -244,10 +244,7 @@ import {
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 
-import {
-  ReceiptTrustAnchorDirectoryDiscoveryError,
-  ReceiptTrustAnchorDirectoryDiscoveryService,
-} from "./receipt-trust-directory-discovery.js";
+import { ReceiptTrustAnchorDirectoryDiscoveryError, ReceiptTrustAnchorDirectoryDiscoveryService } from "./receipt-trust-directory-discovery.js";
 import {
   errorMessage,
   jsonError,
@@ -351,19 +348,9 @@ const MAX_EVALUATION_REQUEST_BYTES = 64 * 1024;
 const MAX_EXTENSION_ADMIN_REQUEST_BYTES = 64 * 1024;
 const MAX_TRUST_ADMIN_REQUEST_BYTES = 8 * 1024;
 const MAX_PACKAGE_GOVERNANCE_REQUEST_BYTES = 64 * 1024;
-export async function createServices(
-  options?: ServerServiceOptions,
-): Promise<NapierServices> {
-  const workspaceRoot = path.resolve(
-    options?.workspaceRoot ??
-      process.env["NAPIER_WORKSPACE"] ??
-      inferWorkspaceRoot(process.cwd()),
-  );
-  const dataRoot = path.resolve(
-    options?.dataRoot ??
-      process.env["NAPIER_HOME"] ??
-      path.join(workspaceRoot, ".napier"),
-  );
+export async function createServices(options?: ServerServiceOptions): Promise<NapierServices> {
+  const workspaceRoot = path.resolve(options?.workspaceRoot ?? process.env["NAPIER_WORKSPACE"] ?? inferWorkspaceRoot(process.cwd()));
+  const dataRoot = path.resolve(options?.dataRoot ?? process.env["NAPIER_HOME"] ?? path.join(workspaceRoot, ".napier"));
   const local = await createLocalAgentRuntime({
     workspaceRoot,
     dataRoot,
@@ -391,15 +378,13 @@ export async function createServices(
     sandboxSetup,
   } = local;
   const evaluations = new RunEvaluationService(store, models);
-  const evaluationCasebookQualifications =
-    new EvaluationCasebookQualificationService(store, models);
+  const evaluationCasebookQualifications = new EvaluationCasebookQualificationService(store, models);
   const evaluationSuites = new EvaluationSuiteService(store, models);
   const automation = new AutomationService(store, runtime);
   const channels = new ChannelService(store, runtime);
   const recovery = new RecoveryService(store, runtime);
   const browserTasks = new BrowserTasks(dataRoot, credentials, options?.env);
-  const { receiptTrustDirectories, receiptTrustDirectorySubscriptions } =
-    createReceiptTrustServices(store, options);
+  const { receiptTrustDirectories, receiptTrustDirectorySubscriptions } = createReceiptTrustServices(store, options);
   if (options?.startAutomation) {
     automation.start();
     channels.start();
@@ -450,11 +435,7 @@ export function createApp(services: NapierServices): Hono {
   app.get("/api/health", (context) => {
     const persistence = services.store.getPersistenceMetrics();
     const response: HealthResponse = {
-      status:
-        persistence.last?.status === "failed" ||
-        (persistence.last?.projectionFailureCount ?? 0) > 0
-          ? "degraded"
-          : "ok",
+      status: persistence.last?.status === "failed" || (persistence.last?.projectionFailureCount ?? 0) > 0 ? "degraded" : "ok",
       service: "napier",
       time: new Date().toISOString(),
       runtime: createHealthRuntimeProjection(),
@@ -477,578 +458,300 @@ export function createApp(services: NapierServices): Hono {
     return context.json(directory);
   });
 
-  app.post(
-    "/api/receipt-trust/anchors/directory/signed-metadata",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_TRUST_ADMIN_REQUEST_BYTES,
-          "Receipt trust anchor directory metadata signing request",
-        );
-      } catch (error) {
-        return jsonError(
-          context,
-          error instanceof RequestBodyTooLargeError
-            ? error.message
-            : "Receipt trust anchor directory metadata signing request is invalid",
-          error instanceof RequestBodyTooLargeError ? 413 : 400,
-        );
-      }
-      const body = parseSignReceiptTrustAnchorDirectoryMetadataRequest(input);
-      if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory metadata signing request is invalid",
-          400,
-        );
-      }
-      services.store.getThread(body.threadId);
-      const directory = services.store.getReceiptTrustAnchorDirectory();
-      const receipt = createReceiptTrustAnchorDirectoryMetadataReceipt(
-        directory,
-        body,
-      );
-      const envelope = signTrustedReceipt(
-        receipt,
-        services.store.getReceiptTrustAnchor(body.trustAnchorId),
-      );
-      await appendReceiptTrustEvent(services, body.threadId, "receipt.signed", {
-        ...trustedReceiptEventPayload(envelope),
-        publisher: receipt.publisher,
-        directorySha256: receipt.directorySha256,
-        anchorSetSha256: receipt.anchorSetSha256,
-        ...(receipt.sourceUrlSha256
-          ? { sourceUrlSha256: receipt.sourceUrlSha256 }
-          : {}),
-        ...(receipt.sourceOriginSha256
-          ? { sourceOriginSha256: receipt.sourceOriginSha256 }
-          : {}),
-      });
-      setTrustedReceiptHeaders(
+  app.post("/api/receipt-trust/anchors/directory/signed-metadata", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(context.req.raw, MAX_TRUST_ADMIN_REQUEST_BYTES, "Receipt trust anchor directory metadata signing request");
+    } catch (error) {
+      return jsonError(
         context,
-        envelope,
-        `napier-signed-anchor-directory-metadata-${directory.anchorSetSha256.slice(0, 12)}-${envelope.contentSha256.slice(0, 12)}.json`,
+        error instanceof RequestBodyTooLargeError ? error.message : "Receipt trust anchor directory metadata signing request is invalid",
+        error instanceof RequestBodyTooLargeError ? 413 : 400,
       );
-      return context.json(envelope, 201);
-    },
-  );
+    }
+    const body = parseSignReceiptTrustAnchorDirectoryMetadataRequest(input);
+    if (!body) {
+      return jsonError(context, "Receipt trust anchor directory metadata signing request is invalid", 400);
+    }
+    services.store.getThread(body.threadId);
+    const directory = services.store.getReceiptTrustAnchorDirectory();
+    const receipt = createReceiptTrustAnchorDirectoryMetadataReceipt(directory, body);
+    const envelope = signTrustedReceipt(receipt, services.store.getReceiptTrustAnchor(body.trustAnchorId));
+    await appendReceiptTrustEvent(services, body.threadId, "receipt.signed", {
+      ...trustedReceiptEventPayload(envelope),
+      publisher: receipt.publisher,
+      directorySha256: receipt.directorySha256,
+      anchorSetSha256: receipt.anchorSetSha256,
+      ...(receipt.sourceUrlSha256 ? { sourceUrlSha256: receipt.sourceUrlSha256 } : {}),
+      ...(receipt.sourceOriginSha256 ? { sourceOriginSha256: receipt.sourceOriginSha256 } : {}),
+    });
+    setTrustedReceiptHeaders(
+      context,
+      envelope,
+      `napier-signed-anchor-directory-metadata-${directory.anchorSetSha256.slice(0, 12)}-${envelope.contentSha256.slice(0, 12)}.json`,
+    );
+    return context.json(envelope, 201);
+  });
 
   app.get("/api/receipt-trust/anchors/directory/subscriptions", (context) => {
-    const subscriptions =
-      services.store.listReceiptTrustAnchorDirectorySubscriptions();
-    setReceiptTrustAnchorDirectorySubscriptionListHeaders(
-      context,
-      subscriptions,
-    );
+    const subscriptions = services.store.listReceiptTrustAnchorDirectorySubscriptions();
+    setReceiptTrustAnchorDirectorySubscriptionListHeaders(context, subscriptions);
     return context.json(subscriptions);
   });
 
-  app.post(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_TRUST_ADMIN_REQUEST_BYTES,
-          "Receipt trust anchor directory quorum request",
-        );
-      } catch (error) {
-        return jsonError(
-          context,
-          error instanceof RequestBodyTooLargeError
-            ? error.message
-            : "Receipt trust anchor directory quorum request is invalid",
-          error instanceof RequestBodyTooLargeError ? 413 : 400,
-        );
-      }
-      const body = parseEvaluateReceiptTrustAnchorDirectoryQuorumRequest(input);
-      if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum request is invalid",
-          400,
-        );
-      }
-      let metadataEvidence: ReceiptTrustAnchorDirectoryQuorumMetadataEvidence[];
-      try {
-        metadataEvidence =
-          createReceiptTrustAnchorDirectoryQuorumMetadataEvidence(
-            services,
-            body,
-          );
-      } catch (error) {
-        return jsonError(
-          context,
-          errorMessage(error),
-          error instanceof RequestBodyTooLargeError ? 413 : 400,
-        );
-      }
-      const quorum =
-        services.store.getReceiptTrustAnchorDirectorySubscriptionQuorum(
-          body.policy,
-          metadataEvidence,
-        );
-      setReceiptTrustAnchorDirectoryQuorumHeaders(context, quorum);
-      return context.json(quorum);
-    },
-  );
-
-  app.post(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_TRUST_ADMIN_REQUEST_BYTES,
-          "Receipt trust anchor directory quorum promotion request",
-        );
-      } catch (error) {
-        return jsonError(
-          context,
-          error instanceof RequestBodyTooLargeError
-            ? error.message
-            : "Receipt trust anchor directory quorum promotion request is invalid",
-          error instanceof RequestBodyTooLargeError ? 413 : 400,
-        );
-      }
-      const body = parsePromoteReceiptTrustAnchorDirectoryQuorumRequest(input);
-      if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum promotion request is invalid",
-          400,
-        );
-      }
-      try {
-        const metadataEvidence =
-          createReceiptTrustAnchorDirectoryQuorumMetadataEvidence(
-            services,
-            body,
-          );
-        const quorum =
-          services.store.getReceiptTrustAnchorDirectorySubscriptionQuorum(
-            body.policy,
-            metadataEvidence,
-          );
-        const promotion =
-          createReceiptTrustAnchorDirectoryQuorumPromotionReceipt(
-            quorum,
-            body.metadata ?? [],
-          );
-        setReceiptTrustAnchorDirectoryQuorumPromotionHeaders(
-          context,
-          promotion,
-        );
-        return context.json(promotion, 201);
-      } catch (error) {
-        const message = errorMessage(error);
-        return jsonError(
-          context,
-          message,
-          message.includes("requires an agreed quorum") ? 409 : 400,
-        );
-      }
-    },
-  );
-
-  app.get(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines",
-    (context) => {
-      const baselines =
-        services.store.listReceiptTrustAnchorDirectoryQuorumPromotionBaselines();
-      setReceiptTrustAnchorDirectoryQuorumPromotionBaselineListHeaders(
+  app.post("/api/receipt-trust/anchors/directory/subscriptions/quorum", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(context.req.raw, MAX_TRUST_ADMIN_REQUEST_BYTES, "Receipt trust anchor directory quorum request");
+    } catch (error) {
+      return jsonError(
         context,
-        baselines,
+        error instanceof RequestBodyTooLargeError ? error.message : "Receipt trust anchor directory quorum request is invalid",
+        error instanceof RequestBodyTooLargeError ? 413 : 400,
       );
-      return context.json(baselines);
-    },
-  );
+    }
+    const body = parseEvaluateReceiptTrustAnchorDirectoryQuorumRequest(input);
+    if (!body) {
+      return jsonError(context, "Receipt trust anchor directory quorum request is invalid", 400);
+    }
+    let metadataEvidence: ReceiptTrustAnchorDirectoryQuorumMetadataEvidence[];
+    try {
+      metadataEvidence = createReceiptTrustAnchorDirectoryQuorumMetadataEvidence(services, body);
+    } catch (error) {
+      return jsonError(context, errorMessage(error), error instanceof RequestBodyTooLargeError ? 413 : 400);
+    }
+    const quorum = services.store.getReceiptTrustAnchorDirectorySubscriptionQuorum(body.policy, metadataEvidence);
+    setReceiptTrustAnchorDirectoryQuorumHeaders(context, quorum);
+    return context.json(quorum);
+  });
 
-  app.post(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_TRUST_ADMIN_REQUEST_BYTES,
-          "Receipt trust anchor directory quorum promotion baseline request",
-        );
-      } catch (error) {
-        return jsonError(
-          context,
-          error instanceof RequestBodyTooLargeError
-            ? error.message
-            : "Receipt trust anchor directory quorum promotion baseline request is invalid",
-          error instanceof RequestBodyTooLargeError ? 413 : 400,
-        );
-      }
-      const body =
-        parsePromoteReceiptTrustAnchorDirectoryQuorumBaselineRequest(input);
-      if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum promotion baseline request is invalid",
-          400,
-        );
-      }
-      try {
-        services.store.getThread(body.threadId);
-        const metadataEvidence =
-          createReceiptTrustAnchorDirectoryQuorumMetadataEvidence(
-            services,
-            body,
-          );
-        const quorum =
-          services.store.getReceiptTrustAnchorDirectorySubscriptionQuorum(
-            body.policy,
-            metadataEvidence,
-          );
-        const promotion =
-          createReceiptTrustAnchorDirectoryQuorumPromotionReceipt(
-            quorum,
-            body.metadata ?? [],
-          );
-        const envelope = signTrustedReceipt(
-          promotion,
-          services.store.getReceiptTrustAnchor(body.trustAnchorId),
-        );
-        const result =
-          await services.store.promoteReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
-            body.threadId,
-            envelope,
-          );
-        if (result.created) {
-          await appendReceiptTrustEvent(
-            services,
-            body.threadId,
-            "receipt_trust.directory_quorum_promotion_baseline.promoted",
-            {
-              ...trustedReceiptEventPayload(envelope),
-              baselineId: result.baseline.id,
-              baselineSha256: result.baseline.contentSha256,
-              selectedAnchorSetSha256: result.baseline.selectedAnchorSetSha256,
-              selectedDirectorySha256: result.baseline.selectedDirectorySha256,
-              selectedSubscriptionSetSha256:
-                result.baseline.selectedSubscriptionSetSha256,
-              selectedMetadataEnvelopeSetSha256:
-                result.baseline.selectedMetadataEnvelopeSetSha256,
-            },
-          );
-        }
-        setPromoteReceiptTrustAnchorDirectoryQuorumPromotionBaselineResultHeaders(
-          context,
-          result,
-        );
-        return context.json(result, result.created ? 201 : 200);
-      } catch (error) {
-        const message = errorMessage(error);
-        return jsonError(
-          context,
-          message,
-          message.includes("requires an agreed quorum") ||
-            message.includes("not trusted")
-            ? 409
-            : 400,
-        );
-      }
-    },
-  );
-
-  app.post(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/verify",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_TRUSTED_RECEIPT_BYTES + MAX_TRUST_ADMIN_REQUEST_BYTES,
-          "Receipt trust anchor directory quorum promotion baseline verification request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum promotion baseline verification request is invalid",
-          400,
-        );
-      }
-      const body =
-        parseVerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest(
-          input,
-        );
-      if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum promotion baseline verification request is invalid",
-          400,
-        );
-      }
-      const trustDirectoryVerification =
-        body.trustDirectory === undefined
-          ? undefined
-          : services.store.verifyReceiptTrustAnchorDirectory(
-              body.trustDirectory,
-              body.trustDirectoryPolicy,
-            );
-      const anchors =
-        body.trustDirectory === undefined
-          ? services.store.listReceiptTrustAnchors()
-          : trustDirectoryVerification?.status === "valid"
-            ? receiptTrustAnchorsFromDirectory(body.trustDirectory)
-            : [];
-      const verification =
-        verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
-          body.baseline,
-          anchors,
-          {
-            ...(trustDirectoryVerification
-              ? { trustDirectoryVerification }
-              : {}),
-          },
-        );
-      setReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerificationHeaders(
+  app.post("/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(context.req.raw, MAX_TRUST_ADMIN_REQUEST_BYTES, "Receipt trust anchor directory quorum promotion request");
+    } catch (error) {
+      return jsonError(
         context,
+        error instanceof RequestBodyTooLargeError ? error.message : "Receipt trust anchor directory quorum promotion request is invalid",
+        error instanceof RequestBodyTooLargeError ? 413 : 400,
+      );
+    }
+    const body = parsePromoteReceiptTrustAnchorDirectoryQuorumRequest(input);
+    if (!body) {
+      return jsonError(context, "Receipt trust anchor directory quorum promotion request is invalid", 400);
+    }
+    try {
+      const metadataEvidence = createReceiptTrustAnchorDirectoryQuorumMetadataEvidence(services, body);
+      const quorum = services.store.getReceiptTrustAnchorDirectorySubscriptionQuorum(body.policy, metadataEvidence);
+      const promotion = createReceiptTrustAnchorDirectoryQuorumPromotionReceipt(quorum, body.metadata ?? []);
+      setReceiptTrustAnchorDirectoryQuorumPromotionHeaders(context, promotion);
+      return context.json(promotion, 201);
+    } catch (error) {
+      const message = errorMessage(error);
+      return jsonError(context, message, message.includes("requires an agreed quorum") ? 409 : 400);
+    }
+  });
+
+  app.get("/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines", (context) => {
+    const baselines = services.store.listReceiptTrustAnchorDirectoryQuorumPromotionBaselines();
+    setReceiptTrustAnchorDirectoryQuorumPromotionBaselineListHeaders(context, baselines);
+    return context.json(baselines);
+  });
+
+  app.post("/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(context.req.raw, MAX_TRUST_ADMIN_REQUEST_BYTES, "Receipt trust anchor directory quorum promotion baseline request");
+    } catch (error) {
+      return jsonError(
+        context,
+        error instanceof RequestBodyTooLargeError ? error.message : "Receipt trust anchor directory quorum promotion baseline request is invalid",
+        error instanceof RequestBodyTooLargeError ? 413 : 400,
+      );
+    }
+    const body = parsePromoteReceiptTrustAnchorDirectoryQuorumBaselineRequest(input);
+    if (!body) {
+      return jsonError(context, "Receipt trust anchor directory quorum promotion baseline request is invalid", 400);
+    }
+    try {
+      services.store.getThread(body.threadId);
+      const metadataEvidence = createReceiptTrustAnchorDirectoryQuorumMetadataEvidence(services, body);
+      const quorum = services.store.getReceiptTrustAnchorDirectorySubscriptionQuorum(body.policy, metadataEvidence);
+      const promotion = createReceiptTrustAnchorDirectoryQuorumPromotionReceipt(quorum, body.metadata ?? []);
+      const envelope = signTrustedReceipt(promotion, services.store.getReceiptTrustAnchor(body.trustAnchorId));
+      const result = await services.store.promoteReceiptTrustAnchorDirectoryQuorumPromotionBaseline(body.threadId, envelope);
+      if (result.created) {
+        await appendReceiptTrustEvent(services, body.threadId, "receipt_trust.directory_quorum_promotion_baseline.promoted", {
+          ...trustedReceiptEventPayload(envelope),
+          baselineId: result.baseline.id,
+          baselineSha256: result.baseline.contentSha256,
+          selectedAnchorSetSha256: result.baseline.selectedAnchorSetSha256,
+          selectedDirectorySha256: result.baseline.selectedDirectorySha256,
+          selectedSubscriptionSetSha256: result.baseline.selectedSubscriptionSetSha256,
+          selectedMetadataEnvelopeSetSha256: result.baseline.selectedMetadataEnvelopeSetSha256,
+        });
+      }
+      setPromoteReceiptTrustAnchorDirectoryQuorumPromotionBaselineResultHeaders(context, result);
+      return context.json(result, result.created ? 201 : 200);
+    } catch (error) {
+      const message = errorMessage(error);
+      return jsonError(context, message, message.includes("requires an agreed quorum") || message.includes("not trusted") ? 409 : 400);
+    }
+  });
+
+  app.post("/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/verify", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(
+        context.req.raw,
+        MAX_TRUSTED_RECEIPT_BYTES + MAX_TRUST_ADMIN_REQUEST_BYTES,
+        "Receipt trust anchor directory quorum promotion baseline verification request",
+      );
+    } catch (error) {
+      if (error instanceof RequestBodyTooLargeError) {
+        return jsonError(context, error.message, 413);
+      }
+      return jsonError(context, "Receipt trust anchor directory quorum promotion baseline verification request is invalid", 400);
+    }
+    const body = parseVerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest(input);
+    if (!body) {
+      return jsonError(context, "Receipt trust anchor directory quorum promotion baseline verification request is invalid", 400);
+    }
+    const trustDirectoryVerification =
+      body.trustDirectory === undefined ? undefined : services.store.verifyReceiptTrustAnchorDirectory(body.trustDirectory, body.trustDirectoryPolicy);
+    const anchors =
+      body.trustDirectory === undefined
+        ? services.store.listReceiptTrustAnchors()
+        : trustDirectoryVerification?.status === "valid"
+          ? receiptTrustAnchorsFromDirectory(body.trustDirectory)
+          : [];
+    const verification = verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline(body.baseline, anchors, {
+      ...(trustDirectoryVerification ? { trustDirectoryVerification } : {}),
+    });
+    setReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerificationHeaders(context, verification);
+    return context.json(verification);
+  });
+
+  app.post("/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/import", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(
+        context.req.raw,
+        MAX_TRUSTED_RECEIPT_BYTES + MAX_TRUST_ADMIN_REQUEST_BYTES,
+        "Receipt trust anchor directory quorum promotion baseline import request",
+      );
+    } catch (error) {
+      if (error instanceof RequestBodyTooLargeError) {
+        return jsonError(context, error.message, 413);
+      }
+      return jsonError(context, "Receipt trust anchor directory quorum promotion baseline import request is invalid", 400);
+    }
+    const body = parseImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest(input);
+    if (!body) {
+      return jsonError(context, "Receipt trust anchor directory quorum promotion baseline import request is invalid", 400);
+    }
+    const trustDirectoryVerification =
+      body.trustDirectory === undefined ? undefined : services.store.verifyReceiptTrustAnchorDirectory(body.trustDirectory, body.trustDirectoryPolicy);
+    const anchors =
+      body.trustDirectory === undefined
+        ? services.store.listReceiptTrustAnchors()
+        : trustDirectoryVerification?.status === "valid"
+          ? receiptTrustAnchorsFromDirectory(body.trustDirectory)
+          : [];
+    const verification = verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline(body.baseline, anchors, {
+      ...(trustDirectoryVerification ? { trustDirectoryVerification } : {}),
+    });
+    if (verification.status !== "trusted" || !verification.baselineValid || !verification.signatureValid || !verification.integrityValid) {
+      return jsonError(context, "Receipt trust anchor directory quorum promotion baseline import requires trusted verification", 409);
+    }
+    try {
+      const imported = await services.store.importReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+        body.threadId,
+        body.baseline,
+        body.expectedCurrentBaselineSha256,
+        anchors,
+        body.importPolicy,
+      );
+      if (imported.imported) {
+        await appendReceiptTrustEvent(services, body.threadId, "receipt_trust.directory_quorum_promotion_baseline.imported", {
+          baselineId: imported.baseline.id,
+          baselineSha256: imported.baseline.contentSha256,
+          importedReceiptSha256: imported.baseline.envelope.receipt.contentSha256,
+          envelopeSha256: imported.baseline.envelope.contentSha256,
+          keyId: imported.baseline.envelope.signature.keyId,
+          expectedCurrentBaselineSha256: body.expectedCurrentBaselineSha256,
+          ...(imported.previousBaselineSha256 ? { previousBaselineSha256: imported.previousBaselineSha256 } : {}),
+          verificationSha256: verification.contentSha256,
+          ...(imported.policyReview
+            ? {
+                importPolicySha256: imported.policyReview.policySha256,
+                importPolicyReviewSha256: imported.policyReview.contentSha256,
+              }
+            : {}),
+        });
+      }
+      const result: ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult = {
+        baseline: imported.baseline,
+        imported: imported.imported,
         verification,
-      );
-      return context.json(verification);
-    },
-  );
+        ...(imported.policyReview ? { policyReview: imported.policyReview } : {}),
+        expectedCurrentBaselineSha256: body.expectedCurrentBaselineSha256,
+        ...(imported.previousBaselineSha256 ? { previousBaselineSha256: imported.previousBaselineSha256 } : {}),
+      };
+      setImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResultHeaders(context, result);
+      return context.json(result, imported.imported ? 201 : 200);
+    } catch (error) {
+      const message = errorMessage(error);
+      return jsonError(context, message, message.includes("precondition") || message.includes("policy rejected") ? 409 : 400);
+    }
+  });
 
-  app.post(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/import",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_TRUSTED_RECEIPT_BYTES + MAX_TRUST_ADMIN_REQUEST_BYTES,
-          "Receipt trust anchor directory quorum promotion baseline import request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum promotion baseline import request is invalid",
-          400,
-        );
-      }
-      const body =
-        parseImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest(
-          input,
-        );
-      if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum promotion baseline import request is invalid",
-          400,
-        );
-      }
-      const trustDirectoryVerification =
-        body.trustDirectory === undefined
-          ? undefined
-          : services.store.verifyReceiptTrustAnchorDirectory(
-              body.trustDirectory,
-              body.trustDirectoryPolicy,
-            );
-      const anchors =
-        body.trustDirectory === undefined
-          ? services.store.listReceiptTrustAnchors()
-          : trustDirectoryVerification?.status === "valid"
-            ? receiptTrustAnchorsFromDirectory(body.trustDirectory)
-            : [];
-      const verification =
-        verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
-          body.baseline,
-          anchors,
-          {
-            ...(trustDirectoryVerification
-              ? { trustDirectoryVerification }
-              : {}),
-          },
-        );
-      if (
-        verification.status !== "trusted" ||
-        !verification.baselineValid ||
-        !verification.signatureValid ||
-        !verification.integrityValid
-      ) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum promotion baseline import requires trusted verification",
-          409,
-        );
-      }
-      try {
-        const imported =
-          await services.store.importReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
-            body.threadId,
-            body.baseline,
-            body.expectedCurrentBaselineSha256,
-            anchors,
-            body.importPolicy,
-          );
-        if (imported.imported) {
-          await appendReceiptTrustEvent(
-            services,
-            body.threadId,
-            "receipt_trust.directory_quorum_promotion_baseline.imported",
-            {
-              baselineId: imported.baseline.id,
-              baselineSha256: imported.baseline.contentSha256,
-              importedReceiptSha256:
-                imported.baseline.envelope.receipt.contentSha256,
-              envelopeSha256: imported.baseline.envelope.contentSha256,
-              keyId: imported.baseline.envelope.signature.keyId,
-              expectedCurrentBaselineSha256: body.expectedCurrentBaselineSha256,
-              ...(imported.previousBaselineSha256
-                ? { previousBaselineSha256: imported.previousBaselineSha256 }
-                : {}),
-              verificationSha256: verification.contentSha256,
-              ...(imported.policyReview
-                ? {
-                    importPolicySha256: imported.policyReview.policySha256,
-                    importPolicyReviewSha256:
-                      imported.policyReview.contentSha256,
-                  }
-                : {}),
-            },
-          );
-        }
-        const result: ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult =
-          {
-            baseline: imported.baseline,
-            imported: imported.imported,
-            verification,
-            ...(imported.policyReview
-              ? { policyReview: imported.policyReview }
-              : {}),
-            expectedCurrentBaselineSha256: body.expectedCurrentBaselineSha256,
-            ...(imported.previousBaselineSha256
-              ? { previousBaselineSha256: imported.previousBaselineSha256 }
-              : {}),
-          };
-        setImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResultHeaders(
-          context,
-          result,
-        );
-        return context.json(result, imported.imported ? 201 : 200);
-      } catch (error) {
-        const message = errorMessage(error);
-        return jsonError(
-          context,
-          message,
-          message.includes("precondition") ||
-            message.includes("policy rejected")
-            ? 409
-            : 400,
-        );
-      }
-    },
-  );
+  app.get("/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decisions", (context) => {
+    const history = services.store.getReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory();
+    setReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryHeaders(context, history);
+    return context.json(history);
+  });
 
-  app.get(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decisions",
-    (context) => {
-      const history =
-        services.store.getReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory();
-      setReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryHeaders(
-        context,
-        history,
+  app.post("/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decisions/verify", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(
+        context.req.raw,
+        MAX_TRUSTED_RECEIPT_BYTES + MAX_TRUST_ADMIN_REQUEST_BYTES,
+        "Receipt trust anchor directory quorum activation decision history verification request",
       );
-      return context.json(history);
-    },
-  );
-
-  app.post(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decisions/verify",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_TRUSTED_RECEIPT_BYTES + MAX_TRUST_ADMIN_REQUEST_BYTES,
-          "Receipt trust anchor directory quorum activation decision history verification request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation decision history verification request is invalid",
-          400,
-        );
+    } catch (error) {
+      if (error instanceof RequestBodyTooLargeError) {
+        return jsonError(context, error.message, 413);
       }
-      const body =
-        parseVerifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryRequest(
-          input,
-        );
-      if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation decision history verification request is invalid",
-          400,
-        );
-      }
-      const verification =
-        services.store.verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(
-          body.history,
-        );
-      setReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerificationHeaders(
-        context,
-        verification,
-      );
-      return context.json(verification);
-    },
-  );
+      return jsonError(context, "Receipt trust anchor directory quorum activation decision history verification request is invalid", 400);
+    }
+    const body = parseVerifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryRequest(input);
+    if (!body) {
+      return jsonError(context, "Receipt trust anchor directory quorum activation decision history verification request is invalid", 400);
+    }
+    const verification = services.store.verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(body.history);
+    setReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerificationHeaders(context, verification);
+    return context.json(verification);
+  });
 
-  app.get(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection",
-    (context) => {
-      const state =
-        services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionState();
-      setReceiptTrustAnchorDirectoryQuorumActivationSelectionStateHeaders(
-        context,
-        state,
-      );
-      return context.json(state);
-    },
-  );
+  app.get("/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection", (context) => {
+    const state = services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionState();
+    setReceiptTrustAnchorDirectoryQuorumActivationSelectionStateHeaders(context, state);
+    return context.json(state);
+  });
 
-  app.get(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/drift-audit",
-    (context) => {
-      const audit =
-        services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit();
-      setReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAuditHeaders(
-        context,
-        audit,
-      );
-      return context.json(audit);
-    },
-  );
+  app.get("/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/drift-audit", (context) => {
+    const audit = services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit();
+    setReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAuditHeaders(context, audit);
+    return context.json(audit);
+  });
 
-  app.get(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint",
-    (context) => {
-      const checkpoint =
-        services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint();
-      setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointHeaders(
-        context,
-        checkpoint,
-      );
-      return context.json(checkpoint);
-    },
-  );
+  app.get("/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint", (context) => {
+    const checkpoint = services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint();
+    setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointHeaders(context, checkpoint);
+    return context.json(checkpoint);
+  });
 
   app.post(
     "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/verify",
@@ -1064,31 +767,14 @@ export function createApp(services: NapierServices): Hono {
         if (error instanceof RequestBodyTooLargeError) {
           return jsonError(context, error.message, 413);
         }
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection transparency checkpoint verification request is invalid",
-          400,
-        );
+        return jsonError(context, "Receipt trust anchor directory quorum activation selection transparency checkpoint verification request is invalid", 400);
       }
-      const body =
-        parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest(
-          input,
-        );
+      const body = parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest(input);
       if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection transparency checkpoint verification request is invalid",
-          400,
-        );
+        return jsonError(context, "Receipt trust anchor directory quorum activation selection transparency checkpoint verification request is invalid", 400);
       }
-      const verification =
-        services.store.verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(
-          body.checkpoint,
-        );
-      setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerificationHeaders(
-        context,
-        verification,
-      );
+      const verification = services.store.verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(body.checkpoint);
+      setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerificationHeaders(context, verification);
       return context.json(verification);
     },
   );
@@ -1107,51 +793,23 @@ export function createApp(services: NapierServices): Hono {
         if (error instanceof RequestBodyTooLargeError) {
           return jsonError(context, error.message, 413);
         }
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection transparency checkpoint discovery request is invalid",
-          400,
-        );
+        return jsonError(context, "Receipt trust anchor directory quorum activation selection transparency checkpoint discovery request is invalid", 400);
       }
-      const body =
-        parseDiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest(
-          input,
-        );
+      const body = parseDiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest(input);
       if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection transparency checkpoint discovery request is invalid",
-          400,
-        );
+        return jsonError(context, "Receipt trust anchor directory quorum activation selection transparency checkpoint discovery request is invalid", 400);
       }
       try {
-        const source = await services.receiptTrustDirectories.fetchJson(
-          body.sourceUrl,
-        );
-        const discovery =
-          createHostedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery(
-            services.store,
-            source,
-            body,
-          );
-        setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryHeaders(
-          context,
-          discovery,
-        );
-        return context.json(
-          discovery,
-          discovery.status === "valid" ? 200 : 422,
-        );
+        const source = await services.receiptTrustDirectories.fetchJson(body.sourceUrl);
+        const discovery = createHostedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery(services.store, source, body);
+        setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryHeaders(context, discovery);
+        return context.json(discovery, discovery.status === "valid" ? 200 : 422);
       } catch (error) {
         const message = errorMessage(error);
         return jsonError(
           context,
           "Receipt trust anchor directory quorum activation selection transparency checkpoint discovery failed",
-          error instanceof ReceiptTrustAnchorDirectoryDiscoveryError
-            ? error.status
-            : message.includes("checkpoint")
-              ? 422
-              : 400,
+          error instanceof ReceiptTrustAnchorDirectoryDiscoveryError ? error.status : message.includes("checkpoint") ? 422 : 400,
         );
       }
     },
@@ -1160,12 +818,8 @@ export function createApp(services: NapierServices): Hono {
   app.get(
     "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions",
     (context) => {
-      const subscriptions =
-        services.store.listReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions();
-      setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionListHeaders(
-        context,
-        subscriptions,
-      );
+      const subscriptions = services.store.listReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions();
+      setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionListHeaders(context, subscriptions);
       return context.json(subscriptions);
     },
   );
@@ -1189,25 +843,12 @@ export function createApp(services: NapierServices): Hono {
           error instanceof RequestBodyTooLargeError ? 413 : 400,
         );
       }
-      const body =
-        parseEvaluateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumRequest(
-          input,
-        );
+      const body = parseEvaluateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumRequest(input);
       if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection transparency checkpoint registry quorum request is invalid",
-          400,
-        );
+        return jsonError(context, "Receipt trust anchor directory quorum activation selection transparency checkpoint registry quorum request is invalid", 400);
       }
-      const quorum =
-        services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum(
-          body.policy,
-        );
-      setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumHeaders(
-        context,
-        quorum,
-      );
+      const quorum = services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum(body.policy);
+      setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumHeaders(context, quorum);
       return context.json(quorum);
     },
   );
@@ -1215,12 +856,8 @@ export function createApp(services: NapierServices): Hono {
   app.get(
     "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum/baselines",
     (context) => {
-      const baselines =
-        services.store.listReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines();
-      setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineListHeaders(
-        context,
-        baselines,
-      );
+      const baselines = services.store.listReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines();
+      setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineListHeaders(context, baselines);
       return context.json(baselines);
     },
   );
@@ -1244,10 +881,7 @@ export function createApp(services: NapierServices): Hono {
           error instanceof RequestBodyTooLargeError ? 413 : 400,
         );
       }
-      const body =
-        parsePromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest(
-          input,
-        );
+      const body = parsePromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest(input);
       if (!body) {
         return jsonError(
           context,
@@ -1257,57 +891,30 @@ export function createApp(services: NapierServices): Hono {
       }
       try {
         services.store.getThread(body.threadId);
-        const quorum =
-          services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum(
-            body.policy,
-          );
-        const envelope = signTrustedReceipt(
-          quorum,
-          services.store.getReceiptTrustAnchor(body.trustAnchorId),
+        const quorum = services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum(body.policy);
+        const envelope = signTrustedReceipt(quorum, services.store.getReceiptTrustAnchor(body.trustAnchorId));
+        const result = await services.store.promoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+          body.threadId,
+          envelope,
         );
-        const result =
-          await services.store.promoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
-            body.threadId,
-            envelope,
-          );
         if (result.created) {
-          await appendReceiptTrustEvent(
-            services,
-            body.threadId,
-            "receipt_trust.checkpoint_registry_quorum_baseline.promoted",
-            {
-              ...trustedReceiptEventPayload(envelope),
-              baselineId: result.baseline.id,
-              baselineSha256: result.baseline.contentSha256,
-              selectedCheckpointSha256:
-                result.baseline.selectedCheckpointSha256,
-              selectedSelectionSetSha256:
-                result.baseline.selectedSelectionSetSha256,
-              selectedSelectionChainTailSha256:
-                result.baseline.selectedSelectionChainTailSha256 ?? "",
-              selectedSubscriptionSetSha256:
-                result.baseline.selectedSubscriptionSetSha256,
-              selectedSourceOriginSetSha256:
-                result.baseline.selectedSourceOriginSetSha256,
-              selectedSignerSetSha256: result.baseline.selectedSignerSetSha256,
-            },
-          );
+          await appendReceiptTrustEvent(services, body.threadId, "receipt_trust.checkpoint_registry_quorum_baseline.promoted", {
+            ...trustedReceiptEventPayload(envelope),
+            baselineId: result.baseline.id,
+            baselineSha256: result.baseline.contentSha256,
+            selectedCheckpointSha256: result.baseline.selectedCheckpointSha256,
+            selectedSelectionSetSha256: result.baseline.selectedSelectionSetSha256,
+            selectedSelectionChainTailSha256: result.baseline.selectedSelectionChainTailSha256 ?? "",
+            selectedSubscriptionSetSha256: result.baseline.selectedSubscriptionSetSha256,
+            selectedSourceOriginSetSha256: result.baseline.selectedSourceOriginSetSha256,
+            selectedSignerSetSha256: result.baseline.selectedSignerSetSha256,
+          });
         }
-        setPromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResultHeaders(
-          context,
-          result,
-        );
+        setPromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResultHeaders(context, result);
         return context.json(result, result.created ? 201 : 200);
       } catch (error) {
         const message = errorMessage(error);
-        return jsonError(
-          context,
-          message,
-          message.includes("requires an agreed quorum") ||
-            message.includes("not trusted")
-            ? 409
-            : 400,
-        );
+        return jsonError(context, message, message.includes("requires an agreed quorum") || message.includes("not trusted") ? 409 : 400);
       }
     },
   );
@@ -1325,50 +932,26 @@ export function createApp(services: NapierServices): Hono {
       } catch (error) {
         return jsonError(
           context,
-          error instanceof RequestBodyTooLargeError
-            ? error.message
-            : "Receipt trust checkpoint registry quorum baseline verification request is invalid",
+          error instanceof RequestBodyTooLargeError ? error.message : "Receipt trust checkpoint registry quorum baseline verification request is invalid",
           error instanceof RequestBodyTooLargeError ? 413 : 400,
         );
       }
-      const body =
-        parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest(
-          input,
-        );
+      const body = parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest(input);
       if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust checkpoint registry quorum baseline verification request is invalid",
-          400,
-        );
+        return jsonError(context, "Receipt trust checkpoint registry quorum baseline verification request is invalid", 400);
       }
       const trustDirectoryVerification =
-        body.trustDirectory === undefined
-          ? undefined
-          : services.store.verifyReceiptTrustAnchorDirectory(
-              body.trustDirectory,
-              body.trustDirectoryPolicy,
-            );
+        body.trustDirectory === undefined ? undefined : services.store.verifyReceiptTrustAnchorDirectory(body.trustDirectory, body.trustDirectoryPolicy);
       const anchors =
         body.trustDirectory === undefined
           ? services.store.listReceiptTrustAnchors()
           : trustDirectoryVerification?.status === "valid"
             ? receiptTrustAnchorsFromDirectory(body.trustDirectory)
             : [];
-      const verification =
-        verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
-          body.baseline,
-          anchors,
-          {
-            ...(trustDirectoryVerification
-              ? { trustDirectoryVerification }
-              : {}),
-          },
-        );
-      setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineVerificationHeaders(
-        context,
-        verification,
-      );
+      const verification = verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(body.baseline, anchors, {
+        ...(trustDirectoryVerification ? { trustDirectoryVerification } : {}),
+      });
+      setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineVerificationHeaders(context, verification);
       return context.json(verification);
     },
   );
@@ -1386,118 +969,63 @@ export function createApp(services: NapierServices): Hono {
       } catch (error) {
         return jsonError(
           context,
-          error instanceof RequestBodyTooLargeError
-            ? error.message
-            : "Receipt trust checkpoint registry quorum baseline import request is invalid",
+          error instanceof RequestBodyTooLargeError ? error.message : "Receipt trust checkpoint registry quorum baseline import request is invalid",
           error instanceof RequestBodyTooLargeError ? 413 : 400,
         );
       }
-      const body =
-        parseImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest(
-          input,
-        );
+      const body = parseImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest(input);
       if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust checkpoint registry quorum baseline import request is invalid",
-          400,
-        );
+        return jsonError(context, "Receipt trust checkpoint registry quorum baseline import request is invalid", 400);
       }
       const trustDirectoryVerification =
-        body.trustDirectory === undefined
-          ? undefined
-          : services.store.verifyReceiptTrustAnchorDirectory(
-              body.trustDirectory,
-              body.trustDirectoryPolicy,
-            );
+        body.trustDirectory === undefined ? undefined : services.store.verifyReceiptTrustAnchorDirectory(body.trustDirectory, body.trustDirectoryPolicy);
       const anchors =
         body.trustDirectory === undefined
           ? services.store.listReceiptTrustAnchors()
           : trustDirectoryVerification?.status === "valid"
             ? receiptTrustAnchorsFromDirectory(body.trustDirectory)
             : [];
-      const verification =
-        verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
-          body.baseline,
-          anchors,
-          {
-            ...(trustDirectoryVerification
-              ? { trustDirectoryVerification }
-              : {}),
-          },
-        );
-      if (
-        verification.status !== "trusted" ||
-        !verification.baselineValid ||
-        !verification.signatureValid ||
-        !verification.integrityValid
-      ) {
-        return jsonError(
-          context,
-          "Receipt trust checkpoint registry quorum baseline import requires trusted verification",
-          409,
-        );
+      const verification = verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(body.baseline, anchors, {
+        ...(trustDirectoryVerification ? { trustDirectoryVerification } : {}),
+      });
+      if (verification.status !== "trusted" || !verification.baselineValid || !verification.signatureValid || !verification.integrityValid) {
+        return jsonError(context, "Receipt trust checkpoint registry quorum baseline import requires trusted verification", 409);
       }
       try {
-        const imported =
-          await services.store.importReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
-            body.threadId,
-            body.baseline,
-            body.expectedCurrentBaselineSha256,
-            anchors,
-          );
-        if (imported.imported) {
-          await appendReceiptTrustEvent(
-            services,
-            body.threadId,
-            "receipt_trust.checkpoint_registry_quorum_baseline.imported",
-            {
-              baselineId: imported.baseline.id,
-              baselineSha256: imported.baseline.contentSha256,
-              expectedCurrentBaselineSha256: body.expectedCurrentBaselineSha256,
-              previousBaselineSha256: imported.previousBaselineSha256 ?? "",
-              verificationSha256: verification.contentSha256,
-              envelopeSha256: imported.baseline.envelope.contentSha256,
-              selectedCheckpointSha256:
-                imported.baseline.selectedCheckpointSha256,
-              selectedSelectionSetSha256:
-                imported.baseline.selectedSelectionSetSha256,
-              selectedSelectionChainTailSha256:
-                imported.baseline.selectedSelectionChainTailSha256 ?? "",
-              selectedSubscriptionSetSha256:
-                imported.baseline.selectedSubscriptionSetSha256,
-              selectedSourceOriginSetSha256:
-                imported.baseline.selectedSourceOriginSetSha256,
-              selectedSignerSetSha256:
-                imported.baseline.selectedSignerSetSha256,
-            },
-          );
-        }
-        const result: ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult =
-          {
-            baseline: imported.baseline,
-            imported: imported.imported,
-            verification,
-            expectedCurrentBaselineSha256: body.expectedCurrentBaselineSha256,
-            ...(imported.previousBaselineSha256
-              ? { previousBaselineSha256: imported.previousBaselineSha256 }
-              : {}),
-          };
-        setImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResultHeaders(
-          context,
-          result,
+        const imported = await services.store.importReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+          body.threadId,
+          body.baseline,
+          body.expectedCurrentBaselineSha256,
+          anchors,
         );
+        if (imported.imported) {
+          await appendReceiptTrustEvent(services, body.threadId, "receipt_trust.checkpoint_registry_quorum_baseline.imported", {
+            baselineId: imported.baseline.id,
+            baselineSha256: imported.baseline.contentSha256,
+            expectedCurrentBaselineSha256: body.expectedCurrentBaselineSha256,
+            previousBaselineSha256: imported.previousBaselineSha256 ?? "",
+            verificationSha256: verification.contentSha256,
+            envelopeSha256: imported.baseline.envelope.contentSha256,
+            selectedCheckpointSha256: imported.baseline.selectedCheckpointSha256,
+            selectedSelectionSetSha256: imported.baseline.selectedSelectionSetSha256,
+            selectedSelectionChainTailSha256: imported.baseline.selectedSelectionChainTailSha256 ?? "",
+            selectedSubscriptionSetSha256: imported.baseline.selectedSubscriptionSetSha256,
+            selectedSourceOriginSetSha256: imported.baseline.selectedSourceOriginSetSha256,
+            selectedSignerSetSha256: imported.baseline.selectedSignerSetSha256,
+          });
+        }
+        const result: ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult = {
+          baseline: imported.baseline,
+          imported: imported.imported,
+          verification,
+          expectedCurrentBaselineSha256: body.expectedCurrentBaselineSha256,
+          ...(imported.previousBaselineSha256 ? { previousBaselineSha256: imported.previousBaselineSha256 } : {}),
+        };
+        setImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResultHeaders(context, result);
         return context.json(result, imported.imported ? 201 : 200);
       } catch (error) {
         const message = errorMessage(error);
-        return jsonError(
-          context,
-          message,
-          message.includes("precondition failed") ||
-            message.includes("not trusted")
-            ? 409
-            : 400,
-        );
+        return jsonError(context, message, message.includes("precondition failed") || message.includes("not trusted") ? 409 : 400);
       }
     },
   );
@@ -1521,76 +1049,41 @@ export function createApp(services: NapierServices): Hono {
           error instanceof RequestBodyTooLargeError ? 413 : 400,
         );
       }
-      const body =
-        parseCreateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest(
-          input,
-        );
+      const body = parseCreateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest(input);
       if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection transparency checkpoint subscription request is invalid",
-          400,
-        );
+        return jsonError(context, "Receipt trust anchor directory quorum activation selection transparency checkpoint subscription request is invalid", 400);
       }
       let discovery: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery;
       try {
-        const source = await services.receiptTrustDirectories.fetchJson(
-          body.sourceUrl,
-        );
-        discovery =
-          createHostedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery(
-            services.store,
-            source,
-            {
-              sourceUrl: body.sourceUrl,
-              policy: body.policy,
-            },
-          );
+        const source = await services.receiptTrustDirectories.fetchJson(body.sourceUrl);
+        discovery = createHostedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery(services.store, source, {
+          sourceUrl: body.sourceUrl,
+          policy: body.policy,
+        });
       } catch (error) {
         if (error instanceof ReceiptTrustAnchorDirectoryDiscoveryError) {
           return jsonError(context, error.message, error.status);
         }
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection transparency checkpoint subscription discovery failed",
-          502,
-        );
+        return jsonError(context, "Receipt trust anchor directory quorum activation selection transparency checkpoint subscription discovery failed", 502);
       }
       if (discovery.status !== "valid") {
-        setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryHeaders(
-          context,
-          discovery,
-        );
+        setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryHeaders(context, discovery);
         return context.json(discovery, 422);
       }
-      const subscription =
-        await services.store.createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
-          body,
-          discovery,
-        );
-      await appendReceiptTrustEvent(
-        services,
-        subscription.auditThreadId,
-        "receipt.trust_checkpoint_subscription.created",
-        {
-          subscriptionId: subscription.id,
-          subscriptionRevision: subscription.revision,
-          subscriptionSha256: subscription.contentSha256,
-          sourceUrlSha256: subscription.sourceUrlSha256,
-          sourceOriginSha256: subscription.sourceOriginSha256,
-          policySha256: subscription.policySha256,
-          envelopeSha256: subscription.lastGoodDiscovery?.envelopeSha256 ?? "",
-          checkpointSha256:
-            subscription.lastGoodDiscovery?.checkpointSha256 ?? "",
-          selectionCount: subscription.lastGoodDiscovery?.selectionCount ?? 0,
-          selectionChainTailSha256:
-            subscription.lastGoodDiscovery?.selectionChainTailSha256 ?? "",
-        },
-      );
-      setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionHeaders(
-        context,
-        subscription,
-      );
+      const subscription = await services.store.createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(body, discovery);
+      await appendReceiptTrustEvent(services, subscription.auditThreadId, "receipt.trust_checkpoint_subscription.created", {
+        subscriptionId: subscription.id,
+        subscriptionRevision: subscription.revision,
+        subscriptionSha256: subscription.contentSha256,
+        sourceUrlSha256: subscription.sourceUrlSha256,
+        sourceOriginSha256: subscription.sourceOriginSha256,
+        policySha256: subscription.policySha256,
+        envelopeSha256: subscription.lastGoodDiscovery?.envelopeSha256 ?? "",
+        checkpointSha256: subscription.lastGoodDiscovery?.checkpointSha256 ?? "",
+        selectionCount: subscription.lastGoodDiscovery?.selectionCount ?? 0,
+        selectionChainTailSha256: subscription.lastGoodDiscovery?.selectionChainTailSha256 ?? "",
+      });
+      setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionHeaders(context, subscription);
       return context.json(subscription, 201);
     },
   );
@@ -1614,10 +1107,7 @@ export function createApp(services: NapierServices): Hono {
           error instanceof RequestBodyTooLargeError ? 413 : 400,
         );
       }
-      const body =
-        parseRefreshReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest(
-          input,
-        );
+      const body = parseRefreshReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest(input);
       if (!body) {
         return jsonError(
           context,
@@ -1625,16 +1115,12 @@ export function createApp(services: NapierServices): Hono {
           400,
         );
       }
-      const result =
-        await services.receiptTrustDirectorySubscriptions.refreshCheckpoint(
-          context.req.param("subscriptionId"),
-          body.threadId,
-          body.expectedRevision,
-        );
-      setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshHeaders(
-        context,
-        result,
+      const result = await services.receiptTrustDirectorySubscriptions.refreshCheckpoint(
+        context.req.param("subscriptionId"),
+        body.threadId,
+        body.expectedRevision,
       );
+      setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshHeaders(context, result);
       return context.json(result);
     },
   );
@@ -1658,10 +1144,7 @@ export function createApp(services: NapierServices): Hono {
           error instanceof RequestBodyTooLargeError ? 413 : 400,
         );
       }
-      const body =
-        parseUpdateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest(
-          input,
-        );
+      const body = parseUpdateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest(input);
       if (!body) {
         return jsonError(
           context,
@@ -1669,34 +1152,21 @@ export function createApp(services: NapierServices): Hono {
           400,
         );
       }
-      const before =
-        services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
-          context.req.param("subscriptionId"),
-        );
-      const subscription =
-        await services.store.updateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
-          before.id,
-          body,
-        );
-      if (before.revision !== subscription.revision) {
-        await appendReceiptTrustEvent(
-          services,
-          subscription.auditThreadId,
-          "receipt.trust_checkpoint_subscription.updated",
-          {
-            subscriptionId: subscription.id,
-            subscriptionRevision: subscription.revision,
-            subscriptionSha256: subscription.contentSha256,
-            sourceUrlSha256: subscription.sourceUrlSha256,
-            sourceOriginSha256: subscription.sourceOriginSha256,
-            status: subscription.status,
-          },
-        );
-      }
-      setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionHeaders(
-        context,
-        subscription,
+      const before = services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
+        context.req.param("subscriptionId"),
       );
+      const subscription = await services.store.updateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(before.id, body);
+      if (before.revision !== subscription.revision) {
+        await appendReceiptTrustEvent(services, subscription.auditThreadId, "receipt.trust_checkpoint_subscription.updated", {
+          subscriptionId: subscription.id,
+          subscriptionRevision: subscription.revision,
+          subscriptionSha256: subscription.contentSha256,
+          sourceUrlSha256: subscription.sourceUrlSha256,
+          sourceOriginSha256: subscription.sourceOriginSha256,
+          status: subscription.status,
+        });
+      }
+      setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionHeaders(context, subscription);
       return context.json(subscription);
     },
   );
@@ -1715,358 +1185,216 @@ export function createApp(services: NapierServices): Hono {
         if (error instanceof RequestBodyTooLargeError) {
           return jsonError(context, error.message, 413);
         }
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection transparency checkpoint signing request is invalid",
-          400,
-        );
+        return jsonError(context, "Receipt trust anchor directory quorum activation selection transparency checkpoint signing request is invalid", 400);
       }
-      const body =
-        parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest(
-          input,
-        );
+      const body = parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest(input);
       if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection transparency checkpoint signing request is invalid",
-          400,
-        );
+        return jsonError(context, "Receipt trust anchor directory quorum activation selection transparency checkpoint signing request is invalid", 400);
       }
       try {
         services.store.getThread(body.threadId);
-        const checkpoint =
-          services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint();
-        const envelope = signTrustedReceipt(
-          checkpoint,
-          services.store.getReceiptTrustAnchor(body.trustAnchorId),
-        );
-        await appendReceiptTrustEvent(
-          services,
-          body.threadId,
-          "receipt.signed",
-          {
-            ...trustedReceiptEventPayload(envelope),
-            checkpointSha256: checkpoint.contentSha256,
-            selectionCount: checkpoint.selectionCount,
-            selectionSetSha256: checkpoint.selectionSetSha256,
-            ...(checkpoint.selectionChainTailSha256
-              ? {
-                  selectionChainTailSha256: checkpoint.selectionChainTailSha256,
-                }
-              : {}),
-            driftStatus: checkpoint.driftStatus,
-          },
-        );
-        setTrustedReceiptHeaders(
-          context,
-          envelope,
-          `napier-signed-quorum-activation-selection-checkpoint-${envelope.contentSha256.slice(0, 12)}.json`,
-        );
+        const checkpoint = services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint();
+        const envelope = signTrustedReceipt(checkpoint, services.store.getReceiptTrustAnchor(body.trustAnchorId));
+        await appendReceiptTrustEvent(services, body.threadId, "receipt.signed", {
+          ...trustedReceiptEventPayload(envelope),
+          checkpointSha256: checkpoint.contentSha256,
+          selectionCount: checkpoint.selectionCount,
+          selectionSetSha256: checkpoint.selectionSetSha256,
+          ...(checkpoint.selectionChainTailSha256
+            ? {
+                selectionChainTailSha256: checkpoint.selectionChainTailSha256,
+              }
+            : {}),
+          driftStatus: checkpoint.driftStatus,
+        });
+        setTrustedReceiptHeaders(context, envelope, `napier-signed-quorum-activation-selection-checkpoint-${envelope.contentSha256.slice(0, 12)}.json`);
         return context.json(envelope, 201);
       } catch (error) {
         const message = errorMessage(error);
         const caught = error instanceof Error ? error : new Error(message);
-        return jsonError(
-          context,
-          message,
-          isReceiptTrustConflict(caught) ? 409 : 400,
-        );
+        return jsonError(context, message, isReceiptTrustConflict(caught) ? 409 : 400);
       }
     },
   );
 
-  app.post(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_TRUST_ADMIN_REQUEST_BYTES,
-          "Receipt trust anchor directory quorum activation selection rotation review request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection rotation review request is invalid",
-          400,
-        );
-      }
-      const body =
-        parseReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest(
-          input,
-        );
-      if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection rotation review request is invalid",
-          400,
-        );
-      }
-      const review =
-        services.store.reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
-          body.activationDecisionRecordId,
-          body.expectedCurrentSelectionSha256,
-          body.checkpointRegistryQuorumPolicy,
-        );
-      setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReviewHeaders(
-        context,
-        review,
+  app.post("/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(
+        context.req.raw,
+        MAX_TRUST_ADMIN_REQUEST_BYTES,
+        "Receipt trust anchor directory quorum activation selection rotation review request",
       );
-      return context.json(review);
-    },
-  );
+    } catch (error) {
+      if (error instanceof RequestBodyTooLargeError) {
+        return jsonError(context, error.message, 413);
+      }
+      return jsonError(context, "Receipt trust anchor directory quorum activation selection rotation review request is invalid", 400);
+    }
+    const body = parseReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest(input);
+    if (!body) {
+      return jsonError(context, "Receipt trust anchor directory quorum activation selection rotation review request is invalid", 400);
+    }
+    const review = services.store.reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
+      body.activationDecisionRecordId,
+      body.expectedCurrentSelectionSha256,
+      body.checkpointRegistryQuorumPolicy,
+    );
+    setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReviewHeaders(context, review);
+    return context.json(review);
+  });
 
-  app.post(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_TRUST_ADMIN_REQUEST_BYTES,
-          "Receipt trust anchor directory quorum activation selection rotation proposal request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection rotation proposal request is invalid",
-          400,
-        );
-      }
-      const body =
-        parseProposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest(
-          input,
-        );
-      if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection rotation proposal request is invalid",
-          400,
-        );
-      }
-      const proposal =
-        services.store.proposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
-          body.activationDecisionRecordId,
-          body.expectedCurrentSelectionSha256,
-          {
-            ...(body.checkpointRegistryQuorumBaselineId
-              ? {
-                  checkpointRegistryQuorumBaselineId:
-                    body.checkpointRegistryQuorumBaselineId,
-                }
-              : {}),
-            ...(body.expectedCheckpointRegistryQuorumBaselineSha256
-              ? {
-                  expectedCheckpointRegistryQuorumBaselineSha256:
-                    body.expectedCheckpointRegistryQuorumBaselineSha256,
-                }
-              : {}),
-            ...(body.checkpointRegistryQuorumPolicy
-              ? {
-                  checkpointRegistryQuorumPolicy:
-                    body.checkpointRegistryQuorumPolicy,
-                }
-              : {}),
-          },
-        );
-      setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalHeaders(
-        context,
-        proposal,
+  app.post("/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(
+        context.req.raw,
+        MAX_TRUST_ADMIN_REQUEST_BYTES,
+        "Receipt trust anchor directory quorum activation selection rotation proposal request",
       );
-      return context.json(proposal);
-    },
-  );
+    } catch (error) {
+      if (error instanceof RequestBodyTooLargeError) {
+        return jsonError(context, error.message, 413);
+      }
+      return jsonError(context, "Receipt trust anchor directory quorum activation selection rotation proposal request is invalid", 400);
+    }
+    const body = parseProposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest(input);
+    if (!body) {
+      return jsonError(context, "Receipt trust anchor directory quorum activation selection rotation proposal request is invalid", 400);
+    }
+    const proposal = services.store.proposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
+      body.activationDecisionRecordId,
+      body.expectedCurrentSelectionSha256,
+      {
+        ...(body.checkpointRegistryQuorumBaselineId
+          ? {
+              checkpointRegistryQuorumBaselineId: body.checkpointRegistryQuorumBaselineId,
+            }
+          : {}),
+        ...(body.expectedCheckpointRegistryQuorumBaselineSha256
+          ? {
+              expectedCheckpointRegistryQuorumBaselineSha256: body.expectedCheckpointRegistryQuorumBaselineSha256,
+            }
+          : {}),
+        ...(body.checkpointRegistryQuorumPolicy
+          ? {
+              checkpointRegistryQuorumPolicy: body.checkpointRegistryQuorumPolicy,
+            }
+          : {}),
+      },
+    );
+    setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalHeaders(context, proposal);
+    return context.json(proposal);
+  });
 
-  app.post(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/sign",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_TRUST_ADMIN_REQUEST_BYTES,
-          "Receipt trust anchor directory quorum activation selection rotation proposal signing request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection rotation proposal signing request is invalid",
-          400,
-        );
-      }
-      const body =
-        parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest(
-          input,
-        );
-      if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection rotation proposal signing request is invalid",
-          400,
-        );
-      }
-      try {
-        services.store.getThread(body.threadId);
-        const proposal =
-          services.store.proposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
-            body.activationDecisionRecordId,
-            body.expectedCurrentSelectionSha256,
-            {
-              ...(body.checkpointRegistryQuorumBaselineId
-                ? {
-                    checkpointRegistryQuorumBaselineId:
-                      body.checkpointRegistryQuorumBaselineId,
-                  }
-                : {}),
-              ...(body.expectedCheckpointRegistryQuorumBaselineSha256
-                ? {
-                    expectedCheckpointRegistryQuorumBaselineSha256:
-                      body.expectedCheckpointRegistryQuorumBaselineSha256,
-                  }
-                : {}),
-              ...(body.checkpointRegistryQuorumPolicy
-                ? {
-                    checkpointRegistryQuorumPolicy:
-                      body.checkpointRegistryQuorumPolicy,
-                  }
-                : {}),
-            },
-          );
-        if (proposal.status !== "proposed") {
-          return jsonError(
-            context,
-            "Receipt trust anchor directory quorum activation selection rotation proposal is not eligible for signing",
-            409,
-          );
-        }
-        const envelope = signTrustedReceipt(
-          proposal,
-          services.store.getReceiptTrustAnchor(body.trustAnchorId),
-        );
-        await appendReceiptTrustEvent(
-          services,
-          body.threadId,
-          "receipt.signed",
-          {
-            ...trustedReceiptEventPayload(envelope),
-            proposalSha256: proposal.contentSha256,
-            rotationReviewSha256: proposal.rotationReviewSha256,
-            activationDecisionRecordId: proposal.activationDecisionRecordId,
-            ...(proposal.activationDecisionRecordSha256
-              ? {
-                  activationDecisionRecordSha256:
-                    proposal.activationDecisionRecordSha256,
-                }
-              : {}),
-            expectedCurrentSelectionSha256:
-              proposal.expectedCurrentSelectionSha256,
-            currentSelectionSha256: proposal.currentSelectionSha256,
-            ...(proposal.checkpointRegistryQuorumBaselineSha256
-              ? {
-                  checkpointRegistryQuorumBaselineSha256:
-                    proposal.checkpointRegistryQuorumBaselineSha256,
-                }
-              : {}),
-            currentCheckpointSha256: proposal.currentCheckpointSha256,
-          },
-        );
-        setTrustedReceiptHeaders(
-          context,
-          envelope,
-          `napier-signed-quorum-activation-selection-rotation-proposal-${envelope.contentSha256.slice(0, 12)}.json`,
-        );
-        return context.json(envelope, 201);
-      } catch (error) {
-        return jsonError(context, errorMessage(error), 400);
-      }
-    },
-  );
-
-  app.post(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/discover",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_TRUST_ADMIN_REQUEST_BYTES,
-          "Receipt trust anchor directory quorum activation selection rotation proposal discovery request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection rotation proposal discovery request is invalid",
-          400,
-        );
-      }
-      const body =
-        parseDiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest(
-          input,
-        );
-      if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection rotation proposal discovery request is invalid",
-          400,
-        );
-      }
-      try {
-        services.store.getThread(body.threadId);
-        const source = await services.receiptTrustDirectories.fetchJson(
-          body.sourceUrl,
-        );
-        const discovery =
-          createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery(
-            services.store,
-            body,
-            source,
-          );
-        setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryHeaders(
-          context,
-          discovery,
-        );
-        return context.json(
-          discovery,
-          discovery.status === "valid" ? 200 : 422,
-        );
-      } catch (error) {
-        if (error instanceof ReceiptTrustAnchorDirectoryDiscoveryError) {
-          return jsonError(context, error.message, error.status);
-        }
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection rotation proposal discovery failed",
-          502,
-        );
-      }
-    },
-  );
-
-  app.get(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions",
-    (context) => {
-      const subscriptions =
-        services.store.listReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions();
-      setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionListHeaders(
-        context,
-        subscriptions,
+  app.post("/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/sign", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(
+        context.req.raw,
+        MAX_TRUST_ADMIN_REQUEST_BYTES,
+        "Receipt trust anchor directory quorum activation selection rotation proposal signing request",
       );
-      return context.json(subscriptions);
-    },
-  );
+    } catch (error) {
+      if (error instanceof RequestBodyTooLargeError) {
+        return jsonError(context, error.message, 413);
+      }
+      return jsonError(context, "Receipt trust anchor directory quorum activation selection rotation proposal signing request is invalid", 400);
+    }
+    const body = parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest(input);
+    if (!body) {
+      return jsonError(context, "Receipt trust anchor directory quorum activation selection rotation proposal signing request is invalid", 400);
+    }
+    try {
+      services.store.getThread(body.threadId);
+      const proposal = services.store.proposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
+        body.activationDecisionRecordId,
+        body.expectedCurrentSelectionSha256,
+        {
+          ...(body.checkpointRegistryQuorumBaselineId
+            ? {
+                checkpointRegistryQuorumBaselineId: body.checkpointRegistryQuorumBaselineId,
+              }
+            : {}),
+          ...(body.expectedCheckpointRegistryQuorumBaselineSha256
+            ? {
+                expectedCheckpointRegistryQuorumBaselineSha256: body.expectedCheckpointRegistryQuorumBaselineSha256,
+              }
+            : {}),
+          ...(body.checkpointRegistryQuorumPolicy
+            ? {
+                checkpointRegistryQuorumPolicy: body.checkpointRegistryQuorumPolicy,
+              }
+            : {}),
+        },
+      );
+      if (proposal.status !== "proposed") {
+        return jsonError(context, "Receipt trust anchor directory quorum activation selection rotation proposal is not eligible for signing", 409);
+      }
+      const envelope = signTrustedReceipt(proposal, services.store.getReceiptTrustAnchor(body.trustAnchorId));
+      await appendReceiptTrustEvent(services, body.threadId, "receipt.signed", {
+        ...trustedReceiptEventPayload(envelope),
+        proposalSha256: proposal.contentSha256,
+        rotationReviewSha256: proposal.rotationReviewSha256,
+        activationDecisionRecordId: proposal.activationDecisionRecordId,
+        ...(proposal.activationDecisionRecordSha256
+          ? {
+              activationDecisionRecordSha256: proposal.activationDecisionRecordSha256,
+            }
+          : {}),
+        expectedCurrentSelectionSha256: proposal.expectedCurrentSelectionSha256,
+        currentSelectionSha256: proposal.currentSelectionSha256,
+        ...(proposal.checkpointRegistryQuorumBaselineSha256
+          ? {
+              checkpointRegistryQuorumBaselineSha256: proposal.checkpointRegistryQuorumBaselineSha256,
+            }
+          : {}),
+        currentCheckpointSha256: proposal.currentCheckpointSha256,
+      });
+      setTrustedReceiptHeaders(context, envelope, `napier-signed-quorum-activation-selection-rotation-proposal-${envelope.contentSha256.slice(0, 12)}.json`);
+      return context.json(envelope, 201);
+    } catch (error) {
+      return jsonError(context, errorMessage(error), 400);
+    }
+  });
+
+  app.post("/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/discover", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(
+        context.req.raw,
+        MAX_TRUST_ADMIN_REQUEST_BYTES,
+        "Receipt trust anchor directory quorum activation selection rotation proposal discovery request",
+      );
+    } catch (error) {
+      if (error instanceof RequestBodyTooLargeError) {
+        return jsonError(context, error.message, 413);
+      }
+      return jsonError(context, "Receipt trust anchor directory quorum activation selection rotation proposal discovery request is invalid", 400);
+    }
+    const body = parseDiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest(input);
+    if (!body) {
+      return jsonError(context, "Receipt trust anchor directory quorum activation selection rotation proposal discovery request is invalid", 400);
+    }
+    try {
+      services.store.getThread(body.threadId);
+      const source = await services.receiptTrustDirectories.fetchJson(body.sourceUrl);
+      const discovery = createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery(services.store, body, source);
+      setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryHeaders(context, discovery);
+      return context.json(discovery, discovery.status === "valid" ? 200 : 422);
+    } catch (error) {
+      if (error instanceof ReceiptTrustAnchorDirectoryDiscoveryError) {
+        return jsonError(context, error.message, error.status);
+      }
+      return jsonError(context, "Receipt trust anchor directory quorum activation selection rotation proposal discovery failed", 502);
+    }
+  });
+
+  app.get("/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions", (context) => {
+    const subscriptions = services.store.listReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions();
+    setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionListHeaders(context, subscriptions);
+    return context.json(subscriptions);
+  });
 
   app.post(
     "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions",
@@ -2087,72 +1415,38 @@ export function createApp(services: NapierServices): Hono {
           error instanceof RequestBodyTooLargeError ? 413 : 400,
         );
       }
-      const body =
-        parseCreateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest(
-          input,
-        );
+      const body = parseCreateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest(input);
       if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection rotation proposal subscription request is invalid",
-          400,
-        );
+        return jsonError(context, "Receipt trust anchor directory quorum activation selection rotation proposal subscription request is invalid", 400);
       }
       let discovery: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery;
       try {
         services.store.getThread(body.threadId);
-        const source = await services.receiptTrustDirectories.fetchJson(
-          body.sourceUrl,
-        );
-        discovery =
-          createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery(
-            services.store,
-            body,
-            source,
-          );
+        const source = await services.receiptTrustDirectories.fetchJson(body.sourceUrl);
+        discovery = createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery(services.store, body, source);
       } catch (error) {
         if (error instanceof ReceiptTrustAnchorDirectoryDiscoveryError) {
           return jsonError(context, error.message, error.status);
         }
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection rotation proposal subscription discovery failed",
-          502,
-        );
+        return jsonError(context, "Receipt trust anchor directory quorum activation selection rotation proposal subscription discovery failed", 502);
       }
       if (discovery.status !== "valid") {
-        setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryHeaders(
-          context,
-          discovery,
-        );
+        setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryHeaders(context, discovery);
         return context.json(discovery, 422);
       }
-      const subscription =
-        await services.store.createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
-          body,
-          discovery,
-        );
-      await appendReceiptTrustEvent(
-        services,
-        subscription.auditThreadId,
-        "receipt.trust_rotation_proposal_subscription.created",
-        {
-          subscriptionId: subscription.id,
-          subscriptionRevision: subscription.revision,
-          subscriptionSha256: subscription.contentSha256,
-          sourceUrlSha256: subscription.sourceUrlSha256,
-          sourceOriginSha256: subscription.sourceOriginSha256,
-          policySha256: subscription.policySha256,
-          envelopeSha256: subscription.lastGoodDiscovery?.envelopeSha256 ?? "",
-          proposalSha256: subscription.lastGoodDiscovery?.proposalSha256 ?? "",
-          preflightSha256:
-            subscription.lastGoodDiscovery?.preflight?.contentSha256 ?? "",
-        },
-      );
-      setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionHeaders(
-        context,
-        subscription,
-      );
+      const subscription = await services.store.createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(body, discovery);
+      await appendReceiptTrustEvent(services, subscription.auditThreadId, "receipt.trust_rotation_proposal_subscription.created", {
+        subscriptionId: subscription.id,
+        subscriptionRevision: subscription.revision,
+        subscriptionSha256: subscription.contentSha256,
+        sourceUrlSha256: subscription.sourceUrlSha256,
+        sourceOriginSha256: subscription.sourceOriginSha256,
+        policySha256: subscription.policySha256,
+        envelopeSha256: subscription.lastGoodDiscovery?.envelopeSha256 ?? "",
+        proposalSha256: subscription.lastGoodDiscovery?.proposalSha256 ?? "",
+        preflightSha256: subscription.lastGoodDiscovery?.preflight?.contentSha256 ?? "",
+      });
+      setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionHeaders(context, subscription);
       return context.json(subscription, 201);
     },
   );
@@ -2176,28 +1470,13 @@ export function createApp(services: NapierServices): Hono {
           error instanceof RequestBodyTooLargeError ? 413 : 400,
         );
       }
-      const body =
-        parseRefreshReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest(
-          input,
-        );
+      const body = parseRefreshReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest(input);
       if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection rotation proposal subscription refresh request is invalid",
-          400,
-        );
+        return jsonError(context, "Receipt trust anchor directory quorum activation selection rotation proposal subscription refresh request is invalid", 400);
       }
       const subscriptionId = context.req.param("subscriptionId");
-      const result =
-        await services.receiptTrustDirectorySubscriptions.refreshRotationProposal(
-          subscriptionId,
-          body.threadId,
-          body.expectedRevision,
-        );
-      setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshHeaders(
-        context,
-        result,
-      );
+      const result = await services.receiptTrustDirectorySubscriptions.refreshRotationProposal(subscriptionId, body.threadId, body.expectedRevision);
+      setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshHeaders(context, result);
       return context.json(result);
     },
   );
@@ -2222,10 +1501,7 @@ export function createApp(services: NapierServices): Hono {
           400,
         );
       }
-      const body =
-        parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest(
-          input,
-        );
+      const body = parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest(input);
       if (!body) {
         return jsonError(
           context,
@@ -2235,23 +1511,12 @@ export function createApp(services: NapierServices): Hono {
       }
       try {
         services.store.getThread(body.threadId);
-        const subscription =
-          services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
-            context.req.param("subscriptionId"),
-          );
-        const approval =
-          createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval(
-            services.store,
-            subscription,
-            body,
-          );
-        const envelope = signTrustedReceipt(
-          approval,
-          services.store.getReceiptTrustAnchor(body.trustAnchorId),
+        const subscription = services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+          context.req.param("subscriptionId"),
         );
-        const approvalApplyAfter = body.queueForApply
-          ? (body.applyAfter ?? new Date().toISOString())
-          : undefined;
+        const approval = createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval(services.store, subscription, body);
+        const envelope = signTrustedReceipt(approval, services.store.getReceiptTrustAnchor(body.trustAnchorId));
+        const approvalApplyAfter = body.queueForApply ? (body.applyAfter ?? new Date().toISOString()) : undefined;
         const queuedSubscription = body.queueForApply
           ? await services.store.queueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApply(
               approval.subscriptionId,
@@ -2262,58 +1527,46 @@ export function createApp(services: NapierServices): Hono {
               approvalApplyAfter,
             )
           : undefined;
-        await appendReceiptTrustEvent(
-          services,
-          body.threadId,
-          "receipt.signed",
-          {
-            ...trustedReceiptEventPayload(envelope),
-            subscriptionId: approval.subscriptionId,
-            subscriptionRevision: approval.subscriptionRevision,
-            subscriptionSha256: approval.subscriptionSha256,
-            sourceUrlSha256: approval.sourceUrlSha256,
-            sourceOriginSha256: approval.sourceOriginSha256,
-            policySha256: approval.policySha256,
-            discoverySha256: approval.discoverySha256,
-            envelopeSha256: approval.envelopeSha256,
+        await appendReceiptTrustEvent(services, body.threadId, "receipt.signed", {
+          ...trustedReceiptEventPayload(envelope),
+          subscriptionId: approval.subscriptionId,
+          subscriptionRevision: approval.subscriptionRevision,
+          subscriptionSha256: approval.subscriptionSha256,
+          sourceUrlSha256: approval.sourceUrlSha256,
+          sourceOriginSha256: approval.sourceOriginSha256,
+          policySha256: approval.policySha256,
+          discoverySha256: approval.discoverySha256,
+          envelopeSha256: approval.envelopeSha256,
+          proposalSha256: approval.proposalSha256,
+          approvalPreflightSha256: approval.approvalPreflightSha256,
+          activationDecisionRecordId: approval.activationDecisionRecordId,
+          expectedCurrentSelectionSha256: approval.expectedCurrentSelectionSha256,
+          proposalSignerKeyId: approval.proposalSignerKeyId,
+          ...(approval.checkpointRegistryQuorumBaselineSha256
+            ? {
+                checkpointRegistryQuorumBaselineSha256: approval.checkpointRegistryQuorumBaselineSha256,
+              }
+            : {}),
+          ...(queuedSubscription
+            ? {
+                queuedApprovalApply: true,
+                approvalApplyAfter: approvalApplyAfter ?? "",
+              }
+            : {}),
+        });
+        if (queuedSubscription) {
+          await appendReceiptTrustEvent(services, body.threadId, "receipt.trust_rotation_proposal_approval_apply.queued", {
+            subscriptionId: queuedSubscription.id,
+            subscriptionRevision: queuedSubscription.revision,
+            subscriptionSha256: queuedSubscription.contentSha256,
+            sourceUrlSha256: queuedSubscription.sourceUrlSha256,
+            sourceOriginSha256: queuedSubscription.sourceOriginSha256,
+            approvalEnvelopeSha256: envelope.contentSha256,
+            approvalSha256: approval.contentSha256,
             proposalSha256: approval.proposalSha256,
             approvalPreflightSha256: approval.approvalPreflightSha256,
-            activationDecisionRecordId: approval.activationDecisionRecordId,
-            expectedCurrentSelectionSha256:
-              approval.expectedCurrentSelectionSha256,
-            proposalSignerKeyId: approval.proposalSignerKeyId,
-            ...(approval.checkpointRegistryQuorumBaselineSha256
-              ? {
-                  checkpointRegistryQuorumBaselineSha256:
-                    approval.checkpointRegistryQuorumBaselineSha256,
-                }
-              : {}),
-            ...(queuedSubscription
-              ? {
-                  queuedApprovalApply: true,
-                  approvalApplyAfter: approvalApplyAfter ?? "",
-                }
-              : {}),
-          },
-        );
-        if (queuedSubscription) {
-          await appendReceiptTrustEvent(
-            services,
-            body.threadId,
-            "receipt.trust_rotation_proposal_approval_apply.queued",
-            {
-              subscriptionId: queuedSubscription.id,
-              subscriptionRevision: queuedSubscription.revision,
-              subscriptionSha256: queuedSubscription.contentSha256,
-              sourceUrlSha256: queuedSubscription.sourceUrlSha256,
-              sourceOriginSha256: queuedSubscription.sourceOriginSha256,
-              approvalEnvelopeSha256: envelope.contentSha256,
-              approvalSha256: approval.contentSha256,
-              proposalSha256: approval.proposalSha256,
-              approvalPreflightSha256: approval.approvalPreflightSha256,
-              applyAfter: approvalApplyAfter ?? "",
-            },
-          );
+            applyAfter: approvalApplyAfter ?? "",
+          });
         }
         setTrustedReceiptHeaders(
           context,
@@ -2347,10 +1600,7 @@ export function createApp(services: NapierServices): Hono {
           400,
         );
       }
-      const body =
-        parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest(
-          input,
-        );
+      const body = parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest(input);
       if (!body) {
         return jsonError(
           context,
@@ -2360,82 +1610,52 @@ export function createApp(services: NapierServices): Hono {
       }
       try {
         services.store.getThread(body.threadId);
-        const subscription =
-          services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
-            context.req.param("subscriptionId"),
-          );
-        const approvalGate =
-          verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyGate(
-            services.store,
-            subscription,
-            body,
-          );
+        const subscription = services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+          context.req.param("subscriptionId"),
+        );
+        const approvalGate = verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyGate(
+          services.store,
+          subscription,
+          body,
+        );
         if (approvalGate.status === "rejected") {
           return jsonError(context, approvalGate.reason, 409);
         }
-        const result =
-          await services.store.applyReceiptTrustAnchorDirectoryQuorumActivationSelection(
-            body.threadId,
-            approvalGate.proposal.activationDecisionRecordId,
-            approvalGate.proposal.expectedCurrentSelectionSha256,
-          );
-        if (result.applied) {
-          await appendReceiptTrustEvent(
-            services,
-            body.threadId,
-            "receipt.trust_directory_quorum_activation_selection.applied",
-            {
-              selectionId: result.selection.id,
-              selectionSha256: result.selection.contentSha256,
-              activationDecisionRecordId:
-                result.selection.activationDecisionRecordId,
-              activationDecisionRecordSha256:
-                result.selection.activationDecisionRecordSha256,
-              activationDecisionEnvelopeSha256:
-                result.selection.activationDecisionEnvelopeSha256,
-              baselineId: result.selection.baselineId,
-              baselineSha256: result.selection.baselineSha256,
-              selectedAnchorSetSha256: result.selection.selectedAnchorSetSha256,
-              selectedDirectorySha256: result.selection.selectedDirectorySha256,
-              expectedCurrentSelectionSha256:
-                result.expectedCurrentSelectionSha256,
-              ...(result.previousSelectionSha256
-                ? { previousSelectionSha256: result.previousSelectionSha256 }
-                : {}),
-              rotationProposalEnvelopeSha256:
-                approvalGate.proposalEnvelope.contentSha256,
-              rotationProposalSha256: approvalGate.proposal.contentSha256,
-              rotationProposalReviewSha256:
-                approvalGate.proposal.rotationReviewSha256,
-              rotationProposalCheckpointRegistryQuorumBaselineSha256:
-                approvalGate.proposal.checkpointRegistryQuorumBaselineSha256 ??
-                "",
-              rotationProposalApprovalEnvelopeSha256:
-                approvalGate.approvalEnvelope.contentSha256,
-              rotationProposalApprovalSha256:
-                approvalGate.approval.contentSha256,
-              rotationProposalApprovalPreflightSha256:
-                approvalGate.approval.approvalPreflightSha256,
-              rotationProposalApprovalCurrentPreflightSha256:
-                approvalGate.preflight.contentSha256,
-              rotationProposalApprovalSignerKeyId:
-                approvalGate.approvalEnvelope.signature.keyId,
-              rotationProposalSubscriptionId:
-                approvalGate.approval.subscriptionId,
-              rotationProposalSubscriptionRevision:
-                approvalGate.approval.subscriptionRevision,
-              rotationProposalSubscriptionSha256:
-                approvalGate.approval.subscriptionSha256,
-              selectionStateSha256: result.selectionState.contentSha256,
-              resultSha256: result.contentSha256,
-            },
-          );
-        }
-        setApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionApprovalResultHeaders(
-          context,
-          result,
-          approvalGate,
+        const result = await services.store.applyReceiptTrustAnchorDirectoryQuorumActivationSelection(
+          body.threadId,
+          approvalGate.proposal.activationDecisionRecordId,
+          approvalGate.proposal.expectedCurrentSelectionSha256,
         );
+        if (result.applied) {
+          await appendReceiptTrustEvent(services, body.threadId, "receipt.trust_directory_quorum_activation_selection.applied", {
+            selectionId: result.selection.id,
+            selectionSha256: result.selection.contentSha256,
+            activationDecisionRecordId: result.selection.activationDecisionRecordId,
+            activationDecisionRecordSha256: result.selection.activationDecisionRecordSha256,
+            activationDecisionEnvelopeSha256: result.selection.activationDecisionEnvelopeSha256,
+            baselineId: result.selection.baselineId,
+            baselineSha256: result.selection.baselineSha256,
+            selectedAnchorSetSha256: result.selection.selectedAnchorSetSha256,
+            selectedDirectorySha256: result.selection.selectedDirectorySha256,
+            expectedCurrentSelectionSha256: result.expectedCurrentSelectionSha256,
+            ...(result.previousSelectionSha256 ? { previousSelectionSha256: result.previousSelectionSha256 } : {}),
+            rotationProposalEnvelopeSha256: approvalGate.proposalEnvelope.contentSha256,
+            rotationProposalSha256: approvalGate.proposal.contentSha256,
+            rotationProposalReviewSha256: approvalGate.proposal.rotationReviewSha256,
+            rotationProposalCheckpointRegistryQuorumBaselineSha256: approvalGate.proposal.checkpointRegistryQuorumBaselineSha256 ?? "",
+            rotationProposalApprovalEnvelopeSha256: approvalGate.approvalEnvelope.contentSha256,
+            rotationProposalApprovalSha256: approvalGate.approval.contentSha256,
+            rotationProposalApprovalPreflightSha256: approvalGate.approval.approvalPreflightSha256,
+            rotationProposalApprovalCurrentPreflightSha256: approvalGate.preflight.contentSha256,
+            rotationProposalApprovalSignerKeyId: approvalGate.approvalEnvelope.signature.keyId,
+            rotationProposalSubscriptionId: approvalGate.approval.subscriptionId,
+            rotationProposalSubscriptionRevision: approvalGate.approval.subscriptionRevision,
+            rotationProposalSubscriptionSha256: approvalGate.approval.subscriptionSha256,
+            selectionStateSha256: result.selectionState.contentSha256,
+            resultSha256: result.contentSha256,
+          });
+        }
+        setApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionApprovalResultHeaders(context, result, approvalGate);
         return context.json(result, result.applied ? 201 : 200);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
@@ -2463,10 +1683,7 @@ export function createApp(services: NapierServices): Hono {
           400,
         );
       }
-      const body =
-        parseReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest(
-          input,
-        );
+      const body = parseReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest(input);
       if (!body) {
         return jsonError(
           context,
@@ -2476,20 +1693,15 @@ export function createApp(services: NapierServices): Hono {
       }
       try {
         services.store.getThread(body.threadId);
-        const subscription =
-          services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
-            context.req.param("subscriptionId"),
-          );
-        const { review } =
-          createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview(
-            services.store,
-            subscription,
-            body,
-          );
-        setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReviewHeaders(
-          context,
-          review,
+        const subscription = services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+          context.req.param("subscriptionId"),
         );
+        const { review } = createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview(
+          services.store,
+          subscription,
+          body,
+        );
+        setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReviewHeaders(context, review);
         return context.json(review);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
@@ -2517,10 +1729,7 @@ export function createApp(services: NapierServices): Hono {
           400,
         );
       }
-      const body =
-        parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest(
-          input,
-        );
+      const body = parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest(input);
       if (!body) {
         return jsonError(
           context,
@@ -2530,92 +1739,58 @@ export function createApp(services: NapierServices): Hono {
       }
       try {
         services.store.getThread(body.threadId);
-        const subscription =
-          services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
-            context.req.param("subscriptionId"),
-          );
-        const policyReview =
-          createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview(
-            services.store,
-            subscription,
-            body,
-          );
-        if (
-          policyReview.review.status !== "accepted" ||
-          policyReview.acceptedGates.length === 0
-        ) {
-          setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReviewHeaders(
-            context,
-            policyReview.review,
-          );
+        const subscription = services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+          context.req.param("subscriptionId"),
+        );
+        const policyReview = createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview(
+          services.store,
+          subscription,
+          body,
+        );
+        if (policyReview.review.status !== "accepted" || policyReview.acceptedGates.length === 0) {
+          setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReviewHeaders(context, policyReview.review);
           return context.json(policyReview.review, 409);
         }
         const approvalGate = policyReview.acceptedGates[0]!;
-        const result =
-          await services.store.applyReceiptTrustAnchorDirectoryQuorumActivationSelection(
-            body.threadId,
-            approvalGate.proposal.activationDecisionRecordId,
-            approvalGate.proposal.expectedCurrentSelectionSha256,
-          );
-        const applyResult =
-          createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyResult(
-            policyReview.review,
-            result,
-          );
-        if (result.applied) {
-          await appendReceiptTrustEvent(
-            services,
-            body.threadId,
-            "receipt.trust_directory_quorum_activation_selection.policy_applied",
-            {
-              selectionId: result.selection.id,
-              selectionSha256: result.selection.contentSha256,
-              activationDecisionRecordId:
-                result.selection.activationDecisionRecordId,
-              activationDecisionRecordSha256:
-                result.selection.activationDecisionRecordSha256,
-              activationDecisionEnvelopeSha256:
-                result.selection.activationDecisionEnvelopeSha256,
-              baselineId: result.selection.baselineId,
-              baselineSha256: result.selection.baselineSha256,
-              selectedAnchorSetSha256: result.selection.selectedAnchorSetSha256,
-              selectedDirectorySha256: result.selection.selectedDirectorySha256,
-              expectedCurrentSelectionSha256:
-                result.expectedCurrentSelectionSha256,
-              ...(result.previousSelectionSha256
-                ? { previousSelectionSha256: result.previousSelectionSha256 }
-                : {}),
-              rotationProposalEnvelopeSha256:
-                approvalGate.proposalEnvelope.contentSha256,
-              rotationProposalSha256: approvalGate.proposal.contentSha256,
-              rotationProposalReviewSha256:
-                approvalGate.proposal.rotationReviewSha256,
-              rotationProposalApprovalPolicyReviewSha256:
-                policyReview.review.contentSha256,
-              rotationProposalApprovalPolicySha256:
-                policyReview.review.approvalPolicySha256,
-              rotationProposalApprovalPolicyDistinctSignerCount:
-                policyReview.review.distinctSignerCount,
-              rotationProposalApprovalPolicyAcceptedApprovalCount:
-                policyReview.review.acceptedApprovalCount,
-              rotationProposalApprovalPolicySignerSetSha256:
-                policyReview.review.signerSetSha256,
-              rotationProposalSubscriptionId:
-                policyReview.review.subscriptionId,
-              rotationProposalSubscriptionRevision:
-                policyReview.review.subscriptionRevision,
-              rotationProposalSubscriptionSha256:
-                policyReview.review.subscriptionSha256,
-              selectionStateSha256: result.selectionState.contentSha256,
-              resultSha256: result.contentSha256,
-              applyResultSha256: applyResult.contentSha256,
-            },
-          );
-        }
-        setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyResultHeaders(
-          context,
-          applyResult,
+        const result = await services.store.applyReceiptTrustAnchorDirectoryQuorumActivationSelection(
+          body.threadId,
+          approvalGate.proposal.activationDecisionRecordId,
+          approvalGate.proposal.expectedCurrentSelectionSha256,
         );
+        const applyResult = createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyResult(
+          policyReview.review,
+          result,
+        );
+        if (result.applied) {
+          await appendReceiptTrustEvent(services, body.threadId, "receipt.trust_directory_quorum_activation_selection.policy_applied", {
+            selectionId: result.selection.id,
+            selectionSha256: result.selection.contentSha256,
+            activationDecisionRecordId: result.selection.activationDecisionRecordId,
+            activationDecisionRecordSha256: result.selection.activationDecisionRecordSha256,
+            activationDecisionEnvelopeSha256: result.selection.activationDecisionEnvelopeSha256,
+            baselineId: result.selection.baselineId,
+            baselineSha256: result.selection.baselineSha256,
+            selectedAnchorSetSha256: result.selection.selectedAnchorSetSha256,
+            selectedDirectorySha256: result.selection.selectedDirectorySha256,
+            expectedCurrentSelectionSha256: result.expectedCurrentSelectionSha256,
+            ...(result.previousSelectionSha256 ? { previousSelectionSha256: result.previousSelectionSha256 } : {}),
+            rotationProposalEnvelopeSha256: approvalGate.proposalEnvelope.contentSha256,
+            rotationProposalSha256: approvalGate.proposal.contentSha256,
+            rotationProposalReviewSha256: approvalGate.proposal.rotationReviewSha256,
+            rotationProposalApprovalPolicyReviewSha256: policyReview.review.contentSha256,
+            rotationProposalApprovalPolicySha256: policyReview.review.approvalPolicySha256,
+            rotationProposalApprovalPolicyDistinctSignerCount: policyReview.review.distinctSignerCount,
+            rotationProposalApprovalPolicyAcceptedApprovalCount: policyReview.review.acceptedApprovalCount,
+            rotationProposalApprovalPolicySignerSetSha256: policyReview.review.signerSetSha256,
+            rotationProposalSubscriptionId: policyReview.review.subscriptionId,
+            rotationProposalSubscriptionRevision: policyReview.review.subscriptionRevision,
+            rotationProposalSubscriptionSha256: policyReview.review.subscriptionSha256,
+            selectionStateSha256: result.selectionState.contentSha256,
+            resultSha256: result.contentSha256,
+            applyResultSha256: applyResult.contentSha256,
+          });
+        }
+        setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyResultHeaders(context, applyResult);
         return context.json(applyResult, result.applied ? 201 : 200);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
@@ -2643,10 +1818,7 @@ export function createApp(services: NapierServices): Hono {
           400,
         );
       }
-      const body =
-        parseQueueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyRequest(
-          input,
-        );
+      const body = parseQueueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyRequest(input);
       if (!body) {
         return jsonError(
           context,
@@ -2656,32 +1828,23 @@ export function createApp(services: NapierServices): Hono {
       }
       try {
         services.store.getThread(body.threadId);
-        const subscription =
-          services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
-            context.req.param("subscriptionId"),
-          );
-        const policyReview =
-          createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview(
-            services.store,
-            subscription,
-            body,
-          );
-        if (
-          policyReview.review.status !== "accepted" ||
-          policyReview.acceptedGates.length === 0
-        ) {
-          setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReviewHeaders(
-            context,
-            policyReview.review,
-          );
+        const subscription = services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+          context.req.param("subscriptionId"),
+        );
+        const policyReview = createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview(
+          services.store,
+          subscription,
+          body,
+        );
+        if (policyReview.review.status !== "accepted" || policyReview.acceptedGates.length === 0) {
+          setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReviewHeaders(context, policyReview.review);
           return context.json(policyReview.review, 409);
         }
-        const baselineGate =
-          verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineGate(
-            services.store,
-            policyReview.review,
-            body.approvalPolicyBaselineSha256,
-          );
+        const baselineGate = verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineGate(
+          services.store,
+          policyReview.review,
+          body.approvalPolicyBaselineSha256,
+        );
         if (baselineGate.status === "rejected") {
           return jsonError(
             context,
@@ -2690,50 +1853,38 @@ export function createApp(services: NapierServices): Hono {
           );
         }
         const applyAfter = body.applyAfter ?? new Date().toISOString();
-        const queuedSubscription =
-          await services.store.queueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalPolicyApply(
-            subscription.id,
-            body.threadId,
-            body.expectedSubscriptionRevision,
-            body.expectedSubscriptionSha256,
-            body.approvalEnvelopes,
-            body.approvalPolicy,
-            body.approvalPolicyBaselineSha256,
-            applyAfter,
-          );
-        const queueResult =
-          createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyQueueResult(
-            queuedSubscription,
-            policyReview.review,
-            body.approvalPolicyBaselineSha256,
-            applyAfter,
-          );
-        await appendReceiptTrustEvent(
-          services,
+        const queuedSubscription = await services.store.queueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalPolicyApply(
+          subscription.id,
           body.threadId,
-          "receipt.trust_rotation_proposal_approval_policy_apply.queued",
-          {
-            subscriptionId: queuedSubscription.id,
-            subscriptionRevision: queuedSubscription.revision,
-            subscriptionSha256: queuedSubscription.contentSha256,
-            sourceUrlSha256: queuedSubscription.sourceUrlSha256,
-            sourceOriginSha256: queuedSubscription.sourceOriginSha256,
-            applyAfter,
-            approvalPolicyBaselineSha256: body.approvalPolicyBaselineSha256,
-            approvalPolicySha256: policyReview.review.approvalPolicySha256,
-            approvalEnvelopeSetSha256:
-              policyReview.review.approvalEnvelopeSetSha256,
-            acceptedApprovalEnvelopeSetSha256:
-              policyReview.review.acceptedApprovalEnvelopeSetSha256,
-            signerSetSha256: policyReview.review.signerSetSha256,
-            policyReviewSha256: policyReview.review.contentSha256,
-            queueResultSha256: queueResult.contentSha256,
-          },
+          body.expectedSubscriptionRevision,
+          body.expectedSubscriptionSha256,
+          body.approvalEnvelopes,
+          body.approvalPolicy,
+          body.approvalPolicyBaselineSha256,
+          applyAfter,
         );
-        setQueueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyResultHeaders(
-          context,
-          queueResult,
+        const queueResult = createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyQueueResult(
+          queuedSubscription,
+          policyReview.review,
+          body.approvalPolicyBaselineSha256,
+          applyAfter,
         );
+        await appendReceiptTrustEvent(services, body.threadId, "receipt.trust_rotation_proposal_approval_policy_apply.queued", {
+          subscriptionId: queuedSubscription.id,
+          subscriptionRevision: queuedSubscription.revision,
+          subscriptionSha256: queuedSubscription.contentSha256,
+          sourceUrlSha256: queuedSubscription.sourceUrlSha256,
+          sourceOriginSha256: queuedSubscription.sourceOriginSha256,
+          applyAfter,
+          approvalPolicyBaselineSha256: body.approvalPolicyBaselineSha256,
+          approvalPolicySha256: policyReview.review.approvalPolicySha256,
+          approvalEnvelopeSetSha256: policyReview.review.approvalEnvelopeSetSha256,
+          acceptedApprovalEnvelopeSetSha256: policyReview.review.acceptedApprovalEnvelopeSetSha256,
+          signerSetSha256: policyReview.review.signerSetSha256,
+          policyReviewSha256: policyReview.review.contentSha256,
+          queueResultSha256: queueResult.contentSha256,
+        });
+        setQueueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyResultHeaders(context, queueResult);
         return context.json(queueResult, 202);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
@@ -2744,12 +1895,8 @@ export function createApp(services: NapierServices): Hono {
   app.get(
     "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/approval-policy-baselines",
     (context) => {
-      const baselines =
-        services.store.listReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines();
-      setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineListHeaders(
-        context,
-        baselines,
-      );
+      const baselines = services.store.listReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines();
+      setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineListHeaders(context, baselines);
       return context.json(baselines);
     },
   );
@@ -2768,89 +1915,52 @@ export function createApp(services: NapierServices): Hono {
         if (error instanceof RequestBodyTooLargeError) {
           return jsonError(context, error.message, 413);
         }
-        return jsonError(
-          context,
-          "Receipt trust rotation proposal approval policy baseline request is invalid",
-          400,
-        );
+        return jsonError(context, "Receipt trust rotation proposal approval policy baseline request is invalid", 400);
       }
-      const body =
-        parsePromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest(
-          input,
-        );
+      const body = parsePromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest(input);
       if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust rotation proposal approval policy baseline request is invalid",
-          400,
-        );
+        return jsonError(context, "Receipt trust rotation proposal approval policy baseline request is invalid", 400);
       }
       try {
         services.store.getThread(body.threadId);
-        const subscription =
-          services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
-            context.req.param("subscriptionId"),
-          );
-        const { review } =
-          createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview(
-            services.store,
-            subscription,
-            body,
-          );
+        const subscription = services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+          context.req.param("subscriptionId"),
+        );
+        const { review } = createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview(
+          services.store,
+          subscription,
+          body,
+        );
         if (review.status !== "accepted") {
-          setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReviewHeaders(
-            context,
-            review,
-          );
+          setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReviewHeaders(context, review);
           return context.json(review, 409);
         }
-        const envelope = signTrustedReceipt(
-          review,
-          services.store.getReceiptTrustAnchor(body.trustAnchorId),
+        const envelope = signTrustedReceipt(review, services.store.getReceiptTrustAnchor(body.trustAnchorId));
+        const result = await services.store.promoteReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
+          body.threadId,
+          envelope,
         );
-        const result =
-          await services.store.promoteReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
-            body.threadId,
-            envelope,
-          );
         if (result.created) {
-          await appendReceiptTrustEvent(
-            services,
-            body.threadId,
-            "receipt_trust.rotation_approval_policy_baseline.promoted",
-            {
-              ...trustedReceiptEventPayload(envelope),
-              baselineId: result.baseline.id,
-              baselineSha256: result.baseline.contentSha256,
-              approvalPolicySha256: result.baseline.approvalPolicySha256,
-              subscriptionSha256: result.baseline.subscriptionSha256,
-              acceptedApprovalEnvelopeSetSha256:
-                result.baseline.acceptedApprovalEnvelopeSetSha256,
-              signerSetSha256: result.baseline.signerSetSha256,
-              ...(result.baseline.requiredSignerSetSha256
-                ? {
-                    requiredSignerSetSha256:
-                      result.baseline.requiredSignerSetSha256,
-                  }
-                : {}),
-            },
-          );
+          await appendReceiptTrustEvent(services, body.threadId, "receipt_trust.rotation_approval_policy_baseline.promoted", {
+            ...trustedReceiptEventPayload(envelope),
+            baselineId: result.baseline.id,
+            baselineSha256: result.baseline.contentSha256,
+            approvalPolicySha256: result.baseline.approvalPolicySha256,
+            subscriptionSha256: result.baseline.subscriptionSha256,
+            acceptedApprovalEnvelopeSetSha256: result.baseline.acceptedApprovalEnvelopeSetSha256,
+            signerSetSha256: result.baseline.signerSetSha256,
+            ...(result.baseline.requiredSignerSetSha256
+              ? {
+                  requiredSignerSetSha256: result.baseline.requiredSignerSetSha256,
+                }
+              : {}),
+          });
         }
-        setPromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineResultHeaders(
-          context,
-          result,
-        );
+        setPromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineResultHeaders(context, result);
         return context.json(result, result.created ? 201 : 200);
       } catch (error) {
         const message = errorMessage(error);
-        return jsonError(
-          context,
-          message,
-          message.includes("not trusted") ||
-            message.includes("requires an accepted review")
-            ? 409
-            : 400,
-        );
+        return jsonError(context, message, message.includes("not trusted") || message.includes("requires an accepted review") ? 409 : 400);
       }
     },
   );
@@ -2869,45 +1979,22 @@ export function createApp(services: NapierServices): Hono {
         if (error instanceof RequestBodyTooLargeError) {
           return jsonError(context, error.message, 413);
         }
-        return jsonError(
-          context,
-          "Receipt trust rotation proposal approval policy baseline verification request is invalid",
-          400,
-        );
+        return jsonError(context, "Receipt trust rotation proposal approval policy baseline verification request is invalid", 400);
       }
-      const body =
-        parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest(
-          input,
-        );
+      const body = parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest(input);
       if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust rotation proposal approval policy baseline verification request is invalid",
-          400,
-        );
+        return jsonError(context, "Receipt trust rotation proposal approval policy baseline verification request is invalid", 400);
       }
       const trustDirectoryVerification =
-        body.trustDirectory === undefined
-          ? undefined
-          : services.store.verifyReceiptTrustAnchorDirectory(
-              body.trustDirectory,
-              body.trustDirectoryPolicy,
-            );
+        body.trustDirectory === undefined ? undefined : services.store.verifyReceiptTrustAnchorDirectory(body.trustDirectory, body.trustDirectoryPolicy);
       const anchors =
         body.trustDirectory === undefined
           ? services.store.listReceiptTrustAnchors()
           : trustDirectoryVerification?.status === "valid"
             ? receiptTrustAnchorsFromDirectory(body.trustDirectory)
             : [];
-      const verification =
-        verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
-          body.baseline,
-          anchors,
-        );
-      setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineVerificationHeaders(
-        context,
-        verification,
-      );
+      const verification = verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(body.baseline, anchors);
+      setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineVerificationHeaders(context, verification);
       return context.json(verification);
     },
   );
@@ -2926,103 +2013,55 @@ export function createApp(services: NapierServices): Hono {
         if (error instanceof RequestBodyTooLargeError) {
           return jsonError(context, error.message, 413);
         }
-        return jsonError(
-          context,
-          "Receipt trust rotation proposal approval policy baseline import request is invalid",
-          400,
-        );
+        return jsonError(context, "Receipt trust rotation proposal approval policy baseline import request is invalid", 400);
       }
-      const body =
-        parseImportReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest(
-          input,
-        );
+      const body = parseImportReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest(input);
       if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust rotation proposal approval policy baseline import request is invalid",
-          400,
-        );
+        return jsonError(context, "Receipt trust rotation proposal approval policy baseline import request is invalid", 400);
       }
       const trustDirectoryVerification =
-        body.trustDirectory === undefined
-          ? undefined
-          : services.store.verifyReceiptTrustAnchorDirectory(
-              body.trustDirectory,
-              body.trustDirectoryPolicy,
-            );
+        body.trustDirectory === undefined ? undefined : services.store.verifyReceiptTrustAnchorDirectory(body.trustDirectory, body.trustDirectoryPolicy);
       const anchors =
         body.trustDirectory === undefined
           ? services.store.listReceiptTrustAnchors()
           : trustDirectoryVerification?.status === "valid"
             ? receiptTrustAnchorsFromDirectory(body.trustDirectory)
             : [];
-      const verification =
-        verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
-          body.baseline,
-          anchors,
-        );
-      if (
-        verification.status !== "trusted" ||
-        !verification.baselineValid ||
-        !verification.signatureValid ||
-        !verification.integrityValid
-      ) {
-        return jsonError(
-          context,
-          "Receipt trust rotation proposal approval policy baseline import requires trusted verification",
-          409,
-        );
+      const verification = verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(body.baseline, anchors);
+      if (verification.status !== "trusted" || !verification.baselineValid || !verification.signatureValid || !verification.integrityValid) {
+        return jsonError(context, "Receipt trust rotation proposal approval policy baseline import requires trusted verification", 409);
       }
       try {
-        const imported =
-          await services.store.importReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
-            body.threadId,
-            body.baseline,
-            body.expectedCurrentBaselineSha256,
-            anchors,
-          );
-        if (imported.imported) {
-          await appendReceiptTrustEvent(
-            services,
-            body.threadId,
-            "receipt_trust.rotation_approval_policy_baseline.imported",
-            {
-              baselineId: imported.baseline.id,
-              baselineSha256: imported.baseline.contentSha256,
-              policyReviewSha256:
-                imported.baseline.envelope.receipt.contentSha256,
-              envelopeSha256: imported.baseline.envelope.contentSha256,
-              keyId: imported.baseline.envelope.signature.keyId,
-              expectedCurrentBaselineSha256: body.expectedCurrentBaselineSha256,
-              verificationSha256: verification.contentSha256,
-              ...(imported.previousBaselineSha256
-                ? { previousBaselineSha256: imported.previousBaselineSha256 }
-                : {}),
-            },
-          );
-        }
-        const result: ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineResult =
-          {
-            baseline: imported.baseline,
-            imported: imported.imported,
-            verification,
-            expectedCurrentBaselineSha256: body.expectedCurrentBaselineSha256,
-            ...(imported.previousBaselineSha256
-              ? { previousBaselineSha256: imported.previousBaselineSha256 }
-              : {}),
-          };
-        setImportReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineResultHeaders(
-          context,
-          result,
+        const imported = await services.store.importReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
+          body.threadId,
+          body.baseline,
+          body.expectedCurrentBaselineSha256,
+          anchors,
         );
+        if (imported.imported) {
+          await appendReceiptTrustEvent(services, body.threadId, "receipt_trust.rotation_approval_policy_baseline.imported", {
+            baselineId: imported.baseline.id,
+            baselineSha256: imported.baseline.contentSha256,
+            policyReviewSha256: imported.baseline.envelope.receipt.contentSha256,
+            envelopeSha256: imported.baseline.envelope.contentSha256,
+            keyId: imported.baseline.envelope.signature.keyId,
+            expectedCurrentBaselineSha256: body.expectedCurrentBaselineSha256,
+            verificationSha256: verification.contentSha256,
+            ...(imported.previousBaselineSha256 ? { previousBaselineSha256: imported.previousBaselineSha256 } : {}),
+          });
+        }
+        const result: ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineResult = {
+          baseline: imported.baseline,
+          imported: imported.imported,
+          verification,
+          expectedCurrentBaselineSha256: body.expectedCurrentBaselineSha256,
+          ...(imported.previousBaselineSha256 ? { previousBaselineSha256: imported.previousBaselineSha256 } : {}),
+        };
+        setImportReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineResultHeaders(context, result);
         return context.json(result, imported.imported ? 201 : 200);
       } catch (error) {
         const message = errorMessage(error);
-        return jsonError(
-          context,
-          message,
-          message.includes("precondition") ? 409 : 400,
-        );
+        return jsonError(context, message, message.includes("precondition") ? 409 : 400);
       }
     },
   );
@@ -3047,10 +2086,7 @@ export function createApp(services: NapierServices): Hono {
           400,
         );
       }
-      const body =
-        parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest(
-          input,
-        );
+      const body = parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest(input);
       if (!body) {
         return jsonError(
           context,
@@ -3060,20 +2096,15 @@ export function createApp(services: NapierServices): Hono {
       }
       try {
         services.store.getThread(body.threadId);
-        const subscription =
-          services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
-            context.req.param("subscriptionId"),
-          );
-        const replay =
-          createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay(
-            services.store,
-            subscription,
-            body,
-          );
-        setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplayHeaders(
-          context,
-          replay,
+        const subscription = services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+          context.req.param("subscriptionId"),
         );
+        const replay = createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay(
+          services.store,
+          subscription,
+          body,
+        );
+        setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplayHeaders(context, replay);
         return context.json(replay);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
@@ -3100,45 +2131,23 @@ export function createApp(services: NapierServices): Hono {
           error instanceof RequestBodyTooLargeError ? 413 : 400,
         );
       }
-      const body =
-        parseUpdateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest(
-          input,
-        );
+      const body = parseUpdateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest(input);
       if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection rotation proposal subscription update request is invalid",
-          400,
-        );
+        return jsonError(context, "Receipt trust anchor directory quorum activation selection rotation proposal subscription update request is invalid", 400);
       }
-      const before =
-        services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
-          context.req.param("subscriptionId"),
-        );
-      const subscription =
-        await services.store.updateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
-          before.id,
-          body,
-        );
+      const before = services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(context.req.param("subscriptionId"));
+      const subscription = await services.store.updateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(before.id, body);
       if (before.revision !== subscription.revision) {
-        await appendReceiptTrustEvent(
-          services,
-          subscription.auditThreadId,
-          "receipt.trust_rotation_proposal_subscription.updated",
-          {
-            subscriptionId: subscription.id,
-            subscriptionRevision: subscription.revision,
-            subscriptionSha256: subscription.contentSha256,
-            sourceUrlSha256: subscription.sourceUrlSha256,
-            sourceOriginSha256: subscription.sourceOriginSha256,
-            status: subscription.status,
-          },
-        );
+        await appendReceiptTrustEvent(services, subscription.auditThreadId, "receipt.trust_rotation_proposal_subscription.updated", {
+          subscriptionId: subscription.id,
+          subscriptionRevision: subscription.revision,
+          subscriptionSha256: subscription.contentSha256,
+          sourceUrlSha256: subscription.sourceUrlSha256,
+          sourceOriginSha256: subscription.sourceOriginSha256,
+          status: subscription.status,
+        });
       }
-      setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionHeaders(
-        context,
-        subscription,
-      );
+      setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionHeaders(context, subscription);
       return context.json(subscription);
     },
   );
@@ -3157,34 +2166,16 @@ export function createApp(services: NapierServices): Hono {
         if (error instanceof RequestBodyTooLargeError) {
           return jsonError(context, error.message, 413);
         }
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection rotation proposal preflight request is invalid",
-          400,
-        );
+        return jsonError(context, "Receipt trust anchor directory quorum activation selection rotation proposal preflight request is invalid", 400);
       }
-      const body =
-        parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest(
-          input,
-        );
+      const body = parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest(input);
       if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection rotation proposal preflight request is invalid",
-          400,
-        );
+        return jsonError(context, "Receipt trust anchor directory quorum activation selection rotation proposal preflight request is invalid", 400);
       }
       try {
         services.store.getThread(body.threadId);
-        const preflight =
-          createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight(
-            services.store,
-            body,
-          );
-        setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflightHeaders(
-          context,
-          preflight,
-        );
+        const preflight = createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight(services.store, body);
+        setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflightHeaders(context, preflight);
         return context.json(preflight, 200);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
@@ -3192,544 +2183,315 @@ export function createApp(services: NapierServices): Hono {
     },
   );
 
-  app.post(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/apply",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_TRUSTED_RECEIPT_BYTES + MAX_TRUST_ADMIN_REQUEST_BYTES,
-          "Receipt trust anchor directory quorum activation selection request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection request is invalid",
-          400,
-        );
-      }
-      const body =
-        parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest(
-          input,
-        );
-      if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation selection request is invalid",
-          400,
-        );
-      }
-      try {
-        const selectionState =
-          services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionState();
-        const activeSelection = selectionState.selection;
-        const willRotateActiveSelection =
-          activeSelection !== undefined &&
-          activeSelection.activationDecisionRecordId !==
-            body.activationDecisionRecordId;
-        const proposalGate = willRotateActiveSelection
-          ? verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalGate(
-              services.store,
-              body,
-            )
-          : undefined;
-        if (proposalGate?.status === "rejected") {
-          return jsonError(context, proposalGate.reason, 409);
-        }
-        const result =
-          await services.store.applyReceiptTrustAnchorDirectoryQuorumActivationSelection(
-            body.threadId,
-            body.activationDecisionRecordId,
-            body.expectedCurrentSelectionSha256,
-          );
-        if (result.applied) {
-          await appendReceiptTrustEvent(
-            services,
-            body.threadId,
-            "receipt.trust_directory_quorum_activation_selection.applied",
-            {
-              selectionId: result.selection.id,
-              selectionSha256: result.selection.contentSha256,
-              activationDecisionRecordId:
-                result.selection.activationDecisionRecordId,
-              activationDecisionRecordSha256:
-                result.selection.activationDecisionRecordSha256,
-              activationDecisionEnvelopeSha256:
-                result.selection.activationDecisionEnvelopeSha256,
-              baselineId: result.selection.baselineId,
-              baselineSha256: result.selection.baselineSha256,
-              selectedAnchorSetSha256: result.selection.selectedAnchorSetSha256,
-              selectedDirectorySha256: result.selection.selectedDirectorySha256,
-              expectedCurrentSelectionSha256:
-                result.expectedCurrentSelectionSha256,
-              ...(result.previousSelectionSha256
-                ? { previousSelectionSha256: result.previousSelectionSha256 }
-                : {}),
-              ...(proposalGate?.status === "accepted"
-                ? {
-                    rotationProposalEnvelopeSha256:
-                      proposalGate.envelope.contentSha256,
-                    rotationProposalSha256: proposalGate.proposal.contentSha256,
-                    rotationProposalReviewSha256:
-                      proposalGate.proposal.rotationReviewSha256,
-                    rotationProposalCheckpointRegistryQuorumBaselineSha256:
-                      proposalGate.proposal
-                        .checkpointRegistryQuorumBaselineSha256 ?? "",
-                  }
-                : {}),
-              selectionStateSha256: result.selectionState.contentSha256,
-              resultSha256: result.contentSha256,
-            },
-          );
-        }
-        setApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResultHeaders(
-          context,
-          result,
-        );
-        return context.json(result, result.applied ? 201 : 200);
-      } catch (error) {
-        const message = errorMessage(error);
-        return jsonError(
-          context,
-          message,
-          message.includes("precondition failed") ? 409 : 400,
-        );
-      }
-    },
-  );
-
-  app.post(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decision",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_TRUSTED_RECEIPT_BYTES + MAX_TRUST_ADMIN_REQUEST_BYTES,
-          "Receipt trust anchor directory quorum activation decision request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation decision request is invalid",
-          400,
-        );
-      }
-      const body =
-        parseSignReceiptTrustAnchorDirectoryQuorumActivationDecisionRequest(
-          input,
-        );
-      if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory quorum activation decision request is invalid",
-          400,
-        );
-      }
-      try {
-        services.store.getThread(body.threadId);
-        const baselines =
-          services.store.listReceiptTrustAnchorDirectoryQuorumPromotionBaselines();
-        const baseline =
-          body.baselineId === undefined
-            ? baselines.at(-1)
-            : baselines.find((candidate) => candidate.id === body.baselineId);
-        if (!baseline) {
-          return jsonError(
-            context,
-            "Receipt trust anchor directory quorum activation decision baseline was not found",
-            404,
-          );
-        }
-        const trustDirectoryVerification =
-          body.trustDirectory === undefined
-            ? undefined
-            : services.store.verifyReceiptTrustAnchorDirectory(
-                body.trustDirectory,
-                body.trustDirectoryPolicy,
-              );
-        const anchors =
-          body.trustDirectory === undefined
-            ? services.store.listReceiptTrustAnchors()
-            : trustDirectoryVerification?.status === "valid"
-              ? receiptTrustAnchorsFromDirectory(body.trustDirectory)
-              : [];
-        const verification =
-          verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
-            baseline,
-            anchors,
-            {
-              ...(trustDirectoryVerification
-                ? { trustDirectoryVerification }
-                : {}),
-            },
-          );
-        const policyReview =
-          reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy(
-            baseline,
-            body.importPolicy,
-          );
-        const sourceAlignment =
-          createReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment(
-            baseline,
-            services.store.listReceiptTrustAnchorDirectorySubscriptions(),
-          );
-        const receipt =
-          createReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt({
-            baseline,
-            verification,
-            policyReview,
-            sourceAlignment,
-          });
-        const envelope = signTrustedReceipt(
-          receipt,
-          services.store.getReceiptTrustAnchor(body.trustAnchorId),
-        );
-        const result: SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult =
-          {
-            baseline,
-            verification,
-            policyReview,
-            sourceAlignment,
-            envelope,
-          };
-        const record =
-          await services.store.recordReceiptTrustAnchorDirectoryQuorumActivationDecision(
-            body.threadId,
-            result,
-          );
-        await appendReceiptTrustEvent(
-          services,
-          body.threadId,
-          "receipt_trust.directory_quorum_activation_decision.signed",
-          {
-            ...trustedReceiptEventPayload(envelope),
-            decision: receipt.decision,
-            baselineId: baseline.id,
-            baselineSha256: baseline.contentSha256,
-            verificationSha256: verification.contentSha256,
-            policyReviewSha256: policyReview.contentSha256,
-            sourceAlignmentSha256: sourceAlignment.contentSha256,
-            recordId: record.id,
-            recordSha256: record.contentSha256,
-            alignedSourceCount: sourceAlignment.alignedSourceCount,
-            driftedSourceCount: sourceAlignment.driftedSourceCount,
-            missingSourceCount: sourceAlignment.missingSourceCount,
-          },
-        );
-        setReceiptTrustAnchorDirectoryQuorumActivationDecisionResultHeaders(
-          context,
-          result,
-        );
-        context.header(
-          "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id",
-          record.id,
-        );
-        context.header(
-          "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-SHA256",
-          record.contentSha256,
-        );
-        return context.json(result, 201);
-      } catch (error) {
-        return jsonError(context, errorMessage(error), 400);
-      }
-    },
-  );
-
-  app.post(
-    "/api/receipt-trust/anchors/directory/subscriptions",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_TRUST_ADMIN_REQUEST_BYTES,
-          "Receipt trust anchor directory subscription request",
-        );
-      } catch (error) {
-        return jsonError(
-          context,
-          error instanceof RequestBodyTooLargeError
-            ? error.message
-            : "Receipt trust anchor directory subscription request is invalid",
-          error instanceof RequestBodyTooLargeError ? 413 : 400,
-        );
-      }
-      const body =
-        parseCreateReceiptTrustAnchorDirectorySubscriptionRequest(input);
-      if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory subscription request is invalid",
-          400,
-        );
-      }
-      let discovery: ReceiptTrustAnchorDirectoryDiscovery;
-      try {
-        discovery = await services.receiptTrustDirectories.discover({
-          sourceUrl: body.sourceUrl,
-          policy: body.policy,
-        });
-      } catch (error) {
-        if (error instanceof ReceiptTrustAnchorDirectoryDiscoveryError) {
-          return jsonError(context, error.message, error.status);
-        }
-        return jsonError(
-          context,
-          "Receipt trust anchor directory subscription discovery failed",
-          502,
-        );
-      }
-      if (discovery.status !== "valid") {
-        setReceiptTrustAnchorDirectoryDiscoveryHeaders(context, discovery);
-        return context.json(discovery, 422);
-      }
-      const subscription =
-        await services.store.createReceiptTrustAnchorDirectorySubscription(
-          body,
-          discovery,
-        );
-      await appendReceiptTrustEvent(
-        services,
-        subscription.auditThreadId,
-        "receipt.trust_directory_subscription.created",
-        {
-          subscriptionId: subscription.id,
-          subscriptionRevision: subscription.revision,
-          subscriptionSha256: subscription.contentSha256,
-          sourceUrlSha256: subscription.sourceUrlSha256,
-          sourceOriginSha256: subscription.sourceOriginSha256,
-          policySha256: subscription.policySha256,
-          directorySha256:
-            subscription.lastGoodDiscovery?.directory?.contentSha256 ?? "",
-          anchorSetSha256:
-            subscription.lastGoodDiscovery?.directory?.anchorSetSha256 ?? "",
-        },
-      );
-      setReceiptTrustAnchorDirectorySubscriptionHeaders(context, subscription);
-      return context.json(subscription, 201);
-    },
-  );
-
-  app.post(
-    "/api/receipt-trust/anchors/directory/subscriptions/:subscriptionId/refresh",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_TRUST_ADMIN_REQUEST_BYTES,
-          "Receipt trust anchor directory subscription refresh request",
-        );
-      } catch (error) {
-        return jsonError(
-          context,
-          error instanceof RequestBodyTooLargeError
-            ? error.message
-            : "Receipt trust anchor directory subscription refresh request is invalid",
-          error instanceof RequestBodyTooLargeError ? 413 : 400,
-        );
-      }
-      const body =
-        parseRefreshReceiptTrustAnchorDirectorySubscriptionRequest(input);
-      if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory subscription refresh request is invalid",
-          400,
-        );
-      }
-      const result = await services.receiptTrustDirectorySubscriptions.refresh(
-        context.req.param("subscriptionId"),
-        body.threadId,
-        body.expectedRevision,
-      );
-      setReceiptTrustAnchorDirectorySubscriptionRefreshHeaders(context, result);
-      return context.json(result);
-    },
-  );
-
-  app.post(
-    "/api/receipt-trust/anchors/directory/subscriptions/:subscriptionId",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_TRUST_ADMIN_REQUEST_BYTES,
-          "Receipt trust anchor directory subscription update request",
-        );
-      } catch (error) {
-        return jsonError(
-          context,
-          error instanceof RequestBodyTooLargeError
-            ? error.message
-            : "Receipt trust anchor directory subscription update request is invalid",
-          error instanceof RequestBodyTooLargeError ? 413 : 400,
-        );
-      }
-      const body =
-        parseUpdateReceiptTrustAnchorDirectorySubscriptionRequest(input);
-      if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory subscription update request is invalid",
-          400,
-        );
-      }
-      const before = services.store.getReceiptTrustAnchorDirectorySubscription(
-        context.req.param("subscriptionId"),
-      );
-      const subscription =
-        await services.store.updateReceiptTrustAnchorDirectorySubscription(
-          before.id,
-          body,
-        );
-      if (before.revision !== subscription.revision) {
-        await appendReceiptTrustEvent(
-          services,
-          subscription.auditThreadId,
-          "receipt.trust_directory_subscription.updated",
-          {
-            subscriptionId: subscription.id,
-            subscriptionRevision: subscription.revision,
-            subscriptionSha256: subscription.contentSha256,
-            sourceUrlSha256: subscription.sourceUrlSha256,
-            sourceOriginSha256: subscription.sourceOriginSha256,
-            status: subscription.status,
-          },
-        );
-      }
-      setReceiptTrustAnchorDirectorySubscriptionHeaders(context, subscription);
-      return context.json(subscription);
-    },
-  );
-
-  app.post("/api/receipt-trust/anchors/directory/verify", async (context) => {
+  app.post("/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/apply", async (context) => {
     let input: unknown;
     try {
       input = await readLimitedJson(
         context.req.raw,
-        MAX_TRUSTED_RECEIPT_BYTES,
-        "Receipt trust anchor directory verification request",
+        MAX_TRUSTED_RECEIPT_BYTES + MAX_TRUST_ADMIN_REQUEST_BYTES,
+        "Receipt trust anchor directory quorum activation selection request",
       );
     } catch (error) {
       if (error instanceof RequestBodyTooLargeError) {
         return jsonError(context, error.message, 413);
       }
-      return jsonError(
-        context,
-        "Receipt trust anchor directory verification request is invalid",
-        400,
-      );
+      return jsonError(context, "Receipt trust anchor directory quorum activation selection request is invalid", 400);
     }
-    const body = parseVerifyReceiptTrustAnchorDirectoryRequest(input);
+    const body = parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Receipt trust anchor directory verification request is invalid",
-        400,
-      );
+      return jsonError(context, "Receipt trust anchor directory quorum activation selection request is invalid", 400);
     }
-    const verification = services.store.verifyReceiptTrustAnchorDirectory(
-      body.directory,
-      body.policy,
-    );
-    setReceiptTrustAnchorDirectoryVerificationHeaders(context, verification);
-    return context.json(verification);
+    try {
+      const selectionState = services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionState();
+      const activeSelection = selectionState.selection;
+      const willRotateActiveSelection = activeSelection !== undefined && activeSelection.activationDecisionRecordId !== body.activationDecisionRecordId;
+      const proposalGate = willRotateActiveSelection
+        ? verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalGate(services.store, body)
+        : undefined;
+      if (proposalGate?.status === "rejected") {
+        return jsonError(context, proposalGate.reason, 409);
+      }
+      const result = await services.store.applyReceiptTrustAnchorDirectoryQuorumActivationSelection(
+        body.threadId,
+        body.activationDecisionRecordId,
+        body.expectedCurrentSelectionSha256,
+      );
+      if (result.applied) {
+        await appendReceiptTrustEvent(services, body.threadId, "receipt.trust_directory_quorum_activation_selection.applied", {
+          selectionId: result.selection.id,
+          selectionSha256: result.selection.contentSha256,
+          activationDecisionRecordId: result.selection.activationDecisionRecordId,
+          activationDecisionRecordSha256: result.selection.activationDecisionRecordSha256,
+          activationDecisionEnvelopeSha256: result.selection.activationDecisionEnvelopeSha256,
+          baselineId: result.selection.baselineId,
+          baselineSha256: result.selection.baselineSha256,
+          selectedAnchorSetSha256: result.selection.selectedAnchorSetSha256,
+          selectedDirectorySha256: result.selection.selectedDirectorySha256,
+          expectedCurrentSelectionSha256: result.expectedCurrentSelectionSha256,
+          ...(result.previousSelectionSha256 ? { previousSelectionSha256: result.previousSelectionSha256 } : {}),
+          ...(proposalGate?.status === "accepted"
+            ? {
+                rotationProposalEnvelopeSha256: proposalGate.envelope.contentSha256,
+                rotationProposalSha256: proposalGate.proposal.contentSha256,
+                rotationProposalReviewSha256: proposalGate.proposal.rotationReviewSha256,
+                rotationProposalCheckpointRegistryQuorumBaselineSha256: proposalGate.proposal.checkpointRegistryQuorumBaselineSha256 ?? "",
+              }
+            : {}),
+          selectionStateSha256: result.selectionState.contentSha256,
+          resultSha256: result.contentSha256,
+        });
+      }
+      setApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResultHeaders(context, result);
+      return context.json(result, result.applied ? 201 : 200);
+    } catch (error) {
+      const message = errorMessage(error);
+      return jsonError(context, message, message.includes("precondition failed") ? 409 : 400);
+    }
   });
 
-  app.post(
-    "/api/receipt-trust/anchors/directory/metadata/verify",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_TRUSTED_RECEIPT_BYTES + MAX_TRUST_ADMIN_REQUEST_BYTES,
-          "Receipt trust anchor directory metadata verification request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Receipt trust anchor directory metadata verification request is invalid",
-          400,
-        );
+  app.post("/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decision", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(
+        context.req.raw,
+        MAX_TRUSTED_RECEIPT_BYTES + MAX_TRUST_ADMIN_REQUEST_BYTES,
+        "Receipt trust anchor directory quorum activation decision request",
+      );
+    } catch (error) {
+      if (error instanceof RequestBodyTooLargeError) {
+        return jsonError(context, error.message, 413);
       }
-      const body = parseVerifyReceiptTrustAnchorDirectoryMetadataRequest(input);
-      if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory metadata verification request is invalid",
-          400,
-        );
+      return jsonError(context, "Receipt trust anchor directory quorum activation decision request is invalid", 400);
+    }
+    const body = parseSignReceiptTrustAnchorDirectoryQuorumActivationDecisionRequest(input);
+    if (!body) {
+      return jsonError(context, "Receipt trust anchor directory quorum activation decision request is invalid", 400);
+    }
+    try {
+      services.store.getThread(body.threadId);
+      const baselines = services.store.listReceiptTrustAnchorDirectoryQuorumPromotionBaselines();
+      const baseline = body.baselineId === undefined ? baselines.at(-1) : baselines.find((candidate) => candidate.id === body.baselineId);
+      if (!baseline) {
+        return jsonError(context, "Receipt trust anchor directory quorum activation decision baseline was not found", 404);
       }
       const trustDirectoryVerification =
-        body.trustDirectory === undefined
-          ? undefined
-          : services.store.verifyReceiptTrustAnchorDirectory(
-              body.trustDirectory,
-              body.trustDirectoryPolicy,
-            );
+        body.trustDirectory === undefined ? undefined : services.store.verifyReceiptTrustAnchorDirectory(body.trustDirectory, body.trustDirectoryPolicy);
       const anchors =
         body.trustDirectory === undefined
           ? services.store.listReceiptTrustAnchors()
           : trustDirectoryVerification?.status === "valid"
             ? receiptTrustAnchorsFromDirectory(body.trustDirectory)
             : [];
-      const verification = verifyReceiptTrustAnchorDirectoryMetadata(
-        body.envelope,
-        body.directory,
-        anchors,
-        {
-          ...(body.directoryPolicy
-            ? { directoryPolicy: body.directoryPolicy }
-            : {}),
-          ...(trustDirectoryVerification ? { trustDirectoryVerification } : {}),
-        },
+      const verification = verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline(baseline, anchors, {
+        ...(trustDirectoryVerification ? { trustDirectoryVerification } : {}),
+      });
+      const policyReview = reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy(baseline, body.importPolicy);
+      const sourceAlignment = createReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment(
+        baseline,
+        services.store.listReceiptTrustAnchorDirectorySubscriptions(),
       );
-      setReceiptTrustAnchorDirectoryMetadataVerificationHeaders(
-        context,
+      const receipt = createReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt({
+        baseline,
         verification,
-      );
-      return context.json(verification);
-    },
-  );
+        policyReview,
+        sourceAlignment,
+      });
+      const envelope = signTrustedReceipt(receipt, services.store.getReceiptTrustAnchor(body.trustAnchorId));
+      const result: SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult = {
+        baseline,
+        verification,
+        policyReview,
+        sourceAlignment,
+        envelope,
+      };
+      const record = await services.store.recordReceiptTrustAnchorDirectoryQuorumActivationDecision(body.threadId, result);
+      await appendReceiptTrustEvent(services, body.threadId, "receipt_trust.directory_quorum_activation_decision.signed", {
+        ...trustedReceiptEventPayload(envelope),
+        decision: receipt.decision,
+        baselineId: baseline.id,
+        baselineSha256: baseline.contentSha256,
+        verificationSha256: verification.contentSha256,
+        policyReviewSha256: policyReview.contentSha256,
+        sourceAlignmentSha256: sourceAlignment.contentSha256,
+        recordId: record.id,
+        recordSha256: record.contentSha256,
+        alignedSourceCount: sourceAlignment.alignedSourceCount,
+        driftedSourceCount: sourceAlignment.driftedSourceCount,
+        missingSourceCount: sourceAlignment.missingSourceCount,
+      });
+      setReceiptTrustAnchorDirectoryQuorumActivationDecisionResultHeaders(context, result);
+      context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id", record.id);
+      context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-SHA256", record.contentSha256);
+      return context.json(result, 201);
+    } catch (error) {
+      return jsonError(context, errorMessage(error), 400);
+    }
+  });
 
-  app.post("/api/receipt-trust/anchors/directory/discover", async (context) => {
+  app.post("/api/receipt-trust/anchors/directory/subscriptions", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(context.req.raw, MAX_TRUST_ADMIN_REQUEST_BYTES, "Receipt trust anchor directory subscription request");
+    } catch (error) {
+      return jsonError(
+        context,
+        error instanceof RequestBodyTooLargeError ? error.message : "Receipt trust anchor directory subscription request is invalid",
+        error instanceof RequestBodyTooLargeError ? 413 : 400,
+      );
+    }
+    const body = parseCreateReceiptTrustAnchorDirectorySubscriptionRequest(input);
+    if (!body) {
+      return jsonError(context, "Receipt trust anchor directory subscription request is invalid", 400);
+    }
+    let discovery: ReceiptTrustAnchorDirectoryDiscovery;
+    try {
+      discovery = await services.receiptTrustDirectories.discover({
+        sourceUrl: body.sourceUrl,
+        policy: body.policy,
+      });
+    } catch (error) {
+      if (error instanceof ReceiptTrustAnchorDirectoryDiscoveryError) {
+        return jsonError(context, error.message, error.status);
+      }
+      return jsonError(context, "Receipt trust anchor directory subscription discovery failed", 502);
+    }
+    if (discovery.status !== "valid") {
+      setReceiptTrustAnchorDirectoryDiscoveryHeaders(context, discovery);
+      return context.json(discovery, 422);
+    }
+    const subscription = await services.store.createReceiptTrustAnchorDirectorySubscription(body, discovery);
+    await appendReceiptTrustEvent(services, subscription.auditThreadId, "receipt.trust_directory_subscription.created", {
+      subscriptionId: subscription.id,
+      subscriptionRevision: subscription.revision,
+      subscriptionSha256: subscription.contentSha256,
+      sourceUrlSha256: subscription.sourceUrlSha256,
+      sourceOriginSha256: subscription.sourceOriginSha256,
+      policySha256: subscription.policySha256,
+      directorySha256: subscription.lastGoodDiscovery?.directory?.contentSha256 ?? "",
+      anchorSetSha256: subscription.lastGoodDiscovery?.directory?.anchorSetSha256 ?? "",
+    });
+    setReceiptTrustAnchorDirectorySubscriptionHeaders(context, subscription);
+    return context.json(subscription, 201);
+  });
+
+  app.post("/api/receipt-trust/anchors/directory/subscriptions/:subscriptionId/refresh", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(context.req.raw, MAX_TRUST_ADMIN_REQUEST_BYTES, "Receipt trust anchor directory subscription refresh request");
+    } catch (error) {
+      return jsonError(
+        context,
+        error instanceof RequestBodyTooLargeError ? error.message : "Receipt trust anchor directory subscription refresh request is invalid",
+        error instanceof RequestBodyTooLargeError ? 413 : 400,
+      );
+    }
+    const body = parseRefreshReceiptTrustAnchorDirectorySubscriptionRequest(input);
+    if (!body) {
+      return jsonError(context, "Receipt trust anchor directory subscription refresh request is invalid", 400);
+    }
+    const result = await services.receiptTrustDirectorySubscriptions.refresh(context.req.param("subscriptionId"), body.threadId, body.expectedRevision);
+    setReceiptTrustAnchorDirectorySubscriptionRefreshHeaders(context, result);
+    return context.json(result);
+  });
+
+  app.post("/api/receipt-trust/anchors/directory/subscriptions/:subscriptionId", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(context.req.raw, MAX_TRUST_ADMIN_REQUEST_BYTES, "Receipt trust anchor directory subscription update request");
+    } catch (error) {
+      return jsonError(
+        context,
+        error instanceof RequestBodyTooLargeError ? error.message : "Receipt trust anchor directory subscription update request is invalid",
+        error instanceof RequestBodyTooLargeError ? 413 : 400,
+      );
+    }
+    const body = parseUpdateReceiptTrustAnchorDirectorySubscriptionRequest(input);
+    if (!body) {
+      return jsonError(context, "Receipt trust anchor directory subscription update request is invalid", 400);
+    }
+    const before = services.store.getReceiptTrustAnchorDirectorySubscription(context.req.param("subscriptionId"));
+    const subscription = await services.store.updateReceiptTrustAnchorDirectorySubscription(before.id, body);
+    if (before.revision !== subscription.revision) {
+      await appendReceiptTrustEvent(services, subscription.auditThreadId, "receipt.trust_directory_subscription.updated", {
+        subscriptionId: subscription.id,
+        subscriptionRevision: subscription.revision,
+        subscriptionSha256: subscription.contentSha256,
+        sourceUrlSha256: subscription.sourceUrlSha256,
+        sourceOriginSha256: subscription.sourceOriginSha256,
+        status: subscription.status,
+      });
+    }
+    setReceiptTrustAnchorDirectorySubscriptionHeaders(context, subscription);
+    return context.json(subscription);
+  });
+
+  app.post("/api/receipt-trust/anchors/directory/verify", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(context.req.raw, MAX_TRUSTED_RECEIPT_BYTES, "Receipt trust anchor directory verification request");
+    } catch (error) {
+      if (error instanceof RequestBodyTooLargeError) {
+        return jsonError(context, error.message, 413);
+      }
+      return jsonError(context, "Receipt trust anchor directory verification request is invalid", 400);
+    }
+    const body = parseVerifyReceiptTrustAnchorDirectoryRequest(input);
+    if (!body) {
+      return jsonError(context, "Receipt trust anchor directory verification request is invalid", 400);
+    }
+    const verification = services.store.verifyReceiptTrustAnchorDirectory(body.directory, body.policy);
+    setReceiptTrustAnchorDirectoryVerificationHeaders(context, verification);
+    return context.json(verification);
+  });
+
+  app.post("/api/receipt-trust/anchors/directory/metadata/verify", async (context) => {
     let input: unknown;
     try {
       input = await readLimitedJson(
         context.req.raw,
-        MAX_TRUST_ADMIN_REQUEST_BYTES,
-        "Receipt trust anchor directory discovery request",
+        MAX_TRUSTED_RECEIPT_BYTES + MAX_TRUST_ADMIN_REQUEST_BYTES,
+        "Receipt trust anchor directory metadata verification request",
       );
+    } catch (error) {
+      if (error instanceof RequestBodyTooLargeError) {
+        return jsonError(context, error.message, 413);
+      }
+      return jsonError(context, "Receipt trust anchor directory metadata verification request is invalid", 400);
+    }
+    const body = parseVerifyReceiptTrustAnchorDirectoryMetadataRequest(input);
+    if (!body) {
+      return jsonError(context, "Receipt trust anchor directory metadata verification request is invalid", 400);
+    }
+    const trustDirectoryVerification =
+      body.trustDirectory === undefined ? undefined : services.store.verifyReceiptTrustAnchorDirectory(body.trustDirectory, body.trustDirectoryPolicy);
+    const anchors =
+      body.trustDirectory === undefined
+        ? services.store.listReceiptTrustAnchors()
+        : trustDirectoryVerification?.status === "valid"
+          ? receiptTrustAnchorsFromDirectory(body.trustDirectory)
+          : [];
+    const verification = verifyReceiptTrustAnchorDirectoryMetadata(body.envelope, body.directory, anchors, {
+      ...(body.directoryPolicy ? { directoryPolicy: body.directoryPolicy } : {}),
+      ...(trustDirectoryVerification ? { trustDirectoryVerification } : {}),
+    });
+    setReceiptTrustAnchorDirectoryMetadataVerificationHeaders(context, verification);
+    return context.json(verification);
+  });
+
+  app.post("/api/receipt-trust/anchors/directory/discover", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(context.req.raw, MAX_TRUST_ADMIN_REQUEST_BYTES, "Receipt trust anchor directory discovery request");
     } catch (error) {
       return jsonError(
         context,
-        error instanceof RequestBodyTooLargeError
-          ? error.message
-          : "Receipt trust anchor directory discovery request is invalid",
+        error instanceof RequestBodyTooLargeError ? error.message : "Receipt trust anchor directory discovery request is invalid",
         error instanceof RequestBodyTooLargeError ? 413 : 400,
       );
     }
     const body = parseDiscoverReceiptTrustAnchorDirectoryRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Receipt trust anchor directory discovery request is invalid",
-        400,
-      );
+      return jsonError(context, "Receipt trust anchor directory discovery request is invalid", 400);
     }
     try {
       const discovery = await services.receiptTrustDirectories.discover(body);
@@ -3739,47 +2501,30 @@ export function createApp(services: NapierServices): Hono {
       if (error instanceof ReceiptTrustAnchorDirectoryDiscoveryError) {
         return jsonError(context, error.message, error.status);
       }
-      return jsonError(
-        context,
-        "Receipt trust anchor directory discovery failed",
-        502,
-      );
+      return jsonError(context, "Receipt trust anchor directory discovery failed", 502);
     }
   });
 
   app.post("/api/receipt-trust/anchors", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_TRUST_ADMIN_REQUEST_BYTES,
-        "Receipt trust anchor request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_TRUST_ADMIN_REQUEST_BYTES, "Receipt trust anchor request");
     } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
+      return jsonError(context, errorMessage(error), error instanceof RequestBodyTooLargeError ? 413 : 400);
     }
     const body = parseCreateReceiptTrustAnchorRequest(input);
     if (!body) {
       return jsonError(context, "Receipt trust anchor is invalid", 400);
     }
     const anchor = await services.store.createReceiptTrustAnchor(body);
-    await appendReceiptTrustEvent(
-      services,
-      body.threadId,
-      "receipt.trust_anchor.created",
-      {
-        trustAnchorId: anchor.id,
-        keyId: anchor.keyId,
-        algorithm: anchor.algorithm,
-        status: anchor.status,
-        signingCapable: Boolean(anchor.signingSource),
-        anchorSha256: anchor.contentSha256,
-      },
-    );
+    await appendReceiptTrustEvent(services, body.threadId, "receipt.trust_anchor.created", {
+      trustAnchorId: anchor.id,
+      keyId: anchor.keyId,
+      algorithm: anchor.algorithm,
+      status: anchor.status,
+      signingCapable: Boolean(anchor.signingSource),
+      anchorSha256: anchor.contentSha256,
+    });
     setReceiptTrustAnchorHeaders(context, anchor);
     return context.json(anchor, 201);
   });
@@ -3787,43 +2532,24 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/receipt-trust/anchors/:anchorId/revoke", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_TRUST_ADMIN_REQUEST_BYTES,
-        "Receipt trust anchor revocation request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_TRUST_ADMIN_REQUEST_BYTES, "Receipt trust anchor revocation request");
     } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
+      return jsonError(context, errorMessage(error), error instanceof RequestBodyTooLargeError ? 413 : 400);
     }
     const body = parseRevokeReceiptTrustAnchorRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Receipt trust anchor revocation is invalid",
-        400,
-      );
+      return jsonError(context, "Receipt trust anchor revocation is invalid", 400);
     }
     services.store.getThread(body.threadId);
-    const before = services.store.getReceiptTrustAnchor(
-      context.req.param("anchorId"),
-    );
+    const before = services.store.getReceiptTrustAnchor(context.req.param("anchorId"));
     const anchor = await services.store.revokeReceiptTrustAnchor(before.id);
     if (before.status !== anchor.status) {
-      await appendReceiptTrustEvent(
-        services,
-        body.threadId,
-        "receipt.trust_anchor.revoked",
-        {
-          trustAnchorId: anchor.id,
-          keyId: anchor.keyId,
-          status: anchor.status,
-          anchorSha256: anchor.contentSha256,
-        },
-      );
+      await appendReceiptTrustEvent(services, body.threadId, "receipt.trust_anchor.revoked", {
+        trustAnchorId: anchor.id,
+        keyId: anchor.keyId,
+        status: anchor.status,
+        anchorSha256: anchor.contentSha256,
+      });
     }
     setReceiptTrustAnchorHeaders(context, anchor);
     return context.json(anchor);
@@ -3832,11 +2558,7 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/receipt-trust/verify", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_TRUSTED_RECEIPT_BYTES + 1_024,
-        "Trusted receipt request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_TRUSTED_RECEIPT_BYTES + 1_024, "Trusted receipt request");
     } catch (error) {
       if (error instanceof RequestBodyTooLargeError) {
         return jsonError(context, error.message, 413);
@@ -3847,21 +2569,10 @@ export function createApp(services: NapierServices): Hono {
     if (!body) {
       return jsonError(context, "Trusted receipt request is invalid", 400);
     }
-    const activeSelectionState =
-      body.directory === undefined
-        ? services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionState()
-        : undefined;
+    const activeSelectionState = body.directory === undefined ? services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionState() : undefined;
     const activeSelection = activeSelectionState?.selection;
-    const directorySource =
-      body.directory !== undefined
-        ? ("uploaded" as const)
-        : activeSelection
-          ? ("active_selection" as const)
-          : undefined;
-    const selectedDirectory =
-      body.directory !== undefined
-        ? body.directory
-        : activeSelection?.selectedDirectory;
+    const directorySource = body.directory !== undefined ? ("uploaded" as const) : activeSelection ? ("active_selection" as const) : undefined;
+    const selectedDirectory = body.directory !== undefined ? body.directory : activeSelection?.selectedDirectory;
     const directoryPolicy =
       body.directory !== undefined
         ? body.directoryPolicy
@@ -3871,45 +2582,30 @@ export function createApp(services: NapierServices): Hono {
             }
           : undefined;
     const directoryVerification =
-      selectedDirectory === undefined
-        ? undefined
-        : services.store.verifyReceiptTrustAnchorDirectory(
-            selectedDirectory,
-            directoryPolicy,
-          );
+      selectedDirectory === undefined ? undefined : services.store.verifyReceiptTrustAnchorDirectory(selectedDirectory, directoryPolicy);
     if (directoryVerification?.status === "invalid") {
       const verification: TrustedReceiptVerification = {
         status: "invalid",
         verifiedAt: new Date().toISOString(),
         ...(directorySource ? { anchorDirectorySource: directorySource } : {}),
         anchorDirectorySha256:
-          directoryVerification.declaredContentSha256 ??
-          directoryVerification.recomputedContentSha256 ??
-          directoryVerification.contentSha256,
+          directoryVerification.declaredContentSha256 ?? directoryVerification.recomputedContentSha256 ?? directoryVerification.contentSha256,
         anchorDirectoryVerificationSha256: directoryVerification.contentSha256,
-        ...(directoryVerification.policySha256
-          ? { anchorDirectoryPolicySha256: directoryVerification.policySha256 }
-          : {}),
+        ...(directoryVerification.policySha256 ? { anchorDirectoryPolicySha256: directoryVerification.policySha256 } : {}),
         ...(directoryVerification.directoryGeneratedAt
           ? {
-              anchorDirectoryGeneratedAt:
-                directoryVerification.directoryGeneratedAt,
+              anchorDirectoryGeneratedAt: directoryVerification.directoryGeneratedAt,
             }
           : {}),
-        ...(directoryVerification.directoryAgeMs !== undefined
-          ? { anchorDirectoryAgeMs: directoryVerification.directoryAgeMs }
-          : {}),
-        ...(directoryVerification.anchorCount !== undefined
-          ? { anchorDirectoryAnchorCount: directoryVerification.anchorCount }
-          : {}),
+        ...(directoryVerification.directoryAgeMs !== undefined ? { anchorDirectoryAgeMs: directoryVerification.directoryAgeMs } : {}),
+        ...(directoryVerification.anchorCount !== undefined ? { anchorDirectoryAnchorCount: directoryVerification.anchorCount } : {}),
         ...(activeSelection
           ? {
               anchorDirectorySelectionId: activeSelection.id,
               anchorDirectorySelectionSha256: activeSelection.contentSha256,
               ...(activeSelectionState
                 ? {
-                    anchorDirectorySelectionStateSha256:
-                      activeSelectionState.contentSha256,
+                    anchorDirectorySelectionStateSha256: activeSelectionState.contentSha256,
                   }
                 : {}),
             }
@@ -3917,70 +2613,52 @@ export function createApp(services: NapierServices): Hono {
         signatureValid: false,
         integrityValid: false,
         reason:
-          directorySource === "active_selection"
-            ? "Active receipt trust anchor directory selection is invalid"
-            : "Receipt trust anchor directory is invalid",
+          directorySource === "active_selection" ? "Active receipt trust anchor directory selection is invalid" : "Receipt trust anchor directory is invalid",
       };
       setTrustedReceiptVerificationHeaders(context, verification);
       return context.json(verification);
     }
-    const directory =
-      selectedDirectory === undefined
-        ? undefined
-        : receiptTrustAnchorsFromDirectory(selectedDirectory);
-    const verification = verifyTrustedReceiptEnvelope(
-      body.envelope,
-      directory ?? services.store.listReceiptTrustAnchors(),
-    );
-    const verifiedWithDirectory: TrustedReceiptVerification =
-      directoryVerification
-        ? {
-            ...verification,
-            ...(directorySource
-              ? { anchorDirectorySource: directorySource }
-              : {}),
-            ...(directoryVerification.declaredContentSha256
-              ? {
-                  anchorDirectorySha256:
-                    directoryVerification.declaredContentSha256,
-                }
-              : {}),
-            anchorDirectoryVerificationSha256:
-              directoryVerification.contentSha256,
-            ...(directoryVerification.policySha256
-              ? {
-                  anchorDirectoryPolicySha256:
-                    directoryVerification.policySha256,
-                }
-              : {}),
-            ...(directoryVerification.directoryGeneratedAt
-              ? {
-                  anchorDirectoryGeneratedAt:
-                    directoryVerification.directoryGeneratedAt,
-                }
-              : {}),
-            ...(directoryVerification.directoryAgeMs !== undefined
-              ? { anchorDirectoryAgeMs: directoryVerification.directoryAgeMs }
-              : {}),
-            ...(directoryVerification.anchorCount !== undefined
-              ? {
-                  anchorDirectoryAnchorCount: directoryVerification.anchorCount,
-                }
-              : {}),
-            ...(activeSelection
-              ? {
-                  anchorDirectorySelectionId: activeSelection.id,
-                  anchorDirectorySelectionSha256: activeSelection.contentSha256,
-                  ...(activeSelectionState
-                    ? {
-                        anchorDirectorySelectionStateSha256:
-                          activeSelectionState.contentSha256,
-                      }
-                    : {}),
-                }
-              : {}),
-          }
-        : verification;
+    const directory = selectedDirectory === undefined ? undefined : receiptTrustAnchorsFromDirectory(selectedDirectory);
+    const verification = verifyTrustedReceiptEnvelope(body.envelope, directory ?? services.store.listReceiptTrustAnchors());
+    const verifiedWithDirectory: TrustedReceiptVerification = directoryVerification
+      ? {
+          ...verification,
+          ...(directorySource ? { anchorDirectorySource: directorySource } : {}),
+          ...(directoryVerification.declaredContentSha256
+            ? {
+                anchorDirectorySha256: directoryVerification.declaredContentSha256,
+              }
+            : {}),
+          anchorDirectoryVerificationSha256: directoryVerification.contentSha256,
+          ...(directoryVerification.policySha256
+            ? {
+                anchorDirectoryPolicySha256: directoryVerification.policySha256,
+              }
+            : {}),
+          ...(directoryVerification.directoryGeneratedAt
+            ? {
+                anchorDirectoryGeneratedAt: directoryVerification.directoryGeneratedAt,
+              }
+            : {}),
+          ...(directoryVerification.directoryAgeMs !== undefined ? { anchorDirectoryAgeMs: directoryVerification.directoryAgeMs } : {}),
+          ...(directoryVerification.anchorCount !== undefined
+            ? {
+                anchorDirectoryAnchorCount: directoryVerification.anchorCount,
+              }
+            : {}),
+          ...(activeSelection
+            ? {
+                anchorDirectorySelectionId: activeSelection.id,
+                anchorDirectorySelectionSha256: activeSelection.contentSha256,
+                ...(activeSelectionState
+                  ? {
+                      anchorDirectorySelectionStateSha256: activeSelectionState.contentSha256,
+                    }
+                  : {}),
+              }
+            : {}),
+        }
+      : verification;
     setTrustedReceiptVerificationHeaders(context, verifiedWithDirectory);
     return context.json(verifiedWithDirectory);
   });
@@ -3997,11 +2675,7 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/usage-price-tables/verify", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        64 * 1024,
-        "Usage price table verification request",
-      );
+      input = await readLimitedJson(context.req.raw, 64 * 1024, "Usage price table verification request");
     } catch (error) {
       return jsonError(context, errorMessage(error), 400);
     }
@@ -4009,12 +2683,7 @@ export function createApp(services: NapierServices): Hono {
     if (!body) {
       return jsonError(context, "Invalid usage price table request", 400);
     }
-    const verification = verifyUsagePriceTableCatalog(
-      body.catalog,
-      body.requiredProviders
-        ? { requiredProviders: body.requiredProviders }
-        : {},
-    );
+    const verification = verifyUsagePriceTableCatalog(body.catalog, body.requiredProviders ? { requiredProviders: body.requiredProviders } : {});
     setUsagePriceTableVerificationHeaders(context, verification);
     return context.json(verification);
   });
@@ -4053,533 +2722,276 @@ export function createApp(services: NapierServices): Hono {
     setCalibrationHeaders: setEvaluationCasebookCalibrationHeaders,
     setArtifactHeaders: setEvaluationCasebookArtifactHeaders,
     setQualificationListHeaders: setEvaluationCasebookQualificationListHeaders,
-    setQualificationReceiptHeaders:
-      setEvaluationCasebookQualificationReceiptHeaders,
+    setQualificationReceiptHeaders: setEvaluationCasebookQualificationReceiptHeaders,
     setBaselineListHeaders: setEvaluationQualificationBaselineListHeaders,
     setSuiteListHeaders: setEvaluationSuiteListHeaders,
     setSuiteReceiptHeaders: setEvaluationSuiteGateReceiptHeaders,
     setSuiteExecutionListHeaders: setEvaluationSuiteExecutionListHeaders,
   });
 
-  app.post(
-    "/api/evaluation-casebooks/:casebookId/signed-qualification-receipt",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_TRUST_ADMIN_REQUEST_BYTES,
-          "Signed qualification receipt request",
-        );
-      } catch (error) {
-        return jsonError(
-          context,
-          errorMessage(error),
-          error instanceof RequestBodyTooLargeError ? 413 : 400,
-        );
-      }
-      const body = parseSignTrustedReceiptRequest(input, true);
-      if (!body?.threadId) {
-        return jsonError(
-          context,
-          "Signed qualification receipt request is invalid",
-          400,
-        );
-      }
-      services.store.getThread(body.threadId);
-      const receipt = createEvaluationCasebookQualificationReceipt(
-        services.store,
-        context.req.param("casebookId"),
-      );
-      const envelope = signTrustedReceipt(
-        receipt,
-        services.store.getReceiptTrustAnchor(body.trustAnchorId),
-      );
-      await appendReceiptTrustEvent(
-        services,
-        body.threadId,
-        "receipt.signed",
-        trustedReceiptEventPayload(envelope),
-      );
-      setTrustedReceiptHeaders(
-        context,
-        envelope,
-        `napier-signed-casebook-qualification-${receipt.casebook.id}-r${receipt.casebook.currentRevision}-${envelope.contentSha256.slice(0, 12)}.json`,
-      );
-      return context.json(envelope, 201);
-    },
-  );
+  app.post("/api/evaluation-casebooks/:casebookId/signed-qualification-receipt", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(context.req.raw, MAX_TRUST_ADMIN_REQUEST_BYTES, "Signed qualification receipt request");
+    } catch (error) {
+      return jsonError(context, errorMessage(error), error instanceof RequestBodyTooLargeError ? 413 : 400);
+    }
+    const body = parseSignTrustedReceiptRequest(input, true);
+    if (!body?.threadId) {
+      return jsonError(context, "Signed qualification receipt request is invalid", 400);
+    }
+    services.store.getThread(body.threadId);
+    const receipt = createEvaluationCasebookQualificationReceipt(services.store, context.req.param("casebookId"));
+    const envelope = signTrustedReceipt(receipt, services.store.getReceiptTrustAnchor(body.trustAnchorId));
+    await appendReceiptTrustEvent(services, body.threadId, "receipt.signed", trustedReceiptEventPayload(envelope));
+    setTrustedReceiptHeaders(
+      context,
+      envelope,
+      `napier-signed-casebook-qualification-${receipt.casebook.id}-r${receipt.casebook.currentRevision}-${envelope.contentSha256.slice(0, 12)}.json`,
+    );
+    return context.json(envelope, 201);
+  });
 
-  app.post(
-    "/api/evaluation-casebooks/:casebookId/qualification-baselines",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_TRUST_ADMIN_REQUEST_BYTES,
-          "Qualification baseline request",
-        );
-      } catch (error) {
-        return jsonError(
-          context,
-          errorMessage(error),
-          error instanceof RequestBodyTooLargeError ? 413 : 400,
-        );
+  app.post("/api/evaluation-casebooks/:casebookId/qualification-baselines", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(context.req.raw, MAX_TRUST_ADMIN_REQUEST_BYTES, "Qualification baseline request");
+    } catch (error) {
+      return jsonError(context, errorMessage(error), error instanceof RequestBodyTooLargeError ? 413 : 400);
+    }
+    const body = parsePromoteEvaluationQualificationBaselineRequest(input);
+    if (!body) {
+      return jsonError(context, "Qualification baseline request is invalid", 400);
+    }
+    services.store.getThread(body.threadId);
+    const casebookId = context.req.param("casebookId");
+    const receipt = createEvaluationCasebookQualificationReceipt(services.store, casebookId);
+    if (receipt.state !== "passed") {
+      return jsonError(context, "Qualification baseline requires a current passing receipt", 409);
+    }
+    const envelope = signTrustedReceipt(receipt, services.store.getReceiptTrustAnchor(body.trustAnchorId));
+    let result;
+    try {
+      result = await services.store.promoteEvaluationQualificationBaseline(casebookId, body.threadId, envelope);
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        (error.message.includes("current passing receipt") || error.message.includes("not trusted") || error.message.includes("changed"))
+      ) {
+        return jsonError(context, error.message, 409);
       }
-      const body = parsePromoteEvaluationQualificationBaselineRequest(input);
-      if (!body) {
-        return jsonError(
-          context,
-          "Qualification baseline request is invalid",
-          400,
-        );
-      }
-      services.store.getThread(body.threadId);
-      const casebookId = context.req.param("casebookId");
-      const receipt = createEvaluationCasebookQualificationReceipt(
-        services.store,
-        casebookId,
-      );
-      if (receipt.state !== "passed") {
-        return jsonError(
-          context,
-          "Qualification baseline requires a current passing receipt",
-          409,
-        );
-      }
-      const envelope = signTrustedReceipt(
-        receipt,
-        services.store.getReceiptTrustAnchor(body.trustAnchorId),
-      );
-      let result;
-      try {
-        result = await services.store.promoteEvaluationQualificationBaseline(
-          casebookId,
-          body.threadId,
-          envelope,
-        );
-      } catch (error) {
-        if (
-          error instanceof Error &&
-          (error.message.includes("current passing receipt") ||
-            error.message.includes("not trusted") ||
-            error.message.includes("changed"))
-        ) {
-          return jsonError(context, error.message, 409);
-        }
-        throw error;
-      }
-      if (result.created) {
-        await appendReceiptTrustEvent(
-          services,
-          body.threadId,
-          "evaluation.casebook.qualification_baseline.promoted",
-          {
-            baselineId: result.baseline.id,
-            casebookId: result.baseline.casebookId,
-            casebookRevision: result.baseline.casebookRevision,
-            qualificationExecutionId: result.baseline.qualificationExecutionId,
-            keyId: result.baseline.envelope.signature.keyId,
-            receiptSha256: result.baseline.envelope.receipt.contentSha256,
-            receiptArtifactSha256:
-              result.baseline.envelope.signature.receiptArtifactSha256,
-            envelopeSha256: result.baseline.envelope.contentSha256,
-            baselineSha256: result.baseline.contentSha256,
-          },
-        );
-      }
-      setPromoteEvaluationQualificationBaselineResultHeaders(context, result);
-      return context.json(result, result.created ? 201 : 200);
-    },
-  );
+      throw error;
+    }
+    if (result.created) {
+      await appendReceiptTrustEvent(services, body.threadId, "evaluation.casebook.qualification_baseline.promoted", {
+        baselineId: result.baseline.id,
+        casebookId: result.baseline.casebookId,
+        casebookRevision: result.baseline.casebookRevision,
+        qualificationExecutionId: result.baseline.qualificationExecutionId,
+        keyId: result.baseline.envelope.signature.keyId,
+        receiptSha256: result.baseline.envelope.receipt.contentSha256,
+        receiptArtifactSha256: result.baseline.envelope.signature.receiptArtifactSha256,
+        envelopeSha256: result.baseline.envelope.contentSha256,
+        baselineSha256: result.baseline.contentSha256,
+      });
+    }
+    setPromoteEvaluationQualificationBaselineResultHeaders(context, result);
+    return context.json(result, result.created ? 201 : 200);
+  });
 
-  app.post(
-    "/api/threads/:threadId/evaluation-suites/:suiteId/signed-receipt",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_TRUST_ADMIN_REQUEST_BYTES,
-          "Signed evaluation gate receipt request",
-        );
-      } catch (error) {
-        return jsonError(
-          context,
-          errorMessage(error),
-          error instanceof RequestBodyTooLargeError ? 413 : 400,
-        );
-      }
-      const body = parseSignTrustedReceiptRequest(input, false);
-      if (!body) {
-        return jsonError(
-          context,
-          "Signed evaluation gate receipt request is invalid",
-          400,
-        );
-      }
-      const threadId = context.req.param("threadId");
-      const receipt = createEvaluationSuiteGateReceipt(
-        services.store,
-        threadId,
-        context.req.param("suiteId"),
-      );
-      const envelope = signTrustedReceipt(
-        receipt,
-        services.store.getReceiptTrustAnchor(body.trustAnchorId),
-      );
-      await appendReceiptTrustEvent(
-        services,
-        threadId,
-        "receipt.signed",
-        trustedReceiptEventPayload(envelope),
-      );
-      setTrustedReceiptHeaders(
-        context,
-        envelope,
-        `napier-signed-gate-${receipt.suite.id}-r${receipt.suite.revision}-${envelope.contentSha256.slice(0, 12)}.json`,
-      );
-      return context.json(envelope, 201);
-    },
-  );
+  app.post("/api/threads/:threadId/evaluation-suites/:suiteId/signed-receipt", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(context.req.raw, MAX_TRUST_ADMIN_REQUEST_BYTES, "Signed evaluation gate receipt request");
+    } catch (error) {
+      return jsonError(context, errorMessage(error), error instanceof RequestBodyTooLargeError ? 413 : 400);
+    }
+    const body = parseSignTrustedReceiptRequest(input, false);
+    if (!body) {
+      return jsonError(context, "Signed evaluation gate receipt request is invalid", 400);
+    }
+    const threadId = context.req.param("threadId");
+    const receipt = createEvaluationSuiteGateReceipt(services.store, threadId, context.req.param("suiteId"));
+    const envelope = signTrustedReceipt(receipt, services.store.getReceiptTrustAnchor(body.trustAnchorId));
+    await appendReceiptTrustEvent(services, threadId, "receipt.signed", trustedReceiptEventPayload(envelope));
+    setTrustedReceiptHeaders(
+      context,
+      envelope,
+      `napier-signed-gate-${receipt.suite.id}-r${receipt.suite.revision}-${envelope.contentSha256.slice(0, 12)}.json`,
+    );
+    return context.json(envelope, 201);
+  });
 
   registerPlanLifecycleHttp(app, services);
 
   registerPlanBlueprintLibraryHttp(app, services.store);
 
   app.get("/api/plan-blueprints/portfolio/calibration", async (context) => {
-    const calibration =
-      await services.store.calibrateExecutionPlanBlueprintPortfolio();
+    const calibration = await services.store.calibrateExecutionPlanBlueprintPortfolio();
     setExecutionPlanBlueprintPortfolioCalibrationHeaders(context, calibration);
     return context.json(calibration);
   });
 
-  app.get(
-    "/api/plan-blueprints/portfolio/recommendation-policy-backtest",
-    async (context) => {
-      const backtest =
-        await services.store.backtestExecutionPlanBlueprintRecommendationPolicies();
-      setExecutionPlanBlueprintRecommendationPolicyBacktestHeaders(
-        context,
-        backtest,
+  app.get("/api/plan-blueprints/portfolio/recommendation-policy-backtest", async (context) => {
+    const backtest = await services.store.backtestExecutionPlanBlueprintRecommendationPolicies();
+    setExecutionPlanBlueprintRecommendationPolicyBacktestHeaders(context, backtest);
+    return context.json(backtest);
+  });
+
+  app.get("/api/plan-blueprints/portfolio/recommendation-policy-overrides", async (context) => {
+    const overrides = await services.store.listExecutionPlanBlueprintRecommendationPolicyOverrides();
+    setExecutionPlanBlueprintRecommendationPolicyOverrideListHeaders(context, overrides);
+    return context.json(overrides);
+  });
+
+  app.get("/api/plan-blueprints/portfolio/recommendation-policy-overrides/drift-review", async (context) => {
+    const review = await services.store.reviewExecutionPlanBlueprintRecommendationPolicyOverrideDrift();
+    setExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewHeaders(context, review);
+    return context.json(review);
+  });
+
+  app.get("/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements", async (context) => {
+    const history = await services.store.listExecutionPlanBlueprintRecommendationPolicyOverrideRetirements();
+    setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryHeaders(context, history);
+    return context.json(history);
+  });
+
+  app.post("/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/verify", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(
+        context.req.raw,
+        MAX_EXECUTION_PLAN_BLUEPRINT_BYTES,
+        "Execution plan blueprint recommendation policy override retirement history verification request",
       );
-      return context.json(backtest);
-    },
-  );
+    } catch (error) {
+      if (error instanceof RequestBodyTooLargeError) {
+        return jsonError(context, error.message, 413);
+      }
+      return jsonError(context, "Execution plan blueprint recommendation policy override retirement history verification request is invalid", 400);
+    }
+    const request = parseVerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryRequest(input);
+    if (!request) {
+      return jsonError(context, "Execution plan blueprint recommendation policy override retirement history verification request is invalid", 400);
+    }
+    const verification = await services.store.verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirements(request.history);
+    setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerificationHeaders(context, verification);
+    return context.json(verification);
+  });
 
-  app.get(
-    "/api/plan-blueprints/portfolio/recommendation-policy-overrides",
-    async (context) => {
-      const overrides =
-        await services.store.listExecutionPlanBlueprintRecommendationPolicyOverrides();
-      setExecutionPlanBlueprintRecommendationPolicyOverrideListHeaders(
-        context,
-        overrides,
+  app.post("/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/proof-bundle/verify", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(
+        context.req.raw,
+        MAX_THREAD_REPLAY_BUNDLE_BYTES,
+        "Execution plan blueprint recommendation policy override retirement history proof bundle verification request",
       );
-      return context.json(overrides);
-    },
-  );
+    } catch (error) {
+      if (error instanceof RequestBodyTooLargeError) {
+        return jsonError(context, error.message, 413);
+      }
+      return jsonError(context, "Execution plan blueprint recommendation policy override retirement history proof bundle verification request is invalid", 400);
+    }
+    const request = parseVerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest(input);
+    if (!request) {
+      return jsonError(context, "Execution plan blueprint recommendation policy override retirement history proof bundle verification request is invalid", 400);
+    }
+    const proofBundle = services.store.verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle(request.histories);
+    setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleHeaders(context, proofBundle);
+    return context.json(proofBundle);
+  });
 
-  app.get(
-    "/api/plan-blueprints/portfolio/recommendation-policy-overrides/drift-review",
-    async (context) => {
-      const review =
-        await services.store.reviewExecutionPlanBlueprintRecommendationPolicyOverrideDrift();
-      setExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewHeaders(
-        context,
-        review,
+  app.post("/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/proof-bundle/sign", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(
+        context.req.raw,
+        MAX_THREAD_REPLAY_BUNDLE_BYTES,
+        "Execution plan blueprint recommendation policy override retirement history proof bundle signing request",
       );
-      return context.json(review);
-    },
-  );
-
-  app.get(
-    "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements",
-    async (context) => {
-      const history =
-        await services.store.listExecutionPlanBlueprintRecommendationPolicyOverrideRetirements();
-      setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryHeaders(
+    } catch (error) {
+      if (error instanceof RequestBodyTooLargeError) {
+        return jsonError(context, error.message, 413);
+      }
+      return jsonError(context, "Execution plan blueprint recommendation policy override retirement history proof bundle signing request is invalid", 400);
+    }
+    const request = parseSignExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest(input);
+    if (!request) {
+      return jsonError(context, "Execution plan blueprint recommendation policy override retirement history proof bundle signing request is invalid", 400);
+    }
+    try {
+      services.store.getThread(request.threadId);
+      const proofBundle = services.store.verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle(request.histories);
+      if (proofBundle.status === "invalid") {
+        return jsonError(context, "Execution plan blueprint recommendation policy override retirement history proof bundle is invalid", 409);
+      }
+      const envelope = signTrustedReceipt(proofBundle, services.store.getReceiptTrustAnchor(request.trustAnchorId));
+      await appendReceiptTrustEvent(services, request.threadId, "receipt.signed", trustedReceiptEventPayload(envelope));
+      setTrustedReceiptHeaders(context, envelope, `napier-signed-policy-retirement-proof-bundle-${envelope.contentSha256.slice(0, 12)}.json`);
+      return context.json(envelope, 201);
+    } catch (error) {
+      const message = errorMessage(error);
+      const caught = error instanceof Error ? error : new Error(message);
+      return jsonError(
         context,
-        history,
+        message,
+        message.includes("proof bundle is invalid") || isReceiptTrustConflict(caught) ? 409 : isReceiptTrustClientError(caught) ? 400 : 500,
       );
-      return context.json(history);
-    },
-  );
+    }
+  });
 
-  app.post(
-    "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/verify",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_EXECUTION_PLAN_BLUEPRINT_BYTES,
-          "Execution plan blueprint recommendation policy override retirement history verification request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Execution plan blueprint recommendation policy override retirement history verification request is invalid",
-          400,
-        );
-      }
-      const request =
-        parseVerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryRequest(
-          input,
-        );
-      if (!request) {
-        return jsonError(
-          context,
-          "Execution plan blueprint recommendation policy override retirement history verification request is invalid",
-          400,
-        );
-      }
-      const verification =
-        await services.store.verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirements(
-          request.history,
-        );
-      setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerificationHeaders(
-        context,
-        verification,
+  app.post("/api/plan-blueprints/portfolio/recommendation-policy-overrides/retire", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(
+        context.req.raw,
+        MAX_EXECUTION_PLAN_BLUEPRINT_BYTES,
+        "Execution plan blueprint recommendation policy override retirement request",
       );
-      return context.json(verification);
-    },
-  );
+    } catch (error) {
+      if (error instanceof RequestBodyTooLargeError) {
+        return jsonError(context, error.message, 413);
+      }
+      return jsonError(context, "Execution plan blueprint recommendation policy override retirement request is invalid", 400);
+    }
+    const request = parseRetireExecutionPlanBlueprintRecommendationPolicyOverrideRequest(input);
+    if (!request) {
+      return jsonError(context, "Execution plan blueprint recommendation policy override retirement request is invalid", 400);
+    }
+    try {
+      const result = await services.store.retireExecutionPlanBlueprintRecommendationPolicyOverride(request);
+      setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHeaders(context, result);
+      return context.json(result);
+    } catch (error) {
+      const message = errorMessage(error);
+      return jsonError(context, message, message.includes("changed") || message.includes("missing") || message.includes("not retire recommended") ? 409 : 400);
+    }
+  });
 
-  app.post(
-    "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/proof-bundle/verify",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_THREAD_REPLAY_BUNDLE_BYTES,
-          "Execution plan blueprint recommendation policy override retirement history proof bundle verification request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Execution plan blueprint recommendation policy override retirement history proof bundle verification request is invalid",
-          400,
-        );
+  app.post("/api/plan-blueprints/portfolio/recommendation-policy-overrides", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(context.req.raw, MAX_EXECUTION_PLAN_BLUEPRINT_BYTES, "Execution plan blueprint recommendation policy override request");
+    } catch (error) {
+      if (error instanceof RequestBodyTooLargeError) {
+        return jsonError(context, error.message, 413);
       }
-      const request =
-        parseVerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest(
-          input,
-        );
-      if (!request) {
-        return jsonError(
-          context,
-          "Execution plan blueprint recommendation policy override retirement history proof bundle verification request is invalid",
-          400,
-        );
-      }
-      const proofBundle =
-        services.store.verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle(
-          request.histories,
-        );
-      setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleHeaders(
-        context,
-        proofBundle,
-      );
-      return context.json(proofBundle);
-    },
-  );
-
-  app.post(
-    "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/proof-bundle/sign",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_THREAD_REPLAY_BUNDLE_BYTES,
-          "Execution plan blueprint recommendation policy override retirement history proof bundle signing request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Execution plan blueprint recommendation policy override retirement history proof bundle signing request is invalid",
-          400,
-        );
-      }
-      const request =
-        parseSignExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest(
-          input,
-        );
-      if (!request) {
-        return jsonError(
-          context,
-          "Execution plan blueprint recommendation policy override retirement history proof bundle signing request is invalid",
-          400,
-        );
-      }
-      try {
-        services.store.getThread(request.threadId);
-        const proofBundle =
-          services.store.verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle(
-            request.histories,
-          );
-        if (proofBundle.status === "invalid") {
-          return jsonError(
-            context,
-            "Execution plan blueprint recommendation policy override retirement history proof bundle is invalid",
-            409,
-          );
-        }
-        const envelope = signTrustedReceipt(
-          proofBundle,
-          services.store.getReceiptTrustAnchor(request.trustAnchorId),
-        );
-        await appendReceiptTrustEvent(
-          services,
-          request.threadId,
-          "receipt.signed",
-          trustedReceiptEventPayload(envelope),
-        );
-        setTrustedReceiptHeaders(
-          context,
-          envelope,
-          `napier-signed-policy-retirement-proof-bundle-${envelope.contentSha256.slice(0, 12)}.json`,
-        );
-        return context.json(envelope, 201);
-      } catch (error) {
-        const message = errorMessage(error);
-        const caught = error instanceof Error ? error : new Error(message);
-        return jsonError(
-          context,
-          message,
-          message.includes("proof bundle is invalid") ||
-            isReceiptTrustConflict(caught)
-            ? 409
-            : isReceiptTrustClientError(caught)
-              ? 400
-              : 500,
-        );
-      }
-    },
-  );
-
-  app.post(
-    "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retire",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_EXECUTION_PLAN_BLUEPRINT_BYTES,
-          "Execution plan blueprint recommendation policy override retirement request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Execution plan blueprint recommendation policy override retirement request is invalid",
-          400,
-        );
-      }
-      const request =
-        parseRetireExecutionPlanBlueprintRecommendationPolicyOverrideRequest(
-          input,
-        );
-      if (!request) {
-        return jsonError(
-          context,
-          "Execution plan blueprint recommendation policy override retirement request is invalid",
-          400,
-        );
-      }
-      try {
-        const result =
-          await services.store.retireExecutionPlanBlueprintRecommendationPolicyOverride(
-            request,
-          );
-        setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHeaders(
-          context,
-          result,
-        );
-        return context.json(result);
-      } catch (error) {
-        const message = errorMessage(error);
-        return jsonError(
-          context,
-          message,
-          message.includes("changed") ||
-            message.includes("missing") ||
-            message.includes("not retire recommended")
-            ? 409
-            : 400,
-        );
-      }
-    },
-  );
-
-  app.post(
-    "/api/plan-blueprints/portfolio/recommendation-policy-overrides",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_EXECUTION_PLAN_BLUEPRINT_BYTES,
-          "Execution plan blueprint recommendation policy override request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Execution plan blueprint recommendation policy override request is invalid",
-          400,
-        );
-      }
-      const request =
-        parseSetExecutionPlanBlueprintRecommendationPolicyOverrideRequest(
-          input,
-        );
-      if (!request) {
-        return jsonError(
-          context,
-          "Execution plan blueprint recommendation policy override request is invalid",
-          400,
-        );
-      }
-      try {
-        const override =
-          await services.store.setExecutionPlanBlueprintRecommendationPolicyOverride(
-            request,
-          );
-        setExecutionPlanBlueprintRecommendationPolicyOverrideHeaders(
-          context,
-          override,
-        );
-        return context.json(override);
-      } catch (error) {
-        const message = errorMessage(error);
-        return jsonError(
-          context,
-          message,
-          message.includes("portfolio set changed") ||
-            message.includes("family is missing")
-            ? 409
-            : 400,
-        );
-      }
-    },
-  );
+      return jsonError(context, "Execution plan blueprint recommendation policy override request is invalid", 400);
+    }
+    const request = parseSetExecutionPlanBlueprintRecommendationPolicyOverrideRequest(input);
+    if (!request) {
+      return jsonError(context, "Execution plan blueprint recommendation policy override request is invalid", 400);
+    }
+    try {
+      const override = await services.store.setExecutionPlanBlueprintRecommendationPolicyOverride(request);
+      setExecutionPlanBlueprintRecommendationPolicyOverrideHeaders(context, override);
+      return context.json(override);
+    } catch (error) {
+      const message = errorMessage(error);
+      return jsonError(context, message, message.includes("portfolio set changed") || message.includes("family is missing") ? 409 : 400);
+    }
+  });
 
   registerPlanBlueprintReplayHttp(app, services.store);
 
@@ -4605,8 +3017,7 @@ export function createApp(services: NapierServices): Hono {
       evaluations: services.evaluations,
     },
     {
-      readRequest: (request, label) =>
-        readLimitedJson(request, MAX_EVALUATION_REQUEST_BYTES, label),
+      readRequest: (request, label) => readLimitedJson(request, MAX_EVALUATION_REQUEST_BYTES, label),
       requestBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
       errorMessage,
       jsonError,
@@ -4614,8 +3025,7 @@ export function createApp(services: NapierServices): Hono {
   );
 
   registerEvaluationReviewHttp(app, services.store, {
-    readRequest: (request, label) =>
-      readLimitedJson(request, MAX_EVALUATION_REQUEST_BYTES, label),
+    readRequest: (request, label) => readLimitedJson(request, MAX_EVALUATION_REQUEST_BYTES, label),
     requestBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
     errorMessage,
     jsonError,
@@ -4629,8 +3039,7 @@ export function createApp(services: NapierServices): Hono {
       qualifications: services.evaluationCasebookQualifications,
     },
     {
-      readRequest: (request, label) =>
-        readLimitedJson(request, MAX_EVALUATION_REQUEST_BYTES, label),
+      readRequest: (request, label) => readLimitedJson(request, MAX_EVALUATION_REQUEST_BYTES, label),
       requestBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
       errorMessage,
       jsonError,
@@ -4652,8 +3061,7 @@ export function createApp(services: NapierServices): Hono {
       suites: services.evaluationSuites,
     },
     {
-      readRequest: (request, label) =>
-        readLimitedJson(request, MAX_EVALUATION_REQUEST_BYTES, label),
+      readRequest: (request, label) => readLimitedJson(request, MAX_EVALUATION_REQUEST_BYTES, label),
       requestBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
       errorMessage,
       jsonError,
@@ -4665,9 +3073,7 @@ export function createApp(services: NapierServices): Hono {
 
   app.get("/api/extensions", (context) => {
     const agentId = context.req.query("agent");
-    const extensions = services.store.listExtensions(
-      agentId ? { agentId } : {},
-    );
+    const extensions = services.store.listExtensions(agentId ? { agentId } : {});
     setExtensionListHeaders(context, extensions, agentId);
     return context.json(extensions);
   });
@@ -4681,41 +3087,23 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/extensions/publishers", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_TRUST_ADMIN_REQUEST_BYTES,
-        "Extension publisher trust anchor request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_TRUST_ADMIN_REQUEST_BYTES, "Extension publisher trust anchor request");
     } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
+      return jsonError(context, errorMessage(error), error instanceof RequestBodyTooLargeError ? 413 : 400);
     }
     const body = parseCreateExtensionPublisherTrustAnchorRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Extension publisher trust anchor is invalid",
-        400,
-      );
+      return jsonError(context, "Extension publisher trust anchor is invalid", 400);
     }
-    const anchor =
-      await services.store.createExtensionPublisherTrustAnchor(body);
-    await appendExtensionEvent(
-      services,
-      body.threadId,
-      "extension.publisher.created",
-      {
-        trustAnchorId: anchor.id,
-        keyId: anchor.keyId,
-        algorithm: anchor.algorithm,
-        status: anchor.status,
-        signingCapable: Boolean(anchor.signingSource),
-        anchorSha256: anchor.contentSha256,
-      },
-    );
+    const anchor = await services.store.createExtensionPublisherTrustAnchor(body);
+    await appendExtensionEvent(services, body.threadId, "extension.publisher.created", {
+      trustAnchorId: anchor.id,
+      keyId: anchor.keyId,
+      algorithm: anchor.algorithm,
+      status: anchor.status,
+      signingCapable: Boolean(anchor.signingSource),
+      anchorSha256: anchor.contentSha256,
+    });
     setExtensionPublisherTrustAnchorHeaders(context, anchor);
     return context.json(anchor, 201);
   });
@@ -4723,64 +3111,32 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/extensions/publishers/:anchorId/revoke", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_TRUST_ADMIN_REQUEST_BYTES,
-        "Extension publisher trust anchor revocation request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_TRUST_ADMIN_REQUEST_BYTES, "Extension publisher trust anchor revocation request");
     } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
+      return jsonError(context, errorMessage(error), error instanceof RequestBodyTooLargeError ? 413 : 400);
     }
     const body = parseRevokeExtensionPublisherTrustAnchorRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Extension publisher trust anchor revocation is invalid",
-        400,
-      );
+      return jsonError(context, "Extension publisher trust anchor revocation is invalid", 400);
     }
     services.store.getThread(body.threadId);
-    const before = services.store.getExtensionPublisherTrustAnchor(
-      context.req.param("anchorId"),
-    );
-    const extensionRevisions = new Map(
-      services.store
-        .listExtensions()
-        .map((extension) => [extension.id, extension.revision]),
-    );
-    const anchor = await services.store.revokeExtensionPublisherTrustAnchor(
-      before.id,
-    );
+    const before = services.store.getExtensionPublisherTrustAnchor(context.req.param("anchorId"));
+    const extensionRevisions = new Map(services.store.listExtensions().map((extension) => [extension.id, extension.revision]));
+    const anchor = await services.store.revokeExtensionPublisherTrustAnchor(before.id);
     const affectedExtensionIds = services.store
       .listExtensions()
-      .filter(
-        (extension) =>
-          extension.revision !== extensionRevisions.get(extension.id),
-      )
+      .filter((extension) => extension.revision !== extensionRevisions.get(extension.id))
       .map((extension) => extension.id);
-    await Promise.allSettled(
-      affectedExtensionIds.map((extensionId) =>
-        services.extensions.closeTransport(extensionId),
-      ),
-    );
+    await Promise.allSettled(affectedExtensionIds.map((extensionId) => services.extensions.closeTransport(extensionId)));
     if (before.status !== anchor.status) {
-      await appendExtensionEvent(
-        services,
-        body.threadId,
-        "extension.publisher.revoked",
-        {
-          trustAnchorId: anchor.id,
-          keyId: anchor.keyId,
-          status: anchor.status,
-          anchorSha256: anchor.contentSha256,
-          affectedExtensionIdsSha256: sha256Json(affectedExtensionIds.sort()),
-          affectedExtensionCount: affectedExtensionIds.length,
-        },
-      );
+      await appendExtensionEvent(services, body.threadId, "extension.publisher.revoked", {
+        trustAnchorId: anchor.id,
+        keyId: anchor.keyId,
+        status: anchor.status,
+        anchorSha256: anchor.contentSha256,
+        affectedExtensionIdsSha256: sha256Json(affectedExtensionIds.sort()),
+        affectedExtensionCount: affectedExtensionIds.length,
+      });
     }
     setExtensionPublisherTrustAnchorHeaders(context, anchor);
     return context.json(anchor);
@@ -4789,73 +3145,40 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/skills/packages/sign", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_PACKAGE_GOVERNANCE_REQUEST_BYTES,
-        "Skill package signing request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_PACKAGE_GOVERNANCE_REQUEST_BYTES, "Skill package signing request");
     } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
+      return jsonError(context, errorMessage(error), error instanceof RequestBodyTooLargeError ? 413 : 400);
     }
     const body = parseSignSkillPackageRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Skill package signing request is invalid",
-        400,
-      );
+      return jsonError(context, "Skill package signing request is invalid", 400);
     }
     const envelope = await services.store.signSkillPackage(body);
-    setSkillPackageHeaders(
-      context,
-      envelope,
-      `napier-skill-package-${envelope.manifest.contentSha256.slice(0, 12)}.json`,
-    );
-    await appendExtensionEvent(
-      services,
-      body.threadId,
-      "skill.package.signed",
-      {
-        manifestSha256: envelope.manifest.contentSha256,
-        envelopeSha256: envelope.contentSha256,
-        skillCatalogSha256: envelope.manifest.skillCatalogSha256,
-        skillCount: envelope.manifest.skills.length,
-        keyId: envelope.signature.keyId,
-        skillNamesSha256: sha256Json(envelope.manifest.loadedSkillNames),
-      },
-    );
+    setSkillPackageHeaders(context, envelope, `napier-skill-package-${envelope.manifest.contentSha256.slice(0, 12)}.json`);
+    await appendExtensionEvent(services, body.threadId, "skill.package.signed", {
+      manifestSha256: envelope.manifest.contentSha256,
+      envelopeSha256: envelope.contentSha256,
+      skillCatalogSha256: envelope.manifest.skillCatalogSha256,
+      skillCount: envelope.manifest.skills.length,
+      keyId: envelope.signature.keyId,
+      skillNamesSha256: sha256Json(envelope.manifest.loadedSkillNames),
+    });
     return context.json(envelope);
   });
 
   app.post("/api/skills/packages/verify", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_SIGNED_SKILL_PACKAGE_BYTES + 1_024,
-        "Skill package verification request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_SIGNED_SKILL_PACKAGE_BYTES + 1_024, "Skill package verification request");
     } catch (error) {
       if (error instanceof RequestBodyTooLargeError) {
         return jsonError(context, error.message, 413);
       }
-      return jsonError(
-        context,
-        "Skill package verification request is invalid",
-        400,
-      );
+      return jsonError(context, "Skill package verification request is invalid", 400);
     }
     const body = parseVerifySkillPackageRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Skill package verification request is invalid",
-        400,
-      );
+      return jsonError(context, "Skill package verification request is invalid", 400);
     }
     const verification = services.store.verifySkillPackage(body);
     setSkillPackageVerificationHeaders(context, verification);
@@ -4865,57 +3188,33 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/skills/packages/qualify", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_SIGNED_SKILL_PACKAGE_BYTES + 1_024,
-        "Skill package qualification request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_SIGNED_SKILL_PACKAGE_BYTES + 1_024, "Skill package qualification request");
     } catch (error) {
       if (error instanceof RequestBodyTooLargeError) {
         return jsonError(context, error.message, 413);
       }
-      return jsonError(
-        context,
-        "Skill package qualification request is invalid",
-        400,
-      );
+      return jsonError(context, "Skill package qualification request is invalid", 400);
     }
     const body = parseQualifySkillPackageRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Skill package qualification request is invalid",
-        400,
-      );
+      return jsonError(context, "Skill package qualification request is invalid", 400);
     }
     const qualification = await services.store.qualifySkillPackage(body);
     setSkillPackageQualificationHeaders(context, qualification);
-    await appendExtensionEvent(
-      services,
-      body.threadId,
-      "skill.package.qualified",
-      {
-        status: qualification.status,
-        verificationStatus: qualification.verificationStatus,
-        skillCount: qualification.skillCount,
-        ...(qualification.manifestSha256
-          ? { manifestSha256: qualification.manifestSha256 }
-          : {}),
-        ...(qualification.envelopeSha256
-          ? { envelopeSha256: qualification.envelopeSha256 }
-          : {}),
-        ...(qualification.skillCatalogSha256
-          ? { skillCatalogSha256: qualification.skillCatalogSha256 }
-          : {}),
-        ...(qualification.observedSkillCatalogSha256
-          ? {
-              observedSkillCatalogSha256:
-                qualification.observedSkillCatalogSha256,
-            }
-          : {}),
-        ...(qualification.keyId ? { keyId: qualification.keyId } : {}),
-      },
-    );
+    await appendExtensionEvent(services, body.threadId, "skill.package.qualified", {
+      status: qualification.status,
+      verificationStatus: qualification.verificationStatus,
+      skillCount: qualification.skillCount,
+      ...(qualification.manifestSha256 ? { manifestSha256: qualification.manifestSha256 } : {}),
+      ...(qualification.envelopeSha256 ? { envelopeSha256: qualification.envelopeSha256 } : {}),
+      ...(qualification.skillCatalogSha256 ? { skillCatalogSha256: qualification.skillCatalogSha256 } : {}),
+      ...(qualification.observedSkillCatalogSha256
+        ? {
+            observedSkillCatalogSha256: qualification.observedSkillCatalogSha256,
+          }
+        : {}),
+      ...(qualification.keyId ? { keyId: qualification.keyId } : {}),
+    });
     return context.json(qualification);
   });
 
@@ -4928,90 +3227,55 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/skills/packages/installations", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_SIGNED_SKILL_PACKAGE_BYTES + 1_024,
-        "Skill package installation request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_SIGNED_SKILL_PACKAGE_BYTES + 1_024, "Skill package installation request");
     } catch (error) {
       if (error instanceof RequestBodyTooLargeError) {
         return jsonError(context, error.message, 413);
       }
-      return jsonError(
-        context,
-        "Skill package installation request is invalid",
-        400,
-      );
+      return jsonError(context, "Skill package installation request is invalid", 400);
     }
     const body = parseInstallSkillPackageRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Skill package installation request is invalid",
-        400,
-      );
+      return jsonError(context, "Skill package installation request is invalid", 400);
     }
     const result = await services.store.installSkillPackage(body);
     setSkillPackageInstallationResultHeaders(context, result);
-    await appendExtensionEvent(
-      services,
-      body.threadId,
-      result.created
-        ? "skill.package.installed"
-        : "skill.package.installation_matched",
-      {
-        installationId: result.installation.id,
-        status: result.installation.status,
-        created: result.created,
-        publisher: result.installation.publisher,
-        keyId: result.installation.keyId,
-        skillCatalogSha256: result.installation.skillCatalogSha256,
-        manifestSha256: result.installation.manifestSha256,
-        envelopeSha256: result.installation.envelopeSha256,
-        skillNamesSha256: result.installation.skillNamesSha256,
-        skillCount: result.installation.loadedSkillNames.length,
-        ...(result.replacedInstallation
-          ? {
-              replacedInstallationId: result.replacedInstallation.id,
-              publisherChanged:
-                result.replacedInstallation.publisher !==
-                  result.installation.publisher ||
-                result.replacedInstallation.keyId !== result.installation.keyId,
-              skillSetChanged:
-                result.replacedInstallation.skillNamesSha256 !==
-                result.installation.skillNamesSha256,
-            }
-          : {}),
-      },
-    );
+    await appendExtensionEvent(services, body.threadId, result.created ? "skill.package.installed" : "skill.package.installation_matched", {
+      installationId: result.installation.id,
+      status: result.installation.status,
+      created: result.created,
+      publisher: result.installation.publisher,
+      keyId: result.installation.keyId,
+      skillCatalogSha256: result.installation.skillCatalogSha256,
+      manifestSha256: result.installation.manifestSha256,
+      envelopeSha256: result.installation.envelopeSha256,
+      skillNamesSha256: result.installation.skillNamesSha256,
+      skillCount: result.installation.loadedSkillNames.length,
+      ...(result.replacedInstallation
+        ? {
+            replacedInstallationId: result.replacedInstallation.id,
+            publisherChanged:
+              result.replacedInstallation.publisher !== result.installation.publisher || result.replacedInstallation.keyId !== result.installation.keyId,
+            skillSetChanged: result.replacedInstallation.skillNamesSha256 !== result.installation.skillNamesSha256,
+          }
+        : {}),
+    });
     return context.json(result);
   });
 
   app.post("/api/skills/content/preview", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_SKILL_CONTENT_BYTES * 2 + 4_096,
-        "Skill content preview request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_SKILL_CONTENT_BYTES * 2 + 4_096, "Skill content preview request");
     } catch (error) {
       if (error instanceof RequestBodyTooLargeError) {
         return jsonError(context, error.message, 413);
       }
-      return jsonError(
-        context,
-        "Skill content preview request is invalid",
-        400,
-      );
+      return jsonError(context, "Skill content preview request is invalid", 400);
     }
     const body = parsePreviewSkillContentRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Skill content preview request is invalid",
-        400,
-      );
+      return jsonError(context, "Skill content preview request is invalid", 400);
     }
     const review = await services.store.previewSkillContent(body);
     setSkillContentReviewHeaders(context, review);
@@ -5021,11 +3285,7 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/skills/content/apply", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_SKILL_CONTENT_BYTES * 2 + 4_096,
-        "Skill content apply request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_SKILL_CONTENT_BYTES * 2 + 4_096, "Skill content apply request");
     } catch (error) {
       if (error instanceof RequestBodyTooLargeError) {
         return jsonError(context, error.message, 413);
@@ -5041,11 +3301,7 @@ export function createApp(services: NapierServices): Hono {
     await appendExtensionEvent(
       services,
       body.threadId,
-      result.review.action === "noop"
-        ? "skill.content.noop"
-        : result.review.action === "install"
-          ? "skill.content.installed"
-          : "skill.content.replaced",
+      result.review.action === "noop" ? "skill.content.noop" : result.review.action === "install" ? "skill.content.installed" : "skill.content.replaced",
       {
         applied: result.applied,
         skillName: result.review.skillName,
@@ -5057,15 +3313,9 @@ export function createApp(services: NapierServices): Hono {
         bodySha256: result.review.bodySha256,
         sizeBytes: result.review.sizeBytes,
         lineCount: result.review.lineCount,
-        ...(result.review.currentContentSha256
-          ? { currentContentSha256: result.review.currentContentSha256 }
-          : {}),
-        ...(result.review.currentSizeBytes !== undefined
-          ? { currentSizeBytes: result.review.currentSizeBytes }
-          : {}),
-        ...(result.review.currentLineCount !== undefined
-          ? { currentLineCount: result.review.currentLineCount }
-          : {}),
+        ...(result.review.currentContentSha256 ? { currentContentSha256: result.review.currentContentSha256 } : {}),
+        ...(result.review.currentSizeBytes !== undefined ? { currentSizeBytes: result.review.currentSizeBytes } : {}),
+        ...(result.review.currentLineCount !== undefined ? { currentLineCount: result.review.currentLineCount } : {}),
       },
     );
     return context.json(result);
@@ -5074,73 +3324,40 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/prompts/packages/sign", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_PACKAGE_GOVERNANCE_REQUEST_BYTES,
-        "Prompt package signing request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_PACKAGE_GOVERNANCE_REQUEST_BYTES, "Prompt package signing request");
     } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
+      return jsonError(context, errorMessage(error), error instanceof RequestBodyTooLargeError ? 413 : 400);
     }
     const body = parseSignPromptPackageRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Prompt package signing request is invalid",
-        400,
-      );
+      return jsonError(context, "Prompt package signing request is invalid", 400);
     }
     const envelope = services.store.signPromptPackage(body);
-    setPromptPackageHeaders(
-      context,
-      envelope,
-      `napier-prompt-package-${envelope.manifest.contentSha256.slice(0, 12)}.json`,
-    );
-    await appendExtensionEvent(
-      services,
-      body.threadId,
-      "prompt.package.signed",
-      {
-        manifestSha256: envelope.manifest.contentSha256,
-        envelopeSha256: envelope.contentSha256,
-        systemPromptSha256: envelope.manifest.systemPromptSha256,
-        agentId: envelope.manifest.sourceAgentId,
-        agentRevision: envelope.manifest.agentRevision,
-        keyId: envelope.signature.keyId,
-      },
-    );
+    setPromptPackageHeaders(context, envelope, `napier-prompt-package-${envelope.manifest.contentSha256.slice(0, 12)}.json`);
+    await appendExtensionEvent(services, body.threadId, "prompt.package.signed", {
+      manifestSha256: envelope.manifest.contentSha256,
+      envelopeSha256: envelope.contentSha256,
+      systemPromptSha256: envelope.manifest.systemPromptSha256,
+      agentId: envelope.manifest.sourceAgentId,
+      agentRevision: envelope.manifest.agentRevision,
+      keyId: envelope.signature.keyId,
+    });
     return context.json(envelope);
   });
 
   app.post("/api/prompts/packages/verify", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_SIGNED_PROMPT_PACKAGE_BYTES + 1_024,
-        "Prompt package verification request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_SIGNED_PROMPT_PACKAGE_BYTES + 1_024, "Prompt package verification request");
     } catch (error) {
       if (error instanceof RequestBodyTooLargeError) {
         return jsonError(context, error.message, 413);
       }
-      return jsonError(
-        context,
-        "Prompt package verification request is invalid",
-        400,
-      );
+      return jsonError(context, "Prompt package verification request is invalid", 400);
     }
     const body = parseVerifyPromptPackageRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Prompt package verification request is invalid",
-        400,
-      );
+      return jsonError(context, "Prompt package verification request is invalid", 400);
     }
     const verification = services.store.verifyPromptPackage(body);
     setPromptPackageVerificationHeaders(context, verification);
@@ -5150,137 +3367,74 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/prompts/packages/qualify", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_SIGNED_PROMPT_PACKAGE_BYTES + 1_024,
-        "Prompt package qualification request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_SIGNED_PROMPT_PACKAGE_BYTES + 1_024, "Prompt package qualification request");
     } catch (error) {
       if (error instanceof RequestBodyTooLargeError) {
         return jsonError(context, error.message, 413);
       }
-      return jsonError(
-        context,
-        "Prompt package qualification request is invalid",
-        400,
-      );
+      return jsonError(context, "Prompt package qualification request is invalid", 400);
     }
     const body = parseQualifyPromptPackageRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Prompt package qualification request is invalid",
-        400,
-      );
+      return jsonError(context, "Prompt package qualification request is invalid", 400);
     }
     const qualification = services.store.qualifyPromptPackage(body);
     setPromptPackageQualificationHeaders(context, qualification);
-    await appendExtensionEvent(
-      services,
-      body.threadId,
-      "prompt.package.qualified",
-      {
-        status: qualification.status,
-        verificationStatus: qualification.verificationStatus,
-        ...(qualification.manifestSha256
-          ? { manifestSha256: qualification.manifestSha256 }
-          : {}),
-        ...(qualification.envelopeSha256
-          ? { envelopeSha256: qualification.envelopeSha256 }
-          : {}),
-        ...(qualification.systemPromptSha256
-          ? { systemPromptSha256: qualification.systemPromptSha256 }
-          : {}),
-        ...(qualification.observedSystemPromptSha256
-          ? {
-              observedSystemPromptSha256:
-                qualification.observedSystemPromptSha256,
-            }
-          : {}),
-        ...(qualification.observedAgentId
-          ? { observedAgentId: qualification.observedAgentId }
-          : {}),
-        ...(qualification.observedAgentRevision
-          ? { observedAgentRevision: qualification.observedAgentRevision }
-          : {}),
-        ...(qualification.keyId ? { keyId: qualification.keyId } : {}),
-      },
-    );
+    await appendExtensionEvent(services, body.threadId, "prompt.package.qualified", {
+      status: qualification.status,
+      verificationStatus: qualification.verificationStatus,
+      ...(qualification.manifestSha256 ? { manifestSha256: qualification.manifestSha256 } : {}),
+      ...(qualification.envelopeSha256 ? { envelopeSha256: qualification.envelopeSha256 } : {}),
+      ...(qualification.systemPromptSha256 ? { systemPromptSha256: qualification.systemPromptSha256 } : {}),
+      ...(qualification.observedSystemPromptSha256
+        ? {
+            observedSystemPromptSha256: qualification.observedSystemPromptSha256,
+          }
+        : {}),
+      ...(qualification.observedAgentId ? { observedAgentId: qualification.observedAgentId } : {}),
+      ...(qualification.observedAgentRevision ? { observedAgentRevision: qualification.observedAgentRevision } : {}),
+      ...(qualification.keyId ? { keyId: qualification.keyId } : {}),
+    });
     return context.json(qualification);
   });
 
   app.post("/api/inspectors/packages/sign", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_PACKAGE_GOVERNANCE_REQUEST_BYTES,
-        "Inspector package signing request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_PACKAGE_GOVERNANCE_REQUEST_BYTES, "Inspector package signing request");
     } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
+      return jsonError(context, errorMessage(error), error instanceof RequestBodyTooLargeError ? 413 : 400);
     }
     const body = parseSignInspectorPackageRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Inspector package signing request is invalid",
-        400,
-      );
+      return jsonError(context, "Inspector package signing request is invalid", 400);
     }
     const envelope = services.store.signInspectorPackage(body);
-    setInspectorPackageHeaders(
-      context,
-      envelope,
-      `napier-inspector-package-${envelope.manifest.contentSha256.slice(0, 12)}.json`,
-    );
-    await appendExtensionEvent(
-      services,
-      body.threadId,
-      "inspector.package.signed",
-      {
-        manifestSha256: envelope.manifest.contentSha256,
-        envelopeSha256: envelope.contentSha256,
-        inspectorCatalogSha256: envelope.manifest.inspectorCatalogSha256,
-        panelCount: envelope.manifest.panels.length,
-        keyId: envelope.signature.keyId,
-        panelIdsSha256: sha256Json(
-          envelope.manifest.panels.map((panel) => panel.id),
-        ),
-      },
-    );
+    setInspectorPackageHeaders(context, envelope, `napier-inspector-package-${envelope.manifest.contentSha256.slice(0, 12)}.json`);
+    await appendExtensionEvent(services, body.threadId, "inspector.package.signed", {
+      manifestSha256: envelope.manifest.contentSha256,
+      envelopeSha256: envelope.contentSha256,
+      inspectorCatalogSha256: envelope.manifest.inspectorCatalogSha256,
+      panelCount: envelope.manifest.panels.length,
+      keyId: envelope.signature.keyId,
+      panelIdsSha256: sha256Json(envelope.manifest.panels.map((panel) => panel.id)),
+    });
     return context.json(envelope);
   });
 
   app.post("/api/inspectors/packages/verify", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_SIGNED_INSPECTOR_PACKAGE_BYTES + 1_024,
-        "Inspector package verification request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_SIGNED_INSPECTOR_PACKAGE_BYTES + 1_024, "Inspector package verification request");
     } catch (error) {
       if (error instanceof RequestBodyTooLargeError) {
         return jsonError(context, error.message, 413);
       }
-      return jsonError(
-        context,
-        "Inspector package verification request is invalid",
-        400,
-      );
+      return jsonError(context, "Inspector package verification request is invalid", 400);
     }
     const body = parseVerifyInspectorPackageRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Inspector package verification request is invalid",
-        400,
-      );
+      return jsonError(context, "Inspector package verification request is invalid", 400);
     }
     const verification = services.store.verifyInspectorPackage(body);
     setInspectorPackageVerificationHeaders(context, verification);
@@ -5290,133 +3444,69 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/inspectors/packages/qualify", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_SIGNED_INSPECTOR_PACKAGE_BYTES + 1_024,
-        "Inspector package qualification request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_SIGNED_INSPECTOR_PACKAGE_BYTES + 1_024, "Inspector package qualification request");
     } catch (error) {
       if (error instanceof RequestBodyTooLargeError) {
         return jsonError(context, error.message, 413);
       }
-      return jsonError(
-        context,
-        "Inspector package qualification request is invalid",
-        400,
-      );
+      return jsonError(context, "Inspector package qualification request is invalid", 400);
     }
     const body = parseQualifyInspectorPackageRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Inspector package qualification request is invalid",
-        400,
-      );
+      return jsonError(context, "Inspector package qualification request is invalid", 400);
     }
     const qualification = services.store.qualifyInspectorPackage(body);
     setInspectorPackageQualificationHeaders(context, qualification);
-    await appendExtensionEvent(
-      services,
-      body.threadId,
-      "inspector.package.qualified",
-      {
-        status: qualification.status,
-        verificationStatus: qualification.verificationStatus,
-        panelCount: qualification.panelCount,
-        ...(qualification.manifestSha256
-          ? { manifestSha256: qualification.manifestSha256 }
-          : {}),
-        ...(qualification.envelopeSha256
-          ? { envelopeSha256: qualification.envelopeSha256 }
-          : {}),
-        ...(qualification.inspectorCatalogSha256
-          ? { inspectorCatalogSha256: qualification.inspectorCatalogSha256 }
-          : {}),
-        ...(qualification.observedInspectorCatalogSha256
-          ? {
-              observedInspectorCatalogSha256:
-                qualification.observedInspectorCatalogSha256,
-            }
-          : {}),
-        ...(qualification.keyId ? { keyId: qualification.keyId } : {}),
-      },
-    );
+    await appendExtensionEvent(services, body.threadId, "inspector.package.qualified", {
+      status: qualification.status,
+      verificationStatus: qualification.verificationStatus,
+      panelCount: qualification.panelCount,
+      ...(qualification.manifestSha256 ? { manifestSha256: qualification.manifestSha256 } : {}),
+      ...(qualification.envelopeSha256 ? { envelopeSha256: qualification.envelopeSha256 } : {}),
+      ...(qualification.inspectorCatalogSha256 ? { inspectorCatalogSha256: qualification.inspectorCatalogSha256 } : {}),
+      ...(qualification.observedInspectorCatalogSha256
+        ? {
+            observedInspectorCatalogSha256: qualification.observedInspectorCatalogSha256,
+          }
+        : {}),
+      ...(qualification.keyId ? { keyId: qualification.keyId } : {}),
+    });
     return context.json(qualification);
   });
 
   app.post("/api/extensions/:extensionId/package/sign", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_PACKAGE_GOVERNANCE_REQUEST_BYTES,
-        "Extension package signing request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_PACKAGE_GOVERNANCE_REQUEST_BYTES, "Extension package signing request");
     } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
+      return jsonError(context, errorMessage(error), error instanceof RequestBodyTooLargeError ? 413 : 400);
     }
     const body = parseSignExtensionPackageRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Extension package signing request is invalid",
-        400,
-      );
+      return jsonError(context, "Extension package signing request is invalid", 400);
     }
-    const extension = services.store.getExtension(
-      context.req.param("extensionId"),
-    );
-    const envelope = await services.store.signExtensionPackage(
-      extension.id,
-      body,
-    );
-    setSignedExtensionPackageHeaders(
-      context,
-      envelope,
-      extension.normalizedName,
-    );
-    await appendExtensionEvent(
-      services,
-      body.threadId,
-      "extension.package.signed",
-      signedExtensionPackageEventPayload(extension.id, envelope),
-    );
+    const extension = services.store.getExtension(context.req.param("extensionId"));
+    const envelope = await services.store.signExtensionPackage(extension.id, body);
+    setSignedExtensionPackageHeaders(context, envelope, extension.normalizedName);
+    await appendExtensionEvent(services, body.threadId, "extension.package.signed", signedExtensionPackageEventPayload(extension.id, envelope));
     return context.json(envelope);
   });
 
   app.post("/api/extensions/packages/deployment/preview", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_EXTENSION_PACKAGE_DEPLOYMENT_BYTES + 131_072,
-        "Signed Extension package deployment preview request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_EXTENSION_PACKAGE_DEPLOYMENT_BYTES + 131_072, "Signed Extension package deployment preview request");
     } catch (error) {
       if (error instanceof RequestBodyTooLargeError) {
         return jsonError(context, error.message, 413);
       }
-      return jsonError(
-        context,
-        "Signed Extension package deployment preview request is invalid",
-        400,
-      );
+      return jsonError(context, "Signed Extension package deployment preview request is invalid", 400);
     }
     const body = parsePreviewExtensionPackageDeploymentRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Signed Extension package deployment preview request is invalid",
-        400,
-      );
+      return jsonError(context, "Signed Extension package deployment preview request is invalid", 400);
     }
-    const preview = services.store.previewExtensionPackageDeployment(
-      body.envelopes,
-    );
+    const preview = services.store.previewExtensionPackageDeployment(body.envelopes);
     setExtensionPackageDeploymentPreviewHeaders(context, preview);
     return context.json(preview);
   });
@@ -5424,67 +3514,40 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/extensions/packages/deployment", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_EXTENSION_PACKAGE_DEPLOYMENT_BYTES + 131_072,
-        "Signed Extension package deployment request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_EXTENSION_PACKAGE_DEPLOYMENT_BYTES + 131_072, "Signed Extension package deployment request");
     } catch (error) {
       if (error instanceof RequestBodyTooLargeError) {
         return jsonError(context, error.message, 413);
       }
-      return jsonError(
-        context,
-        "Signed Extension package deployment request is invalid",
-        400,
-      );
+      return jsonError(context, "Signed Extension package deployment request is invalid", 400);
     }
     const body = parseApplyExtensionPackageDeploymentRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Signed Extension package deployment request is invalid",
-        400,
-      );
+      return jsonError(context, "Signed Extension package deployment request is invalid", 400);
     }
     const result = await services.store.applyExtensionPackageDeployment(body);
-    await Promise.allSettled(
-      result.updatedExtensionIds.map((extensionId) =>
-        services.extensions.closeTransport(extensionId),
-      ),
-    );
+    await Promise.allSettled(result.updatedExtensionIds.map((extensionId) => services.extensions.closeTransport(extensionId)));
     if (result.extensions.length > 0) {
-      await appendExtensionEvent(
-        services,
-        body.threadId,
-        "extension.packages.deployed",
-        {
-          deploymentSha256: result.preview.contentSha256,
-          candidateCount: result.preview.candidateCount,
-          installCount: result.installedExtensionIds.length,
-          updateCount: result.updatedExtensionIds.length,
-          installedExtensionIdsSha256: sha256Json(
-            [...result.installedExtensionIds].sort(),
-          ),
-          updatedExtensionIdsSha256: sha256Json(
-            [...result.updatedExtensionIds].sort(),
-          ),
-          candidateEnvelopeIdsSha256: sha256Json(
-            result.preview.items.map((item) => item.next.envelopeSha256).sort(),
-          ),
-          applyOrderSha256: sha256Json(result.preview.applyOrder),
-          dependencyResolutionSha256: sha256Json(
-            result.preview.resolutions.map((resolution) => ({
-              dependentName: resolution.dependentName,
-              dependencyName: resolution.dependencyName,
-              versionRange: resolution.versionRange,
-              resolvedVersion: resolution.resolvedVersion,
-              resolvedExtensionId: resolution.resolvedExtensionId ?? "",
-              source: resolution.source,
-            })),
-          ),
-        },
-      );
+      await appendExtensionEvent(services, body.threadId, "extension.packages.deployed", {
+        deploymentSha256: result.preview.contentSha256,
+        candidateCount: result.preview.candidateCount,
+        installCount: result.installedExtensionIds.length,
+        updateCount: result.updatedExtensionIds.length,
+        installedExtensionIdsSha256: sha256Json([...result.installedExtensionIds].sort()),
+        updatedExtensionIdsSha256: sha256Json([...result.updatedExtensionIds].sort()),
+        candidateEnvelopeIdsSha256: sha256Json(result.preview.items.map((item) => item.next.envelopeSha256).sort()),
+        applyOrderSha256: sha256Json(result.preview.applyOrder),
+        dependencyResolutionSha256: sha256Json(
+          result.preview.resolutions.map((resolution) => ({
+            dependentName: resolution.dependentName,
+            dependencyName: resolution.dependencyName,
+            versionRange: resolution.versionRange,
+            resolvedVersion: resolution.resolvedVersion,
+            resolvedExtensionId: resolution.resolvedExtensionId ?? "",
+            source: resolution.source,
+          })),
+        ),
+      });
     }
     setExtensionPackageDeploymentResultHeaders(context, result);
     return context.json(result);
@@ -5493,106 +3556,54 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/extensions/packages/lockfile/export", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_PACKAGE_GOVERNANCE_REQUEST_BYTES,
-        "Extension package lockfile export request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_PACKAGE_GOVERNANCE_REQUEST_BYTES, "Extension package lockfile export request");
     } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
+      return jsonError(context, errorMessage(error), error instanceof RequestBodyTooLargeError ? 413 : 400);
     }
     const body = parseExportExtensionPackageLockfileRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Extension package lockfile export request is invalid",
-        400,
-      );
+      return jsonError(context, "Extension package lockfile export request is invalid", 400);
     }
     const lockfile = services.store.exportExtensionPackageLockfile(body);
-    setExtensionPackageLockfileHeaders(
-      context,
-      lockfile,
-      `napier-extension-lockfile-${lockfile.contentSha256.slice(0, 12)}.json`,
-    );
-    await appendExtensionEvent(
-      services,
-      body.threadId,
-      "extension.packages.lockfile.exported",
-      {
-        lockfileSha256: lockfile.contentSha256,
-        packageCount: lockfile.packages.length,
-        packageEnvelopeIdsSha256: sha256Json(
-          lockfile.packages.map((entry) => entry.envelopeSha256).sort(),
-        ),
-        dependencyCount: lockfile.packages.reduce(
-          (total, entry) => total + entry.dependencies.length,
-          0,
-        ),
-      },
-    );
+    setExtensionPackageLockfileHeaders(context, lockfile, `napier-extension-lockfile-${lockfile.contentSha256.slice(0, 12)}.json`);
+    await appendExtensionEvent(services, body.threadId, "extension.packages.lockfile.exported", {
+      lockfileSha256: lockfile.contentSha256,
+      packageCount: lockfile.packages.length,
+      packageEnvelopeIdsSha256: sha256Json(lockfile.packages.map((entry) => entry.envelopeSha256).sort()),
+      dependencyCount: lockfile.packages.reduce((total, entry) => total + entry.dependencies.length, 0),
+    });
     return context.json(lockfile);
   });
 
-  app.get(
-    "/api/extensions/packages/lockfiles/:lockfileSha256",
-    async (context) => {
-      const lockfileSha256 = context.req.param("lockfileSha256");
-      if (!/^[a-f0-9]{64}$/.test(lockfileSha256)) {
-        return jsonError(
-          context,
-          "Extension package lockfile hash is invalid",
-          400,
-        );
-      }
-      try {
-        const lockfile =
-          services.store.getExtensionPackageRolloutLockfile(lockfileSha256);
-        setExtensionPackageLockfileHeaders(
-          context,
-          lockfile,
-          `napier-extension-lockfile-${lockfile.contentSha256.slice(0, 12)}.json`,
-        );
-        return context.json(lockfile);
-      } catch (error) {
-        return jsonError(context, errorMessage(error), 404);
-      }
-    },
-  );
+  app.get("/api/extensions/packages/lockfiles/:lockfileSha256", async (context) => {
+    const lockfileSha256 = context.req.param("lockfileSha256");
+    if (!/^[a-f0-9]{64}$/.test(lockfileSha256)) {
+      return jsonError(context, "Extension package lockfile hash is invalid", 400);
+    }
+    try {
+      const lockfile = services.store.getExtensionPackageRolloutLockfile(lockfileSha256);
+      setExtensionPackageLockfileHeaders(context, lockfile, `napier-extension-lockfile-${lockfile.contentSha256.slice(0, 12)}.json`);
+      return context.json(lockfile);
+    } catch (error) {
+      return jsonError(context, errorMessage(error), 404);
+    }
+  });
 
   app.post("/api/extensions/packages/lockfile/verify", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_EXTENSION_PACKAGE_LOCKFILE_BYTES + 16_384,
-        "Extension package lockfile verification request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_EXTENSION_PACKAGE_LOCKFILE_BYTES + 16_384, "Extension package lockfile verification request");
     } catch (error) {
       if (error instanceof RequestBodyTooLargeError) {
         return jsonError(context, error.message, 413);
       }
-      return jsonError(
-        context,
-        "Extension package lockfile verification request is invalid",
-        400,
-      );
+      return jsonError(context, "Extension package lockfile verification request is invalid", 400);
     }
     const body = parseVerifyExtensionPackageLockfileRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Extension package lockfile verification request is invalid",
-        400,
-      );
+      return jsonError(context, "Extension package lockfile verification request is invalid", 400);
     }
-    const verification = services.store.verifyExtensionPackageLockfile(
-      body.lockfile,
-    );
+    const verification = services.store.verifyExtensionPackageLockfile(body.lockfile);
     setExtensionPackageLockfileVerificationHeaders(context, verification);
     return context.json(verification);
   });
@@ -5600,47 +3611,23 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/extensions/packages/channel-index/sign", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_PACKAGE_GOVERNANCE_REQUEST_BYTES,
-        "Extension package channel index signing request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_PACKAGE_GOVERNANCE_REQUEST_BYTES, "Extension package channel index signing request");
     } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
+      return jsonError(context, errorMessage(error), error instanceof RequestBodyTooLargeError ? 413 : 400);
     }
     const body = parseSignExtensionPackageChannelIndexRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Extension package channel index signing request is invalid",
-        400,
-      );
+      return jsonError(context, "Extension package channel index signing request is invalid", 400);
     }
-    const envelope =
-      await services.store.signExtensionPackageChannelIndex(body);
-    setExtensionPackageChannelIndexHeaders(
-      context,
-      envelope,
-      `napier-channel-index-${envelope.index.contentSha256.slice(0, 12)}.json`,
-    );
-    await appendExtensionEvent(
-      services,
-      body.threadId,
-      "extension.packages.channel_index.signed",
-      {
-        indexSha256: envelope.index.contentSha256,
-        envelopeSha256: envelope.contentSha256,
-        channelCount: envelope.index.channels.length,
-        keyId: envelope.signature.keyId,
-        channelNamesSha256: sha256Json(
-          envelope.index.channels.map((entry) => entry.normalizedName).sort(),
-        ),
-      },
-    );
+    const envelope = await services.store.signExtensionPackageChannelIndex(body);
+    setExtensionPackageChannelIndexHeaders(context, envelope, `napier-channel-index-${envelope.index.contentSha256.slice(0, 12)}.json`);
+    await appendExtensionEvent(services, body.threadId, "extension.packages.channel_index.signed", {
+      indexSha256: envelope.index.contentSha256,
+      envelopeSha256: envelope.contentSha256,
+      channelCount: envelope.index.channels.length,
+      keyId: envelope.signature.keyId,
+      channelNamesSha256: sha256Json(envelope.index.channels.map((entry) => entry.normalizedName).sort()),
+    });
     return context.json(envelope);
   });
 
@@ -5656,22 +3643,13 @@ export function createApp(services: NapierServices): Hono {
       if (error instanceof RequestBodyTooLargeError) {
         return jsonError(context, error.message, 413);
       }
-      return jsonError(
-        context,
-        "Extension package channel index verification request is invalid",
-        400,
-      );
+      return jsonError(context, "Extension package channel index verification request is invalid", 400);
     }
     const body = parseVerifyExtensionPackageChannelIndexRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Extension package channel index verification request is invalid",
-        400,
-      );
+      return jsonError(context, "Extension package channel index verification request is invalid", 400);
     }
-    const verification =
-      services.store.verifyExtensionPackageChannelIndex(body);
+    const verification = services.store.verifyExtensionPackageChannelIndex(body);
     setExtensionPackageChannelIndexVerificationHeaders(context, verification);
     return context.json(verification);
   });
@@ -5685,227 +3663,133 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/extensions/packages/rollouts", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_PACKAGE_GOVERNANCE_REQUEST_BYTES,
-        "Extension package rollout channel request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_PACKAGE_GOVERNANCE_REQUEST_BYTES, "Extension package rollout channel request");
     } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
+      return jsonError(context, errorMessage(error), error instanceof RequestBodyTooLargeError ? 413 : 400);
     }
     const body = parsePublishExtensionPackageRolloutChannelRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Extension package rollout channel request is invalid",
-        400,
-      );
+      return jsonError(context, "Extension package rollout channel request is invalid", 400);
     }
-    const channel =
-      await services.store.publishExtensionPackageRolloutChannel(body);
-    await appendExtensionEvent(
-      services,
-      body.threadId,
-      "extension.packages.rollout.published",
-      {
-        channelId: channel.id,
-        name: channel.name,
-        normalizedName: channel.normalizedName,
-        revision: channel.revision,
-        lockfileSha256: channel.lockfileSha256,
-        packageCount: channel.packageCount,
-        dependencyCount: channel.dependencyCount,
-        packageEnvelopeIdsSha256: channel.packageEnvelopeIdsSha256,
-        policySha256: sha256Json({
-          maxPackages: channel.policy.maxPackages,
-          allowedPublisherKeyIds: channel.policy.allowedPublisherKeyIds,
-          allowedPackageNames: channel.policy.allowedPackageNames,
-          requireTrustedPublishers: channel.policy.requireTrustedPublishers,
-          requireDependencyClosure: channel.policy.requireDependencyClosure,
-        }),
-      },
-    );
+    const channel = await services.store.publishExtensionPackageRolloutChannel(body);
+    await appendExtensionEvent(services, body.threadId, "extension.packages.rollout.published", {
+      channelId: channel.id,
+      name: channel.name,
+      normalizedName: channel.normalizedName,
+      revision: channel.revision,
+      lockfileSha256: channel.lockfileSha256,
+      packageCount: channel.packageCount,
+      dependencyCount: channel.dependencyCount,
+      packageEnvelopeIdsSha256: channel.packageEnvelopeIdsSha256,
+      policySha256: sha256Json({
+        maxPackages: channel.policy.maxPackages,
+        allowedPublisherKeyIds: channel.policy.allowedPublisherKeyIds,
+        allowedPackageNames: channel.policy.allowedPackageNames,
+        requireTrustedPublishers: channel.policy.requireTrustedPublishers,
+        requireDependencyClosure: channel.policy.requireDependencyClosure,
+      }),
+    });
     setExtensionPackageRolloutChannelHeaders(context, channel);
     return context.json(channel, channel.revision === 1 ? 201 : 200);
   });
 
-  app.post(
-    "/api/extensions/packages/rollouts/:channelId/preview",
-    (context) => {
-      const body = parsePreviewExtensionPackageRolloutChannelRequest({
-        channelId: context.req.param("channelId"),
-      });
-      if (!body) {
-        return jsonError(
-          context,
-          "Extension package rollout channel preview request is invalid",
-          400,
-        );
-      }
-      const preview =
-        services.store.previewExtensionPackageRolloutChannel(body);
-      setExtensionPackageRolloutPreviewHeaders(context, preview);
-      return context.json(preview);
-    },
-  );
+  app.post("/api/extensions/packages/rollouts/:channelId/preview", (context) => {
+    const body = parsePreviewExtensionPackageRolloutChannelRequest({
+      channelId: context.req.param("channelId"),
+    });
+    if (!body) {
+      return jsonError(context, "Extension package rollout channel preview request is invalid", 400);
+    }
+    const preview = services.store.previewExtensionPackageRolloutChannel(body);
+    setExtensionPackageRolloutPreviewHeaders(context, preview);
+    return context.json(preview);
+  });
 
   app.post("/api/extensions/packages/rollouts/:channelId", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_PACKAGE_GOVERNANCE_REQUEST_BYTES,
-        "Extension package rollout channel apply request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_PACKAGE_GOVERNANCE_REQUEST_BYTES, "Extension package rollout channel apply request");
     } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
+      return jsonError(context, errorMessage(error), error instanceof RequestBodyTooLargeError ? 413 : 400);
     }
-    const record =
-      input && typeof input === "object" && !Array.isArray(input)
-        ? (input as Record<string, unknown>)
-        : {};
+    const record = input && typeof input === "object" && !Array.isArray(input) ? (input as Record<string, unknown>) : {};
     const body = parseApplyExtensionPackageRolloutChannelRequest({
       ...record,
       channelId: context.req.param("channelId"),
     });
     if (!body) {
-      return jsonError(
-        context,
-        "Extension package rollout channel apply request is invalid",
-        400,
-      );
+      return jsonError(context, "Extension package rollout channel apply request is invalid", 400);
     }
-    const result =
-      await services.store.applyExtensionPackageRolloutChannel(body);
-    await Promise.allSettled(
-      result.deployment.updatedExtensionIds.map((extensionId) =>
-        services.extensions.closeTransport(extensionId),
-      ),
-    );
+    const result = await services.store.applyExtensionPackageRolloutChannel(body);
+    await Promise.allSettled(result.deployment.updatedExtensionIds.map((extensionId) => services.extensions.closeTransport(extensionId)));
     if (result.deployment.extensions.length > 0) {
-      await appendExtensionEvent(
-        services,
-        body.threadId,
-        "extension.packages.rollout.applied",
-        {
-          channelId: result.channel.id,
-          channelRevision: result.channel.revision,
-          rolloutSha256: result.rolloutPreview.contentSha256,
-          deploymentSha256: result.deployment.preview.contentSha256,
-          lockfileSha256: result.channel.lockfileSha256,
-          installCount: result.deployment.installedExtensionIds.length,
-          updateCount: result.deployment.updatedExtensionIds.length,
-          installedExtensionIdsSha256: sha256Json(
-            [...result.deployment.installedExtensionIds].sort(),
-          ),
-          updatedExtensionIdsSha256: sha256Json(
-            [...result.deployment.updatedExtensionIds].sort(),
-          ),
-          packageEnvelopeIdsSha256: result.channel.packageEnvelopeIdsSha256,
-        },
-      );
+      await appendExtensionEvent(services, body.threadId, "extension.packages.rollout.applied", {
+        channelId: result.channel.id,
+        channelRevision: result.channel.revision,
+        rolloutSha256: result.rolloutPreview.contentSha256,
+        deploymentSha256: result.deployment.preview.contentSha256,
+        lockfileSha256: result.channel.lockfileSha256,
+        installCount: result.deployment.installedExtensionIds.length,
+        updateCount: result.deployment.updatedExtensionIds.length,
+        installedExtensionIdsSha256: sha256Json([...result.deployment.installedExtensionIds].sort()),
+        updatedExtensionIdsSha256: sha256Json([...result.deployment.updatedExtensionIds].sort()),
+        packageEnvelopeIdsSha256: result.channel.packageEnvelopeIdsSha256,
+      });
     }
     setExtensionPackageRolloutApplyResultHeaders(context, result);
     return context.json(result);
   });
 
-  app.post(
-    "/api/extensions/:extensionId/package/update/preview",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_SIGNED_EXTENSION_PACKAGE_BYTES + 16_384,
-          "Signed Extension package update preview request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Signed Extension package update preview request is invalid",
-          400,
-        );
-      }
-      const body = parsePreviewExtensionPackageUpdateRequest(input);
-      if (!body) {
-        return jsonError(
-          context,
-          "Signed Extension package update preview request is invalid",
-          400,
-        );
-      }
-      const preview = services.store.previewExtensionPackageUpdate(
-        context.req.param("extensionId"),
-        body.envelope,
-      );
-      setExtensionPackageUpdatePreviewHeaders(context, preview);
-      return context.json(preview);
-    },
-  );
-
-  app.post("/api/extensions/:extensionId/package/update", async (context) => {
+  app.post("/api/extensions/:extensionId/package/update/preview", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_SIGNED_EXTENSION_PACKAGE_BYTES + 16_384,
-        "Signed Extension package update request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_SIGNED_EXTENSION_PACKAGE_BYTES + 16_384, "Signed Extension package update preview request");
     } catch (error) {
       if (error instanceof RequestBodyTooLargeError) {
         return jsonError(context, error.message, 413);
       }
-      return jsonError(
-        context,
-        "Signed Extension package update request is invalid",
-        400,
-      );
+      return jsonError(context, "Signed Extension package update preview request is invalid", 400);
+    }
+    const body = parsePreviewExtensionPackageUpdateRequest(input);
+    if (!body) {
+      return jsonError(context, "Signed Extension package update preview request is invalid", 400);
+    }
+    const preview = services.store.previewExtensionPackageUpdate(context.req.param("extensionId"), body.envelope);
+    setExtensionPackageUpdatePreviewHeaders(context, preview);
+    return context.json(preview);
+  });
+
+  app.post("/api/extensions/:extensionId/package/update", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(context.req.raw, MAX_SIGNED_EXTENSION_PACKAGE_BYTES + 16_384, "Signed Extension package update request");
+    } catch (error) {
+      if (error instanceof RequestBodyTooLargeError) {
+        return jsonError(context, error.message, 413);
+      }
+      return jsonError(context, "Signed Extension package update request is invalid", 400);
     }
     const body = parseApplyExtensionPackageUpdateRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Signed Extension package update request is invalid",
-        400,
-      );
+      return jsonError(context, "Signed Extension package update request is invalid", 400);
     }
     const extensionId = context.req.param("extensionId");
-    const result = await services.store.applyExtensionPackageUpdate(
-      extensionId,
-      body,
-    );
+    const result = await services.store.applyExtensionPackageUpdate(extensionId, body);
     if (result.updated) {
       await services.extensions.closeTransport(extensionId);
-      await appendExtensionEvent(
-        services,
-        body.threadId,
-        "extension.package.updated",
-        {
-          extensionId,
-          expectedPackageBindingSha256:
-            result.preview.expectedPackageBindingSha256,
-          currentManifestSha256: result.preview.current.manifestSha256,
-          currentEnvelopeSha256: result.preview.current.envelopeSha256,
-          nextManifestSha256: result.preview.next.manifestSha256,
-          nextEnvelopeSha256: result.preview.next.envelopeSha256,
-          previewSha256: result.preview.contentSha256,
-          versionDirection: result.preview.versionDirection,
-          publisherChanged: result.preview.publisherChanged,
-          changeKinds: result.preview.changes,
-          packageHistoryCount: result.extension.packageHistory?.length ?? 0,
-        },
-      );
+      await appendExtensionEvent(services, body.threadId, "extension.package.updated", {
+        extensionId,
+        expectedPackageBindingSha256: result.preview.expectedPackageBindingSha256,
+        currentManifestSha256: result.preview.current.manifestSha256,
+        currentEnvelopeSha256: result.preview.current.envelopeSha256,
+        nextManifestSha256: result.preview.next.manifestSha256,
+        nextEnvelopeSha256: result.preview.next.envelopeSha256,
+        previewSha256: result.preview.contentSha256,
+        versionDirection: result.preview.versionDirection,
+        publisherChanged: result.preview.publisherChanged,
+        changeKinds: result.preview.changes,
+        packageHistoryCount: result.extension.packageHistory?.length ?? 0,
+      });
     }
     setExtensionPackageUpdateResultHeaders(context, result);
     return context.json(result);
@@ -5914,33 +3798,18 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/extensions/packages/verify", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_SIGNED_EXTENSION_PACKAGE_BYTES + 16_384,
-        "Signed Extension package verification request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_SIGNED_EXTENSION_PACKAGE_BYTES + 16_384, "Signed Extension package verification request");
     } catch (error) {
       if (error instanceof RequestBodyTooLargeError) {
         return jsonError(context, error.message, 413);
       }
-      return jsonError(
-        context,
-        "Signed Extension package verification request is invalid",
-        400,
-      );
+      return jsonError(context, "Signed Extension package verification request is invalid", 400);
     }
     const body = parseVerifySignedExtensionPackageRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Signed Extension package verification request is invalid",
-        400,
-      );
+      return jsonError(context, "Signed Extension package verification request is invalid", 400);
     }
-    const verification = verifySignedExtensionPackageEnvelope(
-      body.envelope,
-      services.store.listExtensionPublisherTrustAnchors(),
-    );
+    const verification = verifySignedExtensionPackageEnvelope(body.envelope, services.store.listExtensionPublisherTrustAnchors());
     setExtensionPackageVerificationHeaders(context, verification);
     return context.json(verification);
   });
@@ -5948,48 +3817,26 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/extensions/packages/import", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_SIGNED_EXTENSION_PACKAGE_BYTES + 16_384,
-        "Signed Extension package import request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_SIGNED_EXTENSION_PACKAGE_BYTES + 16_384, "Signed Extension package import request");
     } catch (error) {
       if (error instanceof RequestBodyTooLargeError) {
         return jsonError(context, error.message, 413);
       }
-      return jsonError(
-        context,
-        "Signed Extension package import request is invalid",
-        400,
-      );
+      return jsonError(context, "Signed Extension package import request is invalid", 400);
     }
     const body = parseImportSignedExtensionPackageRequest(input);
     if (!body) {
-      return jsonError(
-        context,
-        "Signed Extension package import request is invalid",
-        400,
-      );
+      return jsonError(context, "Signed Extension package import request is invalid", 400);
     }
     const extension = await services.store.importSignedExtensionPackage(body);
     const packageBinding = extension.packageBinding;
     if (!packageBinding) {
-      throw new Error(
-        "Signed Extension import did not produce a package binding",
-      );
+      throw new Error("Signed Extension import did not produce a package binding");
     }
-    await appendExtensionEvent(
-      services,
-      body.threadId,
-      "extension.package.imported",
-      {
-        ...signedExtensionPackageEventPayload(
-          extension.id,
-          packageBinding.envelope,
-        ),
-        packageBindingSha256: packageBinding.contentSha256,
-      },
-    );
+    await appendExtensionEvent(services, body.threadId, "extension.package.imported", {
+      ...signedExtensionPackageEventPayload(extension.id, packageBinding.envelope),
+      packageBindingSha256: packageBinding.contentSha256,
+    });
     setExtensionRecordHeaders(context, extension);
     return context.json(extension, 201);
   });
@@ -5997,17 +3844,9 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/extensions/mcp", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_EXTENSION_ADMIN_REQUEST_BYTES,
-        "MCP extension request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_EXTENSION_ADMIN_REQUEST_BYTES, "MCP extension request");
     } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
+      return jsonError(context, errorMessage(error), error instanceof RequestBodyTooLargeError ? 413 : 400);
     }
     const body = parseCreateMcpExtensionRequest(input);
     if (!body) {
@@ -6029,37 +3868,21 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/extensions/:extensionId/review", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_EXTENSION_ADMIN_REQUEST_BYTES,
-        "Extension review request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_EXTENSION_ADMIN_REQUEST_BYTES, "Extension review request");
     } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
+      return jsonError(context, errorMessage(error), error instanceof RequestBodyTooLargeError ? 413 : 400);
     }
     const body = parseReviewExtensionRequest(input);
     if (!body) {
       return jsonError(context, "Extension review request is invalid", 400);
     }
     if (body.threadId) services.store.getThread(body.threadId);
-    const extension = await services.store.reviewExtension(
-      context.req.param("extensionId"),
-      body,
-    );
-    await appendExtensionEvent(
-      services,
-      body.threadId,
-      `extension.${body.action === "approve" ? "approved" : "rejected"}`,
-      {
-        extensionId: extension.id,
-        trustStatus: extension.trustStatus,
-        approvedCapabilities: extension.approvedCapabilities,
-      },
-    );
+    const extension = await services.store.reviewExtension(context.req.param("extensionId"), body);
+    await appendExtensionEvent(services, body.threadId, `extension.${body.action === "approve" ? "approved" : "rejected"}`, {
+      extensionId: extension.id,
+      trustStatus: extension.trustStatus,
+      approvedCapabilities: extension.approvedCapabilities,
+    });
     setExtensionRecordHeaders(context, extension);
     return context.json(extension);
   });
@@ -6067,38 +3890,21 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/extensions/:extensionId/enabled", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_EXTENSION_ADMIN_REQUEST_BYTES,
-        "Extension enablement request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_EXTENSION_ADMIN_REQUEST_BYTES, "Extension enablement request");
     } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
+      return jsonError(context, errorMessage(error), error instanceof RequestBodyTooLargeError ? 413 : 400);
     }
     const body = parseSetExtensionEnabledRequest(input);
     if (!body) {
       return jsonError(context, "Extension enablement request is invalid", 400);
     }
     if (body.threadId) services.store.getThread(body.threadId);
-    const extension = await services.store.setExtensionEnabled(
-      context.req.param("extensionId"),
-      body.agentId,
-      body.enabled,
-    );
-    await appendExtensionEvent(
-      services,
-      body.threadId,
-      body.enabled ? "extension.enabled" : "extension.disabled",
-      {
-        extensionId: extension.id,
-        agentId: body.agentId,
-        enabled: body.enabled,
-      },
-    );
+    const extension = await services.store.setExtensionEnabled(context.req.param("extensionId"), body.agentId, body.enabled);
+    await appendExtensionEvent(services, body.threadId, body.enabled ? "extension.enabled" : "extension.disabled", {
+      extensionId: extension.id,
+      agentId: body.agentId,
+      enabled: body.enabled,
+    });
     setExtensionRecordHeaders(context, extension);
     return context.json(extension);
   });
@@ -6106,36 +3912,21 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/extensions/:extensionId/connect", async (context) => {
     let input: unknown;
     try {
-      input = await readOptionalLimitedJson(
-        context.req.raw,
-        MAX_EXTENSION_ADMIN_REQUEST_BYTES,
-        "Extension connect request",
-      );
+      input = await readOptionalLimitedJson(context.req.raw, MAX_EXTENSION_ADMIN_REQUEST_BYTES, "Extension connect request");
     } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
+      return jsonError(context, errorMessage(error), error instanceof RequestBodyTooLargeError ? 413 : 400);
     }
     const body = parseExtensionThreadContextRequest(input);
     if (!body) {
       return jsonError(context, "Extension connect request is invalid", 400);
     }
     if (body?.threadId) services.store.getThread(body.threadId);
-    const extension = await services.extensions.connect(
-      context.req.param("extensionId"),
-    );
-    await appendExtensionEvent(
-      services,
-      body?.threadId,
-      "extension.connected",
-      {
-        extensionId: extension.id,
-        toolCount: extension.tools.length,
-        status: extension.connection.status,
-      },
-    );
+    const extension = await services.extensions.connect(context.req.param("extensionId"));
+    await appendExtensionEvent(services, body?.threadId, "extension.connected", {
+      extensionId: extension.id,
+      toolCount: extension.tools.length,
+      status: extension.connection.status,
+    });
     setExtensionRecordHeaders(context, extension);
     return context.json(extension);
   });
@@ -6143,35 +3934,20 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/extensions/:extensionId/disconnect", async (context) => {
     let input: unknown;
     try {
-      input = await readOptionalLimitedJson(
-        context.req.raw,
-        MAX_EXTENSION_ADMIN_REQUEST_BYTES,
-        "Extension disconnect request",
-      );
+      input = await readOptionalLimitedJson(context.req.raw, MAX_EXTENSION_ADMIN_REQUEST_BYTES, "Extension disconnect request");
     } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
+      return jsonError(context, errorMessage(error), error instanceof RequestBodyTooLargeError ? 413 : 400);
     }
     const body = parseExtensionThreadContextRequest(input);
     if (!body) {
       return jsonError(context, "Extension disconnect request is invalid", 400);
     }
     if (body?.threadId) services.store.getThread(body.threadId);
-    const extension = await services.extensions.disconnect(
-      context.req.param("extensionId"),
-    );
-    await appendExtensionEvent(
-      services,
-      body?.threadId,
-      "extension.disconnected",
-      {
-        extensionId: extension.id,
-        status: extension.connection.status,
-      },
-    );
+    const extension = await services.extensions.disconnect(context.req.param("extensionId"));
+    await appendExtensionEvent(services, body?.threadId, "extension.disconnected", {
+      extensionId: extension.id,
+      status: extension.connection.status,
+    });
     setExtensionRecordHeaders(context, extension);
     return context.json(extension);
   });
@@ -6179,46 +3955,25 @@ export function createApp(services: NapierServices): Hono {
   app.post("/api/extensions/:extensionId/tools/review", async (context) => {
     let input: unknown;
     try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_EXTENSION_ADMIN_REQUEST_BYTES,
-        "MCP tool review request",
-      );
+      input = await readLimitedJson(context.req.raw, MAX_EXTENSION_ADMIN_REQUEST_BYTES, "MCP tool review request");
     } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
+      return jsonError(context, errorMessage(error), error instanceof RequestBodyTooLargeError ? 413 : 400);
     }
     const body = parseReviewMcpToolRequest(input);
     if (!body) {
       return jsonError(context, "MCP tool review request is invalid", 400);
     }
     if (body.threadId) services.store.getThread(body.threadId);
-    const extension = await services.store.reviewMcpTool(
-      context.req.param("extensionId"),
-      body.toolName,
-      body,
-    );
-    const tool = extension.tools.find(
-      (candidate) =>
-        candidate.name === body.toolName ||
-        candidate.directName === body.toolName,
-    );
-    await appendExtensionEvent(
-      services,
-      body.threadId,
-      `extension.tool.${body.action === "approve" ? "approved" : "rejected"}`,
-      {
-        extensionId: extension.id,
-        toolName: tool?.name ?? body.toolName,
-        directName: tool?.directName ?? "",
-        reviewStatus: tool?.reviewStatus ?? "missing",
-        effect: tool?.effect ?? "unknown",
-        schemaSha256: tool?.schemaSha256 ?? "",
-      },
-    );
+    const extension = await services.store.reviewMcpTool(context.req.param("extensionId"), body.toolName, body);
+    const tool = extension.tools.find((candidate) => candidate.name === body.toolName || candidate.directName === body.toolName);
+    await appendExtensionEvent(services, body.threadId, `extension.tool.${body.action === "approve" ? "approved" : "rejected"}`, {
+      extensionId: extension.id,
+      toolName: tool?.name ?? body.toolName,
+      directName: tool?.directName ?? "",
+      reviewStatus: tool?.reviewStatus ?? "missing",
+      effect: tool?.effect ?? "unknown",
+      schemaSha256: tool?.schemaSha256 ?? "",
+    });
     setExtensionRecordHeaders(context, extension);
     return context.json(extension);
   });
@@ -6265,18 +4020,13 @@ export function createApp(services: NapierServices): Hono {
 
 export async function readProductionIndex(): Promise<string | undefined> {
   try {
-    return await readFile(
-      path.resolve(process.cwd(), "apps/web/dist/index.html"),
-      "utf8",
-    );
+    return await readFile(path.resolve(process.cwd(), "apps/web/dist/index.html"), "utf8");
   } catch {
     return undefined;
   }
 }
 
-function parseVerifyUsagePriceTableCatalogRequest(
-  input: unknown,
-): VerifyUsagePriceTableCatalogRequest | undefined {
+function parseVerifyUsagePriceTableCatalogRequest(input: unknown): VerifyUsagePriceTableCatalogRequest | undefined {
   if (!input || Array.isArray(input) || typeof input !== "object") {
     return undefined;
   }
@@ -6294,11 +4044,7 @@ function parseVerifyUsagePriceTableCatalogRequest(
   if (
     !Array.isArray(requiredProviders) ||
     requiredProviders.length > 20 ||
-    !requiredProviders.every(
-      (provider) =>
-        typeof provider === "string" &&
-        /^[a-zA-Z0-9][a-zA-Z0-9._-]{1,80}$/.test(provider),
-    )
+    !requiredProviders.every((provider) => typeof provider === "string" && /^[a-zA-Z0-9][a-zA-Z0-9._-]{1,80}$/.test(provider))
   ) {
     return undefined;
   }
@@ -6308,31 +4054,13 @@ function parseVerifyUsagePriceTableCatalogRequest(
   };
 }
 
-function parseCreateMcpExtensionRequest(
-  input: unknown,
-): CreateMcpExtensionRequest | undefined {
-  const record = requestRecord(input, [
-    "name",
-    "description",
-    "version",
-    "transport",
-    "requestedCapabilities",
-    "threadId",
-  ]);
+function parseCreateMcpExtensionRequest(input: unknown): CreateMcpExtensionRequest | undefined {
+  const record = requestRecord(input, ["name", "description", "version", "transport", "requestedCapabilities", "threadId"]);
   const name = normalizeBoundedText(record?.["name"], 1, 80);
-  const description =
-    record?.["description"] === undefined
-      ? undefined
-      : normalizeBoundedText(record["description"], 0, 500);
-  const version =
-    record?.["version"] === undefined
-      ? undefined
-      : normalizeBoundedText(record["version"], 1, 64);
+  const description = record?.["description"] === undefined ? undefined : normalizeBoundedText(record["description"], 0, 500);
+  const version = record?.["version"] === undefined ? undefined : normalizeBoundedText(record["version"], 1, 64);
   const transport = parseMcpTransport(record?.["transport"]);
-  const requestedCapabilities =
-    record?.["requestedCapabilities"] === undefined
-      ? undefined
-      : parseExtensionCapabilities(record["requestedCapabilities"]);
+  const requestedCapabilities = record?.["requestedCapabilities"] === undefined ? undefined : parseExtensionCapabilities(record["requestedCapabilities"]);
   const threadId = record?.["threadId"];
   if (
     !record ||
@@ -6355,20 +4083,10 @@ function parseCreateMcpExtensionRequest(
   };
 }
 
-function parseReviewExtensionRequest(
-  input: unknown,
-): ReviewExtensionRequest | undefined {
-  const record = requestRecord(input, [
-    "action",
-    "approvedCapabilities",
-    "note",
-    "threadId",
-  ]);
+function parseReviewExtensionRequest(input: unknown): ReviewExtensionRequest | undefined {
+  const record = requestRecord(input, ["action", "approvedCapabilities", "note", "threadId"]);
   const action = record?.["action"];
-  const approvedCapabilities =
-    record?.["approvedCapabilities"] === undefined
-      ? undefined
-      : parseExtensionCapabilities(record["approvedCapabilities"]);
+  const approvedCapabilities = record?.["approvedCapabilities"] === undefined ? undefined : parseExtensionCapabilities(record["approvedCapabilities"]);
   const note = parseOptionalBoundedText(record?.["note"], 500);
   const threadId = record?.["threadId"];
   if (
@@ -6388,17 +4106,12 @@ function parseReviewExtensionRequest(
   };
 }
 
-function parseSetExtensionEnabledRequest(
-  input: unknown,
-): SetExtensionEnabledRequest | undefined {
+function parseSetExtensionEnabledRequest(input: unknown): SetExtensionEnabledRequest | undefined {
   const record = requestRecord(input, ["agentId", "enabled", "threadId"]);
   const agentId = record?.["agentId"];
   const enabled = record?.["enabled"];
   const threadId = record?.["threadId"];
-  return record &&
-    validAgentId(agentId) &&
-    typeof enabled === "boolean" &&
-    (threadId === undefined || validThreadId(threadId))
+  return record && validAgentId(agentId) && typeof enabled === "boolean" && (threadId === undefined || validThreadId(threadId))
     ? {
         agentId,
         enabled,
@@ -6407,9 +4120,7 @@ function parseSetExtensionEnabledRequest(
     : undefined;
 }
 
-function parseExtensionThreadContextRequest(
-  input: unknown,
-): { threadId?: string } | undefined {
+function parseExtensionThreadContextRequest(input: unknown): { threadId?: string } | undefined {
   if (input === undefined) return {};
   const record = requestRecord(input, ["threadId"]);
   const threadId = record?.["threadId"];
@@ -6420,24 +4131,12 @@ function parseExtensionThreadContextRequest(
     : undefined;
 }
 
-function parseReviewMcpToolRequest(
-  input: unknown,
-): (ReviewMcpToolRequest & { toolName: string }) | undefined {
-  const record = requestRecord(input, [
-    "toolName",
-    "action",
-    "effect",
-    "routingHint",
-    "note",
-    "threadId",
-  ]);
+function parseReviewMcpToolRequest(input: unknown): (ReviewMcpToolRequest & { toolName: string }) | undefined {
+  const record = requestRecord(input, ["toolName", "action", "effect", "routingHint", "note", "threadId"]);
   const toolName = parseProcessText(record?.["toolName"], 1, 160);
   const action = record?.["action"];
   const effect = parseMcpToolEffect(record?.["effect"]);
-  const routingHint =
-    record?.["routingHint"] === undefined
-      ? undefined
-      : parseReviewedRoutingHint(record["routingHint"]);
+  const routingHint = record?.["routingHint"] === undefined ? undefined : parseReviewedRoutingHint(record["routingHint"]);
   const note = parseOptionalBoundedText(record?.["note"], 500);
   const threadId = record?.["threadId"];
   if (
@@ -6485,33 +4184,12 @@ function parseMcpTransport(input: unknown): McpTransportConfig | undefined {
     };
   }
   if (type === "stdio") {
-    const record = requestRecord(input, [
-      "type",
-      "command",
-      "args",
-      "cwd",
-      "env",
-    ]);
+    const record = requestRecord(input, ["type", "command", "args", "cwd", "env"]);
     const command = parseProcessText(record?.["command"], 1, 500);
-    const args =
-      record?.["args"] === undefined
-        ? undefined
-        : parseProcessTextArray(record["args"], 50, 1_000, true);
-    const cwd =
-      record?.["cwd"] === undefined
-        ? undefined
-        : parseProcessText(record["cwd"], 1, 1_000);
-    const env =
-      record?.["env"] === undefined
-        ? undefined
-        : parseEnvironmentMap(record["env"]);
-    if (
-      !record ||
-      !command ||
-      (record["args"] !== undefined && !args) ||
-      (record["cwd"] !== undefined && !cwd) ||
-      (record["env"] !== undefined && !env)
-    ) {
+    const args = record?.["args"] === undefined ? undefined : parseProcessTextArray(record["args"], 50, 1_000, true);
+    const cwd = record?.["cwd"] === undefined ? undefined : parseProcessText(record["cwd"], 1, 1_000);
+    const env = record?.["env"] === undefined ? undefined : parseEnvironmentMap(record["env"]);
+    if (!record || !command || (record["args"] !== undefined && !args) || (record["cwd"] !== undefined && !cwd) || (record["env"] !== undefined && !env)) {
       return undefined;
     }
     return {
@@ -6525,9 +4203,7 @@ function parseMcpTransport(input: unknown): McpTransportConfig | undefined {
   return undefined;
 }
 
-function parseExtensionCapabilities(
-  input: unknown,
-): ExtensionCapability[] | undefined {
+function parseExtensionCapabilities(input: unknown): ExtensionCapability[] | undefined {
   if (!Array.isArray(input) || input.length > 7) return undefined;
   const output: ExtensionCapability[] = [];
   for (const value of input) {
@@ -6549,15 +4225,10 @@ function parseExtensionCapabilities(
 }
 
 function parseMcpToolEffect(input: unknown): McpToolEffect | undefined {
-  return input === "read" || input === "write" || input === "unknown"
-    ? input
-    : undefined;
+  return input === "read" || input === "write" || input === "unknown" ? input : undefined;
 }
 
-function parseEnvironmentMap(
-  input: unknown,
-  options: { keyPattern?: RegExp } = {},
-): Record<string, string> | undefined {
+function parseEnvironmentMap(input: unknown, options: { keyPattern?: RegExp } = {}): Record<string, string> | undefined {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
     return undefined;
   }
@@ -6566,11 +4237,7 @@ function parseEnvironmentMap(
   const keyPattern = options.keyPattern ?? /^[A-Za-z_][A-Za-z0-9_]{0,127}$/;
   const output: Record<string, string> = {};
   for (const [key, value] of entries) {
-    if (
-      !keyPattern.test(key) ||
-      typeof value !== "string" ||
-      !/^[A-Za-z_][A-Za-z0-9_]{0,127}$/.test(value)
-    ) {
+    if (!keyPattern.test(key) || typeof value !== "string" || !/^[A-Za-z_][A-Za-z0-9_]{0,127}$/.test(value)) {
       return undefined;
     }
     output[key] = value;
@@ -6578,12 +4245,7 @@ function parseEnvironmentMap(
   return output;
 }
 
-function parseProcessTextArray(
-  input: unknown,
-  maxItems: number,
-  maxLength: number,
-  allowEmpty = false,
-): string[] | undefined {
+function parseProcessTextArray(input: unknown, maxItems: number, maxLength: number, allowEmpty = false): string[] | undefined {
   if (!Array.isArray(input) || input.length > maxItems) return undefined;
   const output: string[] = [];
   for (const value of input) {
@@ -6594,34 +4256,21 @@ function parseProcessTextArray(
   return output;
 }
 
-function parseProcessText(
-  input: unknown,
-  minLength: number,
-  maxLength: number,
-): string | undefined {
+function parseProcessText(input: unknown, minLength: number, maxLength: number): string | undefined {
   if (typeof input !== "string" || /[\u0000-\u001f\u007f]/.test(input)) {
     return undefined;
   }
   const normalized = input.trim();
-  return normalized.length >= minLength && normalized.length <= maxLength
-    ? normalized
-    : undefined;
+  return normalized.length >= minLength && normalized.length <= maxLength ? normalized : undefined;
 }
 
 function parseReviewedRoutingHint(input: unknown): string | undefined {
   if (typeof input !== "string") return undefined;
   const normalized = input.replace(/\s+/g, " ").trim();
-  return normalized.length > 0 &&
-    normalized.length <= 500 &&
-    !/[\u0000-\u001f\u007f<>]/.test(normalized)
-    ? normalized
-    : undefined;
+  return normalized.length > 0 && normalized.length <= 500 && !/[\u0000-\u001f\u007f<>]/.test(normalized) ? normalized : undefined;
 }
 
-function parseOptionalBoundedText(
-  input: unknown,
-  maxLength: number,
-): string | undefined {
+function parseOptionalBoundedText(input: unknown, maxLength: number): string | undefined {
   if (input === undefined) return "";
   if (typeof input !== "string") return undefined;
   const normalized = input.replace(/\s+/g, " ").trim();
@@ -6630,9 +4279,7 @@ function parseOptionalBoundedText(
 
 function parseVerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryRequest(
   input: unknown,
-):
-  | VerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryRequest
-  | undefined {
+): VerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryRequest | undefined {
   const record = requestRecord(input, ["history"]);
   if (!record || record["history"] === undefined) return undefined;
   return {
@@ -6642,9 +4289,7 @@ function parseVerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirement
 
 function parseVerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest(
   input: unknown,
-):
-  | VerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest
-  | undefined {
+): VerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest | undefined {
   const record = requestRecord(input, ["histories"]);
   if (!record || !Array.isArray(record["histories"])) return undefined;
   return {
@@ -6654,14 +4299,8 @@ function parseVerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirement
 
 function parseSignExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest(
   input: unknown,
-):
-  | SignExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest
-  | undefined {
-  const record = requestRecord(input, [
-    "histories",
-    "threadId",
-    "trustAnchorId",
-  ]);
+): SignExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest | undefined {
+  const record = requestRecord(input, ["histories", "threadId", "trustAnchorId"]);
   const threadId = record?.["threadId"];
   const trustAnchorId = record?.["trustAnchorId"];
   return record &&
@@ -6680,22 +4319,15 @@ function parseSignExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHi
 function parseSetExecutionPlanBlueprintRecommendationPolicyOverrideRequest(
   input: unknown,
 ): SetExecutionPlanBlueprintRecommendationPolicyOverrideRequest | undefined {
-  const record = requestRecord(input, [
-    "familySha256",
-    "policyTemplate",
-    "expectedPortfolioSetSha256",
-  ]);
+  const record = requestRecord(input, ["familySha256", "policyTemplate", "expectedPortfolioSetSha256"]);
   if (!record) return undefined;
   const familySha256 = record["familySha256"];
   const policyTemplate = record["policyTemplate"];
   const expectedPortfolioSetSha256 = record["expectedPortfolioSetSha256"];
   if (
     !isSha256Hex(familySha256) ||
-    (policyTemplate !== "balanced" &&
-      policyTemplate !== "delivery_first" &&
-      policyTemplate !== "portfolio_first") ||
-    (expectedPortfolioSetSha256 !== undefined &&
-      !isSha256Hex(expectedPortfolioSetSha256))
+    (policyTemplate !== "balanced" && policyTemplate !== "delivery_first" && policyTemplate !== "portfolio_first") ||
+    (expectedPortfolioSetSha256 !== undefined && !isSha256Hex(expectedPortfolioSetSha256))
   ) {
     return undefined;
   }
@@ -6744,17 +4376,11 @@ function isSha256Hex(value: unknown): value is string {
   return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
 }
 
-function parseCreateReceiptTrustAnchorRequest(
-  input: unknown,
-): CreateReceiptTrustAnchorRequest | undefined {
+function parseCreateReceiptTrustAnchorRequest(input: unknown): CreateReceiptTrustAnchorRequest | undefined {
   const record = requestRecord(input, ["threadId", "label", "source"]);
   const threadId = record?.["threadId"];
   const label = record?.["label"];
-  const source = requestRecord(record?.["source"], [
-    "type",
-    "variable",
-    "publicKeySpki",
-  ]);
+  const source = requestRecord(record?.["source"], ["type", "variable", "publicKeySpki"]);
   const type = source?.["type"];
   if (
     !record ||
@@ -6785,9 +4411,7 @@ function parseCreateReceiptTrustAnchorRequest(
   }
   const publicKeySpki = source["publicKeySpki"];
   if (
-    Object.keys(source).some(
-      (key) => key !== "type" && key !== "publicKeySpki",
-    ) ||
+    Object.keys(source).some((key) => key !== "type" && key !== "publicKeySpki") ||
     typeof publicKeySpki !== "string" ||
     publicKeySpki.length === 0 ||
     publicKeySpki.length > 4_096
@@ -6801,35 +4425,21 @@ function parseCreateReceiptTrustAnchorRequest(
   };
 }
 
-function parseRevokeReceiptTrustAnchorRequest(
-  input: unknown,
-): RevokeReceiptTrustAnchorRequest | undefined {
+function parseRevokeReceiptTrustAnchorRequest(input: unknown): RevokeReceiptTrustAnchorRequest | undefined {
   const record = requestRecord(input, ["threadId"]);
   const threadId = record?.["threadId"];
-  return record &&
-    typeof threadId === "string" &&
-    /^thread_[a-z0-9]{8,80}$/.test(threadId)
-    ? { threadId }
-    : undefined;
+  return record && typeof threadId === "string" && /^thread_[a-z0-9]{8,80}$/.test(threadId) ? { threadId } : undefined;
 }
 
-function parseSignTrustedReceiptRequest(
-  input: unknown,
-  requireThreadId: boolean,
-): SignTrustedReceiptRequest | undefined {
-  const record = requestRecord(
-    input,
-    requireThreadId ? ["trustAnchorId", "threadId"] : ["trustAnchorId"],
-  );
+function parseSignTrustedReceiptRequest(input: unknown, requireThreadId: boolean): SignTrustedReceiptRequest | undefined {
+  const record = requestRecord(input, requireThreadId ? ["trustAnchorId", "threadId"] : ["trustAnchorId"]);
   const trustAnchorId = record?.["trustAnchorId"];
   const threadId = record?.["threadId"];
   if (
     !record ||
     typeof trustAnchorId !== "string" ||
     !/^trustkey_[a-z0-9]{8,80}$/.test(trustAnchorId) ||
-    (requireThreadId &&
-      (typeof threadId !== "string" ||
-        !/^thread_[a-z0-9]{8,80}$/.test(threadId)))
+    (requireThreadId && (typeof threadId !== "string" || !/^thread_[a-z0-9]{8,80}$/.test(threadId)))
   ) {
     return undefined;
   }
@@ -6839,27 +4449,15 @@ function parseSignTrustedReceiptRequest(
   };
 }
 
-function parseSignReceiptTrustAnchorDirectoryMetadataRequest(
-  input: unknown,
-): SignReceiptTrustAnchorDirectoryMetadataRequest | undefined {
-  const record = requestRecord(input, [
-    "trustAnchorId",
-    "threadId",
-    "publisher",
-    "sourceUrlSha256",
-    "sourceOriginSha256",
-    "expiresAt",
-  ]);
+function parseSignReceiptTrustAnchorDirectoryMetadataRequest(input: unknown): SignReceiptTrustAnchorDirectoryMetadataRequest | undefined {
+  const record = requestRecord(input, ["trustAnchorId", "threadId", "publisher", "sourceUrlSha256", "sourceOriginSha256", "expiresAt"]);
   const trustAnchorId = record?.["trustAnchorId"];
   const threadId = record?.["threadId"];
   const publisher = record?.["publisher"];
   const sourceUrlSha256 = record?.["sourceUrlSha256"];
   const sourceOriginSha256 = record?.["sourceOriginSha256"];
   const expiresAt = record?.["expiresAt"];
-  const normalizedPublisher =
-    typeof publisher === "string"
-      ? publisher.replace(/\s+/g, " ").trim()
-      : undefined;
+  const normalizedPublisher = typeof publisher === "string" ? publisher.replace(/\s+/g, " ").trim() : undefined;
   if (
     !record ||
     typeof trustAnchorId !== "string" ||
@@ -6871,9 +4469,7 @@ function parseSignReceiptTrustAnchorDirectoryMetadataRequest(
     (sourceUrlSha256 === undefined) !== (sourceOriginSha256 === undefined) ||
     (sourceUrlSha256 !== undefined && !isSha256Hex(sourceUrlSha256)) ||
     (sourceOriginSha256 !== undefined && !isSha256Hex(sourceOriginSha256)) ||
-    (expiresAt !== undefined &&
-      (typeof expiresAt !== "string" ||
-        !Number.isFinite(Date.parse(expiresAt))))
+    (expiresAt !== undefined && (typeof expiresAt !== "string" || !Number.isFinite(Date.parse(expiresAt))))
   ) {
     return undefined;
   }
@@ -6887,9 +4483,7 @@ function parseSignReceiptTrustAnchorDirectoryMetadataRequest(
   };
 }
 
-function parsePromoteEvaluationQualificationBaselineRequest(
-  input: unknown,
-): PromoteEvaluationQualificationBaselineRequest | undefined {
+function parsePromoteEvaluationQualificationBaselineRequest(input: unknown): PromoteEvaluationQualificationBaselineRequest | undefined {
   const record = requestRecord(input, ["threadId", "trustAnchorId"]);
   const threadId = record?.["threadId"];
   const trustAnchorId = record?.["trustAnchorId"];
@@ -6902,59 +4496,34 @@ function parsePromoteEvaluationQualificationBaselineRequest(
     : undefined;
 }
 
-function parseVerifyTrustedReceiptRequest(
-  input: unknown,
-): VerifyTrustedReceiptRequest | undefined {
-  const record = requestRecord(input, [
-    "envelope",
-    "directory",
-    "directoryPolicy",
-  ]);
-  const directoryPolicy = parseReceiptTrustAnchorDirectoryVerificationPolicy(
-    record?.["directoryPolicy"],
-  );
+function parseVerifyTrustedReceiptRequest(input: unknown): VerifyTrustedReceiptRequest | undefined {
+  const record = requestRecord(input, ["envelope", "directory", "directoryPolicy"]);
+  const directoryPolicy = parseReceiptTrustAnchorDirectoryVerificationPolicy(record?.["directoryPolicy"]);
   if (
     !record ||
     record["envelope"] === undefined ||
-    (record["directoryPolicy"] !== undefined &&
-      record["directory"] === undefined) ||
+    (record["directoryPolicy"] !== undefined && record["directory"] === undefined) ||
     (record["directoryPolicy"] !== undefined && !directoryPolicy)
   ) {
     return undefined;
   }
   return {
     envelope: record["envelope"],
-    ...(record["directory"] !== undefined
-      ? { directory: record["directory"] }
-      : {}),
+    ...(record["directory"] !== undefined ? { directory: record["directory"] } : {}),
     ...(directoryPolicy ? { directoryPolicy } : {}),
   };
 }
 
-function parseVerifyReceiptTrustAnchorDirectoryMetadataRequest(
-  input: unknown,
-): VerifyReceiptTrustAnchorDirectoryMetadataRequest | undefined {
-  const record = requestRecord(input, [
-    "envelope",
-    "directory",
-    "directoryPolicy",
-    "trustDirectory",
-    "trustDirectoryPolicy",
-  ]);
-  const directoryPolicy = parseReceiptTrustAnchorDirectoryVerificationPolicy(
-    record?.["directoryPolicy"],
-  );
-  const trustDirectoryPolicy =
-    parseReceiptTrustAnchorDirectoryVerificationPolicy(
-      record?.["trustDirectoryPolicy"],
-    );
+function parseVerifyReceiptTrustAnchorDirectoryMetadataRequest(input: unknown): VerifyReceiptTrustAnchorDirectoryMetadataRequest | undefined {
+  const record = requestRecord(input, ["envelope", "directory", "directoryPolicy", "trustDirectory", "trustDirectoryPolicy"]);
+  const directoryPolicy = parseReceiptTrustAnchorDirectoryVerificationPolicy(record?.["directoryPolicy"]);
+  const trustDirectoryPolicy = parseReceiptTrustAnchorDirectoryVerificationPolicy(record?.["trustDirectoryPolicy"]);
   if (
     !record ||
     record["envelope"] === undefined ||
     record["directory"] === undefined ||
     (record["directoryPolicy"] !== undefined && !directoryPolicy) ||
-    (record["trustDirectoryPolicy"] !== undefined &&
-      record["trustDirectory"] === undefined) ||
+    (record["trustDirectoryPolicy"] !== undefined && record["trustDirectory"] === undefined) ||
     (record["trustDirectoryPolicy"] !== undefined && !trustDirectoryPolicy)
   ) {
     return undefined;
@@ -6963,9 +4532,7 @@ function parseVerifyReceiptTrustAnchorDirectoryMetadataRequest(
     envelope: record["envelope"],
     directory: record["directory"],
     ...(directoryPolicy ? { directoryPolicy } : {}),
-    ...(record["trustDirectory"] !== undefined
-      ? { trustDirectory: record["trustDirectory"] }
-      : {}),
+    ...(record["trustDirectory"] !== undefined ? { trustDirectory: record["trustDirectory"] } : {}),
     ...(trustDirectoryPolicy ? { trustDirectoryPolicy } : {}),
   };
 }
@@ -6973,38 +4540,26 @@ function parseVerifyReceiptTrustAnchorDirectoryMetadataRequest(
 function parseVerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest(
   input: unknown,
 ): VerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest | undefined {
-  const record = requestRecord(input, [
-    "baseline",
-    "trustDirectory",
-    "trustDirectoryPolicy",
-  ]);
-  const trustDirectoryPolicy =
-    parseReceiptTrustAnchorDirectoryVerificationPolicy(
-      record?.["trustDirectoryPolicy"],
-    );
+  const record = requestRecord(input, ["baseline", "trustDirectory", "trustDirectoryPolicy"]);
+  const trustDirectoryPolicy = parseReceiptTrustAnchorDirectoryVerificationPolicy(record?.["trustDirectoryPolicy"]);
   if (
     !record ||
     record["baseline"] === undefined ||
-    (record["trustDirectoryPolicy"] !== undefined &&
-      record["trustDirectory"] === undefined) ||
+    (record["trustDirectoryPolicy"] !== undefined && record["trustDirectory"] === undefined) ||
     (record["trustDirectoryPolicy"] !== undefined && !trustDirectoryPolicy)
   ) {
     return undefined;
   }
   return {
     baseline: record["baseline"],
-    ...(record["trustDirectory"] !== undefined
-      ? { trustDirectory: record["trustDirectory"] }
-      : {}),
+    ...(record["trustDirectory"] !== undefined ? { trustDirectory: record["trustDirectory"] } : {}),
     ...(trustDirectoryPolicy ? { trustDirectoryPolicy } : {}),
   };
 }
 
 function parseVerifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryRequest(
   input: unknown,
-):
-  | VerifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryRequest
-  | undefined {
+): VerifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryRequest | undefined {
   const record = requestRecord(input, ["history"]);
   if (!record || record["history"] === undefined) return undefined;
   return {
@@ -7014,9 +4569,7 @@ function parseVerifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryRe
 
 function parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest(
   input: unknown,
-):
-  | VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest
-  | undefined {
+): VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest | undefined {
   const record = requestRecord(input, ["checkpoint"]);
   if (!record || record["checkpoint"] === undefined) return undefined;
   return {
@@ -7026,31 +4579,17 @@ function parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTranspar
 
 function parseDiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest(
   input: unknown,
-):
-  | DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest
-  | undefined {
-  const record = requestRecord(input, [
-    "sourceUrl",
-    "policy",
-    "trustDirectory",
-    "trustDirectoryPolicy",
-  ]);
-  const policy =
-    parseReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy(
-      record?.["policy"],
-    );
-  const trustDirectoryPolicy =
-    parseReceiptTrustAnchorDirectoryVerificationPolicy(
-      record?.["trustDirectoryPolicy"],
-    );
+): DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest | undefined {
+  const record = requestRecord(input, ["sourceUrl", "policy", "trustDirectory", "trustDirectoryPolicy"]);
+  const policy = parseReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy(record?.["policy"]);
+  const trustDirectoryPolicy = parseReceiptTrustAnchorDirectoryVerificationPolicy(record?.["trustDirectoryPolicy"]);
   if (
     !record ||
     typeof record["sourceUrl"] !== "string" ||
     record["sourceUrl"].length === 0 ||
     record["sourceUrl"].length > 2_048 ||
     (record["policy"] !== undefined && !policy) ||
-    (record["trustDirectoryPolicy"] !== undefined &&
-      record["trustDirectory"] === undefined) ||
+    (record["trustDirectoryPolicy"] !== undefined && record["trustDirectory"] === undefined) ||
     (record["trustDirectoryPolicy"] !== undefined && !trustDirectoryPolicy)
   ) {
     return undefined;
@@ -7058,27 +4597,18 @@ function parseDiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransp
   return {
     sourceUrl: record["sourceUrl"],
     ...(policy ? { policy } : {}),
-    ...(record["trustDirectory"] !== undefined
-      ? { trustDirectory: record["trustDirectory"] }
-      : {}),
+    ...(record["trustDirectory"] !== undefined ? { trustDirectory: record["trustDirectory"] } : {}),
     ...(trustDirectoryPolicy ? { trustDirectoryPolicy } : {}),
   };
 }
 
 function parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest(
   input: unknown,
-):
-  | SignReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest
-  | undefined {
+): SignReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest | undefined {
   const record = requestRecord(input, ["threadId", "trustAnchorId"]);
   const threadId = record?.["threadId"];
   const trustAnchorId = record?.["trustAnchorId"];
-  if (
-    !record ||
-    !validThreadId(threadId) ||
-    typeof trustAnchorId !== "string" ||
-    !/^trustkey_[a-f0-9]{20}$/.test(trustAnchorId)
-  ) {
+  if (!record || !validThreadId(threadId) || typeof trustAnchorId !== "string" || !/^trustkey_[a-f0-9]{20}$/.test(trustAnchorId)) {
     return undefined;
   }
   return {
@@ -7089,27 +4619,18 @@ function parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparen
 
 function parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest(
   input: unknown,
-):
-  | ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest
-  | undefined {
-  const record = requestRecord(input, [
-    "threadId",
-    "activationDecisionRecordId",
-    "expectedCurrentSelectionSha256",
-    "rotationProposalEnvelope",
-  ]);
+): ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest | undefined {
+  const record = requestRecord(input, ["threadId", "activationDecisionRecordId", "expectedCurrentSelectionSha256", "rotationProposalEnvelope"]);
   const threadId = record?.["threadId"];
   const activationDecisionRecordId = record?.["activationDecisionRecordId"];
-  const expectedCurrentSelectionSha256 =
-    record?.["expectedCurrentSelectionSha256"];
+  const expectedCurrentSelectionSha256 = record?.["expectedCurrentSelectionSha256"];
   if (
     !record ||
     !validThreadId(threadId) ||
     typeof activationDecisionRecordId !== "string" ||
     !/^trustqad_[a-z0-9]{8,80}$/.test(activationDecisionRecordId) ||
     typeof expectedCurrentSelectionSha256 !== "string" ||
-    (expectedCurrentSelectionSha256 !== "" &&
-      !isSha256Hex(expectedCurrentSelectionSha256))
+    (expectedCurrentSelectionSha256 !== "" && !isSha256Hex(expectedCurrentSelectionSha256))
   ) {
     return undefined;
   }
@@ -7129,15 +4650,8 @@ function parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest(
 
 function parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest(
   input: unknown,
-):
-  | ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest
-  | undefined {
-  const record = requestRecord(input, [
-    "threadId",
-    "expectedSubscriptionRevision",
-    "expectedSubscriptionSha256",
-    "approvalEnvelope",
-  ]);
+): ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest | undefined {
+  const record = requestRecord(input, ["threadId", "expectedSubscriptionRevision", "expectedSubscriptionSha256", "approvalEnvelope"]);
   const threadId = record?.["threadId"];
   const expectedSubscriptionRevision = record?.["expectedSubscriptionRevision"];
   const expectedSubscriptionSha256 = record?.["expectedSubscriptionSha256"];
@@ -7164,26 +4678,14 @@ function parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationP
 
 function parseReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest(
   input: unknown,
-):
-  | ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest
-  | undefined {
-  const record = requestRecord(input, [
-    "threadId",
-    "expectedSubscriptionRevision",
-    "expectedSubscriptionSha256",
-    "approvalEnvelopes",
-    "approvalPolicy",
-  ]);
+): ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest | undefined {
+  const record = requestRecord(input, ["threadId", "expectedSubscriptionRevision", "expectedSubscriptionSha256", "approvalEnvelopes", "approvalPolicy"]);
   const threadId = record?.["threadId"];
   const expectedSubscriptionRevision = record?.["expectedSubscriptionRevision"];
   const expectedSubscriptionSha256 = record?.["expectedSubscriptionSha256"];
   const approvalEnvelopes = record?.["approvalEnvelopes"];
-  const approvalPolicyRecord = requestRecord(record?.["approvalPolicy"], [
-    "minimumDistinctSignerCount",
-    "requiredSignerKeyIds",
-  ]);
-  const minimumDistinctSignerCount =
-    approvalPolicyRecord?.["minimumDistinctSignerCount"];
+  const approvalPolicyRecord = requestRecord(record?.["approvalPolicy"], ["minimumDistinctSignerCount", "requiredSignerKeyIds"]);
+  const minimumDistinctSignerCount = approvalPolicyRecord?.["minimumDistinctSignerCount"];
   const requiredSignerKeyIds = approvalPolicyRecord?.["requiredSignerKeyIds"];
   if (
     !record ||
@@ -7200,46 +4702,32 @@ function parseReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation
     minimumDistinctSignerCount < 1 ||
     minimumDistinctSignerCount > 10 ||
     (requiredSignerKeyIds !== undefined &&
-      (!Array.isArray(requiredSignerKeyIds) ||
-        requiredSignerKeyIds.length > 10 ||
-        !requiredSignerKeyIds.every(isSha256Hex)))
+      (!Array.isArray(requiredSignerKeyIds) || requiredSignerKeyIds.length > 10 || !requiredSignerKeyIds.every(isSha256Hex)))
   ) {
     return undefined;
   }
-  const uniqueRequiredSignerKeyIds =
-    requiredSignerKeyIds === undefined
-      ? []
-      : Array.from(new Set(requiredSignerKeyIds as string[])).sort();
+  const uniqueRequiredSignerKeyIds = requiredSignerKeyIds === undefined ? [] : Array.from(new Set(requiredSignerKeyIds as string[])).sort();
   return {
     threadId,
     expectedSubscriptionRevision,
     expectedSubscriptionSha256,
-    approvalEnvelopes:
-      approvalEnvelopes as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>[],
+    approvalEnvelopes: approvalEnvelopes as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>[],
     approvalPolicy: {
       minimumDistinctSignerCount,
-      ...(uniqueRequiredSignerKeyIds.length > 0
-        ? { requiredSignerKeyIds: uniqueRequiredSignerKeyIds }
-        : {}),
+      ...(uniqueRequiredSignerKeyIds.length > 0 ? { requiredSignerKeyIds: uniqueRequiredSignerKeyIds } : {}),
     },
   };
 }
 
 function parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest(
   input: unknown,
-):
-  | ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest
-  | undefined {
-  return parseReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest(
-    input,
-  );
+): ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest | undefined {
+  return parseReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest(input);
 }
 
 function parseQueueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyRequest(
   input: unknown,
-):
-  | QueueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyRequest
-  | undefined {
+): QueueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyRequest | undefined {
   const record = requestRecord(input, [
     "threadId",
     "expectedSubscriptionRevision",
@@ -7249,28 +4737,24 @@ function parseQueueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationP
     "approvalPolicyBaselineSha256",
     "applyAfter",
   ]);
-  const reviewRequest =
-    parseReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest(
-      record
-        ? {
-            threadId: record["threadId"],
-            expectedSubscriptionRevision:
-              record["expectedSubscriptionRevision"],
-            expectedSubscriptionSha256: record["expectedSubscriptionSha256"],
-            approvalEnvelopes: record["approvalEnvelopes"],
-            approvalPolicy: record["approvalPolicy"],
-          }
-        : undefined,
-    );
+  const reviewRequest = parseReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest(
+    record
+      ? {
+          threadId: record["threadId"],
+          expectedSubscriptionRevision: record["expectedSubscriptionRevision"],
+          expectedSubscriptionSha256: record["expectedSubscriptionSha256"],
+          approvalEnvelopes: record["approvalEnvelopes"],
+          approvalPolicy: record["approvalPolicy"],
+        }
+      : undefined,
+  );
   const approvalPolicyBaselineSha256 = record?.["approvalPolicyBaselineSha256"];
   const applyAfter = record?.["applyAfter"];
   if (
     !reviewRequest ||
     typeof approvalPolicyBaselineSha256 !== "string" ||
     !/^[a-f0-9]{64}$/.test(approvalPolicyBaselineSha256) ||
-    (applyAfter !== undefined &&
-      (typeof applyAfter !== "string" ||
-        !Number.isFinite(Date.parse(applyAfter))))
+    (applyAfter !== undefined && (typeof applyAfter !== "string" || !Number.isFinite(Date.parse(applyAfter))))
   ) {
     return undefined;
   }
@@ -7283,9 +4767,7 @@ function parseQueueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationP
 
 function parsePromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest(
   input: unknown,
-):
-  | PromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest
-  | undefined {
+): PromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest | undefined {
   const record = requestRecord(input, [
     "threadId",
     "trustAnchorId",
@@ -7294,25 +4776,19 @@ function parsePromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionRotatio
     "approvalEnvelopes",
     "approvalPolicy",
   ]);
-  const reviewRequest =
-    parseReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest(
-      record
-        ? {
-            threadId: record["threadId"],
-            expectedSubscriptionRevision:
-              record["expectedSubscriptionRevision"],
-            expectedSubscriptionSha256: record["expectedSubscriptionSha256"],
-            approvalEnvelopes: record["approvalEnvelopes"],
-            approvalPolicy: record["approvalPolicy"],
-          }
-        : undefined,
-    );
+  const reviewRequest = parseReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest(
+    record
+      ? {
+          threadId: record["threadId"],
+          expectedSubscriptionRevision: record["expectedSubscriptionRevision"],
+          expectedSubscriptionSha256: record["expectedSubscriptionSha256"],
+          approvalEnvelopes: record["approvalEnvelopes"],
+          approvalPolicy: record["approvalPolicy"],
+        }
+      : undefined,
+  );
   const trustAnchorId = record?.["trustAnchorId"];
-  if (
-    !reviewRequest ||
-    typeof trustAnchorId !== "string" ||
-    !/^trustkey_[a-z0-9]{8,80}$/.test(trustAnchorId)
-  ) {
+  if (!reviewRequest || typeof trustAnchorId !== "string" || !/^trustkey_[a-z0-9]{8,80}$/.test(trustAnchorId)) {
     return undefined;
   }
   return {
@@ -7323,71 +4799,43 @@ function parsePromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionRotatio
 
 function parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest(
   input: unknown,
-):
-  | VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest
-  | undefined {
-  const record = requestRecord(input, [
-    "baseline",
-    "trustDirectory",
-    "trustDirectoryPolicy",
-  ]);
-  const trustDirectoryPolicy =
-    parseReceiptTrustAnchorDirectoryVerificationPolicy(
-      record?.["trustDirectoryPolicy"],
-    );
+): VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest | undefined {
+  const record = requestRecord(input, ["baseline", "trustDirectory", "trustDirectoryPolicy"]);
+  const trustDirectoryPolicy = parseReceiptTrustAnchorDirectoryVerificationPolicy(record?.["trustDirectoryPolicy"]);
   if (
     !record ||
     record["baseline"] === undefined ||
-    (record["trustDirectoryPolicy"] !== undefined &&
-      record["trustDirectory"] === undefined) ||
+    (record["trustDirectoryPolicy"] !== undefined && record["trustDirectory"] === undefined) ||
     (record["trustDirectoryPolicy"] !== undefined && !trustDirectoryPolicy)
   ) {
     return undefined;
   }
   return {
     baseline: record["baseline"],
-    ...(record["trustDirectory"] !== undefined
-      ? { trustDirectory: record["trustDirectory"] }
-      : {}),
+    ...(record["trustDirectory"] !== undefined ? { trustDirectory: record["trustDirectory"] } : {}),
     ...(trustDirectoryPolicy ? { trustDirectoryPolicy } : {}),
   };
 }
 
 function parseImportReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest(
   input: unknown,
-):
-  | ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest
-  | undefined {
-  const record = requestRecord(input, [
-    "baseline",
-    "threadId",
-    "expectedCurrentBaselineSha256",
-    "trustDirectory",
-    "trustDirectoryPolicy",
-  ]);
+): ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest | undefined {
+  const record = requestRecord(input, ["baseline", "threadId", "expectedCurrentBaselineSha256", "trustDirectory", "trustDirectoryPolicy"]);
   const verifyRequest = record
-    ? parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest(
-        {
-          baseline: record["baseline"],
-          ...(record["trustDirectory"] !== undefined
-            ? { trustDirectory: record["trustDirectory"] }
-            : {}),
-          ...(record["trustDirectoryPolicy"] !== undefined
-            ? { trustDirectoryPolicy: record["trustDirectoryPolicy"] }
-            : {}),
-        },
-      )
+    ? parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest({
+        baseline: record["baseline"],
+        ...(record["trustDirectory"] !== undefined ? { trustDirectory: record["trustDirectory"] } : {}),
+        ...(record["trustDirectoryPolicy"] !== undefined ? { trustDirectoryPolicy: record["trustDirectoryPolicy"] } : {}),
+      })
     : undefined;
   const threadId = record?.["threadId"];
-  const expectedCurrentBaselineSha256 =
-    record?.["expectedCurrentBaselineSha256"];
+  const expectedCurrentBaselineSha256 = record?.["expectedCurrentBaselineSha256"];
   if (
     !record ||
     !verifyRequest ||
     !validThreadId(threadId) ||
     typeof expectedCurrentBaselineSha256 !== "string" ||
-    (expectedCurrentBaselineSha256 !== "" &&
-      !isSha256Hex(expectedCurrentBaselineSha256))
+    (expectedCurrentBaselineSha256 !== "" && !isSha256Hex(expectedCurrentBaselineSha256))
   ) {
     return undefined;
   }
@@ -7400,52 +4848,35 @@ function parseImportReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation
 
 function parseReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest(
   input: unknown,
-):
-  | ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest
-  | undefined {
-  const record = requestRecord(input, [
-    "activationDecisionRecordId",
-    "expectedCurrentSelectionSha256",
-    "checkpointRegistryQuorumPolicy",
-  ]);
+): ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest | undefined {
+  const record = requestRecord(input, ["activationDecisionRecordId", "expectedCurrentSelectionSha256", "checkpointRegistryQuorumPolicy"]);
   const activationDecisionRecordId = record?.["activationDecisionRecordId"];
-  const expectedCurrentSelectionSha256 =
-    record?.["expectedCurrentSelectionSha256"];
-  const checkpointRegistryQuorumPolicyInput =
-    record?.["checkpointRegistryQuorumPolicy"];
+  const expectedCurrentSelectionSha256 = record?.["expectedCurrentSelectionSha256"];
+  const checkpointRegistryQuorumPolicyInput = record?.["checkpointRegistryQuorumPolicy"];
   const checkpointRegistryQuorumPolicy =
     checkpointRegistryQuorumPolicyInput === undefined
       ? undefined
-      : parseReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy(
-          checkpointRegistryQuorumPolicyInput,
-        );
+      : parseReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy(checkpointRegistryQuorumPolicyInput);
   if (
     !record ||
-    (checkpointRegistryQuorumPolicyInput !== undefined &&
-      !checkpointRegistryQuorumPolicy) ||
+    (checkpointRegistryQuorumPolicyInput !== undefined && !checkpointRegistryQuorumPolicy) ||
     typeof activationDecisionRecordId !== "string" ||
     !/^trustqad_[a-z0-9]{8,80}$/.test(activationDecisionRecordId) ||
     typeof expectedCurrentSelectionSha256 !== "string" ||
-    (expectedCurrentSelectionSha256 !== "" &&
-      !isSha256Hex(expectedCurrentSelectionSha256))
+    (expectedCurrentSelectionSha256 !== "" && !isSha256Hex(expectedCurrentSelectionSha256))
   ) {
     return undefined;
   }
   return {
     activationDecisionRecordId,
     expectedCurrentSelectionSha256,
-    ...(checkpointRegistryQuorumPolicyInput !== undefined &&
-    checkpointRegistryQuorumPolicy
-      ? { checkpointRegistryQuorumPolicy }
-      : {}),
+    ...(checkpointRegistryQuorumPolicyInput !== undefined && checkpointRegistryQuorumPolicy ? { checkpointRegistryQuorumPolicy } : {}),
   };
 }
 
 function parseProposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest(
   input: unknown,
-):
-  | ProposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest
-  | undefined {
+): ProposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest | undefined {
   const record = requestRecord(input, [
     "activationDecisionRecordId",
     "expectedCurrentSelectionSha256",
@@ -7454,54 +4885,38 @@ function parseProposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotatio
     "expectedCheckpointRegistryQuorumBaselineSha256",
   ]);
   const reviewRequest = record
-    ? parseReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest(
-        {
-          activationDecisionRecordId: record["activationDecisionRecordId"],
-          expectedCurrentSelectionSha256:
-            record["expectedCurrentSelectionSha256"],
-          ...(record["checkpointRegistryQuorumPolicy"] !== undefined
-            ? {
-                checkpointRegistryQuorumPolicy:
-                  record["checkpointRegistryQuorumPolicy"],
-              }
-            : {}),
-        },
-      )
+    ? parseReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest({
+        activationDecisionRecordId: record["activationDecisionRecordId"],
+        expectedCurrentSelectionSha256: record["expectedCurrentSelectionSha256"],
+        ...(record["checkpointRegistryQuorumPolicy"] !== undefined
+          ? {
+              checkpointRegistryQuorumPolicy: record["checkpointRegistryQuorumPolicy"],
+            }
+          : {}),
+      })
     : undefined;
-  const checkpointRegistryQuorumBaselineId =
-    record?.["checkpointRegistryQuorumBaselineId"];
-  const expectedCheckpointRegistryQuorumBaselineSha256 =
-    record?.["expectedCheckpointRegistryQuorumBaselineSha256"];
+  const checkpointRegistryQuorumBaselineId = record?.["checkpointRegistryQuorumBaselineId"];
+  const expectedCheckpointRegistryQuorumBaselineSha256 = record?.["expectedCheckpointRegistryQuorumBaselineSha256"];
   if (
     !record ||
     !reviewRequest ||
     (checkpointRegistryQuorumBaselineId !== undefined &&
-      (typeof checkpointRegistryQuorumBaselineId !== "string" ||
-        !/^trustcpqb_[a-z0-9]{8,80}$/.test(
-          checkpointRegistryQuorumBaselineId,
-        ))) ||
+      (typeof checkpointRegistryQuorumBaselineId !== "string" || !/^trustcpqb_[a-z0-9]{8,80}$/.test(checkpointRegistryQuorumBaselineId))) ||
     (expectedCheckpointRegistryQuorumBaselineSha256 !== undefined &&
-      (typeof expectedCheckpointRegistryQuorumBaselineSha256 !== "string" ||
-        !isSha256Hex(expectedCheckpointRegistryQuorumBaselineSha256)))
+      (typeof expectedCheckpointRegistryQuorumBaselineSha256 !== "string" || !isSha256Hex(expectedCheckpointRegistryQuorumBaselineSha256)))
   ) {
     return undefined;
   }
   return {
     ...reviewRequest,
-    ...(typeof checkpointRegistryQuorumBaselineId === "string"
-      ? { checkpointRegistryQuorumBaselineId }
-      : {}),
-    ...(typeof expectedCheckpointRegistryQuorumBaselineSha256 === "string"
-      ? { expectedCheckpointRegistryQuorumBaselineSha256 }
-      : {}),
+    ...(typeof checkpointRegistryQuorumBaselineId === "string" ? { checkpointRegistryQuorumBaselineId } : {}),
+    ...(typeof expectedCheckpointRegistryQuorumBaselineSha256 === "string" ? { expectedCheckpointRegistryQuorumBaselineSha256 } : {}),
   };
 }
 
 function parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest(
   input: unknown,
-):
-  | SignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest
-  | undefined {
+): SignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest | undefined {
   const record = requestRecord(input, [
     "threadId",
     "trustAnchorId",
@@ -7512,42 +4927,29 @@ function parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPr
     "expectedCheckpointRegistryQuorumBaselineSha256",
   ]);
   const proposalRequest = record
-    ? parseProposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest(
-        {
-          activationDecisionRecordId: record["activationDecisionRecordId"],
-          expectedCurrentSelectionSha256:
-            record["expectedCurrentSelectionSha256"],
-          ...(record["checkpointRegistryQuorumPolicy"] !== undefined
-            ? {
-                checkpointRegistryQuorumPolicy:
-                  record["checkpointRegistryQuorumPolicy"],
-              }
-            : {}),
-          ...(record["checkpointRegistryQuorumBaselineId"] !== undefined
-            ? {
-                checkpointRegistryQuorumBaselineId:
-                  record["checkpointRegistryQuorumBaselineId"],
-              }
-            : {}),
-          ...(record["expectedCheckpointRegistryQuorumBaselineSha256"] !==
-          undefined
-            ? {
-                expectedCheckpointRegistryQuorumBaselineSha256:
-                  record["expectedCheckpointRegistryQuorumBaselineSha256"],
-              }
-            : {}),
-        },
-      )
+    ? parseProposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest({
+        activationDecisionRecordId: record["activationDecisionRecordId"],
+        expectedCurrentSelectionSha256: record["expectedCurrentSelectionSha256"],
+        ...(record["checkpointRegistryQuorumPolicy"] !== undefined
+          ? {
+              checkpointRegistryQuorumPolicy: record["checkpointRegistryQuorumPolicy"],
+            }
+          : {}),
+        ...(record["checkpointRegistryQuorumBaselineId"] !== undefined
+          ? {
+              checkpointRegistryQuorumBaselineId: record["checkpointRegistryQuorumBaselineId"],
+            }
+          : {}),
+        ...(record["expectedCheckpointRegistryQuorumBaselineSha256"] !== undefined
+          ? {
+              expectedCheckpointRegistryQuorumBaselineSha256: record["expectedCheckpointRegistryQuorumBaselineSha256"],
+            }
+          : {}),
+      })
     : undefined;
   const threadId = record?.["threadId"];
   const trustAnchorId = record?.["trustAnchorId"];
-  if (
-    !record ||
-    !proposalRequest ||
-    !validThreadId(threadId) ||
-    typeof trustAnchorId !== "string" ||
-    !/^trustkey_[a-f0-9]{20}$/.test(trustAnchorId)
-  ) {
+  if (!record || !proposalRequest || !validThreadId(threadId) || typeof trustAnchorId !== "string" || !/^trustkey_[a-f0-9]{20}$/.test(trustAnchorId)) {
     return undefined;
   }
   return {
@@ -7559,9 +4961,7 @@ function parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPr
 
 function parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest(
   input: unknown,
-):
-  | SignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest
-  | undefined {
+): SignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest | undefined {
   const record = requestRecord(input, [
     "threadId",
     "trustAnchorId",
@@ -7593,22 +4993,12 @@ function parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPr
     expectedSubscriptionRevision < 1 ||
     typeof expectedSubscriptionSha256 !== "string" ||
     !isSha256Hex(expectedSubscriptionSha256) ||
-    (expectedDiscoverySha256 !== undefined &&
-      (typeof expectedDiscoverySha256 !== "string" ||
-        !isSha256Hex(expectedDiscoverySha256))) ||
-    (expectedEnvelopeSha256 !== undefined &&
-      (typeof expectedEnvelopeSha256 !== "string" ||
-        !isSha256Hex(expectedEnvelopeSha256))) ||
-    (expectedProposalSha256 !== undefined &&
-      (typeof expectedProposalSha256 !== "string" ||
-        !isSha256Hex(expectedProposalSha256))) ||
-    (expiresAt !== undefined &&
-      (typeof expiresAt !== "string" ||
-        !Number.isFinite(Date.parse(expiresAt)))) ||
+    (expectedDiscoverySha256 !== undefined && (typeof expectedDiscoverySha256 !== "string" || !isSha256Hex(expectedDiscoverySha256))) ||
+    (expectedEnvelopeSha256 !== undefined && (typeof expectedEnvelopeSha256 !== "string" || !isSha256Hex(expectedEnvelopeSha256))) ||
+    (expectedProposalSha256 !== undefined && (typeof expectedProposalSha256 !== "string" || !isSha256Hex(expectedProposalSha256))) ||
+    (expiresAt !== undefined && (typeof expiresAt !== "string" || !Number.isFinite(Date.parse(expiresAt)))) ||
     (queueForApply !== undefined && typeof queueForApply !== "boolean") ||
-    (applyAfter !== undefined &&
-      (typeof applyAfter !== "string" ||
-        !Number.isFinite(Date.parse(applyAfter))))
+    (applyAfter !== undefined && (typeof applyAfter !== "string" || !Number.isFinite(Date.parse(applyAfter))))
   ) {
     return undefined;
   }
@@ -7617,15 +5007,9 @@ function parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPr
     trustAnchorId,
     expectedSubscriptionRevision,
     expectedSubscriptionSha256,
-    ...(typeof expectedDiscoverySha256 === "string"
-      ? { expectedDiscoverySha256 }
-      : {}),
-    ...(typeof expectedEnvelopeSha256 === "string"
-      ? { expectedEnvelopeSha256 }
-      : {}),
-    ...(typeof expectedProposalSha256 === "string"
-      ? { expectedProposalSha256 }
-      : {}),
+    ...(typeof expectedDiscoverySha256 === "string" ? { expectedDiscoverySha256 } : {}),
+    ...(typeof expectedEnvelopeSha256 === "string" ? { expectedEnvelopeSha256 } : {}),
+    ...(typeof expectedProposalSha256 === "string" ? { expectedProposalSha256 } : {}),
     ...(typeof expiresAt === "string" ? { expiresAt } : {}),
     ...(typeof queueForApply === "boolean" ? { queueForApply } : {}),
     ...(typeof applyAfter === "string" ? { applyAfter } : {}),
@@ -7634,16 +5018,11 @@ function parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPr
 
 function parseDiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest(
   input: unknown,
-):
-  | DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest
-  | undefined {
+): DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest | undefined {
   const record = requestRecord(input, ["threadId", "sourceUrl", "policy"]);
   const threadId = record?.["threadId"];
   const sourceUrl = record?.["sourceUrl"];
-  const policy =
-    parseReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy(
-      record?.["policy"],
-    );
+  const policy = parseReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy(record?.["policy"]);
   if (
     !record ||
     !validThreadId(threadId) ||
@@ -7663,9 +5042,7 @@ function parseDiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionRotati
 
 function parseReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy(
   input: unknown,
-):
-  | ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy
-  | undefined {
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy | undefined {
   if (input === undefined) return {};
   const record = requestRecord(input, [
     "maxEnvelopeAgeMs",
@@ -7679,65 +5056,35 @@ function parseReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPropos
   const maxEnvelopeAgeMs = record["maxEnvelopeAgeMs"];
   const expectedEnvelopeSha256 = record["expectedEnvelopeSha256"];
   const expectedProposalSha256 = record["expectedProposalSha256"];
-  const expectedActivationDecisionRecordId =
-    record["expectedActivationDecisionRecordId"];
-  const expectedCurrentSelectionSha256 =
-    record["expectedCurrentSelectionSha256"];
+  const expectedActivationDecisionRecordId = record["expectedActivationDecisionRecordId"];
+  const expectedCurrentSelectionSha256 = record["expectedCurrentSelectionSha256"];
   const requiredSignerKeyIds = record["requiredSignerKeyIds"];
   if (
-    (maxEnvelopeAgeMs !== undefined &&
-      (!isNonNegativeInteger(maxEnvelopeAgeMs) ||
-        maxEnvelopeAgeMs > 365 * 24 * 60 * 60 * 1_000)) ||
-    (expectedEnvelopeSha256 !== undefined &&
-      (typeof expectedEnvelopeSha256 !== "string" ||
-        !isSha256Hex(expectedEnvelopeSha256))) ||
-    (expectedProposalSha256 !== undefined &&
-      (typeof expectedProposalSha256 !== "string" ||
-        !isSha256Hex(expectedProposalSha256))) ||
+    (maxEnvelopeAgeMs !== undefined && (!isNonNegativeInteger(maxEnvelopeAgeMs) || maxEnvelopeAgeMs > 365 * 24 * 60 * 60 * 1_000)) ||
+    (expectedEnvelopeSha256 !== undefined && (typeof expectedEnvelopeSha256 !== "string" || !isSha256Hex(expectedEnvelopeSha256))) ||
+    (expectedProposalSha256 !== undefined && (typeof expectedProposalSha256 !== "string" || !isSha256Hex(expectedProposalSha256))) ||
     (expectedActivationDecisionRecordId !== undefined &&
-      (typeof expectedActivationDecisionRecordId !== "string" ||
-        !/^trustqad_[a-z0-9]{8,80}$/.test(
-          expectedActivationDecisionRecordId,
-        ))) ||
+      (typeof expectedActivationDecisionRecordId !== "string" || !/^trustqad_[a-z0-9]{8,80}$/.test(expectedActivationDecisionRecordId))) ||
     (expectedCurrentSelectionSha256 !== undefined &&
-      (typeof expectedCurrentSelectionSha256 !== "string" ||
-        (expectedCurrentSelectionSha256 !== "" &&
-          !isSha256Hex(expectedCurrentSelectionSha256)))) ||
-    !validSha256List(
-      requiredSignerKeyIds,
-      MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
-    )
+      (typeof expectedCurrentSelectionSha256 !== "string" || (expectedCurrentSelectionSha256 !== "" && !isSha256Hex(expectedCurrentSelectionSha256)))) ||
+    !validSha256List(requiredSignerKeyIds, MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)
   ) {
     return undefined;
   }
   return {
     ...(maxEnvelopeAgeMs !== undefined ? { maxEnvelopeAgeMs } : {}),
-    ...(typeof expectedEnvelopeSha256 === "string"
-      ? { expectedEnvelopeSha256 }
-      : {}),
-    ...(typeof expectedProposalSha256 === "string"
-      ? { expectedProposalSha256 }
-      : {}),
-    ...(typeof expectedActivationDecisionRecordId === "string"
-      ? { expectedActivationDecisionRecordId }
-      : {}),
-    ...(typeof expectedCurrentSelectionSha256 === "string"
-      ? { expectedCurrentSelectionSha256 }
-      : {}),
-    ...(Array.isArray(requiredSignerKeyIds) && requiredSignerKeyIds.length > 0
-      ? { requiredSignerKeyIds: requiredSignerKeyIds as string[] }
-      : {}),
+    ...(typeof expectedEnvelopeSha256 === "string" ? { expectedEnvelopeSha256 } : {}),
+    ...(typeof expectedProposalSha256 === "string" ? { expectedProposalSha256 } : {}),
+    ...(typeof expectedActivationDecisionRecordId === "string" ? { expectedActivationDecisionRecordId } : {}),
+    ...(typeof expectedCurrentSelectionSha256 === "string" ? { expectedCurrentSelectionSha256 } : {}),
+    ...(Array.isArray(requiredSignerKeyIds) && requiredSignerKeyIds.length > 0 ? { requiredSignerKeyIds: requiredSignerKeyIds as string[] } : {}),
   };
 }
 
 function parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest(
   input: unknown,
-):
-  | VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest
-  | undefined {
-  return parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest(
-    input,
-  ) as
+): VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest | undefined {
+  return parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest(input) as
     | VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest
     | undefined;
 }
@@ -7745,35 +5092,19 @@ function parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation
 function parseImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest(
   input: unknown,
 ): ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest | undefined {
-  const record = requestRecord(input, [
-    "baseline",
-    "threadId",
-    "expectedCurrentBaselineSha256",
-    "importPolicy",
-    "trustDirectory",
-    "trustDirectoryPolicy",
-  ]);
+  const record = requestRecord(input, ["baseline", "threadId", "expectedCurrentBaselineSha256", "importPolicy", "trustDirectory", "trustDirectoryPolicy"]);
   const threadId = record?.["threadId"];
-  const expectedCurrentBaselineSha256 =
-    record?.["expectedCurrentBaselineSha256"];
-  const importPolicy =
-    parseReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy(
-      record?.["importPolicy"],
-    );
-  const trustDirectoryPolicy =
-    parseReceiptTrustAnchorDirectoryVerificationPolicy(
-      record?.["trustDirectoryPolicy"],
-    );
+  const expectedCurrentBaselineSha256 = record?.["expectedCurrentBaselineSha256"];
+  const importPolicy = parseReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy(record?.["importPolicy"]);
+  const trustDirectoryPolicy = parseReceiptTrustAnchorDirectoryVerificationPolicy(record?.["trustDirectoryPolicy"]);
   if (
     !record ||
     record["baseline"] === undefined ||
     !validThreadId(threadId) ||
     typeof expectedCurrentBaselineSha256 !== "string" ||
-    (expectedCurrentBaselineSha256 !== "" &&
-      !isSha256Hex(expectedCurrentBaselineSha256)) ||
+    (expectedCurrentBaselineSha256 !== "" && !isSha256Hex(expectedCurrentBaselineSha256)) ||
     (record["importPolicy"] !== undefined && !importPolicy) ||
-    (record["trustDirectoryPolicy"] !== undefined &&
-      record["trustDirectory"] === undefined) ||
+    (record["trustDirectoryPolicy"] !== undefined && record["trustDirectory"] === undefined) ||
     (record["trustDirectoryPolicy"] !== undefined && !trustDirectoryPolicy)
   ) {
     return undefined;
@@ -7783,9 +5114,7 @@ function parseImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest(
     threadId,
     expectedCurrentBaselineSha256,
     ...(importPolicy ? { importPolicy } : {}),
-    ...(record["trustDirectory"] !== undefined
-      ? { trustDirectory: record["trustDirectory"] }
-      : {}),
+    ...(record["trustDirectory"] !== undefined ? { trustDirectory: record["trustDirectory"] } : {}),
     ...(trustDirectoryPolicy ? { trustDirectoryPolicy } : {}),
   };
 }
@@ -7793,36 +5122,20 @@ function parseImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest(
 function parseSignReceiptTrustAnchorDirectoryQuorumActivationDecisionRequest(
   input: unknown,
 ): SignReceiptTrustAnchorDirectoryQuorumActivationDecisionRequest | undefined {
-  const record = requestRecord(input, [
-    "threadId",
-    "trustAnchorId",
-    "baselineId",
-    "importPolicy",
-    "trustDirectory",
-    "trustDirectoryPolicy",
-  ]);
+  const record = requestRecord(input, ["threadId", "trustAnchorId", "baselineId", "importPolicy", "trustDirectory", "trustDirectoryPolicy"]);
   const threadId = record?.["threadId"];
   const trustAnchorId = record?.["trustAnchorId"];
   const baselineId = record?.["baselineId"];
-  const importPolicy =
-    parseReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy(
-      record?.["importPolicy"],
-    );
-  const trustDirectoryPolicy =
-    parseReceiptTrustAnchorDirectoryVerificationPolicy(
-      record?.["trustDirectoryPolicy"],
-    );
+  const importPolicy = parseReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy(record?.["importPolicy"]);
+  const trustDirectoryPolicy = parseReceiptTrustAnchorDirectoryVerificationPolicy(record?.["trustDirectoryPolicy"]);
   if (
     !record ||
     !validThreadId(threadId) ||
     typeof trustAnchorId !== "string" ||
     !/^trustkey_[a-z0-9]{8,80}$/.test(trustAnchorId) ||
-    (baselineId !== undefined &&
-      (typeof baselineId !== "string" ||
-        !/^trustqpb_[a-z0-9]{8,80}$/.test(baselineId))) ||
+    (baselineId !== undefined && (typeof baselineId !== "string" || !/^trustqpb_[a-z0-9]{8,80}$/.test(baselineId))) ||
     !importPolicy ||
-    (record["trustDirectoryPolicy"] !== undefined &&
-      record["trustDirectory"] === undefined) ||
+    (record["trustDirectoryPolicy"] !== undefined && record["trustDirectory"] === undefined) ||
     (record["trustDirectoryPolicy"] !== undefined && !trustDirectoryPolicy)
   ) {
     return undefined;
@@ -7832,25 +5145,15 @@ function parseSignReceiptTrustAnchorDirectoryQuorumActivationDecisionRequest(
     trustAnchorId,
     ...(typeof baselineId === "string" ? { baselineId } : {}),
     importPolicy,
-    ...(record["trustDirectory"] !== undefined
-      ? { trustDirectory: record["trustDirectory"] }
-      : {}),
+    ...(record["trustDirectory"] !== undefined ? { trustDirectory: record["trustDirectory"] } : {}),
     ...(trustDirectoryPolicy ? { trustDirectoryPolicy } : {}),
   };
 }
 
-function parseVerifyReceiptTrustAnchorDirectoryRequest(
-  input: unknown,
-): VerifyReceiptTrustAnchorDirectoryRequest | undefined {
+function parseVerifyReceiptTrustAnchorDirectoryRequest(input: unknown): VerifyReceiptTrustAnchorDirectoryRequest | undefined {
   const record = requestRecord(input, ["directory", "policy"]);
-  const policy = parseReceiptTrustAnchorDirectoryVerificationPolicy(
-    record?.["policy"],
-  );
-  if (
-    !record ||
-    record["directory"] === undefined ||
-    (record["policy"] !== undefined && !policy)
-  ) {
+  const policy = parseReceiptTrustAnchorDirectoryVerificationPolicy(record?.["policy"]);
+  if (!record || record["directory"] === undefined || (record["policy"] !== undefined && !policy)) {
     return undefined;
   }
   return {
@@ -7859,21 +5162,11 @@ function parseVerifyReceiptTrustAnchorDirectoryRequest(
   };
 }
 
-function parseDiscoverReceiptTrustAnchorDirectoryRequest(
-  input: unknown,
-): DiscoverReceiptTrustAnchorDirectoryRequest | undefined {
+function parseDiscoverReceiptTrustAnchorDirectoryRequest(input: unknown): DiscoverReceiptTrustAnchorDirectoryRequest | undefined {
   const record = requestRecord(input, ["sourceUrl", "policy"]);
   const sourceUrl = record?.["sourceUrl"];
-  const policy = parseReceiptTrustAnchorDirectoryVerificationPolicy(
-    record?.["policy"],
-  );
-  if (
-    !record ||
-    typeof sourceUrl !== "string" ||
-    sourceUrl.length === 0 ||
-    sourceUrl.length > 2_048 ||
-    (record["policy"] !== undefined && !policy)
-  ) {
+  const policy = parseReceiptTrustAnchorDirectoryVerificationPolicy(record?.["policy"]);
+  if (!record || typeof sourceUrl !== "string" || sourceUrl.length === 0 || sourceUrl.length > 2_048 || (record["policy"] !== undefined && !policy)) {
     return undefined;
   }
   return {
@@ -7884,9 +5177,7 @@ function parseDiscoverReceiptTrustAnchorDirectoryRequest(
 
 function parseReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy(
   input: unknown,
-):
-  | ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy
-  | undefined {
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy | undefined {
   if (input === undefined) return {};
   const record = requestRecord(input, [
     "maxEnvelopeAgeMs",
@@ -7901,56 +5192,37 @@ function parseReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCh
   const maxEnvelopeAgeMs = record["maxEnvelopeAgeMs"];
   const expectedCheckpointSha256 = record["expectedCheckpointSha256"];
   const expectedSelectionSetSha256 = record["expectedSelectionSetSha256"];
-  const expectedSelectionChainTailSha256 =
-    record["expectedSelectionChainTailSha256"];
+  const expectedSelectionChainTailSha256 = record["expectedSelectionChainTailSha256"];
   const minimumSelectionCount = record["minimumSelectionCount"];
   const requiredSignerKeyIds = record["requiredSignerKeyIds"];
   const rejectRollback = record["rejectRollback"];
   if (
-    (maxEnvelopeAgeMs !== undefined &&
-      (!isNonNegativeInteger(maxEnvelopeAgeMs) ||
-        maxEnvelopeAgeMs > 365 * 24 * 60 * 60 * 1_000)) ||
+    (maxEnvelopeAgeMs !== undefined && (!isNonNegativeInteger(maxEnvelopeAgeMs) || maxEnvelopeAgeMs > 365 * 24 * 60 * 60 * 1_000)) ||
     (typeof expectedCheckpointSha256 === "string"
-      ? expectedCheckpointSha256 !== "" &&
-        !isSha256Hex(expectedCheckpointSha256)
+      ? expectedCheckpointSha256 !== "" && !isSha256Hex(expectedCheckpointSha256)
       : expectedCheckpointSha256 !== undefined) ||
     (typeof expectedSelectionSetSha256 === "string"
-      ? expectedSelectionSetSha256 !== "" &&
-        !isSha256Hex(expectedSelectionSetSha256)
+      ? expectedSelectionSetSha256 !== "" && !isSha256Hex(expectedSelectionSetSha256)
       : expectedSelectionSetSha256 !== undefined) ||
     (typeof expectedSelectionChainTailSha256 === "string"
-      ? expectedSelectionChainTailSha256 !== "" &&
-        !isSha256Hex(expectedSelectionChainTailSha256)
+      ? expectedSelectionChainTailSha256 !== "" && !isSha256Hex(expectedSelectionChainTailSha256)
       : expectedSelectionChainTailSha256 !== undefined) ||
     (minimumSelectionCount !== undefined &&
-      (!isNonNegativeInteger(minimumSelectionCount) ||
-        minimumSelectionCount >
-          MAX_RECEIPT_TRUST_CHECKPOINT_SELECTION_COUNT)) ||
-    !validSha256List(
-      requiredSignerKeyIds,
-      MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
-    ) ||
+      (!isNonNegativeInteger(minimumSelectionCount) || minimumSelectionCount > MAX_RECEIPT_TRUST_CHECKPOINT_SELECTION_COUNT)) ||
+    !validSha256List(requiredSignerKeyIds, MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS) ||
     (rejectRollback !== undefined && typeof rejectRollback !== "boolean")
   ) {
     return undefined;
   }
   return {
     ...(maxEnvelopeAgeMs !== undefined ? { maxEnvelopeAgeMs } : {}),
-    ...(typeof expectedCheckpointSha256 === "string"
-      ? { expectedCheckpointSha256 }
-      : {}),
-    ...(typeof expectedSelectionSetSha256 === "string"
-      ? { expectedSelectionSetSha256 }
-      : {}),
-    ...(typeof expectedSelectionChainTailSha256 === "string"
-      ? { expectedSelectionChainTailSha256 }
-      : {}),
+    ...(typeof expectedCheckpointSha256 === "string" ? { expectedCheckpointSha256 } : {}),
+    ...(typeof expectedSelectionSetSha256 === "string" ? { expectedSelectionSetSha256 } : {}),
+    ...(typeof expectedSelectionChainTailSha256 === "string" ? { expectedSelectionChainTailSha256 } : {}),
     ...(minimumSelectionCount !== undefined ? { minimumSelectionCount } : {}),
     ...(requiredSignerKeyIds !== undefined
       ? {
-          requiredSignerKeyIds: Array.from(
-            new Set(requiredSignerKeyIds as string[]),
-          ).sort(),
+          requiredSignerKeyIds: Array.from(new Set(requiredSignerKeyIds as string[])).sort(),
         }
       : {}),
     ...(rejectRollback !== undefined ? { rejectRollback } : {}),
@@ -7959,14 +5231,9 @@ function parseReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCh
 
 function parseEvaluateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumRequest(
   input: unknown,
-):
-  | EvaluateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumRequest
-  | undefined {
+): EvaluateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumRequest | undefined {
   const record = requestRecord(input, ["policy"]);
-  const policy =
-    parseReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy(
-      record?.["policy"],
-    );
+  const policy = parseReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy(record?.["policy"]);
   if (!record || (record["policy"] !== undefined && !policy)) {
     return undefined;
   }
@@ -7977,14 +5244,9 @@ function parseEvaluateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransp
 
 function parsePromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest(
   input: unknown,
-):
-  | PromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest
-  | undefined {
+): PromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest | undefined {
   const record = requestRecord(input, ["policy", "threadId", "trustAnchorId"]);
-  const policy =
-    parseReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy(
-      record?.["policy"],
-    );
+  const policy = parseReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy(record?.["policy"]);
   const threadId = record?.["threadId"];
   const trustAnchorId = record?.["trustAnchorId"];
   if (
@@ -8005,71 +5267,43 @@ function parsePromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTranspa
 
 function parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest(
   input: unknown,
-):
-  | VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest
-  | undefined {
-  const record = requestRecord(input, [
-    "baseline",
-    "trustDirectory",
-    "trustDirectoryPolicy",
-  ]);
-  const trustDirectoryPolicy =
-    parseReceiptTrustAnchorDirectoryVerificationPolicy(
-      record?.["trustDirectoryPolicy"],
-    );
+): VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest | undefined {
+  const record = requestRecord(input, ["baseline", "trustDirectory", "trustDirectoryPolicy"]);
+  const trustDirectoryPolicy = parseReceiptTrustAnchorDirectoryVerificationPolicy(record?.["trustDirectoryPolicy"]);
   if (
     !record ||
     record["baseline"] === undefined ||
-    (record["trustDirectoryPolicy"] !== undefined &&
-      record["trustDirectory"] === undefined) ||
+    (record["trustDirectoryPolicy"] !== undefined && record["trustDirectory"] === undefined) ||
     (record["trustDirectoryPolicy"] !== undefined && !trustDirectoryPolicy)
   ) {
     return undefined;
   }
   return {
     baseline: record["baseline"],
-    ...(record["trustDirectory"] !== undefined
-      ? { trustDirectory: record["trustDirectory"] }
-      : {}),
+    ...(record["trustDirectory"] !== undefined ? { trustDirectory: record["trustDirectory"] } : {}),
     ...(trustDirectoryPolicy ? { trustDirectoryPolicy } : {}),
   };
 }
 
 function parseImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest(
   input: unknown,
-):
-  | ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest
-  | undefined {
-  const record = requestRecord(input, [
-    "baseline",
-    "threadId",
-    "expectedCurrentBaselineSha256",
-    "trustDirectory",
-    "trustDirectoryPolicy",
-  ]);
+): ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest | undefined {
+  const record = requestRecord(input, ["baseline", "threadId", "expectedCurrentBaselineSha256", "trustDirectory", "trustDirectoryPolicy"]);
   const verifyRequest = record
-    ? parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest(
-        {
-          baseline: record["baseline"],
-          ...(record["trustDirectory"] !== undefined
-            ? { trustDirectory: record["trustDirectory"] }
-            : {}),
-          ...(record["trustDirectoryPolicy"] !== undefined
-            ? { trustDirectoryPolicy: record["trustDirectoryPolicy"] }
-            : {}),
-        },
-      )
+    ? parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest({
+        baseline: record["baseline"],
+        ...(record["trustDirectory"] !== undefined ? { trustDirectory: record["trustDirectory"] } : {}),
+        ...(record["trustDirectoryPolicy"] !== undefined ? { trustDirectoryPolicy: record["trustDirectoryPolicy"] } : {}),
+      })
     : undefined;
   const threadId = record?.["threadId"];
-  const expectedCurrentBaselineSha256 =
-    record?.["expectedCurrentBaselineSha256"];
+  const expectedCurrentBaselineSha256 = record?.["expectedCurrentBaselineSha256"];
   if (
     !record ||
     !verifyRequest ||
     !validThreadId(threadId) ||
     typeof expectedCurrentBaselineSha256 !== "string" ||
-    (expectedCurrentBaselineSha256 !== "" &&
-      !isSha256Hex(expectedCurrentBaselineSha256))
+    (expectedCurrentBaselineSha256 !== "" && !isSha256Hex(expectedCurrentBaselineSha256))
   ) {
     return undefined;
   }
@@ -8082,9 +5316,7 @@ function parseImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTranspar
 
 function parseReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy(
   input: unknown,
-):
-  | ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy
-  | undefined {
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy | undefined {
   if (input === undefined) return {};
   const record = requestRecord(input, [
     "minimumSources",
@@ -8105,106 +5337,65 @@ function parseReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCh
   const maxObservationAgeMs = record["maxObservationAgeMs"];
   const expectedCheckpointSha256 = record["expectedCheckpointSha256"];
   const expectedSelectionSetSha256 = record["expectedSelectionSetSha256"];
-  const expectedSelectionChainTailSha256 =
-    record["expectedSelectionChainTailSha256"];
+  const expectedSelectionChainTailSha256 = record["expectedSelectionChainTailSha256"];
   const minimumSelectionCount = record["minimumSelectionCount"];
   const requiredSourceOriginSha256s = record["requiredSourceOriginSha256s"];
   const requiredSignerKeyIds = record["requiredSignerKeyIds"];
   if (
     (minimumSources !== undefined &&
-      (!isNonNegativeInteger(minimumSources) ||
-        minimumSources < 1 ||
-        minimumSources > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
+      (!isNonNegativeInteger(minimumSources) || minimumSources < 1 || minimumSources > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
     (minimumAgreementCount !== undefined &&
-      (!isNonNegativeInteger(minimumAgreementCount) ||
-        minimumAgreementCount < 1 ||
-        minimumAgreementCount > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
+      (!isNonNegativeInteger(minimumAgreementCount) || minimumAgreementCount < 1 || minimumAgreementCount > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
     (minimumDistinctSourceOrigins !== undefined &&
       (!isNonNegativeInteger(minimumDistinctSourceOrigins) ||
         minimumDistinctSourceOrigins < 1 ||
-        minimumDistinctSourceOrigins >
-          MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
-    (maxObservationAgeMs !== undefined &&
-      (!isNonNegativeInteger(maxObservationAgeMs) ||
-        maxObservationAgeMs > 365 * 24 * 60 * 60 * 1_000)) ||
+        minimumDistinctSourceOrigins > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
+    (maxObservationAgeMs !== undefined && (!isNonNegativeInteger(maxObservationAgeMs) || maxObservationAgeMs > 365 * 24 * 60 * 60 * 1_000)) ||
     (typeof expectedCheckpointSha256 === "string"
-      ? expectedCheckpointSha256 !== "" &&
-        !isSha256Hex(expectedCheckpointSha256)
+      ? expectedCheckpointSha256 !== "" && !isSha256Hex(expectedCheckpointSha256)
       : expectedCheckpointSha256 !== undefined) ||
     (typeof expectedSelectionSetSha256 === "string"
-      ? expectedSelectionSetSha256 !== "" &&
-        !isSha256Hex(expectedSelectionSetSha256)
+      ? expectedSelectionSetSha256 !== "" && !isSha256Hex(expectedSelectionSetSha256)
       : expectedSelectionSetSha256 !== undefined) ||
     (typeof expectedSelectionChainTailSha256 === "string"
-      ? expectedSelectionChainTailSha256 !== "" &&
-        !isSha256Hex(expectedSelectionChainTailSha256)
+      ? expectedSelectionChainTailSha256 !== "" && !isSha256Hex(expectedSelectionChainTailSha256)
       : expectedSelectionChainTailSha256 !== undefined) ||
     (minimumSelectionCount !== undefined &&
-      (!isNonNegativeInteger(minimumSelectionCount) ||
-        minimumSelectionCount >
-          MAX_RECEIPT_TRUST_CHECKPOINT_SELECTION_COUNT)) ||
-    !validSha256List(
-      requiredSourceOriginSha256s,
-      MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
-    ) ||
-    !validSha256List(
-      requiredSignerKeyIds,
-      MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
-    )
+      (!isNonNegativeInteger(minimumSelectionCount) || minimumSelectionCount > MAX_RECEIPT_TRUST_CHECKPOINT_SELECTION_COUNT)) ||
+    !validSha256List(requiredSourceOriginSha256s, MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS) ||
+    !validSha256List(requiredSignerKeyIds, MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)
   ) {
     return undefined;
   }
   return {
     ...(minimumSources !== undefined ? { minimumSources } : {}),
     ...(minimumAgreementCount !== undefined ? { minimumAgreementCount } : {}),
-    ...(minimumDistinctSourceOrigins !== undefined
-      ? { minimumDistinctSourceOrigins }
-      : {}),
+    ...(minimumDistinctSourceOrigins !== undefined ? { minimumDistinctSourceOrigins } : {}),
     ...(maxObservationAgeMs !== undefined ? { maxObservationAgeMs } : {}),
-    ...(typeof expectedCheckpointSha256 === "string"
-      ? { expectedCheckpointSha256 }
-      : {}),
-    ...(typeof expectedSelectionSetSha256 === "string"
-      ? { expectedSelectionSetSha256 }
-      : {}),
-    ...(typeof expectedSelectionChainTailSha256 === "string"
-      ? { expectedSelectionChainTailSha256 }
-      : {}),
+    ...(typeof expectedCheckpointSha256 === "string" ? { expectedCheckpointSha256 } : {}),
+    ...(typeof expectedSelectionSetSha256 === "string" ? { expectedSelectionSetSha256 } : {}),
+    ...(typeof expectedSelectionChainTailSha256 === "string" ? { expectedSelectionChainTailSha256 } : {}),
     ...(minimumSelectionCount !== undefined ? { minimumSelectionCount } : {}),
     ...(requiredSourceOriginSha256s !== undefined
       ? {
-          requiredSourceOriginSha256s: Array.from(
-            new Set(requiredSourceOriginSha256s as string[]),
-          ).sort(),
+          requiredSourceOriginSha256s: Array.from(new Set(requiredSourceOriginSha256s as string[])).sort(),
         }
       : {}),
     ...(requiredSignerKeyIds !== undefined
       ? {
-          requiredSignerKeyIds: Array.from(
-            new Set(requiredSignerKeyIds as string[]),
-          ).sort(),
+          requiredSignerKeyIds: Array.from(new Set(requiredSignerKeyIds as string[])).sort(),
         }
       : {}),
   };
 }
 
-function parseCreateReceiptTrustAnchorDirectorySubscriptionRequest(
-  input: unknown,
-): CreateReceiptTrustAnchorDirectorySubscriptionRequest | undefined {
-  const record = requestRecord(input, [
-    "threadId",
-    "label",
-    "sourceUrl",
-    "refreshIntervalMs",
-    "policy",
-  ]);
+function parseCreateReceiptTrustAnchorDirectorySubscriptionRequest(input: unknown): CreateReceiptTrustAnchorDirectorySubscriptionRequest | undefined {
+  const record = requestRecord(input, ["threadId", "label", "sourceUrl", "refreshIntervalMs", "policy"]);
   const threadId = record?.["threadId"];
   const label = record?.["label"];
   const sourceUrl = record?.["sourceUrl"];
   const refreshIntervalMs = record?.["refreshIntervalMs"];
-  const policy = parseReceiptTrustAnchorDirectoryVerificationPolicy(
-    record?.["policy"],
-  );
+  const policy = parseReceiptTrustAnchorDirectoryVerificationPolicy(record?.["policy"]);
   if (
     !record ||
     !validThreadId(threadId) ||
@@ -8232,24 +5423,13 @@ function parseCreateReceiptTrustAnchorDirectorySubscriptionRequest(
 
 function parseCreateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest(
   input: unknown,
-):
-  | CreateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest
-  | undefined {
-  const record = requestRecord(input, [
-    "threadId",
-    "label",
-    "sourceUrl",
-    "refreshIntervalMs",
-    "policy",
-  ]);
+): CreateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest | undefined {
+  const record = requestRecord(input, ["threadId", "label", "sourceUrl", "refreshIntervalMs", "policy"]);
   const threadId = record?.["threadId"];
   const label = record?.["label"];
   const sourceUrl = record?.["sourceUrl"];
   const refreshIntervalMs = record?.["refreshIntervalMs"];
-  const policy =
-    parseReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy(
-      record?.["policy"],
-    );
+  const policy = parseReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy(record?.["policy"]);
   if (
     !record ||
     record["policy"] === undefined ||
@@ -8278,24 +5458,13 @@ function parseCreateReceiptTrustAnchorDirectoryQuorumActivationSelectionTranspar
 
 function parseCreateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest(
   input: unknown,
-):
-  | CreateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest
-  | undefined {
-  const record = requestRecord(input, [
-    "threadId",
-    "label",
-    "sourceUrl",
-    "refreshIntervalMs",
-    "policy",
-  ]);
+): CreateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest | undefined {
+  const record = requestRecord(input, ["threadId", "label", "sourceUrl", "refreshIntervalMs", "policy"]);
   const threadId = record?.["threadId"];
   const label = record?.["label"];
   const sourceUrl = record?.["sourceUrl"];
   const refreshIntervalMs = record?.["refreshIntervalMs"];
-  const policy =
-    parseReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy(
-      record?.["policy"],
-    );
+  const policy = parseReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy(record?.["policy"]);
   if (
     !record ||
     record["policy"] === undefined ||
@@ -8322,31 +5491,16 @@ function parseCreateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation
   };
 }
 
-function parseEvaluateReceiptTrustAnchorDirectoryQuorumRequest(
-  input: unknown,
-): EvaluateReceiptTrustAnchorDirectoryQuorumRequest | undefined {
-  const record = requestRecord(input, [
-    "policy",
-    "metadata",
-    "trustDirectory",
-    "trustDirectoryPolicy",
-  ]);
-  const policy = parseReceiptTrustAnchorDirectoryQuorumPolicy(
-    record?.["policy"],
-  );
-  const metadata = parseReceiptTrustAnchorDirectoryQuorumMetadataInputs(
-    record?.["metadata"],
-  );
-  const trustDirectoryPolicy =
-    parseReceiptTrustAnchorDirectoryVerificationPolicy(
-      record?.["trustDirectoryPolicy"],
-    );
+function parseEvaluateReceiptTrustAnchorDirectoryQuorumRequest(input: unknown): EvaluateReceiptTrustAnchorDirectoryQuorumRequest | undefined {
+  const record = requestRecord(input, ["policy", "metadata", "trustDirectory", "trustDirectoryPolicy"]);
+  const policy = parseReceiptTrustAnchorDirectoryQuorumPolicy(record?.["policy"]);
+  const metadata = parseReceiptTrustAnchorDirectoryQuorumMetadataInputs(record?.["metadata"]);
+  const trustDirectoryPolicy = parseReceiptTrustAnchorDirectoryVerificationPolicy(record?.["trustDirectoryPolicy"]);
   if (
     !record ||
     (record["policy"] !== undefined && !policy) ||
     (record["metadata"] !== undefined && !metadata) ||
-    (record["trustDirectoryPolicy"] !== undefined &&
-      record["trustDirectory"] === undefined) ||
+    (record["trustDirectoryPolicy"] !== undefined && record["trustDirectory"] === undefined) ||
     (record["trustDirectoryPolicy"] !== undefined && !trustDirectoryPolicy)
   ) {
     return undefined;
@@ -8354,51 +5508,28 @@ function parseEvaluateReceiptTrustAnchorDirectoryQuorumRequest(
   return {
     ...(policy ? { policy } : {}),
     ...(metadata ? { metadata } : {}),
-    ...(record["trustDirectory"] !== undefined
-      ? { trustDirectory: record["trustDirectory"] }
-      : {}),
+    ...(record["trustDirectory"] !== undefined ? { trustDirectory: record["trustDirectory"] } : {}),
     ...(trustDirectoryPolicy ? { trustDirectoryPolicy } : {}),
   };
 }
 
-function parsePromoteReceiptTrustAnchorDirectoryQuorumRequest(
-  input: unknown,
-): PromoteReceiptTrustAnchorDirectoryQuorumRequest | undefined {
+function parsePromoteReceiptTrustAnchorDirectoryQuorumRequest(input: unknown): PromoteReceiptTrustAnchorDirectoryQuorumRequest | undefined {
   return parseEvaluateReceiptTrustAnchorDirectoryQuorumRequest(input);
 }
 
-function parsePromoteReceiptTrustAnchorDirectoryQuorumBaselineRequest(
-  input: unknown,
-): PromoteReceiptTrustAnchorDirectoryQuorumBaselineRequest | undefined {
-  const record = requestRecord(input, [
-    "policy",
-    "metadata",
-    "trustDirectory",
-    "trustDirectoryPolicy",
-    "threadId",
-    "trustAnchorId",
-  ]);
+function parsePromoteReceiptTrustAnchorDirectoryQuorumBaselineRequest(input: unknown): PromoteReceiptTrustAnchorDirectoryQuorumBaselineRequest | undefined {
+  const record = requestRecord(input, ["policy", "metadata", "trustDirectory", "trustDirectoryPolicy", "threadId", "trustAnchorId"]);
   const threadId = record?.["threadId"];
   const trustAnchorId = record?.["trustAnchorId"];
   const quorumRequest = record
     ? parseEvaluateReceiptTrustAnchorDirectoryQuorumRequest({
         ...(record["policy"] !== undefined ? { policy: record["policy"] } : {}),
-        ...(record["metadata"] !== undefined
-          ? { metadata: record["metadata"] }
-          : {}),
-        ...(record["trustDirectory"] !== undefined
-          ? { trustDirectory: record["trustDirectory"] }
-          : {}),
-        ...(record["trustDirectoryPolicy"] !== undefined
-          ? { trustDirectoryPolicy: record["trustDirectoryPolicy"] }
-          : {}),
+        ...(record["metadata"] !== undefined ? { metadata: record["metadata"] } : {}),
+        ...(record["trustDirectory"] !== undefined ? { trustDirectory: record["trustDirectory"] } : {}),
+        ...(record["trustDirectoryPolicy"] !== undefined ? { trustDirectoryPolicy: record["trustDirectoryPolicy"] } : {}),
       })
     : undefined;
-  return record &&
-    quorumRequest &&
-    validThreadId(threadId) &&
-    typeof trustAnchorId === "string" &&
-    /^trustkey_[a-z0-9]{8,80}$/.test(trustAnchorId)
+  return record && quorumRequest && validThreadId(threadId) && typeof trustAnchorId === "string" && /^trustkey_[a-z0-9]{8,80}$/.test(trustAnchorId)
     ? {
         ...quorumRequest,
         threadId,
@@ -8407,14 +5538,9 @@ function parsePromoteReceiptTrustAnchorDirectoryQuorumBaselineRequest(
     : undefined;
 }
 
-function parseReceiptTrustAnchorDirectoryQuorumMetadataInputs(
-  input: unknown,
-): ReceiptTrustAnchorDirectoryQuorumMetadataInput[] | undefined {
+function parseReceiptTrustAnchorDirectoryQuorumMetadataInputs(input: unknown): ReceiptTrustAnchorDirectoryQuorumMetadataInput[] | undefined {
   if (input === undefined) return undefined;
-  if (
-    !Array.isArray(input) ||
-    input.length > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS
-  ) {
+  if (!Array.isArray(input) || input.length > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS) {
     return undefined;
   }
   const seen = new Set<string>();
@@ -8434,9 +5560,7 @@ function parseReceiptTrustAnchorDirectoryQuorumMetadataInputs(
     seen.add(subscriptionId);
     metadata.push({ subscriptionId, envelope: record["envelope"] });
   }
-  return metadata.sort((left, right) =>
-    left.subscriptionId.localeCompare(right.subscriptionId),
-  );
+  return metadata.sort((left, right) => left.subscriptionId.localeCompare(right.subscriptionId));
 }
 
 function createReceiptTrustAnchorDirectoryQuorumMetadataEvidence(
@@ -8445,12 +5569,7 @@ function createReceiptTrustAnchorDirectoryQuorumMetadataEvidence(
 ): ReceiptTrustAnchorDirectoryQuorumMetadataEvidence[] {
   if (!request.metadata?.length) return [];
   const trustDirectoryVerification =
-    request.trustDirectory === undefined
-      ? undefined
-      : services.store.verifyReceiptTrustAnchorDirectory(
-          request.trustDirectory,
-          request.trustDirectoryPolicy,
-        );
+    request.trustDirectory === undefined ? undefined : services.store.verifyReceiptTrustAnchorDirectory(request.trustDirectory, request.trustDirectoryPolicy);
   const anchors =
     request.trustDirectory === undefined
       ? services.store.listReceiptTrustAnchors()
@@ -8458,25 +5577,15 @@ function createReceiptTrustAnchorDirectoryQuorumMetadataEvidence(
         ? receiptTrustAnchorsFromDirectory(request.trustDirectory)
         : [];
   return request.metadata.map((metadata) => {
-    const subscription =
-      services.store.getReceiptTrustAnchorDirectorySubscription(
-        metadata.subscriptionId,
-      );
+    const subscription = services.store.getReceiptTrustAnchorDirectorySubscription(metadata.subscriptionId);
     const directory = subscription.lastGoodDiscovery?.directory;
     if (!directory) {
-      throw new Error(
-        "Receipt trust anchor directory quorum metadata subscription has no last-good directory",
-      );
+      throw new Error("Receipt trust anchor directory quorum metadata subscription has no last-good directory");
     }
-    const verification = verifyReceiptTrustAnchorDirectoryMetadata(
-      metadata.envelope,
-      directory,
-      anchors,
-      {
-        directoryPolicy: subscription.policy,
-        ...(trustDirectoryVerification ? { trustDirectoryVerification } : {}),
-      },
-    );
+    const verification = verifyReceiptTrustAnchorDirectoryMetadata(metadata.envelope, directory, anchors, {
+      directoryPolicy: subscription.policy,
+      ...(trustDirectoryVerification ? { trustDirectoryVerification } : {}),
+    });
     return {
       subscriptionId: metadata.subscriptionId,
       status: verification.status,
@@ -8485,23 +5594,15 @@ function createReceiptTrustAnchorDirectoryQuorumMetadataEvidence(
       directoryBindingValid: verification.directoryBindingValid,
       diagnosticCount: verification.diagnostics.length,
       diagnosticsSha256: sha256Json(verification.diagnostics),
-      ...(verification.publisher
-        ? { publisherSha256: sha256Text(verification.publisher) }
-        : {}),
-      ...(verification.signerKeyId
-        ? { signerKeyId: verification.signerKeyId }
-        : {}),
-      ...(verification.envelopeSha256
-        ? { envelopeSha256: verification.envelopeSha256 }
-        : {}),
+      ...(verification.publisher ? { publisherSha256: sha256Text(verification.publisher) } : {}),
+      ...(verification.signerKeyId ? { signerKeyId: verification.signerKeyId } : {}),
+      ...(verification.envelopeSha256 ? { envelopeSha256: verification.envelopeSha256 } : {}),
       verificationSha256: verification.contentSha256,
     };
   });
 }
 
-function parseReceiptTrustAnchorDirectoryQuorumPolicy(
-  input: unknown,
-): ReceiptTrustAnchorDirectoryQuorumPolicy | undefined {
+function parseReceiptTrustAnchorDirectoryQuorumPolicy(input: unknown): ReceiptTrustAnchorDirectoryQuorumPolicy | undefined {
   if (input === undefined) return undefined;
   const record = requestRecord(input, [
     "minimumSources",
@@ -8522,62 +5623,41 @@ function parseReceiptTrustAnchorDirectoryQuorumPolicy(
   const minimumMetadataPublisherCount = record["minimumMetadataPublisherCount"];
   const expectedAnchorSetSha256 = record["expectedAnchorSetSha256"];
   const requiredSourceOriginSha256s = record["requiredSourceOriginSha256s"];
-  const requiredMetadataPublisherSha256s =
-    record["requiredMetadataPublisherSha256s"];
+  const requiredMetadataPublisherSha256s = record["requiredMetadataPublisherSha256s"];
   const sourceWeights = record["sourceWeights"];
-  const effectiveMinimumSources =
-    typeof minimumSources === "number" ? minimumSources : 2;
+  const effectiveMinimumSources = typeof minimumSources === "number" ? minimumSources : 2;
   const sourceWeightOrigins = new Set<string>();
   if (
     (minimumSources !== undefined &&
-      (!isNonNegativeInteger(minimumSources) ||
-        minimumSources < 1 ||
-        minimumSources > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
+      (!isNonNegativeInteger(minimumSources) || minimumSources < 1 || minimumSources > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
     (minimumAgreementCount !== undefined &&
-      (!isNonNegativeInteger(minimumAgreementCount) ||
-        minimumAgreementCount < 1 ||
-        minimumAgreementCount > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
+      (!isNonNegativeInteger(minimumAgreementCount) || minimumAgreementCount < 1 || minimumAgreementCount > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
     (minimumDistinctSourceOrigins !== undefined &&
       (!isNonNegativeInteger(minimumDistinctSourceOrigins) ||
         minimumDistinctSourceOrigins < 1 ||
-        minimumDistinctSourceOrigins >
-          MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
+        minimumDistinctSourceOrigins > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
     (minimumAgreementWeight !== undefined &&
       (!isNonNegativeInteger(minimumAgreementWeight) ||
         minimumAgreementWeight < 1 ||
-        minimumAgreementWeight >
-          MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS *
-            MAX_RECEIPT_TRUST_DIRECTORY_SOURCE_WEIGHT)) ||
+        minimumAgreementWeight > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS * MAX_RECEIPT_TRUST_DIRECTORY_SOURCE_WEIGHT)) ||
     (minimumMetadataPublisherCount !== undefined &&
-      (!isNonNegativeInteger(minimumMetadataPublisherCount) ||
-        minimumMetadataPublisherCount >
-          MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
-    (minimumAgreementCount !== undefined &&
-      minimumAgreementCount > effectiveMinimumSources) ||
+      (!isNonNegativeInteger(minimumMetadataPublisherCount) || minimumMetadataPublisherCount > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
+    (minimumAgreementCount !== undefined && minimumAgreementCount > effectiveMinimumSources) ||
     (expectedAnchorSetSha256 !== undefined &&
-      (typeof expectedAnchorSetSha256 !== "string" ||
-        (expectedAnchorSetSha256 !== "" &&
-          !isSha256Hex(expectedAnchorSetSha256)))) ||
+      (typeof expectedAnchorSetSha256 !== "string" || (expectedAnchorSetSha256 !== "" && !isSha256Hex(expectedAnchorSetSha256)))) ||
     (requiredSourceOriginSha256s !== undefined &&
       (!Array.isArray(requiredSourceOriginSha256s) ||
-        requiredSourceOriginSha256s.length >
-          MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS ||
+        requiredSourceOriginSha256s.length > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS ||
         requiredSourceOriginSha256s.some((origin) => !isSha256Hex(origin)))) ||
     (requiredMetadataPublisherSha256s !== undefined &&
       (!Array.isArray(requiredMetadataPublisherSha256s) ||
-        requiredMetadataPublisherSha256s.length >
-          MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS ||
-        requiredMetadataPublisherSha256s.some(
-          (publisherSha256) => !isSha256Hex(publisherSha256),
-        ))) ||
+        requiredMetadataPublisherSha256s.length > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS ||
+        requiredMetadataPublisherSha256s.some((publisherSha256) => !isSha256Hex(publisherSha256)))) ||
     (sourceWeights !== undefined &&
       (!Array.isArray(sourceWeights) ||
         sourceWeights.length > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS ||
         !sourceWeights.every((item) => {
-          const recordItem = requestRecord(item, [
-            "sourceOriginSha256",
-            "weight",
-          ]);
+          const recordItem = requestRecord(item, ["sourceOriginSha256", "weight"]);
           const sourceOriginSha256 = recordItem?.["sourceOriginSha256"];
           const weight = recordItem?.["weight"];
           if (
@@ -8597,15 +5677,9 @@ function parseReceiptTrustAnchorDirectoryQuorumPolicy(
     return undefined;
   }
   const normalizedRequiredSourceOrigins =
-    requiredSourceOriginSha256s === undefined
-      ? undefined
-      : Array.from(new Set(requiredSourceOriginSha256s as string[])).sort();
+    requiredSourceOriginSha256s === undefined ? undefined : Array.from(new Set(requiredSourceOriginSha256s as string[])).sort();
   const normalizedRequiredMetadataPublishers =
-    requiredMetadataPublisherSha256s === undefined
-      ? undefined
-      : Array.from(
-          new Set(requiredMetadataPublisherSha256s as string[]),
-        ).sort();
+    requiredMetadataPublisherSha256s === undefined ? undefined : Array.from(new Set(requiredMetadataPublisherSha256s as string[])).sort();
   const normalizedSourceWeights =
     sourceWeights === undefined
       ? undefined
@@ -8614,34 +5688,21 @@ function parseReceiptTrustAnchorDirectoryQuorumPolicy(
             sourceOriginSha256: item["sourceOriginSha256"] as string,
             weight: item["weight"] as number,
           }))
-          .sort((left, right) =>
-            left.sourceOriginSha256.localeCompare(right.sourceOriginSha256),
-          );
+          .sort((left, right) => left.sourceOriginSha256.localeCompare(right.sourceOriginSha256));
   return {
     ...(minimumSources !== undefined ? { minimumSources } : {}),
     ...(minimumAgreementCount !== undefined ? { minimumAgreementCount } : {}),
-    ...(minimumDistinctSourceOrigins !== undefined
-      ? { minimumDistinctSourceOrigins }
-      : {}),
+    ...(minimumDistinctSourceOrigins !== undefined ? { minimumDistinctSourceOrigins } : {}),
     ...(minimumAgreementWeight !== undefined ? { minimumAgreementWeight } : {}),
-    ...(minimumMetadataPublisherCount !== undefined
-      ? { minimumMetadataPublisherCount }
-      : {}),
-    ...(typeof expectedAnchorSetSha256 === "string"
-      ? { expectedAnchorSetSha256 }
-      : {}),
-    ...(normalizedRequiredSourceOrigins !== undefined
-      ? { requiredSourceOriginSha256s: normalizedRequiredSourceOrigins }
-      : {}),
+    ...(minimumMetadataPublisherCount !== undefined ? { minimumMetadataPublisherCount } : {}),
+    ...(typeof expectedAnchorSetSha256 === "string" ? { expectedAnchorSetSha256 } : {}),
+    ...(normalizedRequiredSourceOrigins !== undefined ? { requiredSourceOriginSha256s: normalizedRequiredSourceOrigins } : {}),
     ...(normalizedRequiredMetadataPublishers !== undefined
       ? {
-          requiredMetadataPublisherSha256s:
-            normalizedRequiredMetadataPublishers,
+          requiredMetadataPublisherSha256s: normalizedRequiredMetadataPublishers,
         }
       : {}),
-    ...(normalizedSourceWeights !== undefined
-      ? { sourceWeights: normalizedSourceWeights }
-      : {}),
+    ...(normalizedSourceWeights !== undefined ? { sourceWeights: normalizedSourceWeights } : {}),
   };
 }
 
@@ -8676,55 +5737,30 @@ function parseReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy(
   const expectedAnchorSetSha256 = record["expectedAnchorSetSha256"];
   const expectedDirectorySha256 = record["expectedDirectorySha256"];
   const requiredSourceOriginSha256s = record["requiredSourceOriginSha256s"];
-  const requiredMetadataPublisherSha256s =
-    record["requiredMetadataPublisherSha256s"];
+  const requiredMetadataPublisherSha256s = record["requiredMetadataPublisherSha256s"];
   const requiredMetadataSignerKeyIds = record["requiredMetadataSignerKeyIds"];
   if (
-    (maxBaselineAgeMs !== undefined &&
-      !isNonNegativeInteger(maxBaselineAgeMs)) ||
+    (maxBaselineAgeMs !== undefined && !isNonNegativeInteger(maxBaselineAgeMs)) ||
     (maxReceiptAgeMs !== undefined && !isNonNegativeInteger(maxReceiptAgeMs)) ||
-    (maxSourceObservedAgeMs !== undefined &&
-      !isNonNegativeInteger(maxSourceObservedAgeMs)) ||
+    (maxSourceObservedAgeMs !== undefined && !isNonNegativeInteger(maxSourceObservedAgeMs)) ||
     (minimumAgreementCount !== undefined &&
-      (!isNonNegativeInteger(minimumAgreementCount) ||
-        minimumAgreementCount > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
+      (!isNonNegativeInteger(minimumAgreementCount) || minimumAgreementCount > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
     (minimumAgreementWeight !== undefined &&
       (!isNonNegativeInteger(minimumAgreementWeight) ||
-        minimumAgreementWeight >
-          MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS *
-            MAX_RECEIPT_TRUST_DIRECTORY_SOURCE_WEIGHT)) ||
+        minimumAgreementWeight > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS * MAX_RECEIPT_TRUST_DIRECTORY_SOURCE_WEIGHT)) ||
     (minimumDistinctSourceOrigins !== undefined &&
-      (!isNonNegativeInteger(minimumDistinctSourceOrigins) ||
-        minimumDistinctSourceOrigins >
-          MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
+      (!isNonNegativeInteger(minimumDistinctSourceOrigins) || minimumDistinctSourceOrigins > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
     (minimumMetadataPublisherCount !== undefined &&
-      (!isNonNegativeInteger(minimumMetadataPublisherCount) ||
-        minimumMetadataPublisherCount >
-          MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
+      (!isNonNegativeInteger(minimumMetadataPublisherCount) || minimumMetadataPublisherCount > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
     (minimumSelectedMetadataCount !== undefined &&
-      (!isNonNegativeInteger(minimumSelectedMetadataCount) ||
-        minimumSelectedMetadataCount >
-          MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
+      (!isNonNegativeInteger(minimumSelectedMetadataCount) || minimumSelectedMetadataCount > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
     (expectedAnchorSetSha256 !== undefined &&
-      (typeof expectedAnchorSetSha256 !== "string" ||
-        (expectedAnchorSetSha256 !== "" &&
-          !isSha256Hex(expectedAnchorSetSha256)))) ||
+      (typeof expectedAnchorSetSha256 !== "string" || (expectedAnchorSetSha256 !== "" && !isSha256Hex(expectedAnchorSetSha256)))) ||
     (expectedDirectorySha256 !== undefined &&
-      (typeof expectedDirectorySha256 !== "string" ||
-        (expectedDirectorySha256 !== "" &&
-          !isSha256Hex(expectedDirectorySha256)))) ||
-    !validSha256List(
-      requiredSourceOriginSha256s,
-      MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
-    ) ||
-    !validSha256List(
-      requiredMetadataPublisherSha256s,
-      MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
-    ) ||
-    !validSha256List(
-      requiredMetadataSignerKeyIds,
-      MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
-    )
+      (typeof expectedDirectorySha256 !== "string" || (expectedDirectorySha256 !== "" && !isSha256Hex(expectedDirectorySha256)))) ||
+    !validSha256List(requiredSourceOriginSha256s, MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS) ||
+    !validSha256List(requiredMetadataPublisherSha256s, MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS) ||
+    !validSha256List(requiredMetadataSignerKeyIds, MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)
   ) {
     return undefined;
   }
@@ -8734,174 +5770,95 @@ function parseReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy(
     ...(maxSourceObservedAgeMs !== undefined ? { maxSourceObservedAgeMs } : {}),
     ...(minimumAgreementCount !== undefined ? { minimumAgreementCount } : {}),
     ...(minimumAgreementWeight !== undefined ? { minimumAgreementWeight } : {}),
-    ...(minimumDistinctSourceOrigins !== undefined
-      ? { minimumDistinctSourceOrigins }
-      : {}),
-    ...(minimumMetadataPublisherCount !== undefined
-      ? { minimumMetadataPublisherCount }
-      : {}),
-    ...(minimumSelectedMetadataCount !== undefined
-      ? { minimumSelectedMetadataCount }
-      : {}),
-    ...(typeof expectedAnchorSetSha256 === "string"
-      ? { expectedAnchorSetSha256 }
-      : {}),
-    ...(typeof expectedDirectorySha256 === "string"
-      ? { expectedDirectorySha256 }
-      : {}),
+    ...(minimumDistinctSourceOrigins !== undefined ? { minimumDistinctSourceOrigins } : {}),
+    ...(minimumMetadataPublisherCount !== undefined ? { minimumMetadataPublisherCount } : {}),
+    ...(minimumSelectedMetadataCount !== undefined ? { minimumSelectedMetadataCount } : {}),
+    ...(typeof expectedAnchorSetSha256 === "string" ? { expectedAnchorSetSha256 } : {}),
+    ...(typeof expectedDirectorySha256 === "string" ? { expectedDirectorySha256 } : {}),
     ...(requiredSourceOriginSha256s !== undefined
       ? {
-          requiredSourceOriginSha256s: Array.from(
-            new Set(requiredSourceOriginSha256s as string[]),
-          ).sort(),
+          requiredSourceOriginSha256s: Array.from(new Set(requiredSourceOriginSha256s as string[])).sort(),
         }
       : {}),
     ...(requiredMetadataPublisherSha256s !== undefined
       ? {
-          requiredMetadataPublisherSha256s: Array.from(
-            new Set(requiredMetadataPublisherSha256s as string[]),
-          ).sort(),
+          requiredMetadataPublisherSha256s: Array.from(new Set(requiredMetadataPublisherSha256s as string[])).sort(),
         }
       : {}),
     ...(requiredMetadataSignerKeyIds !== undefined
       ? {
-          requiredMetadataSignerKeyIds: Array.from(
-            new Set(requiredMetadataSignerKeyIds as string[]),
-          ).sort(),
+          requiredMetadataSignerKeyIds: Array.from(new Set(requiredMetadataSignerKeyIds as string[])).sort(),
         }
       : {}),
   };
 }
 
 function validSha256List(value: unknown, maxLength: number): boolean {
-  return (
-    value === undefined ||
-    (Array.isArray(value) &&
-      value.length <= maxLength &&
-      value.every((item) => isSha256Hex(item)))
-  );
+  return value === undefined || (Array.isArray(value) && value.length <= maxLength && value.every((item) => isSha256Hex(item)));
 }
 
-function parseRefreshReceiptTrustAnchorDirectorySubscriptionRequest(
-  input: unknown,
-): RefreshReceiptTrustAnchorDirectorySubscriptionRequest | undefined {
+function parseRefreshReceiptTrustAnchorDirectorySubscriptionRequest(input: unknown): RefreshReceiptTrustAnchorDirectorySubscriptionRequest | undefined {
   const record = requestRecord(input, ["threadId", "expectedRevision"]);
   const threadId = record?.["threadId"];
   const expectedRevision = record?.["expectedRevision"];
-  return record &&
-    validThreadId(threadId) &&
-    isNonNegativeInteger(expectedRevision) &&
-    expectedRevision >= 1
-    ? { threadId, expectedRevision }
-    : undefined;
+  return record && validThreadId(threadId) && isNonNegativeInteger(expectedRevision) && expectedRevision >= 1 ? { threadId, expectedRevision } : undefined;
 }
 
 function parseRefreshReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest(
   input: unknown,
-):
-  | RefreshReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest
-  | undefined {
+): RefreshReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest | undefined {
   const record = requestRecord(input, ["threadId", "expectedRevision"]);
   const threadId = record?.["threadId"];
   const expectedRevision = record?.["expectedRevision"];
-  return record &&
-    validThreadId(threadId) &&
-    isNonNegativeInteger(expectedRevision) &&
-    expectedRevision >= 1
-    ? { threadId, expectedRevision }
-    : undefined;
+  return record && validThreadId(threadId) && isNonNegativeInteger(expectedRevision) && expectedRevision >= 1 ? { threadId, expectedRevision } : undefined;
 }
 
 function parseRefreshReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest(
   input: unknown,
-):
-  | RefreshReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest
-  | undefined {
+): RefreshReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest | undefined {
   const record = requestRecord(input, ["threadId", "expectedRevision"]);
   const threadId = record?.["threadId"];
   const expectedRevision = record?.["expectedRevision"];
-  return record &&
-    validThreadId(threadId) &&
-    isNonNegativeInteger(expectedRevision) &&
-    expectedRevision >= 1
-    ? { threadId, expectedRevision }
-    : undefined;
+  return record && validThreadId(threadId) && isNonNegativeInteger(expectedRevision) && expectedRevision >= 1 ? { threadId, expectedRevision } : undefined;
 }
 
-function parseUpdateReceiptTrustAnchorDirectorySubscriptionRequest(
-  input: unknown,
-): UpdateReceiptTrustAnchorDirectorySubscriptionRequest | undefined {
-  const record = requestRecord(input, [
-    "threadId",
-    "expectedRevision",
-    "status",
-  ]);
+function parseUpdateReceiptTrustAnchorDirectorySubscriptionRequest(input: unknown): UpdateReceiptTrustAnchorDirectorySubscriptionRequest | undefined {
+  const record = requestRecord(input, ["threadId", "expectedRevision", "status"]);
   const threadId = record?.["threadId"];
   const expectedRevision = record?.["expectedRevision"];
   const status = record?.["status"];
-  return record &&
-    validThreadId(threadId) &&
-    isNonNegativeInteger(expectedRevision) &&
-    expectedRevision >= 1 &&
-    (status === "active" || status === "paused")
+  return record && validThreadId(threadId) && isNonNegativeInteger(expectedRevision) && expectedRevision >= 1 && (status === "active" || status === "paused")
     ? { threadId, expectedRevision, status }
     : undefined;
 }
 
 function parseUpdateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest(
   input: unknown,
-):
-  | UpdateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest
-  | undefined {
-  const record = requestRecord(input, [
-    "threadId",
-    "expectedRevision",
-    "status",
-  ]);
+): UpdateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest | undefined {
+  const record = requestRecord(input, ["threadId", "expectedRevision", "status"]);
   const threadId = record?.["threadId"];
   const expectedRevision = record?.["expectedRevision"];
   const status = record?.["status"];
-  return record &&
-    validThreadId(threadId) &&
-    isNonNegativeInteger(expectedRevision) &&
-    expectedRevision >= 1 &&
-    (status === "active" || status === "paused")
+  return record && validThreadId(threadId) && isNonNegativeInteger(expectedRevision) && expectedRevision >= 1 && (status === "active" || status === "paused")
     ? { threadId, expectedRevision, status }
     : undefined;
 }
 
 function parseUpdateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest(
   input: unknown,
-):
-  | UpdateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest
-  | undefined {
-  const record = requestRecord(input, [
-    "threadId",
-    "expectedRevision",
-    "status",
-  ]);
+): UpdateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest | undefined {
+  const record = requestRecord(input, ["threadId", "expectedRevision", "status"]);
   const threadId = record?.["threadId"];
   const expectedRevision = record?.["expectedRevision"];
   const status = record?.["status"];
-  return record &&
-    validThreadId(threadId) &&
-    isNonNegativeInteger(expectedRevision) &&
-    expectedRevision >= 1 &&
-    (status === "active" || status === "paused")
+  return record && validThreadId(threadId) && isNonNegativeInteger(expectedRevision) && expectedRevision >= 1 && (status === "active" || status === "paused")
     ? { threadId, expectedRevision, status }
     : undefined;
 }
 
-function parseReceiptTrustAnchorDirectoryVerificationPolicy(
-  input: unknown,
-): ReceiptTrustAnchorDirectoryVerificationPolicy | undefined {
+function parseReceiptTrustAnchorDirectoryVerificationPolicy(input: unknown): ReceiptTrustAnchorDirectoryVerificationPolicy | undefined {
   if (input === undefined) return undefined;
-  const record = requestRecord(input, [
-    "maxAgeMs",
-    "expectedAnchorSetSha256",
-    "minimumTrustedCount",
-    "requiredTrustedKeyIds",
-  ]);
+  const record = requestRecord(input, ["maxAgeMs", "expectedAnchorSetSha256", "minimumTrustedCount", "requiredTrustedKeyIds"]);
   if (!record) return undefined;
   const maxAgeMs = record["maxAgeMs"];
   const expectedAnchorSetSha256 = record["expectedAnchorSetSha256"];
@@ -8909,10 +5866,8 @@ function parseReceiptTrustAnchorDirectoryVerificationPolicy(
   const requiredTrustedKeyIds = record["requiredTrustedKeyIds"];
   if (
     (maxAgeMs !== undefined && !isNonNegativeInteger(maxAgeMs)) ||
-    (expectedAnchorSetSha256 !== undefined &&
-      !isSha256Hex(expectedAnchorSetSha256)) ||
-    (minimumTrustedCount !== undefined &&
-      !isNonNegativeInteger(minimumTrustedCount)) ||
+    (expectedAnchorSetSha256 !== undefined && !isSha256Hex(expectedAnchorSetSha256)) ||
+    (minimumTrustedCount !== undefined && !isNonNegativeInteger(minimumTrustedCount)) ||
     (requiredTrustedKeyIds !== undefined &&
       (!Array.isArray(requiredTrustedKeyIds) ||
         requiredTrustedKeyIds.length > MAX_RECEIPT_TRUST_ANCHORS ||
@@ -8920,19 +5875,12 @@ function parseReceiptTrustAnchorDirectoryVerificationPolicy(
   ) {
     return undefined;
   }
-  const normalizedRequiredTrustedKeyIds =
-    requiredTrustedKeyIds === undefined
-      ? undefined
-      : Array.from(new Set(requiredTrustedKeyIds as string[])).sort();
+  const normalizedRequiredTrustedKeyIds = requiredTrustedKeyIds === undefined ? undefined : Array.from(new Set(requiredTrustedKeyIds as string[])).sort();
   return {
     ...(maxAgeMs !== undefined ? { maxAgeMs } : {}),
-    ...(expectedAnchorSetSha256 !== undefined
-      ? { expectedAnchorSetSha256 }
-      : {}),
+    ...(expectedAnchorSetSha256 !== undefined ? { expectedAnchorSetSha256 } : {}),
     ...(minimumTrustedCount !== undefined ? { minimumTrustedCount } : {}),
-    ...(normalizedRequiredTrustedKeyIds !== undefined
-      ? { requiredTrustedKeyIds: normalizedRequiredTrustedKeyIds }
-      : {}),
+    ...(normalizedRequiredTrustedKeyIds !== undefined ? { requiredTrustedKeyIds: normalizedRequiredTrustedKeyIds } : {}),
   };
 }
 
@@ -8940,17 +5888,11 @@ function isNonNegativeInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value >= 0;
 }
 
-function parseCreateExtensionPublisherTrustAnchorRequest(
-  input: unknown,
-): CreateExtensionPublisherTrustAnchorRequest | undefined {
+function parseCreateExtensionPublisherTrustAnchorRequest(input: unknown): CreateExtensionPublisherTrustAnchorRequest | undefined {
   const record = requestRecord(input, ["threadId", "label", "source"]);
   const threadId = record?.["threadId"];
   const label = record?.["label"];
-  const source = requestRecord(record?.["source"], [
-    "type",
-    "variable",
-    "publicKeySpki",
-  ]);
+  const source = requestRecord(record?.["source"], ["type", "variable", "publicKeySpki"]);
   const type = source?.["type"];
   if (
     !record ||
@@ -8980,9 +5922,7 @@ function parseCreateExtensionPublisherTrustAnchorRequest(
   }
   const publicKeySpki = source["publicKeySpki"];
   if (
-    Object.keys(source).some(
-      (key) => key !== "type" && key !== "publicKeySpki",
-    ) ||
+    Object.keys(source).some((key) => key !== "type" && key !== "publicKeySpki") ||
     typeof publicKeySpki !== "string" ||
     publicKeySpki.length === 0 ||
     publicKeySpki.length > 4_096
@@ -8996,24 +5936,14 @@ function parseCreateExtensionPublisherTrustAnchorRequest(
   };
 }
 
-function parseRevokeExtensionPublisherTrustAnchorRequest(
-  input: unknown,
-): RevokeExtensionPublisherTrustAnchorRequest | undefined {
+function parseRevokeExtensionPublisherTrustAnchorRequest(input: unknown): RevokeExtensionPublisherTrustAnchorRequest | undefined {
   const record = requestRecord(input, ["threadId"]);
   const threadId = record?.["threadId"];
   return record && validThreadId(threadId) ? { threadId } : undefined;
 }
 
-function parseSignExtensionPackageRequest(
-  input: unknown,
-): SignExtensionPackageRequest | undefined {
-  const record = requestRecord(input, [
-    "threadId",
-    "trustAnchorId",
-    "publisher",
-    "dependencies",
-    "expiresAt",
-  ]);
+function parseSignExtensionPackageRequest(input: unknown): SignExtensionPackageRequest | undefined {
+  const record = requestRecord(input, ["threadId", "trustAnchorId", "publisher", "dependencies", "expiresAt"]);
   const threadId = record?.["threadId"];
   const trustAnchorId = record?.["trustAnchorId"];
   const publisher = record?.["publisher"];
@@ -9030,9 +5960,7 @@ function parseSignExtensionPackageRequest(
     publisher.replace(/\s+/g, " ").trim().length > 120 ||
     /[\u0000-\u001f\u007f<>]/.test(publisher) ||
     (dependenciesInput !== undefined && dependencies === undefined) ||
-    (expiresAt !== undefined &&
-      (typeof expiresAt !== "string" ||
-        !Number.isFinite(Date.parse(expiresAt))))
+    (expiresAt !== undefined && (typeof expiresAt !== "string" || !Number.isFinite(Date.parse(expiresAt))))
   ) {
     return undefined;
   }
@@ -9045,16 +5973,8 @@ function parseSignExtensionPackageRequest(
   };
 }
 
-function parseSignSkillPackageRequest(
-  input: unknown,
-): SignSkillPackageRequest | undefined {
-  const record = requestRecord(input, [
-    "threadId",
-    "trustAnchorId",
-    "publisher",
-    "skillNames",
-    "expiresAt",
-  ]);
+function parseSignSkillPackageRequest(input: unknown): SignSkillPackageRequest | undefined {
+  const record = requestRecord(input, ["threadId", "trustAnchorId", "publisher", "skillNames", "expiresAt"]);
   const threadId = record?.["threadId"];
   const trustAnchorId = record?.["trustAnchorId"];
   const publisher = record?.["publisher"];
@@ -9072,15 +5992,9 @@ function parseSignSkillPackageRequest(
     (skillNames !== undefined &&
       (!Array.isArray(skillNames) ||
         skillNames.length > 128 ||
-        skillNames.some(
-          (name) =>
-            typeof name !== "string" ||
-            !/^[a-z0-9][a-z0-9_-]{0,79}$/.test(name),
-        ) ||
+        skillNames.some((name) => typeof name !== "string" || !/^[a-z0-9][a-z0-9_-]{0,79}$/.test(name)) ||
         new Set(skillNames).size !== skillNames.length)) ||
-    (expiresAt !== undefined &&
-      (typeof expiresAt !== "string" ||
-        !Number.isFinite(Date.parse(expiresAt))))
+    (expiresAt !== undefined && (typeof expiresAt !== "string" || !Number.isFinite(Date.parse(expiresAt))))
   ) {
     return undefined;
   }
@@ -9093,16 +6007,8 @@ function parseSignSkillPackageRequest(
   };
 }
 
-function parseSignPromptPackageRequest(
-  input: unknown,
-): SignPromptPackageRequest | undefined {
-  const record = requestRecord(input, [
-    "threadId",
-    "trustAnchorId",
-    "publisher",
-    "agentId",
-    "expiresAt",
-  ]);
+function parseSignPromptPackageRequest(input: unknown): SignPromptPackageRequest | undefined {
+  const record = requestRecord(input, ["threadId", "trustAnchorId", "publisher", "agentId", "expiresAt"]);
   const threadId = record?.["threadId"];
   const trustAnchorId = record?.["trustAnchorId"];
   const publisher = record?.["publisher"];
@@ -9119,9 +6025,7 @@ function parseSignPromptPackageRequest(
     /[\u0000-\u001f\u007f<>]/.test(publisher) ||
     typeof agentId !== "string" ||
     !validAgentId(agentId) ||
-    (expiresAt !== undefined &&
-      (typeof expiresAt !== "string" ||
-        !Number.isFinite(Date.parse(expiresAt))))
+    (expiresAt !== undefined && (typeof expiresAt !== "string" || !Number.isFinite(Date.parse(expiresAt))))
   ) {
     return undefined;
   }
@@ -9134,15 +6038,8 @@ function parseSignPromptPackageRequest(
   };
 }
 
-function parseSignInspectorPackageRequest(
-  input: unknown,
-): SignInspectorPackageRequest | undefined {
-  const record = requestRecord(input, [
-    "threadId",
-    "trustAnchorId",
-    "publisher",
-    "expiresAt",
-  ]);
+function parseSignInspectorPackageRequest(input: unknown): SignInspectorPackageRequest | undefined {
+  const record = requestRecord(input, ["threadId", "trustAnchorId", "publisher", "expiresAt"]);
   const threadId = record?.["threadId"];
   const trustAnchorId = record?.["trustAnchorId"];
   const publisher = record?.["publisher"];
@@ -9156,9 +6053,7 @@ function parseSignInspectorPackageRequest(
     !publisher.replace(/\s+/g, " ").trim() ||
     publisher.replace(/\s+/g, " ").trim().length > 120 ||
     /[\u0000-\u001f\u007f<>]/.test(publisher) ||
-    (expiresAt !== undefined &&
-      (typeof expiresAt !== "string" ||
-        !Number.isFinite(Date.parse(expiresAt))))
+    (expiresAt !== undefined && (typeof expiresAt !== "string" || !Number.isFinite(Date.parse(expiresAt))))
   ) {
     return undefined;
   }
@@ -9170,17 +6065,8 @@ function parseSignInspectorPackageRequest(
   };
 }
 
-function parseSignExtensionPackageChannelIndexRequest(
-  input: unknown,
-): SignExtensionPackageChannelIndexRequest | undefined {
-  const record = requestRecord(input, [
-    "threadId",
-    "trustAnchorId",
-    "publisher",
-    "channelIds",
-    "lockfileBaseUrl",
-    "expiresAt",
-  ]);
+function parseSignExtensionPackageChannelIndexRequest(input: unknown): SignExtensionPackageChannelIndexRequest | undefined {
+  const record = requestRecord(input, ["threadId", "trustAnchorId", "publisher", "channelIds", "lockfileBaseUrl", "expiresAt"]);
   const threadId = record?.["threadId"];
   const trustAnchorId = record?.["trustAnchorId"];
   const publisher = record?.["publisher"];
@@ -9200,18 +6086,11 @@ function parseSignExtensionPackageChannelIndexRequest(
       (!Array.isArray(channelIds) ||
         channelIds.length < 1 ||
         channelIds.length > MAX_EXTENSION_PACKAGE_DEPLOYMENT_CANDIDATES ||
-        channelIds.some(
-          (id) =>
-            typeof id !== "string" || !/^rollout_[a-z0-9]{8,80}$/.test(id),
-        ) ||
+        channelIds.some((id) => typeof id !== "string" || !/^rollout_[a-z0-9]{8,80}$/.test(id)) ||
         new Set(channelIds).size !== channelIds.length)) ||
     (lockfileBaseUrl !== undefined &&
-      (typeof lockfileBaseUrl !== "string" ||
-        lockfileBaseUrl.length > 500 ||
-        /[\u0000-\u001f\u007f<>]/.test(lockfileBaseUrl))) ||
-    (expiresAt !== undefined &&
-      (typeof expiresAt !== "string" ||
-        !Number.isFinite(Date.parse(expiresAt))))
+      (typeof lockfileBaseUrl !== "string" || lockfileBaseUrl.length > 500 || /[\u0000-\u001f\u007f<>]/.test(lockfileBaseUrl))) ||
+    (expiresAt !== undefined && (typeof expiresAt !== "string" || !Number.isFinite(Date.parse(expiresAt))))
   ) {
     return undefined;
   }
@@ -9225,19 +6104,12 @@ function parseSignExtensionPackageChannelIndexRequest(
   };
 }
 
-function parseExtensionPackageDependencies(
-  input: unknown,
-): SignExtensionPackageRequest["dependencies"] | undefined {
+function parseExtensionPackageDependencies(input: unknown): SignExtensionPackageRequest["dependencies"] | undefined {
   if (input === undefined) return undefined;
-  if (
-    !Array.isArray(input) ||
-    input.length < 1 ||
-    input.length > MAX_EXTENSION_PACKAGE_DEPENDENCIES
-  ) {
+  if (!Array.isArray(input) || input.length < 1 || input.length > MAX_EXTENSION_PACKAGE_DEPENDENCIES) {
     return undefined;
   }
-  const dependencies: NonNullable<SignExtensionPackageRequest["dependencies"]> =
-    [];
+  const dependencies: NonNullable<SignExtensionPackageRequest["dependencies"]> = [];
   for (const value of input) {
     const record = requestRecord(value, ["normalizedName", "versionRange"]);
     const normalizedName = record?.["normalizedName"];
@@ -9257,52 +6129,30 @@ function parseExtensionPackageDependencies(
   return dependencies;
 }
 
-function parseVerifySignedExtensionPackageRequest(
-  input: unknown,
-): VerifySignedExtensionPackageRequest | undefined {
+function parseVerifySignedExtensionPackageRequest(input: unknown): VerifySignedExtensionPackageRequest | undefined {
   const record = requestRecord(input, ["envelope"]);
-  return record && record["envelope"] !== undefined
-    ? { envelope: record["envelope"] }
-    : undefined;
+  return record && record["envelope"] !== undefined ? { envelope: record["envelope"] } : undefined;
 }
 
-function parseVerifySkillPackageRequest(
-  input: unknown,
-): VerifySkillPackageRequest | undefined {
+function parseVerifySkillPackageRequest(input: unknown): VerifySkillPackageRequest | undefined {
   const record = requestRecord(input, ["envelope"]);
-  return record && record["envelope"] !== undefined
-    ? { envelope: record["envelope"] }
-    : undefined;
+  return record && record["envelope"] !== undefined ? { envelope: record["envelope"] } : undefined;
 }
 
-function parseVerifyPromptPackageRequest(
-  input: unknown,
-): VerifyPromptPackageRequest | undefined {
+function parseVerifyPromptPackageRequest(input: unknown): VerifyPromptPackageRequest | undefined {
   const record = requestRecord(input, ["envelope"]);
-  return record && record["envelope"] !== undefined
-    ? { envelope: record["envelope"] }
-    : undefined;
+  return record && record["envelope"] !== undefined ? { envelope: record["envelope"] } : undefined;
 }
 
-function parseVerifyInspectorPackageRequest(
-  input: unknown,
-): VerifyInspectorPackageRequest | undefined {
+function parseVerifyInspectorPackageRequest(input: unknown): VerifyInspectorPackageRequest | undefined {
   const record = requestRecord(input, ["envelope"]);
-  return record && record["envelope"] !== undefined
-    ? { envelope: record["envelope"] }
-    : undefined;
+  return record && record["envelope"] !== undefined ? { envelope: record["envelope"] } : undefined;
 }
 
-function parseQualifySkillPackageRequest(
-  input: unknown,
-): QualifySkillPackageRequest | undefined {
+function parseQualifySkillPackageRequest(input: unknown): QualifySkillPackageRequest | undefined {
   const record = requestRecord(input, ["envelope", "threadId"]);
   const threadId = record?.["threadId"];
-  if (
-    !record ||
-    record["envelope"] === undefined ||
-    (threadId !== undefined && !validThreadId(threadId))
-  ) {
+  if (!record || record["envelope"] === undefined || (threadId !== undefined && !validThreadId(threadId))) {
     return undefined;
   }
   return {
@@ -9311,9 +6161,7 @@ function parseQualifySkillPackageRequest(
   };
 }
 
-function parseInstallSkillPackageRequest(
-  input: unknown,
-): InstallSkillPackageRequest | undefined {
+function parseInstallSkillPackageRequest(input: unknown): InstallSkillPackageRequest | undefined {
   const record = requestRecord(input, [
     "threadId",
     "envelope",
@@ -9331,37 +6179,24 @@ function parseInstallSkillPackageRequest(
     !record ||
     !validThreadId(threadId) ||
     record["envelope"] === undefined ||
-    (replaceInstallationId !== undefined &&
-      (typeof replaceInstallationId !== "string" ||
-        !/^skillinstall_[a-z0-9]{8,80}$/.test(replaceInstallationId))) ||
-    (confirmReplacement !== undefined &&
-      typeof confirmReplacement !== "boolean") ||
-    (confirmPublisherChange !== undefined &&
-      typeof confirmPublisherChange !== "boolean") ||
-    (confirmSkillSetChange !== undefined &&
-      typeof confirmSkillSetChange !== "boolean")
+    (replaceInstallationId !== undefined && (typeof replaceInstallationId !== "string" || !/^skillinstall_[a-z0-9]{8,80}$/.test(replaceInstallationId))) ||
+    (confirmReplacement !== undefined && typeof confirmReplacement !== "boolean") ||
+    (confirmPublisherChange !== undefined && typeof confirmPublisherChange !== "boolean") ||
+    (confirmSkillSetChange !== undefined && typeof confirmSkillSetChange !== "boolean")
   ) {
     return undefined;
   }
   return {
     threadId,
     envelope: record["envelope"],
-    ...(typeof replaceInstallationId === "string"
-      ? { replaceInstallationId }
-      : {}),
+    ...(typeof replaceInstallationId === "string" ? { replaceInstallationId } : {}),
     ...(typeof confirmReplacement === "boolean" ? { confirmReplacement } : {}),
-    ...(typeof confirmPublisherChange === "boolean"
-      ? { confirmPublisherChange }
-      : {}),
-    ...(typeof confirmSkillSetChange === "boolean"
-      ? { confirmSkillSetChange }
-      : {}),
+    ...(typeof confirmPublisherChange === "boolean" ? { confirmPublisherChange } : {}),
+    ...(typeof confirmSkillSetChange === "boolean" ? { confirmSkillSetChange } : {}),
   };
 }
 
-function parsePreviewSkillContentRequest(
-  input: unknown,
-): PreviewSkillContentRequest | undefined {
+function parsePreviewSkillContentRequest(input: unknown): PreviewSkillContentRequest | undefined {
   const record = requestRecord(input, ["threadId", "content"]);
   const threadId = record?.["threadId"];
   const content = record?.["content"];
@@ -9371,16 +6206,8 @@ function parsePreviewSkillContentRequest(
   return { threadId, content };
 }
 
-function parseApplySkillContentRequest(
-  input: unknown,
-): ApplySkillContentRequest | undefined {
-  const record = requestRecord(input, [
-    "threadId",
-    "content",
-    "expectedReviewSha256",
-    "confirmInstall",
-    "confirmReplacement",
-  ]);
+function parseApplySkillContentRequest(input: unknown): ApplySkillContentRequest | undefined {
+  const record = requestRecord(input, ["threadId", "content", "expectedReviewSha256", "confirmInstall", "confirmReplacement"]);
   const threadId = record?.["threadId"];
   const content = record?.["content"];
   const expectedReviewSha256 = record?.["expectedReviewSha256"];
@@ -9393,8 +6220,7 @@ function parseApplySkillContentRequest(
     typeof expectedReviewSha256 !== "string" ||
     !/^[a-f0-9]{64}$/.test(expectedReviewSha256) ||
     (confirmInstall !== undefined && typeof confirmInstall !== "boolean") ||
-    (confirmReplacement !== undefined &&
-      typeof confirmReplacement !== "boolean")
+    (confirmReplacement !== undefined && typeof confirmReplacement !== "boolean")
   ) {
     return undefined;
   }
@@ -9407,9 +6233,7 @@ function parseApplySkillContentRequest(
   };
 }
 
-function parseQualifyPromptPackageRequest(
-  input: unknown,
-): QualifyPromptPackageRequest | undefined {
+function parseQualifyPromptPackageRequest(input: unknown): QualifyPromptPackageRequest | undefined {
   const record = requestRecord(input, ["envelope", "agentId", "threadId"]);
   const threadId = record?.["threadId"];
   const agentId = record?.["agentId"];
@@ -9428,16 +6252,10 @@ function parseQualifyPromptPackageRequest(
   };
 }
 
-function parseQualifyInspectorPackageRequest(
-  input: unknown,
-): QualifyInspectorPackageRequest | undefined {
+function parseQualifyInspectorPackageRequest(input: unknown): QualifyInspectorPackageRequest | undefined {
   const record = requestRecord(input, ["envelope", "threadId"]);
   const threadId = record?.["threadId"];
-  if (
-    !record ||
-    record["envelope"] === undefined ||
-    (threadId !== undefined && !validThreadId(threadId))
-  ) {
+  if (!record || record["envelope"] === undefined || (threadId !== undefined && !validThreadId(threadId))) {
     return undefined;
   }
   return {
@@ -9446,18 +6264,12 @@ function parseQualifyInspectorPackageRequest(
   };
 }
 
-function parseVerifyExtensionPackageChannelIndexRequest(
-  input: unknown,
-): VerifyExtensionPackageChannelIndexRequest | undefined {
+function parseVerifyExtensionPackageChannelIndexRequest(input: unknown): VerifyExtensionPackageChannelIndexRequest | undefined {
   const record = requestRecord(input, ["envelope"]);
-  return record && record["envelope"] !== undefined
-    ? { envelope: record["envelope"] }
-    : undefined;
+  return record && record["envelope"] !== undefined ? { envelope: record["envelope"] } : undefined;
 }
 
-function parseExportExtensionPackageLockfileRequest(
-  input: unknown,
-): ExportExtensionPackageLockfileRequest | undefined {
+function parseExportExtensionPackageLockfileRequest(input: unknown): ExportExtensionPackageLockfileRequest | undefined {
   const record = requestRecord(input, ["threadId", "extensionIds"]);
   const threadId = record?.["threadId"];
   const extensionIds = record?.["extensionIds"];
@@ -9468,9 +6280,7 @@ function parseExportExtensionPackageLockfileRequest(
       (!Array.isArray(extensionIds) ||
         extensionIds.length < 1 ||
         extensionIds.length > MAX_EXTENSION_PACKAGE_DEPLOYMENT_CANDIDATES ||
-        extensionIds.some(
-          (id) => typeof id !== "string" || !/^ext_[a-z0-9]{8,80}$/.test(id),
-        ) ||
+        extensionIds.some((id) => typeof id !== "string" || !/^ext_[a-z0-9]{8,80}$/.test(id)) ||
         new Set(extensionIds).size !== extensionIds.length))
   ) {
     return undefined;
@@ -9481,26 +6291,13 @@ function parseExportExtensionPackageLockfileRequest(
   };
 }
 
-function parseVerifyExtensionPackageLockfileRequest(
-  input: unknown,
-): VerifyExtensionPackageLockfileRequest | undefined {
+function parseVerifyExtensionPackageLockfileRequest(input: unknown): VerifyExtensionPackageLockfileRequest | undefined {
   const record = requestRecord(input, ["lockfile"]);
-  return record && record["lockfile"] !== undefined
-    ? { lockfile: record["lockfile"] }
-    : undefined;
+  return record && record["lockfile"] !== undefined ? { lockfile: record["lockfile"] } : undefined;
 }
 
-function parsePublishExtensionPackageRolloutChannelRequest(
-  input: unknown,
-): PublishExtensionPackageRolloutChannelRequest | undefined {
-  const record = requestRecord(input, [
-    "threadId",
-    "name",
-    "description",
-    "extensionIds",
-    "expectedRevision",
-    "policy",
-  ]);
+function parsePublishExtensionPackageRolloutChannelRequest(input: unknown): PublishExtensionPackageRolloutChannelRequest | undefined {
+  const record = requestRecord(input, ["threadId", "name", "description", "extensionIds", "expectedRevision", "policy"]);
   const threadId = record?.["threadId"];
   const name = record?.["name"];
   const description = record?.["description"];
@@ -9515,21 +6312,14 @@ function parsePublishExtensionPackageRolloutChannelRequest(
     name.replace(/\s+/g, " ").trim().length > 80 ||
     /[\u0000-\u001f\u007f<>]/.test(name) ||
     (description !== undefined &&
-      (typeof description !== "string" ||
-        description.replace(/\s+/g, " ").trim().length > 240 ||
-        /[\u0000-\u001f\u007f<>]/.test(description))) ||
+      (typeof description !== "string" || description.replace(/\s+/g, " ").trim().length > 240 || /[\u0000-\u001f\u007f<>]/.test(description))) ||
     (extensionIds !== undefined &&
       (!Array.isArray(extensionIds) ||
         extensionIds.length < 1 ||
         extensionIds.length > MAX_EXTENSION_PACKAGE_DEPLOYMENT_CANDIDATES ||
-        extensionIds.some(
-          (id) => typeof id !== "string" || !/^ext_[a-z0-9]{8,80}$/.test(id),
-        ) ||
+        extensionIds.some((id) => typeof id !== "string" || !/^ext_[a-z0-9]{8,80}$/.test(id)) ||
         new Set(extensionIds).size !== extensionIds.length)) ||
-    (expectedRevision !== undefined &&
-      (typeof expectedRevision !== "number" ||
-        !Number.isSafeInteger(expectedRevision) ||
-        expectedRevision < 1)) ||
+    (expectedRevision !== undefined && (typeof expectedRevision !== "number" || !Number.isSafeInteger(expectedRevision) || expectedRevision < 1)) ||
     (record["policy"] !== undefined && policy === undefined)
   ) {
     return undefined;
@@ -9544,15 +6334,9 @@ function parsePublishExtensionPackageRolloutChannelRequest(
   };
 }
 
-function parseExtensionPackageRolloutPolicy(
-  input: unknown,
-): PublishExtensionPackageRolloutChannelRequest["policy"] | undefined {
+function parseExtensionPackageRolloutPolicy(input: unknown): PublishExtensionPackageRolloutChannelRequest["policy"] | undefined {
   if (input === undefined) return undefined;
-  const record = requestRecord(input, [
-    "maxPackages",
-    "allowedPublisherKeyIds",
-    "allowedPackageNames",
-  ]);
+  const record = requestRecord(input, ["maxPackages", "allowedPublisherKeyIds", "allowedPackageNames"]);
   const maxPackages = record?.["maxPackages"];
   const allowedPublisherKeyIds = record?.["allowedPublisherKeyIds"];
   const allowedPackageNames = record?.["allowedPackageNames"];
@@ -9567,49 +6351,31 @@ function parseExtensionPackageRolloutPolicy(
       (!Array.isArray(allowedPublisherKeyIds) ||
         allowedPublisherKeyIds.length < 1 ||
         allowedPublisherKeyIds.length > 32 ||
-        allowedPublisherKeyIds.some(
-          (keyId) => typeof keyId !== "string" || !/^[a-f0-9]{64}$/.test(keyId),
-        ) ||
-        new Set(allowedPublisherKeyIds).size !==
-          allowedPublisherKeyIds.length)) ||
+        allowedPublisherKeyIds.some((keyId) => typeof keyId !== "string" || !/^[a-f0-9]{64}$/.test(keyId)) ||
+        new Set(allowedPublisherKeyIds).size !== allowedPublisherKeyIds.length)) ||
     (allowedPackageNames !== undefined &&
       (!Array.isArray(allowedPackageNames) ||
         allowedPackageNames.length < 1 ||
-        allowedPackageNames.length >
-          MAX_EXTENSION_PACKAGE_DEPLOYMENT_CANDIDATES ||
-        allowedPackageNames.some(
-          (name) =>
-            typeof name !== "string" ||
-            !/^[a-z0-9][a-z0-9_-]{0,23}$/.test(name),
-        ) ||
+        allowedPackageNames.length > MAX_EXTENSION_PACKAGE_DEPLOYMENT_CANDIDATES ||
+        allowedPackageNames.some((name) => typeof name !== "string" || !/^[a-z0-9][a-z0-9_-]{0,23}$/.test(name)) ||
         new Set(allowedPackageNames).size !== allowedPackageNames.length))
   ) {
     return undefined;
   }
   return {
     ...(typeof maxPackages === "number" ? { maxPackages } : {}),
-    ...(Array.isArray(allowedPublisherKeyIds)
-      ? { allowedPublisherKeyIds }
-      : {}),
+    ...(Array.isArray(allowedPublisherKeyIds) ? { allowedPublisherKeyIds } : {}),
     ...(Array.isArray(allowedPackageNames) ? { allowedPackageNames } : {}),
   };
 }
 
-function parsePreviewExtensionPackageRolloutChannelRequest(
-  input: unknown,
-): PreviewExtensionPackageRolloutChannelRequest | undefined {
+function parsePreviewExtensionPackageRolloutChannelRequest(input: unknown): PreviewExtensionPackageRolloutChannelRequest | undefined {
   const record = requestRecord(input, ["channelId"]);
   const channelId = record?.["channelId"];
-  return record &&
-    typeof channelId === "string" &&
-    /^rollout_[a-z0-9]{8,80}$/.test(channelId)
-    ? { channelId }
-    : undefined;
+  return record && typeof channelId === "string" && /^rollout_[a-z0-9]{8,80}$/.test(channelId) ? { channelId } : undefined;
 }
 
-function parseApplyExtensionPackageRolloutChannelRequest(
-  input: unknown,
-): ApplyExtensionPackageRolloutChannelRequest | undefined {
+function parseApplyExtensionPackageRolloutChannelRequest(input: unknown): ApplyExtensionPackageRolloutChannelRequest | undefined {
   const record = requestRecord(input, [
     "threadId",
     "channelId",
@@ -9633,10 +6399,8 @@ function parseApplyExtensionPackageRolloutChannelRequest(
     !/^[a-f0-9]{64}$/.test(expectedRolloutSha256) ||
     typeof expectedDeploymentSha256 !== "string" ||
     !/^[a-f0-9]{64}$/.test(expectedDeploymentSha256) ||
-    (confirmPublisherChanges !== undefined &&
-      typeof confirmPublisherChanges !== "boolean") ||
-    (confirmVersionOverrides !== undefined &&
-      typeof confirmVersionOverrides !== "boolean")
+    (confirmPublisherChanges !== undefined && typeof confirmPublisherChanges !== "boolean") ||
+    (confirmVersionOverrides !== undefined && typeof confirmVersionOverrides !== "boolean")
   ) {
     return undefined;
   }
@@ -9645,38 +6409,21 @@ function parseApplyExtensionPackageRolloutChannelRequest(
     channelId,
     expectedRolloutSha256,
     expectedDeploymentSha256,
-    ...(confirmPublisherChanges === true
-      ? { confirmPublisherChanges: true }
-      : {}),
-    ...(confirmVersionOverrides === true
-      ? { confirmVersionOverrides: true }
-      : {}),
+    ...(confirmPublisherChanges === true ? { confirmPublisherChanges: true } : {}),
+    ...(confirmVersionOverrides === true ? { confirmVersionOverrides: true } : {}),
   };
 }
 
-function parsePreviewExtensionPackageDeploymentRequest(
-  input: unknown,
-): PreviewExtensionPackageDeploymentRequest | undefined {
+function parsePreviewExtensionPackageDeploymentRequest(input: unknown): PreviewExtensionPackageDeploymentRequest | undefined {
   const record = requestRecord(input, ["envelopes"]);
   const envelopes = record?.["envelopes"];
-  return record &&
-    Array.isArray(envelopes) &&
-    envelopes.length >= 1 &&
-    envelopes.length <= MAX_EXTENSION_PACKAGE_DEPLOYMENT_CANDIDATES
+  return record && Array.isArray(envelopes) && envelopes.length >= 1 && envelopes.length <= MAX_EXTENSION_PACKAGE_DEPLOYMENT_CANDIDATES
     ? { envelopes }
     : undefined;
 }
 
-function parseApplyExtensionPackageDeploymentRequest(
-  input: unknown,
-): ApplyExtensionPackageDeploymentRequest | undefined {
-  const record = requestRecord(input, [
-    "threadId",
-    "envelopes",
-    "expectedDeploymentSha256",
-    "confirmPublisherChanges",
-    "confirmVersionOverrides",
-  ]);
+function parseApplyExtensionPackageDeploymentRequest(input: unknown): ApplyExtensionPackageDeploymentRequest | undefined {
+  const record = requestRecord(input, ["threadId", "envelopes", "expectedDeploymentSha256", "confirmPublisherChanges", "confirmVersionOverrides"]);
   const threadId = record?.["threadId"];
   const envelopes = record?.["envelopes"];
   const expectedDeploymentSha256 = record?.["expectedDeploymentSha256"];
@@ -9690,10 +6437,8 @@ function parseApplyExtensionPackageDeploymentRequest(
     envelopes.length > MAX_EXTENSION_PACKAGE_DEPLOYMENT_CANDIDATES ||
     typeof expectedDeploymentSha256 !== "string" ||
     !/^[a-f0-9]{64}$/.test(expectedDeploymentSha256) ||
-    (confirmPublisherChanges !== undefined &&
-      typeof confirmPublisherChanges !== "boolean") ||
-    (confirmVersionOverrides !== undefined &&
-      typeof confirmVersionOverrides !== "boolean")
+    (confirmPublisherChanges !== undefined && typeof confirmPublisherChanges !== "boolean") ||
+    (confirmVersionOverrides !== undefined && typeof confirmVersionOverrides !== "boolean")
   ) {
     return undefined;
   }
@@ -9701,34 +6446,18 @@ function parseApplyExtensionPackageDeploymentRequest(
     threadId,
     envelopes,
     expectedDeploymentSha256,
-    ...(confirmPublisherChanges === true
-      ? { confirmPublisherChanges: true }
-      : {}),
-    ...(confirmVersionOverrides === true
-      ? { confirmVersionOverrides: true }
-      : {}),
+    ...(confirmPublisherChanges === true ? { confirmPublisherChanges: true } : {}),
+    ...(confirmVersionOverrides === true ? { confirmVersionOverrides: true } : {}),
   };
 }
 
-function parsePreviewExtensionPackageUpdateRequest(
-  input: unknown,
-): PreviewExtensionPackageUpdateRequest | undefined {
+function parsePreviewExtensionPackageUpdateRequest(input: unknown): PreviewExtensionPackageUpdateRequest | undefined {
   const record = requestRecord(input, ["envelope"]);
-  return record && record["envelope"] !== undefined
-    ? { envelope: record["envelope"] }
-    : undefined;
+  return record && record["envelope"] !== undefined ? { envelope: record["envelope"] } : undefined;
 }
 
-function parseApplyExtensionPackageUpdateRequest(
-  input: unknown,
-): ApplyExtensionPackageUpdateRequest | undefined {
-  const record = requestRecord(input, [
-    "threadId",
-    "envelope",
-    "expectedPackageBindingSha256",
-    "confirmPublisherChange",
-    "confirmVersionOverride",
-  ]);
+function parseApplyExtensionPackageUpdateRequest(input: unknown): ApplyExtensionPackageUpdateRequest | undefined {
+  const record = requestRecord(input, ["threadId", "envelope", "expectedPackageBindingSha256", "confirmPublisherChange", "confirmVersionOverride"]);
   const threadId = record?.["threadId"];
   const expectedPackageBindingSha256 = record?.["expectedPackageBindingSha256"];
   const confirmPublisherChange = record?.["confirmPublisherChange"];
@@ -9739,10 +6468,8 @@ function parseApplyExtensionPackageUpdateRequest(
     record["envelope"] === undefined ||
     typeof expectedPackageBindingSha256 !== "string" ||
     !/^[a-f0-9]{64}$/.test(expectedPackageBindingSha256) ||
-    (confirmPublisherChange !== undefined &&
-      typeof confirmPublisherChange !== "boolean") ||
-    (confirmVersionOverride !== undefined &&
-      typeof confirmVersionOverride !== "boolean")
+    (confirmPublisherChange !== undefined && typeof confirmPublisherChange !== "boolean") ||
+    (confirmVersionOverride !== undefined && typeof confirmVersionOverride !== "boolean")
   ) {
     return undefined;
   }
@@ -9750,23 +6477,15 @@ function parseApplyExtensionPackageUpdateRequest(
     threadId,
     envelope: record["envelope"],
     expectedPackageBindingSha256,
-    ...(confirmPublisherChange === true
-      ? { confirmPublisherChange: true }
-      : {}),
-    ...(confirmVersionOverride === true
-      ? { confirmVersionOverride: true }
-      : {}),
+    ...(confirmPublisherChange === true ? { confirmPublisherChange: true } : {}),
+    ...(confirmVersionOverride === true ? { confirmVersionOverride: true } : {}),
   };
 }
 
-function parseImportSignedExtensionPackageRequest(
-  input: unknown,
-): ImportSignedExtensionPackageRequest | undefined {
+function parseImportSignedExtensionPackageRequest(input: unknown): ImportSignedExtensionPackageRequest | undefined {
   const record = requestRecord(input, ["threadId", "envelope"]);
   const threadId = record?.["threadId"];
-  return record && validThreadId(threadId) && record["envelope"] !== undefined
-    ? { threadId, envelope: record["envelope"] }
-    : undefined;
+  return record && validThreadId(threadId) && record["envelope"] !== undefined ? { threadId, envelope: record["envelope"] } : undefined;
 }
 
 function isReceiptTrustConflict(error: Error): boolean {
@@ -9784,12 +6503,9 @@ function isReceiptTrustConflict(error: Error): boolean {
 }
 
 function isReceiptTrustClientError(error: Error): boolean {
-  return [
-    "receipt trust anchor",
-    "receipt signing environment variable",
-    "receipt signing key is not a valid",
-    "trusted receipt",
-  ].some((message) => error.message.toLowerCase().includes(message));
+  return ["receipt trust anchor", "receipt signing environment variable", "receipt signing key is not a valid", "trusted receipt"].some((message) =>
+    error.message.toLowerCase().includes(message),
+  );
 }
 
 function isExtensionPackageConflict(error: Error): boolean {
@@ -9809,11 +6525,7 @@ function isExtensionPackageConflict(error: Error): boolean {
 }
 
 function isExtensionPackageClientError(error: Error): boolean {
-  return [
-    "extension publisher",
-    "extension package",
-    "signed extension package",
-  ].some((message) => error.message.toLowerCase().includes(message));
+  return ["extension publisher", "extension package", "signed extension package"].some((message) => error.message.toLowerCase().includes(message));
 }
 
 function isSkillPackageConflict(error: Error): boolean {
@@ -9842,18 +6554,13 @@ function isSkillContentConflict(error: Error): boolean {
 }
 
 function isSkillContentClientError(error: Error): boolean {
-  return [
-    "skill content review sha-256 is invalid",
-    "skill content must",
-    "skill content frontmatter",
-  ].some((message) => error.message.toLowerCase().includes(message));
+  return ["skill content review sha-256 is invalid", "skill content must", "skill content frontmatter"].some((message) =>
+    error.message.toLowerCase().includes(message),
+  );
 }
 
 function isPlanConflict(error: Error): boolean {
-  return [
-    "plan revision mismatch",
-    "thread already has an active execution plan",
-  ].some((message) => error.message.toLowerCase().includes(message));
+  return ["plan revision mismatch", "thread already has an active execution plan"].some((message) => error.message.toLowerCase().includes(message));
 }
 
 function isPlanClientError(error: Error): boolean {
@@ -9881,18 +6588,11 @@ function validAgentId(value: unknown): value is string {
   return typeof value === "string" && /^agent_[a-z0-9_]{2,80}$/.test(value);
 }
 
-function setOptionalHeader(
-  context: Context,
-  name: string,
-  value: string | undefined,
-): void {
+function setOptionalHeader(context: Context, name: string, value: string | undefined): void {
   if (value !== undefined) context.header(name, value);
 }
 
-function setHealthProjectionHeaders(
-  context: Context,
-  response: HealthResponse,
-): void {
+function setHealthProjectionHeaders(context: Context, response: HealthResponse): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, response);
   context.header("X-Napier-Service", response.service);
@@ -9900,33 +6600,15 @@ function setHealthProjectionHeaders(
   context.header("X-Napier-Node-Version", response.runtime.node.version);
   context.header("X-Napier-Node-Platform", response.runtime.node.platform);
   context.header("X-Napier-Node-Arch", response.runtime.node.arch);
-  context.header(
-    "X-Napier-Runtime-Component-Count",
-    String(HEALTH_RUNTIME_COMPONENTS.length),
-  );
-  context.header(
-    "X-Napier-Runtime-Components-SHA256",
-    sha256Json(response.runtime.components),
-  );
-  context.header(
-    "X-Napier-Runtime-Sqlite-Version",
-    response.runtime.components.sqlite,
-  );
-  context.header(
-    "X-Napier-Runtime-OpenSSL-Version",
-    response.runtime.components.openssl,
-  );
+  context.header("X-Napier-Runtime-Component-Count", String(HEALTH_RUNTIME_COMPONENTS.length));
+  context.header("X-Napier-Runtime-Components-SHA256", sha256Json(response.runtime.components));
+  context.header("X-Napier-Runtime-Sqlite-Version", response.runtime.components.sqlite);
+  context.header("X-Napier-Runtime-OpenSSL-Version", response.runtime.components.openssl);
   context.header("X-Napier-Runtime-Uv-Version", response.runtime.components.uv);
   context.header("X-Napier-Runtime-V8-Version", response.runtime.components.v8);
-  context.header(
-    "X-Napier-Ledger-Schema-Version",
-    String(response.ledger.schemaVersion),
-  );
+  context.header("X-Napier-Ledger-Schema-Version", String(response.ledger.schemaVersion));
   context.header("X-Napier-Ledger-Quick-Check", response.ledger.quickCheck);
-  context.header(
-    "X-Napier-Ledger-Migration-Count",
-    String(response.ledger.migrations.length),
-  );
+  context.header("X-Napier-Ledger-Migration-Count", String(response.ledger.migrations.length));
   context.header(
     "X-Napier-Ledger-Migrations-SHA256",
     sha256Json(
@@ -9937,70 +6619,25 @@ function setHealthProjectionHeaders(
       })),
     ),
   );
-  context.header(
-    "X-Napier-Store-Persistence-SHA256",
-    sha256Text(JSON.stringify(response.store.persistence)),
-  );
-  context.header(
-    "X-Napier-Store-Commit-Count",
-    String(response.store.persistence.commitCount),
-  );
-  context.header(
-    "X-Napier-Store-Failed-Commit-Count",
-    String(response.store.persistence.failedCommitCount),
-  );
-  context.header(
-    "X-Napier-Store-Projection-Failure-Count",
-    String(response.store.persistence.projectionFailureCount),
-  );
-  context.header(
-    "X-Napier-Store-State-Bytes-Written",
-    String(response.store.persistence.stateBytesWritten),
-  );
-  context.header(
-    "X-Napier-Store-Event-Bytes-Written",
-    String(response.store.persistence.eventBytesWritten),
-  );
-  context.header(
-    "X-Napier-Store-Projection-Bytes-Written",
-    String(response.store.persistence.projectionBytesWritten),
-  );
+  context.header("X-Napier-Store-Persistence-SHA256", sha256Text(JSON.stringify(response.store.persistence)));
+  context.header("X-Napier-Store-Commit-Count", String(response.store.persistence.commitCount));
+  context.header("X-Napier-Store-Failed-Commit-Count", String(response.store.persistence.failedCommitCount));
+  context.header("X-Napier-Store-Projection-Failure-Count", String(response.store.persistence.projectionFailureCount));
+  context.header("X-Napier-Store-State-Bytes-Written", String(response.store.persistence.stateBytesWritten));
+  context.header("X-Napier-Store-Event-Bytes-Written", String(response.store.persistence.eventBytesWritten));
+  context.header("X-Napier-Store-Projection-Bytes-Written", String(response.store.persistence.projectionBytesWritten));
   const lastPersistence = response.store.persistence.last;
   if (lastPersistence) {
-    context.header(
-      "X-Napier-Store-Last-Commit-Duration-Ms",
-      String(lastPersistence.ledgerCommitDurationMs),
-    );
-    context.header(
-      "X-Napier-Store-Last-Persist-Duration-Ms",
-      String(lastPersistence.totalDurationMs),
-    );
-    context.header(
-      "X-Napier-Store-Last-State-Bytes",
-      String(lastPersistence.stateBytes),
-    );
-    context.header(
-      "X-Napier-Store-Last-Event-Bytes",
-      String(lastPersistence.eventBytes),
-    );
-    context.header(
-      "X-Napier-Store-Last-Projection-Bytes",
-      String(
-        lastPersistence.stateProjectionBytes +
-          lastPersistence.eventProjectionBytes,
-      ),
-    );
+    context.header("X-Napier-Store-Last-Commit-Duration-Ms", String(lastPersistence.ledgerCommitDurationMs));
+    context.header("X-Napier-Store-Last-Persist-Duration-Ms", String(lastPersistence.totalDurationMs));
+    context.header("X-Napier-Store-Last-State-Bytes", String(lastPersistence.stateBytes));
+    context.header("X-Napier-Store-Last-Event-Bytes", String(lastPersistence.eventBytes));
+    context.header("X-Napier-Store-Last-Projection-Bytes", String(lastPersistence.stateProjectionBytes + lastPersistence.eventProjectionBytes));
   }
   const latestMigration = response.ledger.migrations.at(-1);
   if (latestMigration) {
-    context.header(
-      "X-Napier-Ledger-Latest-Migration-Version",
-      String(latestMigration.version),
-    );
-    context.header(
-      "X-Napier-Ledger-Latest-Migration-Name",
-      latestMigration.name,
-    );
+    context.header("X-Napier-Ledger-Latest-Migration-Version", String(latestMigration.version));
+    context.header("X-Napier-Ledger-Latest-Migration-Name", latestMigration.name);
   }
 }
 
@@ -10011,126 +6648,49 @@ function createHealthRuntimeProjection() {
       platform: process.platform,
       arch: process.arch,
     },
-    components: Object.fromEntries(
-      HEALTH_RUNTIME_COMPONENTS.map((component) => [
-        component,
-        process.versions[component] ?? "unavailable",
-      ]),
-    ) as Record<(typeof HEALTH_RUNTIME_COMPONENTS)[number], string>,
+    components: Object.fromEntries(HEALTH_RUNTIME_COMPONENTS.map((component) => [component, process.versions[component] ?? "unavailable"])) as Record<
+      (typeof HEALTH_RUNTIME_COMPONENTS)[number],
+      string
+    >,
   } satisfies HealthResponse["runtime"];
 }
 
-function setExecutionPlanBlueprintPortfolioCalibrationHeaders(
-  context: Context,
-  calibration: ExecutionPlanBlueprintPortfolioCalibration,
-): void {
+function setExecutionPlanBlueprintPortfolioCalibrationHeaders(context: Context, calibration: ExecutionPlanBlueprintPortfolioCalibration): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, calibration.contentSha256);
-  context.header(
-    "X-Napier-Blueprint-Portfolio-Record-Count",
-    String(calibration.recordCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Portfolio-Active-Count",
-    String(calibration.activeCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Portfolio-Archived-Count",
-    String(calibration.archivedCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Portfolio-Family-Count",
-    String(calibration.familyCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Portfolio-Source-Qualified-Count",
-    String(calibration.sourceQualifiedCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Portfolio-Outcome-Qualified-Count",
-    String(calibration.outcomeQualifiedCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Portfolio-Reviewed-Baseline-Count",
-    String(calibration.reviewedBaselineCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Portfolio-Missing-Baseline-Count",
-    String(calibration.missingBaselineCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Portfolio-Policy-Failed-Count",
-    String(calibration.policyFailedCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Portfolio-Set-SHA256",
-    calibration.portfolioSetSha256,
-  );
+  context.header("X-Napier-Blueprint-Portfolio-Record-Count", String(calibration.recordCount));
+  context.header("X-Napier-Blueprint-Portfolio-Active-Count", String(calibration.activeCount));
+  context.header("X-Napier-Blueprint-Portfolio-Archived-Count", String(calibration.archivedCount));
+  context.header("X-Napier-Blueprint-Portfolio-Family-Count", String(calibration.familyCount));
+  context.header("X-Napier-Blueprint-Portfolio-Source-Qualified-Count", String(calibration.sourceQualifiedCount));
+  context.header("X-Napier-Blueprint-Portfolio-Outcome-Qualified-Count", String(calibration.outcomeQualifiedCount));
+  context.header("X-Napier-Blueprint-Portfolio-Reviewed-Baseline-Count", String(calibration.reviewedBaselineCount));
+  context.header("X-Napier-Blueprint-Portfolio-Missing-Baseline-Count", String(calibration.missingBaselineCount));
+  context.header("X-Napier-Blueprint-Portfolio-Policy-Failed-Count", String(calibration.policyFailedCount));
+  context.header("X-Napier-Blueprint-Portfolio-Set-SHA256", calibration.portfolioSetSha256);
 }
 
-function setExecutionPlanBlueprintRecommendationPolicyBacktestHeaders(
-  context: Context,
-  backtest: ExecutionPlanBlueprintRecommendationPolicyBacktest,
-): void {
+function setExecutionPlanBlueprintRecommendationPolicyBacktestHeaders(context: Context, backtest: ExecutionPlanBlueprintRecommendationPolicyBacktest): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, backtest.contentSha256);
-  context.header(
-    "X-Napier-Blueprint-Portfolio-Record-Count",
-    String(backtest.recordCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Portfolio-Active-Count",
-    String(backtest.activeCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Recommendation-Policy-Count",
-    String(backtest.policyCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Recommendation-Policy-Divergent-Selection-Count",
-    String(backtest.divergentSelectionCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Portfolio-Set-SHA256",
-    backtest.portfolioSetSha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Recommendation-Policy-Set-SHA256",
-    backtest.policySetSha256,
-  );
+  context.header("X-Napier-Blueprint-Portfolio-Record-Count", String(backtest.recordCount));
+  context.header("X-Napier-Blueprint-Portfolio-Active-Count", String(backtest.activeCount));
+  context.header("X-Napier-Blueprint-Recommendation-Policy-Count", String(backtest.policyCount));
+  context.header("X-Napier-Blueprint-Recommendation-Policy-Divergent-Selection-Count", String(backtest.divergentSelectionCount));
+  context.header("X-Napier-Blueprint-Portfolio-Set-SHA256", backtest.portfolioSetSha256);
+  context.header("X-Napier-Blueprint-Recommendation-Policy-Set-SHA256", backtest.policySetSha256);
 }
 
-function setExecutionPlanBlueprintRecommendationPolicyOverrideHeaders(
-  context: Context,
-  override: ExecutionPlanBlueprintRecommendationPolicyOverride,
-): void {
+function setExecutionPlanBlueprintRecommendationPolicyOverrideHeaders(context: Context, override: ExecutionPlanBlueprintRecommendationPolicyOverride): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, override.contentSha256);
   context.header("X-Napier-Blueprint-Family-SHA256", override.familySha256);
-  context.header(
-    "X-Napier-Blueprint-Recommendation-Policy-Template",
-    override.recommendationPolicy.templateId,
-  );
-  context.header(
-    "X-Napier-Blueprint-Recommendation-Policy-SHA256",
-    override.recommendationPolicySha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Portfolio-Set-SHA256",
-    override.portfolioSetSha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Record-Count",
-    String(override.familyRecordCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Outcome-Qualified-Count",
-    String(override.familyOutcomeQualifiedCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Completion-Rate-BPS",
-    String(override.familyCompletionRateBps),
-  );
+  context.header("X-Napier-Blueprint-Recommendation-Policy-Template", override.recommendationPolicy.templateId);
+  context.header("X-Napier-Blueprint-Recommendation-Policy-SHA256", override.recommendationPolicySha256);
+  context.header("X-Napier-Blueprint-Portfolio-Set-SHA256", override.portfolioSetSha256);
+  context.header("X-Napier-Blueprint-Family-Record-Count", String(override.familyRecordCount));
+  context.header("X-Napier-Blueprint-Family-Outcome-Qualified-Count", String(override.familyOutcomeQualifiedCount));
+  context.header("X-Napier-Blueprint-Family-Completion-Rate-BPS", String(override.familyCompletionRateBps));
 }
 
 function setExecutionPlanBlueprintRecommendationPolicyOverrideListHeaders(
@@ -10139,18 +6699,9 @@ function setExecutionPlanBlueprintRecommendationPolicyOverrideListHeaders(
 ): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, overrides.contentSha256);
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Count",
-    String(overrides.overrideCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Set-SHA256",
-    overrides.overrideSetSha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Portfolio-Set-SHA256",
-    overrides.portfolioSetSha256,
-  );
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Count", String(overrides.overrideCount));
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Set-SHA256", overrides.overrideSetSha256);
+  context.header("X-Napier-Blueprint-Portfolio-Set-SHA256", overrides.portfolioSetSha256);
 }
 
 function setExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewHeaders(
@@ -10159,34 +6710,13 @@ function setExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewHeaders
 ): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, review.contentSha256);
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Count",
-    String(review.overrideCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Aligned-Count",
-    String(review.alignedCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Retire-Recommended-Count",
-    String(review.retireRecommendedCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Missing-Family-Count",
-    String(review.missingFamilyCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Portfolio-Set-SHA256",
-    review.portfolioSetSha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Set-SHA256",
-    review.overrideSetSha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Drift-Review-Set-SHA256",
-    review.reviewSetSha256,
-  );
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Count", String(review.overrideCount));
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Aligned-Count", String(review.alignedCount));
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Retire-Recommended-Count", String(review.retireRecommendedCount));
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Missing-Family-Count", String(review.missingFamilyCount));
+  context.header("X-Napier-Blueprint-Portfolio-Set-SHA256", review.portfolioSetSha256);
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Set-SHA256", review.overrideSetSha256);
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Drift-Review-Set-SHA256", review.reviewSetSha256);
 }
 
 function setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHeaders(
@@ -10196,34 +6726,13 @@ function setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHeaders(
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, result.contentSha256);
   context.header("X-Napier-Blueprint-Family-SHA256", result.familySha256);
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Retired-SHA256",
-    result.retiredOverrideSha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Recommendation-Policy-Template",
-    result.retiredRecommendationPolicyTemplate,
-  );
-  context.header(
-    "X-Napier-Blueprint-Recommendation-Policy-SHA256",
-    result.retiredRecommendationPolicySha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Portfolio-Set-SHA256",
-    result.portfolioSetSha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Set-SHA256",
-    result.overrideSetSha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Drift-Review-Set-SHA256",
-    result.driftReviewSetSha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Remaining-Set-SHA256",
-    result.remainingOverrideSetSha256,
-  );
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Retired-SHA256", result.retiredOverrideSha256);
+  context.header("X-Napier-Blueprint-Recommendation-Policy-Template", result.retiredRecommendationPolicyTemplate);
+  context.header("X-Napier-Blueprint-Recommendation-Policy-SHA256", result.retiredRecommendationPolicySha256);
+  context.header("X-Napier-Blueprint-Portfolio-Set-SHA256", result.portfolioSetSha256);
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Set-SHA256", result.overrideSetSha256);
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Drift-Review-Set-SHA256", result.driftReviewSetSha256);
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Remaining-Set-SHA256", result.remainingOverrideSetSha256);
 }
 
 function setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryHeaders(
@@ -10232,27 +6741,11 @@ function setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryH
 ): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, history.contentSha256);
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Retirement-Count",
-    String(history.retirementCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Retirement-Set-SHA256",
-    history.retirementSetSha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Current-Set-SHA256",
-    history.currentOverrideSetSha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Portfolio-Set-SHA256",
-    history.portfolioSetSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Blueprint-Family-Policy-Override-Latest-Retired-At",
-    history.latestRetiredAt,
-  );
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Retirement-Count", String(history.retirementCount));
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Retirement-Set-SHA256", history.retirementSetSha256);
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Current-Set-SHA256", history.currentOverrideSetSha256);
+  context.header("X-Napier-Blueprint-Portfolio-Set-SHA256", history.portfolioSetSha256);
+  setOptionalHeader(context, "X-Napier-Blueprint-Family-Policy-Override-Latest-Retired-At", history.latestRetiredAt);
 }
 
 function setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerificationHeaders(
@@ -10262,79 +6755,22 @@ function setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryV
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, verification.contentSha256);
   context.header("X-Napier-Verification-Status", verification.status);
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(verification.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(verification.diagnostics),
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Declared-Content-SHA256",
-    verification.declaredContentSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Recomputed-Content-SHA256",
-    verification.recomputedContentSha256,
-  );
-  context.header(
-    "X-Napier-Observed-Content-SHA256",
-    verification.observedContentSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Declared-Blueprint-Portfolio-Set-SHA256",
-    verification.declaredPortfolioSetSha256,
-  );
-  context.header(
-    "X-Napier-Observed-Blueprint-Portfolio-Set-SHA256",
-    verification.observedPortfolioSetSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Declared-Blueprint-Family-Policy-Override-Current-Set-SHA256",
-    verification.declaredCurrentOverrideSetSha256,
-  );
-  context.header(
-    "X-Napier-Observed-Blueprint-Family-Policy-Override-Current-Set-SHA256",
-    verification.observedCurrentOverrideSetSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Declared-Blueprint-Family-Policy-Override-Retirement-Set-SHA256",
-    verification.declaredRetirementSetSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Recomputed-Blueprint-Family-Policy-Override-Retirement-Set-SHA256",
-    verification.recomputedRetirementSetSha256,
-  );
-  context.header(
-    "X-Napier-Observed-Blueprint-Family-Policy-Override-Retirement-Set-SHA256",
-    verification.observedRetirementSetSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Blueprint-Family-Policy-Override-Retirement-Count",
-    verification.retirementCount?.toString(),
-  );
-  context.header(
-    "X-Napier-Observed-Blueprint-Family-Policy-Override-Retirement-Count",
-    String(verification.observedRetirementCount),
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Blueprint-Family-Policy-Override-Latest-Retired-At",
-    verification.latestRetiredAt,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Observed-Blueprint-Family-Policy-Override-Latest-Retired-At",
-    verification.observedLatestRetiredAt,
-  );
+  context.header("X-Napier-Diagnostic-Count", String(verification.diagnostics.length));
+  context.header("X-Napier-Diagnostics-SHA256", sha256Json(verification.diagnostics));
+  setOptionalHeader(context, "X-Napier-Declared-Content-SHA256", verification.declaredContentSha256);
+  setOptionalHeader(context, "X-Napier-Recomputed-Content-SHA256", verification.recomputedContentSha256);
+  context.header("X-Napier-Observed-Content-SHA256", verification.observedContentSha256);
+  setOptionalHeader(context, "X-Napier-Declared-Blueprint-Portfolio-Set-SHA256", verification.declaredPortfolioSetSha256);
+  context.header("X-Napier-Observed-Blueprint-Portfolio-Set-SHA256", verification.observedPortfolioSetSha256);
+  setOptionalHeader(context, "X-Napier-Declared-Blueprint-Family-Policy-Override-Current-Set-SHA256", verification.declaredCurrentOverrideSetSha256);
+  context.header("X-Napier-Observed-Blueprint-Family-Policy-Override-Current-Set-SHA256", verification.observedCurrentOverrideSetSha256);
+  setOptionalHeader(context, "X-Napier-Declared-Blueprint-Family-Policy-Override-Retirement-Set-SHA256", verification.declaredRetirementSetSha256);
+  setOptionalHeader(context, "X-Napier-Recomputed-Blueprint-Family-Policy-Override-Retirement-Set-SHA256", verification.recomputedRetirementSetSha256);
+  context.header("X-Napier-Observed-Blueprint-Family-Policy-Override-Retirement-Set-SHA256", verification.observedRetirementSetSha256);
+  setOptionalHeader(context, "X-Napier-Blueprint-Family-Policy-Override-Retirement-Count", verification.retirementCount?.toString());
+  context.header("X-Napier-Observed-Blueprint-Family-Policy-Override-Retirement-Count", String(verification.observedRetirementCount));
+  setOptionalHeader(context, "X-Napier-Blueprint-Family-Policy-Override-Latest-Retired-At", verification.latestRetiredAt);
+  setOptionalHeader(context, "X-Napier-Observed-Blueprint-Family-Policy-Override-Latest-Retired-At", verification.observedLatestRetiredAt);
 }
 
 function setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleHeaders(
@@ -10344,175 +6780,68 @@ function setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryP
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, proofBundle.contentSha256);
   context.header("X-Napier-Verification-Status", proofBundle.status);
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(proofBundle.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(proofBundle.diagnostics),
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Retirement-History-Count",
-    String(proofBundle.historyCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Retirement-History-Valid-Count",
-    String(proofBundle.validHistoryCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Retirement-History-Invalid-Count",
-    String(proofBundle.invalidHistoryCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Retirement-History-Distinct-Count",
-    String(proofBundle.distinctHistoryCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Portfolio-Set-Distinct-Count",
-    String(proofBundle.distinctPortfolioSetCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Current-Set-Distinct-Count",
-    String(proofBundle.distinctCurrentOverrideSetCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Retirement-Set-Distinct-Count",
-    String(proofBundle.distinctRetirementSetCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Retirement-History-Set-SHA256",
-    proofBundle.historySetSha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Portfolio-Set-Bundle-SHA256",
-    proofBundle.portfolioSetBundleSha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Current-Set-Bundle-SHA256",
-    proofBundle.currentOverrideSetBundleSha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Retirement-Set-Bundle-SHA256",
-    proofBundle.retirementSetBundleSha256,
-  );
+  context.header("X-Napier-Diagnostic-Count", String(proofBundle.diagnostics.length));
+  context.header("X-Napier-Diagnostics-SHA256", sha256Json(proofBundle.diagnostics));
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Retirement-History-Count", String(proofBundle.historyCount));
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Retirement-History-Valid-Count", String(proofBundle.validHistoryCount));
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Retirement-History-Invalid-Count", String(proofBundle.invalidHistoryCount));
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Retirement-History-Distinct-Count", String(proofBundle.distinctHistoryCount));
+  context.header("X-Napier-Blueprint-Portfolio-Set-Distinct-Count", String(proofBundle.distinctPortfolioSetCount));
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Current-Set-Distinct-Count", String(proofBundle.distinctCurrentOverrideSetCount));
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Retirement-Set-Distinct-Count", String(proofBundle.distinctRetirementSetCount));
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Retirement-History-Set-SHA256", proofBundle.historySetSha256);
+  context.header("X-Napier-Blueprint-Portfolio-Set-Bundle-SHA256", proofBundle.portfolioSetBundleSha256);
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Current-Set-Bundle-SHA256", proofBundle.currentOverrideSetBundleSha256);
+  context.header("X-Napier-Blueprint-Family-Policy-Override-Retirement-Set-Bundle-SHA256", proofBundle.retirementSetBundleSha256);
 }
 
-function setExtensionListHeaders(
-  context: Context,
-  extensions: readonly ExtensionRecord[],
-  agentId: string | undefined,
-): void {
+function setExtensionListHeaders(context: Context, extensions: readonly ExtensionRecord[], agentId: string | undefined): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, extensions);
   if (agentId) {
     context.header("X-Napier-Agent-Id", agentId);
   }
   context.header("X-Napier-Extension-Count", String(extensions.length));
-  for (const status of [
-    "pending",
-    "approved",
-    "rejected",
-  ] satisfies ExtensionRecord["trustStatus"][]) {
+  for (const status of ["pending", "approved", "rejected"] satisfies ExtensionRecord["trustStatus"][]) {
     context.header(
       `X-Napier-Extension-Trust-${status.replaceAll("_", "-")}-Count`,
-      String(
-        extensions.filter((extension) => extension.trustStatus === status)
-          .length,
-      ),
+      String(extensions.filter((extension) => extension.trustStatus === status).length),
     );
   }
-  context.header(
-    "X-Napier-Extension-Enabled-Agent-Count",
-    String(
-      extensions.reduce(
-        (total, extension) => total + extension.enabledAgentIds.length,
-        0,
-      ),
-    ),
-  );
-  context.header(
-    "X-Napier-Extension-Tool-Count",
-    String(
-      extensions.reduce(
-        (total, extension) => total + extension.tools.length,
-        0,
-      ),
-    ),
-  );
+  context.header("X-Napier-Extension-Enabled-Agent-Count", String(extensions.reduce((total, extension) => total + extension.enabledAgentIds.length, 0)));
+  context.header("X-Napier-Extension-Tool-Count", String(extensions.reduce((total, extension) => total + extension.tools.length, 0)));
 }
 
-function setExtensionRecordHeaders(
-  context: Context,
-  extension: ExtensionRecord,
-): void {
+function setExtensionRecordHeaders(context: Context, extension: ExtensionRecord): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, extension);
   context.header("X-Napier-Extension-Id", extension.id);
   context.header("X-Napier-Extension-Kind", extension.kind);
   context.header("X-Napier-Extension-Trust-Status", extension.trustStatus);
-  context.header(
-    "X-Napier-Extension-Connection-Status",
-    extension.connection.status,
-  );
+  context.header("X-Napier-Extension-Connection-Status", extension.connection.status);
   context.header("X-Napier-Extension-Revision", String(extension.revision));
-  context.header(
-    "X-Napier-Extension-Requested-Capability-Count",
-    String(extension.requestedCapabilities.length),
-  );
-  context.header(
-    "X-Napier-Extension-Approved-Capability-Count",
-    String(extension.approvedCapabilities.length),
-  );
-  context.header(
-    "X-Napier-Extension-Enabled-Agent-Count",
-    String(extension.enabledAgentIds.length),
-  );
-  context.header(
-    "X-Napier-Extension-Tool-Count",
-    String(extension.tools.length),
-  );
-  context.header(
-    "X-Napier-Extension-Reviewed-Tool-Count",
-    String(
-      extension.tools.filter((tool) => tool.reviewStatus !== "pending").length,
-    ),
-  );
+  context.header("X-Napier-Extension-Requested-Capability-Count", String(extension.requestedCapabilities.length));
+  context.header("X-Napier-Extension-Approved-Capability-Count", String(extension.approvedCapabilities.length));
+  context.header("X-Napier-Extension-Enabled-Agent-Count", String(extension.enabledAgentIds.length));
+  context.header("X-Napier-Extension-Tool-Count", String(extension.tools.length));
+  context.header("X-Napier-Extension-Reviewed-Tool-Count", String(extension.tools.filter((tool) => tool.reviewStatus !== "pending").length));
   if (extension.packageBinding) {
-    context.header(
-      "X-Napier-Extension-Package-Binding-SHA256",
-      extension.packageBinding.contentSha256,
-    );
+    context.header("X-Napier-Extension-Package-Binding-SHA256", extension.packageBinding.contentSha256);
   }
 }
 
-function setWorkspaceProcessProjectionHeaders(
-  context: Context,
-  projection: unknown,
-): void {
+function setWorkspaceProcessProjectionHeaders(context: Context, projection: unknown): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, projection);
 }
 
-function setEvaluationSuiteListHeaders(
-  context: Context,
-  threadId: string,
-  suites: readonly EvaluationSuite[],
-): void {
+function setEvaluationSuiteListHeaders(context: Context, threadId: string, suites: readonly EvaluationSuite[]): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, suites);
   context.header("X-Napier-Thread-Id", threadId);
   context.header("X-Napier-Evaluation-Suite-Count", String(suites.length));
-  context.header(
-    "X-Napier-Evaluation-Suite-Revision-Count",
-    String(suites.reduce((total, suite) => total + suite.revision, 0)),
-  );
-  context.header(
-    "X-Napier-Evaluation-Suite-Candidate-Count",
-    String(
-      suites.reduce((total, suite) => total + suite.candidateRunIds.length, 0),
-    ),
-  );
+  context.header("X-Napier-Evaluation-Suite-Revision-Count", String(suites.reduce((total, suite) => total + suite.revision, 0)));
+  context.header("X-Napier-Evaluation-Suite-Candidate-Count", String(suites.reduce((total, suite) => total + suite.candidateRunIds.length, 0)));
 }
 
 function setEvaluationSuiteExecutionListHeaders(
@@ -10527,169 +6856,66 @@ function setEvaluationSuiteExecutionListHeaders(
   if (suiteId) {
     context.header("X-Napier-Evaluation-Suite-Id", suiteId);
   }
-  context.header(
-    "X-Napier-Evaluation-Suite-Execution-Count",
-    String(executions.length),
-  );
-  context.header(
-    "X-Napier-Evaluation-Suite-Case-Count",
-    String(
-      executions.reduce(
-        (total, execution) => total + execution.results.length,
-        0,
-      ),
-    ),
-  );
-  context.header(
-    "X-Napier-Evaluation-Suite-Passed-Count",
-    String(
-      executions.reduce((total, execution) => total + execution.passedCount, 0),
-    ),
-  );
-  context.header(
-    "X-Napier-Evaluation-Suite-Failed-Count",
-    String(
-      executions.reduce((total, execution) => total + execution.failedCount, 0),
-    ),
-  );
-  context.header(
-    "X-Napier-Evaluation-Suite-Inconclusive-Count",
-    String(
-      executions.reduce(
-        (total, execution) => total + execution.inconclusiveCount,
-        0,
-      ),
-    ),
-  );
+  context.header("X-Napier-Evaluation-Suite-Execution-Count", String(executions.length));
+  context.header("X-Napier-Evaluation-Suite-Case-Count", String(executions.reduce((total, execution) => total + execution.results.length, 0)));
+  context.header("X-Napier-Evaluation-Suite-Passed-Count", String(executions.reduce((total, execution) => total + execution.passedCount, 0)));
+  context.header("X-Napier-Evaluation-Suite-Failed-Count", String(executions.reduce((total, execution) => total + execution.failedCount, 0)));
+  context.header("X-Napier-Evaluation-Suite-Inconclusive-Count", String(executions.reduce((total, execution) => total + execution.inconclusiveCount, 0)));
 }
 
-function setEvaluationSuiteGateReceiptHeaders(
-  context: Context,
-  receipt: EvaluationSuiteGateReceipt,
-): void {
+function setEvaluationSuiteGateReceiptHeaders(context: Context, receipt: EvaluationSuiteGateReceipt): void {
   context.header("Cache-Control", "no-store");
-  context.header(
-    "Content-Disposition",
-    `attachment; filename="${evaluationSuiteGateReceiptFilename(receipt)}"`,
-  );
+  context.header("Content-Disposition", `attachment; filename="${evaluationSuiteGateReceiptFilename(receipt)}"`);
   setStableContentSha256Header(context, receipt.contentSha256);
   context.header("X-Napier-Thread-Id", receipt.suite.threadId);
   context.header("X-Napier-Evaluation-Suite-Id", receipt.suite.id);
-  context.header(
-    "X-Napier-Evaluation-Suite-Revision",
-    String(receipt.suite.revision),
-  );
+  context.header("X-Napier-Evaluation-Suite-Revision", String(receipt.suite.revision));
   context.header("X-Napier-Evaluation-Gate-State", receipt.state);
-  context.header(
-    "X-Napier-Evaluation-Count",
-    String(receipt.evaluations.length),
-  );
+  context.header("X-Napier-Evaluation-Count", String(receipt.evaluations.length));
   if (receipt.execution) {
-    context.header(
-      "X-Napier-Evaluation-Suite-Execution-Id",
-      receipt.execution.id,
-    );
-    context.header(
-      "X-Napier-Evaluation-Suite-Execution-Status",
-      receipt.execution.status,
-    );
-    context.header(
-      "X-Napier-Evaluation-Suite-Execution-SHA256",
-      receipt.execution.contentSha256,
-    );
+    context.header("X-Napier-Evaluation-Suite-Execution-Id", receipt.execution.id);
+    context.header("X-Napier-Evaluation-Suite-Execution-Status", receipt.execution.status);
+    context.header("X-Napier-Evaluation-Suite-Execution-SHA256", receipt.execution.contentSha256);
   }
 }
 
-function evaluationSuiteGateReceiptFilename(
-  receipt: EvaluationSuiteGateReceipt,
-): string {
+function evaluationSuiteGateReceiptFilename(receipt: EvaluationSuiteGateReceipt): string {
   const safeSuiteId = safeFilenameSegment(receipt.suite.id, "suite");
   return `napier-gate-${safeSuiteId}-r${receipt.suite.revision}-${receipt.contentSha256.slice(0, 12)}.json`;
 }
 
-function setEvaluationCasebookListHeaders(
-  context: Context,
-  casebooks: readonly EvaluationCasebook[],
-): void {
+function setEvaluationCasebookListHeaders(context: Context, casebooks: readonly EvaluationCasebook[]): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, casebooks);
   context.header("X-Napier-Casebook-Count", String(casebooks.length));
-  context.header(
-    "X-Napier-Casebook-Revision-Count",
-    String(
-      casebooks.reduce(
-        (total, casebook) => total + casebook.revisions.length,
-        0,
-      ),
-    ),
-  );
-  context.header(
-    "X-Napier-Case-Count",
-    String(
-      casebooks.reduce((total, casebook) => total + casebook.cases.length, 0),
-    ),
-  );
+  context.header("X-Napier-Casebook-Revision-Count", String(casebooks.reduce((total, casebook) => total + casebook.revisions.length, 0)));
+  context.header("X-Napier-Case-Count", String(casebooks.reduce((total, casebook) => total + casebook.cases.length, 0)));
 }
 
-function setEvaluationCasebookCalibrationHeaders(
-  context: Context,
-  report: EvaluationCasebookCalibrationReport,
-): void {
+function setEvaluationCasebookCalibrationHeaders(context: Context, report: EvaluationCasebookCalibrationReport): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, report.contentSha256);
   context.header("X-Napier-Casebook-Id", report.casebookId);
   context.header("X-Napier-Casebook-Revision", String(report.casebookRevision));
-  context.header(
-    "X-Napier-Calibration-Sample-Count",
-    String(report.sampleCount),
-  );
-  context.header(
-    "X-Napier-Calibration-Agreement-Count",
-    String(report.agreementCount),
-  );
-  context.header(
-    "X-Napier-Calibration-Agreement-Rate",
-    String(report.agreementRate),
-  );
-  context.header(
-    "X-Napier-Calibration-Group-Count",
-    String(report.groups.length),
-  );
+  context.header("X-Napier-Calibration-Sample-Count", String(report.sampleCount));
+  context.header("X-Napier-Calibration-Agreement-Count", String(report.agreementCount));
+  context.header("X-Napier-Calibration-Agreement-Rate", String(report.agreementRate));
+  context.header("X-Napier-Calibration-Group-Count", String(report.groups.length));
 }
 
-function setEvaluationCasebookArtifactHeaders(
-  context: Context,
-  artifact: EvaluationCasebookArtifact,
-): void {
+function setEvaluationCasebookArtifactHeaders(context: Context, artifact: EvaluationCasebookArtifact): void {
   context.header("Cache-Control", "no-store");
-  context.header(
-    "Content-Disposition",
-    `attachment; filename="${evaluationCasebookArtifactFilename(artifact)}"`,
-  );
+  context.header("Content-Disposition", `attachment; filename="${evaluationCasebookArtifactFilename(artifact)}"`);
   setStableContentSha256Header(context, artifact.contentSha256);
   context.header("X-Napier-Casebook-Id", artifact.casebook.id);
-  context.header(
-    "X-Napier-Casebook-Revision",
-    String(artifact.casebook.currentRevision),
-  );
+  context.header("X-Napier-Casebook-Revision", String(artifact.casebook.currentRevision));
   context.header("X-Napier-Case-Count", String(artifact.casebook.cases.length));
-  context.header(
-    "X-Napier-Casebook-Revision-Count",
-    String(artifact.casebook.revisions.length),
-  );
-  context.header(
-    "X-Napier-Calibration-Sample-Count",
-    String(artifact.calibration.sampleCount),
-  );
-  context.header(
-    "X-Napier-Calibration-Agreement-Rate",
-    String(artifact.calibration.agreementRate),
-  );
+  context.header("X-Napier-Casebook-Revision-Count", String(artifact.casebook.revisions.length));
+  context.header("X-Napier-Calibration-Sample-Count", String(artifact.calibration.sampleCount));
+  context.header("X-Napier-Calibration-Agreement-Rate", String(artifact.calibration.agreementRate));
 }
 
-function evaluationCasebookArtifactFilename(
-  artifact: EvaluationCasebookArtifact,
-): string {
+function evaluationCasebookArtifactFilename(artifact: EvaluationCasebookArtifact): string {
   const safeCasebookId = safeFilenameSegment(artifact.casebook.id, "casebook");
   return `napier-casebook-${safeCasebookId}-r${artifact.casebook.currentRevision}-${artifact.contentSha256.slice(0, 12)}.json`;
 }
@@ -10702,330 +6928,124 @@ function setEvaluationCasebookQualificationListHeaders(
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, qualifications);
   context.header("X-Napier-Casebook-Id", casebookId);
-  context.header(
-    "X-Napier-Qualification-Execution-Count",
-    String(qualifications.length),
-  );
-  context.header(
-    "X-Napier-Qualification-Sample-Count",
-    String(
-      qualifications.reduce(
-        (total, qualification) => total + qualification.sampleCount,
-        0,
-      ),
-    ),
-  );
-  context.header(
-    "X-Napier-Qualification-Agreement-Count",
-    String(
-      qualifications.reduce(
-        (total, qualification) => total + qualification.agreementCount,
-        0,
-      ),
-    ),
-  );
+  context.header("X-Napier-Qualification-Execution-Count", String(qualifications.length));
+  context.header("X-Napier-Qualification-Sample-Count", String(qualifications.reduce((total, qualification) => total + qualification.sampleCount, 0)));
+  context.header("X-Napier-Qualification-Agreement-Count", String(qualifications.reduce((total, qualification) => total + qualification.agreementCount, 0)));
   context.header(
     "X-Napier-Qualification-Inconclusive-Count",
-    String(
-      qualifications.reduce(
-        (total, qualification) => total + qualification.inconclusiveCount,
-        0,
-      ),
-    ),
+    String(qualifications.reduce((total, qualification) => total + qualification.inconclusiveCount, 0)),
   );
-  context.header(
-    "X-Napier-Qualification-Unverified-Count",
-    String(
-      qualifications.reduce(
-        (total, qualification) => total + qualification.unverifiedCount,
-        0,
-      ),
-    ),
-  );
+  context.header("X-Napier-Qualification-Unverified-Count", String(qualifications.reduce((total, qualification) => total + qualification.unverifiedCount, 0)));
 }
 
-function setEvaluationCasebookQualificationReceiptHeaders(
-  context: Context,
-  receipt: EvaluationCasebookQualificationReceipt,
-): void {
+function setEvaluationCasebookQualificationReceiptHeaders(context: Context, receipt: EvaluationCasebookQualificationReceipt): void {
   context.header("Cache-Control", "no-store");
-  context.header(
-    "Content-Disposition",
-    `attachment; filename="${evaluationCasebookQualificationReceiptFilename(receipt)}"`,
-  );
+  context.header("Content-Disposition", `attachment; filename="${evaluationCasebookQualificationReceiptFilename(receipt)}"`);
   setStableContentSha256Header(context, receipt.contentSha256);
   context.header("X-Napier-Casebook-Id", receipt.casebook.id);
-  context.header(
-    "X-Napier-Casebook-Revision",
-    String(receipt.casebook.currentRevision),
-  );
+  context.header("X-Napier-Casebook-Revision", String(receipt.casebook.currentRevision));
   context.header("X-Napier-Qualification-State", receipt.state);
   context.header("X-Napier-Case-Count", String(receipt.casebook.cases.length));
-  context.header(
-    "X-Napier-Casebook-Revision-Count",
-    String(receipt.casebook.revisions.length),
-  );
+  context.header("X-Napier-Casebook-Revision-Count", String(receipt.casebook.revisions.length));
   if (receipt.execution) {
     context.header("X-Napier-Qualification-Execution-Id", receipt.execution.id);
-    context.header(
-      "X-Napier-Qualification-Execution-Status",
-      receipt.execution.status,
-    );
-    context.header(
-      "X-Napier-Qualification-Execution-SHA256",
-      receipt.execution.contentSha256,
-    );
+    context.header("X-Napier-Qualification-Execution-Status", receipt.execution.status);
+    context.header("X-Napier-Qualification-Execution-SHA256", receipt.execution.contentSha256);
     context.header("X-Napier-Audit-Thread-Id", receipt.execution.auditThreadId);
-    context.header(
-      "X-Napier-Qualification-Sample-Count",
-      String(receipt.execution.sampleCount),
-    );
-    context.header(
-      "X-Napier-Qualification-Agreement-Count",
-      String(receipt.execution.agreementCount),
-    );
-    context.header(
-      "X-Napier-Qualification-Inconclusive-Count",
-      String(receipt.execution.inconclusiveCount),
-    );
-    context.header(
-      "X-Napier-Qualification-Unverified-Count",
-      String(receipt.execution.unverifiedCount),
-    );
+    context.header("X-Napier-Qualification-Sample-Count", String(receipt.execution.sampleCount));
+    context.header("X-Napier-Qualification-Agreement-Count", String(receipt.execution.agreementCount));
+    context.header("X-Napier-Qualification-Inconclusive-Count", String(receipt.execution.inconclusiveCount));
+    context.header("X-Napier-Qualification-Unverified-Count", String(receipt.execution.unverifiedCount));
   }
 }
 
-function evaluationCasebookQualificationReceiptFilename(
-  receipt: EvaluationCasebookQualificationReceipt,
-): string {
+function evaluationCasebookQualificationReceiptFilename(receipt: EvaluationCasebookQualificationReceipt): string {
   const safeCasebookId = safeFilenameSegment(receipt.casebook.id, "casebook");
   return `napier-casebook-qualification-${safeCasebookId}-r${receipt.casebook.currentRevision}-${receipt.contentSha256.slice(0, 12)}.json`;
 }
 
-function setEvaluationQualificationBaselineListHeaders(
-  context: Context,
-  casebookId: string,
-  baselines: readonly EvaluationQualificationBaseline[],
-): void {
+function setEvaluationQualificationBaselineListHeaders(context: Context, casebookId: string, baselines: readonly EvaluationQualificationBaseline[]): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, baselines);
   context.header("X-Napier-Casebook-Id", casebookId);
-  context.header(
-    "X-Napier-Qualification-Baseline-Count",
-    String(baselines.length),
-  );
+  context.header("X-Napier-Qualification-Baseline-Count", String(baselines.length));
   const current = baselines.at(-1);
   if (current) {
     context.header("X-Napier-Qualification-Baseline-Id", current.id);
-    context.header(
-      "X-Napier-Qualification-Baseline-SHA256",
-      current.contentSha256,
-    );
-    context.header(
-      "X-Napier-Qualification-Execution-Id",
-      current.qualificationExecutionId,
-    );
-    context.header(
-      "X-Napier-Qualification-Execution-SHA256",
-      current.qualificationExecutionSha256,
-    );
+    context.header("X-Napier-Qualification-Baseline-SHA256", current.contentSha256);
+    context.header("X-Napier-Qualification-Execution-Id", current.qualificationExecutionId);
+    context.header("X-Napier-Qualification-Execution-SHA256", current.qualificationExecutionSha256);
   }
 }
 
-function setPromoteEvaluationQualificationBaselineResultHeaders(
-  context: Context,
-  result: PromoteEvaluationQualificationBaselineResult,
-): void {
+function setPromoteEvaluationQualificationBaselineResultHeaders(context: Context, result: PromoteEvaluationQualificationBaselineResult): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, result);
   context.header("X-Napier-Casebook-Id", result.baseline.casebookId);
-  context.header(
-    "X-Napier-Casebook-Revision",
-    String(result.baseline.casebookRevision),
-  );
-  context.header(
-    "X-Napier-Qualification-Baseline-Created",
-    String(result.created),
-  );
+  context.header("X-Napier-Casebook-Revision", String(result.baseline.casebookRevision));
+  context.header("X-Napier-Qualification-Baseline-Created", String(result.created));
   context.header("X-Napier-Qualification-Baseline-Id", result.baseline.id);
-  context.header(
-    "X-Napier-Qualification-Baseline-SHA256",
-    result.baseline.contentSha256,
-  );
-  context.header(
-    "X-Napier-Qualification-Execution-Id",
-    result.baseline.qualificationExecutionId,
-  );
-  context.header(
-    "X-Napier-Qualification-Execution-SHA256",
-    result.baseline.qualificationExecutionSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-SHA256",
-    result.baseline.envelope.receipt.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Artifact-SHA256",
-    result.baseline.envelope.signature.receiptArtifactSha256,
-  );
-  context.header(
-    "X-Napier-Envelope-SHA256",
-    result.baseline.envelope.contentSha256,
-  );
-  context.header(
-    "X-Napier-Signature-Key-Id",
-    result.baseline.envelope.signature.keyId,
-  );
+  context.header("X-Napier-Qualification-Baseline-SHA256", result.baseline.contentSha256);
+  context.header("X-Napier-Qualification-Execution-Id", result.baseline.qualificationExecutionId);
+  context.header("X-Napier-Qualification-Execution-SHA256", result.baseline.qualificationExecutionSha256);
+  context.header("X-Napier-Receipt-SHA256", result.baseline.envelope.receipt.contentSha256);
+  context.header("X-Napier-Receipt-Artifact-SHA256", result.baseline.envelope.signature.receiptArtifactSha256);
+  context.header("X-Napier-Envelope-SHA256", result.baseline.envelope.contentSha256);
+  context.header("X-Napier-Signature-Key-Id", result.baseline.envelope.signature.keyId);
 }
 
-function setReceiptTrustAnchorListHeaders(
-  context: Context,
-  anchors: readonly ReceiptTrustAnchor[],
-): void {
+function setReceiptTrustAnchorListHeaders(context: Context, anchors: readonly ReceiptTrustAnchor[]): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, anchors);
   context.header("X-Napier-Receipt-Trust-Anchor-Count", String(anchors.length));
-  context.header(
-    "X-Napier-Receipt-Trust-Trusted-Count",
-    String(anchors.filter((anchor) => anchor.status === "trusted").length),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Revoked-Count",
-    String(anchors.filter((anchor) => anchor.status === "revoked").length),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Signing-Capable-Count",
-    String(anchors.filter((anchor) => Boolean(anchor.signingSource)).length),
-  );
+  context.header("X-Napier-Receipt-Trust-Trusted-Count", String(anchors.filter((anchor) => anchor.status === "trusted").length));
+  context.header("X-Napier-Receipt-Trust-Revoked-Count", String(anchors.filter((anchor) => anchor.status === "revoked").length));
+  context.header("X-Napier-Receipt-Trust-Signing-Capable-Count", String(anchors.filter((anchor) => Boolean(anchor.signingSource)).length));
 }
 
-function setReceiptTrustAnchorDirectoryHeaders(
-  context: Context,
-  directory: ReceiptTrustAnchorDirectory,
-): void {
+function setReceiptTrustAnchorDirectoryHeaders(context: Context, directory: ReceiptTrustAnchorDirectory): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, directory.contentSha256);
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-SHA256",
-    directory.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256",
-    directory.anchorSetSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Count",
-    String(directory.anchorCount),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Trusted-Count",
-    String(directory.trustedCount),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Revoked-Count",
-    String(directory.revokedCount),
-  );
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-SHA256", directory.contentSha256);
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256", directory.anchorSetSha256);
+  context.header("X-Napier-Receipt-Trust-Anchor-Count", String(directory.anchorCount));
+  context.header("X-Napier-Receipt-Trust-Trusted-Count", String(directory.trustedCount));
+  context.header("X-Napier-Receipt-Trust-Revoked-Count", String(directory.revokedCount));
 }
 
-function setReceiptTrustAnchorDirectoryQuorumHeaders(
-  context: Context,
-  quorum: ReceiptTrustAnchorDirectoryQuorum,
-): void {
+function setReceiptTrustAnchorDirectoryQuorumHeaders(context: Context, quorum: ReceiptTrustAnchorDirectoryQuorum): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, quorum.contentSha256);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-SHA256",
-    quorum.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Status",
-    quorum.status,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Policy-SHA256",
-    quorum.policySha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Source-Count",
-    String(quorum.sourceCount),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Candidate-Count",
-    String(quorum.candidateCount),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Agreement-Count",
-    String(quorum.agreementCount),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Agreement-Weight",
-    String(quorum.agreementWeight),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Distinct-Origin-Count",
-    String(quorum.agreementDistinctSourceOriginCount),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Metadata-Publisher-Count",
-    String(quorum.agreementMetadataPublisherCount),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Metadata-Publisher-Set-SHA256",
-    quorum.agreementMetadataPublisherSetSha256,
-  );
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(quorum.diagnostics.length),
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-SHA256", quorum.contentSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Status", quorum.status);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Policy-SHA256", quorum.policySha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Source-Count", String(quorum.sourceCount));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Candidate-Count", String(quorum.candidateCount));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Agreement-Count", String(quorum.agreementCount));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Agreement-Weight", String(quorum.agreementWeight));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Distinct-Origin-Count", String(quorum.agreementDistinctSourceOriginCount));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Metadata-Publisher-Count", String(quorum.agreementMetadataPublisherCount));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Metadata-Publisher-Set-SHA256", quorum.agreementMetadataPublisherSetSha256);
+  context.header("X-Napier-Diagnostic-Count", String(quorum.diagnostics.length));
   context.header("X-Napier-Diagnostics-SHA256", sha256Json(quorum.diagnostics));
   if (quorum.selectedAnchorSetSha256) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256",
-      quorum.selectedAnchorSetSha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256", quorum.selectedAnchorSetSha256);
   }
   if (quorum.selectedDirectorySha256) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-SHA256",
-      quorum.selectedDirectorySha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-SHA256", quorum.selectedDirectorySha256);
   }
 }
 
-function setReceiptTrustAnchorDirectoryQuorumPromotionHeaders(
-  context: Context,
-  promotion: ReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
-): void {
+function setReceiptTrustAnchorDirectoryQuorumPromotionHeaders(context: Context, promotion: ReceiptTrustAnchorDirectoryQuorumPromotionReceipt): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, promotion.contentSha256);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-SHA256",
-    promotion.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-SHA256",
-    promotion.quorum.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256",
-    promotion.selectedAnchorSetSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-SHA256",
-    promotion.selectedDirectorySha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Selected-Subscription-Count",
-    String(promotion.selectedSubscriptionCount),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Selected-Metadata-Count",
-    String(promotion.selectedMetadataCount),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Selected-Metadata-Envelope-Set-SHA256",
-    promotion.selectedMetadataEnvelopeSetSha256,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-SHA256", promotion.contentSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-SHA256", promotion.quorum.contentSha256);
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256", promotion.selectedAnchorSetSha256);
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-SHA256", promotion.selectedDirectorySha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Selected-Subscription-Count", String(promotion.selectedSubscriptionCount));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Selected-Metadata-Count", String(promotion.selectedMetadataCount));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Selected-Metadata-Envelope-Set-SHA256", promotion.selectedMetadataEnvelopeSetSha256);
 }
 
 function setReceiptTrustAnchorDirectoryQuorumPromotionBaselineListHeaders(
@@ -11034,24 +7054,12 @@ function setReceiptTrustAnchorDirectoryQuorumPromotionBaselineListHeaders(
 ): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, baselines);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Count",
-    String(baselines.length),
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Count", String(baselines.length));
   const current = baselines.at(-1);
   if (current) {
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Id",
-      current.id,
-    );
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-SHA256",
-      current.contentSha256,
-    );
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-SHA256",
-      current.envelope.receipt.contentSha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Id", current.id);
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-SHA256", current.contentSha256);
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-SHA256", current.envelope.receipt.contentSha256);
     context.header("X-Napier-Envelope-SHA256", current.envelope.contentSha256);
   }
 }
@@ -11062,50 +7070,17 @@ function setPromoteReceiptTrustAnchorDirectoryQuorumPromotionBaselineResultHeade
 ): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, result);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Created",
-    String(result.created),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Id",
-    result.baseline.id,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-SHA256",
-    result.baseline.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-SHA256",
-    result.baseline.envelope.receipt.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Artifact-SHA256",
-    result.baseline.envelope.signature.receiptArtifactSha256,
-  );
-  context.header(
-    "X-Napier-Envelope-SHA256",
-    result.baseline.envelope.contentSha256,
-  );
-  context.header(
-    "X-Napier-Signature-Key-Id",
-    result.baseline.envelope.signature.keyId,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256",
-    result.baseline.selectedAnchorSetSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-SHA256",
-    result.baseline.selectedDirectorySha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Selected-Subscription-Set-SHA256",
-    result.baseline.selectedSubscriptionSetSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Selected-Metadata-Envelope-Set-SHA256",
-    result.baseline.selectedMetadataEnvelopeSetSha256,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Created", String(result.created));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Id", result.baseline.id);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-SHA256", result.baseline.contentSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-SHA256", result.baseline.envelope.receipt.contentSha256);
+  context.header("X-Napier-Receipt-Artifact-SHA256", result.baseline.envelope.signature.receiptArtifactSha256);
+  context.header("X-Napier-Envelope-SHA256", result.baseline.envelope.contentSha256);
+  context.header("X-Napier-Signature-Key-Id", result.baseline.envelope.signature.keyId);
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256", result.baseline.selectedAnchorSetSha256);
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-SHA256", result.baseline.selectedDirectorySha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Selected-Subscription-Set-SHA256", result.baseline.selectedSubscriptionSetSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Selected-Metadata-Envelope-Set-SHA256", result.baseline.selectedMetadataEnvelopeSetSha256);
 }
 
 function setImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResultHeaders(
@@ -11114,54 +7089,21 @@ function setImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResultHeader
 ): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, result);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Imported",
-    String(result.imported),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Expected-Current-SHA256",
-    result.expectedCurrentBaselineSha256,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Imported", String(result.imported));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Expected-Current-SHA256", result.expectedCurrentBaselineSha256);
   if (result.previousBaselineSha256) {
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Previous-SHA256",
-      result.previousBaselineSha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Previous-SHA256", result.previousBaselineSha256);
   }
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Id",
-    result.baseline.id,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-SHA256",
-    result.baseline.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Verification-SHA256",
-    result.verification.contentSha256,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Id", result.baseline.id);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-SHA256", result.baseline.contentSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Verification-SHA256", result.verification.contentSha256);
   if (result.policyReview) {
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Import-Policy-SHA256",
-      result.policyReview.policySha256,
-    );
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Import-Policy-Review-SHA256",
-      result.policyReview.contentSha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Import-Policy-SHA256", result.policyReview.policySha256);
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Import-Policy-Review-SHA256", result.policyReview.contentSha256);
   }
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-SHA256",
-    result.baseline.envelope.receipt.contentSha256,
-  );
-  context.header(
-    "X-Napier-Envelope-SHA256",
-    result.baseline.envelope.contentSha256,
-  );
-  context.header(
-    "X-Napier-Signature-Key-Id",
-    result.baseline.envelope.signature.keyId,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-SHA256", result.baseline.envelope.receipt.contentSha256);
+  context.header("X-Napier-Envelope-SHA256", result.baseline.envelope.contentSha256);
+  context.header("X-Napier-Signature-Key-Id", result.baseline.envelope.signature.keyId);
 }
 
 function setReceiptTrustAnchorDirectoryQuorumActivationDecisionResultHeaders(
@@ -11170,38 +7112,14 @@ function setReceiptTrustAnchorDirectoryQuorumActivationDecisionResultHeaders(
 ): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, result);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision",
-    result.envelope.receipt.decision,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-SHA256",
-    result.envelope.receipt.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Id",
-    result.baseline.id,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-SHA256",
-    result.baseline.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Verification-SHA256",
-    result.verification.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Import-Policy-SHA256",
-    result.policyReview.policySha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Import-Policy-Review-SHA256",
-    result.policyReview.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Source-Alignment-SHA256",
-    result.sourceAlignment.contentSha256,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision", result.envelope.receipt.decision);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-SHA256", result.envelope.receipt.contentSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Id", result.baseline.id);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-SHA256", result.baseline.contentSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Verification-SHA256", result.verification.contentSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Import-Policy-SHA256", result.policyReview.policySha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Import-Policy-Review-SHA256", result.policyReview.contentSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Source-Alignment-SHA256", result.sourceAlignment.contentSha256);
   context.header("X-Napier-Envelope-SHA256", result.envelope.contentSha256);
   context.header("X-Napier-Signature-Key-Id", result.envelope.signature.keyId);
 }
@@ -11212,43 +7130,15 @@ function setReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryHeaders(
 ): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, history.contentSha256);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Count",
-    String(history.decisionCount),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Approved-Count",
-    String(history.approvedCount),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Rejected-Count",
-    String(history.rejectedCount),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Distinct-Baseline-Count",
-    String(history.distinctBaselineCount),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Set-SHA256",
-    history.decisionSetSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Baseline-Set-SHA256",
-    history.baselineSetSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Policy-Review-Set-SHA256",
-    history.policyReviewSetSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Source-Alignment-Set-SHA256",
-    history.sourceAlignmentSetSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Latest-Decision-At",
-    history.latestDecisionAt,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Count", String(history.decisionCount));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Approved-Count", String(history.approvedCount));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Rejected-Count", String(history.rejectedCount));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Distinct-Baseline-Count", String(history.distinctBaselineCount));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Set-SHA256", history.decisionSetSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Baseline-Set-SHA256", history.baselineSetSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Policy-Review-Set-SHA256", history.policyReviewSetSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Source-Alignment-Set-SHA256", history.sourceAlignmentSetSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Latest-Decision-At", history.latestDecisionAt);
 }
 
 function setReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerificationHeaders(
@@ -11258,47 +7148,17 @@ function setReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerificati
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, verification.contentSha256);
   context.header("X-Napier-Verification-Status", verification.status);
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(verification.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(verification.diagnostics),
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Declared-Content-SHA256",
-    verification.declaredContentSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Recomputed-Content-SHA256",
-    verification.recomputedContentSha256,
-  );
-  context.header(
-    "X-Napier-Current-Content-SHA256",
-    verification.currentContentSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Declared-Decision-Set-SHA256",
-    verification.declaredDecisionSetSha256,
-  );
-  context.header(
-    "X-Napier-Current-Decision-Set-SHA256",
-    verification.currentDecisionSetSha256,
-  );
+  context.header("X-Napier-Diagnostic-Count", String(verification.diagnostics.length));
+  context.header("X-Napier-Diagnostics-SHA256", sha256Json(verification.diagnostics));
+  setOptionalHeader(context, "X-Napier-Declared-Content-SHA256", verification.declaredContentSha256);
+  setOptionalHeader(context, "X-Napier-Recomputed-Content-SHA256", verification.recomputedContentSha256);
+  context.header("X-Napier-Current-Content-SHA256", verification.currentContentSha256);
+  setOptionalHeader(context, "X-Napier-Declared-Decision-Set-SHA256", verification.declaredDecisionSetSha256);
+  context.header("X-Napier-Current-Decision-Set-SHA256", verification.currentDecisionSetSha256);
   if (verification.declaredDecisionCount !== undefined) {
-    context.header(
-      "X-Napier-Declared-Decision-Count",
-      String(verification.declaredDecisionCount),
-    );
+    context.header("X-Napier-Declared-Decision-Count", String(verification.declaredDecisionCount));
   }
-  context.header(
-    "X-Napier-Current-Decision-Count",
-    String(verification.currentDecisionCount),
-  );
+  context.header("X-Napier-Current-Decision-Count", String(verification.currentDecisionCount));
 }
 
 function setReceiptTrustAnchorDirectoryQuorumActivationSelectionStateHeaders(
@@ -11307,39 +7167,15 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionStateHeaders(
 ): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, state.contentSha256);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Active",
-    String(state.hasSelection),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Current-SHA256",
-    state.currentSelectionSha256,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Active", String(state.hasSelection));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Current-SHA256", state.currentSelectionSha256);
   if (state.selection) {
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Id",
-      state.selection.id,
-    );
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id",
-      state.selection.activationDecisionRecordId,
-    );
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Id",
-      state.selection.baselineId,
-    );
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-SHA256",
-      state.selection.baselineSha256,
-    );
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256",
-      state.selection.selectedAnchorSetSha256,
-    );
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-SHA256",
-      state.selection.selectedDirectorySha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Id", state.selection.id);
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id", state.selection.activationDecisionRecordId);
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Id", state.selection.baselineId);
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-SHA256", state.selection.baselineSha256);
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256", state.selection.selectedAnchorSetSha256);
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-SHA256", state.selection.selectedDirectorySha256);
   }
 }
 
@@ -11349,70 +7185,22 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAuditHeader
 ): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, audit.contentSha256);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Drift-Status",
-    audit.status,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Drift-Status", audit.status);
   context.header("X-Napier-Diagnostic-Count", String(audit.diagnostics.length));
   context.header("X-Napier-Diagnostics-SHA256", sha256Json(audit.diagnostics));
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Active",
-    String(audit.hasSelection),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-State-SHA256",
-    audit.selectionStateSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Id",
-    audit.selectionId,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Current-SHA256",
-    audit.selectionSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256",
-    audit.selectedAnchorSetSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Anchor-Directory-SHA256",
-    audit.selectedDirectorySha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Status",
-    audit.currentQuorumStatus,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-SHA256",
-    audit.currentQuorumSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Source-Count",
-    String(audit.currentSourceCount),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Agreement-Count",
-    String(audit.currentAgreementCount),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Agreement-Weight",
-    String(audit.currentAgreementWeight),
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Current-Anchor-Set-SHA256",
-    audit.currentAnchorSetSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Current-Directory-SHA256",
-    audit.currentDirectorySha256,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Active", String(audit.hasSelection));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-State-SHA256", audit.selectionStateSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Id", audit.selectionId);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Current-SHA256", audit.selectionSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256", audit.selectedAnchorSetSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Anchor-Directory-SHA256", audit.selectedDirectorySha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Status", audit.currentQuorumStatus);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-SHA256", audit.currentQuorumSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Source-Count", String(audit.currentSourceCount));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Agreement-Count", String(audit.currentAgreementCount));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Agreement-Weight", String(audit.currentAgreementWeight));
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Current-Anchor-Set-SHA256", audit.currentAnchorSetSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Current-Directory-SHA256", audit.currentDirectorySha256);
 }
 
 function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointHeaders(
@@ -11421,65 +7209,20 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyChec
 ): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, checkpoint.contentSha256);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Active",
-    String(checkpoint.hasSelection),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Count",
-    String(checkpoint.selectionCount),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Set-SHA256",
-    checkpoint.selectionSetSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Chain-Tail-SHA256",
-    checkpoint.selectionChainTailSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Current-SHA256",
-    checkpoint.currentSelectionSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Id",
-    checkpoint.currentSelectionId,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Entry-SHA256",
-    checkpoint.currentSelectionEntrySha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Count",
-    String(checkpoint.activationDecisionCount),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Set-SHA256",
-    checkpoint.activationDecisionSetSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Baseline-Set-SHA256",
-    checkpoint.baselineSetSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Policy-Review-Set-SHA256",
-    checkpoint.policyReviewSetSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Source-Alignment-Set-SHA256",
-    checkpoint.sourceAlignmentSetSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Drift-Audit-SHA256",
-    checkpoint.driftAuditSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Drift-Status",
-    checkpoint.driftStatus,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Active", String(checkpoint.hasSelection));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Count", String(checkpoint.selectionCount));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Set-SHA256", checkpoint.selectionSetSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Chain-Tail-SHA256", checkpoint.selectionChainTailSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Current-SHA256", checkpoint.currentSelectionSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Id", checkpoint.currentSelectionId);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Entry-SHA256", checkpoint.currentSelectionEntrySha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Count", String(checkpoint.activationDecisionCount));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Set-SHA256", checkpoint.activationDecisionSetSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Baseline-Set-SHA256", checkpoint.baselineSetSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Policy-Review-Set-SHA256", checkpoint.policyReviewSetSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Source-Alignment-Set-SHA256", checkpoint.sourceAlignmentSetSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Drift-Audit-SHA256", checkpoint.driftAuditSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Drift-Status", checkpoint.driftStatus);
 }
 
 function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerificationHeaders(
@@ -11489,66 +7232,21 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyChec
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, verification.contentSha256);
   context.header("X-Napier-Verification-Status", verification.status);
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(verification.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(verification.diagnostics),
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Declared-Content-SHA256",
-    verification.declaredContentSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Recomputed-Content-SHA256",
-    verification.recomputedContentSha256,
-  );
-  context.header(
-    "X-Napier-Current-Content-SHA256",
-    verification.currentContentSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Declared-Selection-Set-SHA256",
-    verification.declaredSelectionSetSha256,
-  );
-  context.header(
-    "X-Napier-Current-Selection-Set-SHA256",
-    verification.currentSelectionSetSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Declared-Selection-Chain-Tail-SHA256",
-    verification.declaredSelectionChainTailSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Current-Selection-Chain-Tail-SHA256",
-    verification.currentSelectionChainTailSha256,
-  );
+  context.header("X-Napier-Diagnostic-Count", String(verification.diagnostics.length));
+  context.header("X-Napier-Diagnostics-SHA256", sha256Json(verification.diagnostics));
+  setOptionalHeader(context, "X-Napier-Declared-Content-SHA256", verification.declaredContentSha256);
+  setOptionalHeader(context, "X-Napier-Recomputed-Content-SHA256", verification.recomputedContentSha256);
+  context.header("X-Napier-Current-Content-SHA256", verification.currentContentSha256);
+  setOptionalHeader(context, "X-Napier-Declared-Selection-Set-SHA256", verification.declaredSelectionSetSha256);
+  context.header("X-Napier-Current-Selection-Set-SHA256", verification.currentSelectionSetSha256);
+  setOptionalHeader(context, "X-Napier-Declared-Selection-Chain-Tail-SHA256", verification.declaredSelectionChainTailSha256);
+  setOptionalHeader(context, "X-Napier-Current-Selection-Chain-Tail-SHA256", verification.currentSelectionChainTailSha256);
   if (verification.declaredSelectionCount !== undefined) {
-    context.header(
-      "X-Napier-Declared-Selection-Count",
-      String(verification.declaredSelectionCount),
-    );
+    context.header("X-Napier-Declared-Selection-Count", String(verification.declaredSelectionCount));
   }
-  context.header(
-    "X-Napier-Current-Selection-Count",
-    String(verification.currentSelectionCount),
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Declared-Selection-Current-SHA256",
-    verification.declaredCurrentSelectionSha256,
-  );
-  context.header(
-    "X-Napier-Current-Selection-SHA256",
-    verification.currentSelectionSha256,
-  );
+  context.header("X-Napier-Current-Selection-Count", String(verification.currentSelectionCount));
+  setOptionalHeader(context, "X-Napier-Declared-Selection-Current-SHA256", verification.declaredCurrentSelectionSha256);
+  context.header("X-Napier-Current-Selection-SHA256", verification.currentSelectionSha256);
 }
 
 function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryHeaders(
@@ -11558,74 +7256,23 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyChec
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, discovery.contentSha256);
   context.header("X-Napier-Discovery-Status", discovery.status);
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(discovery.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(discovery.diagnostics),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Source-URL-SHA256",
-    discovery.sourceUrlSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Source-Origin-SHA256",
-    discovery.sourceOriginSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Discovery-Policy-SHA256",
-    discovery.policySha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Verification-SHA256",
-    discovery.checkpointVerification.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Verification-Status",
-    discovery.checkpointVerification.status,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Envelope-SHA256",
-    discovery.envelopeSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-SHA256",
-    discovery.checkpointSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Signature-Key-Id",
-    discovery.signerKeyId,
-  );
+  context.header("X-Napier-Diagnostic-Count", String(discovery.diagnostics.length));
+  context.header("X-Napier-Diagnostics-SHA256", sha256Json(discovery.diagnostics));
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Source-URL-SHA256", discovery.sourceUrlSha256);
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Source-Origin-SHA256", discovery.sourceOriginSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Discovery-Policy-SHA256", discovery.policySha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Verification-SHA256", discovery.checkpointVerification.contentSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Verification-Status", discovery.checkpointVerification.status);
+  setOptionalHeader(context, "X-Napier-Envelope-SHA256", discovery.envelopeSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-SHA256", discovery.checkpointSha256);
+  setOptionalHeader(context, "X-Napier-Signature-Key-Id", discovery.signerKeyId);
   if (discovery.selectionCount !== undefined) {
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Count",
-      String(discovery.selectionCount),
-    );
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Count", String(discovery.selectionCount));
   }
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Set-SHA256",
-    discovery.selectionSetSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Chain-Tail-SHA256",
-    discovery.selectionChainTailSha256,
-  );
-  context.header(
-    "X-Napier-Current-Selection-Count",
-    String(discovery.currentSelectionCount),
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Current-Selection-Chain-Tail-SHA256",
-    discovery.currentSelectionChainTailSha256,
-  );
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Set-SHA256", discovery.selectionSetSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Chain-Tail-SHA256", discovery.selectionChainTailSha256);
+  context.header("X-Napier-Current-Selection-Count", String(discovery.currentSelectionCount));
+  setOptionalHeader(context, "X-Napier-Current-Selection-Chain-Tail-SHA256", discovery.currentSelectionChainTailSha256);
 }
 
 function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionListHeaders(
@@ -11634,15 +7281,10 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyChec
 ): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, subscriptions);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-Count",
-    String(subscriptions.length),
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-Count", String(subscriptions.length));
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-Set-SHA256",
-    sha256Json(
-      subscriptions.map((subscription) => subscription.contentSha256).sort(),
-    ),
+    sha256Json(subscriptions.map((subscription) => subscription.contentSha256).sort()),
   );
 }
 
@@ -11652,58 +7294,22 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyChec
 ): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, quorum.contentSha256);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Status",
-    quorum.status,
-  );
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(quorum.diagnostics.length),
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Status", quorum.status);
+  context.header("X-Napier-Diagnostic-Count", String(quorum.diagnostics.length));
   context.header("X-Napier-Diagnostics-SHA256", sha256Json(quorum.diagnostics));
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Policy-SHA256",
-    quorum.policySha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Source-Count",
-    String(quorum.sourceCount),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Eligible-Source-Count",
-    String(quorum.eligibleSourceCount),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Stale-Source-Count",
-    String(quorum.staleSourceCount),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Candidate-Count",
-    String(quorum.candidateCount),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Agreement-Count",
-    String(quorum.agreementCount),
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Policy-SHA256", quorum.policySha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Source-Count", String(quorum.sourceCount));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Eligible-Source-Count", String(quorum.eligibleSourceCount));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Stale-Source-Count", String(quorum.staleSourceCount));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Candidate-Count", String(quorum.candidateCount));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Agreement-Count", String(quorum.agreementCount));
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Agreement-Distinct-Origin-Count",
     String(quorum.agreementDistinctSourceOriginCount),
   );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-SHA256",
-    quorum.selectedCheckpointSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Set-SHA256",
-    quorum.selectedSelectionSetSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Chain-Tail-SHA256",
-    quorum.selectedSelectionChainTailSha256,
-  );
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-SHA256", quorum.selectedCheckpointSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Set-SHA256", quorum.selectedSelectionSetSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Chain-Tail-SHA256", quorum.selectedSelectionChainTailSha256);
 }
 
 function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineListHeaders(
@@ -11712,24 +7318,12 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyChec
 ): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, baselines);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Count",
-    String(baselines.length),
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Count", String(baselines.length));
   const current = baselines.at(-1);
   if (current) {
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Id",
-      current.id,
-    );
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-SHA256",
-      current.contentSha256,
-    );
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-SHA256",
-      current.envelope.receipt.contentSha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Id", current.id);
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-SHA256", current.contentSha256);
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-SHA256", current.envelope.receipt.contentSha256);
     context.header("X-Napier-Envelope-SHA256", current.envelope.contentSha256);
   }
 }
@@ -11740,42 +7334,18 @@ function setPromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTranspare
 ): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, result);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Created",
-    String(result.created),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Id",
-    result.baseline.id,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-SHA256",
-    result.baseline.contentSha256,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Created", String(result.created));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Id", result.baseline.id);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-SHA256", result.baseline.contentSha256);
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-SHA256",
     result.baseline.envelope.receipt.contentSha256,
   );
-  context.header(
-    "X-Napier-Receipt-Artifact-SHA256",
-    result.baseline.envelope.signature.receiptArtifactSha256,
-  );
-  context.header(
-    "X-Napier-Envelope-SHA256",
-    result.baseline.envelope.contentSha256,
-  );
-  context.header(
-    "X-Napier-Signature-Key-Id",
-    result.baseline.envelope.signature.keyId,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-SHA256",
-    result.baseline.selectedCheckpointSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Set-SHA256",
-    result.baseline.selectedSelectionSetSha256,
-  );
+  context.header("X-Napier-Receipt-Artifact-SHA256", result.baseline.envelope.signature.receiptArtifactSha256);
+  context.header("X-Napier-Envelope-SHA256", result.baseline.envelope.contentSha256);
+  context.header("X-Napier-Signature-Key-Id", result.baseline.envelope.signature.keyId);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-SHA256", result.baseline.selectedCheckpointSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Set-SHA256", result.baseline.selectedSelectionSetSha256);
   setOptionalHeader(
     context,
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Chain-Tail-SHA256",
@@ -11789,10 +7359,7 @@ function setPromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTranspare
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Source-Origin-Set-SHA256",
     result.baseline.selectedSourceOriginSetSha256,
   );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Signer-Set-SHA256",
-    result.baseline.selectedSignerSetSha256,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Signer-Set-SHA256", result.baseline.selectedSignerSetSha256);
 }
 
 function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineVerificationHeaders(
@@ -11802,77 +7369,26 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyChec
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, verification.contentSha256);
   context.header("X-Napier-Verification-Status", verification.status);
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(verification.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(verification.diagnostics),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Valid",
-    String(verification.baselineValid),
-  );
-  context.header(
-    "X-Napier-Signature-Valid",
-    String(verification.signatureValid),
-  );
-  context.header(
-    "X-Napier-Integrity-Valid",
-    String(verification.integrityValid),
-  );
+  context.header("X-Napier-Diagnostic-Count", String(verification.diagnostics.length));
+  context.header("X-Napier-Diagnostics-SHA256", sha256Json(verification.diagnostics));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Valid", String(verification.baselineValid));
+  context.header("X-Napier-Signature-Valid", String(verification.signatureValid));
+  context.header("X-Napier-Integrity-Valid", String(verification.integrityValid));
   setOptionalHeader(
     context,
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-SHA256",
     verification.baselineSha256,
   );
-  setOptionalHeader(
-    context,
-    "X-Napier-Envelope-SHA256",
-    verification.envelopeSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-SHA256",
-    verification.quorumSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Artifact-SHA256",
-    verification.receiptArtifactSha256,
-  );
+  setOptionalHeader(context, "X-Napier-Envelope-SHA256", verification.envelopeSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-SHA256", verification.quorumSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Artifact-SHA256", verification.receiptArtifactSha256);
   setOptionalHeader(context, "X-Napier-Signature-Key-Id", verification.keyId);
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-SHA256",
-    verification.selectedCheckpointSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Set-SHA256",
-    verification.selectedSelectionSetSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Chain-Tail-SHA256",
-    verification.selectedSelectionChainTailSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Anchor-Directory-SHA256",
-    verification.anchorDirectorySha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Anchor-Directory-Verification-SHA256",
-    verification.anchorDirectoryVerificationSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Anchor-Directory-Policy-SHA256",
-    verification.anchorDirectoryPolicySha256,
-  );
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-SHA256", verification.selectedCheckpointSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Set-SHA256", verification.selectedSelectionSetSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Chain-Tail-SHA256", verification.selectedSelectionChainTailSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Anchor-Directory-SHA256", verification.anchorDirectorySha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Anchor-Directory-Verification-SHA256", verification.anchorDirectoryVerificationSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Anchor-Directory-Policy-SHA256", verification.anchorDirectoryPolicySha256);
 }
 
 function setImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResultHeaders(
@@ -11881,10 +7397,7 @@ function setImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparen
 ): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, result);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Imported",
-    String(result.imported),
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Imported", String(result.imported));
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Expected-Current-SHA256",
     result.expectedCurrentBaselineSha256,
@@ -11894,26 +7407,14 @@ function setImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparen
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Previous-SHA256",
     result.previousBaselineSha256,
   );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Id",
-    result.baseline.id,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-SHA256",
-    result.baseline.contentSha256,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Id", result.baseline.id);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-SHA256", result.baseline.contentSha256);
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Verification-SHA256",
     result.verification.contentSha256,
   );
-  context.header(
-    "X-Napier-Envelope-SHA256",
-    result.baseline.envelope.contentSha256,
-  );
-  context.header(
-    "X-Napier-Signature-Key-Id",
-    result.baseline.envelope.signature.keyId,
-  );
+  context.header("X-Napier-Envelope-SHA256", result.baseline.envelope.contentSha256);
+  context.header("X-Napier-Signature-Key-Id", result.baseline.envelope.signature.keyId);
 }
 
 function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionHeaders(
@@ -11922,10 +7423,7 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyChec
 ): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, subscription.contentSha256);
-  setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionEvidenceHeaders(
-    context,
-    subscription,
-  );
+  setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionEvidenceHeaders(context, subscription);
 }
 
 function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshHeaders(
@@ -11934,68 +7432,29 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyChec
 ): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, result.contentSha256);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-Refresh-SHA256",
-    result.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-Refresh-Status",
-    result.status,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-Refresh-SHA256", result.contentSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-Refresh-Status", result.status);
   if (result.discovery) {
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Discovery-SHA256",
-      result.discovery.contentSha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Discovery-SHA256", result.discovery.contentSha256);
   }
   if (result.failureSha256) {
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-Failure-SHA256",
-      result.failureSha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-Failure-SHA256", result.failureSha256);
   }
-  setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionEvidenceHeaders(
-    context,
-    result.subscription,
-  );
+  setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionEvidenceHeaders(context, result.subscription);
 }
 
 function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionEvidenceHeaders(
   context: Context,
   subscription: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
 ): void {
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-Id",
-    subscription.id,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-SHA256",
-    subscription.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-Revision",
-    String(subscription.revision),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-Status",
-    subscription.status,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Source-URL-SHA256",
-    subscription.sourceUrlSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Source-Origin-SHA256",
-    subscription.sourceOriginSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-Policy-SHA256",
-    subscription.policySha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-Next-Refresh-At",
-    subscription.nextRefreshAt,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-Id", subscription.id);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-SHA256", subscription.contentSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-Revision", String(subscription.revision));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-Status", subscription.status);
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Source-URL-SHA256", subscription.sourceUrlSha256);
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Source-Origin-SHA256", subscription.sourceOriginSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-Policy-SHA256", subscription.policySha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-Next-Refresh-At", subscription.nextRefreshAt);
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-Transparency-Entry-Count",
     String(subscription.transparencyEntryCount),
@@ -12006,32 +7465,18 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyChec
     subscription.transparencyTailSha256,
   );
   if (subscription.lastRefreshStatus) {
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-Last-Refresh-Status",
-      subscription.lastRefreshStatus,
-    );
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Subscription-Last-Refresh-Status", subscription.lastRefreshStatus);
   }
-  setOptionalHeader(
-    context,
-    "X-Napier-Envelope-SHA256",
-    subscription.lastGoodDiscovery?.envelopeSha256,
-  );
+  setOptionalHeader(context, "X-Napier-Envelope-SHA256", subscription.lastGoodDiscovery?.envelopeSha256);
   setOptionalHeader(
     context,
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-SHA256",
     subscription.lastGoodDiscovery?.checkpointSha256,
   );
   if (subscription.lastGoodDiscovery?.selectionCount !== undefined) {
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Count",
-      String(subscription.lastGoodDiscovery.selectionCount),
-    );
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Count", String(subscription.lastGoodDiscovery.selectionCount));
   }
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Set-SHA256",
-    subscription.lastGoodDiscovery?.selectionSetSha256,
-  );
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Set-SHA256", subscription.lastGoodDiscovery?.selectionSetSha256);
   setOptionalHeader(
     context,
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Chain-Tail-SHA256",
@@ -12045,55 +7490,18 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReviewHe
 ): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, review.contentSha256);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Review-Status",
-    review.status,
-  );
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(review.diagnostics.length),
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Review-Status", review.status);
+  context.header("X-Napier-Diagnostic-Count", String(review.diagnostics.length));
   context.header("X-Napier-Diagnostics-SHA256", sha256Json(review.diagnostics));
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Expected-Current-SHA256",
-    review.expectedCurrentSelectionSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Current-SHA256",
-    review.currentSelectionSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id",
-    review.activationDecisionRecordId,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-SHA256",
-    review.activationDecisionRecordSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-SHA256",
-    review.baselineSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Source-Alignment-SHA256",
-    review.sourceAlignmentSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Current-Source-Alignment-SHA256",
-    review.currentSourceAlignmentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Drift-Audit-SHA256",
-    review.driftAudit.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Drift-Status",
-    review.driftAudit.status,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Expected-Current-SHA256", review.expectedCurrentSelectionSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Current-SHA256", review.currentSelectionSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id", review.activationDecisionRecordId);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-SHA256", review.activationDecisionRecordSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-SHA256", review.baselineSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Source-Alignment-SHA256", review.sourceAlignmentSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Current-Source-Alignment-SHA256", review.currentSourceAlignmentSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Drift-Audit-SHA256", review.driftAudit.contentSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Drift-Status", review.driftAudit.status);
   setOptionalHeader(
     context,
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Status",
@@ -12112,39 +7520,14 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal
 ): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, proposal.contentSha256);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Status",
-    proposal.status,
-  );
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(proposal.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(proposal.diagnostics),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Review-SHA256",
-    proposal.rotationReviewSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Expected-Current-SHA256",
-    proposal.expectedCurrentSelectionSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Current-SHA256",
-    proposal.currentSelectionSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id",
-    proposal.activationDecisionRecordId,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-SHA256",
-    proposal.activationDecisionRecordSha256,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Status", proposal.status);
+  context.header("X-Napier-Diagnostic-Count", String(proposal.diagnostics.length));
+  context.header("X-Napier-Diagnostics-SHA256", sha256Json(proposal.diagnostics));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Review-SHA256", proposal.rotationReviewSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Expected-Current-SHA256", proposal.expectedCurrentSelectionSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Current-SHA256", proposal.currentSelectionSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id", proposal.activationDecisionRecordId);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-SHA256", proposal.activationDecisionRecordSha256);
   setOptionalHeader(
     context,
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Id",
@@ -12160,29 +7543,15 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Expected-SHA256",
     proposal.expectedCheckpointRegistryQuorumBaselineSha256,
   );
-  setOptionalHeader(
-    context,
-    "X-Napier-Envelope-SHA256",
-    proposal.checkpointRegistryQuorumBaselineEnvelopeSha256,
-  );
+  setOptionalHeader(context, "X-Napier-Envelope-SHA256", proposal.checkpointRegistryQuorumBaselineEnvelopeSha256);
   setOptionalHeader(
     context,
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-SHA256",
     proposal.checkpointRegistryQuorumSha256,
   );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-SHA256",
-    proposal.currentCheckpointSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Set-SHA256",
-    proposal.currentSelectionSetSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Chain-Tail-SHA256",
-    proposal.currentSelectionChainTailSha256,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-SHA256", proposal.currentCheckpointSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Set-SHA256", proposal.currentSelectionSetSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Chain-Tail-SHA256", proposal.currentSelectionChainTailSha256);
 }
 
 function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflightHeaders(
@@ -12191,65 +7560,23 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal
 ): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, preflight.contentSha256);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Preflight-Status",
-    preflight.status,
-  );
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(preflight.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(preflight.diagnostics),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Expected-Current-SHA256",
-    preflight.expectedCurrentSelectionSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Current-SHA256",
-    preflight.currentSelectionSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id",
-    preflight.activationDecisionRecordId,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Active-SHA256",
-    preflight.activeSelectionSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Envelope-SHA256",
-    preflight.rotationProposalEnvelopeSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-SHA256",
-    preflight.rotationProposalSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Review-SHA256",
-    preflight.rotationProposalReviewSha256,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Preflight-Status", preflight.status);
+  context.header("X-Napier-Diagnostic-Count", String(preflight.diagnostics.length));
+  context.header("X-Napier-Diagnostics-SHA256", sha256Json(preflight.diagnostics));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Expected-Current-SHA256", preflight.expectedCurrentSelectionSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Current-SHA256", preflight.currentSelectionSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id", preflight.activationDecisionRecordId);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Active-SHA256", preflight.activeSelectionSha256);
+  setOptionalHeader(context, "X-Napier-Envelope-SHA256", preflight.rotationProposalEnvelopeSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-SHA256", preflight.rotationProposalSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Review-SHA256", preflight.rotationProposalReviewSha256);
   setOptionalHeader(
     context,
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-SHA256",
     preflight.rotationProposalCheckpointRegistryQuorumBaselineSha256,
   );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Verification-Status",
-    preflight.trustedReceiptVerificationStatus,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Key-Id",
-    preflight.trustedReceiptVerificationKeyId,
-  );
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Verification-Status", preflight.trustedReceiptVerificationStatus);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Key-Id", preflight.trustedReceiptVerificationKeyId);
 }
 
 function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryHeaders(
@@ -12259,74 +7586,25 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, discovery.contentSha256);
   context.header("X-Napier-Discovery-Status", discovery.status);
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(discovery.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(discovery.diagnostics),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Source-URL-SHA256",
-    discovery.sourceUrlSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Source-Origin-SHA256",
-    discovery.sourceOriginSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Discovery-Policy-SHA256",
-    discovery.policySha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Source-Response-SHA256",
-    discovery.responseBodySha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Source-Response-Bytes",
-    String(discovery.responseBytes),
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Envelope-SHA256",
-    discovery.envelopeSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-SHA256",
-    discovery.proposalSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Review-SHA256",
-    discovery.proposalReviewSha256,
-  );
+  context.header("X-Napier-Diagnostic-Count", String(discovery.diagnostics.length));
+  context.header("X-Napier-Diagnostics-SHA256", sha256Json(discovery.diagnostics));
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Source-URL-SHA256", discovery.sourceUrlSha256);
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Source-Origin-SHA256", discovery.sourceOriginSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Discovery-Policy-SHA256", discovery.policySha256);
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Source-Response-SHA256", discovery.responseBodySha256);
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Source-Response-Bytes", String(discovery.responseBytes));
+  setOptionalHeader(context, "X-Napier-Envelope-SHA256", discovery.envelopeSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-SHA256", discovery.proposalSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Review-SHA256", discovery.proposalReviewSha256);
   setOptionalHeader(
     context,
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-SHA256",
     discovery.checkpointRegistryQuorumBaselineSha256,
   );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id",
-    discovery.activationDecisionRecordId,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Expected-Current-SHA256",
-    discovery.expectedCurrentSelectionSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Signature-Key-Id",
-    discovery.signerKeyId,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Preflight-Status",
-    discovery.preflight?.status,
-  );
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id", discovery.activationDecisionRecordId);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Expected-Current-SHA256", discovery.expectedCurrentSelectionSha256);
+  setOptionalHeader(context, "X-Napier-Signature-Key-Id", discovery.signerKeyId);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Preflight-Status", discovery.preflight?.status);
   setOptionalHeader(
     context,
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Preflight-SHA256",
@@ -12340,15 +7618,10 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal
 ): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, subscriptions);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Count",
-    String(subscriptions.length),
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Count", String(subscriptions.length));
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Set-SHA256",
-    sha256Json(
-      subscriptions.map((subscription) => subscription.contentSha256).sort(),
-    ),
+    sha256Json(subscriptions.map((subscription) => subscription.contentSha256).sort()),
   );
 }
 
@@ -12358,10 +7631,7 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal
 ): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, subscription.contentSha256);
-  setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionEvidenceHeaders(
-    context,
-    subscription,
-  );
+  setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionEvidenceHeaders(context, subscription);
 }
 
 function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshHeaders(
@@ -12370,68 +7640,29 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal
 ): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, result.contentSha256);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Refresh-SHA256",
-    result.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Refresh-Status",
-    result.status,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Refresh-SHA256", result.contentSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Refresh-Status", result.status);
   if (result.discovery) {
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Discovery-SHA256",
-      result.discovery.contentSha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Discovery-SHA256", result.discovery.contentSha256);
   }
   if (result.failureSha256) {
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Failure-SHA256",
-      result.failureSha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Failure-SHA256", result.failureSha256);
   }
-  setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionEvidenceHeaders(
-    context,
-    result.subscription,
-  );
+  setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionEvidenceHeaders(context, result.subscription);
 }
 
 function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionEvidenceHeaders(
   context: Context,
   subscription: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
 ): void {
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Id",
-    subscription.id,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-SHA256",
-    subscription.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Revision",
-    String(subscription.revision),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Status",
-    subscription.status,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Source-URL-SHA256",
-    subscription.sourceUrlSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Source-Origin-SHA256",
-    subscription.sourceOriginSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Policy-SHA256",
-    subscription.policySha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Next-Refresh-At",
-    subscription.nextRefreshAt,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Id", subscription.id);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-SHA256", subscription.contentSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Revision", String(subscription.revision));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Status", subscription.status);
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Source-URL-SHA256", subscription.sourceUrlSha256);
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Source-Origin-SHA256", subscription.sourceOriginSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Policy-SHA256", subscription.policySha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Next-Refresh-At", subscription.nextRefreshAt);
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Transparency-Entry-Count",
     String(subscription.transparencyEntryCount),
@@ -12447,11 +7678,7 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal
       subscription.lastRefreshStatus,
     );
   }
-  setOptionalHeader(
-    context,
-    "X-Napier-Envelope-SHA256",
-    subscription.lastGoodDiscovery?.envelopeSha256,
-  );
+  setOptionalHeader(context, "X-Napier-Envelope-SHA256", subscription.lastGoodDiscovery?.envelopeSha256);
   setOptionalHeader(
     context,
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-SHA256",
@@ -12470,65 +7697,28 @@ function setApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResultHeade
 ): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, result.contentSha256);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Applied",
-    String(result.applied),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Expected-Current-SHA256",
-    result.expectedCurrentSelectionSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Previous-SHA256",
-    result.previousSelectionSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Current-SHA256",
-    result.selection.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-State-SHA256",
-    result.selectionState.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Id",
-    result.selection.id,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id",
-    result.selection.activationDecisionRecordId,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Id",
-    result.selection.baselineId,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-SHA256",
-    result.selection.baselineSha256,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Applied", String(result.applied));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Expected-Current-SHA256", result.expectedCurrentSelectionSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Previous-SHA256", result.previousSelectionSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Current-SHA256", result.selection.contentSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-State-SHA256", result.selectionState.contentSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Id", result.selection.id);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id", result.selection.activationDecisionRecordId);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Id", result.selection.baselineId);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-SHA256", result.selection.baselineSha256);
 }
 
 function setApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionApprovalResultHeaders(
   context: Context,
   result: ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult,
-  approvalGate: Extract<
-    RotationProposalSubscriptionApprovalApplyGateResult,
-    { status: "accepted" }
-  >,
+  approvalGate: Extract<RotationProposalSubscriptionApprovalApplyGateResult, { status: "accepted" }>,
 ): void {
-  setApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResultHeaders(
-    context,
-    result,
-  );
+  setApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResultHeaders(context, result);
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Envelope-SHA256",
     approvalGate.approvalEnvelope.contentSha256,
   );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-SHA256",
-    approvalGate.approval.contentSha256,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-SHA256", approvalGate.approval.contentSha256);
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Preflight-SHA256",
     approvalGate.approval.approvalPreflightSha256,
@@ -12537,10 +7727,7 @@ function setApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionApprovalRes
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Current-Preflight-SHA256",
     approvalGate.preflight.contentSha256,
   );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Id",
-    approvalGate.approval.subscriptionId,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Id", approvalGate.approval.subscriptionId);
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-SHA256",
     approvalGate.approval.subscriptionSha256,
@@ -12549,18 +7736,9 @@ function setApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionApprovalRes
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Revision",
     String(approvalGate.approval.subscriptionRevision),
   );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-SHA256",
-    approvalGate.proposal.contentSha256,
-  );
-  context.header(
-    "X-Napier-Envelope-SHA256",
-    approvalGate.proposalEnvelope.contentSha256,
-  );
-  context.header(
-    "X-Napier-Signature-Key-Id",
-    approvalGate.approvalEnvelope.signature.keyId,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-SHA256", approvalGate.proposal.contentSha256);
+  context.header("X-Napier-Envelope-SHA256", approvalGate.proposalEnvelope.contentSha256);
+  context.header("X-Napier-Signature-Key-Id", approvalGate.approvalEnvelope.signature.keyId);
 }
 
 function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReviewHeaders(
@@ -12570,27 +7748,12 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, review.contentSha256);
   context.header("X-Napier-Verification-Status", review.status);
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(review.diagnostics.length),
-  );
+  context.header("X-Napier-Diagnostic-Count", String(review.diagnostics.length));
   context.header("X-Napier-Diagnostics-SHA256", sha256Json(review.diagnostics));
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Id",
-    review.subscriptionId,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Revision",
-    String(review.subscriptionRevision),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-SHA256",
-    review.subscriptionSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-SHA256",
-    review.approvalPolicySha256,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Id", review.subscriptionId);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Revision", String(review.subscriptionRevision));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-SHA256", review.subscriptionSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-SHA256", review.approvalPolicySha256);
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Minimum-Distinct-Signer-Count",
     String(review.approvalPolicy.minimumDistinctSignerCount),
@@ -12607,10 +7770,7 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Distinct-Signer-Count",
     String(review.distinctSignerCount),
   );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Signer-Set-SHA256",
-    review.signerSetSha256,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Signer-Set-SHA256", review.signerSetSha256);
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Envelope-Set-SHA256",
     review.approvalEnvelopeSetSha256,
@@ -12624,26 +7784,10 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Required-Signer-Set-SHA256",
     review.requiredSignerSetSha256,
   );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id",
-    review.activationDecisionRecordId,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Expected-Current-SHA256",
-    review.expectedCurrentSelectionSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-SHA256",
-    review.proposalSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Envelope-SHA256",
-    review.proposalEnvelopeSha256,
-  );
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id", review.activationDecisionRecordId);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Expected-Current-SHA256", review.expectedCurrentSelectionSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-SHA256", review.proposalSha256);
+  setOptionalHeader(context, "X-Napier-Envelope-SHA256", review.proposalEnvelopeSha256);
   setOptionalHeader(
     context,
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Current-Preflight-SHA256",
@@ -12657,10 +7801,7 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal
 ): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, applyResult.contentSha256);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Applied",
-    String(applyResult.result.applied),
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Applied", String(applyResult.result.applied));
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Review-SHA256",
     applyResult.policyReviewSha256,
@@ -12669,22 +7810,10 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Apply-Result-SHA256",
     applyResult.resultSha256,
   );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Current-SHA256",
-    applyResult.result.selection.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-State-SHA256",
-    applyResult.result.selectionState.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id",
-    applyResult.result.selection.activationDecisionRecordId,
-  );
-  context.header(
-    "X-Napier-Verification-Status",
-    applyResult.policyReview.status,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Current-SHA256", applyResult.result.selection.contentSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-State-SHA256", applyResult.result.selectionState.contentSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id", applyResult.result.selection.activationDecisionRecordId);
+  context.header("X-Napier-Verification-Status", applyResult.policyReview.status);
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Distinct-Signer-Count",
     String(applyResult.policyReview.distinctSignerCount),
@@ -12701,14 +7830,8 @@ function setQueueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPro
 ): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, queueResult.contentSha256);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Apply-Queued-At",
-    queueResult.queuedAt,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Apply-After",
-    queueResult.applyAfter,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Apply-Queued-At", queueResult.queuedAt);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Apply-After", queueResult.applyAfter);
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Baseline-SHA256",
     queueResult.approvalPolicyBaselineSha256,
@@ -12717,18 +7840,9 @@ function setQueueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPro
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Review-SHA256",
     queueResult.policyReviewSha256,
   );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-SHA256",
-    queueResult.approvalPolicySha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-SHA256",
-    queueResult.subscriptionSha256,
-  );
-  context.header(
-    "X-Napier-Verification-Status",
-    queueResult.policyReview.status,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-SHA256", queueResult.approvalPolicySha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-SHA256", queueResult.subscriptionSha256);
+  context.header("X-Napier-Verification-Status", queueResult.policyReview.status);
 }
 
 function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineListHeaders(
@@ -12737,20 +7851,11 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal
 ): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, baselines);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Baseline-Count",
-    String(baselines.length),
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Baseline-Count", String(baselines.length));
   const current = baselines.at(-1);
   if (current) {
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Baseline-Id",
-      current.id,
-    );
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Baseline-SHA256",
-      current.contentSha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Baseline-Id", current.id);
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Baseline-SHA256", current.contentSha256);
     context.header(
       "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Review-SHA256",
       current.envelope.receipt.contentSha256,
@@ -12765,34 +7870,16 @@ function setPromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationP
 ): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, result);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Baseline-Created",
-    String(result.created),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Baseline-Id",
-    result.baseline.id,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Baseline-Created", String(result.created));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Baseline-Id", result.baseline.id);
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Baseline-SHA256",
     result.baseline.contentSha256,
   );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-SHA256",
-    result.baseline.approvalPolicySha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Signer-Set-SHA256",
-    result.baseline.signerSetSha256,
-  );
-  context.header(
-    "X-Napier-Envelope-SHA256",
-    result.baseline.envelope.contentSha256,
-  );
-  context.header(
-    "X-Napier-Signature-Key-Id",
-    result.baseline.envelope.signature.keyId,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-SHA256", result.baseline.approvalPolicySha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Signer-Set-SHA256", result.baseline.signerSetSha256);
+  context.header("X-Napier-Envelope-SHA256", result.baseline.envelope.contentSha256);
+  context.header("X-Napier-Signature-Key-Id", result.baseline.envelope.signature.keyId);
 }
 
 function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineVerificationHeaders(
@@ -12802,36 +7889,20 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, verification.contentSha256);
   context.header("X-Napier-Verification-Status", verification.status);
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(verification.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(verification.diagnostics),
-  );
+  context.header("X-Napier-Diagnostic-Count", String(verification.diagnostics.length));
+  context.header("X-Napier-Diagnostics-SHA256", sha256Json(verification.diagnostics));
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Baseline-Valid",
     String(verification.baselineValid),
   );
-  context.header(
-    "X-Napier-Signature-Valid",
-    String(verification.signatureValid),
-  );
-  context.header(
-    "X-Napier-Integrity-Valid",
-    String(verification.integrityValid),
-  );
+  context.header("X-Napier-Signature-Valid", String(verification.signatureValid));
+  context.header("X-Napier-Integrity-Valid", String(verification.integrityValid));
   setOptionalHeader(
     context,
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Baseline-SHA256",
     verification.baselineSha256,
   );
-  setOptionalHeader(
-    context,
-    "X-Napier-Envelope-SHA256",
-    verification.envelopeSha256,
-  );
+  setOptionalHeader(context, "X-Napier-Envelope-SHA256", verification.envelopeSha256);
   setOptionalHeader(
     context,
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Review-SHA256",
@@ -12856,10 +7927,7 @@ function setImportReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPr
 ): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, result);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Baseline-Imported",
-    String(result.imported),
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Baseline-Imported", String(result.imported));
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Baseline-Expected-Current-SHA256",
     result.expectedCurrentBaselineSha256,
@@ -12869,10 +7937,7 @@ function setImportReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPr
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Baseline-Previous-SHA256",
     result.previousBaselineSha256,
   );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Baseline-Id",
-    result.baseline.id,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Baseline-Id", result.baseline.id);
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Baseline-SHA256",
     result.baseline.contentSha256,
@@ -12881,14 +7946,8 @@ function setImportReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPr
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Baseline-Verification-SHA256",
     result.verification.contentSha256,
   );
-  context.header(
-    "X-Napier-Envelope-SHA256",
-    result.baseline.envelope.contentSha256,
-  );
-  context.header(
-    "X-Napier-Signature-Key-Id",
-    result.baseline.envelope.signature.keyId,
-  );
+  context.header("X-Napier-Envelope-SHA256", result.baseline.envelope.contentSha256);
+  context.header("X-Napier-Signature-Key-Id", result.baseline.envelope.signature.keyId);
 }
 
 function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplayHeaders(
@@ -12898,41 +7957,15 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, replay.contentSha256);
   context.header("X-Napier-Verification-Status", replay.status);
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(replay.diagnostics.length),
-  );
+  context.header("X-Napier-Diagnostic-Count", String(replay.diagnostics.length));
   context.header("X-Napier-Diagnostics-SHA256", sha256Json(replay.diagnostics));
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Id",
-    replay.subscriptionId,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Revision",
-    String(replay.subscriptionRevision),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-SHA256",
-    replay.subscriptionSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Current-SHA256",
-    replay.currentSelectionSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-State-SHA256",
-    replay.selectionStateSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Active-SHA256",
-    replay.activeSelectionSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id",
-    replay.activeActivationDecisionRecordId,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Id", replay.subscriptionId);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Revision", String(replay.subscriptionRevision));
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-SHA256", replay.subscriptionSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Current-SHA256", replay.currentSelectionSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-State-SHA256", replay.selectionStateSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Active-SHA256", replay.activeSelectionSha256);
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id", replay.activeActivationDecisionRecordId);
   setOptionalHeader(
     context,
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Verifier-Selection-SHA256",
@@ -12948,26 +7981,14 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Envelope-SHA256",
     replay.approvalEnvelopeSha256,
   );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-SHA256",
-    replay.approvalSha256,
-  );
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-SHA256", replay.approvalSha256);
   setOptionalHeader(
     context,
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Verification-Status",
     replay.approvalTrustedReceiptVerificationStatus,
   );
-  setOptionalHeader(
-    context,
-    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-SHA256",
-    replay.proposalSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Envelope-SHA256",
-    replay.proposalEnvelopeSha256,
-  );
+  setOptionalHeader(context, "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-SHA256", replay.proposalSha256);
+  setOptionalHeader(context, "X-Napier-Envelope-SHA256", replay.proposalEnvelopeSha256);
 }
 
 function setReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerificationHeaders(
@@ -12976,41 +7997,17 @@ function setReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerificationHeader
 ): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, verification.contentSha256);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Verification-Status",
-    verification.status,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Valid",
-    String(verification.baselineValid),
-  );
-  context.header(
-    "X-Napier-Receipt-Signature-Valid",
-    String(verification.signatureValid),
-  );
-  context.header(
-    "X-Napier-Receipt-Integrity-Valid",
-    String(verification.integrityValid),
-  );
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(verification.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(verification.diagnostics),
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Verification-Status", verification.status);
+  context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Valid", String(verification.baselineValid));
+  context.header("X-Napier-Receipt-Signature-Valid", String(verification.signatureValid));
+  context.header("X-Napier-Receipt-Integrity-Valid", String(verification.integrityValid));
+  context.header("X-Napier-Diagnostic-Count", String(verification.diagnostics.length));
+  context.header("X-Napier-Diagnostics-SHA256", sha256Json(verification.diagnostics));
   if (verification.baselineSha256) {
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-SHA256",
-      verification.baselineSha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-SHA256", verification.baselineSha256);
   }
   if (verification.receiptSha256) {
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-SHA256",
-      verification.receiptSha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Promotion-SHA256", verification.receiptSha256);
   }
   if (verification.envelopeSha256) {
     context.header("X-Napier-Envelope-SHA256", verification.envelopeSha256);
@@ -13019,322 +8016,136 @@ function setReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerificationHeader
     context.header("X-Napier-Signature-Key-Id", verification.keyId);
   }
   if (verification.anchorDirectoryVerificationSha256) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-Verification-SHA256",
-      verification.anchorDirectoryVerificationSha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-Verification-SHA256", verification.anchorDirectoryVerificationSha256);
   }
 }
 
-function setReceiptTrustAnchorDirectorySubscriptionListHeaders(
-  context: Context,
-  subscriptions: ReceiptTrustAnchorDirectorySubscription[],
-): void {
+function setReceiptTrustAnchorDirectorySubscriptionListHeaders(context: Context, subscriptions: ReceiptTrustAnchorDirectorySubscription[]): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, subscriptions);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Subscription-Count",
-    String(subscriptions.length),
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Subscription-Count", String(subscriptions.length));
   context.header(
     "X-Napier-Receipt-Trust-Directory-Subscription-Active-Count",
-    String(
-      subscriptions.filter((subscription) => subscription.status === "active")
-        .length,
-    ),
+    String(subscriptions.filter((subscription) => subscription.status === "active").length),
   );
 }
 
-function setReceiptTrustAnchorDirectorySubscriptionHeaders(
-  context: Context,
-  subscription: ReceiptTrustAnchorDirectorySubscription,
-): void {
+function setReceiptTrustAnchorDirectorySubscriptionHeaders(context: Context, subscription: ReceiptTrustAnchorDirectorySubscription): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, subscription.contentSha256);
-  setReceiptTrustAnchorDirectorySubscriptionEvidenceHeaders(
-    context,
-    subscription,
-  );
+  setReceiptTrustAnchorDirectorySubscriptionEvidenceHeaders(context, subscription);
 }
 
-function setReceiptTrustAnchorDirectorySubscriptionRefreshHeaders(
-  context: Context,
-  result: ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
-): void {
+function setReceiptTrustAnchorDirectorySubscriptionRefreshHeaders(context: Context, result: ReceiptTrustAnchorDirectorySubscriptionRefreshResult): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, result.contentSha256);
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Subscription-Refresh-SHA256",
-    result.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Subscription-Refresh-Status",
-    result.status,
-  );
+  context.header("X-Napier-Receipt-Trust-Directory-Subscription-Refresh-SHA256", result.contentSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Subscription-Refresh-Status", result.status);
   if (result.discovery) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-Discovery-SHA256",
-      result.discovery.contentSha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-Discovery-SHA256", result.discovery.contentSha256);
   }
   if (result.failureSha256) {
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Subscription-Failure-SHA256",
-      result.failureSha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Directory-Subscription-Failure-SHA256", result.failureSha256);
   }
-  setReceiptTrustAnchorDirectorySubscriptionEvidenceHeaders(
-    context,
-    result.subscription,
-  );
+  setReceiptTrustAnchorDirectorySubscriptionEvidenceHeaders(context, result.subscription);
 }
 
-function setReceiptTrustAnchorDirectorySubscriptionEvidenceHeaders(
-  context: Context,
-  subscription: ReceiptTrustAnchorDirectorySubscription,
-): void {
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Subscription-Id",
-    subscription.id,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Subscription-SHA256",
-    subscription.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Subscription-Revision",
-    String(subscription.revision),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Subscription-Status",
-    subscription.status,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Source-URL-SHA256",
-    subscription.sourceUrlSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Source-Origin-SHA256",
-    subscription.sourceOriginSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Policy-SHA256",
-    subscription.policySha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Subscription-Next-Refresh-At",
-    subscription.nextRefreshAt,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Directory-Subscription-Transparency-Entry-Count",
-    String(subscription.transparencyEntryCount),
-  );
+function setReceiptTrustAnchorDirectorySubscriptionEvidenceHeaders(context: Context, subscription: ReceiptTrustAnchorDirectorySubscription): void {
+  context.header("X-Napier-Receipt-Trust-Directory-Subscription-Id", subscription.id);
+  context.header("X-Napier-Receipt-Trust-Directory-Subscription-SHA256", subscription.contentSha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Subscription-Revision", String(subscription.revision));
+  context.header("X-Napier-Receipt-Trust-Directory-Subscription-Status", subscription.status);
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Source-URL-SHA256", subscription.sourceUrlSha256);
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Source-Origin-SHA256", subscription.sourceOriginSha256);
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Policy-SHA256", subscription.policySha256);
+  context.header("X-Napier-Receipt-Trust-Directory-Subscription-Next-Refresh-At", subscription.nextRefreshAt);
+  context.header("X-Napier-Receipt-Trust-Directory-Subscription-Transparency-Entry-Count", String(subscription.transparencyEntryCount));
   if (subscription.transparencyTailSha256) {
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Subscription-Transparency-Tail-SHA256",
-      subscription.transparencyTailSha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Directory-Subscription-Transparency-Tail-SHA256", subscription.transparencyTailSha256);
   }
   if (subscription.lastRefreshStatus) {
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Subscription-Last-Refresh-Status",
-      subscription.lastRefreshStatus,
-    );
+    context.header("X-Napier-Receipt-Trust-Directory-Subscription-Last-Refresh-Status", subscription.lastRefreshStatus);
   }
   if (subscription.lastGoodDiscovery?.directory) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-SHA256",
-      subscription.lastGoodDiscovery.directory.contentSha256,
-    );
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256",
-      subscription.lastGoodDiscovery.directory.anchorSetSha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-SHA256", subscription.lastGoodDiscovery.directory.contentSha256);
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256", subscription.lastGoodDiscovery.directory.anchorSetSha256);
   }
 }
 
-function setReceiptTrustAnchorDirectoryDiscoveryHeaders(
-  context: Context,
-  discovery: ReceiptTrustAnchorDirectoryDiscovery,
-): void {
+function setReceiptTrustAnchorDirectoryDiscoveryHeaders(context: Context, discovery: ReceiptTrustAnchorDirectoryDiscovery): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, discovery.contentSha256);
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Discovery-SHA256",
-    discovery.contentSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Source-URL-SHA256",
-    discovery.sourceUrlSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Source-Origin-SHA256",
-    discovery.sourceOriginSha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Response-SHA256",
-    discovery.responseBodySha256,
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Response-Bytes",
-    String(discovery.responseBytes),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-HTTP-Status",
-    String(discovery.httpStatus),
-  );
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Discovery-SHA256", discovery.contentSha256);
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Source-URL-SHA256", discovery.sourceUrlSha256);
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Source-Origin-SHA256", discovery.sourceOriginSha256);
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Response-SHA256", discovery.responseBodySha256);
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Response-Bytes", String(discovery.responseBytes));
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-HTTP-Status", String(discovery.httpStatus));
   context.header("X-Napier-Verification-Status", discovery.status);
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(discovery.verification.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(discovery.verification.diagnostics),
-  );
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Verification-SHA256",
-    discovery.verification.contentSha256,
-  );
+  context.header("X-Napier-Diagnostic-Count", String(discovery.verification.diagnostics.length));
+  context.header("X-Napier-Diagnostics-SHA256", sha256Json(discovery.verification.diagnostics));
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Verification-SHA256", discovery.verification.contentSha256);
   if (discovery.verification.policySha256) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-Policy-SHA256",
-      discovery.verification.policySha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-Policy-SHA256", discovery.verification.policySha256);
   }
   if (discovery.verification.directoryAgeMs !== undefined) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-Age-Ms",
-      String(discovery.verification.directoryAgeMs),
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-Age-Ms", String(discovery.verification.directoryAgeMs));
   }
   if (discovery.directory) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-SHA256",
-      discovery.directory.contentSha256,
-    );
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256",
-      discovery.directory.anchorSetSha256,
-    );
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Count",
-      String(discovery.directory.anchorCount),
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-SHA256", discovery.directory.contentSha256);
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256", discovery.directory.anchorSetSha256);
+    context.header("X-Napier-Receipt-Trust-Anchor-Count", String(discovery.directory.anchorCount));
   }
 }
 
-function setReceiptTrustAnchorDirectoryVerificationHeaders(
-  context: Context,
-  verification: ReceiptTrustAnchorDirectoryVerification,
-): void {
+function setReceiptTrustAnchorDirectoryVerificationHeaders(context: Context, verification: ReceiptTrustAnchorDirectoryVerification): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, verification.contentSha256);
   context.header("X-Napier-Verification-Status", verification.status);
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(verification.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(verification.diagnostics),
-  );
+  context.header("X-Napier-Diagnostic-Count", String(verification.diagnostics.length));
+  context.header("X-Napier-Diagnostics-SHA256", sha256Json(verification.diagnostics));
   if (verification.declaredContentSha256) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-SHA256",
-      verification.declaredContentSha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-SHA256", verification.declaredContentSha256);
   }
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Verification-SHA256",
-    verification.contentSha256,
-  );
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Verification-SHA256", verification.contentSha256);
   if (verification.policySha256) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-Policy-SHA256",
-      verification.policySha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-Policy-SHA256", verification.policySha256);
   }
   if (verification.directoryGeneratedAt) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-Generated-At",
-      verification.directoryGeneratedAt,
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-Generated-At", verification.directoryGeneratedAt);
   }
   if (verification.directoryAgeMs !== undefined) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-Age-Ms",
-      String(verification.directoryAgeMs),
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-Age-Ms", String(verification.directoryAgeMs));
   }
   if (verification.declaredAnchorSetSha256) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256",
-      verification.declaredAnchorSetSha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256", verification.declaredAnchorSetSha256);
   }
   if (verification.recomputedAnchorSetSha256) {
-    context.header(
-      "X-Napier-Recomputed-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256",
-      verification.recomputedAnchorSetSha256,
-    );
+    context.header("X-Napier-Recomputed-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256", verification.recomputedAnchorSetSha256);
   }
   if (verification.anchorCount !== undefined) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Count",
-      String(verification.anchorCount),
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Count", String(verification.anchorCount));
   }
   if (verification.trustedCount !== undefined) {
-    context.header(
-      "X-Napier-Receipt-Trust-Trusted-Count",
-      String(verification.trustedCount),
-    );
+    context.header("X-Napier-Receipt-Trust-Trusted-Count", String(verification.trustedCount));
   }
   if (verification.revokedCount !== undefined) {
-    context.header(
-      "X-Napier-Receipt-Trust-Revoked-Count",
-      String(verification.revokedCount),
-    );
+    context.header("X-Napier-Receipt-Trust-Revoked-Count", String(verification.revokedCount));
   }
 }
 
-function setReceiptTrustAnchorDirectoryMetadataVerificationHeaders(
-  context: Context,
-  verification: ReceiptTrustAnchorDirectoryMetadataVerification,
-): void {
+function setReceiptTrustAnchorDirectoryMetadataVerificationHeaders(context: Context, verification: ReceiptTrustAnchorDirectoryMetadataVerification): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, verification.contentSha256);
   context.header("X-Napier-Verification-Status", verification.status);
-  context.header(
-    "X-Napier-Receipt-Trust-Anchor-Directory-Metadata-Verification-SHA256",
-    verification.contentSha256,
-  );
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(verification.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(verification.diagnostics),
-  );
-  context.header(
-    "X-Napier-Signature-Valid",
-    String(verification.signatureValid),
-  );
-  context.header(
-    "X-Napier-Integrity-Valid",
-    String(verification.integrityValid),
-  );
-  context.header(
-    "X-Napier-Directory-Binding-Valid",
-    String(verification.directoryBindingValid),
-  );
+  context.header("X-Napier-Receipt-Trust-Anchor-Directory-Metadata-Verification-SHA256", verification.contentSha256);
+  context.header("X-Napier-Diagnostic-Count", String(verification.diagnostics.length));
+  context.header("X-Napier-Diagnostics-SHA256", sha256Json(verification.diagnostics));
+  context.header("X-Napier-Signature-Valid", String(verification.signatureValid));
+  context.header("X-Napier-Integrity-Valid", String(verification.integrityValid));
+  context.header("X-Napier-Directory-Binding-Valid", String(verification.directoryBindingValid));
   if (verification.publisher) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-Publisher-SHA256",
-      sha256Text(verification.publisher),
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-Publisher-SHA256", sha256Text(verification.publisher));
   }
   if (verification.signerKeyId) {
     context.header("X-Napier-Signature-Key-Id", verification.signerKeyId);
@@ -13343,69 +8154,39 @@ function setReceiptTrustAnchorDirectoryMetadataVerificationHeaders(
     context.header("X-Napier-Envelope-SHA256", verification.envelopeSha256);
   }
   if (verification.directorySha256) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-SHA256",
-      verification.directorySha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-SHA256", verification.directorySha256);
   }
   if (verification.anchorSetSha256) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256",
-      verification.anchorSetSha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256", verification.anchorSetSha256);
   }
   if (verification.expiresAt) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-Metadata-Expires-At",
-      verification.expiresAt,
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-Metadata-Expires-At", verification.expiresAt);
   }
 }
 
-function setReceiptTrustAnchorHeaders(
-  context: Context,
-  anchor: ReceiptTrustAnchor,
-): void {
+function setReceiptTrustAnchorHeaders(context: Context, anchor: ReceiptTrustAnchor): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, anchor.contentSha256);
   context.header("X-Napier-Receipt-Trust-Anchor-Id", anchor.id);
   context.header("X-Napier-Signature-Key-Id", anchor.keyId);
   context.header("X-Napier-Receipt-Trust-Anchor-Status", anchor.status);
-  context.header(
-    "X-Napier-Receipt-Trust-Signing-Capable",
-    String(Boolean(anchor.signingSource)),
-  );
+  context.header("X-Napier-Receipt-Trust-Signing-Capable", String(Boolean(anchor.signingSource)));
 }
 
-function setTrustedReceiptVerificationHeaders(
-  context: Context,
-  verification: TrustedReceiptVerification,
-): void {
+function setTrustedReceiptVerificationHeaders(context: Context, verification: TrustedReceiptVerification): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, verification);
   context.header("X-Napier-Receipt-Verification-Status", verification.status);
-  context.header(
-    "X-Napier-Signature-Valid",
-    String(verification.signatureValid),
-  );
-  context.header(
-    "X-Napier-Integrity-Valid",
-    String(verification.integrityValid),
-  );
+  context.header("X-Napier-Signature-Valid", String(verification.signatureValid));
+  context.header("X-Napier-Integrity-Valid", String(verification.integrityValid));
   if (verification.receiptKind) {
     context.header("X-Napier-Receipt-Kind", verification.receiptKind);
   }
   if (verification.receiptContentSha256) {
-    context.header(
-      "X-Napier-Receipt-SHA256",
-      verification.receiptContentSha256,
-    );
+    context.header("X-Napier-Receipt-SHA256", verification.receiptContentSha256);
   }
   if (verification.receiptArtifactSha256) {
-    context.header(
-      "X-Napier-Receipt-Artifact-SHA256",
-      verification.receiptArtifactSha256,
-    );
+    context.header("X-Napier-Receipt-Artifact-SHA256", verification.receiptArtifactSha256);
   }
   if (verification.keyId) {
     context.header("X-Napier-Signature-Key-Id", verification.keyId);
@@ -13414,170 +8195,78 @@ function setTrustedReceiptVerificationHeaders(
     context.header("X-Napier-Envelope-SHA256", verification.envelopeSha256);
   }
   if (verification.anchorDirectorySha256) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-SHA256",
-      verification.anchorDirectorySha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-SHA256", verification.anchorDirectorySha256);
   }
   if (verification.anchorDirectorySource) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-Source",
-      verification.anchorDirectorySource,
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-Source", verification.anchorDirectorySource);
   }
   if (verification.anchorDirectorySelectionId) {
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Id",
-      verification.anchorDirectorySelectionId,
-    );
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Id", verification.anchorDirectorySelectionId);
   }
   if (verification.anchorDirectorySelectionSha256) {
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-SHA256",
-      verification.anchorDirectorySelectionSha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-SHA256", verification.anchorDirectorySelectionSha256);
   }
   if (verification.anchorDirectorySelectionStateSha256) {
-    context.header(
-      "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-State-SHA256",
-      verification.anchorDirectorySelectionStateSha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-State-SHA256", verification.anchorDirectorySelectionStateSha256);
   }
   if (verification.anchorDirectoryVerificationSha256) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-Verification-SHA256",
-      verification.anchorDirectoryVerificationSha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-Verification-SHA256", verification.anchorDirectoryVerificationSha256);
   }
   if (verification.anchorDirectoryPolicySha256) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-Policy-SHA256",
-      verification.anchorDirectoryPolicySha256,
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-Policy-SHA256", verification.anchorDirectoryPolicySha256);
   }
   if (verification.anchorDirectoryGeneratedAt) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-Generated-At",
-      verification.anchorDirectoryGeneratedAt,
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-Generated-At", verification.anchorDirectoryGeneratedAt);
   }
   if (verification.anchorDirectoryAgeMs !== undefined) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-Age-Ms",
-      String(verification.anchorDirectoryAgeMs),
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-Age-Ms", String(verification.anchorDirectoryAgeMs));
   }
   if (verification.anchorDirectoryAnchorCount !== undefined) {
-    context.header(
-      "X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Count",
-      String(verification.anchorDirectoryAnchorCount),
-    );
+    context.header("X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Count", String(verification.anchorDirectoryAnchorCount));
   }
 }
 
-function setUsagePriceTableCatalogHeaders(
-  context: Context,
-  catalog: UsagePriceTableCatalog,
-): void {
+function setUsagePriceTableCatalogHeaders(context: Context, catalog: UsagePriceTableCatalog): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, catalog.contentSha256);
-  context.header(
-    "X-Napier-Usage-Price-Table-Count",
-    String(catalog.tables.length),
-  );
-  context.header(
-    "X-Napier-Usage-Price-Provider-Count",
-    String(new Set(catalog.tables.map((table) => table.provider)).size),
-  );
-  context.header(
-    "X-Napier-Usage-Price-Providers-SHA256",
-    sha256Json(catalog.tables.map((table) => table.provider).sort()),
-  );
+  context.header("X-Napier-Usage-Price-Table-Count", String(catalog.tables.length));
+  context.header("X-Napier-Usage-Price-Provider-Count", String(new Set(catalog.tables.map((table) => table.provider)).size));
+  context.header("X-Napier-Usage-Price-Providers-SHA256", sha256Json(catalog.tables.map((table) => table.provider).sort()));
 }
 
-function setUsagePriceTableVerificationHeaders(
-  context: Context,
-  verification: UsagePriceTableVerification,
-): void {
+function setUsagePriceTableVerificationHeaders(context: Context, verification: UsagePriceTableVerification): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, verification);
-  context.header(
-    "X-Napier-Usage-Price-Verification-Status",
-    verification.status,
-  );
-  context.header(
-    "X-Napier-Usage-Price-Table-Count",
-    String(verification.tableCount),
-  );
-  context.header(
-    "X-Napier-Usage-Price-Provider-Count",
-    String(verification.providers.length),
-  );
-  context.header(
-    "X-Napier-Usage-Price-Diagnostic-Count",
-    String(verification.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Usage-Price-Providers-SHA256",
-    sha256Json(verification.providers),
-  );
-  context.header(
-    "X-Napier-Usage-Price-Diagnostics-SHA256",
-    sha256Json(verification.diagnostics),
-  );
+  context.header("X-Napier-Usage-Price-Verification-Status", verification.status);
+  context.header("X-Napier-Usage-Price-Table-Count", String(verification.tableCount));
+  context.header("X-Napier-Usage-Price-Provider-Count", String(verification.providers.length));
+  context.header("X-Napier-Usage-Price-Diagnostic-Count", String(verification.diagnostics.length));
+  context.header("X-Napier-Usage-Price-Providers-SHA256", sha256Json(verification.providers));
+  context.header("X-Napier-Usage-Price-Diagnostics-SHA256", sha256Json(verification.diagnostics));
   if (verification.catalogSha256) {
-    context.header(
-      "X-Napier-Usage-Price-Catalog-SHA256",
-      verification.catalogSha256,
-    );
+    context.header("X-Napier-Usage-Price-Catalog-SHA256", verification.catalogSha256);
   }
 }
 
-function setExtensionPublisherTrustAnchorListHeaders(
-  context: Context,
-  anchors: readonly ExtensionPublisherTrustAnchor[],
-): void {
+function setExtensionPublisherTrustAnchorListHeaders(context: Context, anchors: readonly ExtensionPublisherTrustAnchor[]): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, anchors);
-  context.header(
-    "X-Napier-Extension-Publisher-Trust-Anchor-Count",
-    String(anchors.length),
-  );
-  context.header(
-    "X-Napier-Extension-Publisher-Trust-Trusted-Count",
-    String(anchors.filter((anchor) => anchor.status === "trusted").length),
-  );
-  context.header(
-    "X-Napier-Extension-Publisher-Trust-Revoked-Count",
-    String(anchors.filter((anchor) => anchor.status === "revoked").length),
-  );
-  context.header(
-    "X-Napier-Extension-Publisher-Trust-Signing-Capable-Count",
-    String(anchors.filter((anchor) => Boolean(anchor.signingSource)).length),
-  );
+  context.header("X-Napier-Extension-Publisher-Trust-Anchor-Count", String(anchors.length));
+  context.header("X-Napier-Extension-Publisher-Trust-Trusted-Count", String(anchors.filter((anchor) => anchor.status === "trusted").length));
+  context.header("X-Napier-Extension-Publisher-Trust-Revoked-Count", String(anchors.filter((anchor) => anchor.status === "revoked").length));
+  context.header("X-Napier-Extension-Publisher-Trust-Signing-Capable-Count", String(anchors.filter((anchor) => Boolean(anchor.signingSource)).length));
 }
 
-function setExtensionPublisherTrustAnchorHeaders(
-  context: Context,
-  anchor: ExtensionPublisherTrustAnchor,
-): void {
+function setExtensionPublisherTrustAnchorHeaders(context: Context, anchor: ExtensionPublisherTrustAnchor): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, anchor.contentSha256);
   context.header("X-Napier-Extension-Publisher-Trust-Anchor-Id", anchor.id);
   context.header("X-Napier-Signature-Key-Id", anchor.keyId);
-  context.header(
-    "X-Napier-Extension-Publisher-Trust-Anchor-Status",
-    anchor.status,
-  );
-  context.header(
-    "X-Napier-Extension-Publisher-Trust-Signing-Capable",
-    String(Boolean(anchor.signingSource)),
-  );
+  context.header("X-Napier-Extension-Publisher-Trust-Anchor-Status", anchor.status);
+  context.header("X-Napier-Extension-Publisher-Trust-Signing-Capable", String(Boolean(anchor.signingSource)));
 }
 
-function trustedReceiptEventPayload(
-  envelope: TrustedReceiptEnvelope,
-): Record<string, JsonValue> {
+function trustedReceiptEventPayload(envelope: TrustedReceiptEnvelope): Record<string, JsonValue> {
   return {
     receiptKind: envelope.receiptKind,
     receiptSha256: envelope.receipt.contentSha256,
@@ -13589,10 +8278,7 @@ function trustedReceiptEventPayload(
   };
 }
 
-function signedExtensionPackageEventPayload(
-  extensionId: string,
-  envelope: SignedExtensionPackageEnvelope,
-): Record<string, JsonValue> {
+function signedExtensionPackageEventPayload(extensionId: string, envelope: SignedExtensionPackageEnvelope): Record<string, JsonValue> {
   return {
     extensionId,
     keyId: envelope.signature.keyId,
@@ -13605,113 +8291,60 @@ function signedExtensionPackageEventPayload(
   };
 }
 
-function setTrustedReceiptHeaders(
-  context: Context,
-  envelope: TrustedReceiptEnvelope,
-  filename: string,
-): void {
+function setTrustedReceiptHeaders(context: Context, envelope: TrustedReceiptEnvelope, filename: string): void {
   context.header("Cache-Control", "no-store");
   context.header("Content-Disposition", `attachment; filename="${filename}"`);
   setStableContentSha256Header(context, envelope.contentSha256);
   context.header("X-Napier-Receipt-SHA256", envelope.receipt.contentSha256);
-  context.header(
-    "X-Napier-Receipt-Artifact-SHA256",
-    envelope.signature.receiptArtifactSha256,
-  );
+  context.header("X-Napier-Receipt-Artifact-SHA256", envelope.signature.receiptArtifactSha256);
   context.header("X-Napier-Signature-Key-Id", envelope.signature.keyId);
 }
 
-function setSignedExtensionPackageHeaders(
-  context: Context,
-  envelope: SignedExtensionPackageEnvelope,
-  normalizedName: string,
-): void {
+function setSignedExtensionPackageHeaders(context: Context, envelope: SignedExtensionPackageEnvelope, normalizedName: string): void {
   context.header("Cache-Control", "no-store");
-  context.header(
-    "Content-Disposition",
-    `attachment; filename="${signedExtensionPackageFilename(normalizedName, envelope)}"`,
-  );
+  context.header("Content-Disposition", `attachment; filename="${signedExtensionPackageFilename(normalizedName, envelope)}"`);
   setStableContentSha256Header(context, envelope.contentSha256);
   context.header("X-Napier-Manifest-SHA256", envelope.manifest.contentSha256);
-  context.header(
-    "X-Napier-Manifest-Artifact-SHA256",
-    envelope.signature.manifestArtifactSha256,
-  );
+  context.header("X-Napier-Manifest-Artifact-SHA256", envelope.signature.manifestArtifactSha256);
   context.header("X-Napier-Signature-Key-Id", envelope.signature.keyId);
 }
 
-function signedExtensionPackageFilename(
-  normalizedName: string,
-  envelope: SignedExtensionPackageEnvelope,
-): string {
+function signedExtensionPackageFilename(normalizedName: string, envelope: SignedExtensionPackageEnvelope): string {
   const safeName = safeFilenameSegment(normalizedName, "extension");
   return `${safeName}-${envelope.contentSha256.slice(0, 12)}.napier-extension.json`;
 }
 
-function setSkillPackageHeaders(
-  context: Context,
-  envelope: SignedSkillPackageEnvelope,
-  filename: string,
-): void {
+function setSkillPackageHeaders(context: Context, envelope: SignedSkillPackageEnvelope, filename: string): void {
   context.header("Cache-Control", "no-store");
   context.header("Content-Disposition", `attachment; filename="${filename}"`);
   setStableContentSha256Header(context, envelope.contentSha256);
   context.header("X-Napier-Manifest-SHA256", envelope.manifest.contentSha256);
-  context.header(
-    "X-Napier-Skill-Catalog-SHA256",
-    envelope.manifest.skillCatalogSha256,
-  );
-  context.header(
-    "X-Napier-Skill-Count",
-    String(envelope.manifest.skills.length),
-  );
+  context.header("X-Napier-Skill-Catalog-SHA256", envelope.manifest.skillCatalogSha256);
+  context.header("X-Napier-Skill-Count", String(envelope.manifest.skills.length));
   context.header("X-Napier-Signature-Key-Id", envelope.signature.keyId);
 }
 
-function setPromptPackageHeaders(
-  context: Context,
-  envelope: SignedPromptPackageEnvelope,
-  filename: string,
-): void {
+function setPromptPackageHeaders(context: Context, envelope: SignedPromptPackageEnvelope, filename: string): void {
   context.header("Cache-Control", "no-store");
   context.header("Content-Disposition", `attachment; filename="${filename}"`);
   setStableContentSha256Header(context, envelope.contentSha256);
   context.header("X-Napier-Manifest-SHA256", envelope.manifest.contentSha256);
-  context.header(
-    "X-Napier-System-Prompt-SHA256",
-    envelope.manifest.systemPromptSha256,
-  );
-  context.header(
-    "X-Napier-Agent-Revision",
-    String(envelope.manifest.agentRevision),
-  );
+  context.header("X-Napier-System-Prompt-SHA256", envelope.manifest.systemPromptSha256);
+  context.header("X-Napier-Agent-Revision", String(envelope.manifest.agentRevision));
   context.header("X-Napier-Signature-Key-Id", envelope.signature.keyId);
 }
 
-function setInspectorPackageHeaders(
-  context: Context,
-  envelope: SignedInspectorPackageEnvelope,
-  filename: string,
-): void {
+function setInspectorPackageHeaders(context: Context, envelope: SignedInspectorPackageEnvelope, filename: string): void {
   context.header("Cache-Control", "no-store");
   context.header("Content-Disposition", `attachment; filename="${filename}"`);
   setStableContentSha256Header(context, envelope.contentSha256);
   context.header("X-Napier-Manifest-SHA256", envelope.manifest.contentSha256);
-  context.header(
-    "X-Napier-Inspector-Catalog-SHA256",
-    envelope.manifest.inspectorCatalogSha256,
-  );
-  context.header(
-    "X-Napier-Inspector-Count",
-    String(envelope.manifest.panels.length),
-  );
+  context.header("X-Napier-Inspector-Catalog-SHA256", envelope.manifest.inspectorCatalogSha256);
+  context.header("X-Napier-Inspector-Count", String(envelope.manifest.panels.length));
   context.header("X-Napier-Signature-Key-Id", envelope.signature.keyId);
 }
 
-function setSkillPackageVerificationHeaders(
-  context: Context,
-  verification: SkillPackageVerification,
-): void {
+function setSkillPackageVerificationHeaders(context: Context, verification: SkillPackageVerification): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, verification);
   context.header("X-Napier-Skill-Package-Status", verification.status);
@@ -13720,192 +8353,94 @@ function setSkillPackageVerificationHeaders(
     context.header("X-Napier-Manifest-SHA256", verification.manifestSha256);
   }
   if (verification.envelopeSha256) {
-    context.header(
-      "X-Napier-Skill-Package-Envelope-SHA256",
-      verification.envelopeSha256,
-    );
+    context.header("X-Napier-Skill-Package-Envelope-SHA256", verification.envelopeSha256);
   }
   if (verification.keyId) {
     context.header("X-Napier-Signature-Key-Id", verification.keyId);
   }
 }
 
-function setSkillPackageQualificationHeaders(
-  context: Context,
-  qualification: SkillPackageQualification,
-): void {
+function setSkillPackageQualificationHeaders(context: Context, qualification: SkillPackageQualification): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, qualification);
   context.header("X-Napier-Skill-Package-Status", qualification.status);
-  context.header(
-    "X-Napier-Skill-Package-Verification-Status",
-    qualification.verificationStatus,
-  );
+  context.header("X-Napier-Skill-Package-Verification-Status", qualification.verificationStatus);
   context.header("X-Napier-Skill-Count", String(qualification.skillCount));
   if (qualification.manifestSha256) {
     context.header("X-Napier-Manifest-SHA256", qualification.manifestSha256);
   }
   if (qualification.envelopeSha256) {
-    context.header(
-      "X-Napier-Skill-Package-Envelope-SHA256",
-      qualification.envelopeSha256,
-    );
+    context.header("X-Napier-Skill-Package-Envelope-SHA256", qualification.envelopeSha256);
   }
   if (qualification.skillCatalogSha256) {
-    context.header(
-      "X-Napier-Skill-Catalog-SHA256",
-      qualification.skillCatalogSha256,
-    );
+    context.header("X-Napier-Skill-Catalog-SHA256", qualification.skillCatalogSha256);
   }
   if (qualification.observedSkillCatalogSha256) {
-    context.header(
-      "X-Napier-Observed-Skill-Catalog-SHA256",
-      qualification.observedSkillCatalogSha256,
-    );
+    context.header("X-Napier-Observed-Skill-Catalog-SHA256", qualification.observedSkillCatalogSha256);
   }
   if (qualification.keyId) {
     context.header("X-Napier-Signature-Key-Id", qualification.keyId);
   }
 }
 
-function setSkillPackageInstallationListHeaders(
-  context: Context,
-  installations: readonly SkillPackageInstallation[],
-): void {
+function setSkillPackageInstallationListHeaders(context: Context, installations: readonly SkillPackageInstallation[]): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, installations);
-  context.header(
-    "X-Napier-Skill-Package-Installation-Count",
-    String(installations.length),
-  );
-  context.header(
-    "X-Napier-Skill-Package-Active-Installation-Count",
-    String(
-      installations.filter((installation) => installation.status === "active")
-        .length,
-    ),
-  );
+  context.header("X-Napier-Skill-Package-Installation-Count", String(installations.length));
+  context.header("X-Napier-Skill-Package-Active-Installation-Count", String(installations.filter((installation) => installation.status === "active").length));
   context.header(
     "X-Napier-Skill-Package-Replaced-Installation-Count",
-    String(
-      installations.filter((installation) => installation.status === "replaced")
-        .length,
-    ),
+    String(installations.filter((installation) => installation.status === "replaced").length),
   );
-  context.header(
-    "X-Napier-Skill-Count",
-    String(
-      installations.reduce(
-        (total, installation) => total + installation.loadedSkillNames.length,
-        0,
-      ),
-    ),
-  );
+  context.header("X-Napier-Skill-Count", String(installations.reduce((total, installation) => total + installation.loadedSkillNames.length, 0)));
 }
 
-function setSkillPackageInstallationResultHeaders(
-  context: Context,
-  result: InstallSkillPackageResult,
-): void {
+function setSkillPackageInstallationResultHeaders(context: Context, result: InstallSkillPackageResult): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, result);
-  context.header(
-    "X-Napier-Skill-Package-Installation-Id",
-    result.installation.id,
-  );
-  context.header(
-    "X-Napier-Skill-Package-Installation-Status",
-    result.installation.status,
-  );
-  context.header(
-    "X-Napier-Skill-Package-Installation-Created",
-    String(result.created),
-  );
+  context.header("X-Napier-Skill-Package-Installation-Id", result.installation.id);
+  context.header("X-Napier-Skill-Package-Installation-Status", result.installation.status);
+  context.header("X-Napier-Skill-Package-Installation-Created", String(result.created));
   context.header("X-Napier-Skill-Package-Status", result.qualification.status);
-  context.header(
-    "X-Napier-Skill-Package-Verification-Status",
-    result.qualification.verificationStatus,
-  );
-  context.header(
-    "X-Napier-Skill-Count",
-    String(result.installation.loadedSkillNames.length),
-  );
-  context.header(
-    "X-Napier-Skill-Catalog-SHA256",
-    result.installation.skillCatalogSha256,
-  );
-  context.header(
-    "X-Napier-Manifest-SHA256",
-    result.installation.manifestSha256,
-  );
-  context.header(
-    "X-Napier-Skill-Package-Envelope-SHA256",
-    result.installation.envelopeSha256,
-  );
-  context.header(
-    "X-Napier-Skill-Names-SHA256",
-    result.installation.skillNamesSha256,
-  );
+  context.header("X-Napier-Skill-Package-Verification-Status", result.qualification.verificationStatus);
+  context.header("X-Napier-Skill-Count", String(result.installation.loadedSkillNames.length));
+  context.header("X-Napier-Skill-Catalog-SHA256", result.installation.skillCatalogSha256);
+  context.header("X-Napier-Manifest-SHA256", result.installation.manifestSha256);
+  context.header("X-Napier-Skill-Package-Envelope-SHA256", result.installation.envelopeSha256);
+  context.header("X-Napier-Skill-Names-SHA256", result.installation.skillNamesSha256);
   context.header("X-Napier-Signature-Key-Id", result.installation.keyId);
   if (result.replacedInstallation) {
-    context.header(
-      "X-Napier-Skill-Package-Replaced-Installation-Id",
-      result.replacedInstallation.id,
-    );
+    context.header("X-Napier-Skill-Package-Replaced-Installation-Id", result.replacedInstallation.id);
   }
 }
 
-function setSkillContentReviewHeaders(
-  context: Context,
-  review: SkillContentReview,
-): void {
+function setSkillContentReviewHeaders(context: Context, review: SkillContentReview): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, review.reviewSha256);
   context.header("X-Napier-Skill-Content-Review-SHA256", review.reviewSha256);
   context.header("X-Napier-Skill-Content-SHA256", review.contentSha256);
-  context.header(
-    "X-Napier-Skill-Content-Frontmatter-SHA256",
-    review.frontmatterSha256,
-  );
+  context.header("X-Napier-Skill-Content-Frontmatter-SHA256", review.frontmatterSha256);
   context.header("X-Napier-Skill-Content-Body-SHA256", review.bodySha256);
   context.header("X-Napier-Skill-Content-Action", review.action);
   context.header("X-Napier-Skill-Content-Size-Bytes", String(review.sizeBytes));
   context.header("X-Napier-Skill-Content-Line-Count", String(review.lineCount));
   if (review.currentContentSha256) {
-    context.header(
-      "X-Napier-Skill-Content-Current-SHA256",
-      review.currentContentSha256,
-    );
+    context.header("X-Napier-Skill-Content-Current-SHA256", review.currentContentSha256);
   }
 }
 
-function setSkillContentApplyResultHeaders(
-  context: Context,
-  result: ApplySkillContentResult,
-): void {
+function setSkillContentApplyResultHeaders(context: Context, result: ApplySkillContentResult): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, result);
-  context.header(
-    "X-Napier-Skill-Content-Review-SHA256",
-    result.review.reviewSha256,
-  );
+  context.header("X-Napier-Skill-Content-Review-SHA256", result.review.reviewSha256);
   context.header("X-Napier-Skill-Content-SHA256", result.review.contentSha256);
   context.header("X-Napier-Skill-Content-Action", result.review.action);
   context.header("X-Napier-Skill-Content-Applied", String(result.applied));
-  context.header(
-    "X-Napier-Skill-Content-Size-Bytes",
-    String(result.review.sizeBytes),
-  );
-  context.header(
-    "X-Napier-Skill-Content-Line-Count",
-    String(result.review.lineCount),
-  );
+  context.header("X-Napier-Skill-Content-Size-Bytes", String(result.review.sizeBytes));
+  context.header("X-Napier-Skill-Content-Line-Count", String(result.review.lineCount));
 }
 
-function setPromptPackageVerificationHeaders(
-  context: Context,
-  verification: PromptPackageVerification,
-): void {
+function setPromptPackageVerificationHeaders(context: Context, verification: PromptPackageVerification): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, verification);
   context.header("X-Napier-Prompt-Package-Status", verification.status);
@@ -13913,47 +8448,29 @@ function setPromptPackageVerificationHeaders(
     context.header("X-Napier-Manifest-SHA256", verification.manifestSha256);
   }
   if (verification.envelopeSha256) {
-    context.header(
-      "X-Napier-Prompt-Package-Envelope-SHA256",
-      verification.envelopeSha256,
-    );
+    context.header("X-Napier-Prompt-Package-Envelope-SHA256", verification.envelopeSha256);
   }
   if (verification.keyId) {
     context.header("X-Napier-Signature-Key-Id", verification.keyId);
   }
 }
 
-function setPromptPackageQualificationHeaders(
-  context: Context,
-  qualification: PromptPackageQualification,
-): void {
+function setPromptPackageQualificationHeaders(context: Context, qualification: PromptPackageQualification): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, qualification);
   context.header("X-Napier-Prompt-Package-Status", qualification.status);
-  context.header(
-    "X-Napier-Prompt-Package-Verification-Status",
-    qualification.verificationStatus,
-  );
+  context.header("X-Napier-Prompt-Package-Verification-Status", qualification.verificationStatus);
   if (qualification.manifestSha256) {
     context.header("X-Napier-Manifest-SHA256", qualification.manifestSha256);
   }
   if (qualification.envelopeSha256) {
-    context.header(
-      "X-Napier-Prompt-Package-Envelope-SHA256",
-      qualification.envelopeSha256,
-    );
+    context.header("X-Napier-Prompt-Package-Envelope-SHA256", qualification.envelopeSha256);
   }
   if (qualification.systemPromptSha256) {
-    context.header(
-      "X-Napier-System-Prompt-SHA256",
-      qualification.systemPromptSha256,
-    );
+    context.header("X-Napier-System-Prompt-SHA256", qualification.systemPromptSha256);
   }
   if (qualification.observedSystemPromptSha256) {
-    context.header(
-      "X-Napier-Observed-System-Prompt-SHA256",
-      qualification.observedSystemPromptSha256,
-    );
+    context.header("X-Napier-Observed-System-Prompt-SHA256", qualification.observedSystemPromptSha256);
   }
   if (qualification.sourceAgentId) {
     context.header("X-Napier-Agent-Id", qualification.sourceAgentId);
@@ -13962,20 +8479,14 @@ function setPromptPackageQualificationHeaders(
     context.header("X-Napier-Observed-Agent-Id", qualification.observedAgentId);
   }
   if (qualification.observedAgentRevision !== undefined) {
-    context.header(
-      "X-Napier-Observed-Agent-Revision",
-      String(qualification.observedAgentRevision),
-    );
+    context.header("X-Napier-Observed-Agent-Revision", String(qualification.observedAgentRevision));
   }
   if (qualification.keyId) {
     context.header("X-Napier-Signature-Key-Id", qualification.keyId);
   }
 }
 
-function setInspectorPackageVerificationHeaders(
-  context: Context,
-  verification: InspectorPackageVerification,
-): void {
+function setInspectorPackageVerificationHeaders(context: Context, verification: InspectorPackageVerification): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, verification);
   context.header("X-Napier-Inspector-Package-Status", verification.status);
@@ -13984,132 +8495,66 @@ function setInspectorPackageVerificationHeaders(
     context.header("X-Napier-Manifest-SHA256", verification.manifestSha256);
   }
   if (verification.envelopeSha256) {
-    context.header(
-      "X-Napier-Inspector-Package-Envelope-SHA256",
-      verification.envelopeSha256,
-    );
+    context.header("X-Napier-Inspector-Package-Envelope-SHA256", verification.envelopeSha256);
   }
   if (verification.keyId) {
     context.header("X-Napier-Signature-Key-Id", verification.keyId);
   }
 }
 
-function setInspectorPackageQualificationHeaders(
-  context: Context,
-  qualification: InspectorPackageQualification,
-): void {
+function setInspectorPackageQualificationHeaders(context: Context, qualification: InspectorPackageQualification): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, qualification);
   context.header("X-Napier-Inspector-Package-Status", qualification.status);
-  context.header(
-    "X-Napier-Inspector-Package-Verification-Status",
-    qualification.verificationStatus,
-  );
+  context.header("X-Napier-Inspector-Package-Verification-Status", qualification.verificationStatus);
   context.header("X-Napier-Inspector-Count", String(qualification.panelCount));
   if (qualification.manifestSha256) {
     context.header("X-Napier-Manifest-SHA256", qualification.manifestSha256);
   }
   if (qualification.envelopeSha256) {
-    context.header(
-      "X-Napier-Inspector-Package-Envelope-SHA256",
-      qualification.envelopeSha256,
-    );
+    context.header("X-Napier-Inspector-Package-Envelope-SHA256", qualification.envelopeSha256);
   }
   if (qualification.inspectorCatalogSha256) {
-    context.header(
-      "X-Napier-Inspector-Catalog-SHA256",
-      qualification.inspectorCatalogSha256,
-    );
+    context.header("X-Napier-Inspector-Catalog-SHA256", qualification.inspectorCatalogSha256);
   }
   if (qualification.observedInspectorCatalogSha256) {
-    context.header(
-      "X-Napier-Observed-Inspector-Catalog-SHA256",
-      qualification.observedInspectorCatalogSha256,
-    );
+    context.header("X-Napier-Observed-Inspector-Catalog-SHA256", qualification.observedInspectorCatalogSha256);
   }
   if (qualification.keyId) {
     context.header("X-Napier-Signature-Key-Id", qualification.keyId);
   }
 }
 
-function setExtensionPackageChannelIndexHeaders(
-  context: Context,
-  envelope: SignedExtensionPackageChannelIndexEnvelope,
-  filename: string,
-): void {
+function setExtensionPackageChannelIndexHeaders(context: Context, envelope: SignedExtensionPackageChannelIndexEnvelope, filename: string): void {
   context.header("Cache-Control", "no-store");
   context.header("Content-Disposition", `attachment; filename="${filename}"`);
   setStableContentSha256Header(context, envelope.contentSha256);
   context.header("X-Napier-Index-SHA256", envelope.index.contentSha256);
-  context.header(
-    "X-Napier-Index-Artifact-SHA256",
-    envelope.signature.indexArtifactSha256,
-  );
-  context.header(
-    "X-Napier-Channel-Count",
-    String(envelope.index.channels.length),
-  );
+  context.header("X-Napier-Index-Artifact-SHA256", envelope.signature.indexArtifactSha256);
+  context.header("X-Napier-Channel-Count", String(envelope.index.channels.length));
   context.header("X-Napier-Signature-Key-Id", envelope.signature.keyId);
 }
 
-function setExtensionPackageLockfileHeaders(
-  context: Context,
-  lockfile: ExtensionPackageLockfile,
-  filename: string,
-): void {
+function setExtensionPackageLockfileHeaders(context: Context, lockfile: ExtensionPackageLockfile, filename: string): void {
   context.header("Cache-Control", "no-store");
   context.header("Content-Disposition", `attachment; filename="${filename}"`);
   setStableContentSha256Header(context, lockfile.contentSha256);
   context.header("X-Napier-Package-Count", String(lockfile.packages.length));
-  context.header(
-    "X-Napier-Extension-Package-Dependency-Count",
-    String(
-      lockfile.packages.reduce(
-        (total, entry) => total + entry.dependencies.length,
-        0,
-      ),
-    ),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Envelope-Set-SHA256",
-    sha256Json(lockfile.packages.map((entry) => entry.envelopeSha256).sort()),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Name-Set-SHA256",
-    sha256Json(lockfile.packages.map((entry) => entry.normalizedName).sort()),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Publisher-Key-Set-SHA256",
-    sha256Json(
-      [...new Set(lockfile.packages.map((entry) => entry.keyId))].sort(),
-    ),
-  );
+  context.header("X-Napier-Extension-Package-Dependency-Count", String(lockfile.packages.reduce((total, entry) => total + entry.dependencies.length, 0)));
+  context.header("X-Napier-Extension-Package-Envelope-Set-SHA256", sha256Json(lockfile.packages.map((entry) => entry.envelopeSha256).sort()));
+  context.header("X-Napier-Extension-Package-Name-Set-SHA256", sha256Json(lockfile.packages.map((entry) => entry.normalizedName).sort()));
+  context.header("X-Napier-Extension-Package-Publisher-Key-Set-SHA256", sha256Json([...new Set(lockfile.packages.map((entry) => entry.keyId))].sort()));
 }
 
-function setExtensionPackageVerificationHeaders(
-  context: Context,
-  verification: ExtensionPackageVerification,
-): void {
+function setExtensionPackageVerificationHeaders(context: Context, verification: ExtensionPackageVerification): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, verification);
   context.header("X-Napier-Extension-Package-Status", verification.status);
-  context.header(
-    "X-Napier-Extension-Package-Signature-Valid",
-    String(verification.signatureValid),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Integrity-Valid",
-    String(verification.integrityValid),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Configuration-Valid",
-    String(verification.configurationValid),
-  );
+  context.header("X-Napier-Extension-Package-Signature-Valid", String(verification.signatureValid));
+  context.header("X-Napier-Extension-Package-Integrity-Valid", String(verification.integrityValid));
+  context.header("X-Napier-Extension-Package-Configuration-Valid", String(verification.configurationValid));
   if (verification.executableValid !== undefined) {
-    context.header(
-      "X-Napier-Extension-Package-Executable-Valid",
-      String(verification.executableValid),
-    );
+    context.header("X-Napier-Extension-Package-Executable-Valid", String(verification.executableValid));
   }
   if (verification.keyId) {
     context.header("X-Napier-Signature-Key-Id", verification.keyId);
@@ -14118,373 +8563,145 @@ function setExtensionPackageVerificationHeaders(
     context.header("X-Napier-Manifest-SHA256", verification.manifestSha256);
   }
   if (verification.envelopeSha256) {
-    context.header(
-      "X-Napier-Extension-Package-Envelope-SHA256",
-      verification.envelopeSha256,
-    );
+    context.header("X-Napier-Extension-Package-Envelope-SHA256", verification.envelopeSha256);
   }
   if (verification.transportSha256) {
-    context.header(
-      "X-Napier-Extension-Package-Transport-SHA256",
-      verification.transportSha256,
-    );
+    context.header("X-Napier-Extension-Package-Transport-SHA256", verification.transportSha256);
   }
 }
 
-function setExtensionPackageDeploymentPreviewHeaders(
-  context: Context,
-  preview: ExtensionPackageDeploymentPreview,
-): void {
+function setExtensionPackageDeploymentPreviewHeaders(context: Context, preview: ExtensionPackageDeploymentPreview): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, preview.contentSha256);
-  context.header(
-    "X-Napier-Extension-Package-Deployment-SHA256",
-    preview.contentSha256,
-  );
-  context.header(
-    "X-Napier-Extension-Package-Candidate-Count",
-    String(preview.candidateCount),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Install-Count",
-    String(preview.installCount),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Update-Count",
-    String(preview.updateCount),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Dependency-Resolution-Count",
-    String(preview.resolutions.length),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Requires-Publisher-Confirmation",
-    String(preview.requiresPublisherConfirmation),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Requires-Version-Override",
-    String(preview.requiresVersionOverride),
-  );
-  context.header(
-    "X-Napier-Extension-Package-No-Changes",
-    String(preview.noChanges),
-  );
+  context.header("X-Napier-Extension-Package-Deployment-SHA256", preview.contentSha256);
+  context.header("X-Napier-Extension-Package-Candidate-Count", String(preview.candidateCount));
+  context.header("X-Napier-Extension-Package-Install-Count", String(preview.installCount));
+  context.header("X-Napier-Extension-Package-Update-Count", String(preview.updateCount));
+  context.header("X-Napier-Extension-Package-Dependency-Resolution-Count", String(preview.resolutions.length));
+  context.header("X-Napier-Extension-Package-Requires-Publisher-Confirmation", String(preview.requiresPublisherConfirmation));
+  context.header("X-Napier-Extension-Package-Requires-Version-Override", String(preview.requiresVersionOverride));
+  context.header("X-Napier-Extension-Package-No-Changes", String(preview.noChanges));
 }
 
-function setExtensionPackageDeploymentResultHeaders(
-  context: Context,
-  result: ApplyExtensionPackageDeploymentResult,
-): void {
+function setExtensionPackageDeploymentResultHeaders(context: Context, result: ApplyExtensionPackageDeploymentResult): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, result);
-  context.header(
-    "X-Napier-Extension-Package-Deployment-SHA256",
-    result.preview.contentSha256,
-  );
-  context.header(
-    "X-Napier-Extension-Package-Candidate-Count",
-    String(result.preview.candidateCount),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Applied-Extension-Count",
-    String(result.extensions.length),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Installed-Extension-Count",
-    String(result.installedExtensionIds.length),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Updated-Extension-Count",
-    String(result.updatedExtensionIds.length),
-  );
-  context.header(
-    "X-Napier-Extension-Package-No-Changes",
-    String(result.preview.noChanges),
-  );
+  context.header("X-Napier-Extension-Package-Deployment-SHA256", result.preview.contentSha256);
+  context.header("X-Napier-Extension-Package-Candidate-Count", String(result.preview.candidateCount));
+  context.header("X-Napier-Extension-Package-Applied-Extension-Count", String(result.extensions.length));
+  context.header("X-Napier-Extension-Package-Installed-Extension-Count", String(result.installedExtensionIds.length));
+  context.header("X-Napier-Extension-Package-Updated-Extension-Count", String(result.updatedExtensionIds.length));
+  context.header("X-Napier-Extension-Package-No-Changes", String(result.preview.noChanges));
 }
 
-function setExtensionPackageLockfileVerificationHeaders(
-  context: Context,
-  verification: ExtensionPackageLockfileVerification,
-): void {
+function setExtensionPackageLockfileVerificationHeaders(context: Context, verification: ExtensionPackageLockfileVerification): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, verification);
-  context.header(
-    "X-Napier-Extension-Package-Lockfile-Status",
-    verification.status,
-  );
+  context.header("X-Napier-Extension-Package-Lockfile-Status", verification.status);
   context.header("X-Napier-Package-Count", String(verification.packageCount));
-  context.header(
-    "X-Napier-Extension-Package-Envelope-Count",
-    String(verification.packageEnvelopeSha256es.length),
-  );
+  context.header("X-Napier-Extension-Package-Envelope-Count", String(verification.packageEnvelopeSha256es.length));
   if (verification.lockfileSha256) {
-    context.header(
-      "X-Napier-Extension-Package-Lockfile-SHA256",
-      verification.lockfileSha256,
-    );
+    context.header("X-Napier-Extension-Package-Lockfile-SHA256", verification.lockfileSha256);
   }
 }
 
-function setExtensionPackageChannelIndexVerificationHeaders(
-  context: Context,
-  verification: ExtensionPackageChannelIndexVerification,
-): void {
+function setExtensionPackageChannelIndexVerificationHeaders(context: Context, verification: ExtensionPackageChannelIndexVerification): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, verification);
-  context.header(
-    "X-Napier-Extension-Package-Channel-Index-Status",
-    verification.status,
-  );
+  context.header("X-Napier-Extension-Package-Channel-Index-Status", verification.status);
   context.header("X-Napier-Channel-Count", String(verification.channelCount));
   if (verification.indexSha256) {
     context.header("X-Napier-Index-SHA256", verification.indexSha256);
   }
   if (verification.envelopeSha256) {
-    context.header(
-      "X-Napier-Extension-Package-Envelope-SHA256",
-      verification.envelopeSha256,
-    );
+    context.header("X-Napier-Extension-Package-Envelope-SHA256", verification.envelopeSha256);
   }
   if (verification.keyId) {
     context.header("X-Napier-Signature-Key-Id", verification.keyId);
   }
 }
 
-function setExtensionPackageRolloutChannelListHeaders(
-  context: Context,
-  channels: readonly ExtensionPackageRolloutChannel[],
-): void {
+function setExtensionPackageRolloutChannelListHeaders(context: Context, channels: readonly ExtensionPackageRolloutChannel[]): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, channels);
-  context.header(
-    "X-Napier-Extension-Package-Rollout-Count",
-    String(channels.length),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Active-Rollout-Count",
-    String(channels.filter((channel) => channel.status === "active").length),
-  );
-  context.header(
-    "X-Napier-Package-Count",
-    String(
-      channels.reduce((total, channel) => total + channel.packageCount, 0),
-    ),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Dependency-Count",
-    String(
-      channels.reduce((total, channel) => total + channel.dependencyCount, 0),
-    ),
-  );
+  context.header("X-Napier-Extension-Package-Rollout-Count", String(channels.length));
+  context.header("X-Napier-Extension-Package-Active-Rollout-Count", String(channels.filter((channel) => channel.status === "active").length));
+  context.header("X-Napier-Package-Count", String(channels.reduce((total, channel) => total + channel.packageCount, 0)));
+  context.header("X-Napier-Extension-Package-Dependency-Count", String(channels.reduce((total, channel) => total + channel.dependencyCount, 0)));
 }
 
-function setExtensionPackageRolloutChannelHeaders(
-  context: Context,
-  channel: ExtensionPackageRolloutChannel,
-): void {
+function setExtensionPackageRolloutChannelHeaders(context: Context, channel: ExtensionPackageRolloutChannel): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, channel.contentSha256);
   context.header("X-Napier-Extension-Package-Rollout-Id", channel.id);
   context.header("X-Napier-Extension-Package-Rollout-Status", channel.status);
-  context.header(
-    "X-Napier-Extension-Package-Rollout-Revision",
-    String(channel.revision),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Lockfile-SHA256",
-    channel.lockfileSha256,
-  );
+  context.header("X-Napier-Extension-Package-Rollout-Revision", String(channel.revision));
+  context.header("X-Napier-Extension-Package-Lockfile-SHA256", channel.lockfileSha256);
   context.header("X-Napier-Package-Count", String(channel.packageCount));
-  context.header(
-    "X-Napier-Extension-Package-Dependency-Count",
-    String(channel.dependencyCount),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Envelope-Set-SHA256",
-    channel.packageEnvelopeIdsSha256,
-  );
-  context.header(
-    "X-Napier-Extension-Package-Rollout-Policy-SHA256",
-    sha256Text(JSON.stringify(channel.policy)),
-  );
+  context.header("X-Napier-Extension-Package-Dependency-Count", String(channel.dependencyCount));
+  context.header("X-Napier-Extension-Package-Envelope-Set-SHA256", channel.packageEnvelopeIdsSha256);
+  context.header("X-Napier-Extension-Package-Rollout-Policy-SHA256", sha256Text(JSON.stringify(channel.policy)));
 }
 
-function setExtensionPackageRolloutPreviewHeaders(
-  context: Context,
-  preview: ExtensionPackageRolloutPreview,
-): void {
+function setExtensionPackageRolloutPreviewHeaders(context: Context, preview: ExtensionPackageRolloutPreview): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, preview.contentSha256);
-  context.header(
-    "X-Napier-Extension-Package-Rollout-SHA256",
-    preview.contentSha256,
-  );
+  context.header("X-Napier-Extension-Package-Rollout-SHA256", preview.contentSha256);
   context.header("X-Napier-Extension-Package-Rollout-Id", preview.channelId);
-  context.header(
-    "X-Napier-Extension-Package-Rollout-Revision",
-    String(preview.channelRevision),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Lockfile-SHA256",
-    preview.lockfileSha256,
-  );
-  context.header(
-    "X-Napier-Extension-Package-Lockfile-Status",
-    preview.verification.status,
-  );
-  context.header(
-    "X-Napier-Extension-Package-Deployment-SHA256",
-    preview.deploymentPreview.contentSha256,
-  );
-  context.header(
-    "X-Napier-Extension-Package-Candidate-Count",
-    String(preview.deploymentPreview.candidateCount),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Install-Count",
-    String(preview.deploymentPreview.installCount),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Update-Count",
-    String(preview.deploymentPreview.updateCount),
-  );
+  context.header("X-Napier-Extension-Package-Rollout-Revision", String(preview.channelRevision));
+  context.header("X-Napier-Extension-Package-Lockfile-SHA256", preview.lockfileSha256);
+  context.header("X-Napier-Extension-Package-Lockfile-Status", preview.verification.status);
+  context.header("X-Napier-Extension-Package-Deployment-SHA256", preview.deploymentPreview.contentSha256);
+  context.header("X-Napier-Extension-Package-Candidate-Count", String(preview.deploymentPreview.candidateCount));
+  context.header("X-Napier-Extension-Package-Install-Count", String(preview.deploymentPreview.installCount));
+  context.header("X-Napier-Extension-Package-Update-Count", String(preview.deploymentPreview.updateCount));
 }
 
-function setExtensionPackageRolloutApplyResultHeaders(
-  context: Context,
-  result: ApplyExtensionPackageRolloutChannelResult,
-): void {
+function setExtensionPackageRolloutApplyResultHeaders(context: Context, result: ApplyExtensionPackageRolloutChannelResult): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, result);
-  context.header(
-    "X-Napier-Extension-Package-Rollout-SHA256",
-    result.rolloutPreview.contentSha256,
-  );
-  context.header(
-    "X-Napier-Extension-Package-Deployment-SHA256",
-    result.deployment.preview.contentSha256,
-  );
+  context.header("X-Napier-Extension-Package-Rollout-SHA256", result.rolloutPreview.contentSha256);
+  context.header("X-Napier-Extension-Package-Deployment-SHA256", result.deployment.preview.contentSha256);
   context.header("X-Napier-Extension-Package-Rollout-Id", result.channel.id);
-  context.header(
-    "X-Napier-Extension-Package-Rollout-Revision",
-    String(result.channel.revision),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Lockfile-SHA256",
-    result.channel.lockfileSha256,
-  );
-  context.header(
-    "X-Napier-Extension-Package-Applied-Extension-Count",
-    String(result.deployment.extensions.length),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Installed-Extension-Count",
-    String(result.deployment.installedExtensionIds.length),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Updated-Extension-Count",
-    String(result.deployment.updatedExtensionIds.length),
-  );
+  context.header("X-Napier-Extension-Package-Rollout-Revision", String(result.channel.revision));
+  context.header("X-Napier-Extension-Package-Lockfile-SHA256", result.channel.lockfileSha256);
+  context.header("X-Napier-Extension-Package-Applied-Extension-Count", String(result.deployment.extensions.length));
+  context.header("X-Napier-Extension-Package-Installed-Extension-Count", String(result.deployment.installedExtensionIds.length));
+  context.header("X-Napier-Extension-Package-Updated-Extension-Count", String(result.deployment.updatedExtensionIds.length));
 }
 
-function setExtensionPackageUpdatePreviewHeaders(
-  context: Context,
-  preview: ExtensionPackageUpdatePreview,
-): void {
+function setExtensionPackageUpdatePreviewHeaders(context: Context, preview: ExtensionPackageUpdatePreview): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, preview.contentSha256);
   context.header("X-Napier-Extension-Id", preview.extensionId);
-  context.header(
-    "X-Napier-Extension-Package-Update-SHA256",
-    preview.contentSha256,
-  );
-  context.header(
-    "X-Napier-Extension-Package-Binding-SHA256",
-    preview.expectedPackageBindingSha256,
-  );
-  context.header(
-    "X-Napier-Extension-Package-Current-Manifest-SHA256",
-    preview.current.manifestSha256,
-  );
-  context.header(
-    "X-Napier-Extension-Package-Next-Manifest-SHA256",
-    preview.next.manifestSha256,
-  );
-  context.header(
-    "X-Napier-Extension-Package-Version-Direction",
-    preview.versionDirection,
-  );
-  context.header(
-    "X-Napier-Extension-Package-Requires-Publisher-Confirmation",
-    String(preview.requiresPublisherConfirmation),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Requires-Version-Override",
-    String(preview.requiresVersionOverride),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Change-Count",
-    String(preview.changes.length),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Added-Capability-Count",
-    String(preview.capabilitiesAdded.length),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Removed-Capability-Count",
-    String(preview.capabilitiesRemoved.length),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Tool-Added-Count",
-    String(preview.tools.added.length),
-  );
-  context.header(
-    "X-Napier-Extension-Package-Tool-Removed-Count",
-    String(preview.tools.removed.length),
-  );
-  context.header(
-    "X-Napier-Extension-Package-No-Changes",
-    String(preview.noChanges),
-  );
+  context.header("X-Napier-Extension-Package-Update-SHA256", preview.contentSha256);
+  context.header("X-Napier-Extension-Package-Binding-SHA256", preview.expectedPackageBindingSha256);
+  context.header("X-Napier-Extension-Package-Current-Manifest-SHA256", preview.current.manifestSha256);
+  context.header("X-Napier-Extension-Package-Next-Manifest-SHA256", preview.next.manifestSha256);
+  context.header("X-Napier-Extension-Package-Version-Direction", preview.versionDirection);
+  context.header("X-Napier-Extension-Package-Requires-Publisher-Confirmation", String(preview.requiresPublisherConfirmation));
+  context.header("X-Napier-Extension-Package-Requires-Version-Override", String(preview.requiresVersionOverride));
+  context.header("X-Napier-Extension-Package-Change-Count", String(preview.changes.length));
+  context.header("X-Napier-Extension-Package-Added-Capability-Count", String(preview.capabilitiesAdded.length));
+  context.header("X-Napier-Extension-Package-Removed-Capability-Count", String(preview.capabilitiesRemoved.length));
+  context.header("X-Napier-Extension-Package-Tool-Added-Count", String(preview.tools.added.length));
+  context.header("X-Napier-Extension-Package-Tool-Removed-Count", String(preview.tools.removed.length));
+  context.header("X-Napier-Extension-Package-No-Changes", String(preview.noChanges));
 }
 
-function setExtensionPackageUpdateResultHeaders(
-  context: Context,
-  result: ApplyExtensionPackageUpdateResult,
-): void {
+function setExtensionPackageUpdateResultHeaders(context: Context, result: ApplyExtensionPackageUpdateResult): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, result);
   context.header("X-Napier-Extension-Id", result.extension.id);
-  context.header(
-    "X-Napier-Extension-Package-Update-SHA256",
-    result.preview.contentSha256,
-  );
-  context.header(
-    "X-Napier-Extension-Package-Binding-SHA256",
-    result.preview.expectedPackageBindingSha256,
-  );
+  context.header("X-Napier-Extension-Package-Update-SHA256", result.preview.contentSha256);
+  context.header("X-Napier-Extension-Package-Binding-SHA256", result.preview.expectedPackageBindingSha256);
   context.header("X-Napier-Extension-Package-Updated", String(result.updated));
-  context.header(
-    "X-Napier-Extension-Package-Version-Direction",
-    result.preview.versionDirection,
-  );
-  context.header(
-    "X-Napier-Extension-Package-History-Count",
-    String(result.extension.packageHistory?.length ?? 0),
-  );
-  context.header(
-    "X-Napier-Extension-Revision",
-    String(result.extension.revision),
-  );
+  context.header("X-Napier-Extension-Package-Version-Direction", result.preview.versionDirection);
+  context.header("X-Napier-Extension-Package-History-Count", String(result.extension.packageHistory?.length ?? 0));
+  context.header("X-Napier-Extension-Revision", String(result.extension.revision));
 }
 
-async function appendReceiptTrustEvent(
-  services: NapierServices,
-  threadId: string,
-  type: string,
-  payload: Record<string, JsonValue>,
-): Promise<void> {
+async function appendReceiptTrustEvent(services: NapierServices, threadId: string, type: string, payload: Record<string, JsonValue>): Promise<void> {
   await services.store.appendEvent({
     threadId,
     runId: createId("runctl"),
@@ -14495,12 +8712,7 @@ async function appendReceiptTrustEvent(
   });
 }
 
-async function appendExtensionEvent(
-  services: NapierServices,
-  threadId: string | undefined,
-  type: string,
-  payload: Record<string, JsonValue>,
-): Promise<void> {
+async function appendExtensionEvent(services: NapierServices, threadId: string | undefined, type: string, payload: Record<string, JsonValue>): Promise<void> {
   if (!threadId) return;
   await services.store.appendEvent({
     threadId,

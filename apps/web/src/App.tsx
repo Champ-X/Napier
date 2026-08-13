@@ -28,7 +28,10 @@ export function App() {
   const conversationEnd = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    conversationEnd.current?.scrollIntoView({ behavior: vm.isRunning ? "smooth" : "instant", block: "end" });
+    conversationEnd.current?.scrollIntoView({
+      behavior: vm.isRunning ? "smooth" : "instant",
+      block: "end",
+    });
   }, [vm.messages.length, vm.streamingText, vm.isRunning]);
 
   const taskControls = useTaskControlNavigation({
@@ -168,7 +171,10 @@ export function App() {
                 onImportFixture={(file) => void vm.importThreadFixture(file)}
                 onOpenThread={vm.selectThread}
                 onRefresh={vm.refreshActiveThread}
-                onUseTaskPrompt={(prompt) => { vm.setComposer(prompt); window.setTimeout(() => document.querySelector<HTMLTextAreaElement>(".composer textarea")?.focus(), 0); }}
+                onUseTaskPrompt={(prompt) => {
+                  vm.setComposer(prompt);
+                  window.setTimeout(() => document.querySelector<HTMLTextAreaElement>(".composer textarea")?.focus(), 0);
+                }}
               />
             </Suspense>
           ) : null}

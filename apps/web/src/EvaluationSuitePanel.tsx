@@ -33,15 +33,9 @@ import { copy } from "./copy";
 import EvaluationCasebookPanel from "./EvaluationCasebookPanel";
 import { evaluationSuiteGateReceiptFilename } from "./evaluation-artifact-view-model";
 import ReceiptTrustPanel from "./ReceiptTrustPanel";
-import {
-  getSignedEvaluationSuiteReceipt,
-  listReceiptTrustAnchors,
-} from "./receipt-trust-api";
+import { getSignedEvaluationSuiteReceipt, listReceiptTrustAnchors } from "./receipt-trust-api";
 import { formatApiErrorMessage } from "./api-error";
-import {
-  modelProviderGroups,
-  selectedModelAvailability,
-} from "./model-selection-view-model";
+import { modelProviderGroups, selectedModelAvailability } from "./model-selection-view-model";
 
 export default function EvaluationSuitePanel({
   threadId,
@@ -73,9 +67,7 @@ export default function EvaluationSuitePanel({
   const [editingSuiteId, setEditingSuiteId] = useState<string>();
   const [name, setName] = useState("");
   const [baselineRunId, setBaselineRunId] = useState(runs[0]?.id ?? "");
-  const [candidateRunIds, setCandidateRunIds] = useState<string[]>(
-    runs[1] ? [runs[1].id] : [],
-  );
+  const [candidateRunIds, setCandidateRunIds] = useState<string[]>(runs[1] ? [runs[1].id] : []);
   const [minimumPassRate, setMinimumPassRate] = useState(100);
   const [minimumCandidateScore, setMinimumCandidateScore] = useState(3);
   const [allowInconclusive, setAllowInconclusive] = useState(false);
@@ -85,14 +77,8 @@ export default function EvaluationSuitePanel({
   const [trustAnchors, setTrustAnchors] = useState<ReceiptTrustAnchor[]>([]);
   const [selectedTrustAnchorId, setSelectedTrustAnchorId] = useState("");
 
-  const evaluatorModelGroups = useMemo(
-    () => modelProviderGroups(models),
-    [models],
-  );
-  const evaluatorModel = useMemo(
-    () => selectedModelAvailability(models, evaluatorModelKey),
-    [evaluatorModelKey, models],
-  );
+  const evaluatorModelGroups = useMemo(() => modelProviderGroups(models), [models]);
+  const evaluatorModel = useMemo(() => selectedModelAvailability(models, evaluatorModelKey), [evaluatorModelKey, models]);
   useEffect(() => {
     if (runs.some((run) => run.id === baselineRunId)) return;
     const baseline = runs[0]?.id ?? "";
@@ -111,17 +97,9 @@ export default function EvaluationSuitePanel({
         if (cancelled) return;
         setTrustAnchors(anchors);
         setSelectedTrustAnchorId((current) =>
-          anchors.some(
-            (anchor) =>
-              anchor.id === current &&
-              anchor.status === "trusted" &&
-              Boolean(anchor.signingSource),
-          )
+          anchors.some((anchor) => anchor.id === current && anchor.status === "trusted" && Boolean(anchor.signingSource))
             ? current
-            : (anchors.find(
-                (anchor) =>
-                  anchor.status === "trusted" && Boolean(anchor.signingSource),
-              )?.id ?? ""),
+            : (anchors.find((anchor) => anchor.status === "trusted" && Boolean(anchor.signingSource))?.id ?? ""),
         );
       })
       .catch((loadError: unknown) => {
@@ -132,13 +110,7 @@ export default function EvaluationSuitePanel({
     };
   }, [threadId]);
 
-  const sortedSuites = useMemo(
-    () =>
-      suites
-        .slice()
-        .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)),
-    [suites],
-  );
+  const sortedSuites = useMemo(() => suites.slice().sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)), [suites]);
   const canSubmit =
     Boolean(name.trim()) &&
     Boolean(baselineRunId) &&
@@ -168,17 +140,13 @@ export default function EvaluationSuitePanel({
     setMinimumPassRate(Math.round(suite.gate.minimumPassRate * 100));
     setMinimumCandidateScore(suite.gate.minimumCandidateScore);
     setAllowInconclusive(suite.gate.allowInconclusive);
-    setEvaluatorModelKey(
-      `${suite.evaluatorModel.provider}/${suite.evaluatorModel.id}`,
-    );
+    setEvaluatorModelKey(`${suite.evaluatorModel.provider}/${suite.evaluatorModel.id}`);
     setError(undefined);
   }
 
   function toggleCandidate(runId: string): void {
     if (candidateRunIds.includes(runId)) {
-      setCandidateRunIds((current) =>
-        current.filter((candidate) => candidate !== runId),
-      );
+      setCandidateRunIds((current) => current.filter((candidate) => candidate !== runId));
       return;
     }
     if (candidateRunIds.length >= 8) {
@@ -228,12 +196,7 @@ export default function EvaluationSuitePanel({
 
   async function execute(suiteId: string): Promise<void> {
     const suite = suites.find((candidate) => candidate.id === suiteId);
-    const suiteEvaluator = suite
-      ? selectedModelAvailability(
-          models,
-          `${suite.evaluatorModel.provider}/${suite.evaluatorModel.id}`,
-        )
-      : undefined;
+    const suiteEvaluator = suite ? selectedModelAvailability(models, `${suite.evaluatorModel.provider}/${suite.evaluatorModel.id}`) : undefined;
     if (!suiteEvaluator?.configured) {
       setError(copy.modelUnavailableHint);
       return;
@@ -273,15 +236,8 @@ export default function EvaluationSuitePanel({
     setBusyId(actionId);
     setError(undefined);
     try {
-      const envelope = await getSignedEvaluationSuiteReceipt(
-        threadId,
-        suite.id,
-        selectedTrustAnchorId,
-      );
-      downloadTrustedReceipt(
-        envelope,
-        `napier-signed-gate-${suite.id}-r${suite.revision}-${envelope.contentSha256.slice(0, 12)}.json`,
-      );
+      const envelope = await getSignedEvaluationSuiteReceipt(threadId, suite.id, selectedTrustAnchorId);
+      downloadTrustedReceipt(envelope, `napier-signed-gate-${suite.id}-r${suite.revision}-${envelope.contentSha256.slice(0, 12)}.json`);
     } catch (receiptError) {
       setError(toErrorMessage(receiptError));
     } finally {
@@ -290,10 +246,7 @@ export default function EvaluationSuitePanel({
   }
 
   return (
-    <section
-      className="evaluation-suite-panel"
-      aria-labelledby="evaluation-suite-title"
-    >
+    <section className="evaluation-suite-panel" aria-labelledby="evaluation-suite-title">
       <header>
         <div>
           <span>{copy.lab.suite.eyebrow}</span>
@@ -303,13 +256,7 @@ export default function EvaluationSuitePanel({
       </header>
       <p>{copy.lab.suite.body}</p>
 
-      <ReceiptTrustPanel
-        threadId={threadId}
-        anchors={trustAnchors}
-        selectedAnchorId={selectedTrustAnchorId}
-        onSelect={setSelectedTrustAnchorId}
-        onAnchors={setTrustAnchors}
-      />
+      <ReceiptTrustPanel threadId={threadId} anchors={trustAnchors} selectedAnchorId={selectedTrustAnchorId} onSelect={setSelectedTrustAnchorId} onAnchors={setTrustAnchors} />
 
       <EvaluationCalibrationLedger
         threadId={threadId}
@@ -335,36 +282,20 @@ export default function EvaluationSuitePanel({
 
       <div className="suite-compose">
         <div className="suite-compose-heading">
-          <strong>
-            {editingSuiteId ? copy.lab.suite.update : copy.lab.suite.create}
-          </strong>
+          <strong>{editingSuiteId ? copy.lab.suite.update : copy.lab.suite.create}</strong>
           <code>{evaluatorModelKey}</code>
         </div>
         <label>
           <span>{copy.lab.suite.name}</span>
-          <input
-            type="text"
-            maxLength={100}
-            value={name}
-            placeholder={copy.lab.suite.namePlaceholder}
-            onChange={(event) => setName(event.target.value)}
-          />
+          <input type="text" maxLength={100} value={name} placeholder={copy.lab.suite.namePlaceholder} onChange={(event) => setName(event.target.value)} />
         </label>
         <label>
           <span>{copy.lab.suite.evaluator}</span>
-          <select
-            value={evaluatorModelKey}
-            disabled={Boolean(busyId)}
-            onChange={(event) => setEvaluatorModelKey(event.target.value)}
-          >
+          <select value={evaluatorModelKey} disabled={Boolean(busyId)} onChange={(event) => setEvaluatorModelKey(event.target.value)}>
             {evaluatorModelGroups.map((group) => (
               <optgroup key={group.provider} label={group.label}>
                 {group.options.map((option) => (
-                  <option
-                    key={option.key}
-                    value={option.key}
-                    disabled={!option.configured}
-                  >
+                  <option key={option.key} value={option.key} disabled={!option.configured}>
                     {option.label}
                   </option>
                 ))}
@@ -384,9 +315,7 @@ export default function EvaluationSuitePanel({
             onChange={(event) => {
               const runId = event.target.value;
               setBaselineRunId(runId);
-              setCandidateRunIds((current) =>
-                current.filter((candidate) => candidate !== runId),
-              );
+              setCandidateRunIds((current) => current.filter((candidate) => candidate !== runId));
             }}
           >
             <option value="">{copy.lab.selectRun}</option>
@@ -403,12 +332,7 @@ export default function EvaluationSuitePanel({
           <div>
             {runs.map((run, index) => (
               <label key={run.id}>
-                <input
-                  type="checkbox"
-                  checked={candidateRunIds.includes(run.id)}
-                  disabled={run.id === baselineRunId}
-                  onChange={() => toggleCandidate(run.id)}
-                />
+                <input type="checkbox" checked={candidateRunIds.includes(run.id)} disabled={run.id === baselineRunId} onChange={() => toggleCandidate(run.id)} />
                 <span>{runLabel(run, index)}</span>
               </label>
             ))}
@@ -418,85 +342,39 @@ export default function EvaluationSuitePanel({
           <label>
             <span>{copy.lab.suite.passRate}</span>
             <output>{minimumPassRate}%</output>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              step={5}
-              value={minimumPassRate}
-              onChange={(event) =>
-                setMinimumPassRate(event.currentTarget.valueAsNumber)
-              }
-            />
+            <input type="range" min={0} max={100} step={5} value={minimumPassRate} onChange={(event) => setMinimumPassRate(event.currentTarget.valueAsNumber)} />
           </label>
           <label>
             <span>{copy.lab.suite.candidateScore}</span>
             <output>{minimumCandidateScore.toFixed(1)}</output>
-            <input
-              type="range"
-              min={1}
-              max={5}
-              step={0.25}
-              value={minimumCandidateScore}
-              onChange={(event) =>
-                setMinimumCandidateScore(event.currentTarget.valueAsNumber)
-              }
-            />
+            <input type="range" min={1} max={5} step={0.25} value={minimumCandidateScore} onChange={(event) => setMinimumCandidateScore(event.currentTarget.valueAsNumber)} />
           </label>
         </div>
         <label className="suite-inconclusive-toggle">
-          <input
-            type="checkbox"
-            checked={allowInconclusive}
-            onChange={(event) => setAllowInconclusive(event.target.checked)}
-          />
+          <input type="checkbox" checked={allowInconclusive} onChange={(event) => setAllowInconclusive(event.target.checked)} />
           <span>{copy.lab.suite.allowInconclusive}</span>
         </label>
         {error ? <p className="suite-error">{error}</p> : null}
         <div className="suite-compose-actions">
           {editingSuiteId ? (
-            <button
-              type="button"
-              disabled={Boolean(busyId)}
-              onClick={resetForm}
-            >
+            <button type="button" disabled={Boolean(busyId)} onClick={resetForm}>
               <X size={11} aria-hidden="true" />
               {copy.lab.suite.cancel}
             </button>
           ) : null}
-          <button
-            className="suite-primary-action"
-            type="button"
-            disabled={!canSubmit}
-            onClick={() => void submit()}
-          >
-            {editingSuiteId ? (
-              <Save size={11} aria-hidden="true" />
-            ) : (
-              <Check size={11} aria-hidden="true" />
-            )}
+          <button className="suite-primary-action" type="button" disabled={!canSubmit} onClick={() => void submit()}>
+            {editingSuiteId ? <Save size={11} aria-hidden="true" /> : <Check size={11} aria-hidden="true" />}
             {editingSuiteId ? copy.lab.suite.update : copy.lab.suite.create}
           </button>
         </div>
       </div>
 
       <div className="suite-register">
-        {sortedSuites.length === 0 ? (
-          <p className="empty-panel">{copy.lab.suite.empty}</p>
-        ) : null}
+        {sortedSuites.length === 0 ? <p className="empty-panel">{copy.lab.suite.empty}</p> : null}
         {sortedSuites.map((suite) => {
-          const executionHistory = executions
-            .filter((execution) => execution.suiteId === suite.id)
-            .sort((left, right) =>
-              right.finishedAt.localeCompare(left.finishedAt),
-            );
-          const latestExecution = executionHistory.find(
-            (execution) => execution.suiteRevision === suite.revision,
-          );
-          const suiteEvaluator = selectedModelAvailability(
-            models,
-            `${suite.evaluatorModel.provider}/${suite.evaluatorModel.id}`,
-          );
+          const executionHistory = executions.filter((execution) => execution.suiteId === suite.id).sort((left, right) => right.finishedAt.localeCompare(left.finishedAt));
+          const latestExecution = executionHistory.find((execution) => execution.suiteRevision === suite.revision);
+          const suiteEvaluator = selectedModelAvailability(models, `${suite.evaluatorModel.provider}/${suite.evaluatorModel.id}`);
           return (
             <article key={suite.id} className="suite-docket">
               <header>
@@ -506,12 +384,8 @@ export default function EvaluationSuitePanel({
                   </span>
                   <h4>{suite.name}</h4>
                 </div>
-                <strong
-                  className={`suite-status suite-status-${latestExecution?.status ?? "idle"}`}
-                >
-                  {latestExecution
-                    ? copy.lab.suite.statuses[latestExecution.status]
-                    : copy.lab.suite.neverRun}
+                <strong className={`suite-status suite-status-${latestExecution?.status ?? "idle"}`}>
+                  {latestExecution ? copy.lab.suite.statuses[latestExecution.status] : copy.lab.suite.neverRun}
                 </strong>
               </header>
               <dl>
@@ -543,94 +417,54 @@ export default function EvaluationSuitePanel({
                 <div className="suite-result">
                   <div>
                     <span>{copy.lab.suite.latest}</span>
-                    <strong>
-                      {Math.round(latestExecution.passRate * 100)}%
-                    </strong>
+                    <strong>{Math.round(latestExecution.passRate * 100)}%</strong>
                     <small>
-                      {latestExecution.passedCount}/
-                      {latestExecution.results.length}
+                      {latestExecution.passedCount}/{latestExecution.results.length}
                     </small>
                   </div>
                   <div>
                     <span>{copy.lab.suite.average}</span>
-                    <strong>
-                      {latestExecution.averageCandidateScore?.toFixed(2) ?? "–"}
-                    </strong>
+                    <strong>{latestExecution.averageCandidateScore?.toFixed(2) ?? "–"}</strong>
                     <small>/ 5</small>
                   </div>
-                  <code title={latestExecution.contentSha256}>
-                    {latestExecution.contentSha256.slice(0, 12)}
-                  </code>
+                  <code title={latestExecution.contentSha256}>{latestExecution.contentSha256.slice(0, 12)}</code>
                 </div>
               ) : null}
               {latestExecution ? (
-                <section
-                  className="suite-case-evidence"
-                  aria-label={copy.lab.suite.caseEvidence}
-                >
+                <section className="suite-case-evidence" aria-label={copy.lab.suite.caseEvidence}>
                   <header>
                     <span>{copy.lab.suite.caseEvidence}</span>
                     <code>{latestExecution.results.length}</code>
                   </header>
                   <ol>
                     {latestExecution.results.map((result) => {
-                      const candidateIndex = runs.findIndex(
-                        (run) => run.id === result.candidateRunId,
-                      );
+                      const candidateIndex = runs.findIndex((run) => run.id === result.candidateRunId);
                       const candidate = runs[candidateIndex];
-                      const adjudication = adjudications.find(
-                        (item) => item.evaluationId === result.evaluationId,
-                      );
+                      const adjudication = adjudications.find((item) => item.evaluationId === result.evaluationId);
                       const truth = adjudication?.revisions.at(-1);
                       return (
                         <li key={result.evaluationId}>
                           <header>
-                            <span>
-                              {candidate
-                                ? runLabel(candidate, candidateIndex)
-                                : shortId(result.candidateRunId)}
-                            </span>
-                            <strong
-                              className={`suite-status suite-status-${result.status}`}
-                            >
-                              {copy.lab.suite.statuses[result.status]}
-                            </strong>
+                            <span>{candidate ? runLabel(candidate, candidateIndex) : shortId(result.candidateRunId)}</span>
+                            <strong className={`suite-status suite-status-${result.status}`}>{copy.lab.suite.statuses[result.status]}</strong>
                           </header>
                           <div className="suite-case-scores">
                             <span>
                               {copy.lab.suite.baselineScore}
-                              <strong>
-                                {formatScore(result.baselineAverageScore)}
-                              </strong>
+                              <strong>{formatScore(result.baselineAverageScore)}</strong>
                             </span>
                             <span>
                               {copy.lab.suite.candidateScoreShort}
-                              <strong>
-                                {formatScore(result.candidateAverageScore)}
-                              </strong>
+                              <strong>{formatScore(result.candidateAverageScore)}</strong>
                             </span>
                             <span>
                               {copy.lab.verdicts[result.verdict]}
-                              <code title={result.evaluationSha256}>
-                                {result.evaluationSha256.slice(0, 12)}
-                              </code>
+                              <code title={result.evaluationSha256}>{result.evaluationSha256.slice(0, 12)}</code>
                             </span>
                           </div>
-                          <div
-                            className={`suite-case-truth ${
-                              truth?.expectedVerdict === result.verdict
-                                ? "is-agreed"
-                                : truth
-                                  ? "is-diverged"
-                                  : ""
-                            }`}
-                          >
+                          <div className={`suite-case-truth ${truth?.expectedVerdict === result.verdict ? "is-agreed" : truth ? "is-diverged" : ""}`}>
                             <span>{copy.lab.calibration.expectedVerdict}</span>
-                            <strong>
-                              {truth
-                                ? copy.lab.verdicts[truth.expectedVerdict]
-                                : copy.lab.calibration.unreviewed}
-                            </strong>
+                            <strong>{truth ? copy.lab.verdicts[truth.expectedVerdict] : copy.lab.calibration.unreviewed}</strong>
                             {truth ? (
                               <code>
                                 {copy.lab.calibration.revision} {truth.revision}
@@ -655,66 +489,35 @@ export default function EvaluationSuitePanel({
                         <span>
                           {copy.lab.suite.revision} {execution.suiteRevision}
                         </span>
-                        <strong
-                          className={`suite-status suite-status-${execution.status}`}
-                        >
-                          {copy.lab.suite.statuses[execution.status]}
-                        </strong>
-                        <code title={execution.contentSha256}>
-                          {execution.contentSha256.slice(0, 12)}
-                        </code>
-                        <time dateTime={execution.finishedAt}>
-                          {formatDateTime(execution.finishedAt)}
-                        </time>
+                        <strong className={`suite-status suite-status-${execution.status}`}>{copy.lab.suite.statuses[execution.status]}</strong>
+                        <code title={execution.contentSha256}>{execution.contentSha256.slice(0, 12)}</code>
+                        <time dateTime={execution.finishedAt}>{formatDateTime(execution.finishedAt)}</time>
                       </li>
                     ))}
                   </ol>
                 </details>
               ) : null}
               <footer>
-                <button
-                  type="button"
-                  disabled={Boolean(busyId)}
-                  onClick={() => editSuite(suite)}
-                >
+                <button type="button" disabled={Boolean(busyId)} onClick={() => editSuite(suite)}>
                   <Pencil size={11} aria-hidden="true" />
                   {copy.lab.suite.edit}
                 </button>
-                <button
-                  type="button"
-                  disabled={Boolean(busyId)}
-                  onClick={() => void exportReceipt(suite)}
-                >
+                <button type="button" disabled={Boolean(busyId)} onClick={() => void exportReceipt(suite)}>
                   <Download size={11} aria-hidden="true" />
-                  {busyId === `receipt:${suite.id}`
-                    ? copy.lab.suite.exportingReceipt
-                    : copy.lab.suite.receipt}
+                  {busyId === `receipt:${suite.id}` ? copy.lab.suite.exportingReceipt : copy.lab.suite.receipt}
                 </button>
                 <button
                   type="button"
-                  title={
-                    selectedTrustAnchorId
-                      ? copy.lab.suite.signedReceipt
-                      : copy.lab.casebook.qualification.noSigner
-                  }
+                  title={selectedTrustAnchorId ? copy.lab.suite.signedReceipt : copy.lab.casebook.qualification.noSigner}
                   disabled={Boolean(busyId) || !selectedTrustAnchorId}
                   onClick={() => void exportSignedReceipt(suite)}
                 >
                   <KeyRound size={11} aria-hidden="true" />
-                  {busyId === `signed-receipt:${suite.id}`
-                    ? copy.lab.suite.exportingSignedReceipt
-                    : copy.lab.suite.signedReceipt}
+                  {busyId === `signed-receipt:${suite.id}` ? copy.lab.suite.exportingSignedReceipt : copy.lab.suite.signedReceipt}
                 </button>
-                <button
-                  className="suite-run-button"
-                  type="button"
-                  disabled={Boolean(busyId) || !suiteEvaluator.configured}
-                  onClick={() => void execute(suite.id)}
-                >
+                <button className="suite-run-button" type="button" disabled={Boolean(busyId) || !suiteEvaluator.configured} onClick={() => void execute(suite.id)}>
                   <Play size={11} aria-hidden="true" />
-                  {busyId === suite.id
-                    ? copy.lab.suite.running
-                    : copy.lab.suite.run}
+                  {busyId === suite.id ? copy.lab.suite.running : copy.lab.suite.run}
                 </button>
               </footer>
             </article>
@@ -729,12 +532,7 @@ export default function EvaluationSuitePanel({
   );
 }
 
-const CALIBRATION_VERDICTS: readonly RunEvaluationVerdict[] = [
-  "left_better",
-  "right_better",
-  "tie",
-  "inconclusive",
-];
+const CALIBRATION_VERDICTS: readonly RunEvaluationVerdict[] = ["left_better", "right_better", "tie", "inconclusive"];
 
 function EvaluationCalibrationLedger({
   threadId,
@@ -754,34 +552,14 @@ function EvaluationCalibrationLedger({
   const [report, setReport] = useState<EvaluationCalibrationReport>();
   const [reviewingEvaluationId, setReviewingEvaluationId] = useState<string>();
   const [panelEvaluationId, setPanelEvaluationId] = useState<string>();
-  const [expectedVerdict, setExpectedVerdict] =
-    useState<RunEvaluationVerdict>("tie");
+  const [expectedVerdict, setExpectedVerdict] = useState<RunEvaluationVerdict>("tie");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
-  const [registerOpen, setRegisterOpen] = useState(
-    adjudications.length === 0 && evaluations.length > 0,
-  );
-  const adjudicationKey = adjudications
-    .map((item) => `${item.id}:${item.currentRevision}`)
-    .join("|");
-  const adjudicationByEvaluation = useMemo(
-    () =>
-      new Map(
-        adjudications.map((adjudication) => [
-          adjudication.evaluationId,
-          adjudication,
-        ]),
-      ),
-    [adjudications],
-  );
-  const reviewRegister = useMemo(
-    () =>
-      evaluations
-        .slice()
-        .sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
-    [evaluations],
-  );
+  const [registerOpen, setRegisterOpen] = useState(adjudications.length === 0 && evaluations.length > 0);
+  const adjudicationKey = adjudications.map((item) => `${item.id}:${item.currentRevision}`).join("|");
+  const adjudicationByEvaluation = useMemo(() => new Map(adjudications.map((adjudication) => [adjudication.evaluationId, adjudication])), [adjudications]);
+  const reviewRegister = useMemo(() => evaluations.slice().sort((left, right) => right.createdAt.localeCompare(left.createdAt)), [evaluations]);
 
   useEffect(() => {
     let cancelled = false;
@@ -799,9 +577,7 @@ function EvaluationCalibrationLedger({
   }, [adjudicationKey, threadId]);
 
   function beginReview(evaluation: RunEvaluationRecord): void {
-    const current = adjudicationByEvaluation
-      .get(evaluation.id)
-      ?.revisions.at(-1);
+    const current = adjudicationByEvaluation.get(evaluation.id)?.revisions.at(-1);
     setReviewingEvaluationId(evaluation.id);
     setPanelEvaluationId(undefined);
     setExpectedVerdict(current?.expectedVerdict ?? evaluation.verdict);
@@ -843,15 +619,10 @@ function EvaluationCalibrationLedger({
   }
 
   const reviewedCount = report?.sampleCount ?? adjudications.length;
-  const agreementRate = report?.sampleCount
-    ? Math.round(report.agreementRate * 100)
-    : undefined;
+  const agreementRate = report?.sampleCount ? Math.round(report.agreementRate * 100) : undefined;
 
   return (
-    <section
-      className="calibration-ledger"
-      aria-labelledby="calibration-ledger-title"
-    >
+    <section className="calibration-ledger" aria-labelledby="calibration-ledger-title">
       <header>
         <div>
           <span>{copy.lab.calibration.eyebrow}</span>
@@ -867,17 +638,11 @@ function EvaluationCalibrationLedger({
           <strong>
             {reviewedCount}/{evaluations.length}
           </strong>
-          <progress
-            value={reviewedCount}
-            max={Math.max(evaluations.length, 1)}
-            aria-label={copy.lab.calibration.reviewed}
-          />
+          <progress value={reviewedCount} max={Math.max(evaluations.length, 1)} aria-label={copy.lab.calibration.reviewed} />
         </div>
         <div>
           <span>{copy.lab.calibration.agreement}</span>
-          <strong>
-            {agreementRate === undefined ? "–" : `${agreementRate}%`}
-          </strong>
+          <strong>{agreementRate === undefined ? "–" : `${agreementRate}%`}</strong>
           <small>
             {report?.agreementCount ?? 0}/{report?.sampleCount ?? 0}
           </small>
@@ -892,9 +657,7 @@ function EvaluationCalibrationLedger({
       {report?.sampleCount ? (
         <div className="calibration-cohorts">
           {report.groups.map((group) => (
-            <details
-              key={`${group.evaluatorModel.provider}/${group.evaluatorModel.id}/${group.rubricSha256}`}
-            >
+            <details key={`${group.evaluatorModel.provider}/${group.evaluatorModel.id}/${group.rubricSha256}`}>
               <summary>
                 <span>
                   <strong>
@@ -915,11 +678,7 @@ function EvaluationCalibrationLedger({
                   <tr>
                     <th scope="col">{copy.lab.calibration.modelAxis}</th>
                     {CALIBRATION_VERDICTS.map((verdict) => (
-                      <th
-                        key={verdict}
-                        scope="col"
-                        title={`${copy.lab.calibration.truthAxis}: ${copy.lab.verdicts[verdict]}`}
-                      >
+                      <th key={verdict} scope="col" title={`${copy.lab.calibration.truthAxis}: ${copy.lab.verdicts[verdict]}`}>
                         {copy.lab.calibration.verdictMarks[verdict]}
                       </th>
                     ))}
@@ -932,9 +691,7 @@ function EvaluationCalibrationLedger({
                         {copy.lab.calibration.verdictMarks[modelVerdict]}
                       </th>
                       {CALIBRATION_VERDICTS.map((truthVerdict) => (
-                        <td key={truthVerdict}>
-                          {group.confusionMatrix[modelVerdict][truthVerdict]}
-                        </td>
+                        <td key={truthVerdict}>{group.confusionMatrix[modelVerdict][truthVerdict]}</td>
                       ))}
                     </tr>
                   ))}
@@ -947,11 +704,7 @@ function EvaluationCalibrationLedger({
         <p className="calibration-empty">{copy.lab.calibration.noSamples}</p>
       )}
 
-      <details
-        className="calibration-register"
-        open={registerOpen}
-        onToggle={(event) => setRegisterOpen(event.currentTarget.open)}
-      >
+      <details className="calibration-register" open={registerOpen} onToggle={(event) => setRegisterOpen(event.currentTarget.open)}>
         <summary>
           <span>
             <strong>{copy.lab.calibration.register}</strong>
@@ -971,35 +724,21 @@ function EvaluationCalibrationLedger({
               const agreed = truth?.expectedVerdict === evaluation.verdict;
               const reviewing = reviewingEvaluationId === evaluation.id;
               const panelReviewing = panelEvaluationId === evaluation.id;
-              const evaluationBallots = reviewerBallots.filter(
-                (ballot) => ballot.evaluationId === evaluation.id,
-              );
-              const evaluationResolutions = consensusResolutions.filter(
-                (resolution) => resolution.evaluationId === evaluation.id,
-              );
+              const evaluationBallots = reviewerBallots.filter((ballot) => ballot.evaluationId === evaluation.id);
+              const evaluationResolutions = consensusResolutions.filter((resolution) => resolution.evaluationId === evaluation.id);
               return (
                 <li key={evaluation.id}>
                   <header>
                     <span>
                       <strong>
-                        {shortId(evaluation.leftRunId)} →{" "}
-                        {shortId(evaluation.rightRunId)}
+                        {shortId(evaluation.leftRunId)} → {shortId(evaluation.rightRunId)}
                       </strong>
                       <small>
-                        {evaluation.evaluatorModel.provider}/
-                        {evaluation.evaluatorModel.id}
+                        {evaluation.evaluatorModel.provider}/{evaluation.evaluatorModel.id}
                       </small>
                     </span>
-                    <span
-                      className={`calibration-state ${
-                        truth ? (agreed ? "is-agreed" : "is-diverged") : ""
-                      }`}
-                    >
-                      {truth
-                        ? agreed
-                          ? copy.lab.calibration.agreed
-                          : copy.lab.calibration.disagreed
-                        : copy.lab.calibration.unreviewed}
+                    <span className={`calibration-state ${truth ? (agreed ? "is-agreed" : "is-diverged") : ""}`}>
+                      {truth ? (agreed ? copy.lab.calibration.agreed : copy.lab.calibration.disagreed) : copy.lab.calibration.unreviewed}
                     </span>
                   </header>
                   <div className="calibration-verdict-pair">
@@ -1009,16 +748,12 @@ function EvaluationCalibrationLedger({
                     </span>
                     <span>
                       {copy.lab.calibration.expectedVerdict}
-                      <strong>
-                        {truth ? copy.lab.verdicts[truth.expectedVerdict] : "–"}
-                      </strong>
+                      <strong>{truth ? copy.lab.verdicts[truth.expectedVerdict] : "–"}</strong>
                     </span>
                     <code title={truth?.contentSha256}>
                       {truth
                         ? `${copy.lab.calibration.revision} ${truth.revision} · ${truth.contentSha256.slice(0, 10)}${
-                            truth.source === "reviewer_consensus"
-                              ? ` · ${copy.lab.calibration.consensus.provenance}`
-                              : ""
+                            truth.source === "reviewer_consensus" ? ` · ${copy.lab.calibration.consensus.provenance}` : ""
                           }`
                         : evaluation.id}
                     </code>
@@ -1027,14 +762,7 @@ function EvaluationCalibrationLedger({
                     <div className="calibration-review-form">
                       <label>
                         <span>{copy.lab.calibration.expectedVerdict}</span>
-                        <select
-                          value={expectedVerdict}
-                          onChange={(event) =>
-                            setExpectedVerdict(
-                              event.target.value as RunEvaluationVerdict,
-                            )
-                          }
-                        >
+                        <select value={expectedVerdict} onChange={(event) => setExpectedVerdict(event.target.value as RunEvaluationVerdict)}>
                           {CALIBRATION_VERDICTS.map((verdict) => (
                             <option key={verdict} value={verdict}>
                               {copy.lab.verdicts[verdict]}
@@ -1044,33 +772,16 @@ function EvaluationCalibrationLedger({
                       </label>
                       <label>
                         <span>{copy.lab.calibration.note}</span>
-                        <textarea
-                          rows={3}
-                          maxLength={1_000}
-                          value={note}
-                          placeholder={copy.lab.calibration.notePlaceholder}
-                          onChange={(event) => setNote(event.target.value)}
-                        />
+                        <textarea rows={3} maxLength={1_000} value={note} placeholder={copy.lab.calibration.notePlaceholder} onChange={(event) => setNote(event.target.value)} />
                       </label>
                       <footer>
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={cancelReview}
-                        >
+                        <button type="button" disabled={busy} onClick={cancelReview}>
                           <X size={11} aria-hidden="true" />
                           {copy.lab.calibration.cancel}
                         </button>
-                        <button
-                          className="calibration-save"
-                          type="button"
-                          disabled={busy}
-                          onClick={() => void submitReview()}
-                        >
+                        <button className="calibration-save" type="button" disabled={busy} onClick={() => void submitReview()}>
                           <Save size={11} aria-hidden="true" />
-                          {busy
-                            ? copy.lab.calibration.saving
-                            : copy.lab.calibration.save}
+                          {busy ? copy.lab.calibration.saving : copy.lab.calibration.save}
                         </button>
                       </footer>
                     </div>
@@ -1085,30 +796,14 @@ function EvaluationCalibrationLedger({
                     />
                   ) : (
                     <div className="calibration-review-actions">
-                      <button
-                        className="calibration-review-action"
-                        type="button"
-                        disabled={busy}
-                        aria-expanded={panelReviewing}
-                        onClick={() => beginPanelReview(evaluation.id)}
-                      >
+                      <button className="calibration-review-action" type="button" disabled={busy} aria-expanded={panelReviewing} onClick={() => beginPanelReview(evaluation.id)}>
                         <Users size={11} aria-hidden="true" />
                         {copy.lab.calibration.consensus.open}
-                        {evaluationBallots.length ? (
-                          <code>{evaluationBallots.length}</code>
-                        ) : null}
+                        {evaluationBallots.length ? <code>{evaluationBallots.length}</code> : null}
                       </button>
-                      <button
-                        className="calibration-review-action"
-                        type="button"
-                        disabled={busy}
-                        aria-expanded={reviewing}
-                        onClick={() => beginReview(evaluation)}
-                      >
+                      <button className="calibration-review-action" type="button" disabled={busy} aria-expanded={reviewing} onClick={() => beginReview(evaluation)}>
                         <Pencil size={11} aria-hidden="true" />
-                        {truth
-                          ? copy.lab.calibration.revise
-                          : copy.lab.calibration.review}
+                        {truth ? copy.lab.calibration.revise : copy.lab.calibration.review}
                       </button>
                     </div>
                   )}
@@ -1154,9 +849,7 @@ function EvaluationConsensusDesk({
 }) {
   const [reviewerId, setReviewerId] = useState("");
   const [reviewerName, setReviewerName] = useState("");
-  const [expectedVerdict, setExpectedVerdict] = useState<RunEvaluationVerdict>(
-    evaluation.verdict,
-  );
+  const [expectedVerdict, setExpectedVerdict] = useState<RunEvaluationVerdict>(evaluation.verdict);
   const [note, setNote] = useState("");
   const [minimumReviewers, setMinimumReviewers] = useState(2);
   const [minimumAgreementRate, setMinimumAgreementRate] = useState(67);
@@ -1168,16 +861,9 @@ function EvaluationConsensusDesk({
     .map((ballot) => `${ballot.id}:${ballot.currentRevision}`)
     .sort()
     .join("|");
-  const sortedBallots = ballots
-    .slice()
-    .sort((left, right) => left.reviewerId.localeCompare(right.reviewerId));
-  const latestResolution = resolutions
-    .slice()
-    .sort((left, right) => right.createdAt.localeCompare(left.createdAt))[0];
-  const canSubmitBallot =
-    /^[a-z][a-z0-9_-]{1,63}$/i.test(reviewerId.trim()) &&
-    Boolean(reviewerName.trim()) &&
-    !busyAction;
+  const sortedBallots = ballots.slice().sort((left, right) => left.reviewerId.localeCompare(right.reviewerId));
+  const latestResolution = resolutions.slice().sort((left, right) => right.createdAt.localeCompare(left.createdAt))[0];
+  const canSubmitBallot = /^[a-z][a-z0-9_-]{1,63}$/i.test(reviewerId.trim()) && Boolean(reviewerName.trim()) && !busyAction;
 
   function gateRequest() {
     return {
@@ -1237,13 +923,7 @@ function EvaluationConsensusDesk({
         note,
       });
       await onRefresh();
-      setReport(
-        await previewEvaluationConsensus(
-          threadId,
-          evaluation.id,
-          gateRequest(),
-        ),
-      );
+      setReport(await previewEvaluationConsensus(threadId, evaluation.id, gateRequest()));
       resetBallot();
     } catch (submitError) {
       setError(toErrorMessage(submitError));
@@ -1256,13 +936,7 @@ function EvaluationConsensusDesk({
     setBusyAction("preview");
     setError(undefined);
     try {
-      setReport(
-        await previewEvaluationConsensus(
-          threadId,
-          evaluation.id,
-          gateRequest(),
-        ),
-      );
+      setReport(await previewEvaluationConsensus(threadId, evaluation.id, gateRequest()));
     } catch (previewError) {
       setError(toErrorMessage(previewError));
     } finally {
@@ -1275,11 +949,7 @@ function EvaluationConsensusDesk({
     setBusyAction("resolve");
     setError(undefined);
     try {
-      const result = await resolveEvaluationConsensus(
-        threadId,
-        evaluation.id,
-        gateRequest(),
-      );
+      const result = await resolveEvaluationConsensus(threadId, evaluation.id, gateRequest());
       setReport(result.report);
       await onRefresh();
     } catch (resolutionError) {
@@ -1290,16 +960,11 @@ function EvaluationConsensusDesk({
   }
 
   return (
-    <section
-      className="consensus-desk"
-      aria-labelledby={`consensus-desk-${evaluation.id}`}
-    >
+    <section className="consensus-desk" aria-labelledby={`consensus-desk-${evaluation.id}`}>
       <header>
         <div>
           <span>{copy.lab.calibration.consensus.eyebrow}</span>
-          <h5 id={`consensus-desk-${evaluation.id}`}>
-            {copy.lab.calibration.consensus.title}
-          </h5>
+          <h5 id={`consensus-desk-${evaluation.id}`}>{copy.lab.calibration.consensus.title}</h5>
         </div>
         <button type="button" disabled={Boolean(busyAction)} onClick={onClose}>
           <X size={10} aria-hidden="true" />
@@ -1319,22 +984,15 @@ function EvaluationConsensusDesk({
               const revision = ballot.revisions.at(-1)!;
               return (
                 <li key={ballot.id}>
-                  <button
-                    type="button"
-                    disabled={Boolean(busyAction)}
-                    onClick={() => editBallot(ballot)}
-                  >
+                  <button type="button" disabled={Boolean(busyAction)} onClick={() => editBallot(ballot)}>
                     <span>
                       <strong>{revision.reviewerName}</strong>
                       <small>{ballot.reviewerId}</small>
                     </span>
                     <span>
-                      <strong>
-                        {copy.lab.verdicts[revision.expectedVerdict]}
-                      </strong>
+                      <strong>{copy.lab.verdicts[revision.expectedVerdict]}</strong>
                       <code title={revision.contentSha256}>
-                        r{revision.revision} ·{" "}
-                        {revision.contentSha256.slice(0, 8)}
+                        r{revision.revision} · {revision.contentSha256.slice(0, 8)}
                       </code>
                     </span>
                   </button>
@@ -1365,21 +1023,14 @@ function EvaluationConsensusDesk({
               type="text"
               maxLength={80}
               value={reviewerName}
-              placeholder={
-                copy.lab.calibration.consensus.reviewerNamePlaceholder
-              }
+              placeholder={copy.lab.calibration.consensus.reviewerNamePlaceholder}
               onChange={(event) => setReviewerName(event.target.value)}
             />
           </label>
         </div>
         <label>
           <span>{copy.lab.calibration.expectedVerdict}</span>
-          <select
-            value={expectedVerdict}
-            onChange={(event) =>
-              setExpectedVerdict(event.target.value as RunEvaluationVerdict)
-            }
-          >
+          <select value={expectedVerdict} onChange={(event) => setExpectedVerdict(event.target.value as RunEvaluationVerdict)}>
             {CALIBRATION_VERDICTS.map((verdict) => (
               <option key={verdict} value={verdict}>
                 {copy.lab.verdicts[verdict]}
@@ -1389,35 +1040,18 @@ function EvaluationConsensusDesk({
         </label>
         <label>
           <span>{copy.lab.calibration.consensus.ballotNote}</span>
-          <textarea
-            rows={2}
-            maxLength={1_000}
-            value={note}
-            placeholder={copy.lab.calibration.consensus.ballotNotePlaceholder}
-            onChange={(event) => setNote(event.target.value)}
-          />
+          <textarea rows={2} maxLength={1_000} value={note} placeholder={copy.lab.calibration.consensus.ballotNotePlaceholder} onChange={(event) => setNote(event.target.value)} />
         </label>
         <footer>
           {reviewerId ? (
-            <button
-              type="button"
-              disabled={Boolean(busyAction)}
-              onClick={resetBallot}
-            >
+            <button type="button" disabled={Boolean(busyAction)} onClick={resetBallot}>
               <X size={10} aria-hidden="true" />
               {copy.lab.calibration.consensus.clear}
             </button>
           ) : null}
-          <button
-            className="consensus-record"
-            type="button"
-            disabled={!canSubmitBallot}
-            onClick={() => void submitBallot()}
-          >
+          <button className="consensus-record" type="button" disabled={!canSubmitBallot} onClick={() => void submitBallot()}>
             <Save size={10} aria-hidden="true" />
-            {busyAction === "ballot"
-              ? copy.lab.calibration.consensus.recording
-              : copy.lab.calibration.consensus.record}
+            {busyAction === "ballot" ? copy.lab.calibration.consensus.recording : copy.lab.calibration.consensus.record}
           </button>
         </footer>
       </div>
@@ -1472,43 +1106,22 @@ function EvaluationConsensusDesk({
       </fieldset>
 
       <div className="consensus-actions">
-        <button
-          type="button"
-          disabled={Boolean(busyAction)}
-          onClick={() => void previewConsensus()}
-        >
+        <button type="button" disabled={Boolean(busyAction)} onClick={() => void previewConsensus()}>
           <Play size={10} aria-hidden="true" />
-          {busyAction === "preview"
-            ? copy.lab.calibration.consensus.previewing
-            : copy.lab.calibration.consensus.preview}
+          {busyAction === "preview" ? copy.lab.calibration.consensus.previewing : copy.lab.calibration.consensus.preview}
         </button>
-        <button
-          className="consensus-resolve"
-          type="button"
-          disabled={report?.status !== "ready" || Boolean(busyAction)}
-          onClick={() => void resolveConsensus()}
-        >
+        <button className="consensus-resolve" type="button" disabled={report?.status !== "ready" || Boolean(busyAction)} onClick={() => void resolveConsensus()}>
           <Check size={10} aria-hidden="true" />
-          {busyAction === "resolve"
-            ? copy.lab.calibration.consensus.resolving
-            : copy.lab.calibration.consensus.resolve}
+          {busyAction === "resolve" ? copy.lab.calibration.consensus.resolving : copy.lab.calibration.consensus.resolve}
         </button>
       </div>
 
       {report ? (
         <div className="consensus-report" aria-live="polite">
           <header>
-            <span>
-              {copy.lab.calibration.consensus.statuses[report.status]}
-            </span>
-            <strong>
-              {report.consensusVerdict
-                ? copy.lab.verdicts[report.consensusVerdict]
-                : copy.lab.calibration.consensus.noLeader}
-            </strong>
-            <code title={report.contentSha256}>
-              {report.contentSha256.slice(0, 10)}
-            </code>
+            <span>{copy.lab.calibration.consensus.statuses[report.status]}</span>
+            <strong>{report.consensusVerdict ? copy.lab.verdicts[report.consensusVerdict] : copy.lab.calibration.consensus.noLeader}</strong>
+            <code title={report.contentSha256}>{report.contentSha256.slice(0, 10)}</code>
           </header>
           <div className="consensus-distribution">
             {CALIBRATION_VERDICTS.map((verdict) => (
@@ -1519,27 +1132,20 @@ function EvaluationConsensusDesk({
             ))}
           </div>
           <p>
-            {report.consensusCount}/{report.reviewerCount} ·{" "}
-            {Math.round(report.agreementRate * 100)}%{" "}
-            {copy.lab.calibration.consensus.agreement}
+            {report.consensusCount}/{report.reviewerCount} · {Math.round(report.agreementRate * 100)}% {copy.lab.calibration.consensus.agreement}
           </p>
         </div>
       ) : (
-        <p className="consensus-report-stale">
-          {copy.lab.calibration.consensus.previewRequired}
-        </p>
+        <p className="consensus-report-stale">{copy.lab.calibration.consensus.previewRequired}</p>
       )}
 
       {latestResolution ? (
         <footer className="consensus-resolution">
           <span>{copy.lab.calibration.consensus.latestResolution}</span>
           <code title={latestResolution.contentSha256}>
-            r{latestResolution.adjudicationRevision.revision} ·{" "}
-            {latestResolution.contentSha256.slice(0, 10)}
+            r{latestResolution.adjudicationRevision.revision} · {latestResolution.contentSha256.slice(0, 10)}
           </code>
-          <time dateTime={latestResolution.createdAt}>
-            {formatDateTime(latestResolution.createdAt)}
-          </time>
+          <time dateTime={latestResolution.createdAt}>{formatDateTime(latestResolution.createdAt)}</time>
         </footer>
       ) : null}
       {error ? (
@@ -1591,10 +1197,7 @@ function downloadGateReceipt(receipt: EvaluationSuiteGateReceipt): void {
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
-function downloadTrustedReceipt(
-  envelope: TrustedReceiptEnvelope,
-  filename: string,
-): void {
+function downloadTrustedReceipt(envelope: TrustedReceiptEnvelope, filename: string): void {
   const url = URL.createObjectURL(
     new Blob([`${JSON.stringify(envelope, null, 2)}\n`], {
       type: "application/json",

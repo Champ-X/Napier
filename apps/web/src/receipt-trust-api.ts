@@ -90,25 +90,19 @@ export function verifyReceiptTrustAnchorDirectory(
 export function getSignedReceiptTrustAnchorDirectoryMetadata(
   body: SignReceiptTrustAnchorDirectoryMetadataRequest,
 ): Promise<TrustedReceiptEnvelope> {
-  return requestTrustJson(
-    "/api/receipt-trust/anchors/directory/signed-metadata",
-    {
-      method: "POST",
-      body: JSON.stringify(body),
-    },
-  );
+  return requestTrustJson("/api/receipt-trust/anchors/directory/signed-metadata", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 export function verifyReceiptTrustAnchorDirectoryMetadata(
   body: VerifyReceiptTrustAnchorDirectoryMetadataRequest,
 ): Promise<ReceiptTrustAnchorDirectoryMetadataVerification> {
-  return requestTrustJson(
-    "/api/receipt-trust/anchors/directory/metadata/verify",
-    {
-      method: "POST",
-      body: JSON.stringify(body),
-    },
-  );
+  return requestTrustJson("/api/receipt-trust/anchors/directory/metadata/verify", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 export function discoverReceiptTrustAnchorDirectory(
@@ -120,78 +114,59 @@ export function discoverReceiptTrustAnchorDirectory(
   });
 }
 
-export function listReceiptTrustAnchorDirectorySubscriptions(): Promise<
-  ReceiptTrustAnchorDirectorySubscription[]
-> {
+export function listReceiptTrustAnchorDirectorySubscriptions(): Promise<ReceiptTrustAnchorDirectorySubscription[]> {
   return requestTrustJson("/api/receipt-trust/anchors/directory/subscriptions");
 }
 
 export function evaluateReceiptTrustAnchorDirectoryQuorum(
   body: EvaluateReceiptTrustAnchorDirectoryQuorumRequest = {},
 ): Promise<ReceiptTrustAnchorDirectoryQuorum> {
-  return requestTrustJson(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum",
-    {
-      method: "POST",
-      body: JSON.stringify(body),
-    },
-  );
+  return requestTrustJson("/api/receipt-trust/anchors/directory/subscriptions/quorum", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 export function promoteReceiptTrustAnchorDirectoryQuorum(
   body: PromoteReceiptTrustAnchorDirectoryQuorumRequest = {},
 ): Promise<ReceiptTrustAnchorDirectoryQuorumPromotionReceipt> {
-  return requestTrustJson(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion",
-    {
-      method: "POST",
-      body: JSON.stringify(body),
-    },
-  );
+  return requestTrustJson("/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 export function listReceiptTrustAnchorDirectoryQuorumPromotionBaselines(): Promise<
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline[]
 > {
-  return requestTrustJson(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines",
-  );
+  return requestTrustJson("/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines");
 }
 
 export function promoteReceiptTrustAnchorDirectoryQuorumBaseline(
   body: PromoteReceiptTrustAnchorDirectoryQuorumBaselineRequest,
 ): Promise<PromoteReceiptTrustAnchorDirectoryQuorumBaselineResult> {
-  return requestTrustJson(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines",
-    {
-      method: "POST",
-      body: JSON.stringify(body),
-    },
-  );
+  return requestTrustJson("/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 export function verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
   body: VerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest,
 ): Promise<ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification> {
-  return requestTrustJson(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/verify",
-    {
-      method: "POST",
-      body: JSON.stringify(body),
-    },
-  );
+  return requestTrustJson("/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/verify", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 export function importReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
   body: ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest,
 ): Promise<ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult> {
-  return requestTrustJson(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/import",
-    {
-      method: "POST",
-      body: JSON.stringify(body),
-    },
-  );
+  return requestTrustJson("/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/import", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 export function signReceiptTrustAnchorDirectoryQuorumActivationDecision(
@@ -456,13 +431,10 @@ export function applyReceiptTrustAnchorDirectoryQuorumActivationSelection(
 export function createReceiptTrustAnchorDirectorySubscription(
   body: CreateReceiptTrustAnchorDirectorySubscriptionRequest,
 ): Promise<ReceiptTrustAnchorDirectorySubscription> {
-  return requestTrustJson(
-    "/api/receipt-trust/anchors/directory/subscriptions",
-    {
-      method: "POST",
-      body: JSON.stringify(body),
-    },
-  );
+  return requestTrustJson("/api/receipt-trust/anchors/directory/subscriptions", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 export function refreshReceiptTrustAnchorDirectorySubscription(
@@ -483,35 +455,24 @@ export function updateReceiptTrustAnchorDirectorySubscription(
   subscriptionId: string,
   body: UpdateReceiptTrustAnchorDirectorySubscriptionRequest,
 ): Promise<ReceiptTrustAnchorDirectorySubscription> {
-  return requestTrustJson(
-    `/api/receipt-trust/anchors/directory/subscriptions/${encodeURIComponent(subscriptionId)}`,
-    {
-      method: "POST",
-      body: JSON.stringify(body),
-    },
-  );
+  return requestTrustJson(`/api/receipt-trust/anchors/directory/subscriptions/${encodeURIComponent(subscriptionId)}`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
-export function createReceiptTrustAnchor(
-  body: CreateReceiptTrustAnchorRequest,
-): Promise<ReceiptTrustAnchor> {
+export function createReceiptTrustAnchor(body: CreateReceiptTrustAnchorRequest): Promise<ReceiptTrustAnchor> {
   return requestTrustJson("/api/receipt-trust/anchors", {
     method: "POST",
     body: JSON.stringify(body),
   });
 }
 
-export function revokeReceiptTrustAnchor(
-  anchorId: string,
-  threadId: string,
-): Promise<ReceiptTrustAnchor> {
-  return requestTrustJson(
-    `/api/receipt-trust/anchors/${encodeURIComponent(anchorId)}/revoke`,
-    {
-      method: "POST",
-      body: JSON.stringify({ threadId }),
-    },
-  );
+export function revokeReceiptTrustAnchor(anchorId: string, threadId: string): Promise<ReceiptTrustAnchor> {
+  return requestTrustJson(`/api/receipt-trust/anchors/${encodeURIComponent(anchorId)}/revoke`, {
+    method: "POST",
+    body: JSON.stringify({ threadId }),
+  });
 }
 
 export function verifyTrustedReceipt(
@@ -548,21 +509,14 @@ export function getSignedCasebookQualificationReceipt(
   threadId: string,
   trustAnchorId: string,
 ): Promise<TrustedReceiptEnvelope> {
-  return requestTrustJson(
-    `/api/evaluation-casebooks/${encodeURIComponent(casebookId)}/signed-qualification-receipt`,
-    {
-      method: "POST",
-      body: JSON.stringify({ threadId, trustAnchorId }),
-    },
-  );
+  return requestTrustJson(`/api/evaluation-casebooks/${encodeURIComponent(casebookId)}/signed-qualification-receipt`, {
+    method: "POST",
+    body: JSON.stringify({ threadId, trustAnchorId }),
+  });
 }
 
-export function listEvaluationQualificationBaselines(
-  casebookId: string,
-): Promise<EvaluationQualificationBaseline[]> {
-  return requestTrustJson(
-    `/api/evaluation-casebooks/${encodeURIComponent(casebookId)}/qualification-baselines`,
-  );
+export function listEvaluationQualificationBaselines(casebookId: string): Promise<EvaluationQualificationBaseline[]> {
+  return requestTrustJson(`/api/evaluation-casebooks/${encodeURIComponent(casebookId)}/qualification-baselines`);
 }
 
 export function promoteEvaluationQualificationBaseline(
@@ -570,11 +524,8 @@ export function promoteEvaluationQualificationBaseline(
   threadId: string,
   trustAnchorId: string,
 ): Promise<PromoteEvaluationQualificationBaselineResult> {
-  return requestTrustJson(
-    `/api/evaluation-casebooks/${encodeURIComponent(casebookId)}/qualification-baselines`,
-    {
-      method: "POST",
-      body: JSON.stringify({ threadId, trustAnchorId }),
-    },
-  );
+  return requestTrustJson(`/api/evaluation-casebooks/${encodeURIComponent(casebookId)}/qualification-baselines`, {
+    method: "POST",
+    body: JSON.stringify({ threadId, trustAnchorId }),
+  });
 }

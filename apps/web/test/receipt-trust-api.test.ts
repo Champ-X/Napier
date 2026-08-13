@@ -108,8 +108,7 @@ describe("receipt trust Web API wrappers", () => {
           label: "Release signer",
           algorithm: "Ed25519",
           keyId: "b".repeat(64),
-          publicKeySpki:
-            "MCowBQYDK2VwAyEA000000000000000000000000000000000000000=",
+          publicKeySpki: "MCowBQYDK2VwAyEA000000000000000000000000000000000000000=",
           status: "trusted",
           createdAt: "2026-07-27T00:00:00.000Z",
           updatedAt: "2026-07-27T00:00:00.000Z",
@@ -170,35 +169,34 @@ describe("receipt trust Web API wrappers", () => {
       signature: { keyId: directory.anchors[0]!.keyId },
       contentSha256: "5".repeat(64),
     } as TrustedReceiptEnvelope;
-    const metadataVerification: ReceiptTrustAnchorDirectoryMetadataVerification =
-      {
-        kind: "napier.receipt-trust-anchor-directory-metadata-verification",
-        schemaVersion: 1,
-        apiVersion: "0.1.0",
-        generatedAt: "2026-07-27T00:00:03.000Z",
+    const metadataVerification: ReceiptTrustAnchorDirectoryMetadataVerification = {
+      kind: "napier.receipt-trust-anchor-directory-metadata-verification",
+      schemaVersion: 1,
+      apiVersion: "0.1.0",
+      generatedAt: "2026-07-27T00:00:03.000Z",
+      status: "trusted",
+      diagnostics: [],
+      trustedReceiptVerification: {
         status: "trusted",
-        diagnostics: [],
-        trustedReceiptVerification: {
-          status: "trusted",
-          verifiedAt: "2026-07-27T00:00:03.000Z",
-          receiptKind: "receipt_trust_anchor_directory_metadata",
-          keyId: directory.anchors[0]!.keyId,
-          envelopeSha256: metadataEnvelope.contentSha256,
-          signatureValid: true,
-          integrityValid: true,
-          reason: "Receipt signature and evidence are trusted",
-        },
-        directoryVerification: verification,
-        publisher: "Napier Trust Registry",
-        directorySha256: directory.contentSha256,
-        anchorSetSha256: directory.anchorSetSha256,
-        signerKeyId: directory.anchors[0]!.keyId,
+        verifiedAt: "2026-07-27T00:00:03.000Z",
+        receiptKind: "receipt_trust_anchor_directory_metadata",
+        keyId: directory.anchors[0]!.keyId,
         envelopeSha256: metadataEnvelope.contentSha256,
         signatureValid: true,
         integrityValid: true,
-        directoryBindingValid: true,
-        contentSha256: "6".repeat(64),
-      };
+        reason: "Receipt signature and evidence are trusted",
+      },
+      directoryVerification: verification,
+      publisher: "Napier Trust Registry",
+      directorySha256: directory.contentSha256,
+      anchorSetSha256: directory.anchorSetSha256,
+      signerKeyId: directory.anchors[0]!.keyId,
+      envelopeSha256: metadataEnvelope.contentSha256,
+      signatureValid: true,
+      integrityValid: true,
+      directoryBindingValid: true,
+      contentSha256: "6".repeat(64),
+    };
     const sourceUrl = "https://trust.example.test/anchors.json";
     const signMetadataRequest = {
       threadId: "thread_12345678",
@@ -264,9 +262,7 @@ describe("receipt trust Web API wrappers", () => {
         policy: directoryPolicy,
       }),
     ).resolves.toEqual(discovery);
-    await expect(
-      getSignedReceiptTrustAnchorDirectoryMetadata(signMetadataRequest),
-    ).resolves.toEqual(metadataEnvelope);
+    await expect(getSignedReceiptTrustAnchorDirectoryMetadata(signMetadataRequest)).resolves.toEqual(metadataEnvelope);
     await expect(
       verifyReceiptTrustAnchorDirectoryMetadata({
         envelope: metadataEnvelope,
@@ -429,8 +425,7 @@ describe("receipt trust Web API wrappers", () => {
       selectedAnchorSetSha256: promotion.selectedAnchorSetSha256,
       selectedDirectorySha256: promotion.selectedDirectorySha256,
       selectedSubscriptionSetSha256: promotion.selectedSubscriptionSetSha256,
-      selectedMetadataEnvelopeSetSha256:
-        promotion.selectedMetadataEnvelopeSetSha256,
+      selectedMetadataEnvelopeSetSha256: promotion.selectedMetadataEnvelopeSetSha256,
       createdAt: "2026-07-27T00:00:00.000Z",
       contentSha256: "1".repeat(64),
     } satisfies ReceiptTrustAnchorDirectoryQuorumPromotionBaseline;
@@ -456,15 +451,12 @@ describe("receipt trust Web API wrappers", () => {
       baselineSha256: promotionBaseline.contentSha256,
       envelopeSha256: promotionBaseline.envelope.contentSha256,
       receiptSha256: promotionBaseline.envelope.receipt.contentSha256,
-      receiptArtifactSha256:
-        promotionBaseline.envelope.signature.receiptArtifactSha256,
+      receiptArtifactSha256: promotionBaseline.envelope.signature.receiptArtifactSha256,
       keyId: promotionBaseline.envelope.signature.keyId,
       selectedAnchorSetSha256: promotionBaseline.selectedAnchorSetSha256,
       selectedDirectorySha256: promotionBaseline.selectedDirectorySha256,
-      selectedSubscriptionSetSha256:
-        promotionBaseline.selectedSubscriptionSetSha256,
-      selectedMetadataEnvelopeSetSha256:
-        promotionBaseline.selectedMetadataEnvelopeSetSha256,
+      selectedSubscriptionSetSha256: promotionBaseline.selectedSubscriptionSetSha256,
+      selectedMetadataEnvelopeSetSha256: promotionBaseline.selectedMetadataEnvelopeSetSha256,
       contentSha256: "2".repeat(64),
     } satisfies ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification;
     const promotionBaselineImportRequest = {
@@ -559,8 +551,7 @@ describe("receipt trust Web API wrappers", () => {
         baselineSha256: promotionBaseline.contentSha256,
         envelopeSha256: promotionBaseline.envelope.contentSha256,
         receiptSha256: promotionBaseline.envelope.receipt.contentSha256,
-        receiptArtifactSha256:
-          promotionBaseline.envelope.signature.receiptArtifactSha256,
+        receiptArtifactSha256: promotionBaseline.envelope.signature.receiptArtifactSha256,
         selectedAnchorSetSha256: promotionBaseline.selectedAnchorSetSha256,
         selectedDirectorySha256: promotionBaseline.selectedDirectorySha256,
         verificationStatus: "trusted",
@@ -574,8 +565,7 @@ describe("receipt trust Web API wrappers", () => {
         alignedSourceCount: 2,
         driftedSourceCount: 0,
         missingSourceCount: 0,
-        selectedSourceOriginSetSha256:
-          activationSourceAlignment.selectedSourceOriginSetSha256,
+        selectedSourceOriginSetSha256: activationSourceAlignment.selectedSourceOriginSetSha256,
         metadataPublisherSetSha256: "a".repeat(64),
         metadataSignerSetSha256: "b".repeat(64),
         contentSha256: "c".repeat(64),
@@ -646,8 +636,7 @@ describe("receipt trust Web API wrappers", () => {
       activatedAt: "2026-07-27T00:00:02.000Z",
       activatedByThreadId: promotionBaseline.promotedByThreadId,
       activationDecisionRecordId: activationDecisionHistory.records[0]!.id,
-      activationDecisionRecordSha256:
-        activationDecisionHistory.records[0]!.contentSha256,
+      activationDecisionRecordSha256: activationDecisionHistory.records[0]!.contentSha256,
       activationDecisionReceiptSha256: activationEnvelope.receipt.contentSha256,
       activationDecisionEnvelopeSha256: activationEnvelope.contentSha256,
       baselineId: promotionBaseline.id,
@@ -722,8 +711,7 @@ describe("receipt trust Web API wrappers", () => {
       expectedCurrentSelectionSha256: activationSelection.contentSha256,
       currentSelectionSha256: activationSelection.contentSha256,
       activationDecisionRecordId: activationDecisionHistory.records[0]!.id,
-      activationDecisionRecordSha256:
-        activationDecisionHistory.records[0]!.contentSha256,
+      activationDecisionRecordSha256: activationDecisionHistory.records[0]!.contentSha256,
       baselineSha256: promotionBaseline.contentSha256,
       sourceAlignmentSha256: activationSourceAlignment.contentSha256,
       currentSourceAlignmentSha256: activationSourceAlignment.contentSha256,
@@ -759,14 +747,10 @@ describe("receipt trust Web API wrappers", () => {
           activatedByThreadId: activationSelection.activatedByThreadId,
           selectionId: activationSelection.id,
           selectionSha256: activationSelection.contentSha256,
-          activationDecisionRecordId:
-            activationSelection.activationDecisionRecordId,
-          activationDecisionRecordSha256:
-            activationSelection.activationDecisionRecordSha256,
-          activationDecisionReceiptSha256:
-            activationSelection.activationDecisionReceiptSha256,
-          activationDecisionEnvelopeSha256:
-            activationSelection.activationDecisionEnvelopeSha256,
+          activationDecisionRecordId: activationSelection.activationDecisionRecordId,
+          activationDecisionRecordSha256: activationSelection.activationDecisionRecordSha256,
+          activationDecisionReceiptSha256: activationSelection.activationDecisionReceiptSha256,
+          activationDecisionEnvelopeSha256: activationSelection.activationDecisionEnvelopeSha256,
           baselineId: activationSelection.baselineId,
           baselineSha256: activationSelection.baselineSha256,
           selectedAnchorSetSha256: activationSelection.selectedAnchorSetSha256,
@@ -788,20 +772,14 @@ describe("receipt trust Web API wrappers", () => {
       declaredContentSha256: activationSelectionCheckpoint.contentSha256,
       recomputedContentSha256: activationSelectionCheckpoint.contentSha256,
       currentContentSha256: activationSelectionCheckpoint.contentSha256,
-      declaredSelectionSetSha256:
-        activationSelectionCheckpoint.selectionSetSha256,
-      currentSelectionSetSha256:
-        activationSelectionCheckpoint.selectionSetSha256,
-      declaredSelectionChainTailSha256:
-        activationSelectionCheckpoint.selectionChainTailSha256,
-      currentSelectionChainTailSha256:
-        activationSelectionCheckpoint.selectionChainTailSha256,
+      declaredSelectionSetSha256: activationSelectionCheckpoint.selectionSetSha256,
+      currentSelectionSetSha256: activationSelectionCheckpoint.selectionSetSha256,
+      declaredSelectionChainTailSha256: activationSelectionCheckpoint.selectionChainTailSha256,
+      currentSelectionChainTailSha256: activationSelectionCheckpoint.selectionChainTailSha256,
       declaredSelectionCount: activationSelectionCheckpoint.selectionCount,
       currentSelectionCount: activationSelectionCheckpoint.selectionCount,
-      declaredCurrentSelectionSha256:
-        activationSelectionCheckpoint.currentSelectionSha256,
-      currentSelectionSha256:
-        activationSelectionCheckpoint.currentSelectionSha256,
+      declaredCurrentSelectionSha256: activationSelectionCheckpoint.currentSelectionSha256,
+      currentSelectionSha256: activationSelectionCheckpoint.currentSelectionSha256,
       contentSha256: "5".repeat(64),
     } satisfies ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification;
     const activationSelectionCheckpointSignRequest = {
@@ -812,8 +790,7 @@ describe("receipt trust Web API wrappers", () => {
       kind: "napier.trusted-receipt-envelope",
       schemaVersion: 1,
       apiVersion: "0.1.0",
-      receiptKind:
-        "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint",
+      receiptKind: "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint",
       receipt: activationSelectionCheckpoint,
       signature: {
         algorithm: "Ed25519",
@@ -826,19 +803,14 @@ describe("receipt trust Web API wrappers", () => {
       contentSha256: "9".repeat(64),
     } satisfies TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint>;
     const activationSelectionCheckpointDiscoveryRequest = {
-      sourceUrl:
-        "https://trust.example.test/activation-selection-checkpoint.json",
+      sourceUrl: "https://trust.example.test/activation-selection-checkpoint.json",
       policy: {
         maxEnvelopeAgeMs: 604_800_000,
         expectedCheckpointSha256: activationSelectionCheckpoint.contentSha256,
-        expectedSelectionSetSha256:
-          activationSelectionCheckpoint.selectionSetSha256,
-        expectedSelectionChainTailSha256:
-          activationSelectionCheckpoint.selectionChainTailSha256,
+        expectedSelectionSetSha256: activationSelectionCheckpoint.selectionSetSha256,
+        expectedSelectionChainTailSha256: activationSelectionCheckpoint.selectionChainTailSha256,
         minimumSelectionCount: activationSelectionCheckpoint.selectionCount,
-        requiredSignerKeyIds: [
-          signedActivationSelectionCheckpoint.signature.keyId,
-        ],
+        requiredSignerKeyIds: [signedActivationSelectionCheckpoint.signature.keyId],
         rejectRollback: true,
       },
       trustDirectory: selectedDirectory,
@@ -865,11 +837,9 @@ describe("receipt trust Web API wrappers", () => {
       trustedReceiptVerification: {
         status: "trusted",
         verifiedAt: "2026-07-27T00:00:08.000Z",
-        receiptKind:
-          "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint",
+        receiptKind: "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint",
         receiptContentSha256: activationSelectionCheckpoint.contentSha256,
-        receiptArtifactSha256:
-          signedActivationSelectionCheckpoint.signature.receiptArtifactSha256,
+        receiptArtifactSha256: signedActivationSelectionCheckpoint.signature.receiptArtifactSha256,
         keyId: signedActivationSelectionCheckpoint.signature.keyId,
         envelopeSha256: signedActivationSelectionCheckpoint.contentSha256,
         signatureValid: true,
@@ -883,19 +853,16 @@ describe("receipt trust Web API wrappers", () => {
       signedAt: signedActivationSelectionCheckpoint.signature.signedAt,
       selectionCount: activationSelectionCheckpoint.selectionCount,
       selectionSetSha256: activationSelectionCheckpoint.selectionSetSha256,
-      selectionChainTailSha256:
-        activationSelectionCheckpoint.selectionChainTailSha256,
+      selectionChainTailSha256: activationSelectionCheckpoint.selectionChainTailSha256,
       currentSelectionCount: activationSelectionCheckpoint.selectionCount,
-      currentSelectionChainTailSha256:
-        activationSelectionCheckpoint.selectionChainTailSha256,
+      currentSelectionChainTailSha256: activationSelectionCheckpoint.selectionChainTailSha256,
       envelope: signedActivationSelectionCheckpoint,
       contentSha256: "4".repeat(64),
     } satisfies ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery;
     const activationSelectionCheckpointSubscriptionRequest = {
       threadId: promotionBaseline.promotedByThreadId,
       label: "Activation checkpoint registry",
-      sourceUrl:
-        "https://trust.example.test/activation-selection-checkpoint.json",
+      sourceUrl: "https://trust.example.test/activation-selection-checkpoint.json",
       refreshIntervalMs: 86_400_000,
       policy: activationSelectionCheckpointDiscoveryRequest.policy,
     };
@@ -933,8 +900,7 @@ describe("receipt trust Web API wrappers", () => {
           checkpointSha256: activationSelectionCheckpoint.contentSha256,
           selectionCount: activationSelectionCheckpoint.selectionCount,
           selectionSetSha256: activationSelectionCheckpoint.selectionSetSha256,
-          selectionChainTailSha256:
-            activationSelectionCheckpoint.selectionChainTailSha256,
+          selectionChainTailSha256: activationSelectionCheckpoint.selectionChainTailSha256,
           contentSha256: "8".repeat(64),
         },
       ],
@@ -984,35 +950,26 @@ describe("receipt trust Web API wrappers", () => {
       agreementDistinctSourceOriginCount: 1,
       agreementSignerCount: 1,
       selectedCheckpointSha256: activationSelectionCheckpoint.contentSha256,
-      selectedSelectionSetSha256:
-        activationSelectionCheckpoint.selectionSetSha256,
-      selectedSelectionChainTailSha256:
-        activationSelectionCheckpoint.selectionChainTailSha256,
+      selectedSelectionSetSha256: activationSelectionCheckpoint.selectionSetSha256,
+      selectedSelectionChainTailSha256: activationSelectionCheckpoint.selectionChainTailSha256,
       sources: [
         {
           subscriptionId: activationSelectionCheckpointSubscription.id,
-          subscriptionSha256:
-            activationSelectionCheckpointSubscription.contentSha256,
-          sourceUrlSha256:
-            activationSelectionCheckpointSubscription.sourceUrlSha256,
-          sourceOriginSha256:
-            activationSelectionCheckpointSubscription.sourceOriginSha256,
+          subscriptionSha256: activationSelectionCheckpointSubscription.contentSha256,
+          sourceUrlSha256: activationSelectionCheckpointSubscription.sourceUrlSha256,
+          sourceOriginSha256: activationSelectionCheckpointSubscription.sourceOriginSha256,
           status: "eligible",
           diagnostics: [],
           revision: activationSelectionCheckpointSubscription.revision,
-          observedAt:
-            activationSelectionCheckpointSubscription.transparencyHistory[0]!
-              .observedAt,
+          observedAt: activationSelectionCheckpointSubscription.transparencyHistory[0]!.observedAt,
           discoverySha256: activationSelectionCheckpointDiscovery.contentSha256,
           envelopeSha256: signedActivationSelectionCheckpoint.contentSha256,
           checkpointSha256: activationSelectionCheckpoint.contentSha256,
           signerKeyId: signedActivationSelectionCheckpoint.signature.keyId,
           selectionCount: activationSelectionCheckpoint.selectionCount,
           selectionSetSha256: activationSelectionCheckpoint.selectionSetSha256,
-          selectionChainTailSha256:
-            activationSelectionCheckpoint.selectionChainTailSha256,
-          transparencyTailSha256:
-            activationSelectionCheckpointSubscription.transparencyTailSha256,
+          selectionChainTailSha256: activationSelectionCheckpoint.selectionChainTailSha256,
+          transparencyTailSha256: activationSelectionCheckpointSubscription.transparencyTailSha256,
           contentSha256: "c".repeat(64),
         },
       ],
@@ -1027,8 +984,7 @@ describe("receipt trust Web API wrappers", () => {
           signerSetSha256: "f".repeat(64),
           selectionCount: activationSelectionCheckpoint.selectionCount,
           selectionSetSha256: activationSelectionCheckpoint.selectionSetSha256,
-          selectionChainTailSha256:
-            activationSelectionCheckpoint.selectionChainTailSha256,
+          selectionChainTailSha256: activationSelectionCheckpoint.selectionChainTailSha256,
           contentSha256: "0".repeat(64),
         },
       ],
@@ -1045,8 +1001,7 @@ describe("receipt trust Web API wrappers", () => {
         kind: "napier.trusted-receipt-envelope",
         schemaVersion: 1,
         apiVersion: "0.1.0",
-        receiptKind:
-          "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint_registry_quorum",
+        receiptKind: "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint_registry_quorum",
         receipt: activationSelectionCheckpointRegistryQuorum,
         signature: {
           algorithm: "Ed25519",
@@ -1060,19 +1015,11 @@ describe("receipt trust Web API wrappers", () => {
       },
       promotedByThreadId: promotionBaseline.promotedByThreadId,
       selectedCheckpointSha256: activationSelectionCheckpoint.contentSha256,
-      selectedSelectionSetSha256:
-        activationSelectionCheckpoint.selectionSetSha256,
-      selectedSelectionChainTailSha256:
-        activationSelectionCheckpoint.selectionChainTailSha256,
-      selectedSubscriptionSetSha256:
-        activationSelectionCheckpointRegistryQuorum.candidates[0]!
-          .subscriptionSetSha256,
-      selectedSourceOriginSetSha256:
-        activationSelectionCheckpointRegistryQuorum.candidates[0]!
-          .sourceOriginSetSha256,
-      selectedSignerSetSha256:
-        activationSelectionCheckpointRegistryQuorum.candidates[0]!
-          .signerSetSha256,
+      selectedSelectionSetSha256: activationSelectionCheckpoint.selectionSetSha256,
+      selectedSelectionChainTailSha256: activationSelectionCheckpoint.selectionChainTailSha256,
+      selectedSubscriptionSetSha256: activationSelectionCheckpointRegistryQuorum.candidates[0]!.subscriptionSetSha256,
+      selectedSourceOriginSetSha256: activationSelectionCheckpointRegistryQuorum.candidates[0]!.sourceOriginSetSha256,
+      selectedSignerSetSha256: activationSelectionCheckpointRegistryQuorum.candidates[0]!.signerSetSha256,
       createdAt: "2026-07-27T00:00:10.000Z",
       contentSha256: "5".repeat(64),
     } satisfies ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline;
@@ -1091,30 +1038,18 @@ describe("receipt trust Web API wrappers", () => {
       signatureValid: true,
       integrityValid: true,
       baselineSha256: activationSelectionCheckpointRegistryQuorumBaseline.contentSha256,
-      envelopeSha256:
-        activationSelectionCheckpointRegistryQuorumBaseline.envelope
-          .contentSha256,
-      quorumSha256:
-        activationSelectionCheckpointRegistryQuorumBaseline.envelope.receipt
-          .contentSha256,
+      envelopeSha256: activationSelectionCheckpointRegistryQuorumBaseline.envelope.contentSha256,
+      quorumSha256: activationSelectionCheckpointRegistryQuorumBaseline.envelope.receipt.contentSha256,
       receiptArtifactSha256:
-        activationSelectionCheckpointRegistryQuorumBaseline.envelope.signature
-          .receiptArtifactSha256,
-      keyId:
-        activationSelectionCheckpointRegistryQuorumBaseline.envelope.signature
-          .keyId,
-      selectedCheckpointSha256:
-        activationSelectionCheckpointRegistryQuorumBaseline.selectedCheckpointSha256,
-      selectedSelectionSetSha256:
-        activationSelectionCheckpointRegistryQuorumBaseline.selectedSelectionSetSha256,
+        activationSelectionCheckpointRegistryQuorumBaseline.envelope.signature.receiptArtifactSha256,
+      keyId: activationSelectionCheckpointRegistryQuorumBaseline.envelope.signature.keyId,
+      selectedCheckpointSha256: activationSelectionCheckpointRegistryQuorumBaseline.selectedCheckpointSha256,
+      selectedSelectionSetSha256: activationSelectionCheckpointRegistryQuorumBaseline.selectedSelectionSetSha256,
       selectedSelectionChainTailSha256:
         activationSelectionCheckpointRegistryQuorumBaseline.selectedSelectionChainTailSha256,
-      selectedSubscriptionSetSha256:
-        activationSelectionCheckpointRegistryQuorumBaseline.selectedSubscriptionSetSha256,
-      selectedSourceOriginSetSha256:
-        activationSelectionCheckpointRegistryQuorumBaseline.selectedSourceOriginSetSha256,
-      selectedSignerSetSha256:
-        activationSelectionCheckpointRegistryQuorumBaseline.selectedSignerSetSha256,
+      selectedSubscriptionSetSha256: activationSelectionCheckpointRegistryQuorumBaseline.selectedSubscriptionSetSha256,
+      selectedSourceOriginSetSha256: activationSelectionCheckpointRegistryQuorumBaseline.selectedSourceOriginSetSha256,
+      selectedSignerSetSha256: activationSelectionCheckpointRegistryQuorumBaseline.selectedSignerSetSha256,
       contentSha256: "6".repeat(64),
     } satisfies ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineVerification;
     const activationSelectionCheckpointRegistryQuorumBaselineImportRequest = {
@@ -1125,16 +1060,13 @@ describe("receipt trust Web API wrappers", () => {
     const activationSelectionCheckpointRegistryQuorumBaselineImportResult = {
       baseline: activationSelectionCheckpointRegistryQuorumBaseline,
       imported: true,
-      verification:
-        activationSelectionCheckpointRegistryQuorumBaselineVerification,
+      verification: activationSelectionCheckpointRegistryQuorumBaselineVerification,
       expectedCurrentBaselineSha256: "",
     } satisfies ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult;
     const activationSelectionRotationProposalRequest = {
       ...activationSelectionRotationReviewRequest,
-      checkpointRegistryQuorumBaselineId:
-        activationSelectionCheckpointRegistryQuorumBaseline.id,
-      expectedCheckpointRegistryQuorumBaselineSha256:
-        activationSelectionCheckpointRegistryQuorumBaseline.contentSha256,
+      checkpointRegistryQuorumBaselineId: activationSelectionCheckpointRegistryQuorumBaseline.id,
+      expectedCheckpointRegistryQuorumBaselineSha256: activationSelectionCheckpointRegistryQuorumBaseline.contentSha256,
     };
     const activationSelectionRotationProposal = {
       kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal",
@@ -1142,59 +1074,38 @@ describe("receipt trust Web API wrappers", () => {
       apiVersion: "0.1.0",
       proposedAt: "2026-07-27T00:00:12.000Z",
       status: "already_active",
-      diagnostics: [
-        "selection_already_active",
-        "rotation_review_already_active",
-      ],
-      activationDecisionRecordId:
-        activationSelectionRotationReview.activationDecisionRecordId,
-      activationDecisionRecordSha256:
-        activationSelectionRotationReview.activationDecisionRecordSha256,
-      expectedCurrentSelectionSha256:
-        activationSelectionRotationReview.expectedCurrentSelectionSha256,
-      currentSelectionSha256:
-        activationSelectionRotationReview.currentSelectionSha256,
+      diagnostics: ["selection_already_active", "rotation_review_already_active"],
+      activationDecisionRecordId: activationSelectionRotationReview.activationDecisionRecordId,
+      activationDecisionRecordSha256: activationSelectionRotationReview.activationDecisionRecordSha256,
+      expectedCurrentSelectionSha256: activationSelectionRotationReview.expectedCurrentSelectionSha256,
+      currentSelectionSha256: activationSelectionRotationReview.currentSelectionSha256,
       rotationReview: activationSelectionRotationReview,
       rotationReviewSha256: activationSelectionRotationReview.contentSha256,
-      checkpointRegistryQuorumBaselineId:
-        activationSelectionCheckpointRegistryQuorumBaseline.id,
-      expectedCheckpointRegistryQuorumBaselineSha256:
-        activationSelectionCheckpointRegistryQuorumBaseline.contentSha256,
-      checkpointRegistryQuorumBaselineSha256:
-        activationSelectionCheckpointRegistryQuorumBaseline.contentSha256,
+      checkpointRegistryQuorumBaselineId: activationSelectionCheckpointRegistryQuorumBaseline.id,
+      expectedCheckpointRegistryQuorumBaselineSha256: activationSelectionCheckpointRegistryQuorumBaseline.contentSha256,
+      checkpointRegistryQuorumBaselineSha256: activationSelectionCheckpointRegistryQuorumBaseline.contentSha256,
       checkpointRegistryQuorumBaselineEnvelopeSha256:
-        activationSelectionCheckpointRegistryQuorumBaseline.envelope
-          .contentSha256,
+        activationSelectionCheckpointRegistryQuorumBaseline.envelope.contentSha256,
       checkpointRegistryQuorumSha256:
-        activationSelectionCheckpointRegistryQuorumBaseline.envelope.receipt
-          .contentSha256,
-      selectedCheckpointSha256:
-        activationSelectionCheckpointRegistryQuorumBaseline.selectedCheckpointSha256,
-      selectedSelectionSetSha256:
-        activationSelectionCheckpointRegistryQuorumBaseline.selectedSelectionSetSha256,
+        activationSelectionCheckpointRegistryQuorumBaseline.envelope.receipt.contentSha256,
+      selectedCheckpointSha256: activationSelectionCheckpointRegistryQuorumBaseline.selectedCheckpointSha256,
+      selectedSelectionSetSha256: activationSelectionCheckpointRegistryQuorumBaseline.selectedSelectionSetSha256,
       selectedSelectionChainTailSha256:
         activationSelectionCheckpointRegistryQuorumBaseline.selectedSelectionChainTailSha256,
-      selectedSubscriptionSetSha256:
-        activationSelectionCheckpointRegistryQuorumBaseline.selectedSubscriptionSetSha256,
-      selectedSourceOriginSetSha256:
-        activationSelectionCheckpointRegistryQuorumBaseline.selectedSourceOriginSetSha256,
-      selectedSignerSetSha256:
-        activationSelectionCheckpointRegistryQuorumBaseline.selectedSignerSetSha256,
+      selectedSubscriptionSetSha256: activationSelectionCheckpointRegistryQuorumBaseline.selectedSubscriptionSetSha256,
+      selectedSourceOriginSetSha256: activationSelectionCheckpointRegistryQuorumBaseline.selectedSourceOriginSetSha256,
+      selectedSignerSetSha256: activationSelectionCheckpointRegistryQuorumBaseline.selectedSignerSetSha256,
       currentCheckpointSha256: activationSelectionCheckpoint.contentSha256,
-      currentSelectionSetSha256:
-        activationSelectionCheckpoint.selectionSetSha256,
-      currentSelectionChainTailSha256:
-        activationSelectionCheckpoint.selectionChainTailSha256,
-      checkpointRegistryQuorumBaseline:
-        activationSelectionCheckpointRegistryQuorumBaseline,
+      currentSelectionSetSha256: activationSelectionCheckpoint.selectionSetSha256,
+      currentSelectionChainTailSha256: activationSelectionCheckpoint.selectionChainTailSha256,
+      checkpointRegistryQuorumBaseline: activationSelectionCheckpointRegistryQuorumBaseline,
       contentSha256: "7".repeat(64),
     } satisfies ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal;
     const signedActivationSelectionRotationProposal = {
       kind: "napier.trusted-receipt-envelope",
       schemaVersion: 1,
       apiVersion: "0.1.0",
-      receiptKind:
-        "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal",
+      receiptKind: "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal",
       receipt: activationSelectionRotationProposal,
       signature: {
         algorithm: "Ed25519",
@@ -1213,42 +1124,28 @@ describe("receipt trust Web API wrappers", () => {
       checkedAt: "2026-07-27T00:00:14.000Z",
       status: "accepted",
       diagnostics: [],
-      activationDecisionRecordId:
-        activationSelectionRotationProposal.activationDecisionRecordId,
-      expectedCurrentSelectionSha256:
-        activationSelectionRotationProposal.expectedCurrentSelectionSha256,
-      currentSelectionSha256:
-        activationSelectionRotationProposal.currentSelectionSha256,
-      activeSelectionSha256:
-        activationSelectionRotationProposal.currentSelectionSha256,
-      rotationProposalEnvelopeSha256:
-        signedActivationSelectionRotationProposal.contentSha256,
+      activationDecisionRecordId: activationSelectionRotationProposal.activationDecisionRecordId,
+      expectedCurrentSelectionSha256: activationSelectionRotationProposal.expectedCurrentSelectionSha256,
+      currentSelectionSha256: activationSelectionRotationProposal.currentSelectionSha256,
+      activeSelectionSha256: activationSelectionRotationProposal.currentSelectionSha256,
+      rotationProposalEnvelopeSha256: signedActivationSelectionRotationProposal.contentSha256,
       rotationProposalSha256: activationSelectionRotationProposal.contentSha256,
-      rotationProposalReviewSha256:
-        activationSelectionRotationProposal.rotationReviewSha256,
+      rotationProposalReviewSha256: activationSelectionRotationProposal.rotationReviewSha256,
       trustedReceiptVerificationStatus: "trusted",
       trustedReceiptVerificationReason: "Trusted receipt verified",
-      trustedReceiptVerificationKeyId:
-        signedActivationSelectionRotationProposal.signature.keyId,
-      trustedReceiptVerificationEnvelopeSha256:
-        signedActivationSelectionRotationProposal.contentSha256,
+      trustedReceiptVerificationKeyId: signedActivationSelectionRotationProposal.signature.keyId,
+      trustedReceiptVerificationEnvelopeSha256: signedActivationSelectionRotationProposal.contentSha256,
       contentSha256: "b".repeat(64),
     } satisfies ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight;
     const activationSelectionRotationProposalDiscoveryRequest = {
       threadId: promotionBaseline.promotedByThreadId,
       sourceUrl: "https://trust.example.test/rotation-proposal.json",
       policy: {
-        expectedEnvelopeSha256:
-          signedActivationSelectionRotationProposal.contentSha256,
-        expectedProposalSha256:
-          activationSelectionRotationProposal.contentSha256,
-        expectedActivationDecisionRecordId:
-          activationSelectionRotationProposal.activationDecisionRecordId,
-        expectedCurrentSelectionSha256:
-          activationSelectionRotationProposal.expectedCurrentSelectionSha256,
-        requiredSignerKeyIds: [
-          signedActivationSelectionRotationProposal.signature.keyId,
-        ],
+        expectedEnvelopeSha256: signedActivationSelectionRotationProposal.contentSha256,
+        expectedProposalSha256: activationSelectionRotationProposal.contentSha256,
+        expectedActivationDecisionRecordId: activationSelectionRotationProposal.activationDecisionRecordId,
+        expectedCurrentSelectionSha256: activationSelectionRotationProposal.expectedCurrentSelectionSha256,
+        requiredSignerKeyIds: [signedActivationSelectionRotationProposal.signature.keyId],
         maxEnvelopeAgeMs: 86_400_000,
       },
     };
@@ -1270,14 +1167,11 @@ describe("receipt trust Web API wrappers", () => {
       preflight: activationSelectionRotationProposalPreflight,
       envelopeSha256: signedActivationSelectionRotationProposal.contentSha256,
       proposalSha256: activationSelectionRotationProposal.contentSha256,
-      proposalReviewSha256:
-        activationSelectionRotationProposal.rotationReviewSha256,
+      proposalReviewSha256: activationSelectionRotationProposal.rotationReviewSha256,
       checkpointRegistryQuorumBaselineSha256:
         activationSelectionRotationProposal.checkpointRegistryQuorumBaselineSha256,
-      activationDecisionRecordId:
-        activationSelectionRotationProposal.activationDecisionRecordId,
-      expectedCurrentSelectionSha256:
-        activationSelectionRotationProposal.expectedCurrentSelectionSha256,
+      activationDecisionRecordId: activationSelectionRotationProposal.activationDecisionRecordId,
+      expectedCurrentSelectionSha256: activationSelectionRotationProposal.expectedCurrentSelectionSha256,
       signerKeyId: signedActivationSelectionRotationProposal.signature.keyId,
       signedAt: signedActivationSelectionRotationProposal.signature.signedAt,
       envelope: signedActivationSelectionRotationProposal,
@@ -1417,9 +1311,7 @@ describe("receipt trust Web API wrappers", () => {
         method: "POST",
         body: {
           threadId: activationSelectionCheckpointSubscription.auditThreadId,
-          expectedRevision:
-            activationSelectionCheckpointSubscriptionRefresh.subscription
-              .revision,
+          expectedRevision: activationSelectionCheckpointSubscriptionRefresh.subscription.revision,
           status: "paused",
         },
         response: pausedActivationSelectionCheckpointSubscription,
@@ -1479,10 +1371,8 @@ describe("receipt trust Web API wrappers", () => {
         method: "POST",
         body: {
           threadId: promotionBaseline.promotedByThreadId,
-          activationDecisionRecordId:
-            activationSelectionRotationProposalRequest.activationDecisionRecordId,
-          expectedCurrentSelectionSha256:
-            activationSelectionRotationProposalRequest.expectedCurrentSelectionSha256,
+          activationDecisionRecordId: activationSelectionRotationProposalRequest.activationDecisionRecordId,
+          expectedCurrentSelectionSha256: activationSelectionRotationProposalRequest.expectedCurrentSelectionSha256,
           rotationProposalEnvelope: signedActivationSelectionRotationProposal,
         },
         response: activationSelectionRotationProposalPreflight,
@@ -1509,12 +1399,8 @@ describe("receipt trust Web API wrappers", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(
-      listReceiptTrustAnchorDirectorySubscriptions(),
-    ).resolves.toEqual([subscription]);
-    await expect(
-      createReceiptTrustAnchorDirectorySubscription(createRequest),
-    ).resolves.toEqual(subscription);
+    await expect(listReceiptTrustAnchorDirectorySubscriptions()).resolves.toEqual([subscription]);
+    await expect(createReceiptTrustAnchorDirectorySubscription(createRequest)).resolves.toEqual(subscription);
     await expect(
       refreshReceiptTrustAnchorDirectorySubscription(
         subscription.id,
@@ -1539,50 +1425,42 @@ describe("receipt trust Web API wrappers", () => {
         policy: { minimumSources: 2, minimumAgreementCount: 2 },
       }),
     ).resolves.toEqual(promotion);
-    await expect(
-      listReceiptTrustAnchorDirectoryQuorumPromotionBaselines(),
-    ).resolves.toEqual([]);
-    await expect(
-      promoteReceiptTrustAnchorDirectoryQuorumBaseline(
-        promotionBaselineRequest,
-      ),
-    ).resolves.toEqual(promotionBaselineResult);
+    await expect(listReceiptTrustAnchorDirectoryQuorumPromotionBaselines()).resolves.toEqual([]);
+    await expect(promoteReceiptTrustAnchorDirectoryQuorumBaseline(promotionBaselineRequest)).resolves.toEqual(
+      promotionBaselineResult,
+    );
     await expect(
       verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline({
         baseline: promotionBaseline,
       }),
     ).resolves.toEqual(promotionBaselineVerification);
     await expect(
-      importReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
-        promotionBaselineImportRequest,
-      ),
+      importReceiptTrustAnchorDirectoryQuorumPromotionBaseline(promotionBaselineImportRequest),
     ).resolves.toEqual(promotionBaselineImportResult);
-    await expect(
-      signReceiptTrustAnchorDirectoryQuorumActivationDecision(
-        activationDecisionRequest,
-      ),
-    ).resolves.toEqual(activationDecisionResult);
-    await expect(
-      getReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(),
-    ).resolves.toEqual(activationDecisionHistory);
+    await expect(signReceiptTrustAnchorDirectoryQuorumActivationDecision(activationDecisionRequest)).resolves.toEqual(
+      activationDecisionResult,
+    );
+    await expect(getReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory()).resolves.toEqual(
+      activationDecisionHistory,
+    );
     await expect(
       verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory({
         history: activationDecisionHistory,
       }),
     ).resolves.toEqual(activationDecisionHistoryVerification);
+    await expect(getReceiptTrustAnchorDirectoryQuorumActivationSelectionState()).resolves.toEqual(
+      activationSelectionState,
+    );
+    await expect(getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit()).resolves.toEqual(
+      activationSelectionDriftAudit,
+    );
+    await expect(getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint()).resolves.toEqual(
+      activationSelectionCheckpoint,
+    );
     await expect(
-      getReceiptTrustAnchorDirectoryQuorumActivationSelectionState(),
-    ).resolves.toEqual(activationSelectionState);
-    await expect(
-      getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit(),
-    ).resolves.toEqual(activationSelectionDriftAudit);
-    await expect(
-      getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(),
-    ).resolves.toEqual(activationSelectionCheckpoint);
-    await expect(
-      verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(
-        { checkpoint: activationSelectionCheckpoint },
-      ),
+      verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint({
+        checkpoint: activationSelectionCheckpoint,
+      }),
     ).resolves.toEqual(activationSelectionCheckpointVerification);
     await expect(
       signReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(
@@ -1614,9 +1492,7 @@ describe("receipt trust Web API wrappers", () => {
         activationSelectionCheckpointSubscription.id,
         {
           threadId: activationSelectionCheckpointSubscription.auditThreadId,
-          expectedRevision:
-            activationSelectionCheckpointSubscriptionRefresh.subscription
-              .revision,
+          expectedRevision: activationSelectionCheckpointSubscriptionRefresh.subscription.revision,
           status: "paused",
         },
       ),
@@ -1635,23 +1511,17 @@ describe("receipt trust Web API wrappers", () => {
       ),
     ).resolves.toEqual(activationSelectionCheckpointRegistryQuorumBaselineResult);
     await expect(
-      verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
-        { baseline: activationSelectionCheckpointRegistryQuorumBaseline },
-      ),
-    ).resolves.toEqual(
-      activationSelectionCheckpointRegistryQuorumBaselineVerification,
-    );
+      verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline({
+        baseline: activationSelectionCheckpointRegistryQuorumBaseline,
+      }),
+    ).resolves.toEqual(activationSelectionCheckpointRegistryQuorumBaselineVerification);
     await expect(
       importReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
         activationSelectionCheckpointRegistryQuorumBaselineImportRequest,
       ),
-    ).resolves.toEqual(
-      activationSelectionCheckpointRegistryQuorumBaselineImportResult,
-    );
+    ).resolves.toEqual(activationSelectionCheckpointRegistryQuorumBaselineImportResult);
     await expect(
-      proposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
-        activationSelectionRotationProposalRequest,
-      ),
+      proposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(activationSelectionRotationProposalRequest),
     ).resolves.toEqual(activationSelectionRotationProposal);
     await expect(
       signReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal({
@@ -1666,26 +1536,18 @@ describe("receipt trust Web API wrappers", () => {
       ),
     ).resolves.toEqual(activationSelectionRotationProposalDiscovery);
     await expect(
-      preflightReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal(
-        {
-          threadId: promotionBaseline.promotedByThreadId,
-          activationDecisionRecordId:
-            activationSelectionRotationProposalRequest.activationDecisionRecordId,
-          expectedCurrentSelectionSha256:
-            activationSelectionRotationProposalRequest.expectedCurrentSelectionSha256,
-          rotationProposalEnvelope: signedActivationSelectionRotationProposal,
-        },
-      ),
+      preflightReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal({
+        threadId: promotionBaseline.promotedByThreadId,
+        activationDecisionRecordId: activationSelectionRotationProposalRequest.activationDecisionRecordId,
+        expectedCurrentSelectionSha256: activationSelectionRotationProposalRequest.expectedCurrentSelectionSha256,
+        rotationProposalEnvelope: signedActivationSelectionRotationProposal,
+      }),
     ).resolves.toEqual(activationSelectionRotationProposalPreflight);
     await expect(
-      reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
-        activationSelectionRotationReviewRequest,
-      ),
+      reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(activationSelectionRotationReviewRequest),
     ).resolves.toEqual(activationSelectionRotationReview);
     await expect(
-      applyReceiptTrustAnchorDirectoryQuorumActivationSelection(
-        activationSelectionRequest,
-      ),
+      applyReceiptTrustAnchorDirectoryQuorumActivationSelection(activationSelectionRequest),
     ).resolves.toEqual(activationSelectionResult);
     expect(fetchMock).toHaveBeenCalledTimes(34);
   });
@@ -1723,16 +1585,12 @@ describe("receipt trust Web API wrappers", () => {
       expect(path).toBe("/api/receipt-trust/verify");
       expect(init?.method).toBe("POST");
       expect(init?.headers).toEqual({ "Content-Type": "application/json" });
-      expect(init?.body).toBe(
-        JSON.stringify({ envelope, directory, directoryPolicy }),
-      );
+      expect(init?.body).toBe(JSON.stringify({ envelope, directory, directoryPolicy }));
       return jsonResponse(verification);
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(
-      verifyTrustedReceipt(envelope, directory, directoryPolicy),
-    ).resolves.toEqual(verification);
+    await expect(verifyTrustedReceipt(envelope, directory, directoryPolicy)).resolves.toEqual(verification);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
@@ -1742,9 +1600,7 @@ function jsonResponse(value: unknown): Response {
   return new Response(text, {
     headers: {
       "Content-Type": "application/json",
-      "X-Napier-Content-SHA256": createHash("sha256")
-        .update(text)
-        .digest("hex"),
+      "X-Napier-Content-SHA256": createHash("sha256").update(text).digest("hex"),
       "X-Napier-Content-SHA256-Mode": "body",
     },
   });

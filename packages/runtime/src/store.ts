@@ -250,12 +250,7 @@ import type {
   UpgradeRecommendedCapabilitiesRequestV1,
 } from "@napier/contracts/agent-capability-contract";
 import { loadThreadDetail } from "./thread-detail.js";
-import {
-  createThreadRecord,
-  findThread,
-  sortedThreads,
-  threadRuns,
-} from "./thread-records.js";
+import { createThreadRecord, findThread, sortedThreads, threadRuns } from "./thread-records.js";
 import { mutateThreadTrash, visibleThreads } from "./thread-trash.js";
 import { createWorkspaceSeed } from "./workspace-seed.js";
 
@@ -298,10 +293,7 @@ import {
   validateAutomaticRecoveryAttempt,
 } from "./automatic-recovery.js";
 import { claimAutomaticRecoveryState } from "./automatic-recovery-store-claims.js";
-import {
-  stripAutomaticRecoverySecrets,
-  type PersistedAutomaticRecoveryAttempt,
-} from "./automatic-recovery-store-records.js";
+import { stripAutomaticRecoverySecrets, type PersistedAutomaticRecoveryAttempt } from "./automatic-recovery-store-records.js";
 import {
   abandonAutomaticRecoveryState,
   bindAutomaticRecoveryRunState,
@@ -352,10 +344,7 @@ import {
   verifySignedExtensionPackageEnvelope,
 } from "./extension-packages.js";
 import { normalizeRubric } from "./evaluation.js";
-import {
-  assertRunEvaluationCompletedEventBindings,
-  assertRunEvaluationGovernanceSourceBinding,
-} from "./evaluation-governance.js";
+import { assertRunEvaluationCompletedEventBindings, assertRunEvaluationGovernanceSourceBinding } from "./evaluation-governance.js";
 import {
   createEvaluationCalibrationReport,
   hashEvaluationAdjudicationRevision,
@@ -469,21 +458,14 @@ import {
   validateSignedSkillPackageEnvelope,
   verifySignedSkillPackageEnvelope,
 } from "./skill-packages.js";
-import {
-  applyReviewedSkillContent,
-  createSkillContentReview,
-} from "./skill-content.js";
+import { applyReviewedSkillContent, createSkillContentReview } from "./skill-content.js";
 import {
   qualifyAgentPromptPackage,
   signPromptPackage,
   validateSignedPromptPackageEnvelope,
   verifySignedPromptPackageEnvelope,
 } from "./prompt-packages.js";
-import {
-  qualifyInspectorPackage,
-  signInspectorPackage,
-  verifySignedInspectorPackageEnvelope,
-} from "./inspector-packages.js";
+import { qualifyInspectorPackage, signInspectorPackage, verifySignedInspectorPackageEnvelope } from "./inspector-packages.js";
 import {
   DEFAULT_MEMORY_REVIEW_INTERVAL_DAYS,
   createMemoryFact,
@@ -540,34 +522,16 @@ import {
   verifyExecutionPlanBlueprintRecordReplayHistoryProjection,
   verifyExecutionPlanBlueprintRecordReplayOutcomesProjection,
 } from "./execution-plan-blueprint-replay-verification.js";
-import {
-  advanceSchedule,
-  createAutomationSchedule,
-  updateAutomationSchedule,
-} from "./schedules.js";
-import {
-  ConcurrentStoreUpdateError,
-  LEDGER_DATABASE_FILENAME,
-  type LedgerSchemaReport,
-  SqliteLedger,
-} from "./sqlite-ledger.js";
-import {
-  monotonicNow,
-  StorePersistenceMonitor,
-} from "./store-observability.js";
-import {
-  storeCanonicalJson as canonicalJson,
-  storeSha256 as sha256,
-} from "./store-hashing.js";
+import { advanceSchedule, createAutomationSchedule, updateAutomationSchedule } from "./schedules.js";
+import { ConcurrentStoreUpdateError, LEDGER_DATABASE_FILENAME, type LedgerSchemaReport, SqliteLedger } from "./sqlite-ledger.js";
+import { monotonicNow, StorePersistenceMonitor } from "./store-observability.js";
+import { storeCanonicalJson as canonicalJson, storeSha256 as sha256 } from "./store-hashing.js";
 import {
   createRunConfigurationFingerprint,
   type PromptVariableFingerprintInput,
   validateRunConfigurationFingerprint,
 } from "./run-config.js";
-import {
-  dropPrivateImportedEvent,
-  remapImportedEventPayload,
-} from "./thread-import-event-payload.js";
+import { dropPrivateImportedEvent, remapImportedEventPayload } from "./thread-import-event-payload.js";
 import {
   createAgentMilestoneRecordedPayload,
   MAX_AGENT_MILESTONES_PER_RUN,
@@ -592,67 +556,38 @@ import {
   nextPendingRunControlMessage,
   projectRunControlMessages,
 } from "./run-control-messages.js";
-import {
-  assertSubagentOutcomeBinding,
-  rebindSubagentOutcome,
-} from "./subagent-outcomes.js";
+import { assertSubagentOutcomeBinding, rebindSubagentOutcome } from "./subagent-outcomes.js";
 import {
   rebindSubagentOutcomeRepairOutcome,
   rebindSubagentOutcomeRepairRequest,
   validateSubagentOutcomeRepairOutcome,
   validateSubagentOutcomeRepairRequest,
 } from "./subagent-outcome-repair.js";
-import {
-  validateThreadReplayBundle,
-  verifyThreadReplayBundle,
-} from "./thread-bundles.js";
-import {
-  WORKFLOW_NODE_EXECUTION,
-  type WorkflowNodeExecution,
-} from "./workflow-node-execution.js";
-import {
-  WORKFLOW_SIMULATION_EXECUTION,
-  type WorkflowSimulationExecution,
-} from "./workflow-simulation-execution.js";
+import { validateThreadReplayBundle, verifyThreadReplayBundle } from "./thread-bundles.js";
+import { WORKFLOW_NODE_EXECUTION, type WorkflowNodeExecution } from "./workflow-node-execution.js";
+import { WORKFLOW_SIMULATION_EXECUTION, type WorkflowSimulationExecution } from "./workflow-simulation-execution.js";
 import { validateWorkflowSimulationRunGate } from "./workflow-simulation-run-gate.js";
-import {
-  isWorkflowReadOnlyChildExecutionMode,
-  validateWorkflowReadOnlyChildRunGate,
-} from "./workflow-read-only-child-run-gate.js";
-import {
-  AGENT_MESSAGE_EXPERIMENT_EXECUTION,
-  type AgentMessageExperimentExecution,
-} from "./agent-message-experiment-execution.js";
+import { isWorkflowReadOnlyChildExecutionMode, validateWorkflowReadOnlyChildRunGate } from "./workflow-read-only-child-run-gate.js";
+import { AGENT_MESSAGE_EXPERIMENT_EXECUTION, type AgentMessageExperimentExecution } from "./agent-message-experiment-execution.js";
 import { validateAgentMessageExperimentToolResultRunGate } from "./agent-message-experiment-run-gate.js";
-import {
-  MODEL_INVOCATION_EXPERIMENT_EXECUTION,
-  type ModelInvocationExperimentExecution,
-} from "./model-invocation-experiment-execution.js";
+import { MODEL_INVOCATION_EXPERIMENT_EXECUTION, type ModelInvocationExperimentExecution } from "./model-invocation-experiment-execution.js";
 import { validateModelInvocationExperimentRunGate } from "./model-invocation-experiment-run-gate.js";
-import {
-  TOOL_INVOCATION_EXPERIMENT_EXECUTION,
-  type ToolInvocationExperimentExecution,
-} from "./tool-invocation-experiment-execution.js";
+import { TOOL_INVOCATION_EXPERIMENT_EXECUTION, type ToolInvocationExperimentExecution } from "./tool-invocation-experiment-execution.js";
 import { validateToolInvocationExperimentRunGate } from "./tool-invocation-experiment-run-gate.js";
 
 export const DEFAULT_INBOUND_RETRY_POLICY: Readonly<InboundRetryPolicy> = {
   maxAttempts: 3,
   baseDelayMs: 5_000,
 };
-export const DEFAULT_INBOUND_SIGNATURE_POLICY: Readonly<InboundSignaturePolicy> =
-  {
-    required: false,
-    algorithm: "hmac-sha256",
-    header: "X-Napier-Channel-Signature",
-    timestampHeader: "X-Napier-Channel-Timestamp",
-    toleranceSeconds: 300,
-  };
-export const DEFAULT_INBOUND_CHANNEL_ADAPTER: InboundChannelAdapter =
-  "napier_json";
-type NamedInboundChannelPolicyTemplateId = Exclude<
-  InboundChannelPolicyTemplateId,
-  "custom"
->;
+export const DEFAULT_INBOUND_SIGNATURE_POLICY: Readonly<InboundSignaturePolicy> = {
+  required: false,
+  algorithm: "hmac-sha256",
+  header: "X-Napier-Channel-Signature",
+  timestampHeader: "X-Napier-Channel-Timestamp",
+  toleranceSeconds: 300,
+};
+export const DEFAULT_INBOUND_CHANNEL_ADAPTER: InboundChannelAdapter = "napier_json";
+type NamedInboundChannelPolicyTemplateId = Exclude<InboundChannelPolicyTemplateId, "custom">;
 const INBOUND_CHANNEL_POLICY_TEMPLATES: Readonly<
   Record<
     NamedInboundChannelPolicyTemplateId,
@@ -701,13 +636,7 @@ const MAX_INBOUND_SIGNATURE_TOLERANCE_SECONDS = 900;
 const MAX_INBOUND_RETRY_DELAY_MS = 24 * 60 * 60 * 1_000;
 const MAX_CONCURRENT_WORKFLOW_RUNS_PER_THREAD = 4;
 const THREAD_IMPORTED_EVENT = "thread.imported";
-const MEMORY_STATUSES = new Set([
-  "proposed",
-  "active",
-  "stale",
-  "rejected",
-  "archived",
-]);
+const MEMORY_STATUSES = new Set(["proposed", "active", "stale", "rejected", "archived"]);
 
 interface PersistedRunRecord extends RunRecord {
   leaseTokenSha256?: string;
@@ -906,15 +835,11 @@ const EMPTY_STATE: PersistedState = {
   evaluationCasebookQualificationExecutions: [],
   receiptTrustAnchors: [],
   receiptTrustAnchorDirectorySubscriptions: [],
-  receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions:
-    [],
-  receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions:
-    [],
-  receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines:
-    [],
+  receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions: [],
+  receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions: [],
+  receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines: [],
   receiptTrustAnchorDirectoryQuorumPromotionBaselines: [],
-  receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines:
-    [],
+  receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines: [],
   receiptTrustAnchorDirectoryQuorumActivationDecisions: [],
   receiptTrustAnchorDirectoryQuorumActivationSelections: [],
   evaluationQualificationBaselines: [],
@@ -965,8 +890,11 @@ const EXECUTION_PLAN_BLUEPRINT_RECOMMENDATION_POLICIES: Record<
     },
   },
 };
-const EXECUTION_PLAN_BLUEPRINT_RECOMMENDATION_POLICY_TEMPLATE_IDS: ExecutionPlanBlueprintRecommendationPolicyTemplateId[] =
-  ["balanced", "delivery_first", "portfolio_first"];
+const EXECUTION_PLAN_BLUEPRINT_RECOMMENDATION_POLICY_TEMPLATE_IDS: ExecutionPlanBlueprintRecommendationPolicyTemplateId[] = [
+  "balanced",
+  "delivery_first",
+  "portfolio_first",
+];
 
 export interface CreateSubagentTaskInput {
   threadId: string;
@@ -977,12 +905,7 @@ export interface CreateSubagentTaskInput {
   model: SubagentTask["model"];
 }
 
-const TERMINAL_SUBAGENT_STATUSES = new Set<SubagentTaskStatus>([
-  "completed",
-  "failed",
-  "cancelled",
-  "timed_out",
-]);
+const TERMINAL_SUBAGENT_STATUSES = new Set<SubagentTaskStatus>(["completed", "failed", "cancelled", "timed_out"]);
 
 class SerialQueue {
   private tail = Promise.resolve();
@@ -999,10 +922,7 @@ class SerialQueue {
         try {
           return await operation();
         } catch (error) {
-          if (
-            !(error instanceof ConcurrentStoreUpdateError) ||
-            attempt >= this.maxConflictRetries
-          ) {
+          if (!(error instanceof ConcurrentStoreUpdateError) || attempt >= this.maxConflictRetries) {
             throw error;
           }
         }
@@ -1061,9 +981,7 @@ export class LocalStore {
         restored = true;
       } else {
         try {
-          const parsed = JSON.parse(
-            await readFile(this.statePath, "utf8"),
-          ) as PersistedState;
+          const parsed = JSON.parse(await readFile(this.statePath, "utf8")) as PersistedState;
           this.state = this.validateState(parsed);
           const events = await this.readLegacyEvents();
           this.state = this.validateState(this.state, events);
@@ -1132,51 +1050,34 @@ export class LocalStore {
     this.assertInitialized();
     this.getAgent(agentId);
     return structuredClone(
-      this.state.agentRevisions
-        .filter((revision) => revision.agentId === agentId)
-        .sort((left, right) => right.revision - left.revision),
+      this.state.agentRevisions.filter((revision) => revision.agentId === agentId).sort((left, right) => right.revision - left.revision),
     );
   }
 
   getAgentRevision(agentId: string, revision: number): AgentProfileRevision {
     this.assertInitialized();
     this.getAgent(agentId);
-    const snapshot = this.state.agentRevisions.find(
-      (candidate) =>
-        candidate.agentId === agentId && candidate.revision === revision,
-    );
+    const snapshot = this.state.agentRevisions.find((candidate) => candidate.agentId === agentId && candidate.revision === revision);
     if (!snapshot) {
       throw new Error(`Agent revision not found: ${agentId}@${revision}`);
     }
     return structuredClone(snapshot);
   }
 
-  getAgentCapabilityBinding(
-    agentId: string,
-    revision: number,
-  ): CapabilityBindingLookup {
+  getAgentCapabilityBinding(agentId: string, revision: number): CapabilityBindingLookup {
     this.assertInitialized();
     this.getAgent(agentId);
     return storedAgentCapabilityBinding(this.state, agentId, revision);
   }
 
-  async updateAgent(
-    agentId: string,
-    request: UpdateAgentProfileRequest,
-  ): Promise<AgentProfile> {
+  async updateAgent(agentId: string, request: UpdateAgentProfileRequest): Promise<AgentProfile> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const index = this.state.agents.findIndex(
-        (candidate) => candidate.id === agentId,
-      );
+      const index = this.state.agents.findIndex((candidate) => candidate.id === agentId);
       const current = this.state.agents[index];
       if (!current) throw new Error(`Agent not found: ${agentId}`);
       const updated = updateAgentProfile(current, request);
-      const binding = updatedAgentCapabilityBinding(
-        this.state,
-        current,
-        updated,
-      );
+      const binding = updatedAgentCapabilityBinding(this.state, current, updated);
       this.state.agents[index] = updated;
       if (updated.revision !== current.revision) {
         this.state.agentRevisions.push(
@@ -1192,26 +1093,15 @@ export class LocalStore {
     });
   }
 
-  async rollbackAgent(
-    agentId: string,
-    targetRevision: number,
-  ): Promise<AgentProfileRollbackResult> {
+  async rollbackAgent(agentId: string, targetRevision: number): Promise<AgentProfileRollbackResult> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const index = this.state.agents.findIndex(
-        (candidate) => candidate.id === agentId,
-      );
+      const index = this.state.agents.findIndex((candidate) => candidate.id === agentId);
       const current = this.state.agents[index];
       if (!current) throw new Error(`Agent not found: ${agentId}`);
-      const target = this.state.agentRevisions.find(
-        (candidate) =>
-          candidate.agentId === agentId &&
-          candidate.revision === targetRevision,
-      );
+      const target = this.state.agentRevisions.find((candidate) => candidate.agentId === agentId && candidate.revision === targetRevision);
       if (!target) {
-        throw new Error(
-          `Agent revision not found: ${agentId}@${targetRevision}`,
-        );
+        throw new Error(`Agent revision not found: ${agentId}@${targetRevision}`);
       }
       const agent = rollbackAgentProfile(current, target);
       const revision = createAgentProfileRevision(agent, {
@@ -1221,11 +1111,7 @@ export class LocalStore {
       });
       this.state.agents[index] = agent;
       this.state.agentRevisions.push(revision);
-      const binding = rolledBackAgentCapabilityBinding(
-        this.state,
-        target,
-        agent,
-      );
+      const binding = rolledBackAgentCapabilityBinding(this.state, target, agent);
       if (binding) this.state.agentCapabilityBindings.push(binding);
       await this.persistState();
       return structuredClone({ agent, revision });
@@ -1234,9 +1120,7 @@ export class LocalStore {
 
   async restoreRecommendedAgentCapabilities(
     agentId: string,
-    request:
-      | RestoreRecommendedCapabilitiesRequestV1
-      | UpgradeRecommendedCapabilitiesRequestV1,
+    request: RestoreRecommendedCapabilitiesRequestV1 | UpgradeRecommendedCapabilitiesRequestV1,
     operation: CapabilityCommitOperation = "restore",
   ): Promise<CapabilityRestoreCommit> {
     this.assertInitialized();
@@ -1256,58 +1140,35 @@ export class LocalStore {
     this.assertInitialized();
     return structuredClone(
       [...this.state.credentials].sort((left, right) =>
-        `${left.providerId}:${left.label}`.localeCompare(
-          `${right.providerId}:${right.label}`,
-        ),
+        `${left.providerId}:${left.label}`.localeCompare(`${right.providerId}:${right.label}`),
       ),
     );
   }
 
   getCredentialReference(referenceId: string): CredentialReference {
     this.assertInitialized();
-    const reference = this.state.credentials.find(
-      (candidate) => candidate.id === referenceId,
-    );
+    const reference = this.state.credentials.find((candidate) => candidate.id === referenceId);
     if (!reference) {
       throw new Error(`Credential reference not found: ${referenceId}`);
     }
     return structuredClone(reference);
   }
 
-  getActiveCredentialReference(
-    providerId: string,
-  ): CredentialReference | undefined {
+  getActiveCredentialReference(providerId: string): CredentialReference | undefined {
     this.assertInitialized();
-    const reference = this.state.credentials.find(
-      (candidate) =>
-        candidate.providerId === providerId && candidate.status === "active",
-    );
+    const reference = this.state.credentials.find((candidate) => candidate.providerId === providerId && candidate.status === "active");
     return reference ? structuredClone(reference) : undefined;
   }
 
-  async createCredentialReference(
-    request: CreateCredentialReferenceRequest,
-  ): Promise<CredentialReference> {
+  async createCredentialReference(request: CreateCredentialReferenceRequest): Promise<CredentialReference> {
     this.assertInitialized();
     const reference = createCredentialReferenceRecord(request);
     return this.stateQueue.run(async () => {
-      if (
-        this.state.credentials.some(
-          (candidate) =>
-            candidate.providerId === reference.providerId &&
-            candidate.status === "active",
-        )
-      ) {
-        throw new Error(
-          `Provider already has an active credential reference: ${reference.providerId}`,
-        );
+      if (this.state.credentials.some((candidate) => candidate.providerId === reference.providerId && candidate.status === "active")) {
+        throw new Error(`Provider already has an active credential reference: ${reference.providerId}`);
       }
       const sourceKey = credentialSourceKey(reference);
-      if (
-        this.state.credentials.some(
-          (candidate) => credentialSourceKey(candidate) === sourceKey,
-        )
-      ) {
+      if (this.state.credentials.some((candidate) => credentialSourceKey(candidate) === sourceKey)) {
         throw new Error("Credential reference source already exists");
       }
       this.state.credentials.push(reference);
@@ -1316,15 +1177,10 @@ export class LocalStore {
     });
   }
 
-  async setCredentialReferenceStatus(
-    referenceId: string,
-    status: CredentialReference["status"],
-  ): Promise<CredentialReference> {
+  async setCredentialReferenceStatus(referenceId: string, status: CredentialReference["status"]): Promise<CredentialReference> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const index = this.state.credentials.findIndex(
-        (candidate) => candidate.id === referenceId,
-      );
+      const index = this.state.credentials.findIndex((candidate) => candidate.id === referenceId);
       const current = this.state.credentials[index];
       if (!current) {
         throw new Error(`Credential reference not found: ${referenceId}`);
@@ -1332,15 +1188,10 @@ export class LocalStore {
       if (
         status === "active" &&
         this.state.credentials.some(
-          (candidate) =>
-            candidate.id !== referenceId &&
-            candidate.providerId === current.providerId &&
-            candidate.status === "active",
+          (candidate) => candidate.id !== referenceId && candidate.providerId === current.providerId && candidate.status === "active",
         )
       ) {
-        throw new Error(
-          `Provider already has an active credential reference: ${current.providerId}`,
-        );
+        throw new Error(`Provider already has an active credential reference: ${current.providerId}`);
       }
       const updated = setCredentialReferenceStatus(current, status);
       this.state.credentials[index] = updated;
@@ -1356,18 +1207,12 @@ export class LocalStore {
   ): Promise<CredentialReference> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const index = this.state.credentials.findIndex(
-        (candidate) => candidate.id === referenceId,
-      );
+      const index = this.state.credentials.findIndex((candidate) => candidate.id === referenceId);
       const current = this.state.credentials[index];
       if (!current) {
         throw new Error(`Credential reference not found: ${referenceId}`);
       }
-      const updated = recordCredentialAvailability(
-        current,
-        availability,
-        error,
-      );
+      const updated = recordCredentialAvailability(current, availability, error);
       this.state.credentials[index] = updated;
       await this.persistState();
       return structuredClone(updated);
@@ -1376,11 +1221,7 @@ export class LocalStore {
 
   listReceiptTrustAnchors(): ReceiptTrustAnchor[] {
     this.assertInitialized();
-    return structuredClone(
-      this.state.receiptTrustAnchors
-        .slice()
-        .sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
-    );
+    return structuredClone(this.state.receiptTrustAnchors.slice().sort((left, right) => left.createdAt.localeCompare(right.createdAt)));
   }
 
   getReceiptTrustAnchorDirectory(): ReceiptTrustAnchorDirectory {
@@ -1398,47 +1239,29 @@ export class LocalStore {
 
   getReceiptTrustAnchor(anchorId: string): ReceiptTrustAnchor {
     this.assertInitialized();
-    const anchor = this.state.receiptTrustAnchors.find(
-      (candidate) => candidate.id === anchorId,
-    );
+    const anchor = this.state.receiptTrustAnchors.find((candidate) => candidate.id === anchorId);
     if (!anchor) {
       throw new Error(`Receipt trust anchor not found: ${anchorId}`);
     }
     return structuredClone(anchor);
   }
 
-  async createReceiptTrustAnchor(
-    request: CreateReceiptTrustAnchorRequest,
-  ): Promise<ReceiptTrustAnchor> {
+  async createReceiptTrustAnchor(request: CreateReceiptTrustAnchorRequest): Promise<ReceiptTrustAnchor> {
     this.assertInitialized();
     this.getThread(request.threadId);
     const anchor = createReceiptTrustAnchorRecord(request);
     return this.stateQueue.run(async () => {
       if (this.state.receiptTrustAnchors.length >= MAX_RECEIPT_TRUST_ANCHORS) {
-        throw new Error(
-          `Workspace exceeds ${MAX_RECEIPT_TRUST_ANCHORS} receipt trust anchors`,
-        );
+        throw new Error(`Workspace exceeds ${MAX_RECEIPT_TRUST_ANCHORS} receipt trust anchors`);
       }
-      if (
-        this.state.receiptTrustAnchors.some(
-          (candidate) => candidate.keyId === anchor.keyId,
-        )
-      ) {
-        throw new Error(
-          `Receipt trust anchor already exists for key: ${anchor.keyId}`,
-        );
+      if (this.state.receiptTrustAnchors.some((candidate) => candidate.keyId === anchor.keyId)) {
+        throw new Error(`Receipt trust anchor already exists for key: ${anchor.keyId}`);
       }
       if (
         anchor.signingSource &&
-        this.state.receiptTrustAnchors.some(
-          (candidate) =>
-            candidate.signingSource?.variable ===
-            anchor.signingSource?.variable,
-        )
+        this.state.receiptTrustAnchors.some((candidate) => candidate.signingSource?.variable === anchor.signingSource?.variable)
       ) {
-        throw new Error(
-          `Receipt signing source already exists: ${anchor.signingSource.variable}`,
-        );
+        throw new Error(`Receipt signing source already exists: ${anchor.signingSource.variable}`);
       }
       this.state.receiptTrustAnchors.push(anchor);
       await this.persistState();
@@ -1446,14 +1269,10 @@ export class LocalStore {
     });
   }
 
-  async revokeReceiptTrustAnchor(
-    anchorId: string,
-  ): Promise<ReceiptTrustAnchor> {
+  async revokeReceiptTrustAnchor(anchorId: string): Promise<ReceiptTrustAnchor> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const index = this.state.receiptTrustAnchors.findIndex(
-        (candidate) => candidate.id === anchorId,
-      );
+      const index = this.state.receiptTrustAnchors.findIndex((candidate) => candidate.id === anchorId);
       const current = this.state.receiptTrustAnchors[index];
       if (!current) {
         throw new Error(`Receipt trust anchor not found: ${anchorId}`);
@@ -1472,18 +1291,11 @@ export class LocalStore {
       .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
   }
 
-  getReceiptTrustAnchorDirectorySubscription(
-    subscriptionId: string,
-  ): ReceiptTrustAnchorDirectorySubscription {
+  getReceiptTrustAnchorDirectorySubscription(subscriptionId: string): ReceiptTrustAnchorDirectorySubscription {
     this.assertInitialized();
-    const subscription =
-      this.state.receiptTrustAnchorDirectorySubscriptions.find(
-        (candidate) => candidate.id === subscriptionId,
-      );
+    const subscription = this.state.receiptTrustAnchorDirectorySubscriptions.find((candidate) => candidate.id === subscriptionId);
     if (!subscription) {
-      throw new Error(
-        `Receipt trust anchor directory subscription not found: ${subscriptionId}`,
-      );
+      throw new Error(`Receipt trust anchor directory subscription not found: ${subscriptionId}`);
     }
     return stripReceiptTrustAnchorDirectorySubscriptionSecrets(subscription);
   }
@@ -1516,39 +1328,26 @@ export class LocalStore {
     this.assertInitialized();
     this.getThread(promotedByThreadId);
     return this.stateQueue.run(async () => {
-      const anchor = this.state.receiptTrustAnchors.find(
-        (candidate) => candidate.keyId === envelope.signature.keyId,
-      );
+      const anchor = this.state.receiptTrustAnchors.find((candidate) => candidate.keyId === envelope.signature.keyId);
       if (!anchor) {
-        throw new Error(
-          `Receipt trust anchor not found for key: ${envelope.signature.keyId}`,
-        );
+        throw new Error(`Receipt trust anchor not found for key: ${envelope.signature.keyId}`);
       }
       const verification = verifyTrustedReceiptEnvelope(envelope, [anchor]);
       if (verification.status !== "trusted") {
-        throw new Error(
-          `Receipt trust anchor directory quorum promotion baseline receipt is not trusted: ${verification.reason}`,
-        );
+        throw new Error(`Receipt trust anchor directory quorum promotion baseline receipt is not trusted: ${verification.reason}`);
       }
-      const existing =
-        this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.find(
-          (baseline) =>
-            receiptTrustAnchorDirectoryQuorumPromotionBaselineKey(
-              baseline.envelope,
-            ) ===
-            receiptTrustAnchorDirectoryQuorumPromotionBaselineKey(envelope),
-        );
+      const existing = this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.find(
+        (baseline) =>
+          receiptTrustAnchorDirectoryQuorumPromotionBaselineKey(baseline.envelope) ===
+          receiptTrustAnchorDirectoryQuorumPromotionBaselineKey(envelope),
+      );
       if (existing) {
         return {
           baseline: structuredClone(existing),
           created: false,
         };
       }
-      const baseline =
-        this.appendReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
-          promotedByThreadId,
-          envelope,
-        );
+      const baseline = this.appendReceiptTrustAnchorDirectoryQuorumPromotionBaseline(promotedByThreadId, envelope);
       await this.persistState();
       return {
         baseline: structuredClone(baseline),
@@ -1571,59 +1370,34 @@ export class LocalStore {
   }> {
     this.assertInitialized();
     this.getThread(importedByThreadId);
-    if (
-      expectedCurrentBaselineSha256 !== "" &&
-      !isSha256(expectedCurrentBaselineSha256)
-    ) {
-      throw new Error(
-        "Receipt trust anchor directory quorum promotion baseline import precondition is invalid",
-      );
+    if (expectedCurrentBaselineSha256 !== "" && !isSha256(expectedCurrentBaselineSha256)) {
+      throw new Error("Receipt trust anchor directory quorum promotion baseline import precondition is invalid");
     }
     return this.stateQueue.run(async () => {
-      const current =
-        this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.at(-1);
+      const current = this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.at(-1);
       const currentSha256 = current?.contentSha256 ?? "";
       if (currentSha256 !== expectedCurrentBaselineSha256) {
-        throw new Error(
-          "Receipt trust anchor directory quorum promotion baseline import precondition failed",
-        );
+        throw new Error("Receipt trust anchor directory quorum promotion baseline import precondition failed");
       }
-      const importedBaseline =
-        validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
-          baselineInput,
-          trustedAnchors,
-        );
-      const verification = verifyTrustedReceiptEnvelope(
-        importedBaseline.envelope,
-        trustedAnchors,
-      );
+      const importedBaseline = validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline(baselineInput, trustedAnchors);
+      const verification = verifyTrustedReceiptEnvelope(importedBaseline.envelope, trustedAnchors);
       if (verification.status !== "trusted") {
-        throw new Error(
-          `Receipt trust anchor directory quorum promotion baseline import is not trusted: ${verification.reason}`,
-        );
+        throw new Error(`Receipt trust anchor directory quorum promotion baseline import is not trusted: ${verification.reason}`);
       }
       const policyReview =
         importPolicy === undefined
           ? undefined
-          : reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy(
-              importedBaseline,
-              importPolicy,
-            );
+          : reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy(importedBaseline, importPolicy);
       if (policyReview?.status === "rejected") {
         throw new Error(
           `Receipt trust anchor directory quorum promotion baseline import policy rejected: ${policyReview.diagnostics.join(",")}`,
         );
       }
-      const existing =
-        this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.find(
-          (baseline) =>
-            receiptTrustAnchorDirectoryQuorumPromotionBaselineKey(
-              baseline.envelope,
-            ) ===
-            receiptTrustAnchorDirectoryQuorumPromotionBaselineKey(
-              importedBaseline.envelope,
-            ),
-        );
+      const existing = this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.find(
+        (baseline) =>
+          receiptTrustAnchorDirectoryQuorumPromotionBaselineKey(baseline.envelope) ===
+          receiptTrustAnchorDirectoryQuorumPromotionBaselineKey(importedBaseline.envelope),
+      );
       if (existing) {
         return {
           baseline: structuredClone(existing),
@@ -1632,11 +1406,7 @@ export class LocalStore {
           ...(current ? { previousBaselineSha256: current.contentSha256 } : {}),
         };
       }
-      const baseline =
-        this.appendReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
-          importedByThreadId,
-          importedBaseline.envelope,
-        );
+      const baseline = this.appendReceiptTrustAnchorDirectoryQuorumPromotionBaseline(importedByThreadId, importedBaseline.envelope);
       await this.persistState();
       return {
         baseline: structuredClone(baseline),
@@ -1675,9 +1445,7 @@ export class LocalStore {
 
   getReceiptTrustAnchorDirectoryQuorumActivationSelectionState(): ReceiptTrustAnchorDirectoryQuorumActivationSelectionState {
     this.assertInitialized();
-    return createReceiptTrustAnchorDirectoryQuorumActivationSelectionState(
-      this.state.receiptTrustAnchorDirectoryQuorumActivationSelection,
-    );
+    return createReceiptTrustAnchorDirectoryQuorumActivationSelectionState(this.state.receiptTrustAnchorDirectoryQuorumActivationSelection);
   }
 
   getReceiptTrustAnchorDirectoryQuorumActivationSelectionBySha256(
@@ -1685,24 +1453,18 @@ export class LocalStore {
   ): ReceiptTrustAnchorDirectoryQuorumActivationSelection | undefined {
     this.assertInitialized();
     if (!/^[a-f0-9]{64}$/.test(selectionSha256)) return undefined;
-    const selection =
-      this.state.receiptTrustAnchorDirectoryQuorumActivationSelections.find(
-        (candidate) => candidate.contentSha256 === selectionSha256,
-      );
-    return selection
-      ? validateReceiptTrustAnchorDirectoryQuorumActivationSelection(selection)
-      : undefined;
+    const selection = this.state.receiptTrustAnchorDirectoryQuorumActivationSelections.find(
+      (candidate) => candidate.contentSha256 === selectionSha256,
+    );
+    return selection ? validateReceiptTrustAnchorDirectoryQuorumActivationSelection(selection) : undefined;
   }
 
   getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit(): ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit {
     this.assertInitialized();
-    return createReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit(
-      {
-        selectionState:
-          this.getReceiptTrustAnchorDirectoryQuorumActivationSelectionState(),
-        currentQuorum: this.getReceiptTrustAnchorDirectorySubscriptionQuorum(),
-      },
-    );
+    return createReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit({
+      selectionState: this.getReceiptTrustAnchorDirectoryQuorumActivationSelectionState(),
+      currentQuorum: this.getReceiptTrustAnchorDirectorySubscriptionQuorum(),
+    });
   }
 
   getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(): ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint {
@@ -1730,21 +1492,16 @@ export class LocalStore {
   ): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview {
     this.assertInitialized();
     const reviewedAt = new Date().toISOString();
-    const currentSelection =
-      this.state.receiptTrustAnchorDirectoryQuorumActivationSelection;
+    const currentSelection = this.state.receiptTrustAnchorDirectoryQuorumActivationSelection;
     const currentSelectionSha256 = currentSelection?.contentSha256 ?? "";
-    const driftAudit =
-      this.getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit();
+    const driftAudit = this.getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit();
     const checkpointRegistryQuorum =
       checkpointRegistryQuorumPolicy !== undefined
-        ? this.getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum(
-            checkpointRegistryQuorumPolicy,
-          )
+        ? this.getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum(checkpointRegistryQuorumPolicy)
         : undefined;
-    const record =
-      this.state.receiptTrustAnchorDirectoryQuorumActivationDecisions.find(
-        (candidate) => candidate.id === activationDecisionRecordId,
-      );
+    const record = this.state.receiptTrustAnchorDirectoryQuorumActivationDecisions.find(
+      (candidate) => candidate.id === activationDecisionRecordId,
+    );
     const diagnostics: string[] = [];
     if (expectedCurrentSelectionSha256 !== currentSelectionSha256) {
       diagnostics.push("selection_precondition_failed");
@@ -1752,10 +1509,7 @@ export class LocalStore {
     if (!record) {
       diagnostics.push("activation_decision_missing");
     }
-    if (
-      checkpointRegistryQuorum &&
-      checkpointRegistryQuorum.status !== "agreed"
-    ) {
+    if (checkpointRegistryQuorum && checkpointRegistryQuorum.status !== "agreed") {
       diagnostics.push("checkpoint_registry_quorum_not_agreed");
     }
     if (currentSelection?.activationDecisionRecordId === record?.id) {
@@ -1763,20 +1517,17 @@ export class LocalStore {
     }
     let currentSourceAlignmentSha256: string | undefined;
     if (record) {
-      const currentSourceAlignment =
-        createReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment(
-          record.baseline,
-          this.state.receiptTrustAnchorDirectorySubscriptions,
-        );
+      const currentSourceAlignment = createReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment(
+        record.baseline,
+        this.state.receiptTrustAnchorDirectorySubscriptions,
+      );
       currentSourceAlignmentSha256 = currentSourceAlignment.contentSha256;
       if (record.envelope.receipt.decision !== "approved") {
         diagnostics.push("activation_decision_not_approved");
       }
       if (
-        currentSourceAlignment.selectedSourceOriginSetSha256 !==
-          record.sourceAlignment.selectedSourceOriginSetSha256 ||
-        currentSourceAlignment.alignedSourceCount !==
-          record.sourceAlignment.alignedSourceCount ||
+        currentSourceAlignment.selectedSourceOriginSetSha256 !== record.sourceAlignment.selectedSourceOriginSetSha256 ||
+        currentSourceAlignment.alignedSourceCount !== record.sourceAlignment.alignedSourceCount ||
         currentSourceAlignment.driftedSourceCount !== 0 ||
         currentSourceAlignment.missingSourceCount !== 0
       ) {
@@ -1831,24 +1582,18 @@ export class LocalStore {
   ): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal {
     this.assertInitialized();
     const proposedAt = nowIso();
-    const rotationReview =
-      this.reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
-        activationDecisionRecordId,
-        expectedCurrentSelectionSha256,
-        options.checkpointRegistryQuorumPolicy,
-      );
-    const currentCheckpoint =
-      this.getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint();
+    const rotationReview = this.reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
+      activationDecisionRecordId,
+      expectedCurrentSelectionSha256,
+      options.checkpointRegistryQuorumPolicy,
+    );
+    const currentCheckpoint = this.getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint();
     const checkpointRegistryQuorumBaselines =
-      this.state
-        .receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines;
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines;
     const checkpointRegistryQuorumBaseline =
       options.checkpointRegistryQuorumBaselineId === undefined
         ? checkpointRegistryQuorumBaselines.at(-1)
-        : checkpointRegistryQuorumBaselines.find(
-            (baseline) =>
-              baseline.id === options.checkpointRegistryQuorumBaselineId,
-          );
+        : checkpointRegistryQuorumBaselines.find((baseline) => baseline.id === options.checkpointRegistryQuorumBaselineId);
     const diagnostics = rotationReview.diagnostics.slice();
     if (rotationReview.status !== "eligible") {
       diagnostics.push(`rotation_review_${rotationReview.status}`);
@@ -1858,41 +1603,23 @@ export class LocalStore {
     } else {
       if (
         options.expectedCheckpointRegistryQuorumBaselineSha256 !== undefined &&
-        checkpointRegistryQuorumBaseline.contentSha256 !==
-          options.expectedCheckpointRegistryQuorumBaselineSha256
+        checkpointRegistryQuorumBaseline.contentSha256 !== options.expectedCheckpointRegistryQuorumBaselineSha256
       ) {
-        diagnostics.push(
-          "checkpoint_registry_quorum_baseline_precondition_failed",
-        );
+        diagnostics.push("checkpoint_registry_quorum_baseline_precondition_failed");
       }
-      if (
-        checkpointRegistryQuorumBaseline.envelope.receipt.status !== "agreed"
-      ) {
+      if (checkpointRegistryQuorumBaseline.envelope.receipt.status !== "agreed") {
         diagnostics.push("checkpoint_registry_quorum_baseline_not_agreed");
       }
-      if (
-        checkpointRegistryQuorumBaseline.selectedCheckpointSha256 !==
-        currentCheckpoint.contentSha256
-      ) {
-        diagnostics.push(
-          "checkpoint_registry_quorum_baseline_checkpoint_mismatch",
-        );
+      if (checkpointRegistryQuorumBaseline.selectedCheckpointSha256 !== currentCheckpoint.contentSha256) {
+        diagnostics.push("checkpoint_registry_quorum_baseline_checkpoint_mismatch");
+      }
+      if (checkpointRegistryQuorumBaseline.selectedSelectionSetSha256 !== currentCheckpoint.selectionSetSha256) {
+        diagnostics.push("checkpoint_registry_quorum_baseline_selection_set_mismatch");
       }
       if (
-        checkpointRegistryQuorumBaseline.selectedSelectionSetSha256 !==
-        currentCheckpoint.selectionSetSha256
+        (checkpointRegistryQuorumBaseline.selectedSelectionChainTailSha256 ?? "") !== (currentCheckpoint.selectionChainTailSha256 ?? "")
       ) {
-        diagnostics.push(
-          "checkpoint_registry_quorum_baseline_selection_set_mismatch",
-        );
-      }
-      if (
-        (checkpointRegistryQuorumBaseline.selectedSelectionChainTailSha256 ??
-          "") !== (currentCheckpoint.selectionChainTailSha256 ?? "")
-      ) {
-        diagnostics.push(
-          "checkpoint_registry_quorum_baseline_selection_chain_tail_mismatch",
-        );
+        diagnostics.push("checkpoint_registry_quorum_baseline_selection_chain_tail_mismatch");
       }
     }
     const status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal["status"] =
@@ -1917,8 +1644,7 @@ export class LocalStore {
       activationDecisionRecordId,
       ...(rotationReview.activationDecisionRecordSha256
         ? {
-            activationDecisionRecordSha256:
-              rotationReview.activationDecisionRecordSha256,
+            activationDecisionRecordSha256: rotationReview.activationDecisionRecordSha256,
           }
         : {}),
       expectedCurrentSelectionSha256,
@@ -1927,45 +1653,33 @@ export class LocalStore {
       rotationReviewSha256: rotationReview.contentSha256,
       ...(options.checkpointRegistryQuorumBaselineId
         ? {
-            checkpointRegistryQuorumBaselineId:
-              options.checkpointRegistryQuorumBaselineId,
+            checkpointRegistryQuorumBaselineId: options.checkpointRegistryQuorumBaselineId,
           }
         : checkpointRegistryQuorumBaseline
           ? {
-              checkpointRegistryQuorumBaselineId:
-                checkpointRegistryQuorumBaseline.id,
+              checkpointRegistryQuorumBaselineId: checkpointRegistryQuorumBaseline.id,
             }
           : {}),
       ...(options.expectedCheckpointRegistryQuorumBaselineSha256
         ? {
-            expectedCheckpointRegistryQuorumBaselineSha256:
-              options.expectedCheckpointRegistryQuorumBaselineSha256,
+            expectedCheckpointRegistryQuorumBaselineSha256: options.expectedCheckpointRegistryQuorumBaselineSha256,
           }
         : {}),
       ...(checkpointRegistryQuorumBaseline
         ? {
-            checkpointRegistryQuorumBaselineSha256:
-              checkpointRegistryQuorumBaseline.contentSha256,
-            checkpointRegistryQuorumBaselineEnvelopeSha256:
-              checkpointRegistryQuorumBaseline.envelope.contentSha256,
-            checkpointRegistryQuorumSha256:
-              checkpointRegistryQuorumBaseline.envelope.receipt.contentSha256,
-            selectedCheckpointSha256:
-              checkpointRegistryQuorumBaseline.selectedCheckpointSha256,
-            selectedSelectionSetSha256:
-              checkpointRegistryQuorumBaseline.selectedSelectionSetSha256,
+            checkpointRegistryQuorumBaselineSha256: checkpointRegistryQuorumBaseline.contentSha256,
+            checkpointRegistryQuorumBaselineEnvelopeSha256: checkpointRegistryQuorumBaseline.envelope.contentSha256,
+            checkpointRegistryQuorumSha256: checkpointRegistryQuorumBaseline.envelope.receipt.contentSha256,
+            selectedCheckpointSha256: checkpointRegistryQuorumBaseline.selectedCheckpointSha256,
+            selectedSelectionSetSha256: checkpointRegistryQuorumBaseline.selectedSelectionSetSha256,
             ...(checkpointRegistryQuorumBaseline.selectedSelectionChainTailSha256
               ? {
-                  selectedSelectionChainTailSha256:
-                    checkpointRegistryQuorumBaseline.selectedSelectionChainTailSha256,
+                  selectedSelectionChainTailSha256: checkpointRegistryQuorumBaseline.selectedSelectionChainTailSha256,
                 }
               : {}),
-            selectedSubscriptionSetSha256:
-              checkpointRegistryQuorumBaseline.selectedSubscriptionSetSha256,
-            selectedSourceOriginSetSha256:
-              checkpointRegistryQuorumBaseline.selectedSourceOriginSetSha256,
-            selectedSignerSetSha256:
-              checkpointRegistryQuorumBaseline.selectedSignerSetSha256,
+            selectedSubscriptionSetSha256: checkpointRegistryQuorumBaseline.selectedSubscriptionSetSha256,
+            selectedSourceOriginSetSha256: checkpointRegistryQuorumBaseline.selectedSourceOriginSetSha256,
+            selectedSignerSetSha256: checkpointRegistryQuorumBaseline.selectedSignerSetSha256,
             checkpointRegistryQuorumBaseline,
           }
         : {}),
@@ -1973,8 +1687,7 @@ export class LocalStore {
       currentSelectionSetSha256: currentCheckpoint.selectionSetSha256,
       ...(currentCheckpoint.selectionChainTailSha256
         ? {
-            currentSelectionChainTailSha256:
-              currentCheckpoint.selectionChainTailSha256,
+            currentSelectionChainTailSha256: currentCheckpoint.selectionChainTailSha256,
           }
         : {}),
     };
@@ -1992,28 +1705,19 @@ export class LocalStore {
     this.assertInitialized();
     this.getThread(threadId);
     return this.stateQueue.run(async () => {
-      const currentSelection =
-        this.state.receiptTrustAnchorDirectoryQuorumActivationSelection;
+      const currentSelection = this.state.receiptTrustAnchorDirectoryQuorumActivationSelection;
       const currentSelectionSha256 = currentSelection?.contentSha256 ?? "";
       if (expectedCurrentSelectionSha256 !== currentSelectionSha256) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection precondition failed",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection precondition failed");
       }
-      const record =
-        this.state.receiptTrustAnchorDirectoryQuorumActivationDecisions.find(
-          (candidate) => candidate.id === activationDecisionRecordId,
-        );
+      const record = this.state.receiptTrustAnchorDirectoryQuorumActivationDecisions.find(
+        (candidate) => candidate.id === activationDecisionRecordId,
+      );
       if (!record) {
-        throw new Error(
-          `Receipt trust anchor directory quorum activation decision not found: ${activationDecisionRecordId}`,
-        );
+        throw new Error(`Receipt trust anchor directory quorum activation decision not found: ${activationDecisionRecordId}`);
       }
       if (currentSelection?.activationDecisionRecordId === record.id) {
-        const selectionState =
-          createReceiptTrustAnchorDirectoryQuorumActivationSelectionState(
-            currentSelection,
-          );
+        const selectionState = createReceiptTrustAnchorDirectoryQuorumActivationSelectionState(currentSelection);
         const content = {
           applied: false,
           expectedCurrentSelectionSha256,
@@ -2021,8 +1725,7 @@ export class LocalStore {
           selectionState,
           ...(currentSelection.previousSelectionSha256
             ? {
-                previousSelectionSha256:
-                  currentSelection.previousSelectionSha256,
+                previousSelectionSha256: currentSelection.previousSelectionSha256,
               }
             : {}),
         };
@@ -2031,57 +1734,40 @@ export class LocalStore {
           contentSha256: sha256(canonicalJson(content)),
         };
       }
-      const currentSourceAlignment =
-        createReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment(
-          record.baseline,
-          this.state.receiptTrustAnchorDirectorySubscriptions,
-        );
+      const currentSourceAlignment = createReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment(
+        record.baseline,
+        this.state.receiptTrustAnchorDirectorySubscriptions,
+      );
       if (
-        currentSourceAlignment.selectedSourceOriginSetSha256 !==
-          record.sourceAlignment.selectedSourceOriginSetSha256 ||
-        currentSourceAlignment.alignedSourceCount !==
-          record.sourceAlignment.alignedSourceCount ||
+        currentSourceAlignment.selectedSourceOriginSetSha256 !== record.sourceAlignment.selectedSourceOriginSetSha256 ||
+        currentSourceAlignment.alignedSourceCount !== record.sourceAlignment.alignedSourceCount ||
         currentSourceAlignment.driftedSourceCount !== 0 ||
         currentSourceAlignment.missingSourceCount !== 0
       ) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection source alignment drifted",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection source alignment drifted");
       }
       if (
-        this.state.receiptTrustAnchorDirectoryQuorumActivationSelections
-          .length >= MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_ACTIVATION_DECISIONS
+        this.state.receiptTrustAnchorDirectoryQuorumActivationSelections.length >= MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_ACTIVATION_DECISIONS
       ) {
         throw new Error(
           `Receipt trust anchor directory quorum activation exceeds ${MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_ACTIVATION_DECISIONS} selections`,
         );
       }
-      const selection =
-        createReceiptTrustAnchorDirectoryQuorumActivationSelection({
-          activatedByThreadId: threadId,
-          activationDecisionRecord: record,
-          ...(currentSelectionSha256
-            ? { previousSelectionSha256: currentSelectionSha256 }
-            : {}),
-        });
-      this.state.receiptTrustAnchorDirectoryQuorumActivationSelection =
-        selection;
-      this.state.receiptTrustAnchorDirectoryQuorumActivationSelections.push(
-        selection,
-      );
+      const selection = createReceiptTrustAnchorDirectoryQuorumActivationSelection({
+        activatedByThreadId: threadId,
+        activationDecisionRecord: record,
+        ...(currentSelectionSha256 ? { previousSelectionSha256: currentSelectionSha256 } : {}),
+      });
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelection = selection;
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelections.push(selection);
       await this.persistState();
-      const selectionState =
-        createReceiptTrustAnchorDirectoryQuorumActivationSelectionState(
-          selection,
-        );
+      const selectionState = createReceiptTrustAnchorDirectoryQuorumActivationSelectionState(selection);
       const content = {
         applied: true,
         expectedCurrentSelectionSha256,
         selection: structuredClone(selection),
         selectionState,
-        ...(currentSelectionSha256
-          ? { previousSelectionSha256: currentSelectionSha256 }
-          : {}),
+        ...(currentSelectionSha256 ? { previousSelectionSha256: currentSelectionSha256 } : {}),
       };
       return {
         ...content,
@@ -2097,33 +1783,19 @@ export class LocalStore {
     this.assertInitialized();
     this.getThread(signedByThreadId);
     return this.stateQueue.run(async () => {
-      const anchor = this.state.receiptTrustAnchors.find(
-        (candidate) => candidate.keyId === result.envelope.signature.keyId,
-      );
+      const anchor = this.state.receiptTrustAnchors.find((candidate) => candidate.keyId === result.envelope.signature.keyId);
       if (!anchor) {
-        throw new Error(
-          `Receipt trust anchor not found for key: ${result.envelope.signature.keyId}`,
-        );
+        throw new Error(`Receipt trust anchor not found for key: ${result.envelope.signature.keyId}`);
       }
-      const verification = verifyTrustedReceiptEnvelope(result.envelope, [
-        anchor,
-      ]);
+      const verification = verifyTrustedReceiptEnvelope(result.envelope, [anchor]);
       if (verification.status !== "trusted") {
-        throw new Error(
-          `Receipt trust anchor directory quorum activation decision is not trusted: ${verification.reason}`,
-        );
+        throw new Error(`Receipt trust anchor directory quorum activation decision is not trusted: ${verification.reason}`);
       }
-      const existing =
-        this.state.receiptTrustAnchorDirectoryQuorumActivationDecisions.find(
-          (record) =>
-            record.envelope.contentSha256 === result.envelope.contentSha256,
-        );
+      const existing = this.state.receiptTrustAnchorDirectoryQuorumActivationDecisions.find(
+        (record) => record.envelope.contentSha256 === result.envelope.contentSha256,
+      );
       if (existing) return structuredClone(existing);
-      const record =
-        this.appendReceiptTrustAnchorDirectoryQuorumActivationDecision(
-          signedByThreadId,
-          result,
-        );
+      const record = this.appendReceiptTrustAnchorDirectoryQuorumActivationDecision(signedByThreadId, result);
       await this.persistState();
       return structuredClone(record);
     });
@@ -2135,28 +1807,15 @@ export class LocalStore {
   ): Promise<ReceiptTrustAnchorDirectorySubscription> {
     this.assertInitialized();
     this.getThread(request.threadId);
-    const subscription = createReceiptTrustAnchorDirectorySubscription(
-      request,
-      discovery,
-    );
+    const subscription = createReceiptTrustAnchorDirectorySubscription(request, discovery);
     return this.stateQueue.run(async () => {
-      if (
-        this.state.receiptTrustAnchorDirectorySubscriptions.length >=
-        MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS
-      ) {
-        throw new Error(
-          `Workspace exceeds ${MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS} receipt trust anchor directory subscriptions`,
-        );
+      if (this.state.receiptTrustAnchorDirectorySubscriptions.length >= MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS) {
+        throw new Error(`Workspace exceeds ${MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS} receipt trust anchor directory subscriptions`);
       }
       if (
-        this.state.receiptTrustAnchorDirectorySubscriptions.some(
-          (candidate) =>
-            candidate.sourceUrlSha256 === subscription.sourceUrlSha256,
-        )
+        this.state.receiptTrustAnchorDirectorySubscriptions.some((candidate) => candidate.sourceUrlSha256 === subscription.sourceUrlSha256)
       ) {
-        throw new Error(
-          "Receipt trust anchor directory subscription source already exists",
-        );
+        throw new Error("Receipt trust anchor directory subscription source already exists");
       }
       this.state.receiptTrustAnchorDirectorySubscriptions.push(subscription);
       await this.persistState();
@@ -2171,34 +1830,21 @@ export class LocalStore {
     this.assertInitialized();
     this.getThread(request.threadId);
     return this.stateQueue.run(async () => {
-      const index =
-        this.state.receiptTrustAnchorDirectorySubscriptions.findIndex(
-          (candidate) => candidate.id === subscriptionId,
-        );
-      const current =
-        this.state.receiptTrustAnchorDirectorySubscriptions[index];
+      const index = this.state.receiptTrustAnchorDirectorySubscriptions.findIndex((candidate) => candidate.id === subscriptionId);
+      const current = this.state.receiptTrustAnchorDirectorySubscriptions[index];
       if (!current) {
-        throw new Error(
-          `Receipt trust anchor directory subscription not found: ${subscriptionId}`,
-        );
+        throw new Error(`Receipt trust anchor directory subscription not found: ${subscriptionId}`);
       }
       if (current.revision !== request.expectedRevision) {
-        throw new Error(
-          "Receipt trust anchor directory subscription revision changed",
-        );
+        throw new Error("Receipt trust anchor directory subscription revision changed");
       }
       if (current.claim && Date.parse(current.claim.expiresAt) > Date.now()) {
-        throw new Error(
-          "Receipt trust anchor directory subscription refresh is in progress",
-        );
+        throw new Error("Receipt trust anchor directory subscription refresh is in progress");
       }
       const hadExpiredClaim = current.claim !== undefined;
       delete current.claim;
       delete current.claimTokenSha256;
-      const updated = updateReceiptTrustAnchorDirectorySubscriptionStatus(
-        current,
-        request.status,
-      );
+      const updated = updateReceiptTrustAnchorDirectorySubscriptionStatus(current, request.status);
       this.state.receiptTrustAnchorDirectorySubscriptions[index] = updated;
       if (updated.revision !== current.revision || hadExpiredClaim) {
         await this.persistState();
@@ -2221,27 +1867,15 @@ export class LocalStore {
     }
     const leaseMs = validateLeaseTtl(options.leaseMs ?? 30_000);
     return this.stateQueue.run(async () => {
-      const subscription =
-        this.state.receiptTrustAnchorDirectorySubscriptions.find(
-          (candidate) => candidate.id === subscriptionId,
-        );
+      const subscription = this.state.receiptTrustAnchorDirectorySubscriptions.find((candidate) => candidate.id === subscriptionId);
       if (!subscription) {
-        throw new Error(
-          `Receipt trust anchor directory subscription not found: ${subscriptionId}`,
-        );
+        throw new Error(`Receipt trust anchor directory subscription not found: ${subscriptionId}`);
       }
       if (subscription.revision !== expectedRevision) {
-        throw new Error(
-          "Receipt trust anchor directory subscription revision changed",
-        );
+        throw new Error("Receipt trust anchor directory subscription revision changed");
       }
-      if (
-        subscription.claim &&
-        Date.parse(subscription.claim.expiresAt) > now.getTime()
-      ) {
-        throw new Error(
-          "Receipt trust anchor directory subscription refresh is in progress",
-        );
+      if (subscription.claim && Date.parse(subscription.claim.expiresAt) > now.getTime()) {
+        throw new Error("Receipt trust anchor directory subscription refresh is in progress");
       }
       const token = createLeaseToken();
       subscription.claim = {
@@ -2252,8 +1886,7 @@ export class LocalStore {
       subscription.claimTokenSha256 = sha256(token);
       await this.persistState();
       return {
-        subscription:
-          stripReceiptTrustAnchorDirectorySubscriptionSecrets(subscription),
+        subscription: stripReceiptTrustAnchorDirectorySubscriptionSecrets(subscription),
         sourceUrl: subscription.sourceUrl,
         token,
       };
@@ -2279,20 +1912,11 @@ export class LocalStore {
     return this.stateQueue.run(async () => {
       const claims: ReceiptTrustAnchorDirectorySubscriptionClaim[] = [];
       const due = this.state.receiptTrustAnchorDirectorySubscriptions
-        .filter(
-          (subscription) =>
-            subscription.status === "active" &&
-            Date.parse(subscription.nextRefreshAt) <= now.getTime(),
-        )
-        .sort((left, right) =>
-          left.nextRefreshAt.localeCompare(right.nextRefreshAt),
-        );
+        .filter((subscription) => subscription.status === "active" && Date.parse(subscription.nextRefreshAt) <= now.getTime())
+        .sort((left, right) => left.nextRefreshAt.localeCompare(right.nextRefreshAt));
       for (const subscription of due) {
         if (claims.length >= limit) break;
-        if (
-          subscription.claim &&
-          Date.parse(subscription.claim.expiresAt) > now.getTime()
-        ) {
+        if (subscription.claim && Date.parse(subscription.claim.expiresAt) > now.getTime()) {
           continue;
         }
         const token = createLeaseToken();
@@ -2303,8 +1927,7 @@ export class LocalStore {
         };
         subscription.claimTokenSha256 = sha256(token);
         claims.push({
-          subscription:
-            stripReceiptTrustAnchorDirectorySubscriptionSecrets(subscription),
+          subscription: stripReceiptTrustAnchorDirectorySubscriptionSecrets(subscription),
           sourceUrl: subscription.sourceUrl,
           token,
         });
@@ -2317,40 +1940,24 @@ export class LocalStore {
   async settleReceiptTrustAnchorDirectorySubscriptionClaim(
     subscriptionId: string,
     token: string,
-    outcome:
-      | { discovery: ReceiptTrustAnchorDirectoryDiscovery }
-      | { failureSha256: string },
+    outcome: { discovery: ReceiptTrustAnchorDirectoryDiscovery } | { failureSha256: string },
   ): Promise<ReceiptTrustAnchorDirectorySubscriptionRefreshResult> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const index =
-        this.state.receiptTrustAnchorDirectorySubscriptions.findIndex(
-          (candidate) => candidate.id === subscriptionId,
-        );
-      const current =
-        this.state.receiptTrustAnchorDirectorySubscriptions[index];
+      const index = this.state.receiptTrustAnchorDirectorySubscriptions.findIndex((candidate) => candidate.id === subscriptionId);
+      const current = this.state.receiptTrustAnchorDirectorySubscriptions[index];
       if (!current) {
-        throw new Error(
-          `Receipt trust anchor directory subscription not found: ${subscriptionId}`,
-        );
+        throw new Error(`Receipt trust anchor directory subscription not found: ${subscriptionId}`);
       }
       assertLeaseToken(current.claimTokenSha256, token);
       if (!current.claim) {
-        throw new Error(
-          "Receipt trust anchor directory subscription claim is not active",
-        );
+        throw new Error("Receipt trust anchor directory subscription claim is not active");
       }
       if (Date.parse(current.claim.expiresAt) <= Date.now()) {
-        throw new Error(
-          "Receipt trust anchor directory subscription claim expired",
-        );
+        throw new Error("Receipt trust anchor directory subscription claim expired");
       }
-      const settled = settleReceiptTrustAnchorDirectorySubscriptionRefresh(
-        current,
-        outcome,
-      );
-      this.state.receiptTrustAnchorDirectorySubscriptions[index] =
-        settled.persisted;
+      const settled = settleReceiptTrustAnchorDirectorySubscriptionRefresh(current, outcome);
+      this.state.receiptTrustAnchorDirectorySubscriptions[index] = settled.persisted;
       await this.persistState();
       return settled.result;
     });
@@ -2359,9 +1966,7 @@ export class LocalStore {
   listReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions(): ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription[] {
     this.assertInitialized();
     return this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions
-      .map(
-        stripReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionSecrets,
-      )
+      .map(stripReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionSecrets)
       .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
   }
 
@@ -2369,26 +1974,19 @@ export class LocalStore {
     subscriptionId: string,
   ): ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription {
     this.assertInitialized();
-    const subscription =
-      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions.find(
-        (candidate) => candidate.id === subscriptionId,
-      );
-    if (!subscription) {
-      throw new Error(
-        `Receipt trust anchor directory quorum activation selection checkpoint subscription not found: ${subscriptionId}`,
-      );
-    }
-    return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionSecrets(
-      subscription,
+    const subscription = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions.find(
+      (candidate) => candidate.id === subscriptionId,
     );
+    if (!subscription) {
+      throw new Error(`Receipt trust anchor directory quorum activation selection checkpoint subscription not found: ${subscriptionId}`);
+    }
+    return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionSecrets(subscription);
   }
 
   listReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions(): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription[] {
     this.assertInitialized();
     return this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions
-      .map(
-        stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets,
-      )
+      .map(stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets)
       .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
   }
 
@@ -2396,18 +1994,15 @@ export class LocalStore {
     subscriptionId: string,
   ): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription {
     this.assertInitialized();
-    const subscription =
-      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.find(
-        (candidate) => candidate.id === subscriptionId,
-      );
+    const subscription = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.find(
+      (candidate) => candidate.id === subscriptionId,
+    );
     if (!subscription) {
       throw new Error(
         `Receipt trust anchor directory quorum activation selection rotation proposal subscription not found: ${subscriptionId}`,
       );
     }
-    return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
-      subscription,
-    );
+    return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(subscription);
   }
 
   getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshSource(
@@ -2420,30 +2015,22 @@ export class LocalStore {
   } {
     this.assertInitialized();
     this.getThread(threadId);
-    const subscription =
-      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.find(
-        (candidate) => candidate.id === subscriptionId,
-      );
+    const subscription = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.find(
+      (candidate) => candidate.id === subscriptionId,
+    );
     if (!subscription) {
       throw new Error(
         `Receipt trust anchor directory quorum activation selection rotation proposal subscription not found: ${subscriptionId}`,
       );
     }
     if (subscription.auditThreadId !== threadId) {
-      throw new Error(
-        "Receipt trust anchor directory quorum activation selection rotation proposal subscription audit thread changed",
-      );
+      throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal subscription audit thread changed");
     }
     if (subscription.revision !== expectedRevision) {
-      throw new Error(
-        "Receipt trust anchor directory quorum activation selection rotation proposal subscription revision changed",
-      );
+      throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal subscription revision changed");
     }
     return {
-      subscription:
-        stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
-          subscription,
-        ),
+      subscription: stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(subscription),
       sourceUrl: subscription.sourceUrl,
     };
   }
@@ -2454,16 +2041,11 @@ export class LocalStore {
   ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription> {
     this.assertInitialized();
     this.getThread(request.threadId);
-    const subscription =
-      createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
-        request,
-        discovery,
-      );
+    const subscription = createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(request, discovery);
     return this.stateQueue.run(async () => {
       if (
-        this.state
-          .receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions
-          .length >= MAX_RECEIPT_TRUST_ROTATION_PROPOSAL_SUBSCRIPTIONS
+        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.length >=
+        MAX_RECEIPT_TRUST_ROTATION_PROPOSAL_SUBSCRIPTIONS
       ) {
         throw new Error(
           `Workspace exceeds ${MAX_RECEIPT_TRUST_ROTATION_PROPOSAL_SUBSCRIPTIONS} receipt trust anchor directory quorum activation selection rotation proposal subscriptions`,
@@ -2471,21 +2053,14 @@ export class LocalStore {
       }
       if (
         this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.some(
-          (candidate) =>
-            candidate.sourceUrlSha256 === subscription.sourceUrlSha256,
+          (candidate) => candidate.sourceUrlSha256 === subscription.sourceUrlSha256,
         )
       ) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection rotation proposal subscription source already exists",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal subscription source already exists");
       }
-      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.push(
-        subscription,
-      );
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.push(subscription);
       await this.persistState();
-      return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
-        subscription,
-      );
+      return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(subscription);
     });
   }
 
@@ -2496,47 +2071,30 @@ export class LocalStore {
     this.assertInitialized();
     this.getThread(request.threadId);
     return this.stateQueue.run(async () => {
-      const index =
-        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.findIndex(
-          (candidate) => candidate.id === subscriptionId,
-        );
-      const current =
-        this.state
-          .receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions[
-          index
-        ];
+      const index = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.findIndex(
+        (candidate) => candidate.id === subscriptionId,
+      );
+      const current = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions[index];
       if (!current) {
         throw new Error(
           `Receipt trust anchor directory quorum activation selection rotation proposal subscription not found: ${subscriptionId}`,
         );
       }
       if (current.revision !== request.expectedRevision) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection rotation proposal subscription revision changed",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal subscription revision changed");
       }
       if (current.claim && Date.parse(current.claim.expiresAt) > Date.now()) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection rotation proposal subscription refresh is in progress",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal subscription refresh is in progress");
       }
       const hadExpiredClaim = current.claim !== undefined;
       delete current.claim;
       delete current.claimTokenSha256;
-      const updated =
-        updateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionStatus(
-          current,
-          request.status,
-        );
-      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions[
-        index
-      ] = updated;
+      const updated = updateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionStatus(current, request.status);
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions[index] = updated;
       if (updated.revision !== current.revision || hadExpiredClaim) {
         await this.persistState();
       }
-      return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
-        updated,
-      );
+      return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(updated);
     });
   }
 
@@ -2553,45 +2111,28 @@ export class LocalStore {
     this.assertInitialized();
     this.getThread(threadId);
     return this.stateQueue.run(async () => {
-      const index =
-        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.findIndex(
-          (candidate) => candidate.id === subscriptionId,
-        );
-      const current =
-        this.state
-          .receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions[
-          index
-        ];
+      const index = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.findIndex(
+        (candidate) => candidate.id === subscriptionId,
+      );
+      const current = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions[index];
       if (!current) {
         throw new Error(
           `Receipt trust anchor directory quorum activation selection rotation proposal subscription not found: ${subscriptionId}`,
         );
       }
       if (current.auditThreadId !== threadId) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection rotation proposal subscription audit thread changed",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal subscription audit thread changed");
       }
       if (current.revision !== expectedRevision) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection rotation proposal subscription revision changed",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal subscription revision changed");
       }
       if (current.claim && Date.parse(current.claim.expiresAt) > Date.now()) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection rotation proposal subscription refresh is in progress",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal subscription refresh is in progress");
       }
       delete current.claim;
       delete current.claimTokenSha256;
-      const settled =
-        settleReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefresh(
-          current,
-          outcome,
-        );
-      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions[
-        index
-      ] = settled.persisted;
+      const settled = settleReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefresh(current, outcome);
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions[index] = settled.persisted;
       await this.persistState();
       return settled.result;
     });
@@ -2607,33 +2148,23 @@ export class LocalStore {
     const owner = normalizeLeaseOwner(ownerId);
     const now = options.now ?? new Date();
     if (!Number.isFinite(now.getTime())) {
-      throw new Error(
-        "Receipt trust anchor directory quorum activation selection rotation proposal claim time is invalid",
-      );
+      throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal claim time is invalid");
     }
     const leaseMs = validateLeaseTtl(options.leaseMs ?? 30_000);
     return this.stateQueue.run(async () => {
-      const subscription =
-        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.find(
-          (candidate) => candidate.id === subscriptionId,
-        );
+      const subscription = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.find(
+        (candidate) => candidate.id === subscriptionId,
+      );
       if (!subscription) {
         throw new Error(
           `Receipt trust anchor directory quorum activation selection rotation proposal subscription not found: ${subscriptionId}`,
         );
       }
       if (subscription.revision !== expectedRevision) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection rotation proposal subscription revision changed",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal subscription revision changed");
       }
-      if (
-        subscription.claim &&
-        Date.parse(subscription.claim.expiresAt) > now.getTime()
-      ) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection rotation proposal subscription refresh is in progress",
-        );
+      if (subscription.claim && Date.parse(subscription.claim.expiresAt) > now.getTime()) {
+        throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal subscription refresh is in progress");
       }
       const token = createLeaseToken();
       subscription.claim = {
@@ -2644,10 +2175,7 @@ export class LocalStore {
       subscription.claimTokenSha256 = sha256(token);
       await this.persistState();
       return {
-        subscription:
-          stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
-            subscription,
-          ),
+        subscription: stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(subscription),
         sourceUrl: subscription.sourceUrl,
         token,
       };
@@ -2666,31 +2194,18 @@ export class LocalStore {
     const owner = normalizeLeaseOwner(ownerId);
     const now = options.now ?? new Date();
     if (!Number.isFinite(now.getTime())) {
-      throw new Error(
-        "Receipt trust anchor directory quorum activation selection rotation proposal claim time is invalid",
-      );
+      throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal claim time is invalid");
     }
     const leaseMs = validateLeaseTtl(options.leaseMs ?? 30_000);
     const limit = Math.min(Math.max(options.limit ?? 5, 1), 20);
     return this.stateQueue.run(async () => {
-      const claims: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionClaim[] =
-        [];
-      const due =
-        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions
-          .filter(
-            (subscription) =>
-              subscription.status === "active" &&
-              Date.parse(subscription.nextRefreshAt) <= now.getTime(),
-          )
-          .sort((left, right) =>
-            left.nextRefreshAt.localeCompare(right.nextRefreshAt),
-          );
+      const claims: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionClaim[] = [];
+      const due = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions
+        .filter((subscription) => subscription.status === "active" && Date.parse(subscription.nextRefreshAt) <= now.getTime())
+        .sort((left, right) => left.nextRefreshAt.localeCompare(right.nextRefreshAt));
       for (const subscription of due) {
         if (claims.length >= limit) break;
-        if (
-          subscription.claim &&
-          Date.parse(subscription.claim.expiresAt) > now.getTime()
-        ) {
+        if (subscription.claim && Date.parse(subscription.claim.expiresAt) > now.getTime()) {
           continue;
         }
         const token = createLeaseToken();
@@ -2701,10 +2216,7 @@ export class LocalStore {
         };
         subscription.claimTokenSha256 = sha256(token);
         claims.push({
-          subscription:
-            stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
-              subscription,
-            ),
+          subscription: stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(subscription),
           sourceUrl: subscription.sourceUrl,
           token,
         });
@@ -2725,15 +2237,10 @@ export class LocalStore {
   ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshResult> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const index =
-        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.findIndex(
-          (candidate) => candidate.id === subscriptionId,
-        );
-      const current =
-        this.state
-          .receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions[
-          index
-        ];
+      const index = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.findIndex(
+        (candidate) => candidate.id === subscriptionId,
+      );
+      const current = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions[index];
       if (!current) {
         throw new Error(
           `Receipt trust anchor directory quorum activation selection rotation proposal subscription not found: ${subscriptionId}`,
@@ -2741,23 +2248,13 @@ export class LocalStore {
       }
       assertLeaseToken(current.claimTokenSha256, token);
       if (!current.claim) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection rotation proposal subscription claim is not active",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal subscription claim is not active");
       }
       if (Date.parse(current.claim.expiresAt) <= Date.now()) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection rotation proposal subscription claim expired",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal subscription claim expired");
       }
-      const settled =
-        settleReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefresh(
-          current,
-          outcome,
-        );
-      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions[
-        index
-      ] = settled.persisted;
+      const settled = settleReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefresh(current, outcome);
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions[index] = settled.persisted;
       await this.persistState();
       return settled.result;
     });
@@ -2774,34 +2271,25 @@ export class LocalStore {
     this.assertInitialized();
     this.getThread(threadId);
     return this.stateQueue.run(async () => {
-      const subscription =
-        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.find(
-          (candidate) => candidate.id === subscriptionId,
-        );
+      const subscription = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.find(
+        (candidate) => candidate.id === subscriptionId,
+      );
       if (!subscription) {
         throw new Error(
           `Receipt trust anchor directory quorum activation selection rotation proposal subscription not found: ${subscriptionId}`,
         );
       }
       if (subscription.auditThreadId !== threadId) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection rotation proposal approval apply audit thread changed",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal approval apply audit thread changed");
       }
       if (subscription.revision !== expectedRevision) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection rotation proposal approval apply revision changed",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal approval apply revision changed");
       }
       if (subscription.contentSha256 !== expectedSubscriptionSha256) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection rotation proposal approval apply precondition failed",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal approval apply precondition failed");
       }
       if (!Number.isFinite(Date.parse(applyAfter))) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection rotation proposal approval apply time is invalid",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal approval apply time is invalid");
       }
       if (subscription.pendingApprovalPolicyApply?.status === "pending") {
         throw new Error(
@@ -2811,13 +2299,8 @@ export class LocalStore {
       const envelope = validateTrustedReceiptEnvelope(
         approvalEnvelope,
       ) as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>;
-      if (
-        envelope.receiptKind !==
-        "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval"
-      ) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection rotation proposal approval receipt kind is invalid",
-        );
+      if (envelope.receiptKind !== "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval") {
+        throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal approval receipt kind is invalid");
       }
       subscription.pendingApprovalApply = {
         status: "pending",
@@ -2828,9 +2311,7 @@ export class LocalStore {
         approvalSha256: envelope.receipt.contentSha256,
       };
       await this.persistState();
-      return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
-        subscription,
-      );
+      return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(subscription);
     });
   }
 
@@ -2852,20 +2333,15 @@ export class LocalStore {
       );
     }
     const approvalPolicy =
-      normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicy(
-        approvalPolicyInput,
-      );
+      normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicy(approvalPolicyInput);
     const approvalPolicySha256 = sha256(canonicalJson(approvalPolicy));
     if (!Number.isFinite(Date.parse(applyAfter))) {
-      throw new Error(
-        "Receipt trust anchor directory quorum activation selection rotation proposal approval policy apply time is invalid",
-      );
+      throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal approval policy apply time is invalid");
     }
     return this.stateQueue.run(async () => {
-      const subscription =
-        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.find(
-          (candidate) => candidate.id === subscriptionId,
-        );
+      const subscription = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.find(
+        (candidate) => candidate.id === subscriptionId,
+      );
       if (!subscription) {
         throw new Error(
           `Receipt trust anchor directory quorum activation selection rotation proposal subscription not found: ${subscriptionId}`,
@@ -2887,32 +2363,19 @@ export class LocalStore {
         );
       }
       if (subscription.pendingApprovalApply?.status === "pending") {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection rotation proposal approval apply is already pending",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal approval apply is already pending");
       }
       const approvalPolicyBaseline =
         this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines.find(
-          (candidate) =>
-            candidate.contentSha256 === approvalPolicyBaselineSha256,
+          (candidate) => candidate.contentSha256 === approvalPolicyBaselineSha256,
         );
       if (!approvalPolicyBaseline) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection rotation proposal approval policy baseline not found",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal approval policy baseline not found");
       }
-      if (
-        approvalPolicyBaseline.approvalPolicySha256 !== approvalPolicySha256
-      ) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection rotation proposal approval policy baseline mismatch",
-        );
+      if (approvalPolicyBaseline.approvalPolicySha256 !== approvalPolicySha256) {
+        throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal approval policy baseline mismatch");
       }
-      if (
-        !Array.isArray(approvalEnvelopes) ||
-        approvalEnvelopes.length === 0 ||
-        approvalEnvelopes.length > 20
-      ) {
+      if (!Array.isArray(approvalEnvelopes) || approvalEnvelopes.length === 0 || approvalEnvelopes.length > 20) {
         throw new Error(
           "Receipt trust anchor directory quorum activation selection rotation proposal approval policy apply envelopes are invalid",
         );
@@ -2923,8 +2386,7 @@ export class LocalStore {
             approvalEnvelope,
           ) as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>;
           if (
-            envelope.receiptKind !==
-            "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval"
+            envelope.receiptKind !== "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval"
           ) {
             throw new Error(
               "Receipt trust anchor directory quorum activation selection rotation proposal approval receipt kind is invalid",
@@ -2932,25 +2394,19 @@ export class LocalStore {
           }
           return envelope;
         })
-        .sort((left, right) =>
-          left.contentSha256.localeCompare(right.contentSha256),
-        );
+        .sort((left, right) => left.contentSha256.localeCompare(right.contentSha256));
       subscription.pendingApprovalPolicyApply = {
         status: "pending",
         queuedAt: new Date().toISOString(),
         applyAfter,
         approvalEnvelopes: envelopes,
-        approvalEnvelopeSha256s: envelopes.map(
-          (envelope) => envelope.contentSha256,
-        ),
+        approvalEnvelopeSha256s: envelopes.map((envelope) => envelope.contentSha256),
         approvalPolicy,
         approvalPolicySha256,
         approvalPolicyBaselineSha256,
       };
       await this.persistState();
-      return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
-        subscription,
-      );
+      return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(subscription);
     });
   }
 
@@ -2966,38 +2422,23 @@ export class LocalStore {
     const owner = normalizeLeaseOwner(ownerId);
     const now = options.now ?? new Date();
     if (!Number.isFinite(now.getTime())) {
-      throw new Error(
-        "Receipt trust anchor directory quorum activation selection rotation proposal approval apply claim time is invalid",
-      );
+      throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal approval apply claim time is invalid");
     }
     const leaseMs = validateLeaseTtl(options.leaseMs ?? 30_000);
     const limit = Math.min(Math.max(options.limit ?? 5, 1), 20);
     return this.stateQueue.run(async () => {
-      const claims: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplyClaim[] =
-        [];
-      const due =
-        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions
-          .filter((subscription) => {
-            const pending = subscription.pendingApprovalApply;
-            return (
-              subscription.status === "active" &&
-              pending?.status === "pending" &&
-              Date.parse(pending.applyAfter) <= now.getTime()
-            );
-          })
-          .sort((left, right) =>
-            (left.pendingApprovalApply?.applyAfter ?? "").localeCompare(
-              right.pendingApprovalApply?.applyAfter ?? "",
-            ),
-          );
+      const claims: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplyClaim[] = [];
+      const due = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions
+        .filter((subscription) => {
+          const pending = subscription.pendingApprovalApply;
+          return subscription.status === "active" && pending?.status === "pending" && Date.parse(pending.applyAfter) <= now.getTime();
+        })
+        .sort((left, right) => (left.pendingApprovalApply?.applyAfter ?? "").localeCompare(right.pendingApprovalApply?.applyAfter ?? ""));
       for (const subscription of due) {
         if (claims.length >= limit) break;
         const pending = subscription.pendingApprovalApply;
         if (!pending) continue;
-        if (
-          pending.claim &&
-          Date.parse(pending.claim.expiresAt) > now.getTime()
-        ) {
+        if (pending.claim && Date.parse(pending.claim.expiresAt) > now.getTime()) {
           continue;
         }
         const token = createLeaseToken();
@@ -3008,10 +2449,7 @@ export class LocalStore {
         };
         pending.claimTokenSha256 = sha256(token);
         claims.push({
-          subscription:
-            stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
-              subscription,
-            ),
+          subscription: stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(subscription),
           approvalEnvelope: pending.approvalEnvelope,
           token,
         });
@@ -3028,39 +2466,26 @@ export class LocalStore {
   ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const subscription =
-        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.find(
-          (candidate) => candidate.id === subscriptionId,
-        );
+      const subscription = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.find(
+        (candidate) => candidate.id === subscriptionId,
+      );
       if (!subscription?.pendingApprovalApply) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection rotation proposal approval apply claim is not active",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal approval apply claim is not active");
       }
       const pending = subscription.pendingApprovalApply;
       assertLeaseToken(pending.claimTokenSha256, token);
       if (!pending.claim) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection rotation proposal approval apply claim is not active",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal approval apply claim is not active");
       }
       if (Date.parse(pending.claim.expiresAt) <= Date.now()) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection rotation proposal approval apply claim expired",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal approval apply claim expired");
       }
-      if (
-        "resultSha256" in outcome &&
-        !/^[a-f0-9]{64}$/.test(outcome.resultSha256)
-      ) {
+      if ("resultSha256" in outcome && !/^[a-f0-9]{64}$/.test(outcome.resultSha256)) {
         throw new Error(
           "Receipt trust anchor directory quorum activation selection rotation proposal approval apply result hash is invalid",
         );
       }
-      if (
-        "failureSha256" in outcome &&
-        !/^[a-f0-9]{64}$/.test(outcome.failureSha256)
-      ) {
+      if ("failureSha256" in outcome && !/^[a-f0-9]{64}$/.test(outcome.failureSha256)) {
         throw new Error(
           "Receipt trust anchor directory quorum activation selection rotation proposal approval apply failure hash is invalid",
         );
@@ -3069,16 +2494,12 @@ export class LocalStore {
         ...pending,
         status: "resultSha256" in outcome ? "applied" : "failed",
         settledAt: new Date().toISOString(),
-        ...("resultSha256" in outcome
-          ? { resultSha256: outcome.resultSha256 }
-          : { failureSha256: outcome.failureSha256 }),
+        ...("resultSha256" in outcome ? { resultSha256: outcome.resultSha256 } : { failureSha256: outcome.failureSha256 }),
       };
       delete subscription.pendingApprovalApply.claim;
       delete subscription.pendingApprovalApply.claimTokenSha256;
       await this.persistState();
-      return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
-        subscription,
-      );
+      return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(subscription);
     });
   }
 
@@ -3101,31 +2522,20 @@ export class LocalStore {
     const leaseMs = validateLeaseTtl(options.leaseMs ?? 30_000);
     const limit = Math.min(Math.max(options.limit ?? 5, 1), 20);
     return this.stateQueue.run(async () => {
-      const claims: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalPolicyApplyClaim[] =
-        [];
-      const due =
-        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions
-          .filter((subscription) => {
-            const pending = subscription.pendingApprovalPolicyApply;
-            return (
-              subscription.status === "active" &&
-              pending?.status === "pending" &&
-              Date.parse(pending.applyAfter) <= now.getTime()
-            );
-          })
-          .sort((left, right) =>
-            (left.pendingApprovalPolicyApply?.applyAfter ?? "").localeCompare(
-              right.pendingApprovalPolicyApply?.applyAfter ?? "",
-            ),
-          );
+      const claims: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalPolicyApplyClaim[] = [];
+      const due = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions
+        .filter((subscription) => {
+          const pending = subscription.pendingApprovalPolicyApply;
+          return subscription.status === "active" && pending?.status === "pending" && Date.parse(pending.applyAfter) <= now.getTime();
+        })
+        .sort((left, right) =>
+          (left.pendingApprovalPolicyApply?.applyAfter ?? "").localeCompare(right.pendingApprovalPolicyApply?.applyAfter ?? ""),
+        );
       for (const subscription of due) {
         if (claims.length >= limit) break;
         const pending = subscription.pendingApprovalPolicyApply;
         if (!pending) continue;
-        if (
-          pending.claim &&
-          Date.parse(pending.claim.expiresAt) > now.getTime()
-        ) {
+        if (pending.claim && Date.parse(pending.claim.expiresAt) > now.getTime()) {
           continue;
         }
         const token = createLeaseToken();
@@ -3136,10 +2546,7 @@ export class LocalStore {
         };
         pending.claimTokenSha256 = sha256(token);
         claims.push({
-          subscription:
-            stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
-              subscription,
-            ),
+          subscription: stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(subscription),
           approvalEnvelopes: pending.approvalEnvelopes,
           approvalPolicy: pending.approvalPolicy,
           approvalPolicyBaselineSha256: pending.approvalPolicyBaselineSha256,
@@ -3158,10 +2565,9 @@ export class LocalStore {
   ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const subscription =
-        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.find(
-          (candidate) => candidate.id === subscriptionId,
-        );
+      const subscription = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.find(
+        (candidate) => candidate.id === subscriptionId,
+      );
       if (!subscription?.pendingApprovalPolicyApply) {
         throw new Error(
           "Receipt trust anchor directory quorum activation selection rotation proposal approval policy apply claim is not active",
@@ -3175,9 +2581,7 @@ export class LocalStore {
         );
       }
       if (Date.parse(pending.claim.expiresAt) <= Date.now()) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection rotation proposal approval policy apply claim expired",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection rotation proposal approval policy apply claim expired");
       }
       if ("resultSha256" in outcome && !isSha256(outcome.resultSha256)) {
         throw new Error(
@@ -3193,16 +2597,12 @@ export class LocalStore {
         ...pending,
         status: "resultSha256" in outcome ? "applied" : "failed",
         settledAt: new Date().toISOString(),
-        ...("resultSha256" in outcome
-          ? { resultSha256: outcome.resultSha256 }
-          : { failureSha256: outcome.failureSha256 }),
+        ...("resultSha256" in outcome ? { resultSha256: outcome.resultSha256 } : { failureSha256: outcome.failureSha256 }),
       };
       delete subscription.pendingApprovalPolicyApply.claim;
       delete subscription.pendingApprovalPolicyApply.claimTokenSha256;
       await this.persistState();
-      return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
-        subscription,
-      );
+      return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(subscription);
     });
   }
 
@@ -3232,43 +2632,31 @@ export class LocalStore {
     this.assertInitialized();
     this.getThread(promotedByThreadId);
     return this.stateQueue.run(async () => {
-      const anchor = this.state.receiptTrustAnchors.find(
-        (candidate) => candidate.keyId === envelope.signature.keyId,
-      );
+      const anchor = this.state.receiptTrustAnchors.find((candidate) => candidate.keyId === envelope.signature.keyId);
       if (!anchor) {
-        throw new Error(
-          `Receipt trust anchor not found for key: ${envelope.signature.keyId}`,
-        );
+        throw new Error(`Receipt trust anchor not found for key: ${envelope.signature.keyId}`);
       }
       const verification = verifyTrustedReceiptEnvelope(envelope, [anchor]);
       if (verification.status !== "trusted") {
-        throw new Error(
-          `Receipt trust checkpoint registry quorum baseline receipt is not trusted: ${verification.reason}`,
-        );
+        throw new Error(`Receipt trust checkpoint registry quorum baseline receipt is not trusted: ${verification.reason}`);
       }
       if (envelope.receipt.status !== "agreed") {
-        throw new Error(
-          "Receipt trust checkpoint registry quorum baseline requires an agreed quorum",
-        );
+        throw new Error("Receipt trust checkpoint registry quorum baseline requires an agreed quorum");
       }
-      const existing =
-        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines.find(
-          (baseline) =>
-            receiptTrustCheckpointRegistryQuorumBaselineKey(
-              baseline.envelope,
-            ) === receiptTrustCheckpointRegistryQuorumBaselineKey(envelope),
-        );
+      const existing = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines.find(
+        (baseline) =>
+          receiptTrustCheckpointRegistryQuorumBaselineKey(baseline.envelope) === receiptTrustCheckpointRegistryQuorumBaselineKey(envelope),
+      );
       if (existing) {
         return {
           baseline: structuredClone(existing),
           created: false,
         };
       }
-      const baseline =
-        this.appendReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
-          promotedByThreadId,
-          envelope,
-        );
+      const baseline = this.appendReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+        promotedByThreadId,
+        envelope,
+      );
       await this.persistState();
       return {
         baseline: structuredClone(baseline),
@@ -3289,50 +2677,31 @@ export class LocalStore {
   }> {
     this.assertInitialized();
     this.getThread(importedByThreadId);
-    if (
-      expectedCurrentBaselineSha256 !== "" &&
-      !isSha256(expectedCurrentBaselineSha256)
-    ) {
-      throw new Error(
-        "Receipt trust checkpoint registry quorum baseline import precondition is invalid",
-      );
+    if (expectedCurrentBaselineSha256 !== "" && !isSha256(expectedCurrentBaselineSha256)) {
+      throw new Error("Receipt trust checkpoint registry quorum baseline import precondition is invalid");
     }
     return this.stateQueue.run(async () => {
-      const current =
-        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines.at(
-          -1,
-        );
+      const current = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines.at(-1);
       const currentSha256 = current?.contentSha256 ?? "";
       if (currentSha256 !== expectedCurrentBaselineSha256) {
-        throw new Error(
-          "Receipt trust checkpoint registry quorum baseline import precondition failed",
-        );
+        throw new Error("Receipt trust checkpoint registry quorum baseline import precondition failed");
       }
-      const importedBaseline =
-        validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
-          baselineInput,
-          trustedAnchors,
-        );
-      const verification =
-        verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
-          importedBaseline,
-          trustedAnchors,
-        );
+      const importedBaseline = validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+        baselineInput,
+        trustedAnchors,
+      );
+      const verification = verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+        importedBaseline,
+        trustedAnchors,
+      );
       if (verification.status !== "trusted") {
-        throw new Error(
-          `Receipt trust checkpoint registry quorum baseline import is not trusted: ${verification.diagnostics.join(",")}`,
-        );
+        throw new Error(`Receipt trust checkpoint registry quorum baseline import is not trusted: ${verification.diagnostics.join(",")}`);
       }
-      const existing =
-        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines.find(
-          (baseline) =>
-            receiptTrustCheckpointRegistryQuorumBaselineKey(
-              baseline.envelope,
-            ) ===
-            receiptTrustCheckpointRegistryQuorumBaselineKey(
-              importedBaseline.envelope,
-            ),
-        );
+      const existing = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines.find(
+        (baseline) =>
+          receiptTrustCheckpointRegistryQuorumBaselineKey(baseline.envelope) ===
+          receiptTrustCheckpointRegistryQuorumBaselineKey(importedBaseline.envelope),
+      );
       if (existing) {
         return {
           baseline: structuredClone(existing),
@@ -3340,11 +2709,10 @@ export class LocalStore {
           ...(current ? { previousBaselineSha256: current.contentSha256 } : {}),
         };
       }
-      const baseline =
-        this.appendReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
-          importedByThreadId,
-          importedBaseline.envelope,
-        );
+      const baseline = this.appendReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+        importedByThreadId,
+        importedBaseline.envelope,
+      );
       await this.persistState();
       return {
         baseline: structuredClone(baseline),
@@ -3373,30 +2741,21 @@ export class LocalStore {
     this.assertInitialized();
     this.getThread(promotedByThreadId);
     return this.stateQueue.run(async () => {
-      const anchor = this.state.receiptTrustAnchors.find(
-        (candidate) => candidate.keyId === envelope.signature.keyId,
-      );
+      const anchor = this.state.receiptTrustAnchors.find((candidate) => candidate.keyId === envelope.signature.keyId);
       if (!anchor) {
-        throw new Error(
-          `Receipt trust anchor not found for key: ${envelope.signature.keyId}`,
-        );
+        throw new Error(`Receipt trust anchor not found for key: ${envelope.signature.keyId}`);
       }
       const verification = verifyTrustedReceiptEnvelope(envelope, [anchor]);
       if (verification.status !== "trusted") {
-        throw new Error(
-          `Receipt trust rotation approval policy baseline receipt is not trusted: ${verification.reason}`,
-        );
+        throw new Error(`Receipt trust rotation approval policy baseline receipt is not trusted: ${verification.reason}`);
       }
       if (envelope.receipt.status !== "accepted") {
-        throw new Error(
-          "Receipt trust rotation approval policy baseline requires an accepted review",
-        );
+        throw new Error("Receipt trust rotation approval policy baseline requires an accepted review");
       }
       const existing =
         this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines.find(
           (baseline) =>
-            receiptTrustRotationApprovalPolicyBaselineKey(baseline.envelope) ===
-            receiptTrustRotationApprovalPolicyBaselineKey(envelope),
+            receiptTrustRotationApprovalPolicyBaselineKey(baseline.envelope) === receiptTrustRotationApprovalPolicyBaselineKey(envelope),
         );
       if (existing) {
         return {
@@ -3404,11 +2763,10 @@ export class LocalStore {
           created: false,
         };
       }
-      const baseline =
-        this.appendReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
-          promotedByThreadId,
-          envelope,
-        );
+      const baseline = this.appendReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
+        promotedByThreadId,
+        envelope,
+      );
       await this.persistState();
       return {
         baseline: structuredClone(baseline),
@@ -3429,47 +2787,33 @@ export class LocalStore {
   }> {
     this.assertInitialized();
     this.getThread(importedByThreadId);
-    if (
-      expectedCurrentBaselineSha256 !== "" &&
-      !isSha256(expectedCurrentBaselineSha256)
-    ) {
-      throw new Error(
-        "Receipt trust rotation approval policy baseline import precondition is invalid",
-      );
+    if (expectedCurrentBaselineSha256 !== "" && !isSha256(expectedCurrentBaselineSha256)) {
+      throw new Error("Receipt trust rotation approval policy baseline import precondition is invalid");
     }
     return this.stateQueue.run(async () => {
       const current =
-        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines.at(
-          -1,
-        );
+        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines.at(-1);
       const currentSha256 = current?.contentSha256 ?? "";
       if (currentSha256 !== expectedCurrentBaselineSha256) {
-        throw new Error(
-          "Receipt trust rotation approval policy baseline import precondition failed",
-        );
+        throw new Error("Receipt trust rotation approval policy baseline import precondition failed");
       }
       const importedBaseline =
         validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
           baselineInput,
           trustedAnchors,
         );
-      const verification =
-        verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
-          importedBaseline,
-          trustedAnchors,
-        );
+      const verification = verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
+        importedBaseline,
+        trustedAnchors,
+      );
       if (verification.status !== "trusted") {
-        throw new Error(
-          `Receipt trust rotation approval policy baseline import is not trusted: ${verification.diagnostics.join(",")}`,
-        );
+        throw new Error(`Receipt trust rotation approval policy baseline import is not trusted: ${verification.diagnostics.join(",")}`);
       }
       const existing =
         this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines.find(
           (baseline) =>
             receiptTrustRotationApprovalPolicyBaselineKey(baseline.envelope) ===
-            receiptTrustRotationApprovalPolicyBaselineKey(
-              importedBaseline.envelope,
-            ),
+            receiptTrustRotationApprovalPolicyBaselineKey(importedBaseline.envelope),
         );
       if (existing) {
         return {
@@ -3478,11 +2822,10 @@ export class LocalStore {
           ...(current ? { previousBaselineSha256: current.contentSha256 } : {}),
         };
       }
-      const baseline =
-        this.appendReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
-          importedByThreadId,
-          importedBaseline.envelope,
-        );
+      const baseline = this.appendReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
+        importedByThreadId,
+        importedBaseline.envelope,
+      );
       await this.persistState();
       return {
         baseline: structuredClone(baseline),
@@ -3498,16 +2841,11 @@ export class LocalStore {
   ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription> {
     this.assertInitialized();
     this.getThread(request.threadId);
-    const subscription =
-      createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
-        request,
-        discovery,
-      );
+    const subscription = createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(request, discovery);
     return this.stateQueue.run(async () => {
       if (
-        this.state
-          .receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions
-          .length >= MAX_RECEIPT_TRUST_CHECKPOINT_SUBSCRIPTIONS
+        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions.length >=
+        MAX_RECEIPT_TRUST_CHECKPOINT_SUBSCRIPTIONS
       ) {
         throw new Error(
           `Workspace exceeds ${MAX_RECEIPT_TRUST_CHECKPOINT_SUBSCRIPTIONS} receipt trust anchor directory quorum activation selection checkpoint subscriptions`,
@@ -3515,21 +2853,14 @@ export class LocalStore {
       }
       if (
         this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions.some(
-          (candidate) =>
-            candidate.sourceUrlSha256 === subscription.sourceUrlSha256,
+          (candidate) => candidate.sourceUrlSha256 === subscription.sourceUrlSha256,
         )
       ) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection checkpoint subscription source already exists",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection checkpoint subscription source already exists");
       }
-      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions.push(
-        subscription,
-      );
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions.push(subscription);
       await this.persistState();
-      return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionSecrets(
-        subscription,
-      );
+      return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionSecrets(subscription);
     });
   }
 
@@ -3540,47 +2871,31 @@ export class LocalStore {
     this.assertInitialized();
     this.getThread(request.threadId);
     return this.stateQueue.run(async () => {
-      const index =
-        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions.findIndex(
-          (candidate) => candidate.id === subscriptionId,
-        );
-      const current =
-        this.state
-          .receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions[
-          index
-        ];
+      const index = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions.findIndex(
+        (candidate) => candidate.id === subscriptionId,
+      );
+      const current = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions[index];
       if (!current) {
-        throw new Error(
-          `Receipt trust anchor directory quorum activation selection checkpoint subscription not found: ${subscriptionId}`,
-        );
+        throw new Error(`Receipt trust anchor directory quorum activation selection checkpoint subscription not found: ${subscriptionId}`);
       }
       if (current.revision !== request.expectedRevision) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection checkpoint subscription revision changed",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection checkpoint subscription revision changed");
       }
       if (current.claim && Date.parse(current.claim.expiresAt) > Date.now()) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection checkpoint subscription refresh is in progress",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection checkpoint subscription refresh is in progress");
       }
       const hadExpiredClaim = current.claim !== undefined;
       delete current.claim;
       delete current.claimTokenSha256;
-      const updated =
-        updateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionStatus(
-          current,
-          request.status,
-        );
-      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions[
-        index
-      ] = updated;
+      const updated = updateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionStatus(
+        current,
+        request.status,
+      );
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions[index] = updated;
       if (updated.revision !== current.revision || hadExpiredClaim) {
         await this.persistState();
       }
-      return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionSecrets(
-        updated,
-      );
+      return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionSecrets(updated);
     });
   }
 
@@ -3594,33 +2909,21 @@ export class LocalStore {
     const owner = normalizeLeaseOwner(ownerId);
     const now = options.now ?? new Date();
     if (!Number.isFinite(now.getTime())) {
-      throw new Error(
-        "Receipt trust anchor directory quorum activation selection checkpoint claim time is invalid",
-      );
+      throw new Error("Receipt trust anchor directory quorum activation selection checkpoint claim time is invalid");
     }
     const leaseMs = validateLeaseTtl(options.leaseMs ?? 30_000);
     return this.stateQueue.run(async () => {
-      const subscription =
-        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions.find(
-          (candidate) => candidate.id === subscriptionId,
-        );
+      const subscription = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions.find(
+        (candidate) => candidate.id === subscriptionId,
+      );
       if (!subscription) {
-        throw new Error(
-          `Receipt trust anchor directory quorum activation selection checkpoint subscription not found: ${subscriptionId}`,
-        );
+        throw new Error(`Receipt trust anchor directory quorum activation selection checkpoint subscription not found: ${subscriptionId}`);
       }
       if (subscription.revision !== expectedRevision) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection checkpoint subscription revision changed",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection checkpoint subscription revision changed");
       }
-      if (
-        subscription.claim &&
-        Date.parse(subscription.claim.expiresAt) > now.getTime()
-      ) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection checkpoint subscription refresh is in progress",
-        );
+      if (subscription.claim && Date.parse(subscription.claim.expiresAt) > now.getTime()) {
+        throw new Error("Receipt trust anchor directory quorum activation selection checkpoint subscription refresh is in progress");
       }
       const token = createLeaseToken();
       subscription.claim = {
@@ -3631,10 +2934,7 @@ export class LocalStore {
       subscription.claimTokenSha256 = sha256(token);
       await this.persistState();
       return {
-        subscription:
-          stripReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionSecrets(
-            subscription,
-          ),
+        subscription: stripReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionSecrets(subscription),
         sourceUrl: subscription.sourceUrl,
         token,
       };
@@ -3653,31 +2953,18 @@ export class LocalStore {
     const owner = normalizeLeaseOwner(ownerId);
     const now = options.now ?? new Date();
     if (!Number.isFinite(now.getTime())) {
-      throw new Error(
-        "Receipt trust anchor directory quorum activation selection checkpoint claim time is invalid",
-      );
+      throw new Error("Receipt trust anchor directory quorum activation selection checkpoint claim time is invalid");
     }
     const leaseMs = validateLeaseTtl(options.leaseMs ?? 30_000);
     const limit = Math.min(Math.max(options.limit ?? 5, 1), 20);
     return this.stateQueue.run(async () => {
-      const claims: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionClaim[] =
-        [];
-      const due =
-        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions
-          .filter(
-            (subscription) =>
-              subscription.status === "active" &&
-              Date.parse(subscription.nextRefreshAt) <= now.getTime(),
-          )
-          .sort((left, right) =>
-            left.nextRefreshAt.localeCompare(right.nextRefreshAt),
-          );
+      const claims: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionClaim[] = [];
+      const due = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions
+        .filter((subscription) => subscription.status === "active" && Date.parse(subscription.nextRefreshAt) <= now.getTime())
+        .sort((left, right) => left.nextRefreshAt.localeCompare(right.nextRefreshAt));
       for (const subscription of due) {
         if (claims.length >= limit) break;
-        if (
-          subscription.claim &&
-          Date.parse(subscription.claim.expiresAt) > now.getTime()
-        ) {
+        if (subscription.claim && Date.parse(subscription.claim.expiresAt) > now.getTime()) {
           continue;
         }
         const token = createLeaseToken();
@@ -3688,10 +2975,7 @@ export class LocalStore {
         };
         subscription.claimTokenSha256 = sha256(token);
         claims.push({
-          subscription:
-            stripReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionSecrets(
-              subscription,
-            ),
+          subscription: stripReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionSecrets(subscription),
           sourceUrl: subscription.sourceUrl,
           token,
         });
@@ -3712,39 +2996,22 @@ export class LocalStore {
   ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const index =
-        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions.findIndex(
-          (candidate) => candidate.id === subscriptionId,
-        );
-      const current =
-        this.state
-          .receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions[
-          index
-        ];
+      const index = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions.findIndex(
+        (candidate) => candidate.id === subscriptionId,
+      );
+      const current = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions[index];
       if (!current) {
-        throw new Error(
-          `Receipt trust anchor directory quorum activation selection checkpoint subscription not found: ${subscriptionId}`,
-        );
+        throw new Error(`Receipt trust anchor directory quorum activation selection checkpoint subscription not found: ${subscriptionId}`);
       }
       assertLeaseToken(current.claimTokenSha256, token);
       if (!current.claim) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection checkpoint subscription claim is not active",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection checkpoint subscription claim is not active");
       }
       if (Date.parse(current.claim.expiresAt) <= Date.now()) {
-        throw new Error(
-          "Receipt trust anchor directory quorum activation selection checkpoint subscription claim expired",
-        );
+        throw new Error("Receipt trust anchor directory quorum activation selection checkpoint subscription claim expired");
       }
-      const settled =
-        settleReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefresh(
-          current,
-          outcome,
-        );
-      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions[
-        index
-      ] = settled.persisted;
+      const settled = settleReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefresh(current, outcome);
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions[index] = settled.persisted;
       await this.persistState();
       return settled.result;
     });
@@ -3762,16 +3029,12 @@ export class LocalStore {
 
   getSchedule(scheduleId: string): AutomationSchedule {
     this.assertInitialized();
-    const schedule = this.state.schedules.find(
-      (candidate) => candidate.id === scheduleId,
-    );
+    const schedule = this.state.schedules.find((candidate) => candidate.id === scheduleId);
     if (!schedule) throw new Error(`Schedule not found: ${scheduleId}`);
     return structuredClone(stripScheduleSecrets(schedule));
   }
 
-  async createSchedule(
-    request: CreateAutomationScheduleRequest,
-  ): Promise<AutomationSchedule> {
+  async createSchedule(request: CreateAutomationScheduleRequest): Promise<AutomationSchedule> {
     this.assertInitialized();
     this.getThread(request.threadId);
     const schedule = createAutomationSchedule(request);
@@ -3782,22 +3045,15 @@ export class LocalStore {
     });
   }
 
-  async updateSchedule(
-    scheduleId: string,
-    request: UpdateAutomationScheduleRequest,
-  ): Promise<AutomationSchedule> {
+  async updateSchedule(scheduleId: string, request: UpdateAutomationScheduleRequest): Promise<AutomationSchedule> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
       const schedule = this.mutableSchedule(scheduleId);
       const updated: PersistedAutomationSchedule = {
         ...updateAutomationSchedule(schedule, request),
-        ...(schedule.claimTokenSha256
-          ? { claimTokenSha256: schedule.claimTokenSha256 }
-          : {}),
+        ...(schedule.claimTokenSha256 ? { claimTokenSha256: schedule.claimTokenSha256 } : {}),
       };
-      const index = this.state.schedules.findIndex(
-        (candidate) => candidate.id === scheduleId,
-      );
+      const index = this.state.schedules.findIndex((candidate) => candidate.id === scheduleId);
       this.state.schedules[index] = updated;
       if (updated.revision !== schedule.revision) await this.persistState();
       return structuredClone(stripScheduleSecrets(updated));
@@ -3815,27 +3071,19 @@ export class LocalStore {
     this.assertInitialized();
     const owner = normalizeLeaseOwner(ownerId);
     const now = options.now ?? new Date();
-    if (!Number.isFinite(now.getTime()))
-      throw new Error("Claim time is invalid");
+    if (!Number.isFinite(now.getTime())) throw new Error("Claim time is invalid");
     const leaseMs = validateLeaseTtl(options.leaseMs ?? 60_000);
     const limit = Math.min(Math.max(options.limit ?? 10, 1), 100);
     return this.stateQueue.run(async () => {
       const claims: ScheduleClaim[] = [];
       const skipped: DueScheduleClaims["skipped"] = [];
       const due = this.state.schedules
-        .filter(
-          (schedule) =>
-            schedule.status === "active" &&
-            Date.parse(schedule.nextRunAt) <= now.getTime(),
-        )
+        .filter((schedule) => schedule.status === "active" && Date.parse(schedule.nextRunAt) <= now.getTime())
         .sort((left, right) => left.nextRunAt.localeCompare(right.nextRunAt));
       let processed = 0;
       for (const schedule of due) {
         if (processed >= limit) break;
-        if (
-          schedule.claim &&
-          Date.parse(schedule.claim.expiresAt) > now.getTime()
-        ) {
+        if (schedule.claim && Date.parse(schedule.claim.expiresAt) > now.getTime()) {
           continue;
         }
         processed += 1;
@@ -3879,11 +3127,7 @@ export class LocalStore {
     });
   }
 
-  async renewScheduleClaim(
-    scheduleId: string,
-    token: string,
-    ttlMs: number,
-  ): Promise<AutomationSchedule> {
+  async renewScheduleClaim(scheduleId: string, token: string, ttlMs: number): Promise<AutomationSchedule> {
     this.assertInitialized();
     const normalizedTtl = validateLeaseTtl(ttlMs);
     return this.stateQueue.run(async () => {
@@ -3893,9 +3137,7 @@ export class LocalStore {
       const heartbeatAt = nowIso();
       schedule.claim = {
         ...schedule.claim,
-        expiresAt: new Date(
-          Date.parse(heartbeatAt) + normalizedTtl,
-        ).toISOString(),
+        expiresAt: new Date(Date.parse(heartbeatAt) + normalizedTtl).toISOString(),
         revision: schedule.claim.revision + 1,
       };
       schedule.updatedAt = heartbeatAt;
@@ -3904,11 +3146,7 @@ export class LocalStore {
     });
   }
 
-  async settleScheduleClaim(
-    scheduleId: string,
-    token: string,
-    input: SettleScheduleClaimInput,
-  ): Promise<AutomationSchedule> {
+  async settleScheduleClaim(scheduleId: string, token: string, input: SettleScheduleClaimInput): Promise<AutomationSchedule> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
       const schedule = this.mutableSchedule(scheduleId);
@@ -3916,11 +3154,7 @@ export class LocalStore {
       const claim = schedule.claim;
       if (!claim) throw new Error("Schedule claim is not active");
       if (input.runId) {
-        const run = this.state.runs.find(
-          (candidate) =>
-            candidate.id === input.runId &&
-            candidate.threadId === schedule.threadId,
-        );
+        const run = this.state.runs.find((candidate) => candidate.id === input.runId && candidate.threadId === schedule.threadId);
         if (!run) throw new Error("Schedule run does not belong to its thread");
         schedule.lastRunId = input.runId;
         schedule.lastRunAt = nowIso();
@@ -3928,11 +3162,7 @@ export class LocalStore {
       schedule.lastScheduledFor = claim.scheduledFor;
       if (input.error) schedule.lastError = input.error.slice(0, 500);
       else delete schedule.lastError;
-      schedule.nextRunAt = advanceSchedule(
-        schedule,
-        claim.scheduledFor,
-        new Date(),
-      );
+      schedule.nextRunAt = advanceSchedule(schedule, claim.scheduledFor, new Date());
       delete schedule.claim;
       delete schedule.claimTokenSha256;
       schedule.updatedAt = nowIso();
@@ -3945,31 +3175,23 @@ export class LocalStore {
   listInboundChannels(): InboundChannel[] {
     this.assertInitialized();
     return structuredClone(
-      this.state.channels
-        .map(stripChannelSecrets)
-        .sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
+      this.state.channels.map(stripChannelSecrets).sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
     );
   }
 
   getInboundChannel(channelId: string): InboundChannel {
     this.assertInitialized();
-    const channel = this.state.channels.find(
-      (candidate) => candidate.id === channelId,
-    );
+    const channel = this.state.channels.find((candidate) => candidate.id === channelId);
     if (!channel) throw new Error(`Inbound channel not found: ${channelId}`);
     return structuredClone(stripChannelSecrets(channel));
   }
 
-  async createInboundChannel(
-    request: CreateInboundChannelRequest,
-  ): Promise<CreatedInboundChannel> {
+  async createInboundChannel(request: CreateInboundChannelRequest): Promise<CreatedInboundChannel> {
     this.assertInitialized();
     this.getThread(request.threadId);
     const policy = normalizeInboundChannelPolicy(request);
     const retryPolicy = normalizeInboundRetryPolicy(policy.retryPolicy);
-    const signaturePolicy = normalizeInboundSignaturePolicy(
-      policy.signaturePolicy,
-    );
+    const signaturePolicy = normalizeInboundSignaturePolicy(policy.signaturePolicy);
     const token = createLeaseToken();
     const tokenSha256 = sha256(token);
     const timestamp = nowIso();
@@ -3982,10 +3204,7 @@ export class LocalStore {
       status: "active",
       tokenFingerprint: tokenSha256.slice(0, 12),
       tokenSha256,
-      policyTemplate: deriveInboundChannelPolicyTemplate(
-        retryPolicy,
-        signaturePolicy,
-      ),
+      policyTemplate: deriveInboundChannelPolicyTemplate(retryPolicy, signaturePolicy),
       signaturePolicy,
       retryPolicy,
       revision: 1,
@@ -4002,10 +3221,7 @@ export class LocalStore {
     });
   }
 
-  async setInboundChannelStatus(
-    channelId: string,
-    status: InboundChannel["status"],
-  ): Promise<InboundChannel> {
+  async setInboundChannelStatus(channelId: string, status: InboundChannel["status"]): Promise<InboundChannel> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
       const channel = this.mutableInboundChannel(channelId);
@@ -4022,23 +3238,14 @@ export class LocalStore {
     });
   }
 
-  async updateInboundRetryPolicy(
-    channelId: string,
-    retryPolicy: InboundRetryPolicy,
-  ): Promise<InboundChannel> {
+  async updateInboundRetryPolicy(channelId: string, retryPolicy: InboundRetryPolicy): Promise<InboundChannel> {
     this.assertInitialized();
     const normalized = normalizeInboundRetryPolicy(retryPolicy, false);
     return this.stateQueue.run(async () => {
       const channel = this.mutableInboundChannel(channelId);
-      if (
-        channel.retryPolicy.maxAttempts !== normalized.maxAttempts ||
-        channel.retryPolicy.baseDelayMs !== normalized.baseDelayMs
-      ) {
+      if (channel.retryPolicy.maxAttempts !== normalized.maxAttempts || channel.retryPolicy.baseDelayMs !== normalized.baseDelayMs) {
         channel.retryPolicy = normalized;
-        channel.policyTemplate = deriveInboundChannelPolicyTemplate(
-          channel.retryPolicy,
-          channel.signaturePolicy,
-        );
+        channel.policyTemplate = deriveInboundChannelPolicyTemplate(channel.retryPolicy, channel.signaturePolicy);
         channel.revision += 1;
         channel.updatedAt = nowIso();
         await this.persistState();
@@ -4060,10 +3267,7 @@ export class LocalStore {
         channel.signaturePolicy.toleranceSeconds !== normalized.toleranceSeconds
       ) {
         channel.signaturePolicy = normalized;
-        channel.policyTemplate = deriveInboundChannelPolicyTemplate(
-          channel.retryPolicy,
-          channel.signaturePolicy,
-        );
+        channel.policyTemplate = deriveInboundChannelPolicyTemplate(channel.retryPolicy, channel.signaturePolicy);
         channel.revision += 1;
         channel.updatedAt = nowIso();
         await this.persistState();
@@ -4072,9 +3276,7 @@ export class LocalStore {
     });
   }
 
-  async rotateInboundChannelToken(
-    channelId: string,
-  ): Promise<CreatedInboundChannel> {
+  async rotateInboundChannelToken(channelId: string): Promise<CreatedInboundChannel> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
       const channel = this.mutableInboundChannel(channelId);
@@ -4092,22 +3294,12 @@ export class LocalStore {
     });
   }
 
-  async acceptInboundDelivery(
-    channelId: string,
-    token: string,
-    request: InboundMessageRequest,
-  ): Promise<InboundReceipt> {
+  async acceptInboundDelivery(channelId: string, token: string, request: InboundMessageRequest): Promise<InboundReceipt> {
     this.assertInitialized();
     const idempotencyKey = normalizeIdempotencyKey(request.idempotencyKey);
     const message = normalizeInboundMessage(request.message);
-    const bodySha256 = normalizeOptionalSha256(
-      request.bodySha256,
-      "Inbound body SHA-256",
-    );
-    const adapterCatalogSha256 = normalizeOptionalSha256(
-      request.adapterCatalogSha256,
-      "Inbound adapter catalog SHA-256",
-    );
+    const bodySha256 = normalizeOptionalSha256(request.bodySha256, "Inbound body SHA-256");
+    const adapterCatalogSha256 = normalizeOptionalSha256(request.adapterCatalogSha256, "Inbound adapter catalog SHA-256");
     const idempotencySha256 = sha256(`${channelId}\0${idempotencyKey}`);
     return this.stateQueue.run(async () => {
       const channel = this.mutableInboundChannel(channelId);
@@ -4116,9 +3308,7 @@ export class LocalStore {
         throw new Error("Inbound channel is disabled");
       }
       const existing = this.state.inboundDeliveries.find(
-        (candidate) =>
-          candidate.channelId === channelId &&
-          candidate.idempotencySha256 === idempotencySha256,
+        (candidate) => candidate.channelId === channelId && candidate.idempotencySha256 === idempotencySha256,
       );
       if (existing) {
         return {
@@ -4142,9 +3332,7 @@ export class LocalStore {
         maxAttempts: channel.retryPolicy.maxAttempts,
         retryBaseMs: channel.retryPolicy.baseDelayMs,
         message,
-        ...(request.model
-          ? { model: normalizeInboundModel(request.model) }
-          : {}),
+        ...(request.model ? { model: normalizeInboundModel(request.model) } : {}),
         createdAt: timestamp,
         revision: 1,
       };
@@ -4167,30 +3355,16 @@ export class LocalStore {
     );
   }
 
-  exportInboundDeadLetters(
-    channelId: string,
-    now = new Date(),
-    currentAdapterCatalogSha256?: string,
-  ): InboundDeadLetterExport {
+  exportInboundDeadLetters(channelId: string, now = new Date(), currentAdapterCatalogSha256?: string): InboundDeadLetterExport {
     this.assertInitialized();
     if (!Number.isFinite(now.getTime())) {
       throw new Error("Dead-letter export time is invalid");
     }
-    const normalizedCatalogSha256 = normalizeOptionalSha256(
-      currentAdapterCatalogSha256,
-      "Inbound adapter catalog SHA-256",
-    );
+    const normalizedCatalogSha256 = normalizeOptionalSha256(currentAdapterCatalogSha256, "Inbound adapter catalog SHA-256");
     const channel = this.mutableInboundChannel(channelId);
     const deliveries = this.state.inboundDeliveries
-      .filter(
-        (delivery) =>
-          delivery.channelId === channelId && delivery.status === "failed",
-      )
-      .sort(
-        (left, right) =>
-          left.createdAt.localeCompare(right.createdAt) ||
-          left.id.localeCompare(right.id),
-      )
+      .filter((delivery) => delivery.channelId === channelId && delivery.status === "failed")
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt) || left.id.localeCompare(right.id))
       .map((delivery) => ({
         deliveryId: delivery.id,
         threadId: delivery.threadId,
@@ -4199,34 +3373,22 @@ export class LocalStore {
         attemptCount: delivery.attemptCount,
         maxAttempts: delivery.maxAttempts,
         retryBaseMs: delivery.retryBaseMs,
-        retryDisposition:
-          delivery.attemptCount < delivery.maxAttempts
-            ? ("manual_retry_available" as const)
-            : ("retry_exhausted" as const),
+        retryDisposition: delivery.attemptCount < delivery.maxAttempts ? ("manual_retry_available" as const) : ("retry_exhausted" as const),
         ...(normalizedCatalogSha256
           ? {
-              qualificationStatus: inboundDeadLetterQualificationStatus(
-                delivery,
-                normalizedCatalogSha256,
-              ),
+              qualificationStatus: inboundDeadLetterQualificationStatus(delivery, normalizedCatalogSha256),
             }
           : {}),
         messageSha256: sha256(delivery.message),
         ...(delivery.bodySha256 ? { bodySha256: delivery.bodySha256 } : {}),
-        ...(delivery.adapterCatalogSha256
-          ? { adapterCatalogSha256: delivery.adapterCatalogSha256 }
-          : {}),
+        ...(delivery.adapterCatalogSha256 ? { adapterCatalogSha256: delivery.adapterCatalogSha256 } : {}),
         error: delivery.error ?? "Inbound delivery failed without an error.",
         ...(delivery.runId ? { runId: delivery.runId } : {}),
         createdAt: delivery.createdAt,
-        ...(delivery.lastAttemptAt
-          ? { lastAttemptAt: delivery.lastAttemptAt }
-          : {}),
+        ...(delivery.lastAttemptAt ? { lastAttemptAt: delivery.lastAttemptAt } : {}),
         ...(delivery.finishedAt ? { finishedAt: delivery.finishedAt } : {}),
       }));
-    const qualificationSummary = normalizedCatalogSha256
-      ? inboundDeadLetterQualificationSummary(deliveries)
-      : undefined;
+    const qualificationSummary = normalizedCatalogSha256 ? inboundDeadLetterQualificationSummary(deliveries) : undefined;
     const content = {
       schemaVersion: 1 as const,
       channel: {
@@ -4237,9 +3399,7 @@ export class LocalStore {
         retryPolicy: structuredClone(channel.retryPolicy),
         revision: channel.revision,
       },
-      ...(normalizedCatalogSha256
-        ? { currentAdapterCatalogSha256: normalizedCatalogSha256 }
-        : {}),
+      ...(normalizedCatalogSha256 ? { currentAdapterCatalogSha256: normalizedCatalogSha256 } : {}),
       ...(qualificationSummary ?? {}),
       deliveryCount: deliveries.length,
       deliveries,
@@ -4251,10 +3411,7 @@ export class LocalStore {
     };
   }
 
-  async claimInboundDelivery(
-    deliveryId: string,
-    now = new Date(),
-  ): Promise<InboundExecution | undefined> {
+  async claimInboundDelivery(deliveryId: string, now = new Date()): Promise<InboundExecution | undefined> {
     this.assertInitialized();
     const timestamp = now.toISOString();
     return this.stateQueue.run(async () => {
@@ -4262,10 +3419,7 @@ export class LocalStore {
       if (delivery.status !== "accepted" && delivery.status !== "retrying") {
         return undefined;
       }
-      if (
-        delivery.nextAttemptAt &&
-        Date.parse(delivery.nextAttemptAt) > now.getTime()
-      ) {
+      if (delivery.nextAttemptAt && Date.parse(delivery.nextAttemptAt) > now.getTime()) {
         return undefined;
       }
       const channel = this.mutableInboundChannel(delivery.channelId);
@@ -4291,9 +3445,7 @@ export class LocalStore {
 
   async finishInboundDelivery(
     deliveryId: string,
-    input:
-      | { status: "completed"; runId: string }
-      | { status: "failed"; error: string; runId?: string },
+    input: { status: "completed"; runId: string } | { status: "failed"; error: string; runId?: string },
   ): Promise<InboundDelivery> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
@@ -4305,11 +3457,7 @@ export class LocalStore {
         throw new Error("Inbound delivery is not running");
       }
       if (input.runId) {
-        const run = this.state.runs.find(
-          (candidate) =>
-            candidate.id === input.runId &&
-            candidate.threadId === delivery.threadId,
-        );
+        const run = this.state.runs.find((candidate) => candidate.id === input.runId && candidate.threadId === delivery.threadId);
         if (!run) throw new Error("Inbound run does not belong to its thread");
         delivery.runId = input.runId;
       }
@@ -4327,18 +3475,9 @@ export class LocalStore {
     });
   }
 
-  async scheduleInboundDeliveryRetry(
-    deliveryId: string,
-    error: string,
-    delayMs: number,
-    now = new Date(),
-  ): Promise<InboundDelivery> {
+  async scheduleInboundDeliveryRetry(deliveryId: string, error: string, delayMs: number, now = new Date()): Promise<InboundDelivery> {
     this.assertInitialized();
-    if (
-      !Number.isInteger(delayMs) ||
-      delayMs < 1 ||
-      delayMs > MAX_INBOUND_RETRY_DELAY_MS
-    ) {
+    if (!Number.isInteger(delayMs) || delayMs < 1 || delayMs > MAX_INBOUND_RETRY_DELAY_MS) {
       throw new Error("Inbound retry delay is invalid");
     }
     const timestamp = now.toISOString();
@@ -4354,9 +3493,7 @@ export class LocalStore {
         delete delivery.nextAttemptAt;
       } else {
         delivery.status = "retrying";
-        delivery.nextAttemptAt = new Date(
-          now.getTime() + delayMs,
-        ).toISOString();
+        delivery.nextAttemptAt = new Date(now.getTime() + delayMs).toISOString();
         delete delivery.finishedAt;
       }
       delivery.revision += 1;
@@ -4365,11 +3502,7 @@ export class LocalStore {
     });
   }
 
-  async retryInboundDelivery(
-    channelId: string,
-    deliveryId: string,
-    now = new Date(),
-  ): Promise<InboundDelivery> {
+  async retryInboundDelivery(channelId: string, deliveryId: string, now = new Date()): Promise<InboundDelivery> {
     this.assertInitialized();
     const timestamp = now.toISOString();
     return this.stateQueue.run(async () => {
@@ -4384,9 +3517,7 @@ export class LocalStore {
       if (delivery.attemptCount >= delivery.maxAttempts) {
         throw new Error("Inbound delivery retry limit is exhausted");
       }
-      const run = delivery.runId
-        ? this.state.runs.find((candidate) => candidate.id === delivery.runId)
-        : undefined;
+      const run = delivery.runId ? this.state.runs.find((candidate) => candidate.id === delivery.runId) : undefined;
       if (run?.status === "queued" || run?.status === "running") {
         throw new Error("Inbound delivery run is still active");
       }
@@ -4406,9 +3537,7 @@ export class LocalStore {
       .filter(
         (delivery) =>
           delivery.status === "accepted" ||
-          (delivery.status === "retrying" &&
-            (!delivery.nextAttemptAt ||
-              Date.parse(delivery.nextAttemptAt) <= timestamp)),
+          (delivery.status === "retrying" && (!delivery.nextAttemptAt || Date.parse(delivery.nextAttemptAt) <= timestamp)),
       )
       .map((delivery) => delivery.id);
   }
@@ -4420,11 +3549,7 @@ export class LocalStore {
 
   listVisibleThreads(): ThreadSummary[] {
     this.assertInitialized();
-    return structuredClone(
-      visibleThreads(this.state.threads, (threadId) =>
-        this.requireLedger().listEvents(threadId),
-      ),
-    );
+    return structuredClone(visibleThreads(this.state.threads, (threadId) => this.requireLedger().listEvents(threadId)));
   }
 
   getThread(threadId: string): ThreadRecord {
@@ -4440,10 +3565,7 @@ export class LocalStore {
     return this.setThreadTrashed(threadId, false);
   }
 
-  private async setThreadTrashed(
-    threadId: string,
-    trashed: boolean,
-  ): Promise<ThreadRecord> {
+  private async setThreadTrashed(threadId: string, trashed: boolean): Promise<ThreadRecord> {
     this.assertInitialized();
     return this.threadQueue(threadId).run(() =>
       this.stateQueue.run(async () => {
@@ -4462,22 +3584,16 @@ export class LocalStore {
 
   listRuns(threadId: string): RunRecord[] {
     this.assertInitialized();
-    return structuredClone(
-      threadRuns(this.state.runs, threadId).map(stripRunSecrets),
-    );
+    return structuredClone(threadRuns(this.state.runs, threadId).map(stripRunSecrets));
   }
 
   getRunByTriggerId(triggerId: string): RunRecord | undefined {
     this.assertInitialized();
-    const run = this.state.runs.find(
-      (candidate) => candidate.triggerId === triggerId,
-    );
+    const run = this.state.runs.find((candidate) => candidate.triggerId === triggerId);
     return run ? structuredClone(stripRunSecrets(run)) : undefined;
   }
 
-  listAutomaticRecoveryAssessments(
-    threadId?: string,
-  ): AutomaticRecoveryAssessment[] {
+  listAutomaticRecoveryAssessments(threadId?: string): AutomaticRecoveryAssessment[] {
     this.assertInitialized();
     return structuredClone(
       this.state.automaticRecoveryAssessments
@@ -4498,9 +3614,7 @@ export class LocalStore {
 
   getAutomaticRecoveryAttempt(attemptId: string): AutomaticRecoveryAttempt {
     this.assertInitialized();
-    const attempt = this.state.automaticRecoveryAttempts.find(
-      (candidate) => candidate.id === attemptId,
-    );
+    const attempt = this.state.automaticRecoveryAttempts.find((candidate) => candidate.id === attemptId);
     if (!attempt) {
       throw new Error(`Automatic recovery attempt not found: ${attemptId}`);
     }
@@ -4522,15 +3636,7 @@ export class LocalStore {
     if (!Number.isFinite(now.getTime())) {
       throw new Error("Automatic recovery claim time is invalid");
     }
-    const limit =
-      options.limit === undefined
-        ? 8
-        : boundedStoreInteger(
-            options.limit,
-            "Automatic recovery claim limit",
-            1,
-            32,
-          );
+    const limit = options.limit === undefined ? 8 : boundedStoreInteger(options.limit, "Automatic recovery claim limit", 1, 32);
     return this.stateQueue.run(async () => {
       const { changed, ...claims } = claimAutomaticRecoveryState({
         state: this.state,
@@ -4546,11 +3652,7 @@ export class LocalStore {
     });
   }
 
-  async renewAutomaticRecoveryClaim(
-    attemptId: string,
-    token: string,
-    ttlMs: number,
-  ): Promise<AutomaticRecoveryAttempt> {
+  async renewAutomaticRecoveryClaim(attemptId: string, token: string, ttlMs: number): Promise<AutomaticRecoveryAttempt> {
     this.assertInitialized();
     const normalizedTtl = validateLeaseTtl(ttlMs);
     return this.stateQueue.run(async () => {
@@ -4567,11 +3669,7 @@ export class LocalStore {
     });
   }
 
-  async bindAutomaticRecoveryRun(
-    attemptId: string,
-    token: string,
-    recoveryRunId: string,
-  ): Promise<AutomaticRecoveryAttempt> {
+  async bindAutomaticRecoveryRun(attemptId: string, token: string, recoveryRunId: string): Promise<AutomaticRecoveryAttempt> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
       const attempt = bindAutomaticRecoveryRunState({
@@ -4587,11 +3685,7 @@ export class LocalStore {
     });
   }
 
-  async settleAutomaticRecoveryAttempt(
-    attemptId: string,
-    token: string,
-    recoveryRunId: string,
-  ): Promise<AutomaticRecoveryAttempt> {
+  async settleAutomaticRecoveryAttempt(attemptId: string, token: string, recoveryRunId: string): Promise<AutomaticRecoveryAttempt> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
       const attempt = settleAutomaticRecoveryState({
@@ -4607,11 +3701,7 @@ export class LocalStore {
     });
   }
 
-  async abandonAutomaticRecoveryAttempt(
-    attemptId: string,
-    token: string,
-    error: string,
-  ): Promise<AutomaticRecoveryAttempt> {
+  async abandonAutomaticRecoveryAttempt(attemptId: string, token: string, error: string): Promise<AutomaticRecoveryAttempt> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
       const attempt = abandonAutomaticRecoveryState({
@@ -4631,9 +3721,7 @@ export class LocalStore {
     this.assertInitialized();
     this.getThread(threadId);
     return structuredClone(
-      this.state.plans
-        .filter((plan) => plan.threadId === threadId)
-        .sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
+      this.state.plans.filter((plan) => plan.threadId === threadId).sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
     );
   }
 
@@ -4644,9 +3732,7 @@ export class LocalStore {
     return structuredClone(plan);
   }
 
-  listExecutionPlanBlueprints(
-    status?: ExecutionPlanBlueprintRecord["status"],
-  ): ExecutionPlanBlueprintRecord[] {
+  listExecutionPlanBlueprints(status?: ExecutionPlanBlueprintRecord["status"]): ExecutionPlanBlueprintRecord[] {
     this.assertInitialized();
     return structuredClone(
       this.state.executionPlanBlueprints
@@ -4655,13 +3741,9 @@ export class LocalStore {
     );
   }
 
-  getExecutionPlanBlueprintRecord(
-    recordId: string,
-  ): ExecutionPlanBlueprintRecord {
+  getExecutionPlanBlueprintRecord(recordId: string): ExecutionPlanBlueprintRecord {
     this.assertInitialized();
-    const record = this.state.executionPlanBlueprints.find(
-      (candidate) => candidate.id === recordId,
-    );
+    const record = this.state.executionPlanBlueprints.find((candidate) => candidate.id === recordId);
     if (!record) {
       throw new Error(`Execution plan blueprint not found: ${recordId}`);
     }
@@ -4677,9 +3759,7 @@ export class LocalStore {
     const blueprint = validateExecutionPlanBlueprint(request.blueprint);
     return this.stateQueue.run(async () => {
       const existing = this.state.executionPlanBlueprints.find(
-        (record) =>
-          record.status === "active" &&
-          record.blueprintSha256 === blueprint.contentSha256,
+        (record) => record.status === "active" && record.blueprintSha256 === blueprint.contentSha256,
       );
       if (existing) {
         return {
@@ -4693,9 +3773,7 @@ export class LocalStore {
         createdByThreadId: threadId,
         createdAt: nowIso(),
         ...(request.name ? { name: request.name } : {}),
-        ...(request.description !== undefined
-          ? { description: request.description }
-          : {}),
+        ...(request.description !== undefined ? { description: request.description } : {}),
       });
       this.state.executionPlanBlueprints.push(record);
       await this.persistState();
@@ -4712,44 +3790,31 @@ export class LocalStore {
   ): Promise<ExecutionPlanBlueprintRecord> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const index = this.state.executionPlanBlueprints.findIndex(
-        (candidate) => candidate.id === recordId,
-      );
+      const index = this.state.executionPlanBlueprints.findIndex((candidate) => candidate.id === recordId);
       const current = this.state.executionPlanBlueprints[index];
       if (!current) {
         throw new Error(`Execution plan blueprint not found: ${recordId}`);
       }
-      const updated = setExecutionPlanBlueprintRecordStatus(
-        current,
-        request.status,
-        nowIso(),
-      );
+      const updated = setExecutionPlanBlueprintRecordStatus(current, request.status, nowIso());
       this.state.executionPlanBlueprints[index] = updated;
       await this.persistState();
       return structuredClone(updated);
     });
   }
 
-  async qualifyExecutionPlanBlueprintRecord(
-    recordId: string,
-  ): Promise<ExecutionPlanBlueprintRecordQualification> {
+  async qualifyExecutionPlanBlueprintRecord(recordId: string): Promise<ExecutionPlanBlueprintRecordQualification> {
     this.assertInitialized();
     return qualifyExecutionPlanBlueprintRecordProjection(this, recordId);
   }
 
-  async getExecutionPlanBlueprintRecordReplayHistory(
-    recordId: string,
-  ): Promise<ExecutionPlanBlueprintRecordReplayHistory> {
+  async getExecutionPlanBlueprintRecordReplayHistory(recordId: string): Promise<ExecutionPlanBlueprintRecordReplayHistory> {
     this.assertInitialized();
     this.getExecutionPlanBlueprintRecord(recordId);
     const replays: ExecutionPlanBlueprintRecordReplay[] = [];
     for (const thread of this.state.threads) {
       const events = await this.listEvents(thread.id);
       for (const event of events) {
-        const replay = executionPlanBlueprintRecordReplayFromEvent(
-          event,
-          recordId,
-        );
+        const replay = executionPlanBlueprintRecordReplayFromEvent(event, recordId);
         if (replay) replays.push(replay);
       }
     }
@@ -4762,33 +3827,21 @@ export class LocalStore {
   ): Promise<ExecutionPlanBlueprintRecordReplayHistoryVerification> {
     this.assertInitialized();
     this.getExecutionPlanBlueprintRecord(recordId);
-    const observed =
-      await this.getExecutionPlanBlueprintRecordReplayHistory(recordId);
-    return verifyExecutionPlanBlueprintRecordReplayHistoryProjection(
-      input,
-      recordId,
-      observed,
-    );
+    const observed = await this.getExecutionPlanBlueprintRecordReplayHistory(recordId);
+    return verifyExecutionPlanBlueprintRecordReplayHistoryProjection(input, recordId, observed);
   }
 
-  async getExecutionPlanBlueprintRecordReplayOutcomes(
-    recordId: string,
-  ): Promise<ExecutionPlanBlueprintRecordReplayOutcomes> {
+  async getExecutionPlanBlueprintRecordReplayOutcomes(recordId: string): Promise<ExecutionPlanBlueprintRecordReplayOutcomes> {
     this.assertInitialized();
     this.getExecutionPlanBlueprintRecord(recordId);
-    const history =
-      await this.getExecutionPlanBlueprintRecordReplayHistory(recordId);
+    const history = await this.getExecutionPlanBlueprintRecordReplayHistory(recordId);
     const outcomes = history.replays.map((replay) =>
       createExecutionPlanBlueprintRecordReplayOutcome(
         replay,
         this.state.plans.find((plan) => plan.id === replay.planId),
       ),
     );
-    return createExecutionPlanBlueprintRecordReplayOutcomes(
-      recordId,
-      history.contentSha256,
-      outcomes,
-    );
+    return createExecutionPlanBlueprintRecordReplayOutcomes(recordId, history.contentSha256, outcomes);
   }
 
   async verifyExecutionPlanBlueprintRecordReplayOutcomes(
@@ -4797,18 +3850,11 @@ export class LocalStore {
   ): Promise<ExecutionPlanBlueprintRecordReplayOutcomesVerification> {
     this.assertInitialized();
     this.getExecutionPlanBlueprintRecord(recordId);
-    const observed =
-      await this.getExecutionPlanBlueprintRecordReplayOutcomes(recordId);
-    return verifyExecutionPlanBlueprintRecordReplayOutcomesProjection(
-      input,
-      recordId,
-      observed,
-    );
+    const observed = await this.getExecutionPlanBlueprintRecordReplayOutcomes(recordId);
+    return verifyExecutionPlanBlueprintRecordReplayOutcomesProjection(input, recordId, observed);
   }
 
-  listExecutionPlanBlueprintRecordOutcomeBaselines(
-    recordId: string,
-  ): ExecutionPlanBlueprintRecordOutcomeBaseline[] {
+  listExecutionPlanBlueprintRecordOutcomeBaselines(recordId: string): ExecutionPlanBlueprintRecordOutcomeBaseline[] {
     this.assertInitialized();
     this.getExecutionPlanBlueprintRecord(recordId);
     return structuredClone(
@@ -4824,55 +3870,32 @@ export class LocalStore {
   ): Promise<PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult> {
     this.assertInitialized();
     this.getExecutionPlanBlueprintRecord(recordId);
-    const policy = normalizeExecutionPlanBlueprintOutcomeBaselinePolicy(
-      request.policy,
-    );
-    const observed =
-      await this.getExecutionPlanBlueprintRecordReplayOutcomes(recordId);
-    const verification =
-      verifyExecutionPlanBlueprintRecordReplayOutcomesProjection(
-        request.outcomes,
-        recordId,
-        observed,
-      );
+    const policy = normalizeExecutionPlanBlueprintOutcomeBaselinePolicy(request.policy);
+    const observed = await this.getExecutionPlanBlueprintRecordReplayOutcomes(recordId);
+    const verification = verifyExecutionPlanBlueprintRecordReplayOutcomesProjection(request.outcomes, recordId, observed);
     if (verification.status !== "valid") {
-      throw new Error(
-        "Execution plan blueprint outcome baseline requires current outcomes",
-      );
+      throw new Error("Execution plan blueprint outcome baseline requires current outcomes");
     }
-    const policyDiagnostics = executionPlanBlueprintOutcomePolicyDiagnostics(
-      observed,
-      policy,
-    );
+    const policyDiagnostics = executionPlanBlueprintOutcomePolicyDiagnostics(observed, policy);
     if (policyDiagnostics.length > 0) {
-      throw new Error(
-        `Execution plan blueprint outcome baseline policy failed: ${policyDiagnostics.join(",")}`,
-      );
+      throw new Error(`Execution plan blueprint outcome baseline policy failed: ${policyDiagnostics.join(",")}`);
     }
     const hasReview = request.review !== undefined;
     const reviewGate =
       hasReview || request.reviewGate !== undefined
-        ? normalizeExecutionPlanBlueprintOutcomeBaselineReviewGate(
-            request.reviewGate,
-          )
+        ? normalizeExecutionPlanBlueprintOutcomeBaselineReviewGate(request.reviewGate)
         : undefined;
     if (reviewGate && !hasReview) {
-      throw new Error(
-        "Execution plan blueprint outcome baseline requires reviewed outcomes",
-      );
+      throw new Error("Execution plan blueprint outcome baseline requires reviewed outcomes");
     }
     const reviewEvidence = hasReview
       ? createExecutionPlanBlueprintOutcomeBaselineReviewEvidence({
           recordId,
           review: request.review,
           outcomes: observed,
-          sourceQualification:
-            await this.qualifyExecutionPlanBlueprintRecord(recordId),
-          outcomeQualification:
-            await this.qualifyExecutionPlanBlueprintRecordOutcomes(recordId),
-          reviewGate:
-            reviewGate ??
-            DEFAULT_EXECUTION_PLAN_BLUEPRINT_OUTCOME_BASELINE_REVIEW_GATE,
+          sourceQualification: await this.qualifyExecutionPlanBlueprintRecord(recordId),
+          outcomeQualification: await this.qualifyExecutionPlanBlueprintRecordOutcomes(recordId),
+          reviewGate: reviewGate ?? DEFAULT_EXECUTION_PLAN_BLUEPRINT_OUTCOME_BASELINE_REVIEW_GATE,
         })
       : undefined;
     return this.stateQueue.run(async () => {
@@ -4885,8 +3908,7 @@ export class LocalStore {
         latest.replayOutcomesSha256 === observed.contentSha256 &&
         JSON.stringify(latest.policy) === JSON.stringify(policy) &&
         (latest.reviewSha256 ?? "") === (reviewEvidence?.reviewSha256 ?? "") &&
-        JSON.stringify(latest.reviewGate ?? null) ===
-          JSON.stringify(reviewEvidence?.reviewGate ?? null)
+        JSON.stringify(latest.reviewGate ?? null) === JSON.stringify(reviewEvidence?.reviewGate ?? null)
       ) {
         return {
           baseline: structuredClone(latest),
@@ -4911,22 +3933,15 @@ export class LocalStore {
     });
   }
 
-  async qualifyExecutionPlanBlueprintRecordOutcomes(
-    recordId: string,
-  ): Promise<ExecutionPlanBlueprintRecordOutcomeQualification> {
+  async qualifyExecutionPlanBlueprintRecordOutcomes(recordId: string): Promise<ExecutionPlanBlueprintRecordOutcomeQualification> {
     this.assertInitialized();
     this.getExecutionPlanBlueprintRecord(recordId);
-    const outcomes =
-      await this.getExecutionPlanBlueprintRecordReplayOutcomes(recordId);
+    const outcomes = await this.getExecutionPlanBlueprintRecordReplayOutcomes(recordId);
     const latest = this.state.executionPlanBlueprintOutcomeBaselines
       .filter((baseline) => baseline.recordId === recordId)
       .sort((left, right) => left.promotedAt.localeCompare(right.promotedAt))
       .at(-1);
-    return createExecutionPlanBlueprintOutcomeQualification(
-      recordId,
-      outcomes,
-      latest,
-    );
+    return createExecutionPlanBlueprintOutcomeQualification(recordId, outcomes, latest);
   }
 
   async selectExecutionPlanBlueprintRecord(
@@ -4935,20 +3950,12 @@ export class LocalStore {
   ): Promise<ExecutionPlanBlueprintRecordSelection> {
     this.assertInitialized();
     this.getThread(threadId);
-    const objective = normalizeExecutionPlanBlueprintSelectionObjective(
-      request.objective,
+    const objective = normalizeExecutionPlanBlueprintSelectionObjective(request.objective);
+    const recommendationPolicy = normalizeExecutionPlanBlueprintRecommendationPolicy(request.policyTemplate);
+    const policyOverrides = this.state.executionPlanBlueprintRecommendationPolicyOverrides.map(
+      validateExecutionPlanBlueprintRecommendationPolicyOverride,
     );
-    const recommendationPolicy =
-      normalizeExecutionPlanBlueprintRecommendationPolicy(
-        request.policyTemplate,
-      );
-    const policyOverrides =
-      this.state.executionPlanBlueprintRecommendationPolicyOverrides.map(
-        validateExecutionPlanBlueprintRecommendationPolicyOverride,
-      );
-    const policyOverrideByFamilySha256 = new Map(
-      policyOverrides.map((override) => [override.familySha256, override]),
-    );
+    const policyOverrideByFamilySha256 = new Map(policyOverrides.map((override) => [override.familySha256, override]));
     const candidateInputs: Array<{
       record: ExecutionPlanBlueprintRecord;
       sourceQualification: ExecutionPlanBlueprintRecordQualification;
@@ -4958,21 +3965,16 @@ export class LocalStore {
       entry: ExecutionPlanBlueprintPortfolioCalibrationEntry;
     }> = [];
     const entries: ExecutionPlanBlueprintPortfolioCalibrationEntry[] = [];
-    const records = [...this.state.executionPlanBlueprints].sort(
-      compareExecutionPlanBlueprintRecords,
-    );
+    const records = [...this.state.executionPlanBlueprints].sort(compareExecutionPlanBlueprintRecords);
     for (const record of records) {
-      const sourceQualification =
-        await this.qualifyExecutionPlanBlueprintRecord(record.id);
-      const outcomeQualification =
-        await this.qualifyExecutionPlanBlueprintRecordOutcomes(record.id);
+      const sourceQualification = await this.qualifyExecutionPlanBlueprintRecord(record.id);
+      const outcomeQualification = await this.qualifyExecutionPlanBlueprintRecordOutcomes(record.id);
       const latestBaseline = this.state.executionPlanBlueprintOutcomeBaselines
         .filter((baseline) => baseline.recordId === record.id)
         .sort((left, right) => left.promotedAt.localeCompare(right.promotedAt))
         .at(-1);
       const preview =
-        sourceQualification.status === "qualified" &&
-        outcomeQualification.status === "qualified"
+        sourceQualification.status === "qualified" && outcomeQualification.status === "qualified"
           ? await this.previewPlanFromBlueprintRecord(threadId, {
               recordId: record.id,
               ...(objective ? { objective } : {}),
@@ -4994,28 +3996,17 @@ export class LocalStore {
         ...(preview ? { preview } : {}),
       });
     }
-    const families =
-      createExecutionPlanBlueprintPortfolioCalibrationFamilies(entries);
-    const familyBySha256 = new Map(
-      families.map((family) => [family.familySha256, family]),
-    );
+    const families = createExecutionPlanBlueprintPortfolioCalibrationFamilies(entries);
+    const familyBySha256 = new Map(families.map((family) => [family.familySha256, family]));
     const candidates = candidateInputs.map((input) => {
       const family = familyBySha256.get(input.entry.familySha256);
       if (!family) {
         throw new Error("Execution plan blueprint portfolio family missing");
       }
-      const familyPolicyOverride =
-        request.policyTemplate === undefined
-          ? policyOverrideByFamilySha256.get(family.familySha256)
-          : undefined;
-      const candidateRecommendationPolicy =
-        familyPolicyOverride?.recommendationPolicy ?? recommendationPolicy;
+      const familyPolicyOverride = request.policyTemplate === undefined ? policyOverrideByFamilySha256.get(family.familySha256) : undefined;
+      const candidateRecommendationPolicy = familyPolicyOverride?.recommendationPolicy ?? recommendationPolicy;
       const recommendationPolicySource: ExecutionPlanBlueprintRecommendationPolicySource =
-        request.policyTemplate !== undefined
-          ? "request"
-          : familyPolicyOverride
-            ? "family_override"
-            : "default";
+        request.policyTemplate !== undefined ? "request" : familyPolicyOverride ? "family_override" : "default";
       return createExecutionPlanBlueprintSelectionCandidate({
         record: input.record,
         sourceQualification: input.sourceQualification,
@@ -5023,20 +4014,14 @@ export class LocalStore {
         family,
         recommendationPolicy: candidateRecommendationPolicy,
         recommendationPolicySource,
-        ...(familyPolicyOverride
-          ? { familyPolicyOverrideSha256: familyPolicyOverride.contentSha256 }
-          : {}),
-        ...(input.latestBaseline
-          ? { latestBaseline: input.latestBaseline }
-          : {}),
+        ...(familyPolicyOverride ? { familyPolicyOverrideSha256: familyPolicyOverride.contentSha256 } : {}),
+        ...(input.latestBaseline ? { latestBaseline: input.latestBaseline } : {}),
         ...(input.preview ? { preview: input.preview } : {}),
       });
     });
     const selected = selectExecutionPlanBlueprintCandidate(candidates);
     const selectedCandidates = candidates.map((candidate) =>
-      selected && candidate.recordId === selected.recordId
-        ? { ...candidate, selectionStatus: "selected" as const }
-        : candidate,
+      selected && candidate.recordId === selected.recordId ? { ...candidate, selectionStatus: "selected" as const } : candidate,
     );
     return createExecutionPlanBlueprintRecordSelection({
       threadId,
@@ -5050,17 +4035,14 @@ export class LocalStore {
 
   async calibrateExecutionPlanBlueprintPortfolio(): Promise<ExecutionPlanBlueprintPortfolioCalibration> {
     this.assertInitialized();
-    const entries =
-      await this.listExecutionPlanBlueprintPortfolioCalibrationEntries();
+    const entries = await this.listExecutionPlanBlueprintPortfolioCalibrationEntries();
     return createExecutionPlanBlueprintPortfolioCalibration(entries);
   }
 
   async backtestExecutionPlanBlueprintRecommendationPolicies(): Promise<ExecutionPlanBlueprintRecommendationPolicyBacktest> {
     this.assertInitialized();
-    const entries =
-      await this.listExecutionPlanBlueprintPortfolioCalibrationEntries();
-    const families =
-      createExecutionPlanBlueprintPortfolioCalibrationFamilies(entries);
+    const entries = await this.listExecutionPlanBlueprintPortfolioCalibrationEntries();
+    const families = createExecutionPlanBlueprintPortfolioCalibrationFamilies(entries);
     return createExecutionPlanBlueprintRecommendationPolicyBacktest({
       entries,
       families,
@@ -5071,8 +4053,7 @@ export class LocalStore {
 
   async listExecutionPlanBlueprintRecommendationPolicyOverrides(): Promise<ExecutionPlanBlueprintRecommendationPolicyOverrideList> {
     this.assertInitialized();
-    const entries =
-      await this.listExecutionPlanBlueprintPortfolioCalibrationEntries();
+    const entries = await this.listExecutionPlanBlueprintPortfolioCalibrationEntries();
     return createExecutionPlanBlueprintRecommendationPolicyOverrideList({
       overrides: this.state.executionPlanBlueprintRecommendationPolicyOverrides,
       portfolioSetSha256: executionPlanBlueprintPortfolioSetSha256(entries),
@@ -5081,14 +4062,11 @@ export class LocalStore {
 
   async reviewExecutionPlanBlueprintRecommendationPolicyOverrideDrift(): Promise<ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview> {
     this.assertInitialized();
-    const entries =
-      await this.listExecutionPlanBlueprintPortfolioCalibrationEntries();
-    const families =
-      createExecutionPlanBlueprintPortfolioCalibrationFamilies(entries);
-    const overrides =
-      this.state.executionPlanBlueprintRecommendationPolicyOverrides.map(
-        validateExecutionPlanBlueprintRecommendationPolicyOverride,
-      );
+    const entries = await this.listExecutionPlanBlueprintPortfolioCalibrationEntries();
+    const families = createExecutionPlanBlueprintPortfolioCalibrationFamilies(entries);
+    const overrides = this.state.executionPlanBlueprintRecommendationPolicyOverrides.map(
+      validateExecutionPlanBlueprintRecommendationPolicyOverride,
+    );
     return createExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview({
       entries,
       families,
@@ -5100,45 +4078,30 @@ export class LocalStore {
 
   async listExecutionPlanBlueprintRecommendationPolicyOverrideRetirements(): Promise<ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory> {
     this.assertInitialized();
-    const entries =
-      await this.listExecutionPlanBlueprintPortfolioCalibrationEntries();
-    const overrides =
-      this.state.executionPlanBlueprintRecommendationPolicyOverrides.map(
-        validateExecutionPlanBlueprintRecommendationPolicyOverride,
-      );
-    return createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory(
-      {
-        retirements:
-          this.state
-            .executionPlanBlueprintRecommendationPolicyOverrideRetirements,
-        portfolioSetSha256: executionPlanBlueprintPortfolioSetSha256(entries),
-        currentOverrideSetSha256:
-          executionPlanBlueprintRecommendationPolicyOverrideSetSha256(
-            overrides,
-          ),
-      },
+    const entries = await this.listExecutionPlanBlueprintPortfolioCalibrationEntries();
+    const overrides = this.state.executionPlanBlueprintRecommendationPolicyOverrides.map(
+      validateExecutionPlanBlueprintRecommendationPolicyOverride,
     );
+    return createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory({
+      retirements: this.state.executionPlanBlueprintRecommendationPolicyOverrideRetirements,
+      portfolioSetSha256: executionPlanBlueprintPortfolioSetSha256(entries),
+      currentOverrideSetSha256: executionPlanBlueprintRecommendationPolicyOverrideSetSha256(overrides),
+    });
   }
 
   async verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirements(
     input: unknown,
   ): Promise<ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerification> {
     this.assertInitialized();
-    const observed =
-      await this.listExecutionPlanBlueprintRecommendationPolicyOverrideRetirements();
-    return verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProjection(
-      input,
-      observed,
-    );
+    const observed = await this.listExecutionPlanBlueprintRecommendationPolicyOverrideRetirements();
+    return verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProjection(input, observed);
   }
 
   verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle(
     histories: unknown[],
   ): ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle {
     this.assertInitialized();
-    return createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle(
-      histories,
-    );
+    return createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle(histories);
   }
 
   async setExecutionPlanBlueprintRecommendationPolicyOverride(
@@ -5147,56 +4110,36 @@ export class LocalStore {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
       if (!isSha256(request.familySha256)) {
-        throw new Error(
-          "Execution plan blueprint recommendation policy override family is invalid",
-        );
+        throw new Error("Execution plan blueprint recommendation policy override family is invalid");
       }
-      const recommendationPolicy =
-        normalizeExecutionPlanBlueprintRecommendationPolicy(
-          request.policyTemplate,
-        );
-      const entries =
-        await this.listExecutionPlanBlueprintPortfolioCalibrationEntries();
-      const portfolioSetSha256 =
-        executionPlanBlueprintPortfolioSetSha256(entries);
-      if (
-        request.expectedPortfolioSetSha256 !== undefined &&
-        request.expectedPortfolioSetSha256 !== portfolioSetSha256
-      ) {
-        throw new Error(
-          "Execution plan blueprint recommendation policy override portfolio set changed",
-        );
+      const recommendationPolicy = normalizeExecutionPlanBlueprintRecommendationPolicy(request.policyTemplate);
+      const entries = await this.listExecutionPlanBlueprintPortfolioCalibrationEntries();
+      const portfolioSetSha256 = executionPlanBlueprintPortfolioSetSha256(entries);
+      if (request.expectedPortfolioSetSha256 !== undefined && request.expectedPortfolioSetSha256 !== portfolioSetSha256) {
+        throw new Error("Execution plan blueprint recommendation policy override portfolio set changed");
       }
-      const family = createExecutionPlanBlueprintPortfolioCalibrationFamilies(
-        entries,
-      ).find((candidate) => candidate.familySha256 === request.familySha256);
-      if (!family) {
-        throw new Error(
-          "Execution plan blueprint recommendation policy override family is missing",
-        );
-      }
-      const override = createExecutionPlanBlueprintRecommendationPolicyOverride(
-        {
-          family,
-          recommendationPolicy,
-          portfolioSetSha256,
-          updatedAt: nowIso(),
-        },
+      const family = createExecutionPlanBlueprintPortfolioCalibrationFamilies(entries).find(
+        (candidate) => candidate.familySha256 === request.familySha256,
       );
-      const index =
-        this.state.executionPlanBlueprintRecommendationPolicyOverrides.findIndex(
-          (candidate) => candidate.familySha256 === request.familySha256,
-        );
-      if (index >= 0) {
-        this.state.executionPlanBlueprintRecommendationPolicyOverrides[index] =
-          override;
-      } else {
-        this.state.executionPlanBlueprintRecommendationPolicyOverrides.push(
-          override,
-        );
+      if (!family) {
+        throw new Error("Execution plan blueprint recommendation policy override family is missing");
       }
-      this.state.executionPlanBlueprintRecommendationPolicyOverrides.sort(
-        (left, right) => left.familySha256.localeCompare(right.familySha256),
+      const override = createExecutionPlanBlueprintRecommendationPolicyOverride({
+        family,
+        recommendationPolicy,
+        portfolioSetSha256,
+        updatedAt: nowIso(),
+      });
+      const index = this.state.executionPlanBlueprintRecommendationPolicyOverrides.findIndex(
+        (candidate) => candidate.familySha256 === request.familySha256,
+      );
+      if (index >= 0) {
+        this.state.executionPlanBlueprintRecommendationPolicyOverrides[index] = override;
+      } else {
+        this.state.executionPlanBlueprintRecommendationPolicyOverrides.push(override);
+      }
+      this.state.executionPlanBlueprintRecommendationPolicyOverrides.sort((left, right) =>
+        left.familySha256.localeCompare(right.familySha256),
       );
       await this.persistState();
       return structuredClone(override);
@@ -5215,107 +4158,68 @@ export class LocalStore {
         !isSha256(request.expectedDriftReviewSetSha256) ||
         !isSha256(request.expectedPortfolioSetSha256)
       ) {
-        throw new Error(
-          "Execution plan blueprint recommendation policy override retirement request is invalid",
-        );
+        throw new Error("Execution plan blueprint recommendation policy override retirement request is invalid");
       }
-      const entries =
-        await this.listExecutionPlanBlueprintPortfolioCalibrationEntries();
-      const portfolioSetSha256 =
-        executionPlanBlueprintPortfolioSetSha256(entries);
+      const entries = await this.listExecutionPlanBlueprintPortfolioCalibrationEntries();
+      const portfolioSetSha256 = executionPlanBlueprintPortfolioSetSha256(entries);
       if (request.expectedPortfolioSetSha256 !== portfolioSetSha256) {
-        throw new Error(
-          "Execution plan blueprint recommendation policy override retirement portfolio set changed",
-        );
+        throw new Error("Execution plan blueprint recommendation policy override retirement portfolio set changed");
       }
-      const overrides =
-        this.state.executionPlanBlueprintRecommendationPolicyOverrides.map(
-          validateExecutionPlanBlueprintRecommendationPolicyOverride,
-        );
-      const overrideSetSha256 =
-        executionPlanBlueprintRecommendationPolicyOverrideSetSha256(overrides);
-      if (request.expectedOverrideSetSha256 !== overrideSetSha256) {
-        throw new Error(
-          "Execution plan blueprint recommendation policy override retirement override set changed",
-        );
-      }
-      const override = overrides.find(
-        (candidate) => candidate.familySha256 === request.familySha256,
+      const overrides = this.state.executionPlanBlueprintRecommendationPolicyOverrides.map(
+        validateExecutionPlanBlueprintRecommendationPolicyOverride,
       );
+      const overrideSetSha256 = executionPlanBlueprintRecommendationPolicyOverrideSetSha256(overrides);
+      if (request.expectedOverrideSetSha256 !== overrideSetSha256) {
+        throw new Error("Execution plan blueprint recommendation policy override retirement override set changed");
+      }
+      const override = overrides.find((candidate) => candidate.familySha256 === request.familySha256);
       if (!override) {
-        throw new Error(
-          "Execution plan blueprint recommendation policy override retirement override is missing",
-        );
+        throw new Error("Execution plan blueprint recommendation policy override retirement override is missing");
       }
       if (request.expectedOverrideSha256 !== override.contentSha256) {
-        throw new Error(
-          "Execution plan blueprint recommendation policy override retirement override changed",
-        );
+        throw new Error("Execution plan blueprint recommendation policy override retirement override changed");
       }
-      const families =
-        createExecutionPlanBlueprintPortfolioCalibrationFamilies(entries);
-      const driftReview =
-        createExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview({
-          entries,
-          families,
-          overrides,
-          policies: listExecutionPlanBlueprintRecommendationPolicies(),
-          portfolioSetSha256,
-        });
-      if (
-        request.expectedDriftReviewSetSha256 !== driftReview.reviewSetSha256
-      ) {
-        throw new Error(
-          "Execution plan blueprint recommendation policy override retirement drift review changed",
-        );
+      const families = createExecutionPlanBlueprintPortfolioCalibrationFamilies(entries);
+      const driftReview = createExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview({
+        entries,
+        families,
+        overrides,
+        policies: listExecutionPlanBlueprintRecommendationPolicies(),
+        portfolioSetSha256,
+      });
+      if (request.expectedDriftReviewSetSha256 !== driftReview.reviewSetSha256) {
+        throw new Error("Execution plan blueprint recommendation policy override retirement drift review changed");
       }
-      const review = driftReview.reviews.find(
-        (candidate) => candidate.familySha256 === request.familySha256,
-      );
+      const review = driftReview.reviews.find((candidate) => candidate.familySha256 === request.familySha256);
       if (!review || review.recommendation !== "retire") {
-        throw new Error(
-          "Execution plan blueprint recommendation policy override retirement is not retire recommended",
-        );
+        throw new Error("Execution plan blueprint recommendation policy override retirement is not retire recommended");
       }
-      this.state.executionPlanBlueprintRecommendationPolicyOverrides =
-        overrides.filter(
-          (candidate) => candidate.familySha256 !== request.familySha256,
-        );
-      const remainingOverrideSetSha256 =
-        executionPlanBlueprintRecommendationPolicyOverrideSetSha256(
-          this.state.executionPlanBlueprintRecommendationPolicyOverrides,
-        );
-      const result =
-        createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementResult(
-          {
-            override,
-            portfolioSetSha256,
-            overrideSetSha256,
-            driftReviewSetSha256: driftReview.reviewSetSha256,
-            remainingOverrideSetSha256,
-            retiredAt: nowIso(),
-          },
-        );
-      this.state.executionPlanBlueprintRecommendationPolicyOverrideRetirements.push(
-        result,
+      this.state.executionPlanBlueprintRecommendationPolicyOverrides = overrides.filter(
+        (candidate) => candidate.familySha256 !== request.familySha256,
       );
+      const remainingOverrideSetSha256 = executionPlanBlueprintRecommendationPolicyOverrideSetSha256(
+        this.state.executionPlanBlueprintRecommendationPolicyOverrides,
+      );
+      const result = createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementResult({
+        override,
+        portfolioSetSha256,
+        overrideSetSha256,
+        driftReviewSetSha256: driftReview.reviewSetSha256,
+        remainingOverrideSetSha256,
+        retiredAt: nowIso(),
+      });
+      this.state.executionPlanBlueprintRecommendationPolicyOverrideRetirements.push(result);
       await this.persistState();
       return structuredClone(result);
     });
   }
 
-  private async listExecutionPlanBlueprintPortfolioCalibrationEntries(): Promise<
-    ExecutionPlanBlueprintPortfolioCalibrationEntry[]
-  > {
-    const records = [...this.state.executionPlanBlueprints].sort(
-      compareExecutionPlanBlueprintRecords,
-    );
+  private async listExecutionPlanBlueprintPortfolioCalibrationEntries(): Promise<ExecutionPlanBlueprintPortfolioCalibrationEntry[]> {
+    const records = [...this.state.executionPlanBlueprints].sort(compareExecutionPlanBlueprintRecords);
     const entries: ExecutionPlanBlueprintPortfolioCalibrationEntry[] = [];
     for (const record of records) {
-      const sourceQualification =
-        await this.qualifyExecutionPlanBlueprintRecord(record.id);
-      const outcomeQualification =
-        await this.qualifyExecutionPlanBlueprintRecordOutcomes(record.id);
+      const sourceQualification = await this.qualifyExecutionPlanBlueprintRecord(record.id);
+      const outcomeQualification = await this.qualifyExecutionPlanBlueprintRecordOutcomes(record.id);
       const latestBaseline = this.state.executionPlanBlueprintOutcomeBaselines
         .filter((baseline) => baseline.recordId === record.id)
         .sort((left, right) => left.promotedAt.localeCompare(right.promotedAt))
@@ -5338,15 +4242,9 @@ export class LocalStore {
   ): Promise<ExecutionPlanBlueprintRecordReplayEventVerification> {
     this.assertInitialized();
     this.getExecutionPlanBlueprintRecord(recordId);
-    const threadExists = this.state.threads.some(
-      (thread) => thread.id === request.threadId,
-    );
+    const threadExists = this.state.threads.some((thread) => thread.id === request.threadId);
     const events = threadExists ? await this.listEvents(request.threadId) : [];
-    return verifyExecutionPlanBlueprintRecordReplayEventProjection(
-      recordId,
-      request,
-      events,
-    );
+    return verifyExecutionPlanBlueprintRecordReplayEventProjection(recordId, request, events);
   }
 
   async previewPlanFromBlueprintRecord(
@@ -5355,13 +4253,9 @@ export class LocalStore {
   ): Promise<ExecutionPlanBlueprintRecordPreview> {
     this.assertInitialized();
     this.getThread(threadId);
-    const qualification = await this.qualifyExecutionPlanBlueprintRecord(
-      request.recordId,
-    );
+    const qualification = await this.qualifyExecutionPlanBlueprintRecord(request.recordId);
     const hasOpenPlan = this.state.plans.some(
-      (candidate) =>
-        candidate.threadId === threadId &&
-        (candidate.status === "active" || candidate.status === "blocked"),
+      (candidate) => candidate.threadId === threadId && (candidate.status === "active" || candidate.status === "blocked"),
     );
     const base = {
       threadId,
@@ -5376,9 +4270,7 @@ export class LocalStore {
         diagnostics: qualification.diagnostics,
       });
     }
-    const record = this.state.executionPlanBlueprints.find(
-      (candidate) => candidate.id === request.recordId,
-    );
+    const record = this.state.executionPlanBlueprints.find((candidate) => candidate.id === request.recordId);
     if (!record || record.status !== "active") {
       return withExecutionPlanBlueprintRecordPreviewHash({
         ...base,
@@ -5397,10 +4289,7 @@ export class LocalStore {
       ...base,
       status: "ready",
       diagnostics: [],
-      plan: createExecutionPlan(
-        threadId,
-        executionPlanRequestFromBlueprint(record.blueprint, request.objective),
-      ),
+      plan: createExecutionPlan(threadId, executionPlanRequestFromBlueprint(record.blueprint, request.objective)),
     });
   }
 
@@ -5416,43 +4305,23 @@ export class LocalStore {
   }> {
     this.assertInitialized();
     this.getThread(threadId);
-    const preview = await this.previewPlanFromBlueprintRecord(
-      threadId,
-      request,
-    );
+    const preview = await this.previewPlanFromBlueprintRecord(threadId, request);
     if (preview.status !== "ready") {
-      throw new Error(
-        `Execution plan blueprint record is not ready: ${preview.status}`,
-      );
+      throw new Error(`Execution plan blueprint record is not ready: ${preview.status}`);
     }
-    const expectedPreviewSha256 = normalizeOptionalSha256(
-      request.expectedPreviewSha256,
-      "Execution plan blueprint preview hash",
-    );
-    if (
-      expectedPreviewSha256 !== undefined &&
-      expectedPreviewSha256 !== preview.previewSha256
-    ) {
+    const expectedPreviewSha256 = normalizeOptionalSha256(request.expectedPreviewSha256, "Execution plan blueprint preview hash");
+    if (expectedPreviewSha256 !== undefined && expectedPreviewSha256 !== preview.previewSha256) {
       throw new Error("Execution plan blueprint preview hash mismatch");
     }
     return this.stateQueue.run(async () => {
-      const record = this.state.executionPlanBlueprints.find(
-        (candidate) => candidate.id === request.recordId,
-      );
+      const record = this.state.executionPlanBlueprints.find((candidate) => candidate.id === request.recordId);
       if (!record || record.status !== "active") {
-        throw new Error(
-          `Execution plan blueprint not found: ${request.recordId}`,
-        );
+        throw new Error(`Execution plan blueprint not found: ${request.recordId}`);
       }
-      const plan = createExecutionPlan(
-        threadId,
-        executionPlanRequestFromBlueprint(record.blueprint, request.objective),
-      );
+      const plan = createExecutionPlan(threadId, executionPlanRequestFromBlueprint(record.blueprint, request.objective));
       if (
         this.state.plans.some(
-          (candidate) =>
-            candidate.threadId === threadId &&
-            (candidate.status === "active" || candidate.status === "blocked"),
+          (candidate) => candidate.threadId === threadId && (candidate.status === "active" || candidate.status === "blocked"),
         )
       ) {
         throw new Error("Thread already has an open execution plan");
@@ -5487,12 +4356,8 @@ export class LocalStore {
           blueprintSourcePlanRevision: record.sourcePlanRevision,
           blueprintSourceArchiveSha256: record.sourcePlanArchiveSha256,
           blueprintQualificationStatus: preview.qualification.status,
-          blueprintQualificationSha256: sha256(
-            JSON.stringify(preview.qualification),
-          ),
-          blueprintQualificationDiagnosticsSha256: sha256(
-            JSON.stringify(preview.qualification.diagnostics),
-          ),
+          blueprintQualificationSha256: sha256(JSON.stringify(preview.qualification)),
+          blueprintQualificationDiagnosticsSha256: sha256(JSON.stringify(preview.qualification.diagnostics)),
           blueprintPreviewSha256: preview.previewSha256,
         },
       };
@@ -5509,20 +4374,12 @@ export class LocalStore {
     });
   }
 
-  async createPlan(
-    threadId: string,
-    request: CreateExecutionPlanRequest,
-  ): Promise<ExecutionPlan> {
+  async createPlan(threadId: string, request: CreateExecutionPlanRequest): Promise<ExecutionPlan> {
     this.assertInitialized();
     this.getThread(threadId);
     const plan = createExecutionPlan(threadId, request);
     return this.stateQueue.run(async () => {
-      if (
-        this.state.plans.some(
-          (candidate) =>
-            candidate.threadId === threadId && candidate.status === "active",
-        )
-      ) {
+      if (this.state.plans.some((candidate) => candidate.threadId === threadId && candidate.status === "active")) {
         throw new Error("Thread already has an active execution plan");
       }
       this.state.plans.push(plan);
@@ -5531,15 +4388,10 @@ export class LocalStore {
     });
   }
 
-  async replanPlan(
-    planId: string,
-    request: ReplanExecutionPlanRequest,
-  ): Promise<ExecutionPlan> {
+  async replanPlan(planId: string, request: ReplanExecutionPlanRequest): Promise<ExecutionPlan> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const index = this.state.plans.findIndex(
-        (candidate) => candidate.id === planId,
-      );
+      const index = this.state.plans.findIndex((candidate) => candidate.id === planId);
       const current = this.state.plans[index];
       if (!current) throw new Error(`Plan not found: ${planId}`);
       const updated = replanExecutionPlan(current, request);
@@ -5549,33 +4401,19 @@ export class LocalStore {
     });
   }
 
-  async transitionPlanStep(
-    planId: string,
-    stepId: string,
-    request: TransitionPlanStepRequest,
-  ): Promise<ExecutionPlan> {
+  async transitionPlanStep(planId: string, stepId: string, request: TransitionPlanStepRequest): Promise<ExecutionPlan> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const index = this.state.plans.findIndex(
-        (candidate) => candidate.id === planId,
-      );
+      const index = this.state.plans.findIndex((candidate) => candidate.id === planId);
       const current = this.state.plans[index];
       if (!current) throw new Error(`Plan not found: ${planId}`);
       if (request.action === "start") {
         if (!request.runId) {
           throw new Error("Starting a plan step requires a runId");
         }
-        const run = this.state.runs.find(
-          (candidate) => candidate.id === request.runId,
-        );
-        if (
-          !run ||
-          run.threadId !== current.threadId ||
-          run.status !== "running"
-        ) {
-          throw new Error(
-            "Plan steps must start in a running run from the same thread",
-          );
+        const run = this.state.runs.find((candidate) => candidate.id === request.runId);
+        if (!run || run.threadId !== current.threadId || run.status !== "running") {
+          throw new Error("Plan steps must start in a running run from the same thread");
         }
       }
       const updated = transitionPlanStep(current, stepId, request);
@@ -5585,17 +4423,10 @@ export class LocalStore {
     });
   }
 
-  async recoverCompletedWorkflowPlanStep(
-    planId: string,
-    stepId: string,
-    runId: string,
-    evidence: string,
-  ): Promise<ExecutionPlan> {
+  async recoverCompletedWorkflowPlanStep(planId: string, stepId: string, runId: string, evidence: string): Promise<ExecutionPlan> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const index = this.state.plans.findIndex(
-        (candidate) => candidate.id === planId,
-      );
+      const index = this.state.plans.findIndex((candidate) => candidate.id === planId);
       const current = this.state.plans[index];
       if (!current) throw new Error(`Plan not found: ${planId}`);
       const run = this.state.runs.find((candidate) => candidate.id === runId);
@@ -5605,42 +4436,25 @@ export class LocalStore {
         run.source !== "workflow" ||
         (run.status !== "completed" && run.status !== "interrupted")
       ) {
-        throw new Error(
-          "Recovered Workflow completion requires its completed or interrupted Run",
-        );
+        throw new Error("Recovered Workflow completion requires its completed or interrupted Run");
       }
-      const updated = recoverCompletedPlanStepProjection(
-        current,
-        stepId,
-        runId,
-        evidence,
-      );
+      const updated = recoverCompletedPlanStepProjection(current, stepId, runId, evidence);
       this.state.plans[index] = updated;
       await this.persistState();
       return structuredClone(updated);
     });
   }
 
-  async updatePlanArtifact(
-    planId: string,
-    artifactId: string,
-    request: UpdateArtifactManifestRequest,
-  ): Promise<ExecutionPlan> {
+  async updatePlanArtifact(planId: string, artifactId: string, request: UpdateArtifactManifestRequest): Promise<ExecutionPlan> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const index = this.state.plans.findIndex(
-        (candidate) => candidate.id === planId,
-      );
+      const index = this.state.plans.findIndex((candidate) => candidate.id === planId);
       const current = this.state.plans[index];
       if (!current) throw new Error(`Plan not found: ${planId}`);
       if (request.sourceRunId) {
-        const run = this.state.runs.find(
-          (candidate) => candidate.id === request.sourceRunId,
-        );
+        const run = this.state.runs.find((candidate) => candidate.id === request.sourceRunId);
         if (!run || run.threadId !== current.threadId) {
-          throw new Error(
-            "Artifact sourceRunId must belong to the plan thread",
-          );
+          throw new Error("Artifact sourceRunId must belong to the plan thread");
         }
       }
       const updated = updateArtifactManifest(current, artifactId, request);
@@ -5669,26 +4483,16 @@ export class LocalStore {
     );
   }
 
-  async reviewRunEvaluation(
-    threadId: string,
-    evaluationId: string,
-    request: ReviewRunEvaluationRequest,
-  ): Promise<EvaluationAdjudication> {
+  async reviewRunEvaluation(threadId: string, evaluationId: string, request: ReviewRunEvaluationRequest): Promise<EvaluationAdjudication> {
     this.assertInitialized();
     this.getThread(threadId);
     return this.stateQueue.run(async () => {
-      const evaluation = this.state.evaluations.find(
-        (candidate) =>
-          candidate.id === evaluationId && candidate.threadId === threadId,
-      );
+      const evaluation = this.state.evaluations.find((candidate) => candidate.id === evaluationId && candidate.threadId === threadId);
       if (!evaluation) {
         throw new Error(`Run evaluation not found: ${evaluationId}`);
       }
-      const index = this.state.evaluationAdjudications.findIndex(
-        (candidate) => candidate.evaluationId === evaluationId,
-      );
-      const current =
-        index >= 0 ? this.state.evaluationAdjudications[index] : undefined;
+      const index = this.state.evaluationAdjudications.findIndex((candidate) => candidate.evaluationId === evaluationId);
+      const current = index >= 0 ? this.state.evaluationAdjudications[index] : undefined;
       const updated = reviewRunEvaluationRecord(current, evaluation, request);
       if (current && updated.currentRevision === current.currentRevision) {
         return structuredClone(current);
@@ -5700,24 +4504,13 @@ export class LocalStore {
     });
   }
 
-  listEvaluationReviewerBallots(
-    threadId: string,
-    evaluationId?: string,
-  ): EvaluationReviewerBallot[] {
+  listEvaluationReviewerBallots(threadId: string, evaluationId?: string): EvaluationReviewerBallot[] {
     this.assertInitialized();
     this.getThread(threadId);
     return structuredClone(
       this.state.evaluationReviewerBallots
-        .filter(
-          (ballot) =>
-            ballot.threadId === threadId &&
-            (!evaluationId || ballot.evaluationId === evaluationId),
-        )
-        .sort((left, right) =>
-          `${left.evaluationId}/${left.reviewerId}`.localeCompare(
-            `${right.evaluationId}/${right.reviewerId}`,
-          ),
-        ),
+        .filter((ballot) => ballot.threadId === threadId && (!evaluationId || ballot.evaluationId === evaluationId))
+        .sort((left, right) => `${left.evaluationId}/${left.reviewerId}`.localeCompare(`${right.evaluationId}/${right.reviewerId}`)),
     );
   }
 
@@ -5729,36 +4522,23 @@ export class LocalStore {
     this.assertInitialized();
     this.getThread(threadId);
     return this.stateQueue.run(async () => {
-      const evaluation = this.state.evaluations.find(
-        (candidate) =>
-          candidate.id === evaluationId && candidate.threadId === threadId,
-      );
+      const evaluation = this.state.evaluations.find((candidate) => candidate.id === evaluationId && candidate.threadId === threadId);
       if (!evaluation) {
         throw new Error(`Run evaluation not found: ${evaluationId}`);
       }
       const normalizedReviewerId = request.reviewerId.trim().toLowerCase();
       const index = this.state.evaluationReviewerBallots.findIndex(
-        (candidate) =>
-          candidate.evaluationId === evaluationId &&
-          candidate.reviewerId === normalizedReviewerId,
+        (candidate) => candidate.evaluationId === evaluationId && candidate.reviewerId === normalizedReviewerId,
       );
-      const current =
-        index >= 0 ? this.state.evaluationReviewerBallots[index] : undefined;
+      const current = index >= 0 ? this.state.evaluationReviewerBallots[index] : undefined;
       if (
         !current &&
-        this.state.evaluationReviewerBallots.filter(
-          (candidate) => candidate.evaluationId === evaluationId,
-        ).length >= MAX_EVALUATION_REVIEWERS
+        this.state.evaluationReviewerBallots.filter((candidate) => candidate.evaluationId === evaluationId).length >=
+          MAX_EVALUATION_REVIEWERS
       ) {
-        throw new Error(
-          `Evaluation consensus exceeds ${MAX_EVALUATION_REVIEWERS} reviewers`,
-        );
+        throw new Error(`Evaluation consensus exceeds ${MAX_EVALUATION_REVIEWERS} reviewers`);
       }
-      const updated = submitEvaluationReviewerBallot(
-        current,
-        evaluation,
-        request,
-      );
+      const updated = submitEvaluationReviewerBallot(current, evaluation, request);
       if (current && updated.currentRevision === current.currentRevision) {
         return structuredClone(current);
       }
@@ -5769,42 +4549,26 @@ export class LocalStore {
     });
   }
 
-  getEvaluationConsensusReport(
-    threadId: string,
-    evaluationId: string,
-    gate?: Partial<EvaluationConsensusGate>,
-  ): EvaluationConsensusReport {
+  getEvaluationConsensusReport(threadId: string, evaluationId: string, gate?: Partial<EvaluationConsensusGate>): EvaluationConsensusReport {
     this.assertInitialized();
     this.getThread(threadId);
-    const evaluation = this.state.evaluations.find(
-      (candidate) =>
-        candidate.id === evaluationId && candidate.threadId === threadId,
-    );
+    const evaluation = this.state.evaluations.find((candidate) => candidate.id === evaluationId && candidate.threadId === threadId);
     if (!evaluation) {
       throw new Error(`Run evaluation not found: ${evaluationId}`);
     }
     return createEvaluationConsensusReport(
       evaluation,
-      this.state.evaluationReviewerBallots.filter(
-        (candidate) => candidate.evaluationId === evaluationId,
-      ),
+      this.state.evaluationReviewerBallots.filter((candidate) => candidate.evaluationId === evaluationId),
       gate,
     );
   }
 
-  listEvaluationConsensusResolutions(
-    threadId: string,
-    evaluationId?: string,
-  ): EvaluationConsensusResolution[] {
+  listEvaluationConsensusResolutions(threadId: string, evaluationId?: string): EvaluationConsensusResolution[] {
     this.assertInitialized();
     this.getThread(threadId);
     return structuredClone(
       this.state.evaluationConsensusResolutions
-        .filter(
-          (resolution) =>
-            resolution.threadId === threadId &&
-            (!evaluationId || resolution.evaluationId === evaluationId),
-        )
+        .filter((resolution) => resolution.threadId === threadId && (!evaluationId || resolution.evaluationId === evaluationId))
         .sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
     );
   }
@@ -5817,39 +4581,21 @@ export class LocalStore {
     this.assertInitialized();
     this.getThread(threadId);
     return this.stateQueue.run(async () => {
-      const evaluation = this.state.evaluations.find(
-        (candidate) =>
-          candidate.id === evaluationId && candidate.threadId === threadId,
-      );
+      const evaluation = this.state.evaluations.find((candidate) => candidate.id === evaluationId && candidate.threadId === threadId);
       if (!evaluation) {
         throw new Error(`Run evaluation not found: ${evaluationId}`);
       }
-      const ballots = this.state.evaluationReviewerBallots.filter(
-        (candidate) => candidate.evaluationId === evaluationId,
-      );
-      const report = createEvaluationConsensusReport(
-        evaluation,
-        ballots,
-        request.gate,
-      );
+      const ballots = this.state.evaluationReviewerBallots.filter((candidate) => candidate.evaluationId === evaluationId);
+      const report = createEvaluationConsensusReport(evaluation, ballots, request.gate);
       consensusAdjudicationRequest(report);
       const existing = this.state.evaluationConsensusResolutions.find(
-        (candidate) =>
-          candidate.evaluationId === evaluationId &&
-          candidate.report.contentSha256 === report.contentSha256,
+        (candidate) => candidate.evaluationId === evaluationId && candidate.report.contentSha256 === report.contentSha256,
       );
-      const adjudicationIndex = this.state.evaluationAdjudications.findIndex(
-        (candidate) => candidate.evaluationId === evaluationId,
-      );
-      const currentAdjudication =
-        adjudicationIndex >= 0
-          ? this.state.evaluationAdjudications[adjudicationIndex]
-          : undefined;
+      const adjudicationIndex = this.state.evaluationAdjudications.findIndex((candidate) => candidate.evaluationId === evaluationId);
+      const currentAdjudication = adjudicationIndex >= 0 ? this.state.evaluationAdjudications[adjudicationIndex] : undefined;
       if (existing) {
         if (!currentAdjudication) {
-          throw new Error(
-            `Evaluation consensus adjudication is missing: ${existing.id}`,
-          );
+          throw new Error(`Evaluation consensus adjudication is missing: ${existing.id}`);
         }
         return {
           report: structuredClone(existing.report),
@@ -5859,30 +4605,14 @@ export class LocalStore {
         };
       }
       if (
-        this.state.evaluationConsensusResolutions.filter(
-          (candidate) => candidate.evaluationId === evaluationId,
-        ).length >= MAX_EVALUATION_CONSENSUS_RESOLUTIONS
+        this.state.evaluationConsensusResolutions.filter((candidate) => candidate.evaluationId === evaluationId).length >=
+        MAX_EVALUATION_CONSENSUS_RESOLUTIONS
       ) {
-        throw new Error(
-          `Evaluation exceeds ${MAX_EVALUATION_CONSENSUS_RESOLUTIONS} consensus resolutions`,
-        );
+        throw new Error(`Evaluation exceeds ${MAX_EVALUATION_CONSENSUS_RESOLUTIONS} consensus resolutions`);
       }
-      const adjudication = reviewRunEvaluationRecord(
-        currentAdjudication,
-        evaluation,
-        consensusAdjudicationRequest(report),
-      );
-      const resolution = createEvaluationConsensusResolution(
-        evaluation,
-        report,
-        adjudication,
-      );
-      validateEvaluationConsensusResolution(
-        resolution,
-        evaluation,
-        ballots,
-        adjudication,
-      );
+      const adjudication = reviewRunEvaluationRecord(currentAdjudication, evaluation, consensusAdjudicationRequest(report));
+      const resolution = createEvaluationConsensusResolution(evaluation, report, adjudication);
+      validateEvaluationConsensusResolution(resolution, evaluation, ballots, adjudication);
       if (adjudicationIndex >= 0) {
         this.state.evaluationAdjudications[adjudicationIndex] = adjudication;
       } else {
@@ -5902,47 +4632,30 @@ export class LocalStore {
   getEvaluationCalibration(threadId: string): EvaluationCalibrationReport {
     this.assertInitialized();
     this.getThread(threadId);
-    return createEvaluationCalibrationReport(
-      threadId,
-      this.state.evaluations,
-      this.state.evaluationAdjudications,
-    );
+    return createEvaluationCalibrationReport(threadId, this.state.evaluations, this.state.evaluationAdjudications);
   }
 
-  async getContextCheckpointCalibration(
-    threadId: string,
-  ): Promise<ContextCheckpointCalibrationReport> {
+  async getContextCheckpointCalibration(threadId: string): Promise<ContextCheckpointCalibrationReport> {
     this.assertInitialized();
     this.getThread(threadId);
-    return createContextCheckpointCalibrationReport(
-      threadId,
-      await this.listEvents(threadId),
-    );
+    return createContextCheckpointCalibrationReport(threadId, await this.listEvents(threadId));
   }
 
   listEvaluationCasebooks(): EvaluationCasebook[] {
     this.assertInitialized();
-    return structuredClone(
-      this.state.evaluationCasebooks
-        .slice()
-        .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)),
-    );
+    return structuredClone(this.state.evaluationCasebooks.slice().sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)));
   }
 
   getEvaluationCasebook(casebookId: string): EvaluationCasebook {
     this.assertInitialized();
-    const casebook = this.state.evaluationCasebooks.find(
-      (candidate) => candidate.id === casebookId,
-    );
+    const casebook = this.state.evaluationCasebooks.find((candidate) => candidate.id === casebookId);
     if (!casebook) {
       throw new Error(`Evaluation Casebook not found: ${casebookId}`);
     }
     return structuredClone(casebook);
   }
 
-  async createEvaluationCasebook(
-    request: CreateEvaluationCasebookRequest,
-  ): Promise<EvaluationCasebook> {
+  async createEvaluationCasebook(request: CreateEvaluationCasebookRequest): Promise<EvaluationCasebook> {
     this.assertInitialized();
     this.getThread(request.threadId);
     const casebook = createEvaluationCasebookRecord(request);
@@ -5953,16 +4666,11 @@ export class LocalStore {
     });
   }
 
-  async updateEvaluationCasebook(
-    casebookId: string,
-    request: UpdateEvaluationCasebookRequest,
-  ): Promise<EvaluationCasebook> {
+  async updateEvaluationCasebook(casebookId: string, request: UpdateEvaluationCasebookRequest): Promise<EvaluationCasebook> {
     this.assertInitialized();
     this.getThread(request.threadId);
     return this.stateQueue.run(async () => {
-      const index = this.state.evaluationCasebooks.findIndex(
-        (candidate) => candidate.id === casebookId,
-      );
+      const index = this.state.evaluationCasebooks.findIndex((candidate) => candidate.id === casebookId);
       const current = this.state.evaluationCasebooks[index];
       if (!current) {
         throw new Error(`Evaluation Casebook not found: ${casebookId}`);
@@ -5976,37 +4684,26 @@ export class LocalStore {
     });
   }
 
-  async curateEvaluationCasebookCase(
-    casebookId: string,
-    request: CurateEvaluationCaseRequest,
-  ): Promise<EvaluationCasebook> {
+  async curateEvaluationCasebookCase(casebookId: string, request: CurateEvaluationCaseRequest): Promise<EvaluationCasebook> {
     this.assertInitialized();
     this.getThread(request.threadId);
     return this.stateQueue.run(async () => {
-      const index = this.state.evaluationCasebooks.findIndex(
-        (candidate) => candidate.id === casebookId,
-      );
+      const index = this.state.evaluationCasebooks.findIndex((candidate) => candidate.id === casebookId);
       const current = this.state.evaluationCasebooks[index];
       if (!current) {
         throw new Error(`Evaluation Casebook not found: ${casebookId}`);
       }
       const evaluation = this.state.evaluations.find(
-        (candidate) =>
-          candidate.id === request.evaluationId &&
-          candidate.threadId === request.threadId,
+        (candidate) => candidate.id === request.evaluationId && candidate.threadId === request.threadId,
       );
       if (!evaluation) {
         throw new Error(`Run evaluation not found: ${request.evaluationId}`);
       }
       const adjudication = this.state.evaluationAdjudications.find(
-        (candidate) =>
-          candidate.evaluationId === evaluation.id &&
-          candidate.threadId === request.threadId,
+        (candidate) => candidate.evaluationId === evaluation.id && candidate.threadId === request.threadId,
       );
       if (!adjudication) {
-        throw new Error(
-          `Evaluation requires human adjudication before curation: ${evaluation.id}`,
-        );
+        throw new Error(`Evaluation requires human adjudication before curation: ${evaluation.id}`);
       }
       const truth = adjudication.revisions.at(-1)!;
       const consensusResolution =
@@ -6019,30 +4716,20 @@ export class LocalStore {
             )
           : undefined;
       if (truth.source === "reviewer_consensus" && !consensusResolution) {
-        throw new Error(
-          `Consensus evidence is missing for curation: ${evaluation.id}`,
-        );
+        throw new Error(`Consensus evidence is missing for curation: ${evaluation.id}`);
       }
       const consensusEvidence = consensusResolution
         ? {
             resolution: consensusResolution,
             reviewerBallots: consensusResolution.report.votes.map((vote) => {
-              const ballot = this.state.evaluationReviewerBallots.find(
-                (candidate) => candidate.id === vote.ballotId,
-              );
-              const revision = ballot?.revisions.find(
-                (candidate) => candidate.revision === vote.ballotRevision,
-              );
+              const ballot = this.state.evaluationReviewerBallots.find((candidate) => candidate.id === vote.ballotId);
+              const revision = ballot?.revisions.find((candidate) => candidate.revision === vote.ballotRevision);
               if (!ballot || !revision) {
-                throw new Error(
-                  `Consensus reviewer evidence is missing: ${vote.ballotId}`,
-                );
+                throw new Error(`Consensus reviewer evidence is missing: ${vote.ballotId}`);
               }
               return {
                 ...structuredClone(ballot),
-                revisions: ballot.revisions
-                  .slice(0, vote.ballotRevision)
-                  .map((item) => structuredClone(item)),
+                revisions: ballot.revisions.slice(0, vote.ballotRevision).map((item) => structuredClone(item)),
                 currentRevision: vote.ballotRevision,
                 updatedAt: revision.createdAt,
               };
@@ -6066,9 +4753,7 @@ export class LocalStore {
     this.assertInitialized();
     this.getThread(request.threadId);
     return this.stateQueue.run(async () => {
-      const index = this.state.evaluationCasebooks.findIndex(
-        (candidate) => candidate.id === casebookId,
-      );
+      const index = this.state.evaluationCasebooks.findIndex((candidate) => candidate.id === casebookId);
       const current = this.state.evaluationCasebooks[index];
       if (!current) {
         throw new Error(`Evaluation Casebook not found: ${casebookId}`);
@@ -6080,23 +4765,15 @@ export class LocalStore {
     });
   }
 
-  getEvaluationCasebookCalibration(
-    casebookId: string,
-  ): EvaluationCasebookCalibrationReport {
-    return createEvaluationCasebookCalibrationReport(
-      this.getEvaluationCasebook(casebookId),
-    );
+  getEvaluationCasebookCalibration(casebookId: string): EvaluationCasebookCalibrationReport {
+    return createEvaluationCasebookCalibrationReport(this.getEvaluationCasebook(casebookId));
   }
 
   exportEvaluationCasebook(casebookId: string): EvaluationCasebookArtifact {
-    return createEvaluationCasebookArtifact(
-      this.getEvaluationCasebook(casebookId),
-    );
+    return createEvaluationCasebookArtifact(this.getEvaluationCasebook(casebookId));
   }
 
-  listEvaluationCasebookQualificationExecutions(
-    casebookId: string,
-  ): EvaluationCasebookQualificationExecution[] {
+  listEvaluationCasebookQualificationExecutions(casebookId: string): EvaluationCasebookQualificationExecution[] {
     this.assertInitialized();
     this.getEvaluationCasebook(casebookId);
     return structuredClone(
@@ -6111,41 +4788,21 @@ export class LocalStore {
   ): Promise<EvaluationCasebookQualificationExecution> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const casebook = this.state.evaluationCasebooks.find(
-        (candidate) => candidate.id === execution.casebookId,
-      );
+      const casebook = this.state.evaluationCasebooks.find((candidate) => candidate.id === execution.casebookId);
       if (!casebook) {
-        throw new Error(
-          `Evaluation Casebook not found: ${execution.casebookId}`,
-        );
+        throw new Error(`Evaluation Casebook not found: ${execution.casebookId}`);
       }
       if (execution.casebookRevision !== casebook.currentRevision) {
-        throw new Error(
-          `Evaluation Casebook changed during qualification: ${execution.casebookId}`,
-        );
+        throw new Error(`Evaluation Casebook changed during qualification: ${execution.casebookId}`);
       }
-      if (
-        !this.state.threads.some(
-          (thread) => thread.id === execution.auditThreadId,
-        )
-      ) {
-        throw new Error(
-          `Evaluation Casebook qualification audit thread is missing: ${execution.auditThreadId}`,
-        );
+      if (!this.state.threads.some((thread) => thread.id === execution.auditThreadId)) {
+        throw new Error(`Evaluation Casebook qualification audit thread is missing: ${execution.auditThreadId}`);
       }
       validateEvaluationCasebookQualificationExecution(execution, casebook);
-      if (
-        this.state.evaluationCasebookQualificationExecutions.some(
-          (candidate) => candidate.id === execution.id,
-        )
-      ) {
-        throw new Error(
-          `Evaluation Casebook qualification execution already exists: ${execution.id}`,
-        );
+      if (this.state.evaluationCasebookQualificationExecutions.some((candidate) => candidate.id === execution.id)) {
+        throw new Error(`Evaluation Casebook qualification execution already exists: ${execution.id}`);
       }
-      this.state.evaluationCasebookQualificationExecutions.push(
-        structuredClone(execution),
-      );
+      this.state.evaluationCasebookQualificationExecutions.push(structuredClone(execution));
       const executions = this.state.evaluationCasebookQualificationExecutions
         .filter((candidate) => candidate.casebookId === execution.casebookId)
         .sort((left, right) => left.startedAt.localeCompare(right.startedAt));
@@ -6162,19 +4819,16 @@ export class LocalStore {
             .slice(0, Math.max(0, executions.length - 20))
             .map((candidate) => candidate.id),
         );
-        this.state.evaluationCasebookQualificationExecutions =
-          this.state.evaluationCasebookQualificationExecutions.filter(
-            (candidate) => !removeIds.has(candidate.id),
-          );
+        this.state.evaluationCasebookQualificationExecutions = this.state.evaluationCasebookQualificationExecutions.filter(
+          (candidate) => !removeIds.has(candidate.id),
+        );
       }
       await this.persistState();
       return structuredClone(execution);
     });
   }
 
-  listEvaluationQualificationBaselines(
-    casebookId?: string,
-  ): EvaluationQualificationBaseline[] {
+  listEvaluationQualificationBaselines(casebookId?: string): EvaluationQualificationBaseline[] {
     this.assertInitialized();
     if (casebookId) this.getEvaluationCasebook(casebookId);
     return structuredClone(
@@ -6192,32 +4846,23 @@ export class LocalStore {
     this.assertInitialized();
     this.getThread(promotedByThreadId);
     return this.stateQueue.run(async () => {
-      const casebook = this.state.evaluationCasebooks.find(
-        (candidate) => candidate.id === casebookId,
-      );
+      const casebook = this.state.evaluationCasebooks.find((candidate) => candidate.id === casebookId);
       if (!casebook) {
         throw new Error(`Evaluation Casebook not found: ${casebookId}`);
       }
-      const anchor = this.state.receiptTrustAnchors.find(
-        (candidate) => candidate.keyId === envelope.signature.keyId,
-      );
+      const anchor = this.state.receiptTrustAnchors.find((candidate) => candidate.keyId === envelope.signature.keyId);
       if (!anchor) {
-        throw new Error(
-          `Receipt trust anchor not found for key: ${envelope.signature.keyId}`,
-        );
+        throw new Error(`Receipt trust anchor not found for key: ${envelope.signature.keyId}`);
       }
       const verification = verifyTrustedReceiptEnvelope(envelope, [anchor]);
       if (verification.status !== "trusted") {
-        throw new Error(
-          `Qualification baseline receipt is not trusted: ${verification.reason}`,
-        );
+        throw new Error(`Qualification baseline receipt is not trusted: ${verification.reason}`);
       }
       const existing = this.state.evaluationQualificationBaselines.find(
         (baseline) =>
           baseline.casebookId === casebookId &&
           baseline.casebookRevision === casebook.currentRevision &&
-          baseline.envelope.receipt.contentSha256 ===
-            envelope.receipt.contentSha256 &&
+          baseline.envelope.receipt.contentSha256 === envelope.receipt.contentSha256 &&
           baseline.envelope.signature.keyId === envelope.signature.keyId,
       );
       if (existing) {
@@ -6226,35 +4871,20 @@ export class LocalStore {
           created: false,
         };
       }
-      const casebookBaselines =
-        this.state.evaluationQualificationBaselines.filter(
-          (baseline) => baseline.casebookId === casebookId,
-        );
-      if (
-        casebookBaselines.length >= MAX_QUALIFICATION_BASELINES_PER_CASEBOOK
-      ) {
-        throw new Error(
-          `Evaluation Casebook exceeds ${MAX_QUALIFICATION_BASELINES_PER_CASEBOOK} qualification baselines`,
-        );
+      const casebookBaselines = this.state.evaluationQualificationBaselines.filter((baseline) => baseline.casebookId === casebookId);
+      if (casebookBaselines.length >= MAX_QUALIFICATION_BASELINES_PER_CASEBOOK) {
+        throw new Error(`Evaluation Casebook exceeds ${MAX_QUALIFICATION_BASELINES_PER_CASEBOOK} qualification baselines`);
       }
       const current = casebookBaselines.at(-1);
-      const baseline = createEvaluationQualificationBaseline(
-        envelope,
-        casebook,
-        promotedByThreadId,
-        current?.id,
+      const baseline = createEvaluationQualificationBaseline(envelope, casebook, promotedByThreadId, current?.id);
+      const execution = this.state.evaluationCasebookQualificationExecutions.find(
+        (candidate) =>
+          candidate.id === baseline.qualificationExecutionId &&
+          candidate.casebookId === casebookId &&
+          candidate.contentSha256 === baseline.qualificationExecutionSha256,
       );
-      const execution =
-        this.state.evaluationCasebookQualificationExecutions.find(
-          (candidate) =>
-            candidate.id === baseline.qualificationExecutionId &&
-            candidate.casebookId === casebookId &&
-            candidate.contentSha256 === baseline.qualificationExecutionSha256,
-        );
       if (!execution) {
-        throw new Error(
-          `Qualification baseline execution is missing: ${baseline.qualificationExecutionId}`,
-        );
+        throw new Error(`Qualification baseline execution is missing: ${baseline.qualificationExecutionId}`);
       }
       this.state.evaluationQualificationBaselines.push(baseline);
       await this.persistState();
@@ -6265,23 +4895,14 @@ export class LocalStore {
     });
   }
 
-  async saveRunEvaluation(
-    evaluation: RunEvaluationRecord,
-  ): Promise<RunEvaluationRecord> {
+  async saveRunEvaluation(evaluation: RunEvaluationRecord): Promise<RunEvaluationRecord> {
     this.assertInitialized();
     this.getThread(evaluation.threadId);
     if (evaluation.leftRunId === evaluation.rightRunId) {
       throw new Error("Run evaluation requires two distinct runs");
     }
-    const runIds = new Set(
-      this.state.runs
-        .filter((run) => run.threadId === evaluation.threadId)
-        .map((run) => run.id),
-    );
-    if (
-      !runIds.has(evaluation.leftRunId) ||
-      !runIds.has(evaluation.rightRunId)
-    ) {
+    const runIds = new Set(this.state.runs.filter((run) => run.threadId === evaluation.threadId).map((run) => run.id));
+    if (!runIds.has(evaluation.leftRunId) || !runIds.has(evaluation.rightRunId)) {
       throw new Error("Evaluation runs must belong to the target thread");
     }
     validatePersistedRunEvaluation(
@@ -6292,11 +4913,7 @@ export class LocalStore {
       this.requireLedger().listEvents(evaluation.threadId),
     );
     return this.stateQueue.run(async () => {
-      if (
-        this.state.evaluations.some(
-          (candidate) => candidate.id === evaluation.id,
-        )
-      ) {
+      if (this.state.evaluations.some((candidate) => candidate.id === evaluation.id)) {
         throw new Error(`Run evaluation already exists: ${evaluation.id}`);
       }
       this.state.evaluations.push(structuredClone(evaluation));
@@ -6305,18 +4922,10 @@ export class LocalStore {
         .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
       if (threadEvaluations.length > 50) {
         const protectedEvaluationIds = new Set([
-          ...this.state.evaluationSuiteExecutions.flatMap((execution) =>
-            execution.results.map((result) => result.evaluationId),
-          ),
-          ...this.state.evaluationAdjudications.map(
-            (adjudication) => adjudication.evaluationId,
-          ),
-          ...this.state.evaluationReviewerBallots.map(
-            (ballot) => ballot.evaluationId,
-          ),
-          ...this.state.evaluationConsensusResolutions.map(
-            (resolution) => resolution.evaluationId,
-          ),
+          ...this.state.evaluationSuiteExecutions.flatMap((execution) => execution.results.map((result) => result.evaluationId)),
+          ...this.state.evaluationAdjudications.map((adjudication) => adjudication.evaluationId),
+          ...this.state.evaluationReviewerBallots.map((ballot) => ballot.evaluationId),
+          ...this.state.evaluationConsensusResolutions.map((resolution) => resolution.evaluationId),
         ]);
         const removeIds = new Set(
           threadEvaluations
@@ -6324,9 +4933,7 @@ export class LocalStore {
             .slice(0, threadEvaluations.length - 50)
             .map((candidate) => candidate.id),
         );
-        this.state.evaluations = this.state.evaluations.filter(
-          (candidate) => !removeIds.has(candidate.id),
-        );
+        this.state.evaluations = this.state.evaluations.filter((candidate) => !removeIds.has(candidate.id));
       }
       await this.persistState();
       return structuredClone(evaluation);
@@ -6345,24 +4952,15 @@ export class LocalStore {
 
   getEvaluationSuite(suiteId: string): EvaluationSuite {
     this.assertInitialized();
-    const suite = this.state.evaluationSuites.find(
-      (candidate) => candidate.id === suiteId,
-    );
+    const suite = this.state.evaluationSuites.find((candidate) => candidate.id === suiteId);
     if (!suite) throw new Error(`Evaluation suite not found: ${suiteId}`);
     return structuredClone(suite);
   }
 
-  async createEvaluationSuite(
-    threadId: string,
-    request: CreateEvaluationSuiteRequest,
-  ): Promise<EvaluationSuite> {
+  async createEvaluationSuite(threadId: string, request: CreateEvaluationSuiteRequest): Promise<EvaluationSuite> {
     this.assertInitialized();
     const thread = this.getThread(threadId);
-    const suite = createEvaluationSuiteRecord(
-      threadId,
-      request,
-      this.getAgent(thread.agentId).model,
-    );
+    const suite = createEvaluationSuiteRecord(threadId, request, this.getAgent(thread.agentId).model);
     return this.stateQueue.run(async () => {
       assertEvaluationSuiteRuns(this.state.runs, suite);
       this.state.evaluationSuites.push(suite);
@@ -6371,15 +4969,10 @@ export class LocalStore {
     });
   }
 
-  async updateEvaluationSuite(
-    suiteId: string,
-    request: UpdateEvaluationSuiteRequest,
-  ): Promise<EvaluationSuite> {
+  async updateEvaluationSuite(suiteId: string, request: UpdateEvaluationSuiteRequest): Promise<EvaluationSuite> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const index = this.state.evaluationSuites.findIndex(
-        (candidate) => candidate.id === suiteId,
-      );
+      const index = this.state.evaluationSuites.findIndex((candidate) => candidate.id === suiteId);
       const current = this.state.evaluationSuites[index];
       if (!current) throw new Error(`Evaluation suite not found: ${suiteId}`);
       const updated = updateEvaluationSuiteRecord(current, request);
@@ -6390,57 +4983,30 @@ export class LocalStore {
     });
   }
 
-  listEvaluationSuiteExecutions(
-    threadId: string,
-    suiteId?: string,
-  ): EvaluationSuiteExecution[] {
+  listEvaluationSuiteExecutions(threadId: string, suiteId?: string): EvaluationSuiteExecution[] {
     this.assertInitialized();
     this.getThread(threadId);
     return structuredClone(
       this.state.evaluationSuiteExecutions
-        .filter(
-          (execution) =>
-            execution.threadId === threadId &&
-            (!suiteId || execution.suiteId === suiteId),
-        )
+        .filter((execution) => execution.threadId === threadId && (!suiteId || execution.suiteId === suiteId))
         .sort((left, right) => left.startedAt.localeCompare(right.startedAt)),
     );
   }
 
-  async saveEvaluationSuiteExecution(
-    execution: EvaluationSuiteExecution,
-  ): Promise<EvaluationSuiteExecution> {
+  async saveEvaluationSuiteExecution(execution: EvaluationSuiteExecution): Promise<EvaluationSuiteExecution> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      validateEvaluationSuiteExecution(
-        execution,
-        this.state.evaluationSuites,
-        this.state.evaluations,
-        this.state.runs,
-      );
-      if (
-        this.state.evaluationSuiteExecutions.some(
-          (candidate) => candidate.id === execution.id,
-        )
-      ) {
-        throw new Error(
-          `Evaluation suite execution already exists: ${execution.id}`,
-        );
+      validateEvaluationSuiteExecution(execution, this.state.evaluationSuites, this.state.evaluations, this.state.runs);
+      if (this.state.evaluationSuiteExecutions.some((candidate) => candidate.id === execution.id)) {
+        throw new Error(`Evaluation suite execution already exists: ${execution.id}`);
       }
       this.state.evaluationSuiteExecutions.push(structuredClone(execution));
       const suiteExecutions = this.state.evaluationSuiteExecutions
         .filter((candidate) => candidate.suiteId === execution.suiteId)
         .sort((left, right) => left.startedAt.localeCompare(right.startedAt));
       if (suiteExecutions.length > 20) {
-        const removeIds = new Set(
-          suiteExecutions
-            .slice(0, suiteExecutions.length - 20)
-            .map((candidate) => candidate.id),
-        );
-        this.state.evaluationSuiteExecutions =
-          this.state.evaluationSuiteExecutions.filter(
-            (candidate) => !removeIds.has(candidate.id),
-          );
+        const removeIds = new Set(suiteExecutions.slice(0, suiteExecutions.length - 20).map((candidate) => candidate.id));
+        this.state.evaluationSuiteExecutions = this.state.evaluationSuiteExecutions.filter((candidate) => !removeIds.has(candidate.id));
       }
       await this.persistState();
       return structuredClone(execution);
@@ -6451,26 +5017,17 @@ export class LocalStore {
     this.assertInitialized();
     return structuredClone(
       this.state.subagents
-        .filter(
-          (task) =>
-            task.threadId === threadId && (!runId || task.runId === runId),
-        )
+        .filter((task) => task.threadId === threadId && (!runId || task.runId === runId))
         .sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
     );
   }
 
-  async createSubagentTask(
-    input: CreateSubagentTaskInput,
-  ): Promise<SubagentTask> {
+  async createSubagentTask(input: CreateSubagentTaskInput): Promise<SubagentTask> {
     this.assertInitialized();
     this.getThread(input.threadId);
-    const run = this.state.runs.find(
-      (candidate) => candidate.id === input.runId,
-    );
+    const run = this.state.runs.find((candidate) => candidate.id === input.runId);
     if (!run || run.threadId !== input.threadId) {
-      throw new Error(
-        `Run ${input.runId} does not belong to thread ${input.threadId}`,
-      );
+      throw new Error(`Run ${input.runId} does not belong to thread ${input.threadId}`);
     }
     if (run.status !== "running") {
       throw new Error(`Cannot delegate from run in ${run.status} state`);
@@ -6556,10 +5113,7 @@ export class LocalStore {
       if (input.outcome !== undefined && input.status !== "completed") {
         throw new Error("Only completed subagent tasks may carry an outcome");
       }
-      const outcome =
-        input.outcome === undefined
-          ? undefined
-          : assertSubagentOutcomeBinding(input.outcome, task);
+      const outcome = input.outcome === undefined ? undefined : assertSubagentOutcomeBinding(input.outcome, task);
       task.status = input.status;
       task.stopReason = input.stopReason;
       if (input.result !== undefined) task.result = input.result;
@@ -6577,40 +5131,24 @@ export class LocalStore {
     this.assertInitialized();
     return structuredClone(
       this.state.extensions
-        .filter(
-          (extension) =>
-            !options.agentId ||
-            extension.enabledAgentIds.includes(options.agentId),
-        )
+        .filter((extension) => !options.agentId || extension.enabledAgentIds.includes(options.agentId))
         .sort((left, right) => left.name.localeCompare(right.name)),
     );
   }
 
   getExtension(extensionId: string): ExtensionRecord {
     this.assertInitialized();
-    const extension = this.state.extensions.find(
-      (candidate) => candidate.id === extensionId,
-    );
+    const extension = this.state.extensions.find((candidate) => candidate.id === extensionId);
     if (!extension) throw new Error(`Extension not found: ${extensionId}`);
     return structuredClone(extension);
   }
 
-  async createMcpExtension(
-    request: CreateMcpExtensionRequest,
-  ): Promise<ExtensionRecord> {
+  async createMcpExtension(request: CreateMcpExtensionRequest): Promise<ExtensionRecord> {
     this.assertInitialized();
     const extension = createMcpExtension(request);
     return this.stateQueue.run(async () => {
-      if (
-        this.state.extensions.some(
-          (candidate) =>
-            candidate.kind === "mcp" &&
-            candidate.normalizedName === extension.normalizedName,
-        )
-      ) {
-        throw new Error(
-          `MCP extension name already exists: ${extension.normalizedName}`,
-        );
+      if (this.state.extensions.some((candidate) => candidate.kind === "mcp" && candidate.normalizedName === extension.normalizedName)) {
+        throw new Error(`MCP extension name already exists: ${extension.normalizedName}`);
       }
       this.state.extensions.push(extension);
       await this.persistState();
@@ -6621,62 +5159,35 @@ export class LocalStore {
   listExtensionPublisherTrustAnchors(): ExtensionPublisherTrustAnchor[] {
     this.assertInitialized();
     return structuredClone(
-      this.state.extensionPublisherTrustAnchors
-        .slice()
-        .sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
+      this.state.extensionPublisherTrustAnchors.slice().sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
     );
   }
 
-  getExtensionPublisherTrustAnchor(
-    anchorId: string,
-  ): ExtensionPublisherTrustAnchor {
+  getExtensionPublisherTrustAnchor(anchorId: string): ExtensionPublisherTrustAnchor {
     this.assertInitialized();
-    const anchor = this.state.extensionPublisherTrustAnchors.find(
-      (candidate) => candidate.id === anchorId,
-    );
+    const anchor = this.state.extensionPublisherTrustAnchors.find((candidate) => candidate.id === anchorId);
     if (!anchor) {
-      throw new Error(
-        `Extension publisher trust anchor not found: ${anchorId}`,
-      );
+      throw new Error(`Extension publisher trust anchor not found: ${anchorId}`);
     }
     return structuredClone(anchor);
   }
 
-  async createExtensionPublisherTrustAnchor(
-    request: CreateExtensionPublisherTrustAnchorRequest,
-  ): Promise<ExtensionPublisherTrustAnchor> {
+  async createExtensionPublisherTrustAnchor(request: CreateExtensionPublisherTrustAnchorRequest): Promise<ExtensionPublisherTrustAnchor> {
     this.assertInitialized();
     this.getThread(request.threadId);
     const anchor = createExtensionPublisherTrustAnchorRecord(request);
     return this.stateQueue.run(async () => {
-      if (
-        this.state.extensionPublisherTrustAnchors.length >=
-        MAX_EXTENSION_PUBLISHER_TRUST_ANCHORS
-      ) {
-        throw new Error(
-          `Workspace exceeds ${MAX_EXTENSION_PUBLISHER_TRUST_ANCHORS} Extension publisher trust anchors`,
-        );
+      if (this.state.extensionPublisherTrustAnchors.length >= MAX_EXTENSION_PUBLISHER_TRUST_ANCHORS) {
+        throw new Error(`Workspace exceeds ${MAX_EXTENSION_PUBLISHER_TRUST_ANCHORS} Extension publisher trust anchors`);
       }
-      if (
-        this.state.extensionPublisherTrustAnchors.some(
-          (candidate) => candidate.keyId === anchor.keyId,
-        )
-      ) {
-        throw new Error(
-          `Extension publisher trust anchor already exists for key: ${anchor.keyId}`,
-        );
+      if (this.state.extensionPublisherTrustAnchors.some((candidate) => candidate.keyId === anchor.keyId)) {
+        throw new Error(`Extension publisher trust anchor already exists for key: ${anchor.keyId}`);
       }
       if (
         anchor.signingSource &&
-        this.state.extensionPublisherTrustAnchors.some(
-          (candidate) =>
-            candidate.signingSource?.variable ===
-            anchor.signingSource?.variable,
-        )
+        this.state.extensionPublisherTrustAnchors.some((candidate) => candidate.signingSource?.variable === anchor.signingSource?.variable)
       ) {
-        throw new Error(
-          `Extension publisher signing source already exists: ${anchor.signingSource.variable}`,
-        );
+        throw new Error(`Extension publisher signing source already exists: ${anchor.signingSource.variable}`);
       }
       this.state.extensionPublisherTrustAnchors.push(anchor);
       await this.persistState();
@@ -6684,32 +5195,20 @@ export class LocalStore {
     });
   }
 
-  async revokeExtensionPublisherTrustAnchor(
-    anchorId: string,
-  ): Promise<ExtensionPublisherTrustAnchor> {
+  async revokeExtensionPublisherTrustAnchor(anchorId: string): Promise<ExtensionPublisherTrustAnchor> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const index = this.state.extensionPublisherTrustAnchors.findIndex(
-        (candidate) => candidate.id === anchorId,
-      );
+      const index = this.state.extensionPublisherTrustAnchors.findIndex((candidate) => candidate.id === anchorId);
       const current = this.state.extensionPublisherTrustAnchors[index];
       if (!current) {
-        throw new Error(
-          `Extension publisher trust anchor not found: ${anchorId}`,
-        );
+        throw new Error(`Extension publisher trust anchor not found: ${anchorId}`);
       }
       const updated = revokeExtensionPublisherTrustAnchorRecord(current);
       this.state.extensionPublisherTrustAnchors[index] = updated;
       if (updated.status !== current.status) {
-        for (
-          let extensionIndex = 0;
-          extensionIndex < this.state.extensions.length;
-          extensionIndex += 1
-        ) {
+        for (let extensionIndex = 0; extensionIndex < this.state.extensions.length; extensionIndex += 1) {
           const extension = this.state.extensions[extensionIndex]!;
-          const directlyRevoked =
-            extension.packageBinding?.envelope.signature.keyId ===
-            updated.keyId;
+          const directlyRevoked = extension.packageBinding?.envelope.signature.keyId === updated.keyId;
           const dependencyFailure = extensionPackageDependencyFailure(
             extension,
             this.state.extensions,
@@ -6725,8 +5224,7 @@ export class LocalStore {
               toolCount: extension.tools.length,
               error: directlyRevoked
                 ? "Signed package publisher key was revoked."
-                : (dependencyFailure ??
-                  "Signed package dependency is unavailable."),
+                : (dependencyFailure ?? "Signed package dependency is unavailable."),
             },
             revision: extension.revision + 1,
             updatedAt: updated.updatedAt,
@@ -6738,10 +5236,7 @@ export class LocalStore {
     });
   }
 
-  async signExtensionPackage(
-    extensionId: string,
-    request: SignExtensionPackageRequest,
-  ): Promise<SignedExtensionPackageEnvelope> {
+  async signExtensionPackage(extensionId: string, request: SignExtensionPackageRequest): Promise<SignedExtensionPackageEnvelope> {
     this.assertInitialized();
     this.getThread(request.threadId);
     const extension = this.getExtension(extensionId);
@@ -6752,57 +5247,35 @@ export class LocalStore {
     });
   }
 
-  async signSkillPackage(
-    request: SignSkillPackageRequest,
-  ): Promise<SignedSkillPackageEnvelope> {
+  async signSkillPackage(request: SignSkillPackageRequest): Promise<SignedSkillPackageEnvelope> {
     this.assertInitialized();
     this.getThread(request.threadId);
     const anchor = this.getExtensionPublisherTrustAnchor(request.trustAnchorId);
-    return signWorkspaceSkillPackage(
-      this.workspaceRoot,
-      request.publisher,
-      anchor,
-      {
-        ...(request.skillNames ? { skillNames: request.skillNames } : {}),
-        ...(request.expiresAt ? { expiresAt: request.expiresAt } : {}),
-      },
-    );
+    return signWorkspaceSkillPackage(this.workspaceRoot, request.publisher, anchor, {
+      ...(request.skillNames ? { skillNames: request.skillNames } : {}),
+      ...(request.expiresAt ? { expiresAt: request.expiresAt } : {}),
+    });
   }
 
-  verifySkillPackage(
-    request: VerifySkillPackageRequest,
-  ): SkillPackageVerification {
+  verifySkillPackage(request: VerifySkillPackageRequest): SkillPackageVerification {
     this.assertInitialized();
-    return verifySignedSkillPackageEnvelope(
-      request.envelope,
-      this.state.extensionPublisherTrustAnchors,
-    );
+    return verifySignedSkillPackageEnvelope(request.envelope, this.state.extensionPublisherTrustAnchors);
   }
 
-  async qualifySkillPackage(
-    request: QualifySkillPackageRequest,
-  ): Promise<SkillPackageQualification> {
+  async qualifySkillPackage(request: QualifySkillPackageRequest): Promise<SkillPackageQualification> {
     this.assertInitialized();
     if (request.threadId) this.getThread(request.threadId);
-    return qualifyWorkspaceSkillPackage(
-      this.workspaceRoot,
-      request.envelope,
-      this.state.extensionPublisherTrustAnchors,
-    );
+    return qualifyWorkspaceSkillPackage(this.workspaceRoot, request.envelope, this.state.extensionPublisherTrustAnchors);
   }
 
   listSkillPackageInstallations(): SkillPackageInstallation[] {
     this.assertInitialized();
     return structuredClone(
-      [...this.state.skillPackageInstallations].sort((left, right) =>
-        right.installedAt.localeCompare(left.installedAt),
-      ),
+      [...this.state.skillPackageInstallations].sort((left, right) => right.installedAt.localeCompare(left.installedAt)),
     );
   }
 
-  async installSkillPackage(
-    request: InstallSkillPackageRequest,
-  ): Promise<InstallSkillPackageResult> {
+  async installSkillPackage(request: InstallSkillPackageRequest): Promise<InstallSkillPackageResult> {
     this.assertInitialized();
     this.getThread(request.threadId);
     return this.stateQueue.run(async () => {
@@ -6812,14 +5285,10 @@ export class LocalStore {
         this.state.extensionPublisherTrustAnchors,
       );
       if (qualification.status !== "qualified") {
-        throw new Error(
-          `Skill package cannot be installed: ${qualification.reason}`,
-        );
+        throw new Error(`Skill package cannot be installed: ${qualification.reason}`);
       }
       const envelope = validateSignedSkillPackageEnvelope(request.envelope);
-      const active = this.state.skillPackageInstallations.find(
-        (installation) => installation.status === "active",
-      );
+      const active = this.state.skillPackageInstallations.find((installation) => installation.status === "active");
       if (active?.envelopeSha256 === envelope.contentSha256) {
         return {
           installation: structuredClone(active),
@@ -6828,33 +5297,20 @@ export class LocalStore {
         };
       }
       if (active) {
-        if (
-          request.replaceInstallationId !== active.id ||
-          request.confirmReplacement !== true
-        ) {
-          throw new Error(
-            `Skill package replacement requires confirmation for ${active.id}`,
-          );
+        if (request.replaceInstallationId !== active.id || request.confirmReplacement !== true) {
+          throw new Error(`Skill package replacement requires confirmation for ${active.id}`);
         }
         if (
-          (active.publisher !== envelope.manifest.publisher ||
-            active.keyId !== envelope.signature.keyId) &&
+          (active.publisher !== envelope.manifest.publisher || active.keyId !== envelope.signature.keyId) &&
           request.confirmPublisherChange !== true
         ) {
-          throw new Error(
-            "Skill package publisher change requires explicit confirmation",
-          );
+          throw new Error("Skill package publisher change requires explicit confirmation");
         }
         if (
-          active.skillNamesSha256 !==
-            createHash("sha256")
-              .update(JSON.stringify(envelope.manifest.loadedSkillNames))
-              .digest("hex") &&
+          active.skillNamesSha256 !== createHash("sha256").update(JSON.stringify(envelope.manifest.loadedSkillNames)).digest("hex") &&
           request.confirmSkillSetChange !== true
         ) {
-          throw new Error(
-            "Skill package Skill set change requires explicit confirmation",
-          );
+          throw new Error("Skill package Skill set change requires explicit confirmation");
         }
       } else if (request.replaceInstallationId || request.confirmReplacement) {
         throw new Error("Skill package replacement target is not active");
@@ -6867,14 +5323,8 @@ export class LocalStore {
       });
       let replacedInstallation: SkillPackageInstallation | undefined;
       if (active) {
-        const index = this.state.skillPackageInstallations.findIndex(
-          (candidate) => candidate.id === active.id,
-        );
-        replacedInstallation = markSkillPackageInstallationReplaced(
-          active,
-          installation.id,
-          installation.installedAt,
-        );
+        const index = this.state.skillPackageInstallations.findIndex((candidate) => candidate.id === active.id);
+        replacedInstallation = markSkillPackageInstallationReplaced(active, installation.id, installation.installedAt);
         this.state.skillPackageInstallations[index] = replacedInstallation;
       }
       this.state.skillPackageInstallations.push(installation);
@@ -6883,41 +5333,29 @@ export class LocalStore {
         installation: structuredClone(installation),
         qualification,
         created: true,
-        ...(replacedInstallation
-          ? { replacedInstallation: structuredClone(replacedInstallation) }
-          : {}),
+        ...(replacedInstallation ? { replacedInstallation: structuredClone(replacedInstallation) } : {}),
       };
     });
   }
 
-  async previewSkillContent(
-    request: PreviewSkillContentRequest,
-  ): Promise<SkillContentReview> {
+  async previewSkillContent(request: PreviewSkillContentRequest): Promise<SkillContentReview> {
     this.assertInitialized();
     this.getThread(request.threadId);
     return createSkillContentReview(this.workspaceRoot, request.content);
   }
 
-  async applySkillContent(
-    request: ApplySkillContentRequest,
-  ): Promise<ApplySkillContentResult> {
+  async applySkillContent(request: ApplySkillContentRequest): Promise<ApplySkillContentResult> {
     this.assertInitialized();
     this.getThread(request.threadId);
     return applyReviewedSkillContent(this.workspaceRoot, this.dataRoot, {
       content: request.content,
       expectedReviewSha256: request.expectedReviewSha256,
-      ...(request.confirmInstall !== undefined
-        ? { confirmInstall: request.confirmInstall }
-        : {}),
-      ...(request.confirmReplacement !== undefined
-        ? { confirmReplacement: request.confirmReplacement }
-        : {}),
+      ...(request.confirmInstall !== undefined ? { confirmInstall: request.confirmInstall } : {}),
+      ...(request.confirmReplacement !== undefined ? { confirmReplacement: request.confirmReplacement } : {}),
     });
   }
 
-  signPromptPackage(
-    request: SignPromptPackageRequest,
-  ): SignedPromptPackageEnvelope {
+  signPromptPackage(request: SignPromptPackageRequest): SignedPromptPackageEnvelope {
     this.assertInitialized();
     this.getThread(request.threadId);
     const profile = this.getAgent(request.agentId);
@@ -6928,19 +5366,12 @@ export class LocalStore {
     });
   }
 
-  verifyPromptPackage(
-    request: VerifyPromptPackageRequest,
-  ): PromptPackageVerification {
+  verifyPromptPackage(request: VerifyPromptPackageRequest): PromptPackageVerification {
     this.assertInitialized();
-    return verifySignedPromptPackageEnvelope(
-      request.envelope,
-      this.state.extensionPublisherTrustAnchors,
-    );
+    return verifySignedPromptPackageEnvelope(request.envelope, this.state.extensionPublisherTrustAnchors);
   }
 
-  qualifyPromptPackage(
-    request: QualifyPromptPackageRequest,
-  ): PromptPackageQualification {
+  qualifyPromptPackage(request: QualifyPromptPackageRequest): PromptPackageQualification {
     this.assertInitialized();
     if (request.threadId) this.getThread(request.threadId);
     let targetAgentId = request.agentId;
@@ -6948,9 +5379,7 @@ export class LocalStore {
       const envelope = validateSignedPromptPackageEnvelope(request.envelope);
       targetAgentId = envelope.manifest.sourceAgentId;
     }
-    const profile = this.state.agents.find(
-      (agent) => agent.id === targetAgentId,
-    );
+    const profile = this.state.agents.find((agent) => agent.id === targetAgentId);
     return qualifyAgentPromptPackage(
       request.envelope,
       this.state.extensionPublisherTrustAnchors,
@@ -6958,9 +5387,7 @@ export class LocalStore {
     );
   }
 
-  signInspectorPackage(
-    request: SignInspectorPackageRequest,
-  ): SignedInspectorPackageEnvelope {
+  signInspectorPackage(request: SignInspectorPackageRequest): SignedInspectorPackageEnvelope {
     this.assertInitialized();
     this.getThread(request.threadId);
     const anchor = this.getExtensionPublisherTrustAnchor(request.trustAnchorId);
@@ -6969,101 +5396,64 @@ export class LocalStore {
     });
   }
 
-  verifyInspectorPackage(
-    request: VerifyInspectorPackageRequest,
-  ): InspectorPackageVerification {
+  verifyInspectorPackage(request: VerifyInspectorPackageRequest): InspectorPackageVerification {
     this.assertInitialized();
-    return verifySignedInspectorPackageEnvelope(
-      request.envelope,
-      this.state.extensionPublisherTrustAnchors,
-    );
+    return verifySignedInspectorPackageEnvelope(request.envelope, this.state.extensionPublisherTrustAnchors);
   }
 
-  qualifyInspectorPackage(
-    request: QualifyInspectorPackageRequest,
-  ): InspectorPackageQualification {
+  qualifyInspectorPackage(request: QualifyInspectorPackageRequest): InspectorPackageQualification {
     this.assertInitialized();
     if (request.threadId) this.getThread(request.threadId);
-    return qualifyInspectorPackage(
-      request.envelope,
-      this.state.extensionPublisherTrustAnchors,
-    );
+    return qualifyInspectorPackage(request.envelope, this.state.extensionPublisherTrustAnchors);
   }
 
-  async importSignedExtensionPackage(
-    request: ImportSignedExtensionPackageRequest,
-  ): Promise<ExtensionRecord> {
+  async importSignedExtensionPackage(request: ImportSignedExtensionPackageRequest): Promise<ExtensionRecord> {
     this.assertInitialized();
     this.getThread(request.threadId);
     return this.stateQueue.run(async () => {
-      const verification = verifySignedExtensionPackageEnvelope(
-        request.envelope,
-        this.state.extensionPublisherTrustAnchors,
-      );
+      const verification = verifySignedExtensionPackageEnvelope(request.envelope, this.state.extensionPublisherTrustAnchors);
       if (verification.status !== "trusted") {
-        throw new Error(
-          `Signed Extension package is not trusted: ${verification.reason}`,
-        );
+        throw new Error(`Signed Extension package is not trusted: ${verification.reason}`);
       }
       const extension = createMcpExtensionFromSignedPackage(request.envelope);
       if (
         this.state.extensions.some(
           (candidate) =>
             candidate.normalizedName === extension.normalizedName ||
-            candidate.packageBinding?.envelope.contentSha256 ===
-              extension.packageBinding?.envelope.contentSha256,
+            candidate.packageBinding?.envelope.contentSha256 === extension.packageBinding?.envelope.contentSha256,
         )
       ) {
-        throw new Error(
-          `MCP extension or signed package already exists: ${extension.normalizedName}`,
-        );
+        throw new Error(`MCP extension or signed package already exists: ${extension.normalizedName}`);
       }
       const nextExtensions = [...this.state.extensions, extension];
-      validateExtensionPackageDependencyGraph(
-        nextExtensions,
-        this.state.extensionPublisherTrustAnchors,
-        { requireTrusted: true },
-      );
+      validateExtensionPackageDependencyGraph(nextExtensions, this.state.extensionPublisherTrustAnchors, {
+        requireTrusted: true,
+      });
       this.state.extensions = nextExtensions;
       await this.persistState();
       return structuredClone(extension);
     });
   }
 
-  previewExtensionPackageUpdate(
-    extensionId: string,
-    envelope: unknown,
-  ): ExtensionPackageUpdatePreview {
+  previewExtensionPackageUpdate(extensionId: string, envelope: unknown): ExtensionPackageUpdatePreview {
     this.assertInitialized();
-    const index = this.state.extensions.findIndex(
-      (candidate) => candidate.id === extensionId,
-    );
+    const index = this.state.extensions.findIndex((candidate) => candidate.id === extensionId);
     const current = this.state.extensions[index];
     if (!current) throw new Error(`Extension not found: ${extensionId}`);
-    const preview = createExtensionPackageUpdatePreview(
-      current,
-      envelope,
-      this.state.extensionPublisherTrustAnchors,
-    );
+    const preview = createExtensionPackageUpdatePreview(current, envelope, this.state.extensionPublisherTrustAnchors);
     if (preview.noChanges) return preview;
-    const simulated = applyExtensionPackageUpdateRecord(
-      current,
-      envelope,
-      this.state.extensionPublisherTrustAnchors,
-      {
-        expectedPackageBindingSha256: preview.expectedPackageBindingSha256,
-        confirmPublisherChange: true,
-        confirmVersionOverride: true,
-        updatedAt: preview.generatedAt,
-      },
-    );
+    const simulated = applyExtensionPackageUpdateRecord(current, envelope, this.state.extensionPublisherTrustAnchors, {
+      expectedPackageBindingSha256: preview.expectedPackageBindingSha256,
+      confirmPublisherChange: true,
+      confirmVersionOverride: true,
+      updatedAt: preview.generatedAt,
+    });
     const nextExtensions = [...this.state.extensions];
     nextExtensions[index] = simulated.extension;
-    validateExtensionPackageDependencyGraph(
-      nextExtensions,
-      this.state.extensionPublisherTrustAnchors,
-      { requireTrusted: true, now: new Date(preview.generatedAt) },
-    );
+    validateExtensionPackageDependencyGraph(nextExtensions, this.state.extensionPublisherTrustAnchors, {
+      requireTrusted: true,
+      now: new Date(preview.generatedAt),
+    });
     return preview;
   }
 
@@ -7074,9 +5464,7 @@ export class LocalStore {
     this.assertInitialized();
     this.getThread(request.threadId);
     return this.stateQueue.run(async () => {
-      const index = this.state.extensions.findIndex(
-        (candidate) => candidate.id === extensionId,
-      );
+      const index = this.state.extensions.findIndex((candidate) => candidate.id === extensionId);
       const current = this.state.extensions[index];
       if (!current) throw new Error(`Extension not found: ${extensionId}`);
       const result = applyExtensionPackageUpdateRecord(
@@ -7085,22 +5473,16 @@ export class LocalStore {
         this.state.extensionPublisherTrustAnchors,
         {
           expectedPackageBindingSha256: request.expectedPackageBindingSha256,
-          ...(request.confirmPublisherChange === true
-            ? { confirmPublisherChange: true }
-            : {}),
-          ...(request.confirmVersionOverride === true
-            ? { confirmVersionOverride: true }
-            : {}),
+          ...(request.confirmPublisherChange === true ? { confirmPublisherChange: true } : {}),
+          ...(request.confirmVersionOverride === true ? { confirmVersionOverride: true } : {}),
         },
       );
       if (result.updated) {
         const nextExtensions = [...this.state.extensions];
         nextExtensions[index] = result.extension;
-        validateExtensionPackageDependencyGraph(
-          nextExtensions,
-          this.state.extensionPublisherTrustAnchors,
-          { requireTrusted: true },
-        );
+        validateExtensionPackageDependencyGraph(nextExtensions, this.state.extensionPublisherTrustAnchors, {
+          requireTrusted: true,
+        });
         this.state.extensions = nextExtensions;
         await this.persistState();
       }
@@ -7108,20 +5490,12 @@ export class LocalStore {
     });
   }
 
-  previewExtensionPackageDeployment(
-    envelopes: unknown[],
-  ): ExtensionPackageDeploymentPreview {
+  previewExtensionPackageDeployment(envelopes: unknown[]): ExtensionPackageDeploymentPreview {
     this.assertInitialized();
-    return createExtensionPackageDeploymentPreview(
-      this.state.extensions,
-      envelopes,
-      this.state.extensionPublisherTrustAnchors,
-    );
+    return createExtensionPackageDeploymentPreview(this.state.extensions, envelopes, this.state.extensionPublisherTrustAnchors);
   }
 
-  async applyExtensionPackageDeployment(
-    request: ApplyExtensionPackageDeploymentRequest,
-  ): Promise<ApplyExtensionPackageDeploymentResult> {
+  async applyExtensionPackageDeployment(request: ApplyExtensionPackageDeploymentRequest): Promise<ApplyExtensionPackageDeploymentResult> {
     this.assertInitialized();
     this.getThread(request.threadId);
     return this.stateQueue.run(async () => {
@@ -7131,31 +5505,23 @@ export class LocalStore {
         this.state.extensionPublisherTrustAnchors,
         {
           expectedDeploymentSha256: request.expectedDeploymentSha256,
-          ...(request.confirmPublisherChanges === true
-            ? { confirmPublisherChanges: true }
-            : {}),
-          ...(request.confirmVersionOverrides === true
-            ? { confirmVersionOverrides: true }
-            : {}),
+          ...(request.confirmPublisherChanges === true ? { confirmPublisherChanges: true } : {}),
+          ...(request.confirmVersionOverrides === true ? { confirmVersionOverrides: true } : {}),
         },
       );
       if (result.extensions.length > 0) {
         const nextExtensions = [...this.state.extensions];
         for (const extension of result.extensions) {
-          const index = nextExtensions.findIndex(
-            (candidate) => candidate.id === extension.id,
-          );
+          const index = nextExtensions.findIndex((candidate) => candidate.id === extension.id);
           if (index >= 0) {
             nextExtensions[index] = extension;
           } else {
             nextExtensions.push(extension);
           }
         }
-        validateExtensionPackageDependencyGraph(
-          nextExtensions,
-          this.state.extensionPublisherTrustAnchors,
-          { requireTrusted: true },
-        );
+        validateExtensionPackageDependencyGraph(nextExtensions, this.state.extensionPublisherTrustAnchors, {
+          requireTrusted: true,
+        });
         this.state.extensions = nextExtensions;
         await this.persistState();
       }
@@ -7163,9 +5529,7 @@ export class LocalStore {
     });
   }
 
-  exportExtensionPackageLockfile(
-    request: ExportExtensionPackageLockfileRequest,
-  ): ExtensionPackageLockfile {
+  exportExtensionPackageLockfile(request: ExportExtensionPackageLockfileRequest): ExtensionPackageLockfile {
     this.assertInitialized();
     this.getThread(request.threadId);
     return createExtensionPackageLockfile(
@@ -7175,14 +5539,9 @@ export class LocalStore {
     );
   }
 
-  verifyExtensionPackageLockfile(
-    lockfile: unknown,
-  ): ExtensionPackageLockfileVerification {
+  verifyExtensionPackageLockfile(lockfile: unknown): ExtensionPackageLockfileVerification {
     this.assertInitialized();
-    return verifyExtensionPackageLockfileRecord(
-      lockfile,
-      this.state.extensionPublisherTrustAnchors,
-    );
+    return verifyExtensionPackageLockfileRecord(lockfile, this.state.extensionPublisherTrustAnchors);
   }
 
   async signExtensionPackageChannelIndex(
@@ -7191,68 +5550,40 @@ export class LocalStore {
     this.assertInitialized();
     this.getThread(request.threadId);
     const anchor = this.getExtensionPublisherTrustAnchor(request.trustAnchorId);
-    return signExtensionPackageChannelIndexRecord(
-      this.state.extensionPackageRolloutChannels,
-      request.publisher,
-      anchor,
-      {
-        ...(request.channelIds ? { channelIds: request.channelIds } : {}),
-        ...(request.expiresAt ? { expiresAt: request.expiresAt } : {}),
-        ...(request.lockfileBaseUrl
-          ? { lockfileBaseUrl: request.lockfileBaseUrl }
-          : {}),
-      },
-    );
+    return signExtensionPackageChannelIndexRecord(this.state.extensionPackageRolloutChannels, request.publisher, anchor, {
+      ...(request.channelIds ? { channelIds: request.channelIds } : {}),
+      ...(request.expiresAt ? { expiresAt: request.expiresAt } : {}),
+      ...(request.lockfileBaseUrl ? { lockfileBaseUrl: request.lockfileBaseUrl } : {}),
+    });
   }
 
-  verifyExtensionPackageChannelIndex(
-    request: VerifyExtensionPackageChannelIndexRequest,
-  ): ExtensionPackageChannelIndexVerification {
+  verifyExtensionPackageChannelIndex(request: VerifyExtensionPackageChannelIndexRequest): ExtensionPackageChannelIndexVerification {
     this.assertInitialized();
-    return verifySignedExtensionPackageChannelIndexEnvelopeRecord(
-      request.envelope,
-      this.state.extensionPublisherTrustAnchors,
-    );
+    return verifySignedExtensionPackageChannelIndexEnvelopeRecord(request.envelope, this.state.extensionPublisherTrustAnchors);
   }
 
   listExtensionPackageRolloutChannels(): ExtensionPackageRolloutChannel[] {
     this.assertInitialized();
-    return structuredClone(
-      this.state.extensionPackageRolloutChannels
-        .slice()
-        .sort((left, right) => left.name.localeCompare(right.name)),
-    );
+    return structuredClone(this.state.extensionPackageRolloutChannels.slice().sort((left, right) => left.name.localeCompare(right.name)));
   }
 
-  getExtensionPackageRolloutChannel(
-    channelId: string,
-  ): ExtensionPackageRolloutChannel {
+  getExtensionPackageRolloutChannel(channelId: string): ExtensionPackageRolloutChannel {
     this.assertInitialized();
-    const channel = this.state.extensionPackageRolloutChannels.find(
-      (candidate) => candidate.id === channelId,
-    );
+    const channel = this.state.extensionPackageRolloutChannels.find((candidate) => candidate.id === channelId);
     if (!channel) {
-      throw new Error(
-        `Extension package rollout channel not found: ${channelId}`,
-      );
+      throw new Error(`Extension package rollout channel not found: ${channelId}`);
     }
     return structuredClone(channel);
   }
 
-  getExtensionPackageRolloutLockfile(
-    lockfileSha256: string,
-  ): ExtensionPackageLockfile {
+  getExtensionPackageRolloutLockfile(lockfileSha256: string): ExtensionPackageLockfile {
     this.assertInitialized();
     if (!/^[a-f0-9]{64}$/.test(lockfileSha256)) {
       throw new Error("Extension package lockfile hash is invalid");
     }
-    const channel = this.state.extensionPackageRolloutChannels.find(
-      (candidate) => candidate.lockfileSha256 === lockfileSha256,
-    );
+    const channel = this.state.extensionPackageRolloutChannels.find((candidate) => candidate.lockfileSha256 === lockfileSha256);
     if (!channel) {
-      throw new Error(
-        `Extension package rollout lockfile not found: ${lockfileSha256}`,
-      );
+      throw new Error(`Extension package rollout lockfile not found: ${lockfileSha256}`);
     }
     return structuredClone(channel.lockfile);
   }
@@ -7263,12 +5594,8 @@ export class LocalStore {
     this.assertInitialized();
     this.getThread(request.threadId);
     return this.stateQueue.run(async () => {
-      const normalizedName = normalizeMcpName(
-        request.name.replace(/\s+/g, " ").trim(),
-      );
-      const existing = this.state.extensionPackageRolloutChannels.find(
-        (channel) => channel.normalizedName === normalizedName,
-      );
+      const normalizedName = normalizeMcpName(request.name.replace(/\s+/g, " ").trim());
+      const existing = this.state.extensionPackageRolloutChannels.find((channel) => channel.normalizedName === normalizedName);
       const channel = createExtensionPackageRolloutChannel({
         ...(existing ? { existing } : {}),
         extensions: this.state.extensions,
@@ -7276,9 +5603,7 @@ export class LocalStore {
         request,
       });
       const nextChannels = [...this.state.extensionPackageRolloutChannels];
-      const index = nextChannels.findIndex(
-        (candidate) => candidate.id === channel.id,
-      );
+      const index = nextChannels.findIndex((candidate) => candidate.id === channel.id);
       if (index >= 0) {
         nextChannels[index] = channel;
       } else {
@@ -7290,9 +5615,7 @@ export class LocalStore {
     });
   }
 
-  previewExtensionPackageRolloutChannel(
-    request: PreviewExtensionPackageRolloutChannelRequest,
-  ): ExtensionPackageRolloutPreview {
+  previewExtensionPackageRolloutChannel(request: PreviewExtensionPackageRolloutChannelRequest): ExtensionPackageRolloutPreview {
     this.assertInitialized();
     return createExtensionPackageRolloutPreview(
       this.getExtensionPackageRolloutChannel(request.channelId),
@@ -7307,46 +5630,29 @@ export class LocalStore {
     this.assertInitialized();
     this.getThread(request.threadId);
     return this.stateQueue.run(async () => {
-      const channel = this.state.extensionPackageRolloutChannels.find(
-        (candidate) => candidate.id === request.channelId,
-      );
+      const channel = this.state.extensionPackageRolloutChannels.find((candidate) => candidate.id === request.channelId);
       if (!channel) {
-        throw new Error(
-          `Extension package rollout channel not found: ${request.channelId}`,
-        );
+        throw new Error(`Extension package rollout channel not found: ${request.channelId}`);
       }
-      const result = applyExtensionPackageRolloutChannelRecords(
-        channel,
-        this.state.extensions,
-        this.state.extensionPublisherTrustAnchors,
-        {
-          expectedRolloutSha256: request.expectedRolloutSha256,
-          expectedDeploymentSha256: request.expectedDeploymentSha256,
-          ...(request.confirmPublisherChanges === true
-            ? { confirmPublisherChanges: true }
-            : {}),
-          ...(request.confirmVersionOverrides === true
-            ? { confirmVersionOverrides: true }
-            : {}),
-        },
-      );
+      const result = applyExtensionPackageRolloutChannelRecords(channel, this.state.extensions, this.state.extensionPublisherTrustAnchors, {
+        expectedRolloutSha256: request.expectedRolloutSha256,
+        expectedDeploymentSha256: request.expectedDeploymentSha256,
+        ...(request.confirmPublisherChanges === true ? { confirmPublisherChanges: true } : {}),
+        ...(request.confirmVersionOverrides === true ? { confirmVersionOverrides: true } : {}),
+      });
       if (result.deployment.extensions.length > 0) {
         const nextExtensions = [...this.state.extensions];
         for (const extension of result.deployment.extensions) {
-          const index = nextExtensions.findIndex(
-            (candidate) => candidate.id === extension.id,
-          );
+          const index = nextExtensions.findIndex((candidate) => candidate.id === extension.id);
           if (index >= 0) {
             nextExtensions[index] = extension;
           } else {
             nextExtensions.push(extension);
           }
         }
-        validateExtensionPackageDependencyGraph(
-          nextExtensions,
-          this.state.extensionPublisherTrustAnchors,
-          { requireTrusted: true },
-        );
+        validateExtensionPackageDependencyGraph(nextExtensions, this.state.extensionPublisherTrustAnchors, {
+          requireTrusted: true,
+        });
         this.state.extensions = nextExtensions;
         await this.persistState();
       }
@@ -7354,31 +5660,17 @@ export class LocalStore {
     });
   }
 
-  async reviewExtension(
-    extensionId: string,
-    request: ReviewExtensionRequest,
-  ): Promise<ExtensionRecord> {
-    return this.updateExtension(extensionId, (current) =>
-      reviewExtensionRecord(current, request),
-    );
+  async reviewExtension(extensionId: string, request: ReviewExtensionRequest): Promise<ExtensionRecord> {
+    return this.updateExtension(extensionId, (current) => reviewExtensionRecord(current, request));
   }
 
-  async setExtensionEnabled(
-    extensionId: string,
-    agentId: string,
-    enabled: boolean,
-  ): Promise<ExtensionRecord> {
+  async setExtensionEnabled(extensionId: string, agentId: string, enabled: boolean): Promise<ExtensionRecord> {
     this.getAgent(agentId);
     return this.updateExtension(extensionId, (current) => {
       if (enabled) {
-        const verification = verifyBoundExtensionPackageTrust(
-          current,
-          this.state.extensionPublisherTrustAnchors,
-        );
+        const verification = verifyBoundExtensionPackageTrust(current, this.state.extensionPublisherTrustAnchors);
         if (verification && verification.status !== "trusted") {
-          throw new Error(
-            `Signed Extension package is not trusted: ${verification.reason}`,
-          );
+          throw new Error(`Signed Extension package is not trusted: ${verification.reason}`);
         }
         const dependencyFailure = extensionPackageDependencyFailure(
           current,
@@ -7391,32 +5683,16 @@ export class LocalStore {
     });
   }
 
-  async setExtensionConnection(
-    extensionId: string,
-    connection: ExtensionConnection,
-  ): Promise<ExtensionRecord> {
-    return this.updateExtension(extensionId, (current) =>
-      updateExtensionConnection(current, connection),
-    );
+  async setExtensionConnection(extensionId: string, connection: ExtensionConnection): Promise<ExtensionRecord> {
+    return this.updateExtension(extensionId, (current) => updateExtensionConnection(current, connection));
   }
 
-  async replaceDiscoveredMcpTools(
-    extensionId: string,
-    tools: DiscoveredMcpTool[],
-  ): Promise<ExtensionRecord> {
-    return this.updateExtension(extensionId, (current) =>
-      mergeDiscoveredMcpTools(current, tools),
-    );
+  async replaceDiscoveredMcpTools(extensionId: string, tools: DiscoveredMcpTool[]): Promise<ExtensionRecord> {
+    return this.updateExtension(extensionId, (current) => mergeDiscoveredMcpTools(current, tools));
   }
 
-  async reviewMcpTool(
-    extensionId: string,
-    toolName: string,
-    request: ReviewMcpToolRequest,
-  ): Promise<ExtensionRecord> {
-    return this.updateExtension(extensionId, (current) =>
-      reviewMcpToolRecord(current, toolName, request),
-    );
+  async reviewMcpTool(extensionId: string, toolName: string, request: ReviewMcpToolRequest): Promise<ExtensionRecord> {
+    return this.updateExtension(extensionId, (current) => reviewMcpToolRecord(current, toolName, request));
   }
 
   listMemories(options: { agentId?: string } = {}): MemoryFact[] {
@@ -7430,33 +5706,22 @@ export class LocalStore {
     };
     return structuredClone(
       this.state.memories
-        .filter(
-          (fact) =>
-            !options.agentId ||
-            fact.scope === "workspace" ||
-            fact.agentId === options.agentId,
-        )
+        .filter((fact) => !options.agentId || fact.scope === "workspace" || fact.agentId === options.agentId)
         .sort((left, right) => {
-          const statusDelta =
-            statusOrder[left.status] - statusOrder[right.status];
+          const statusDelta = statusOrder[left.status] - statusOrder[right.status];
           return statusDelta || right.updatedAt.localeCompare(left.updatedAt);
         }),
     );
   }
 
-  async proposeMemory(
-    input: CreateMemoryRequest,
-    source: MemorySource,
-  ): Promise<MemoryFact> {
+  async proposeMemory(input: CreateMemoryRequest, source: MemorySource): Promise<MemoryFact> {
     this.assertInitialized();
     const fact = createMemoryFact(input, source);
     return this.stateQueue.run(async () => {
       const replacementTargetIds = memoryReplacementTargetIds(fact);
       if (replacementTargetIds.length > 0) {
         const targets = replacementTargetIds.map((targetId) => {
-          const target = this.state.memories.find(
-            (memory) => memory.id === targetId,
-          );
+          const target = this.state.memories.find((memory) => memory.id === targetId);
           if (!target) {
             throw new Error(`Memory replacement target not found: ${targetId}`);
           }
@@ -7465,23 +5730,17 @@ export class LocalStore {
         assertMemoryReplacementTargets(targets, fact);
         const pendingReplacement = this.state.memories.find(
           (memory) =>
-            memory.status === "proposed" &&
-            memoryReplacementTargetIds(memory).some((targetId) =>
-              replacementTargetIds.includes(targetId),
-            ),
+            memory.status === "proposed" && memoryReplacementTargetIds(memory).some((targetId) => replacementTargetIds.includes(targetId)),
         );
         if (pendingReplacement) {
-          throw new Error(
-            `Memory already has a pending replacement: ${pendingReplacement.id}`,
-          );
+          throw new Error(`Memory already has a pending replacement: ${pendingReplacement.id}`);
         }
       }
       const key = memoryDedupeKey(fact);
       const replacementKey = memoryReplacementKey(fact);
       const existing = this.state.memories.find(
         (item) =>
-          (item.status === "proposed" ||
-            (!replacementKey && item.status === "active")) &&
+          (item.status === "proposed" || (!replacementKey && item.status === "active")) &&
           memoryReplacementKey(item) === replacementKey &&
           memoryDedupeKey(item) === key,
       );
@@ -7492,24 +5751,17 @@ export class LocalStore {
     });
   }
 
-  async reviewMemory(
-    memoryId: string,
-    request: ReviewMemoryRequest,
-  ): Promise<MemoryFact> {
+  async reviewMemory(memoryId: string, request: ReviewMemoryRequest): Promise<MemoryFact> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const index = this.state.memories.findIndex(
-        (memory) => memory.id === memoryId,
-      );
+      const index = this.state.memories.findIndex((memory) => memory.id === memoryId);
       const current = this.state.memories[index];
       if (!current) throw new Error(`Memory not found: ${memoryId}`);
       const updated = reviewMemoryFact(current, request);
       const replacementTargetIds = memoryReplacementTargetIds(current);
       if (request.action === "approve" && replacementTargetIds.length > 0) {
         const targets = replacementTargetIds.map((targetId) => {
-          const targetIndex = this.state.memories.findIndex(
-            (memory) => memory.id === targetId,
-          );
+          const targetIndex = this.state.memories.findIndex((memory) => memory.id === targetId);
           const target = this.state.memories[targetIndex];
           if (!target) {
             throw new Error(`Memory replacement target not found: ${targetId}`);
@@ -7521,11 +5773,7 @@ export class LocalStore {
           updated,
         );
         for (const { target, targetIndex } of targets) {
-          this.state.memories[targetIndex] = supersedeMemoryFact(
-            target,
-            updated.id,
-            updated.reviewedAt,
-          );
+          this.state.memories[targetIndex] = supersedeMemoryFact(target, updated.id, updated.reviewedAt);
         }
       }
       this.state.memories[index] = updated;
@@ -7534,19 +5782,13 @@ export class LocalStore {
     });
   }
 
-  async expireDueMemories(
-    options: { agentId?: string; now?: Date } = {},
-  ): Promise<MemoryFact[]> {
+  async expireDueMemories(options: { agentId?: string; now?: Date } = {}): Promise<MemoryFact[]> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
       const expired: MemoryFact[] = [];
       for (let index = 0; index < this.state.memories.length; index += 1) {
         const current = this.state.memories[index]!;
-        if (
-          options.agentId &&
-          current.scope === "agent" &&
-          current.agentId !== options.agentId
-        ) {
+        if (options.agentId && current.scope === "agent" && current.agentId !== options.agentId) {
           continue;
         }
         const updated = expireMemoryFact(current, options.now);
@@ -7559,19 +5801,13 @@ export class LocalStore {
     });
   }
 
-  async recordMemoryUsage(
-    memoryIds: string[],
-    runId: string,
-    usedAt = nowIso(),
-  ): Promise<MemoryFact[]> {
+  async recordMemoryUsage(memoryIds: string[], runId: string, usedAt = nowIso()): Promise<MemoryFact[]> {
     this.assertInitialized();
     const uniqueIds = [...new Set(memoryIds)];
     return this.stateQueue.run(async () => {
       const updatedFacts: MemoryFact[] = [];
       for (const memoryId of uniqueIds) {
-        const index = this.state.memories.findIndex(
-          (memory) => memory.id === memoryId,
-        );
+        const index = this.state.memories.findIndex((memory) => memory.id === memoryId);
         const current = this.state.memories[index];
         if (!current) throw new Error(`Memory not found: ${memoryId}`);
         const updated = recordMemoryUse(current, runId, usedAt);
@@ -7588,26 +5824,17 @@ export class LocalStore {
     return loadThreadDetail(this, threadId);
   }
 
-  async listRunControlMessages(
-    threadId: string,
-    runId?: string,
-  ): Promise<RunControlMessage[]> {
+  async listRunControlMessages(threadId: string, runId?: string): Promise<RunControlMessage[]> {
     const events = await this.listEvents(threadId);
     return projectRunControlMessages(events, runId);
   }
 
-  async listOperatorDecisions(
-    threadId: string,
-    runId?: string,
-  ): Promise<OperatorDecision[]> {
+  async listOperatorDecisions(threadId: string, runId?: string): Promise<OperatorDecision[]> {
     const events = await this.listEvents(threadId);
     return projectOperatorDecisions(events, runId);
   }
 
-  async listAgentMilestones(
-    threadId: string,
-    runId?: string,
-  ): Promise<AgentMilestone[]> {
+  async listAgentMilestones(threadId: string, runId?: string): Promise<AgentMilestone[]> {
     const events = await this.listEvents(threadId);
     return projectAgentMilestones(events, runId);
   }
@@ -7618,11 +5845,7 @@ export class LocalStore {
     return structuredClone(this.requireLedger().listEvents(threadId, afterSeq));
   }
 
-  async createThread(input: {
-    title: string;
-    agentId: string;
-    importProvenance?: ThreadImportProvenance;
-  }): Promise<ThreadRecord> {
+  async createThread(input: { title: string; agentId: string; importProvenance?: ThreadImportProvenance }): Promise<ThreadRecord> {
     this.assertInitialized();
     this.getAgent(input.agentId);
     return this.stateQueue.run(async () => {
@@ -7633,82 +5856,44 @@ export class LocalStore {
     });
   }
 
-  async importThreadReplayBundle(
-    input: ThreadReplayBundle,
-    title?: string,
-  ): Promise<ThreadDetail> {
+  async importThreadReplayBundle(input: ThreadReplayBundle, title?: string): Promise<ThreadDetail> {
     this.assertInitialized();
     const bundle = validateThreadReplayBundle(input);
     const bundleVerification = verifyThreadReplayBundle(bundle);
     if (bundleVerification.status !== "valid") {
-      throw new Error(
-        `Thread replay bundle verification failed: ${bundleVerification.diagnostics.join(", ")}`,
-      );
+      throw new Error(`Thread replay bundle verification failed: ${bundleVerification.diagnostics.join(", ")}`);
     }
     const importedThreadId = await this.stateQueue.run(async () => {
       const importedAt = nowIso();
       const agentId = createId("agent");
       const threadId = createId("thread");
-      const runIds = new Map(
-        bundle.runs.map((run) => [run.id, createId("run")]),
-      );
+      const runIds = new Map(bundle.runs.map((run) => [run.id, createId("run")]));
       const auxiliaryRunIds = new Map<string, string>();
       for (const event of bundle.events) {
         if (!runIds.has(event.runId) && !auxiliaryRunIds.has(event.runId)) {
           auxiliaryRunIds.set(event.runId, createId("runctl"));
         }
       }
-      const planIds = new Map(
-        bundle.plans.map((plan) => [plan.id, createId("plan")]),
-      );
-      const evaluationIds = new Map(
-        bundle.evaluations.map((evaluation) => [
-          evaluation.id,
-          createId("evaluation"),
-        ]),
-      );
+      const planIds = new Map(bundle.plans.map((plan) => [plan.id, createId("plan")]));
+      const evaluationIds = new Map(bundle.evaluations.map((evaluation) => [evaluation.id, createId("evaluation")]));
       const evaluationAdjudicationIds = new Map(
-        (bundle.evaluationAdjudications ?? []).map((adjudication) => [
-          adjudication.id,
-          createId("adjudication"),
-        ]),
+        (bundle.evaluationAdjudications ?? []).map((adjudication) => [adjudication.id, createId("adjudication")]),
       );
       const evaluationReviewerBallotIds = new Map(
-        (bundle.evaluationReviewerBallots ?? []).map((ballot) => [
-          ballot.id,
-          createId("reviewballot"),
-        ]),
+        (bundle.evaluationReviewerBallots ?? []).map((ballot) => [ballot.id, createId("reviewballot")]),
       );
       const evaluationConsensusResolutionIds = new Map(
-        (bundle.evaluationConsensusResolutions ?? []).map((resolution) => [
-          resolution.id,
-          createId("consensus"),
-        ]),
+        (bundle.evaluationConsensusResolutions ?? []).map((resolution) => [resolution.id, createId("consensus")]),
       );
-      const evaluationSuiteIds = new Map(
-        (bundle.evaluationSuites ?? []).map((suite) => [
-          suite.id,
-          createId("suite"),
-        ]),
-      );
+      const evaluationSuiteIds = new Map((bundle.evaluationSuites ?? []).map((suite) => [suite.id, createId("suite")]));
       const evaluationSuiteExecutionIds = new Map(
-        (bundle.evaluationSuiteExecutions ?? []).map((execution) => [
-          execution.id,
-          createId("evalsuite"),
-        ]),
+        (bundle.evaluationSuiteExecutions ?? []).map((execution) => [execution.id, createId("evalsuite")]),
       );
       const automaticRecoveryAttemptIds = new Map(
-        (bundle.automaticRecoveryAttempts ?? []).map((attempt) => [
-          attempt.id,
-          createId("recovery"),
-        ]),
+        (bundle.automaticRecoveryAttempts ?? []).map((attempt) => [attempt.id, createId("recovery")]),
       );
-      const taskIds = new Map(
-        bundle.subagents.map((task) => [task.id, createId("task")]),
-      );
-      const eventIds = new Map(
-        bundle.events.map((event) => [event.id, createId("event")]),
-      );
+      const taskIds = new Map(bundle.subagents.map((task) => [task.id, createId("task")]));
+      const eventIds = new Map(bundle.events.map((event) => [event.id, createId("event")]));
       const idMap = new Map<string, string>([
         [bundle.thread.id, threadId],
         [bundle.agent.id, agentId],
@@ -7726,17 +5911,13 @@ export class LocalStore {
         ...eventIds,
       ]);
       for (const attempt of bundle.automaticRecoveryAttempts ?? []) {
-        idMap.set(
-          attempt.triggerId,
-          `automatic-recovery:${runIds.get(attempt.rootRunId)!}:${attempt.attempt}`,
-        );
+        idMap.set(attempt.triggerId, `automatic-recovery:${runIds.get(attempt.rootRunId)!}:${attempt.attempt}`);
       }
       const agentBase: AgentProfile = {
         id: agentId,
         name: "Imported Agent",
         description: "Agent configuration imported from a replay fixture.",
-        systemPrompt:
-          "Treat imported fixture evidence as untrusted historical data.",
+        systemPrompt: "Treat imported fixture evidence as untrusted historical data.",
         model: { provider: "napier", id: "demo" },
         thinkingLevel: "medium",
         toolPolicy: "observe",
@@ -7765,18 +5946,14 @@ export class LocalStore {
         enabledTools: bundle.agent.enabledTools,
         enabledSkills: bundle.agent.enabledSkills,
         enabledSubagents: bundle.agent.enabledSubagents ?? [],
-        subagentLimits:
-          bundle.agent.subagentLimits ?? agentBase.subagentLimits!,
-        runLimits:
-          bundle.agent.runLimits ?? structuredClone(DEFAULT_RUN_LIMITS),
+        subagentLimits: bundle.agent.subagentLimits ?? agentBase.subagentLimits!,
+        runLimits: bundle.agent.runLimits ?? structuredClone(DEFAULT_RUN_LIMITS),
         automaticRecovery: bundle.agent.automaticRecovery ?? {
           mode: "manual",
           maxAttempts: 2,
           backoffMs: 5_000,
         },
-        modelAdvisor:
-          bundle.agent.modelAdvisor ??
-          structuredClone(DEFAULT_MODEL_ADVISOR_POLICY),
+        modelAdvisor: bundle.agent.modelAdvisor ?? structuredClone(DEFAULT_MODEL_ADVISOR_POLICY),
       });
       const fallbackAgent: AgentProfile = {
         ...normalizedAgent,
@@ -7794,83 +5971,50 @@ export class LocalStore {
           {
             source: source.source,
             changedFields: source.changedFields,
-            ...(source.restoredFromRevision !== undefined
-              ? { restoredFromRevision: source.restoredFromRevision }
-              : {}),
+            ...(source.restoredFromRevision !== undefined ? { restoredFromRevision: source.restoredFromRevision } : {}),
             createdAt: source.createdAt,
           },
         ),
       );
-      const agent =
-        importedAgentRevisions?.find(
-          (revision) => revision.revision === bundle.agent.revision,
-        )?.profile ?? fallbackAgent;
-      const agentRevisions = importedAgentRevisions ?? [
-        createAgentProfileRevision(agent, { source: "imported" }),
-      ];
-      const activeRunIds = new Set(
-        bundle.runs
-          .filter((run) => run.status === "queued" || run.status === "running")
-          .map((run) => run.id),
-      );
+      const agent = importedAgentRevisions?.find((revision) => revision.revision === bundle.agent.revision)?.profile ?? fallbackAgent;
+      const agentRevisions = importedAgentRevisions ?? [createAgentProfileRevision(agent, { source: "imported" })];
+      const activeRunIds = new Set(bundle.runs.filter((run) => run.status === "queued" || run.status === "running").map((run) => run.id));
       const runs: PersistedRunRecord[] = bundle.runs.map((source) => {
         const active = activeRunIds.has(source.id);
-        const mappedParentId = source.parentRunId
-          ? runIds.get(source.parentRunId)
-          : undefined;
+        const mappedParentId = source.parentRunId ? runIds.get(source.parentRunId) : undefined;
         return {
           id: runIds.get(source.id)!,
           threadId,
           agentId,
           status: active ? "interrupted" : source.status,
           ...(source.source ? { source: source.source } : {}),
-          ...(source.workflowPlanId
-            ? { workflowPlanId: planIds.get(source.workflowPlanId)! }
-            : {}),
+          ...(source.workflowPlanId ? { workflowPlanId: planIds.get(source.workflowPlanId)! } : {}),
           startedAt: source.startedAt,
           ...(active
             ? {
                 finishedAt: importedAt,
                 interruptedAt: importedAt,
-                interruptionReason:
-                  "Imported fixture captured this run before it reached a terminal state.",
-                error:
-                  "Imported fixture run outcome is unknown and requires verification.",
+                interruptionReason: "Imported fixture captured this run before it reached a terminal state.",
+                error: "Imported fixture run outcome is unknown and requires verification.",
               }
             : {
                 ...(source.finishedAt ? { finishedAt: source.finishedAt } : {}),
-                ...(source.interruptedAt
-                  ? { interruptedAt: source.interruptedAt }
-                  : {}),
-                ...(source.interruptionReason
-                  ? { interruptionReason: source.interruptionReason }
-                  : {}),
+                ...(source.interruptedAt ? { interruptedAt: source.interruptedAt } : {}),
+                ...(source.interruptionReason ? { interruptionReason: source.interruptionReason } : {}),
                 ...(source.error ? { error: source.error } : {}),
               }),
           ...(mappedParentId ? { parentRunId: mappedParentId } : {}),
-          ...(source.branchFromSeq !== undefined
-            ? { branchFromSeq: source.branchFromSeq }
-            : {}),
+          ...(source.branchFromSeq !== undefined ? { branchFromSeq: source.branchFromSeq } : {}),
           usage: structuredClone(source.usage),
-          agentRevision:
-            source.agentRevision ??
-            source.configuration?.agentRevision ??
-            bundle.agent.revision,
+          agentRevision: source.agentRevision ?? source.configuration?.agentRevision ?? bundle.agent.revision,
           limits: normalizeRunLimits(
-            source.limits ??
-              source.configuration?.runLimits ??
-              agent.runLimits ??
-              structuredClone(DEFAULT_RUN_LIMITS),
+            source.limits ?? source.configuration?.runLimits ?? agent.runLimits ?? structuredClone(DEFAULT_RUN_LIMITS),
           ),
-          ...(source.configuration
-            ? { configuration: structuredClone(source.configuration) }
-            : {}),
+          ...(source.configuration ? { configuration: structuredClone(source.configuration) } : {}),
         };
       });
       const plans: ExecutionPlan[] = bundle.plans.map((source) => {
-        const hadRunningStep = source.steps.some(
-          (step) => step.status === "running",
-        );
+        const hadRunningStep = source.steps.some((step) => step.status === "running");
         return refreshPlanProjection({
           ...structuredClone(source),
           id: planIds.get(source.id)!,
@@ -7878,16 +6022,12 @@ export class LocalStore {
           status: hadRunningStep ? "blocked" : source.status,
           steps: source.steps.map((step) => ({
             ...structuredClone(step),
-            ...(step.runId && runIds.has(step.runId)
-              ? { runId: runIds.get(step.runId)! }
-              : {}),
+            ...(step.runId && runIds.has(step.runId) ? { runId: runIds.get(step.runId)! } : {}),
             ...(step.status === "running"
               ? {
                   status: "blocked" as const,
-                  blocker:
-                    "Imported fixture captured this step while it was running.",
-                  evidence:
-                    "The imported step outcome is unknown and must be verified before reopening.",
+                  blocker: "Imported fixture captured this step while it was running.",
+                  evidence: "The imported step outcome is unknown and must be verified before reopening.",
                   finishedAt: importedAt,
                   updatedAt: importedAt,
                 }
@@ -7895,35 +6035,22 @@ export class LocalStore {
           })),
           artifacts: source.artifacts.map((artifact) => ({
             ...structuredClone(artifact),
-            ...(artifact.sourceRunId && runIds.has(artifact.sourceRunId)
-              ? { sourceRunId: runIds.get(artifact.sourceRunId)! }
-              : {}),
+            ...(artifact.sourceRunId && runIds.has(artifact.sourceRunId) ? { sourceRunId: runIds.get(artifact.sourceRunId)! } : {}),
           })),
           revision: source.revision + (hadRunningStep ? 1 : 0),
           updatedAt: hadRunningStep ? importedAt : source.updatedAt,
         });
       });
-      const evaluations: RunEvaluationRecord[] = bundle.evaluations.map(
-        (source) => ({
-          ...structuredClone(source),
-          id: evaluationIds.get(source.id)!,
-          threadId,
-          leftRunId: runIds.get(source.leftRunId)!,
-          rightRunId: runIds.get(source.rightRunId)!,
-        }),
-      );
-      const mappedEvaluationsBySourceId = new Map(
-        bundle.evaluations.map((source, index) => [
-          source.id,
-          evaluations[index]!,
-        ]),
-      );
-      const evaluationReviewerBallots: EvaluationReviewerBallot[] = (
-        bundle.evaluationReviewerBallots ?? []
-      ).map((source) => {
-        const evaluation = mappedEvaluationsBySourceId.get(
-          source.evaluationId,
-        )!;
+      const evaluations: RunEvaluationRecord[] = bundle.evaluations.map((source) => ({
+        ...structuredClone(source),
+        id: evaluationIds.get(source.id)!,
+        threadId,
+        leftRunId: runIds.get(source.leftRunId)!,
+        rightRunId: runIds.get(source.rightRunId)!,
+      }));
+      const mappedEvaluationsBySourceId = new Map(bundle.evaluations.map((source, index) => [source.id, evaluations[index]!]));
+      const evaluationReviewerBallots: EvaluationReviewerBallot[] = (bundle.evaluationReviewerBallots ?? []).map((source) => {
+        const evaluation = mappedEvaluationsBySourceId.get(source.evaluationId)!;
         const ballotId = evaluationReviewerBallotIds.get(source.id)!;
         const revisions = source.revisions.map((revision) => {
           const content = {
@@ -7936,13 +6063,7 @@ export class LocalStore {
           };
           return {
             ...content,
-            contentSha256: hashEvaluationReviewerBallotRevision(
-              ballotId,
-              threadId,
-              evaluation.id,
-              source.reviewerId,
-              content,
-            ),
+            contentSha256: hashEvaluationReviewerBallotRevision(ballotId, threadId, evaluation.id, source.reviewerId, content),
           };
         });
         return validateEvaluationReviewerBallot(
@@ -7957,20 +6078,12 @@ export class LocalStore {
         );
       });
       const mappedBallotsBySourceId = new Map(
-        (bundle.evaluationReviewerBallots ?? []).map((source, index) => [
-          source.id,
-          evaluationReviewerBallots[index]!,
-        ]),
+        (bundle.evaluationReviewerBallots ?? []).map((source, index) => [source.id, evaluationReviewerBallots[index]!]),
       );
-      const mappedReportsByResolutionId = new Map<
-        string,
-        EvaluationConsensusReport
-      >();
+      const mappedReportsByResolutionId = new Map<string, EvaluationConsensusReport>();
       const mappedReportSha256 = new Map<string, string>();
       for (const source of bundle.evaluationConsensusResolutions ?? []) {
-        const evaluation = mappedEvaluationsBySourceId.get(
-          source.evaluationId,
-        )!;
+        const evaluation = mappedEvaluationsBySourceId.get(source.evaluationId)!;
         const mapped: EvaluationConsensusReport = {
           ...structuredClone(source.report),
           threadId,
@@ -7978,9 +6091,7 @@ export class LocalStore {
           evaluationSha256: hashRunEvaluation(evaluation),
           votes: source.report.votes.map((vote) => {
             const ballot = mappedBallotsBySourceId.get(vote.ballotId)!;
-            const revision = ballot.revisions.find(
-              (candidate) => candidate.revision === vote.ballotRevision,
-            )!;
+            const revision = ballot.revisions.find((candidate) => candidate.revision === vote.ballotRevision)!;
             return {
               ...structuredClone(vote),
               ballotId: ballot.id,
@@ -7989,41 +6100,24 @@ export class LocalStore {
           }),
           contentSha256: "",
         };
-        const {
-          generatedAt: _generatedAt,
-          contentSha256: _contentSha256,
-          ...content
-        } = mapped;
+        const { generatedAt: _generatedAt, contentSha256: _contentSha256, ...content } = mapped;
         mapped.contentSha256 = hashEvaluationConsensusReport(content);
         validateEvaluationConsensusReport(
           mapped,
           evaluation,
-          evaluationReviewerBallots.filter(
-            (ballot) => ballot.evaluationId === evaluation.id,
-          ),
+          evaluationReviewerBallots.filter((ballot) => ballot.evaluationId === evaluation.id),
           { requireCurrent: false },
         );
         mappedReportsByResolutionId.set(source.id, mapped);
-        mappedReportSha256.set(
-          source.report.contentSha256,
-          mapped.contentSha256,
-        );
+        mappedReportSha256.set(source.report.contentSha256, mapped.contentSha256);
       }
-      const evaluationAdjudications: EvaluationAdjudication[] = (
-        bundle.evaluationAdjudications ?? []
-      ).map((source) => {
-        const evaluation = mappedEvaluationsBySourceId.get(
-          source.evaluationId,
-        )!;
+      const evaluationAdjudications: EvaluationAdjudication[] = (bundle.evaluationAdjudications ?? []).map((source) => {
+        const evaluation = mappedEvaluationsBySourceId.get(source.evaluationId)!;
         const adjudicationId = evaluationAdjudicationIds.get(source.id)!;
         const revisions = source.revisions.map((revision) => {
-          const mappedSourceSha256 = revision.sourceSha256
-            ? mappedReportSha256.get(revision.sourceSha256)
-            : undefined;
+          const mappedSourceSha256 = revision.sourceSha256 ? mappedReportSha256.get(revision.sourceSha256) : undefined;
           if (revision.source && !mappedSourceSha256) {
-            throw new Error(
-              `Imported consensus report is missing: ${revision.sourceSha256}`,
-            );
+            throw new Error(`Imported consensus report is missing: ${revision.sourceSha256}`);
           }
           const content = {
             revision: revision.revision,
@@ -8040,12 +6134,7 @@ export class LocalStore {
           };
           return {
             ...content,
-            contentSha256: hashEvaluationAdjudicationRevision(
-              adjudicationId,
-              threadId,
-              evaluation.id,
-              content,
-            ),
+            contentSha256: hashEvaluationAdjudicationRevision(adjudicationId, threadId, evaluation.id, content),
           };
         });
         return validateEvaluationAdjudication(
@@ -8060,76 +6149,56 @@ export class LocalStore {
         );
       });
       const mappedAdjudicationsBySourceId = new Map(
-        (bundle.evaluationAdjudications ?? []).map((source, index) => [
-          source.id,
-          evaluationAdjudications[index]!,
-        ]),
+        (bundle.evaluationAdjudications ?? []).map((source, index) => [source.id, evaluationAdjudications[index]!]),
       );
-      const evaluationConsensusResolutions: EvaluationConsensusResolution[] = (
-        bundle.evaluationConsensusResolutions ?? []
-      ).map((source) => {
-        const evaluation = mappedEvaluationsBySourceId.get(
-          source.evaluationId,
-        )!;
-        const report = mappedReportsByResolutionId.get(source.id)!;
-        const adjudication = mappedAdjudicationsBySourceId.get(
-          source.adjudicationId,
-        )!;
-        const adjudicationRevision = adjudication.revisions.find(
-          (revision) =>
-            revision.revision === source.adjudicationRevision.revision,
-        )!;
-        const id = evaluationConsensusResolutionIds.get(source.id)!;
-        const content = {
-          threadId,
-          evaluationId: evaluation.id,
-          evaluationSha256: hashRunEvaluation(evaluation),
-          report,
-          adjudicationId: adjudication.id,
-          adjudicationRevision,
-          createdAt: source.createdAt,
-        };
-        const resolution: EvaluationConsensusResolution = {
-          id,
-          ...content,
-          contentSha256: hashEvaluationConsensusResolution(id, content),
-        };
-        return validateEvaluationConsensusResolution(
-          resolution,
-          evaluation,
-          evaluationReviewerBallots.filter(
-            (ballot) => ballot.evaluationId === evaluation.id,
-          ),
-          adjudication,
-        );
-      });
-      const evaluationSuites: EvaluationSuite[] = (
-        bundle.evaluationSuites ?? []
-      ).map((source) => ({
+      const evaluationConsensusResolutions: EvaluationConsensusResolution[] = (bundle.evaluationConsensusResolutions ?? []).map(
+        (source) => {
+          const evaluation = mappedEvaluationsBySourceId.get(source.evaluationId)!;
+          const report = mappedReportsByResolutionId.get(source.id)!;
+          const adjudication = mappedAdjudicationsBySourceId.get(source.adjudicationId)!;
+          const adjudicationRevision = adjudication.revisions.find(
+            (revision) => revision.revision === source.adjudicationRevision.revision,
+          )!;
+          const id = evaluationConsensusResolutionIds.get(source.id)!;
+          const content = {
+            threadId,
+            evaluationId: evaluation.id,
+            evaluationSha256: hashRunEvaluation(evaluation),
+            report,
+            adjudicationId: adjudication.id,
+            adjudicationRevision,
+            createdAt: source.createdAt,
+          };
+          const resolution: EvaluationConsensusResolution = {
+            id,
+            ...content,
+            contentSha256: hashEvaluationConsensusResolution(id, content),
+          };
+          return validateEvaluationConsensusResolution(
+            resolution,
+            evaluation,
+            evaluationReviewerBallots.filter((ballot) => ballot.evaluationId === evaluation.id),
+            adjudication,
+          );
+        },
+      );
+      const evaluationSuites: EvaluationSuite[] = (bundle.evaluationSuites ?? []).map((source) => ({
         ...structuredClone(source),
         id: evaluationSuiteIds.get(source.id)!,
         threadId,
         baselineRunId: runIds.get(source.baselineRunId)!,
-        candidateRunIds: source.candidateRunIds.map(
-          (runId) => runIds.get(runId)!,
-        ),
+        candidateRunIds: source.candidateRunIds.map((runId) => runIds.get(runId)!),
       }));
-      const evaluationSuiteExecutions: EvaluationSuiteExecution[] = (
-        bundle.evaluationSuiteExecutions ?? []
-      ).map((source) => {
+      const evaluationSuiteExecutions: EvaluationSuiteExecution[] = (bundle.evaluationSuiteExecutions ?? []).map((source) => {
         const mapped: EvaluationSuiteExecution = {
           ...structuredClone(source),
           id: evaluationSuiteExecutionIds.get(source.id)!,
           suiteId: evaluationSuiteIds.get(source.suiteId)!,
           threadId,
           baselineRunId: runIds.get(source.baselineRunId)!,
-          candidateRunIds: source.candidateRunIds.map(
-            (runId) => runIds.get(runId)!,
-          ),
+          candidateRunIds: source.candidateRunIds.map((runId) => runIds.get(runId)!),
           results: source.results.map((result) => {
-            const evaluation = mappedEvaluationsBySourceId.get(
-              result.evaluationId,
-            )!;
+            const evaluation = mappedEvaluationsBySourceId.get(result.evaluationId)!;
             return {
               ...structuredClone(result),
               candidateRunId: runIds.get(result.candidateRunId)!,
@@ -8139,27 +6208,15 @@ export class LocalStore {
           }),
           contentSha256: "",
         };
-        const {
-          id: _id,
-          contentSha256: _contentSha256,
-          startedAt: _startedAt,
-          finishedAt: _finishedAt,
-          ...hashInput
-        } = mapped;
+        const { id: _id, contentSha256: _contentSha256, startedAt: _startedAt, finishedAt: _finishedAt, ...hashInput } = mapped;
         mapped.contentSha256 = hashEvaluationSuiteExecution(hashInput);
         return mapped;
       });
       for (const execution of evaluationSuiteExecutions) {
-        validateEvaluationSuiteExecution(
-          execution,
-          evaluationSuites,
-          evaluations,
-          runs,
-        );
+        validateEvaluationSuiteExecution(execution, evaluationSuites, evaluations, runs);
       }
       const subagents: SubagentTask[] = bundle.subagents.map((source) => {
-        const active =
-          source.status === "pending" || source.status === "running";
+        const active = source.status === "pending" || source.status === "running";
         const { outcome: _outcome, ...sourceTask } = structuredClone(source);
         const taskId = taskIds.get(source.id)!;
         return {
@@ -8179,17 +6236,14 @@ export class LocalStore {
             ? {
                 status: "cancelled" as const,
                 stopReason: "cancelled" as const,
-                error:
-                  "Imported fixture captured this subagent before it reached a terminal state.",
+                error: "Imported fixture captured this subagent before it reached a terminal state.",
                 finishedAt: importedAt,
                 revision: source.revision + 1,
               }
             : {}),
         };
       });
-      const subagentsById = new Map(
-        subagents.map((task) => [task.id, task] as const),
-      );
+      const subagentsById = new Map(subagents.map((task) => [task.id, task] as const));
       const importedEvents = bundle.events.filter(dropPrivateImportedEvent);
       const events: RunEvent[] = importedEvents.map((source, index) => {
         const payload = rebindImportedSubagentEventPayload(
@@ -8212,33 +6266,17 @@ export class LocalStore {
         };
       });
       const mappedAssessmentSha256 = new Map<string, string>();
-      const automaticRecoveryAssessments: AutomaticRecoveryAssessment[] = (
-        bundle.automaticRecoveryAssessments ?? []
-      )
+      const automaticRecoveryAssessments: AutomaticRecoveryAssessment[] = (bundle.automaticRecoveryAssessments ?? [])
         .slice()
-        .sort(
-          (left, right) =>
-            left.priorAttempts - right.priorAttempts ||
-            left.assessedAt.localeCompare(right.assessedAt),
-        )
+        .sort((left, right) => left.priorAttempts - right.priorAttempts || left.assessedAt.localeCompare(right.assessedAt))
         .map((source) => {
           for (const event of events) {
-            event.payload = remapImportedEventPayload(
-              event.type,
-              event.payload,
-              idMap,
-            );
+            event.payload = remapImportedEventPayload(event.type, event.payload, idMap);
           }
           const mappedRunId = runIds.get(source.runId)!;
           const mappedRootRunId = runIds.get(source.rootRunId)!;
-          const mappedRunEvents = events.filter(
-            (event) => event.runId === mappedRunId,
-          );
-          const {
-            contentSha256: _contentSha256,
-            eventRange: _eventRange,
-            ...sourceContent
-          } = source;
+          const mappedRunEvents = events.filter((event) => event.runId === mappedRunId);
+          const { contentSha256: _contentSha256, eventRange: _eventRange, ...sourceContent } = source;
           const content: Omit<AutomaticRecoveryAssessment, "contentSha256"> = {
             ...structuredClone(sourceContent),
             threadId,
@@ -8249,33 +6287,23 @@ export class LocalStore {
               fromSeq: mappedRunEvents[0]?.seq ?? 0,
               toSeq: mappedRunEvents.at(-1)?.seq ?? 0,
               eventCount: mappedRunEvents.length,
-              eventStreamSha256:
-                hashAutomaticRecoveryEventStream(mappedRunEvents),
+              eventStreamSha256: hashAutomaticRecoveryEventStream(mappedRunEvents),
             },
           };
           const mapped = validateAutomaticRecoveryAssessment({
             ...content,
             contentSha256: hashAutomaticRecoveryAssessment(content),
           });
-          mappedAssessmentSha256.set(
-            source.contentSha256,
-            mapped.contentSha256,
-          );
+          mappedAssessmentSha256.set(source.contentSha256, mapped.contentSha256);
           idMap.set(source.contentSha256, mapped.contentSha256);
           return mapped;
         });
-      const automaticRecoveryAttempts: PersistedAutomaticRecoveryAttempt[] = (
-        bundle.automaticRecoveryAttempts ?? []
-      ).map((source) => {
+      const automaticRecoveryAttempts: PersistedAutomaticRecoveryAttempt[] = (bundle.automaticRecoveryAttempts ?? []).map((source) => {
         const id = automaticRecoveryAttemptIds.get(source.id)!;
         const rootRunId = runIds.get(source.rootRunId)!;
         const interruptedRunId = runIds.get(source.interruptedRunId)!;
-        const assessmentSha256 = mappedAssessmentSha256.get(
-          source.assessmentSha256,
-        )!;
-        const mappedRecoveryRunId = source.recoveryRunId
-          ? runIds.get(source.recoveryRunId)
-          : undefined;
+        const assessmentSha256 = mappedAssessmentSha256.get(source.assessmentSha256)!;
+        const mappedRecoveryRunId = source.recoveryRunId ? runIds.get(source.recoveryRunId) : undefined;
         const convertedClaimed = source.status === "claimed";
         const convertedRunning = source.status === "running";
         const status: AutomaticRecoveryAttempt["status"] = convertedClaimed
@@ -8284,9 +6312,7 @@ export class LocalStore {
             ? "interrupted"
             : source.status;
         const triggerId = `automatic-recovery:${rootRunId}:${source.attempt}`;
-        const recoveryRun = mappedRecoveryRunId
-          ? runs.find((run) => run.id === mappedRecoveryRunId)
-          : undefined;
+        const recoveryRun = mappedRecoveryRunId ? runs.find((run) => run.id === mappedRecoveryRunId) : undefined;
         if (recoveryRun) recoveryRun.triggerId = triggerId;
         const converted = convertedClaimed || convertedRunning;
         const content: Omit<AutomaticRecoveryAttempt, "contentSha256"> = {
@@ -8300,27 +6326,18 @@ export class LocalStore {
           triggerId,
           assessmentSha256,
           status,
-          ...(!convertedClaimed && mappedRecoveryRunId
-            ? { recoveryRunId: mappedRecoveryRunId }
-            : {}),
+          ...(!convertedClaimed && mappedRecoveryRunId ? { recoveryRunId: mappedRecoveryRunId } : {}),
           ...(converted
             ? {
-                error:
-                  "Imported fixture closed an in-flight automatic recovery attempt.",
+                error: "Imported fixture closed an in-flight automatic recovery attempt.",
               }
             : source.error
               ? { error: source.error }
               : {}),
           createdAt: source.createdAt,
           updatedAt: converted ? importedAt : source.updatedAt,
-          ...(!convertedClaimed && source.startedAt
-            ? { startedAt: source.startedAt }
-            : {}),
-          ...(converted
-            ? { finishedAt: importedAt }
-            : source.finishedAt
-              ? { finishedAt: source.finishedAt }
-              : {}),
+          ...(!convertedClaimed && source.startedAt ? { startedAt: source.startedAt } : {}),
+          ...(converted ? { finishedAt: importedAt } : source.finishedAt ? { finishedAt: source.finishedAt } : {}),
           revision: source.revision + (converted ? 1 : 0),
         };
         const mapped = validateAutomaticRecoveryAttempt({
@@ -8331,24 +6348,13 @@ export class LocalStore {
         return mapped;
       });
       for (const event of events) {
-        event.payload = remapImportedEventPayload(
-          event.type,
-          event.payload,
-          idMap,
-        );
+        event.payload = remapImportedEventPayload(event.type, event.payload, idMap);
       }
       const importedStatus: ThreadStatus =
-        activeRunIds.size > 0 || bundle.thread.status === "waiting"
-          ? "waiting"
-          : bundle.thread.status === "failed"
-            ? "failed"
-            : "idle";
-      const goal = bundle.thread.goal
-        ? structuredClone(bundle.thread.goal)
-        : undefined;
+        activeRunIds.size > 0 || bundle.thread.status === "waiting" ? "waiting" : bundle.thread.status === "failed" ? "failed" : "idle";
+      const goal = bundle.thread.goal ? structuredClone(bundle.thread.goal) : undefined;
       if (goal?.lastEvaluatedRunId) {
-        goal.lastEvaluatedRunId =
-          runIds.get(goal.lastEvaluatedRunId) ?? goal.lastEvaluatedRunId;
+        goal.lastEvaluatedRunId = runIds.get(goal.lastEvaluatedRunId) ?? goal.lastEvaluatedRunId;
       }
       const localImportedThroughSeq = events.length + 1;
       const importProvenance: ThreadImportProvenance = {
@@ -8358,10 +6364,8 @@ export class LocalStore {
         sourceEventStreamSha256: bundle.eventStreamSha256,
         sourceEventCount: bundle.events.length,
         localImportedThroughSeq,
-        sourceModelContextEnvelopeCount:
-          bundleVerification.modelContextEnvelopeCount,
-        sourceEmbeddedModelContextEnvelopeCount:
-          bundleVerification.embeddedModelContextEnvelopeCount,
+        sourceModelContextEnvelopeCount: bundleVerification.modelContextEnvelopeCount,
+        sourceEmbeddedModelContextEnvelopeCount: bundleVerification.embeddedModelContextEnvelopeCount,
         importedAt,
       };
       events.push({
@@ -8377,9 +6381,7 @@ export class LocalStore {
       });
       const thread: ThreadRecord = {
         id: threadId,
-        title: normalizeImportedThreadTitle(
-          title ?? `${bundle.thread.title} (imported)`,
-        ),
+        title: normalizeImportedThreadTitle(title ?? `${bundle.thread.title} (imported)`),
         agentId,
         status: importedStatus,
         createdAt: importedAt,
@@ -8398,14 +6400,10 @@ export class LocalStore {
       this.state.evaluations.push(...evaluations);
       this.state.evaluationAdjudications.push(...evaluationAdjudications);
       this.state.evaluationReviewerBallots.push(...evaluationReviewerBallots);
-      this.state.evaluationConsensusResolutions.push(
-        ...evaluationConsensusResolutions,
-      );
+      this.state.evaluationConsensusResolutions.push(...evaluationConsensusResolutions);
       this.state.evaluationSuites.push(...evaluationSuites);
       this.state.evaluationSuiteExecutions.push(...evaluationSuiteExecutions);
-      this.state.automaticRecoveryAssessments.push(
-        ...automaticRecoveryAssessments,
-      );
+      this.state.automaticRecoveryAssessments.push(...automaticRecoveryAssessments);
       this.state.automaticRecoveryAttempts.push(...automaticRecoveryAttempts);
       this.state.subagents.push(...subagents);
       await this.persistState(events);
@@ -8423,10 +6421,7 @@ export class LocalStore {
     });
   }
 
-  async createLeasedRun(
-    input: CreateRunInput,
-    leaseOptions: RunLeaseOptions,
-  ): Promise<RunLeaseHandle> {
+  async createLeasedRun(input: CreateRunInput, leaseOptions: RunLeaseOptions): Promise<RunLeaseHandle> {
     this.assertInitialized();
     const ttlMs = validateLeaseTtl(leaseOptions.ttlMs);
     const ownerId = normalizeLeaseOwner(leaseOptions.ownerId);
@@ -8451,11 +6446,7 @@ export class LocalStore {
     });
   }
 
-  async renewRunLease(
-    runId: string,
-    token: string,
-    ttlMs: number,
-  ): Promise<RunRecord> {
+  async renewRunLease(runId: string, token: string, ttlMs: number): Promise<RunRecord> {
     this.assertInitialized();
     const normalizedTtl = validateLeaseTtl(ttlMs);
     return this.stateQueue.run(async () => {
@@ -8471,9 +6462,7 @@ export class LocalStore {
       run.lease = {
         ...run.lease,
         heartbeatAt,
-        expiresAt: new Date(
-          Date.parse(heartbeatAt) + normalizedTtl,
-        ).toISOString(),
+        expiresAt: new Date(Date.parse(heartbeatAt) + normalizedTtl).toISOString(),
         revision: run.lease.revision + 1,
       };
       await this.persistState();
@@ -8481,9 +6470,7 @@ export class LocalStore {
     });
   }
 
-  async recordAgentMilestone(
-    input: RecordAgentMilestoneStoreInput,
-  ): Promise<AgentMilestoneMutation> {
+  async recordAgentMilestone(input: RecordAgentMilestoneStoreInput): Promise<AgentMilestoneMutation> {
     this.assertInitialized();
     this.validateResourceId(input.threadId);
     this.validateResourceId(input.runId);
@@ -8494,27 +6481,17 @@ export class LocalStore {
         if (run.source === "workflow") {
           throw new Error("Workflow node Runs do not record Agent milestones");
         }
-        if (
-          run.threadId !== thread.id ||
-          run.status !== "running" ||
-          thread.currentRunId !== run.id
-        ) {
+        if (run.threadId !== thread.id || run.status !== "running" || thread.currentRunId !== run.id) {
           throw new Error("Agent milestone requires the active Thread Run");
         }
         const currentEvents = this.requireLedger().listEvents(thread.id);
         const current = projectAgentMilestones(currentEvents);
         if (current.length >= MAX_AGENT_MILESTONES_PER_THREAD) {
-          throw new Error(
-            `Agent milestone Thread limit reached (${MAX_AGENT_MILESTONES_PER_THREAD})`,
-          );
+          throw new Error(`Agent milestone Thread limit reached (${MAX_AGENT_MILESTONES_PER_THREAD})`);
         }
-        const runMilestones = current.filter(
-          (milestone) => milestone.runId === run.id,
-        );
+        const runMilestones = current.filter((milestone) => milestone.runId === run.id);
         if (runMilestones.length >= MAX_AGENT_MILESTONES_PER_RUN) {
-          throw new Error(
-            `Agent milestone Run limit reached (${MAX_AGENT_MILESTONES_PER_RUN})`,
-          );
+          throw new Error(`Agent milestone Run limit reached (${MAX_AGENT_MILESTONES_PER_RUN})`);
         }
         const payload = createAgentMilestoneRecordedPayload({
           milestoneId: createId("milestone"),
@@ -8525,9 +6502,7 @@ export class LocalStore {
             completedItems: input.completedItems,
             openLoops: input.openLoops,
           },
-          ...(runMilestones.at(-1)
-            ? { predecessor: runMilestones.at(-1)! }
-            : {}),
+          ...(runMilestones.at(-1) ? { predecessor: runMilestones.at(-1)! } : {}),
         });
         const events = this.appendEventsToThread(thread, [
           {
@@ -8540,10 +6515,7 @@ export class LocalStore {
           },
         ]);
         await this.persistState(events);
-        const milestone = projectAgentMilestones([
-          ...currentEvents,
-          ...events,
-        ]).find((candidate) => candidate.id === payload.milestoneId);
+        const milestone = projectAgentMilestones([...currentEvents, ...events]).find((candidate) => candidate.id === payload.milestoneId);
         if (!milestone) {
           throw new Error("Agent milestone receipt is invalid");
         }
@@ -8555,9 +6527,7 @@ export class LocalStore {
     );
   }
 
-  async requestOperatorDecision(
-    input: RequestOperatorDecisionStoreInput,
-  ): Promise<OperatorDecisionMutation> {
+  async requestOperatorDecision(input: RequestOperatorDecisionStoreInput): Promise<OperatorDecisionMutation> {
     this.assertInitialized();
     this.validateResourceId(input.threadId);
     this.validateResourceId(input.runId);
@@ -8565,33 +6535,18 @@ export class LocalStore {
       this.stateQueue.run(async () => {
         const thread = this.mutableThread(input.threadId);
         const run = this.mutableRun(input.runId);
-        if (
-          run.threadId !== thread.id ||
-          run.status !== "running" ||
-          thread.currentRunId !== run.id
-        ) {
+        if (run.threadId !== thread.id || run.status !== "running" || thread.currentRunId !== run.id) {
           throw new Error("Operator decision requires the active Thread Run");
         }
-        if (
-          run.source !== "workflow" &&
-          run.configuration?.model.provider === "napier" &&
-          run.configuration.model.id === "demo"
-        ) {
+        if (run.source !== "workflow" && run.configuration?.model.provider === "napier" && run.configuration.model.id === "demo") {
           throw new Error("The demo model cannot request operator decisions");
         }
         const currentEvents = this.requireLedger().listEvents(thread.id);
         const current = projectOperatorDecisions(currentEvents);
         if (current.length >= MAX_OPERATOR_DECISIONS_PER_THREAD) {
-          throw new Error(
-            `Operator decision limit reached (${MAX_OPERATOR_DECISIONS_PER_THREAD})`,
-          );
+          throw new Error(`Operator decision limit reached (${MAX_OPERATOR_DECISIONS_PER_THREAD})`);
         }
-        if (
-          current.some(
-            (decision) =>
-              decision.status === "pending" || decision.status === "answered",
-          )
-        ) {
+        if (current.some((decision) => decision.status === "pending" || decision.status === "answered")) {
           throw new Error("Thread already has an open operator decision");
         }
         const payload = createOperatorDecisionRequestedPayload({
@@ -8614,10 +6569,7 @@ export class LocalStore {
           },
         ]);
         await this.persistState(events);
-        const decision = projectOperatorDecisions([
-          ...currentEvents,
-          ...events,
-        ]).find((candidate) => candidate.id === payload.decisionId);
+        const decision = projectOperatorDecisions([...currentEvents, ...events]).find((candidate) => candidate.id === payload.decisionId);
         if (!decision || decision.status !== "pending") {
           throw new Error("Operator decision request receipt is invalid");
         }
@@ -8644,9 +6596,7 @@ export class LocalStore {
           throw new Error("Operator decision answer requires a waiting Thread");
         }
         const currentEvents = this.requireLedger().listEvents(thread.id);
-        const current = projectOperatorDecisions(currentEvents).find(
-          (decision) => decision.id === decisionId,
-        );
+        const current = projectOperatorDecisions(currentEvents).find((decision) => decision.id === decisionId);
         if (!current) {
           throw new Error(`Operator decision not found: ${decisionId}`);
         }
@@ -8654,19 +6604,11 @@ export class LocalStore {
           throw new Error("Operator decision has already been answered");
         }
         if (current.status !== "pending") {
-          throw new Error(
-            `Operator decision cannot be answered in ${current.status} state`,
-          );
+          throw new Error(`Operator decision cannot be answered in ${current.status} state`);
         }
         const originRun = this.mutableRun(current.runId);
-        if (
-          originRun.threadId !== thread.id ||
-          (originRun.status !== "completed" &&
-            originRun.status !== "interrupted")
-        ) {
-          throw new Error(
-            "Operator decision origin Run is not waiting for input",
-          );
+        if (originRun.threadId !== thread.id || (originRun.status !== "completed" && originRun.status !== "interrupted")) {
+          throw new Error("Operator decision origin Run is not waiting for input");
         }
         const payload = createOperatorDecisionAnsweredPayload({
           decision: current,
@@ -8683,10 +6625,7 @@ export class LocalStore {
           },
         ]);
         await this.persistState(events);
-        const decision = projectOperatorDecisions([
-          ...currentEvents,
-          ...events,
-        ]).find((candidate) => candidate.id === decisionId);
+        const decision = projectOperatorDecisions([...currentEvents, ...events]).find((candidate) => candidate.id === decisionId);
         if (!decision || decision.status !== "answered") {
           throw new Error("Operator decision answer receipt is invalid");
         }
@@ -8698,11 +6637,7 @@ export class LocalStore {
     );
   }
 
-  async continueOperatorDecision(
-    threadId: string,
-    decisionId: string,
-    continuationRunId: string,
-  ): Promise<OperatorDecisionMutation> {
+  async continueOperatorDecision(threadId: string, decisionId: string, continuationRunId: string): Promise<OperatorDecisionMutation> {
     this.assertInitialized();
     this.validateResourceId(threadId);
     this.validateResourceId(decisionId);
@@ -8712,16 +6647,12 @@ export class LocalStore {
         const thread = this.mutableThread(threadId);
         const continuationRun = this.mutableRun(continuationRunId);
         const currentEvents = this.requireLedger().listEvents(thread.id);
-        const current = projectOperatorDecisions(currentEvents).find(
-          (decision) => decision.id === decisionId,
-        );
+        const current = projectOperatorDecisions(currentEvents).find((decision) => decision.id === decisionId);
         if (!current) {
           throw new Error(`Operator decision not found: ${decisionId}`);
         }
         if (current.status !== "answered") {
-          throw new Error(
-            `Operator decision cannot continue in ${current.status} state`,
-          );
+          throw new Error(`Operator decision cannot continue in ${current.status} state`);
         }
         if (
           thread.currentRunId !== continuationRun.id ||
@@ -8729,9 +6660,7 @@ export class LocalStore {
           continuationRun.status !== "running" ||
           continuationRun.parentRunId !== current.runId
         ) {
-          throw new Error(
-            "Operator decision continuation Run binding is invalid",
-          );
+          throw new Error("Operator decision continuation Run binding is invalid");
         }
         const payload = createOperatorDecisionContinuedPayload({
           decision: current,
@@ -8748,10 +6677,7 @@ export class LocalStore {
           },
         ]);
         await this.persistState(events);
-        const decision = projectOperatorDecisions([
-          ...currentEvents,
-          ...events,
-        ]).find((candidate) => candidate.id === decisionId);
+        const decision = projectOperatorDecisions([...currentEvents, ...events]).find((candidate) => candidate.id === decisionId);
         if (!decision || decision.status !== "continued") {
           throw new Error("Operator decision continuation receipt is invalid");
         }
@@ -8775,14 +6701,10 @@ export class LocalStore {
       this.stateQueue.run(async () => {
         const thread = this.mutableThread(threadId);
         if (thread.currentRunId) {
-          throw new Error(
-            "Operator decision cannot be cancelled while the Thread is running",
-          );
+          throw new Error("Operator decision cannot be cancelled while the Thread is running");
         }
         const currentEvents = this.requireLedger().listEvents(thread.id);
-        const current = projectOperatorDecisions(currentEvents).find(
-          (decision) => decision.id === decisionId,
-        );
+        const current = projectOperatorDecisions(currentEvents).find((decision) => decision.id === decisionId);
         if (!current) {
           throw new Error(`Operator decision not found: ${decisionId}`);
         }
@@ -8804,18 +6726,11 @@ export class LocalStore {
           },
         ]);
         const originRun = this.mutableRun(current.runId);
-        if (
-          thread.status === "waiting" &&
-          (originRun.status === "completed" ||
-            originRun.status === "interrupted")
-        ) {
+        if (thread.status === "waiting" && (originRun.status === "completed" || originRun.status === "interrupted")) {
           thread.status = "idle";
         }
         await this.persistState(events);
-        const decision = projectOperatorDecisions([
-          ...currentEvents,
-          ...events,
-        ]).find((candidate) => candidate.id === decisionId);
+        const decision = projectOperatorDecisions([...currentEvents, ...events]).find((candidate) => candidate.id === decisionId);
         if (!decision || decision.status !== "cancelled") {
           throw new Error("Operator decision cancellation receipt is invalid");
         }
@@ -8827,9 +6742,7 @@ export class LocalStore {
     );
   }
 
-  async queueRunControlMessage(
-    input: QueueRunControlMessageInput,
-  ): Promise<RunControlMessage> {
+  async queueRunControlMessage(input: QueueRunControlMessageInput): Promise<RunControlMessage> {
     this.assertInitialized();
     this.validateResourceId(input.threadId);
     this.validateResourceId(input.runId);
@@ -8838,42 +6751,21 @@ export class LocalStore {
         const thread = this.mutableThread(input.threadId);
         const run = this.mutableRun(input.runId);
         if (run.source === "workflow") {
-          throw new Error(
-            "Workflow node Runs do not accept live Run control messages",
-          );
+          throw new Error("Workflow node Runs do not accept live Run control messages");
         }
-        if (
-          run.threadId !== thread.id ||
-          run.status !== "running" ||
-          thread.currentRunId !== run.id
-        ) {
+        if (run.threadId !== thread.id || run.status !== "running" || thread.currentRunId !== run.id) {
           throw new Error("Run control message requires the active Thread Run");
         }
-        if (
-          run.configuration?.model.provider === "napier" &&
-          run.configuration.model.id === "demo"
-        ) {
-          throw new Error(
-            "The demo model does not accept live Run control messages",
-          );
+        if (run.configuration?.model.provider === "napier" && run.configuration.model.id === "demo") {
+          throw new Error("The demo model does not accept live Run control messages");
         }
         const currentEvents = this.requireLedger().listEvents(thread.id);
-        const currentMessages = projectRunControlMessages(
-          currentEvents,
-          run.id,
-        );
+        const currentMessages = projectRunControlMessages(currentEvents, run.id);
         if (currentMessages.length >= MAX_TOTAL_RUN_CONTROL_MESSAGES) {
-          throw new Error(
-            `Run control message total limit reached (${MAX_TOTAL_RUN_CONTROL_MESSAGES})`,
-          );
+          throw new Error(`Run control message total limit reached (${MAX_TOTAL_RUN_CONTROL_MESSAGES})`);
         }
-        if (
-          currentMessages.filter((message) => message.status === "queued")
-            .length >= MAX_PENDING_RUN_CONTROL_MESSAGES
-        ) {
-          throw new Error(
-            `Run control message pending limit reached (${MAX_PENDING_RUN_CONTROL_MESSAGES})`,
-          );
+        if (currentMessages.filter((message) => message.status === "queued").length >= MAX_PENDING_RUN_CONTROL_MESSAGES) {
+          throw new Error(`Run control message pending limit reached (${MAX_PENDING_RUN_CONTROL_MESSAGES})`);
         }
         const payload = createRunControlMessageQueuedPayload({
           controlMessageId: createId("control"),
@@ -8894,10 +6786,9 @@ export class LocalStore {
           throw new Error("Run control message queue event was not created");
         }
         await this.persistState(queuedEvent);
-        const message = projectRunControlMessages(
-          [...currentEvents, queuedEvent],
-          run.id,
-        ).find((candidate) => candidate.id === payload.controlMessageId);
+        const message = projectRunControlMessages([...currentEvents, queuedEvent], run.id).find(
+          (candidate) => candidate.id === payload.controlMessageId,
+        );
         if (!message) {
           throw new Error("Run control message queue receipt is invalid");
         }
@@ -8918,20 +6809,11 @@ export class LocalStore {
       this.stateQueue.run(async () => {
         const thread = this.mutableThread(threadId);
         const run = this.mutableRun(runId);
-        if (
-          run.source === "workflow" ||
-          run.threadId !== thread.id ||
-          run.status !== "running" ||
-          thread.currentRunId !== run.id
-        ) {
+        if (run.source === "workflow" || run.threadId !== thread.id || run.status !== "running" || thread.currentRunId !== run.id) {
           return undefined;
         }
         const currentEvents = this.requireLedger().listEvents(thread.id);
-        const pending = nextPendingRunControlMessage(
-          currentEvents,
-          run.id,
-          mode,
-        );
+        const pending = nextPendingRunControlMessage(currentEvents, run.id, mode);
         if (!pending) return undefined;
         const messageEventSeq = thread.eventCount + 2;
         const deliveredPayload = createRunControlMessageDeliveredPayload({
@@ -8957,10 +6839,9 @@ export class LocalStore {
           },
         ]);
         await this.persistState(deliveryEvents);
-        const message = projectRunControlMessages(
-          [...currentEvents, ...deliveryEvents],
-          run.id,
-        ).find((candidate) => candidate.id === pending.message.id);
+        const message = projectRunControlMessages([...currentEvents, ...deliveryEvents], run.id).find(
+          (candidate) => candidate.id === pending.message.id,
+        );
         if (!message || message.status !== "delivered") {
           throw new Error("Run control message delivery receipt is invalid");
         }
@@ -8973,11 +6854,7 @@ export class LocalStore {
     );
   }
 
-  async cancelRunControlMessage(
-    threadId: string,
-    runId: string,
-    controlMessageId: string,
-  ): Promise<RunControlMessage> {
+  async cancelRunControlMessage(threadId: string, runId: string, controlMessageId: string): Promise<RunControlMessage> {
     this.assertInitialized();
     this.validateResourceId(threadId);
     this.validateResourceId(runId);
@@ -8990,9 +6867,7 @@ export class LocalStore {
           throw new Error(`Run not found in thread: ${runId}`);
         }
         const currentEvents = this.requireLedger().listEvents(thread.id);
-        const current = projectRunControlMessages(currentEvents, run.id).find(
-          (message) => message.id === controlMessageId,
-        );
+        const current = projectRunControlMessages(currentEvents, run.id).find((message) => message.id === controlMessageId);
         if (!current) {
           throw new Error(`Run control message not found: ${controlMessageId}`);
         }
@@ -9015,19 +6890,14 @@ export class LocalStore {
           },
         ]);
         if (!cancelledEvent) {
-          throw new Error(
-            "Run control message cancellation event was not created",
-          );
+          throw new Error("Run control message cancellation event was not created");
         }
         await this.persistState(cancelledEvent);
-        const cancelled = projectRunControlMessages(
-          [...currentEvents, cancelledEvent],
-          run.id,
-        ).find((message) => message.id === controlMessageId);
+        const cancelled = projectRunControlMessages([...currentEvents, cancelledEvent], run.id).find(
+          (message) => message.id === controlMessageId,
+        );
         if (!cancelled || cancelled.status !== "cancelled") {
-          throw new Error(
-            "Run control message cancellation receipt is invalid",
-          );
+          throw new Error("Run control message cancellation receipt is invalid");
         }
         return structuredClone(cancelled);
       }),
@@ -9052,22 +6922,12 @@ export class LocalStore {
       }
       const thread = this.mutableThread(run.threadId);
       const waitingDecision = options.waitForOperatorDecisionId
-        ? projectOperatorDecisions(
-            this.requireLedger().listEvents(thread.id),
-            run.id,
-          ).find(
-            (decision) =>
-              decision.id === options.waitForOperatorDecisionId &&
-              decision.status === "pending",
+        ? projectOperatorDecisions(this.requireLedger().listEvents(thread.id), run.id).find(
+            (decision) => decision.id === options.waitForOperatorDecisionId && decision.status === "pending",
           )
         : undefined;
-      if (
-        options.waitForOperatorDecisionId &&
-        (status !== "completed" || !waitingDecision)
-      ) {
-        throw new Error(
-          "Run cannot wait without its pending operator decision",
-        );
+      if (options.waitForOperatorDecisionId && (status !== "completed" || !waitingDecision)) {
+        throw new Error("Run cannot wait without its pending operator decision");
       }
       run.status = status;
       run.finishedAt = nowIso();
@@ -9076,9 +6936,7 @@ export class LocalStore {
       delete run.lease;
       delete run.leaseTokenSha256;
       thread.updatedAt = run.finishedAt;
-      const runOrder = new Map(
-        thread.runIds.map((candidateRunId, index) => [candidateRunId, index]),
-      );
+      const runOrder = new Map(thread.runIds.map((candidateRunId, index) => [candidateRunId, index]));
       const remainingActiveRuns = this.state.runs
         .filter(
           (candidate) =>
@@ -9089,8 +6947,7 @@ export class LocalStore {
         .sort(
           (left, right) =>
             left.startedAt.localeCompare(right.startedAt) ||
-            (runOrder.get(left.id) ?? Number.MAX_SAFE_INTEGER) -
-              (runOrder.get(right.id) ?? Number.MAX_SAFE_INTEGER),
+            (runOrder.get(left.id) ?? Number.MAX_SAFE_INTEGER) - (runOrder.get(right.id) ?? Number.MAX_SAFE_INTEGER),
         );
       if (thread.currentRunId === run.id) {
         const replacement = remainingActiveRuns[0];
@@ -9098,24 +6955,11 @@ export class LocalStore {
         else delete thread.currentRunId;
       }
       const cancellationEvents = [
-        ...this.cancelPendingRunControlMessages(
-          thread,
-          run.id,
-          runControlMessageCancellationReason(status),
-        ),
-        ...this.cancelPendingOperatorDecisions(
-          thread,
-          run.id,
-          operatorDecisionCancellationReason(status),
-          waitingDecision?.id,
-        ),
+        ...this.cancelPendingRunControlMessages(thread, run.id, runControlMessageCancellationReason(status)),
+        ...this.cancelPendingOperatorDecisions(thread, run.id, operatorDecisionCancellationReason(status), waitingDecision?.id),
       ];
-      const openDecision = projectOperatorDecisions([
-        ...this.requireLedger().listEvents(thread.id),
-        ...cancellationEvents,
-      ]).find(
-        (decision) =>
-          decision.status === "pending" || decision.status === "answered",
+      const openDecision = projectOperatorDecisions([...this.requireLedger().listEvents(thread.id), ...cancellationEvents]).find(
+        (decision) => decision.status === "pending" || decision.status === "answered",
       );
       thread.status =
         remainingActiveRuns.length > 0
@@ -9142,10 +6986,7 @@ export class LocalStore {
     });
   }
 
-  async setGoal(
-    threadId: string,
-    goal: GoalState | undefined,
-  ): Promise<ThreadRecord> {
+  async setGoal(threadId: string, goal: GoalState | undefined): Promise<ThreadRecord> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
       const thread = this.mutableThread(threadId);
@@ -9172,8 +7013,7 @@ export class LocalStore {
   }
 
   private async reconcileInterruptedRuns(interruptActiveLeases = false): Promise<void> {
-    const reason =
-      "The runtime process exited or its renewable owner lease expired before this run reached a terminal state.";
+    const reason = "The runtime process exited or its renewable owner lease expired before this run reached a terminal state.";
     const timestamp = nowIso();
     const timestampMs = Date.parse(timestamp);
     const interruptedRunIds = new Set<string>();
@@ -9204,19 +7044,14 @@ export class LocalStore {
       }
       for (const delivery of this.state.inboundDeliveries) {
         if (delivery.status !== "running") continue;
-        const attemptTriggerId =
-          delivery.attemptCount <= 1
-            ? delivery.triggerId
-            : `${delivery.triggerId}:attempt:${delivery.attemptCount}`;
+        const attemptTriggerId = delivery.attemptCount <= 1 ? delivery.triggerId : `${delivery.triggerId}:attempt:${delivery.attemptCount}`;
         const activeRun = this.state.runs.find(
           (run) =>
-            (run.id === delivery.runId || run.triggerId === attemptTriggerId) &&
-            (run.status === "queued" || run.status === "running"),
+            (run.id === delivery.runId || run.triggerId === attemptTriggerId) && (run.status === "queued" || run.status === "running"),
         );
         if (activeRun && !interruptedRunIds.has(activeRun.id)) continue;
         delivery.status = "failed";
-        delivery.error =
-          "Runtime restarted before the inbound delivery settled.";
+        delivery.error = "Runtime restarted before the inbound delivery settled.";
         delivery.finishedAt = timestamp;
         delete delivery.nextAttemptAt;
         delivery.revision += 1;
@@ -9228,10 +7063,7 @@ export class LocalStore {
           thread.status = "waiting";
           thread.updatedAt = timestamp;
           changed = true;
-        } else if (
-          thread.status === "running" &&
-          thread.runIds.some((runId) => interruptedRunIds.has(runId))
-        ) {
+        } else if (thread.status === "running" && thread.runIds.some((runId) => interruptedRunIds.has(runId))) {
           thread.status = "waiting";
           thread.updatedAt = timestamp;
           changed = true;
@@ -9240,19 +7072,10 @@ export class LocalStore {
       for (const runId of interruptedRunIds) {
         const run = this.mutableRun(runId);
         const thread = this.mutableThread(run.threadId);
-        runControlCancellationEvents.push(
-          ...this.cancelPendingRunControlMessages(
-            thread,
-            run.id,
-            "run_interrupted_before_delivery",
-          ),
-        );
+        runControlCancellationEvents.push(...this.cancelPendingRunControlMessages(thread, run.id, "run_interrupted_before_delivery"));
       }
       for (const task of this.state.subagents) {
-        if (
-          !interruptedRunIds.has(task.runId) ||
-          (task.status !== "pending" && task.status !== "running")
-        ) {
+        if (!interruptedRunIds.has(task.runId) || (task.status !== "pending" && task.status !== "running")) {
           continue;
         }
         task.status = "cancelled";
@@ -9266,9 +7089,7 @@ export class LocalStore {
         const current = this.state.plans[index]!;
         let updated = current;
         for (const runId of interruptedRunIds) {
-          const affected = updated.steps.filter(
-            (step) => step.status === "running" && step.runId === runId,
-          );
+          const affected = updated.steps.filter((step) => step.status === "running" && step.runId === runId);
           if (affected.length === 0) continue;
           updated = interruptPlanRun(updated, runId, reason);
           interruptedPlanSteps.push(
@@ -9300,16 +7121,10 @@ export class LocalStore {
       if (changed) await this.persistState(runControlCancellationEvents);
     });
 
-    const interruptedRuns = this.state.runs.filter(
-      (run) => run.status === "interrupted",
-    );
+    const interruptedRuns = this.state.runs.filter((run) => run.status === "interrupted");
     for (const run of interruptedRuns) {
       const events = await this.listEvents(run.threadId);
-      if (
-        !events.some(
-          (event) => event.runId === run.id && event.type === "run.interrupted",
-        )
-      ) {
+      if (!events.some((event) => event.runId === run.id && event.type === "run.interrupted")) {
         await this.appendEvent({
           threadId: run.threadId,
           runId: run.id,
@@ -9324,10 +7139,7 @@ export class LocalStore {
         });
       }
       const tasks = this.state.subagents.filter(
-        (task) =>
-          task.runId === run.id &&
-          task.status === "cancelled" &&
-          task.stopReason === "cancelled",
+        (task) => task.runId === run.id && task.status === "cancelled" && task.stopReason === "cancelled",
       );
       const currentEvents = await this.listEvents(run.threadId);
       for (const task of tasks) {
@@ -9382,8 +7194,7 @@ export class LocalStore {
           runId: step.runId,
           status: "blocked",
           blocker: step.blocker,
-          evidence:
-            "The step outcome is unknown and must be verified before reopening.",
+          evidence: "The step outcome is unknown and must be verified before reopening.",
         },
       });
     }
@@ -9394,17 +7205,12 @@ export class LocalStore {
     const state: PersistedState = {
       ...structuredClone(EMPTY_STATE),
       agents: [agent],
-      agentRevisions: [
-        createAgentProfileRevision(agent, { source: "created" }),
-      ],
+      agentRevisions: [createAgentProfileRevision(agent, { source: "created" })],
       agentCapabilityBindings: [createSeededCapabilityBinding(agent)],
       threads: [thread],
       runs: [run],
     };
-    const snapshot = this.requireLedger().bootstrap(
-      JSON.stringify(state),
-      events,
-    );
+    const snapshot = this.requireLedger().bootstrap(JSON.stringify(state), events);
     this.restoreSnapshot(snapshot);
     await Promise.allSettled([
       this.writeStateProjection(JSON.stringify(this.state, null, 2)),
@@ -9412,19 +7218,9 @@ export class LocalStore {
     ]);
   }
 
-  private validateState(
-    state: PersistedState,
-    sourceBindingEvents?: readonly RunEvent[],
-  ): PersistedState {
-    if (
-      state.version !== 1 ||
-      !Array.isArray(state.agents) ||
-      !Array.isArray(state.threads) ||
-      !Array.isArray(state.runs)
-    ) {
-      throw new Error(
-        `Unsupported or invalid Napier state at ${this.statePath}`,
-      );
+  private validateState(state: PersistedState, sourceBindingEvents?: readonly RunEvent[]): PersistedState {
+    if (state.version !== 1 || !Array.isArray(state.agents) || !Array.isArray(state.threads) || !Array.isArray(state.runs)) {
+      throw new Error(`Unsupported or invalid Napier state at ${this.statePath}`);
     }
     const migrateAgentRevisions = !Array.isArray(state.agentRevisions);
     if (migrateAgentRevisions) state.agentRevisions = [];
@@ -9462,53 +7258,25 @@ export class LocalStore {
     if (!Array.isArray(state.receiptTrustAnchorDirectorySubscriptions)) {
       state.receiptTrustAnchorDirectorySubscriptions = [];
     }
-    if (
-      !Array.isArray(
-        state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions,
-      )
-    ) {
-      state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions =
-        [];
+    if (!Array.isArray(state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions)) {
+      state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions = [];
     }
-    if (
-      !Array.isArray(
-        state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions,
-      )
-    ) {
-      state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions =
-        [];
+    if (!Array.isArray(state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions)) {
+      state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions = [];
     }
-    if (
-      !Array.isArray(
-        state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines,
-      )
-    ) {
-      state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines =
-        [];
+    if (!Array.isArray(state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines)) {
+      state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines = [];
     }
-    if (
-      !Array.isArray(state.receiptTrustAnchorDirectoryQuorumPromotionBaselines)
-    ) {
+    if (!Array.isArray(state.receiptTrustAnchorDirectoryQuorumPromotionBaselines)) {
       state.receiptTrustAnchorDirectoryQuorumPromotionBaselines = [];
     }
-    if (
-      !Array.isArray(
-        state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines,
-      )
-    ) {
-      state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines =
-        [];
+    if (!Array.isArray(state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines)) {
+      state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines = [];
     }
-    if (
-      !Array.isArray(state.receiptTrustAnchorDirectoryQuorumActivationDecisions)
-    ) {
+    if (!Array.isArray(state.receiptTrustAnchorDirectoryQuorumActivationDecisions)) {
       state.receiptTrustAnchorDirectoryQuorumActivationDecisions = [];
     }
-    if (
-      !Array.isArray(
-        state.receiptTrustAnchorDirectoryQuorumActivationSelections,
-      )
-    ) {
+    if (!Array.isArray(state.receiptTrustAnchorDirectoryQuorumActivationSelections)) {
       state.receiptTrustAnchorDirectoryQuorumActivationSelections =
         state.receiptTrustAnchorDirectoryQuorumActivationSelection === undefined
           ? []
@@ -9535,16 +7303,10 @@ export class LocalStore {
     if (!Array.isArray(state.executionPlanBlueprintOutcomeBaselines)) {
       state.executionPlanBlueprintOutcomeBaselines = [];
     }
-    if (
-      !Array.isArray(state.executionPlanBlueprintRecommendationPolicyOverrides)
-    ) {
+    if (!Array.isArray(state.executionPlanBlueprintRecommendationPolicyOverrides)) {
       state.executionPlanBlueprintRecommendationPolicyOverrides = [];
     }
-    if (
-      !Array.isArray(
-        state.executionPlanBlueprintRecommendationPolicyOverrideRetirements,
-      )
-    ) {
+    if (!Array.isArray(state.executionPlanBlueprintRecommendationPolicyOverrideRetirements)) {
       state.executionPlanBlueprintRecommendationPolicyOverrideRetirements = [];
     }
     if (!Array.isArray(state.credentials)) state.credentials = [];
@@ -9553,13 +7315,8 @@ export class LocalStore {
     if (!Array.isArray(state.inboundDeliveries)) {
       state.inboundDeliveries = [];
     }
-    if (
-      state.extensionPublisherTrustAnchors.length >
-      MAX_EXTENSION_PUBLISHER_TRUST_ANCHORS
-    ) {
-      throw new Error(
-        "Persisted Extension publisher trust anchor limit is exceeded",
-      );
+    if (state.extensionPublisherTrustAnchors.length > MAX_EXTENSION_PUBLISHER_TRUST_ANCHORS) {
+      throw new Error("Persisted Extension publisher trust anchor limit is exceeded");
     }
     const extensionPublisherAnchorIds = new Set<string>();
     const extensionPublisherKeyIds = new Set<string>();
@@ -9571,10 +7328,7 @@ export class LocalStore {
       }
       threadIds.add(thread.id);
       if (thread.importProvenance !== undefined) {
-        thread.importProvenance = validateThreadImportProvenance(
-          thread,
-          thread.importProvenance,
-        );
+        thread.importProvenance = validateThreadImportProvenance(thread, thread.importProvenance);
       }
     }
     for (const input of state.extensionPublisherTrustAnchors) {
@@ -9583,12 +7337,9 @@ export class LocalStore {
       if (
         extensionPublisherAnchorIds.has(anchor.id) ||
         extensionPublisherKeyIds.has(anchor.keyId) ||
-        (signingSource !== undefined &&
-          extensionPublisherSigningSources.has(signingSource))
+        (signingSource !== undefined && extensionPublisherSigningSources.has(signingSource))
       ) {
-        throw new Error(
-          `Duplicate persisted Extension publisher trust anchor: ${anchor.id}`,
-        );
+        throw new Error(`Duplicate persisted Extension publisher trust anchor: ${anchor.id}`);
       }
       extensionPublisherAnchorIds.add(anchor.id);
       extensionPublisherKeyIds.add(anchor.keyId);
@@ -9600,16 +7351,12 @@ export class LocalStore {
     for (const input of state.executionPlanBlueprints) {
       const record = validateExecutionPlanBlueprintRecord(input);
       if (executionPlanBlueprintIds.has(record.id)) {
-        throw new Error(
-          `Duplicate persisted Execution Plan blueprint: ${record.id}`,
-        );
+        throw new Error(`Duplicate persisted Execution Plan blueprint: ${record.id}`);
       }
       executionPlanBlueprintIds.add(record.id);
       if (record.status === "active") {
         if (activeExecutionPlanBlueprintHashes.has(record.blueprintSha256)) {
-          throw new Error(
-            `Duplicate active Execution Plan blueprint hash: ${record.id}`,
-          );
+          throw new Error(`Duplicate active Execution Plan blueprint hash: ${record.id}`);
         }
         activeExecutionPlanBlueprintHashes.add(record.blueprintSha256);
       }
@@ -9617,10 +7364,7 @@ export class LocalStore {
     }
     const outcomeBaselineIds = new Set<string>();
     const outcomeBaselineKeys = new Set<string>();
-    const latestOutcomeBaselineByRecord = new Map<
-      string,
-      ExecutionPlanBlueprintRecordOutcomeBaseline
-    >();
+    const latestOutcomeBaselineByRecord = new Map<string, ExecutionPlanBlueprintRecordOutcomeBaseline>();
     for (const input of state.executionPlanBlueprintOutcomeBaselines) {
       const baseline = validateExecutionPlanBlueprintOutcomeBaseline(input);
       const previous = latestOutcomeBaselineByRecord.get(baseline.recordId);
@@ -9631,9 +7375,7 @@ export class LocalStore {
         !executionPlanBlueprintIds.has(baseline.recordId) ||
         baseline.supersedesBaselineId !== previous?.id
       ) {
-        throw new Error(
-          `Persisted Execution Plan blueprint outcome baseline is invalid: ${baseline.id}`,
-        );
+        throw new Error(`Persisted Execution Plan blueprint outcome baseline is invalid: ${baseline.id}`);
       }
       outcomeBaselineIds.add(baseline.id);
       outcomeBaselineKeys.add(baselineKey);
@@ -9642,34 +7384,22 @@ export class LocalStore {
     }
     const recommendationPolicyOverrideFamilies = new Set<string>();
     for (const input of state.executionPlanBlueprintRecommendationPolicyOverrides) {
-      const override =
-        validateExecutionPlanBlueprintRecommendationPolicyOverride(input);
+      const override = validateExecutionPlanBlueprintRecommendationPolicyOverride(input);
       if (recommendationPolicyOverrideFamilies.has(override.familySha256)) {
-        throw new Error(
-          `Duplicate persisted Execution Plan blueprint recommendation policy override: ${override.familySha256}`,
-        );
+        throw new Error(`Duplicate persisted Execution Plan blueprint recommendation policy override: ${override.familySha256}`);
       }
       recommendationPolicyOverrideFamilies.add(override.familySha256);
       Object.assign(input, override);
     }
     const recommendationPolicyOverrideRetirementHashes = new Set<string>();
     for (const input of state.executionPlanBlueprintRecommendationPolicyOverrideRetirements) {
-      const retirement =
-        validateExecutionPlanBlueprintRecommendationPolicyOverrideRetirementResult(
-          input,
-        );
-      if (
-        recommendationPolicyOverrideRetirementHashes.has(
-          retirement.contentSha256,
-        )
-      ) {
+      const retirement = validateExecutionPlanBlueprintRecommendationPolicyOverrideRetirementResult(input);
+      if (recommendationPolicyOverrideRetirementHashes.has(retirement.contentSha256)) {
         throw new Error(
           `Duplicate persisted Execution Plan blueprint recommendation policy override retirement: ${retirement.contentSha256}`,
         );
       }
-      recommendationPolicyOverrideRetirementHashes.add(
-        retirement.contentSha256,
-      );
+      recommendationPolicyOverrideRetirementHashes.add(retirement.contentSha256);
       Object.assign(input, retirement);
     }
     const skillPackageInstallationIds = new Set<string>();
@@ -9677,9 +7407,7 @@ export class LocalStore {
     for (const input of state.skillPackageInstallations) {
       const installation = validateSkillPackageInstallation(input);
       if (skillPackageInstallationIds.has(installation.id)) {
-        throw new Error(
-          `Duplicate persisted Skill package installation: ${installation.id}`,
-        );
+        throw new Error(`Duplicate persisted Skill package installation: ${installation.id}`);
       }
       skillPackageInstallationIds.add(installation.id);
       if (installation.status === "active") {
@@ -9688,95 +7416,44 @@ export class LocalStore {
       Object.assign(input, installation);
     }
     if (activeSkillPackageInstallationCount > 1) {
-      throw new Error(
-        "Multiple active Skill package installations are invalid",
-      );
+      throw new Error("Multiple active Skill package installations are invalid");
     }
     for (const installation of state.skillPackageInstallations) {
-      if (
-        installation.replacesInstallationId &&
-        !skillPackageInstallationIds.has(installation.replacesInstallationId)
-      ) {
-        throw new Error(
-          `Persisted Skill package replacement target is missing: ${installation.id}`,
-        );
+      if (installation.replacesInstallationId && !skillPackageInstallationIds.has(installation.replacesInstallationId)) {
+        throw new Error(`Persisted Skill package replacement target is missing: ${installation.id}`);
       }
-      if (
-        installation.replacedByInstallationId &&
-        !skillPackageInstallationIds.has(installation.replacedByInstallationId)
-      ) {
-        throw new Error(
-          `Persisted Skill package replacement successor is missing: ${installation.id}`,
-        );
+      if (installation.replacedByInstallationId && !skillPackageInstallationIds.has(installation.replacedByInstallationId)) {
+        throw new Error(`Persisted Skill package replacement successor is missing: ${installation.id}`);
       }
     }
     for (const extension of state.extensions) {
-      if (
-        (extension.provenance.source === "signed_package") !==
-        Boolean(extension.packageBinding)
-      ) {
-        throw new Error(
-          `Persisted Extension package provenance is invalid: ${extension.id}`,
-        );
+      if ((extension.provenance.source === "signed_package") !== Boolean(extension.packageBinding)) {
+        throw new Error(`Persisted Extension package provenance is invalid: ${extension.id}`);
       }
-      if (
-        extension.packageHistory !== undefined &&
-        !Array.isArray(extension.packageHistory)
-      ) {
-        throw new Error(
-          `Persisted Extension package history is invalid: ${extension.id}`,
-        );
+      if (extension.packageHistory !== undefined && !Array.isArray(extension.packageHistory)) {
+        throw new Error(`Persisted Extension package history is invalid: ${extension.id}`);
       }
       if (extension.packageBinding && extension.packageHistory === undefined) {
         extension.packageHistory = [];
       }
       if (extension.packageBinding || extension.packageHistory !== undefined) {
-        extension.packageHistory = validateExtensionPackageHistory(
-          extension,
-          state.extensionPublisherTrustAnchors,
-        );
+        extension.packageHistory = validateExtensionPackageHistory(extension, state.extensionPublisherTrustAnchors);
       }
-      const verification = verifyBoundExtensionPackageTrust(
-        extension,
-        state.extensionPublisherTrustAnchors,
-      );
-      if (
-        verification &&
-        verification.status !== "trusted" &&
-        verification.status !== "revoked" &&
-        verification.status !== "expired"
-      ) {
-        throw new Error(
-          `Persisted signed Extension package is invalid: ${extension.id}: ${verification.reason}`,
-        );
+      const verification = verifyBoundExtensionPackageTrust(extension, state.extensionPublisherTrustAnchors);
+      if (verification && verification.status !== "trusted" && verification.status !== "revoked" && verification.status !== "expired") {
+        throw new Error(`Persisted signed Extension package is invalid: ${extension.id}: ${verification.reason}`);
       }
     }
-    validateExtensionPackageDependencyGraph(
-      state.extensions,
-      state.extensionPublisherTrustAnchors,
-    );
-    if (
-      state.extensionPackageRolloutChannels.length >
-      MAX_EXTENSION_PACKAGE_ROLLOUT_CHANNELS
-    ) {
-      throw new Error(
-        "Persisted Extension package rollout channel limit is exceeded",
-      );
+    validateExtensionPackageDependencyGraph(state.extensions, state.extensionPublisherTrustAnchors);
+    if (state.extensionPackageRolloutChannels.length > MAX_EXTENSION_PACKAGE_ROLLOUT_CHANNELS) {
+      throw new Error("Persisted Extension package rollout channel limit is exceeded");
     }
     const rolloutChannelIds = new Set<string>();
     const rolloutChannelNames = new Set<string>();
     for (const input of state.extensionPackageRolloutChannels) {
-      const channel = validateExtensionPackageRolloutChannel(
-        input,
-        state.extensionPublisherTrustAnchors,
-      );
-      if (
-        rolloutChannelIds.has(channel.id) ||
-        rolloutChannelNames.has(channel.normalizedName)
-      ) {
-        throw new Error(
-          `Duplicate persisted Extension package rollout channel: ${channel.id}`,
-        );
+      const channel = validateExtensionPackageRolloutChannel(input, state.extensionPublisherTrustAnchors);
+      if (rolloutChannelIds.has(channel.id) || rolloutChannelNames.has(channel.normalizedName)) {
+        throw new Error(`Duplicate persisted Extension package rollout channel: ${channel.id}`);
       }
       rolloutChannelIds.add(channel.id);
       rolloutChannelNames.add(channel.normalizedName);
@@ -9787,36 +7464,21 @@ export class LocalStore {
       channel.retryPolicy = channel.retryPolicy
         ? normalizeInboundRetryPolicy(channel.retryPolicy)
         : structuredClone(DEFAULT_INBOUND_RETRY_POLICY);
-      channel.signaturePolicy = normalizeInboundSignaturePolicy(
-        channel.signaturePolicy,
-      );
-      channel.policyTemplate = deriveInboundChannelPolicyTemplate(
-        channel.retryPolicy,
-        channel.signaturePolicy,
-      );
+      channel.signaturePolicy = normalizeInboundSignaturePolicy(channel.signaturePolicy);
+      channel.policyTemplate = deriveInboundChannelPolicyTemplate(channel.retryPolicy, channel.signaturePolicy);
     }
     for (const delivery of state.inboundDeliveries) {
       const channelPolicy =
-        state.channels.find((channel) => channel.id === delivery.channelId)
-          ?.retryPolicy ?? DEFAULT_INBOUND_RETRY_POLICY;
-      if (
-        !Number.isInteger(delivery.attemptCount) ||
-        delivery.attemptCount < 0
-      ) {
-        delivery.attemptCount =
-          delivery.status === "accepted" || delivery.status === "retrying"
-            ? 0
-            : 1;
+        state.channels.find((channel) => channel.id === delivery.channelId)?.retryPolicy ?? DEFAULT_INBOUND_RETRY_POLICY;
+      if (!Number.isInteger(delivery.attemptCount) || delivery.attemptCount < 0) {
+        delivery.attemptCount = delivery.status === "accepted" || delivery.status === "retrying" ? 0 : 1;
       }
       if (
         !Number.isInteger(delivery.maxAttempts) ||
         delivery.maxAttempts < delivery.attemptCount ||
         delivery.maxAttempts > MAX_INBOUND_ATTEMPTS
       ) {
-        delivery.maxAttempts = Math.max(
-          channelPolicy.maxAttempts,
-          delivery.attemptCount,
-        );
+        delivery.maxAttempts = Math.max(channelPolicy.maxAttempts, delivery.attemptCount);
       }
       if (
         !Number.isInteger(delivery.retryBaseMs) ||
@@ -9830,18 +7492,12 @@ export class LocalStore {
       if (!MEMORY_STATUSES.has(memory.status)) {
         throw new Error(`Invalid persisted memory status: ${memory.status}`);
       }
-      memory.reviewIntervalDays = normalizeMemoryReviewInterval(
-        memory.reviewIntervalDays ?? DEFAULT_MEMORY_REVIEW_INTERVAL_DAYS,
-      );
+      memory.reviewIntervalDays = normalizeMemoryReviewInterval(memory.reviewIntervalDays ?? DEFAULT_MEMORY_REVIEW_INTERVAL_DAYS);
       if (memory.consolidatesMemoryIds !== undefined) {
         if (!Array.isArray(memory.consolidatesMemoryIds)) {
-          throw new Error(
-            `Invalid persisted memory consolidation: ${memory.id}`,
-          );
+          throw new Error(`Invalid persisted memory consolidation: ${memory.id}`);
         }
-        memory.consolidatesMemoryIds = normalizeMemoryConsolidationIds(
-          memory.consolidatesMemoryIds,
-        );
+        memory.consolidatesMemoryIds = normalizeMemoryConsolidationIds(memory.consolidatesMemoryIds);
       }
       memoryReplacementTargetIds(memory);
       if (!Number.isSafeInteger(memory.useCount) || memory.useCount < 0) {
@@ -9849,16 +7505,9 @@ export class LocalStore {
       }
       if (memory.status === "active") {
         memory.reviewedAt ??= memory.updatedAt;
-        memory.reviewDueAt ??= memoryReviewDueAt(
-          memory.reviewedAt,
-          memory.reviewIntervalDays,
-        );
+        memory.reviewDueAt ??= memoryReviewDueAt(memory.reviewedAt, memory.reviewIntervalDays);
       }
-      for (const timestamp of [
-        memory.reviewedAt,
-        memory.reviewDueAt,
-        memory.lastUsedAt,
-      ]) {
+      for (const timestamp of [memory.reviewedAt, memory.reviewDueAt, memory.lastUsedAt]) {
         if (timestamp && !Number.isFinite(Date.parse(timestamp))) {
           throw new Error(`Invalid persisted memory timestamp: ${memory.id}`);
         }
@@ -9867,44 +7516,25 @@ export class LocalStore {
     for (const memory of state.memories) {
       const replacementTargetIds = memoryReplacementTargetIds(memory);
       for (const targetId of replacementTargetIds) {
-        const target = state.memories.find(
-          (candidate) => candidate.id === targetId,
-        );
+        const target = state.memories.find((candidate) => candidate.id === targetId);
         if (!target) {
-          throw new Error(
-            `Persisted memory replacement target is missing: ${memory.id}`,
-          );
+          throw new Error(`Persisted memory replacement target is missing: ${memory.id}`);
         }
-        if (
-          target.scope !== memory.scope ||
-          target.agentId !== memory.agentId
-        ) {
-          throw new Error(
-            `Persisted memory replacement scope is invalid: ${memory.id}`,
-          );
+        if (target.scope !== memory.scope || target.agentId !== memory.agentId) {
+          throw new Error(`Persisted memory replacement scope is invalid: ${memory.id}`);
         }
         if (
           memory.status !== "proposed" &&
           memory.status !== "rejected" &&
-          (target.status !== "archived" ||
-            target.supersededByMemoryId !== memory.id)
+          (target.status !== "archived" || target.supersededByMemoryId !== memory.id)
         ) {
-          throw new Error(
-            `Persisted memory replacement settlement is invalid: ${memory.id}`,
-          );
+          throw new Error(`Persisted memory replacement settlement is invalid: ${memory.id}`);
         }
       }
       if (memory.supersededByMemoryId) {
-        const replacement = state.memories.find(
-          (candidate) => candidate.id === memory.supersededByMemoryId,
-        );
-        if (
-          !replacement ||
-          !memoryReplacementTargetIds(replacement).includes(memory.id)
-        ) {
-          throw new Error(
-            `Persisted memory supersession link is invalid: ${memory.id}`,
-          );
+        const replacement = state.memories.find((candidate) => candidate.id === memory.supersededByMemoryId);
+        if (!replacement || !memoryReplacementTargetIds(replacement).includes(memory.id)) {
+          throw new Error(`Persisted memory supersession link is invalid: ${memory.id}`);
         }
       }
     }
@@ -9912,28 +7542,18 @@ export class LocalStore {
       if (!Number.isInteger(agent.revision) || agent.revision < 1) {
         agent.revision = 1;
       }
-      agent.runLimits = normalizeRunLimits(
-        agent.runLimits ?? structuredClone(DEFAULT_RUN_LIMITS),
-      );
-      agent.subagentLimits = normalizeSubagentLimits(
-        agent.subagentLimits ?? structuredClone(DEFAULT_SUBAGENT_LIMITS),
-      );
+      agent.runLimits = normalizeRunLimits(agent.runLimits ?? structuredClone(DEFAULT_RUN_LIMITS));
+      agent.subagentLimits = normalizeSubagentLimits(agent.subagentLimits ?? structuredClone(DEFAULT_SUBAGENT_LIMITS));
     }
     if (migrateAgentRevisions) {
-      state.agentRevisions = state.agents.map((agent) =>
-        createAgentProfileRevision(agent, { source: "migrated" }),
-      );
+      state.agentRevisions = state.agents.map((agent) => createAgentProfileRevision(agent, { source: "migrated" }));
     }
     const agentRevisionKeys = new Set<string>();
     for (const input of state.agentRevisions) {
       const revision = validateAgentProfileRevision(input);
-      const agent = state.agents.find(
-        (candidate) => candidate.id === revision.agentId,
-      );
+      const agent = state.agents.find((candidate) => candidate.id === revision.agentId);
       if (!agent || revision.revision > agent.revision) {
-        throw new Error(
-          `Persisted Agent revision references an invalid Agent: ${revision.agentId}@${revision.revision}`,
-        );
+        throw new Error(`Persisted Agent revision references an invalid Agent: ${revision.agentId}@${revision.revision}`);
       }
       const key = `${revision.agentId}:${revision.revision}`;
       if (agentRevisionKeys.has(key)) {
@@ -9943,89 +7563,48 @@ export class LocalStore {
       Object.assign(input, revision);
     }
     for (const agent of state.agents) {
-      const current = state.agentRevisions.find(
-        (revision) =>
-          revision.agentId === agent.id && revision.revision === agent.revision,
-      );
-      if (
-        !current ||
-        JSON.stringify(current.profile) !== JSON.stringify(agent)
-      ) {
-        throw new Error(
-          `Persisted Agent current revision is missing: ${agent.id}@${agent.revision}`,
-        );
+      const current = state.agentRevisions.find((revision) => revision.agentId === agent.id && revision.revision === agent.revision);
+      if (!current || JSON.stringify(current.profile) !== JSON.stringify(agent)) {
+        throw new Error(`Persisted Agent current revision is missing: ${agent.id}@${agent.revision}`);
       }
     }
-    state.agentCapabilityBindings = ensureCurrentCapabilityBindings(
-      state.agentCapabilityBindings,
-      state.agents,
-      state.agentRevisions,
-    );
+    state.agentCapabilityBindings = ensureCurrentCapabilityBindings(state.agentCapabilityBindings, state.agents, state.agentRevisions);
     for (const run of state.runs) {
-      const agent = state.agents.find(
-        (candidate) => candidate.id === run.agentId,
-      );
+      const agent = state.agents.find((candidate) => candidate.id === run.agentId);
       if (run.workflowPlanId !== undefined) {
         this.validateResourceId(run.workflowPlanId);
-        const workflowPlan = state.plans.find(
-          (candidate) => candidate.id === run.workflowPlanId,
-        );
+        const workflowPlan = state.plans.find((candidate) => candidate.id === run.workflowPlanId);
         if (
           (run.source !== "workflow" && run.source !== "workflow_simulation") ||
           !workflowPlan ||
           workflowPlan.threadId !== run.threadId
         ) {
-          throw new Error(
-            `Persisted Workflow Run Plan binding is invalid: ${run.id}`,
-          );
+          throw new Error(`Persisted Workflow Run Plan binding is invalid: ${run.id}`);
         }
       } else if (run.source === "workflow_simulation") {
-        throw new Error(
-          `Persisted Workflow simulation Run Plan binding is missing: ${run.id}`,
-        );
+        throw new Error(`Persisted Workflow simulation Run Plan binding is missing: ${run.id}`);
       }
-      const configuration = run.configuration
-        ? validateRunConfigurationFingerprint(run.configuration)
-        : undefined;
+      const configuration = run.configuration ? validateRunConfigurationFingerprint(run.configuration) : undefined;
       if (configuration) run.configuration = configuration;
-      if (
-        !Number.isInteger(run.agentRevision) ||
-        Number(run.agentRevision) < 1
-      ) {
-        run.agentRevision =
-          configuration?.agentRevision ?? agent?.revision ?? 1;
+      if (!Number.isInteger(run.agentRevision) || Number(run.agentRevision) < 1) {
+        run.agentRevision = configuration?.agentRevision ?? agent?.revision ?? 1;
       }
-      run.limits = normalizeRunLimits(
-        run.limits ??
-          configuration?.runLimits ??
-          agent?.runLimits ??
-          structuredClone(DEFAULT_RUN_LIMITS),
-      );
+      run.limits = normalizeRunLimits(run.limits ?? configuration?.runLimits ?? agent?.runLimits ?? structuredClone(DEFAULT_RUN_LIMITS));
       if (
         configuration &&
-        (run.agentRevision !== configuration.agentRevision ||
-          JSON.stringify(run.limits) !==
-            JSON.stringify(configuration.runLimits))
+        (run.agentRevision !== configuration.agentRevision || JSON.stringify(run.limits) !== JSON.stringify(configuration.runLimits))
       ) {
-        throw new Error(
-          `Run configuration fingerprint conflicts with Run record: ${run.id}`,
-        );
+        throw new Error(`Run configuration fingerprint conflicts with Run record: ${run.id}`);
       }
     }
     const automaticRecoveryAssessmentIds = new Set<string>();
     for (const input of state.automaticRecoveryAssessments) {
       const assessment = validateAutomaticRecoveryAssessment(input);
       if (automaticRecoveryAssessmentIds.has(assessment.runId)) {
-        throw new Error(
-          `Duplicate automatic recovery assessment: ${assessment.runId}`,
-        );
+        throw new Error(`Duplicate automatic recovery assessment: ${assessment.runId}`);
       }
-      const run = state.runs.find(
-        (candidate) => candidate.id === assessment.runId,
-      );
-      const rootRun = state.runs.find(
-        (candidate) => candidate.id === assessment.rootRunId,
-      );
+      const run = state.runs.find((candidate) => candidate.id === assessment.runId);
+      const rootRun = state.runs.find((candidate) => candidate.id === assessment.rootRunId);
       if (
         !run ||
         !rootRun ||
@@ -10034,9 +7613,7 @@ export class LocalStore {
         rootRun.threadId !== assessment.threadId ||
         assessment.runConfigurationSha256 !== run.configuration?.contentSha256
       ) {
-        throw new Error(
-          `Persisted automatic recovery assessment references invalid state: ${assessment.runId}`,
-        );
+        throw new Error(`Persisted automatic recovery assessment references invalid state: ${assessment.runId}`);
       }
       automaticRecoveryAssessmentIds.add(assessment.runId);
       Object.assign(input, assessment);
@@ -10044,24 +7621,13 @@ export class LocalStore {
     const automaticRecoveryAttemptIds = new Set<string>();
     const automaticRecoveryTriggers = new Set<string>();
     for (const input of state.automaticRecoveryAttempts) {
-      const attempt = validateAutomaticRecoveryAttempt(
-        stripAutomaticRecoverySecrets(input),
-      );
-      if (
-        automaticRecoveryAttemptIds.has(attempt.id) ||
-        automaticRecoveryTriggers.has(attempt.triggerId)
-      ) {
+      const attempt = validateAutomaticRecoveryAttempt(stripAutomaticRecoverySecrets(input));
+      if (automaticRecoveryAttemptIds.has(attempt.id) || automaticRecoveryTriggers.has(attempt.triggerId)) {
         throw new Error(`Duplicate automatic recovery attempt: ${attempt.id}`);
       }
-      const assessment = state.automaticRecoveryAssessments.find(
-        (candidate) => candidate.contentSha256 === attempt.assessmentSha256,
-      );
-      const interruptedRun = state.runs.find(
-        (candidate) => candidate.id === attempt.interruptedRunId,
-      );
-      const recoveryRun = attempt.recoveryRunId
-        ? state.runs.find((candidate) => candidate.id === attempt.recoveryRunId)
-        : undefined;
+      const assessment = state.automaticRecoveryAssessments.find((candidate) => candidate.contentSha256 === attempt.assessmentSha256);
+      const interruptedRun = state.runs.find((candidate) => candidate.id === attempt.interruptedRunId);
+      const recoveryRun = attempt.recoveryRunId ? state.runs.find((candidate) => candidate.id === attempt.recoveryRunId) : undefined;
       if (
         !assessment ||
         assessment.runId !== attempt.interruptedRunId ||
@@ -10077,18 +7643,13 @@ export class LocalStore {
             recoveryRun.parentRunId !== attempt.interruptedRunId ||
             recoveryRun.triggerId !== attempt.triggerId))
       ) {
-        throw new Error(
-          `Persisted automatic recovery attempt references invalid state: ${attempt.id}`,
-        );
+        throw new Error(`Persisted automatic recovery attempt references invalid state: ${attempt.id}`);
       }
       if (
         Boolean(attempt.claim) !== Boolean(input.claimTokenSha256) ||
-        (input.claimTokenSha256 &&
-          !/^[a-f0-9]{64}$/.test(input.claimTokenSha256))
+        (input.claimTokenSha256 && !/^[a-f0-9]{64}$/.test(input.claimTokenSha256))
       ) {
-        throw new Error(
-          `Persisted automatic recovery claim secret is invalid: ${attempt.id}`,
-        );
+        throw new Error(`Persisted automatic recovery claim secret is invalid: ${attempt.id}`);
       }
       automaticRecoveryAttemptIds.add(attempt.id);
       automaticRecoveryTriggers.add(attempt.triggerId);
@@ -10100,34 +7661,20 @@ export class LocalStore {
         throw new Error(`Duplicate persisted Run evaluation: ${evaluation.id}`);
       }
       evaluationIds.add(evaluation.id);
-      validatePersistedRunEvaluation(
-        evaluation,
-        state.threads,
-        state.runs,
-        state.subagents,
-        sourceBindingEvents,
-      );
+      validatePersistedRunEvaluation(evaluation, state.threads, state.runs, state.subagents, sourceBindingEvents);
     }
     const adjudicationIds = new Set<string>();
     const adjudicatedEvaluationIds = new Set<string>();
     for (const adjudication of state.evaluationAdjudications) {
       if (adjudicationIds.has(adjudication.id)) {
-        throw new Error(
-          `Duplicate persisted evaluation adjudication: ${adjudication.id}`,
-        );
+        throw new Error(`Duplicate persisted evaluation adjudication: ${adjudication.id}`);
       }
       if (adjudicatedEvaluationIds.has(adjudication.evaluationId)) {
-        throw new Error(
-          `Duplicate persisted adjudicated evaluation: ${adjudication.evaluationId}`,
-        );
+        throw new Error(`Duplicate persisted adjudicated evaluation: ${adjudication.evaluationId}`);
       }
-      const evaluation = state.evaluations.find(
-        (candidate) => candidate.id === adjudication.evaluationId,
-      );
+      const evaluation = state.evaluations.find((candidate) => candidate.id === adjudication.evaluationId);
       if (!evaluation || evaluation.threadId !== adjudication.threadId) {
-        throw new Error(
-          `Persisted evaluation adjudication reference is invalid: ${adjudication.id}`,
-        );
+        throw new Error(`Persisted evaluation adjudication reference is invalid: ${adjudication.id}`);
       }
       validateEvaluationAdjudication(adjudication, evaluation);
       adjudicationIds.add(adjudication.id);
@@ -10136,19 +7683,10 @@ export class LocalStore {
     const reviewerBallotIds = new Set<string>();
     const reviewerLaneKeys = new Set<string>();
     for (const ballot of state.evaluationReviewerBallots) {
-      const evaluation = state.evaluations.find(
-        (candidate) => candidate.id === ballot.evaluationId,
-      );
+      const evaluation = state.evaluations.find((candidate) => candidate.id === ballot.evaluationId);
       const laneKey = `${ballot.evaluationId}:${ballot.reviewerId}`;
-      if (
-        reviewerBallotIds.has(ballot.id) ||
-        reviewerLaneKeys.has(laneKey) ||
-        !evaluation ||
-        evaluation.threadId !== ballot.threadId
-      ) {
-        throw new Error(
-          `Persisted evaluation reviewer ballot is invalid: ${ballot.id}`,
-        );
+      if (reviewerBallotIds.has(ballot.id) || reviewerLaneKeys.has(laneKey) || !evaluation || evaluation.threadId !== ballot.threadId) {
+        throw new Error(`Persisted evaluation reviewer ballot is invalid: ${ballot.id}`);
       }
       validateEvaluationReviewerBallot(ballot, evaluation);
       reviewerBallotIds.add(ballot.id);
@@ -10157,12 +7695,8 @@ export class LocalStore {
     const consensusResolutionIds = new Set<string>();
     const consensusReportHashes = new Set<string>();
     for (const resolution of state.evaluationConsensusResolutions) {
-      const evaluation = state.evaluations.find(
-        (candidate) => candidate.id === resolution.evaluationId,
-      );
-      const adjudication = state.evaluationAdjudications.find(
-        (candidate) => candidate.id === resolution.adjudicationId,
-      );
+      const evaluation = state.evaluations.find((candidate) => candidate.id === resolution.evaluationId);
+      const adjudication = state.evaluationAdjudications.find((candidate) => candidate.id === resolution.adjudicationId);
       const reportKey = `${resolution.evaluationId}:${resolution.report.contentSha256}`;
       if (
         consensusResolutionIds.has(resolution.id) ||
@@ -10171,16 +7705,12 @@ export class LocalStore {
         !adjudication ||
         evaluation.threadId !== resolution.threadId
       ) {
-        throw new Error(
-          `Persisted evaluation consensus resolution is invalid: ${resolution.id}`,
-        );
+        throw new Error(`Persisted evaluation consensus resolution is invalid: ${resolution.id}`);
       }
       validateEvaluationConsensusResolution(
         resolution,
         evaluation,
-        state.evaluationReviewerBallots.filter(
-          (ballot) => ballot.evaluationId === evaluation.id,
-        ),
+        state.evaluationReviewerBallots.filter((ballot) => ballot.evaluationId === evaluation.id),
         adjudication,
       );
       consensusResolutionIds.add(resolution.id);
@@ -10197,9 +7727,7 @@ export class LocalStore {
               resolution.report.contentSha256 === revision.sourceSha256,
           )
         ) {
-          throw new Error(
-            `Persisted consensus adjudication provenance is missing: ${adjudication.id}@${revision.revision}`,
-          );
+          throw new Error(`Persisted consensus adjudication provenance is missing: ${adjudication.id}@${revision.revision}`);
         }
       }
     }
@@ -10207,9 +7735,7 @@ export class LocalStore {
     for (const input of state.evaluationCasebooks) {
       const casebook = migrateLegacyEvaluationCasebook(input);
       if (casebookIds.has(casebook.id)) {
-        throw new Error(
-          `Duplicate persisted Evaluation Casebook: ${casebook.id}`,
-        );
+        throw new Error(`Duplicate persisted Evaluation Casebook: ${casebook.id}`);
       }
       casebookIds.add(casebook.id);
       Object.assign(input, casebook);
@@ -10217,20 +7743,11 @@ export class LocalStore {
     const casebookQualificationExecutionIds = new Set<string>();
     for (const execution of state.evaluationCasebookQualificationExecutions) {
       if (casebookQualificationExecutionIds.has(execution.id)) {
-        throw new Error(
-          `Duplicate persisted Evaluation Casebook qualification execution: ${execution.id}`,
-        );
+        throw new Error(`Duplicate persisted Evaluation Casebook qualification execution: ${execution.id}`);
       }
-      const casebook = state.evaluationCasebooks.find(
-        (candidate) => candidate.id === execution.casebookId,
-      );
-      if (
-        !casebook ||
-        !state.threads.some((thread) => thread.id === execution.auditThreadId)
-      ) {
-        throw new Error(
-          `Persisted Evaluation Casebook qualification reference is invalid: ${execution.id}`,
-        );
+      const casebook = state.evaluationCasebooks.find((candidate) => candidate.id === execution.casebookId);
+      if (!casebook || !state.threads.some((thread) => thread.id === execution.auditThreadId)) {
+        throw new Error(`Persisted Evaluation Casebook qualification reference is invalid: ${execution.id}`);
       }
       validateEvaluationCasebookQualificationExecution(execution, casebook);
       casebookQualificationExecutionIds.add(execution.id);
@@ -10247,71 +7764,46 @@ export class LocalStore {
       if (
         trustAnchorIds.has(anchor.id) ||
         trustAnchorKeyIds.has(anchor.keyId) ||
-        (signingSource !== undefined &&
-          trustAnchorSigningSources.has(signingSource))
+        (signingSource !== undefined && trustAnchorSigningSources.has(signingSource))
       ) {
-        throw new Error(
-          `Duplicate persisted receipt trust anchor: ${anchor.id}`,
-        );
+        throw new Error(`Duplicate persisted receipt trust anchor: ${anchor.id}`);
       }
       trustAnchorIds.add(anchor.id);
       trustAnchorKeyIds.add(anchor.keyId);
       if (signingSource) trustAnchorSigningSources.add(signingSource);
     }
-    if (
-      state.receiptTrustAnchorDirectorySubscriptions.length >
-      MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS
-    ) {
-      throw new Error(
-        "Persisted receipt trust anchor directory subscription limit is exceeded",
-      );
+    if (state.receiptTrustAnchorDirectorySubscriptions.length > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS) {
+      throw new Error("Persisted receipt trust anchor directory subscription limit is exceeded");
     }
     const trustDirectorySubscriptionIds = new Set<string>();
     const trustDirectorySubscriptionSourceHashes = new Set<string>();
     for (const input of state.receiptTrustAnchorDirectorySubscriptions) {
-      const subscription =
-        validatePersistedReceiptTrustAnchorDirectorySubscription(input);
+      const subscription = validatePersistedReceiptTrustAnchorDirectorySubscription(input);
       if (
         trustDirectorySubscriptionIds.has(subscription.id) ||
-        trustDirectorySubscriptionSourceHashes.has(
-          subscription.sourceUrlSha256,
-        ) ||
-        !state.threads.some(
-          (thread) => thread.id === subscription.auditThreadId,
-        )
+        trustDirectorySubscriptionSourceHashes.has(subscription.sourceUrlSha256) ||
+        !state.threads.some((thread) => thread.id === subscription.auditThreadId)
       ) {
-        throw new Error(
-          `Duplicate persisted receipt trust anchor directory subscription: ${subscription.id}`,
-        );
+        throw new Error(`Duplicate persisted receipt trust anchor directory subscription: ${subscription.id}`);
       }
       trustDirectorySubscriptionIds.add(subscription.id);
       trustDirectorySubscriptionSourceHashes.add(subscription.sourceUrlSha256);
       Object.assign(input, subscription);
     }
     if (
-      state
-        .receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions
-        .length > MAX_RECEIPT_TRUST_CHECKPOINT_SUBSCRIPTIONS
+      state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions.length >
+      MAX_RECEIPT_TRUST_CHECKPOINT_SUBSCRIPTIONS
     ) {
-      throw new Error(
-        "Persisted receipt trust anchor directory quorum activation selection checkpoint subscription limit is exceeded",
-      );
+      throw new Error("Persisted receipt trust anchor directory quorum activation selection checkpoint subscription limit is exceeded");
     }
     const trustCheckpointSubscriptionIds = new Set<string>();
     const trustCheckpointSubscriptionSourceHashes = new Set<string>();
     for (const input of state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions) {
-      const subscription =
-        validatePersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
-          input,
-        );
+      const subscription = validatePersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(input);
       if (
         trustCheckpointSubscriptionIds.has(subscription.id) ||
-        trustCheckpointSubscriptionSourceHashes.has(
-          subscription.sourceUrlSha256,
-        ) ||
-        !state.threads.some(
-          (thread) => thread.id === subscription.auditThreadId,
-        )
+        trustCheckpointSubscriptionSourceHashes.has(subscription.sourceUrlSha256) ||
+        !state.threads.some((thread) => thread.id === subscription.auditThreadId)
       ) {
         throw new Error(
           `Duplicate persisted receipt trust anchor directory quorum activation selection checkpoint subscription: ${subscription.id}`,
@@ -10322,9 +7814,8 @@ export class LocalStore {
       Object.assign(input, subscription);
     }
     if (
-      state
-        .receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions
-        .length > MAX_RECEIPT_TRUST_ROTATION_PROPOSAL_SUBSCRIPTIONS
+      state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.length >
+      MAX_RECEIPT_TRUST_ROTATION_PROPOSAL_SUBSCRIPTIONS
     ) {
       throw new Error(
         "Persisted receipt trust anchor directory quorum activation selection rotation proposal subscription limit is exceeded",
@@ -10333,37 +7824,25 @@ export class LocalStore {
     const trustRotationProposalSubscriptionIds = new Set<string>();
     const trustRotationProposalSubscriptionSourceHashes = new Set<string>();
     for (const input of state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions) {
-      const subscription =
-        validatePersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
-          input,
-        );
+      const subscription = validatePersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(input);
       if (
         trustRotationProposalSubscriptionIds.has(subscription.id) ||
-        trustRotationProposalSubscriptionSourceHashes.has(
-          subscription.sourceUrlSha256,
-        ) ||
-        !state.threads.some(
-          (thread) => thread.id === subscription.auditThreadId,
-        )
+        trustRotationProposalSubscriptionSourceHashes.has(subscription.sourceUrlSha256) ||
+        !state.threads.some((thread) => thread.id === subscription.auditThreadId)
       ) {
         throw new Error(
           `Duplicate persisted receipt trust anchor directory quorum activation selection rotation proposal subscription: ${subscription.id}`,
         );
       }
       trustRotationProposalSubscriptionIds.add(subscription.id);
-      trustRotationProposalSubscriptionSourceHashes.add(
-        subscription.sourceUrlSha256,
-      );
+      trustRotationProposalSubscriptionSourceHashes.add(subscription.sourceUrlSha256);
       Object.assign(input, subscription);
     }
     if (
-      state
-        .receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines
-        .length > MAX_RECEIPT_TRUST_CHECKPOINT_REGISTRY_QUORUM_BASELINES
+      state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines.length >
+      MAX_RECEIPT_TRUST_CHECKPOINT_REGISTRY_QUORUM_BASELINES
     ) {
-      throw new Error(
-        "Persisted receipt trust checkpoint registry quorum baseline limit is exceeded",
-      );
+      throw new Error("Persisted receipt trust checkpoint registry quorum baseline limit is exceeded");
     }
     const checkpointRegistryQuorumBaselineIds = new Set<string>();
     const checkpointRegistryQuorumBaselineKeys = new Set<string>();
@@ -10371,66 +7850,40 @@ export class LocalStore {
       | ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline
       | undefined;
     for (const input of state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines) {
-      const baseline =
-        validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
-          input,
-          state.receiptTrustAnchors,
-        );
-      const baselineKey = receiptTrustCheckpointRegistryQuorumBaselineKey(
-        baseline.envelope,
+      const baseline = validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+        input,
+        state.receiptTrustAnchors,
       );
+      const baselineKey = receiptTrustCheckpointRegistryQuorumBaselineKey(baseline.envelope);
       if (
         checkpointRegistryQuorumBaselineIds.has(baseline.id) ||
         checkpointRegistryQuorumBaselineKeys.has(baselineKey) ||
-        !state.threads.some(
-          (thread) => thread.id === baseline.promotedByThreadId,
-        ) ||
-        baseline.supersedesBaselineId !==
-          latestCheckpointRegistryQuorumBaseline?.id
+        !state.threads.some((thread) => thread.id === baseline.promotedByThreadId) ||
+        baseline.supersedesBaselineId !== latestCheckpointRegistryQuorumBaseline?.id
       ) {
-        throw new Error(
-          `Persisted receipt trust checkpoint registry quorum baseline is invalid: ${baseline.id}`,
-        );
+        throw new Error(`Persisted receipt trust checkpoint registry quorum baseline is invalid: ${baseline.id}`);
       }
       checkpointRegistryQuorumBaselineIds.add(baseline.id);
       checkpointRegistryQuorumBaselineKeys.add(baselineKey);
       latestCheckpointRegistryQuorumBaseline = baseline;
       Object.assign(input, baseline);
     }
-    if (
-      state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.length >
-      MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_PROMOTION_BASELINES
-    ) {
-      throw new Error(
-        "Persisted receipt trust anchor directory quorum promotion baseline limit is exceeded",
-      );
+    if (state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.length > MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_PROMOTION_BASELINES) {
+      throw new Error("Persisted receipt trust anchor directory quorum promotion baseline limit is exceeded");
     }
     const trustDirectoryQuorumPromotionBaselineIds = new Set<string>();
     const trustDirectoryQuorumPromotionBaselineKeys = new Set<string>();
-    let latestTrustDirectoryQuorumPromotionBaseline:
-      | ReceiptTrustAnchorDirectoryQuorumPromotionBaseline
-      | undefined;
+    let latestTrustDirectoryQuorumPromotionBaseline: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline | undefined;
     for (const input of state.receiptTrustAnchorDirectoryQuorumPromotionBaselines) {
-      const baseline =
-        validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
-          input,
-          state.receiptTrustAnchors,
-        );
-      const baselineKey = receiptTrustAnchorDirectoryQuorumPromotionBaselineKey(
-        baseline.envelope,
-      );
+      const baseline = validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline(input, state.receiptTrustAnchors);
+      const baselineKey = receiptTrustAnchorDirectoryQuorumPromotionBaselineKey(baseline.envelope);
       if (
         trustDirectoryQuorumPromotionBaselineIds.has(baseline.id) ||
         trustDirectoryQuorumPromotionBaselineKeys.has(baselineKey) ||
-        !state.threads.some(
-          (thread) => thread.id === baseline.promotedByThreadId,
-        ) ||
-        baseline.supersedesBaselineId !==
-          latestTrustDirectoryQuorumPromotionBaseline?.id
+        !state.threads.some((thread) => thread.id === baseline.promotedByThreadId) ||
+        baseline.supersedesBaselineId !== latestTrustDirectoryQuorumPromotionBaseline?.id
       ) {
-        throw new Error(
-          `Persisted receipt trust anchor directory quorum promotion baseline is invalid: ${baseline.id}`,
-        );
+        throw new Error(`Persisted receipt trust anchor directory quorum promotion baseline is invalid: ${baseline.id}`);
       }
       trustDirectoryQuorumPromotionBaselineIds.add(baseline.id);
       trustDirectoryQuorumPromotionBaselineKeys.add(baselineKey);
@@ -10438,13 +7891,10 @@ export class LocalStore {
       Object.assign(input, baseline);
     }
     if (
-      state
-        .receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines
-        .length > MAX_RECEIPT_TRUST_CHECKPOINT_REGISTRY_QUORUM_BASELINES
+      state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines.length >
+      MAX_RECEIPT_TRUST_CHECKPOINT_REGISTRY_QUORUM_BASELINES
     ) {
-      throw new Error(
-        "Persisted receipt trust rotation approval policy baseline limit is exceeded",
-      );
+      throw new Error("Persisted receipt trust rotation approval policy baseline limit is exceeded");
     }
     const rotationApprovalPolicyBaselineIds = new Set<string>();
     const rotationApprovalPolicyBaselineKeys = new Set<string>();
@@ -10456,198 +7906,117 @@ export class LocalStore {
       | ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline
       | undefined;
     for (const input of state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines) {
-      const baseline =
-        validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
-          input,
-          state.receiptTrustAnchors,
-        );
-      const baselineKey = receiptTrustRotationApprovalPolicyBaselineKey(
-        baseline.envelope,
+      const baseline = validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
+        input,
+        state.receiptTrustAnchors,
       );
+      const baselineKey = receiptTrustRotationApprovalPolicyBaselineKey(baseline.envelope);
       if (
         rotationApprovalPolicyBaselineIds.has(baseline.id) ||
         rotationApprovalPolicyBaselineKeys.has(baselineKey) ||
-        !state.threads.some(
-          (thread) => thread.id === baseline.promotedByThreadId,
-        ) ||
-        baseline.supersedesBaselineId !==
-          latestRotationApprovalPolicyBaseline?.id
+        !state.threads.some((thread) => thread.id === baseline.promotedByThreadId) ||
+        baseline.supersedesBaselineId !== latestRotationApprovalPolicyBaseline?.id
       ) {
-        throw new Error(
-          `Persisted receipt trust rotation approval policy baseline is invalid: ${baseline.id}`,
-        );
+        throw new Error(`Persisted receipt trust rotation approval policy baseline is invalid: ${baseline.id}`);
       }
       rotationApprovalPolicyBaselineIds.add(baseline.id);
       rotationApprovalPolicyBaselineKeys.add(baselineKey);
-      rotationApprovalPolicyBaselinesBySha256.set(
-        baseline.contentSha256,
-        baseline,
-      );
+      rotationApprovalPolicyBaselinesBySha256.set(baseline.contentSha256, baseline);
       latestRotationApprovalPolicyBaseline = baseline;
       Object.assign(input, baseline);
     }
     for (const subscription of state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions) {
       const pending = subscription.pendingApprovalPolicyApply;
       if (!pending) continue;
-      const baseline = rotationApprovalPolicyBaselinesBySha256.get(
-        pending.approvalPolicyBaselineSha256,
-      );
-      if (
-        !baseline ||
-        baseline.approvalPolicySha256 !== pending.approvalPolicySha256
-      ) {
-        throw new Error(
-          `Persisted receipt trust rotation approval policy apply baseline reference is invalid: ${subscription.id}`,
-        );
+      const baseline = rotationApprovalPolicyBaselinesBySha256.get(pending.approvalPolicyBaselineSha256);
+      if (!baseline || baseline.approvalPolicySha256 !== pending.approvalPolicySha256) {
+        throw new Error(`Persisted receipt trust rotation approval policy apply baseline reference is invalid: ${subscription.id}`);
       }
     }
-    if (
-      state.receiptTrustAnchorDirectoryQuorumActivationDecisions.length >
-      MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_ACTIVATION_DECISIONS
-    ) {
-      throw new Error(
-        "Persisted receipt trust anchor directory quorum activation decision limit is exceeded",
-      );
+    if (state.receiptTrustAnchorDirectoryQuorumActivationDecisions.length > MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_ACTIVATION_DECISIONS) {
+      throw new Error("Persisted receipt trust anchor directory quorum activation decision limit is exceeded");
     }
     const trustDirectoryQuorumActivationDecisionIds = new Set<string>();
-    const trustDirectoryQuorumActivationDecisionEnvelopeHashes =
-      new Set<string>();
+    const trustDirectoryQuorumActivationDecisionEnvelopeHashes = new Set<string>();
     for (const input of state.receiptTrustAnchorDirectoryQuorumActivationDecisions) {
-      const record =
-        validateReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord(
-          input,
-        );
+      const record = validateReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord(input);
       if (
         trustDirectoryQuorumActivationDecisionIds.has(record.id) ||
-        trustDirectoryQuorumActivationDecisionEnvelopeHashes.has(
-          record.envelope.contentSha256,
-        ) ||
-        !state.threads.some(
-          (thread) => thread.id === record.signedByThreadId,
-        ) ||
+        trustDirectoryQuorumActivationDecisionEnvelopeHashes.has(record.envelope.contentSha256) ||
+        !state.threads.some((thread) => thread.id === record.signedByThreadId) ||
         !state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.some(
-          (baseline) =>
-            baseline.contentSha256 === record.baseline.contentSha256,
+          (baseline) => baseline.contentSha256 === record.baseline.contentSha256,
         )
       ) {
-        throw new Error(
-          `Persisted receipt trust anchor directory quorum activation decision is invalid: ${record.id}`,
-        );
+        throw new Error(`Persisted receipt trust anchor directory quorum activation decision is invalid: ${record.id}`);
       }
       trustDirectoryQuorumActivationDecisionIds.add(record.id);
-      trustDirectoryQuorumActivationDecisionEnvelopeHashes.add(
-        record.envelope.contentSha256,
-      );
+      trustDirectoryQuorumActivationDecisionEnvelopeHashes.add(record.envelope.contentSha256);
       Object.assign(input, record);
     }
-    if (
-      state.receiptTrustAnchorDirectoryQuorumActivationSelections.length >
-      MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_ACTIVATION_DECISIONS
-    ) {
-      throw new Error(
-        "Persisted receipt trust anchor directory quorum activation selection limit is exceeded",
-      );
+    if (state.receiptTrustAnchorDirectoryQuorumActivationSelections.length > MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_ACTIVATION_DECISIONS) {
+      throw new Error("Persisted receipt trust anchor directory quorum activation selection limit is exceeded");
     }
     const trustDirectoryQuorumActivationSelectionIds = new Set<string>();
     const trustDirectoryQuorumActivationSelectionHashes = new Set<string>();
-    let latestTrustDirectoryQuorumActivationSelection:
-      | ReceiptTrustAnchorDirectoryQuorumActivationSelection
-      | undefined;
+    let latestTrustDirectoryQuorumActivationSelection: ReceiptTrustAnchorDirectoryQuorumActivationSelection | undefined;
     for (const input of state.receiptTrustAnchorDirectoryQuorumActivationSelections) {
-      const selection =
-        validateReceiptTrustAnchorDirectoryQuorumActivationSelection(input);
-      const record =
-        state.receiptTrustAnchorDirectoryQuorumActivationDecisions.find(
-          (candidate) => candidate.id === selection.activationDecisionRecordId,
-        );
+      const selection = validateReceiptTrustAnchorDirectoryQuorumActivationSelection(input);
+      const record = state.receiptTrustAnchorDirectoryQuorumActivationDecisions.find(
+        (candidate) => candidate.id === selection.activationDecisionRecordId,
+      );
       if (
         trustDirectoryQuorumActivationSelectionIds.has(selection.id) ||
-        trustDirectoryQuorumActivationSelectionHashes.has(
-          selection.contentSha256,
-        ) ||
+        trustDirectoryQuorumActivationSelectionHashes.has(selection.contentSha256) ||
         !record ||
         record.contentSha256 !== selection.activationDecisionRecordSha256 ||
-        record.envelope.contentSha256 !==
-          selection.activationDecisionEnvelopeSha256 ||
-        record.envelope.receipt.contentSha256 !==
-          selection.activationDecisionReceiptSha256 ||
-        !state.threads.some(
-          (thread) => thread.id === selection.activatedByThreadId,
-        ) ||
+        record.envelope.contentSha256 !== selection.activationDecisionEnvelopeSha256 ||
+        record.envelope.receipt.contentSha256 !== selection.activationDecisionReceiptSha256 ||
+        !state.threads.some((thread) => thread.id === selection.activatedByThreadId) ||
         (latestTrustDirectoryQuorumActivationSelection !== undefined &&
-          selection.previousSelectionSha256 !==
-            latestTrustDirectoryQuorumActivationSelection.contentSha256)
+          selection.previousSelectionSha256 !== latestTrustDirectoryQuorumActivationSelection.contentSha256)
       ) {
-        throw new Error(
-          `Persisted receipt trust anchor directory quorum activation selection history is invalid: ${selection.id}`,
-        );
+        throw new Error(`Persisted receipt trust anchor directory quorum activation selection history is invalid: ${selection.id}`);
       }
       trustDirectoryQuorumActivationSelectionIds.add(selection.id);
-      trustDirectoryQuorumActivationSelectionHashes.add(
-        selection.contentSha256,
-      );
+      trustDirectoryQuorumActivationSelectionHashes.add(selection.contentSha256);
       latestTrustDirectoryQuorumActivationSelection = selection;
       Object.assign(input, selection);
     }
     if (state.receiptTrustAnchorDirectoryQuorumActivationSelection) {
-      const selection =
-        validateReceiptTrustAnchorDirectoryQuorumActivationSelection(
-          state.receiptTrustAnchorDirectoryQuorumActivationSelection,
-        );
-      const record =
-        state.receiptTrustAnchorDirectoryQuorumActivationDecisions.find(
-          (candidate) => candidate.id === selection.activationDecisionRecordId,
-        );
+      const selection = validateReceiptTrustAnchorDirectoryQuorumActivationSelection(
+        state.receiptTrustAnchorDirectoryQuorumActivationSelection,
+      );
+      const record = state.receiptTrustAnchorDirectoryQuorumActivationDecisions.find(
+        (candidate) => candidate.id === selection.activationDecisionRecordId,
+      );
       if (
         !record ||
         record.contentSha256 !== selection.activationDecisionRecordSha256 ||
-        record.envelope.contentSha256 !==
-          selection.activationDecisionEnvelopeSha256 ||
-        record.envelope.receipt.contentSha256 !==
-          selection.activationDecisionReceiptSha256 ||
-        !state.threads.some(
-          (thread) => thread.id === selection.activatedByThreadId,
-        )
+        record.envelope.contentSha256 !== selection.activationDecisionEnvelopeSha256 ||
+        record.envelope.receipt.contentSha256 !== selection.activationDecisionReceiptSha256 ||
+        !state.threads.some((thread) => thread.id === selection.activatedByThreadId)
       ) {
-        throw new Error(
-          `Persisted receipt trust anchor directory quorum activation selection is invalid: ${selection.id}`,
-        );
+        throw new Error(`Persisted receipt trust anchor directory quorum activation selection is invalid: ${selection.id}`);
       }
-      Object.assign(
-        state.receiptTrustAnchorDirectoryQuorumActivationSelection,
-        selection,
-      );
+      Object.assign(state.receiptTrustAnchorDirectoryQuorumActivationSelection, selection);
     }
     if (
       latestTrustDirectoryQuorumActivationSelection &&
-      state.receiptTrustAnchorDirectoryQuorumActivationSelection
-        ?.contentSha256 !==
+      state.receiptTrustAnchorDirectoryQuorumActivationSelection?.contentSha256 !==
         latestTrustDirectoryQuorumActivationSelection.contentSha256
     ) {
-      throw new Error(
-        "Persisted receipt trust anchor directory quorum activation selection history tail is invalid",
-      );
+      throw new Error("Persisted receipt trust anchor directory quorum activation selection history tail is invalid");
     }
-    if (
-      !latestTrustDirectoryQuorumActivationSelection &&
-      state.receiptTrustAnchorDirectoryQuorumActivationSelection
-    ) {
-      throw new Error(
-        "Persisted receipt trust anchor directory quorum activation selection history is missing",
-      );
+    if (!latestTrustDirectoryQuorumActivationSelection && state.receiptTrustAnchorDirectoryQuorumActivationSelection) {
+      throw new Error("Persisted receipt trust anchor directory quorum activation selection history is missing");
     }
     const qualificationBaselineIds = new Set<string>();
     const qualificationBaselineKeys = new Set<string>();
-    const latestBaselineByCasebook = new Map<
-      string,
-      EvaluationQualificationBaseline
-    >();
+    const latestBaselineByCasebook = new Map<string, EvaluationQualificationBaseline>();
     const baselineCountByCasebook = new Map<string, number>();
     for (const baseline of state.evaluationQualificationBaselines) {
-      validateEvaluationQualificationBaseline(
-        baseline,
-        state.receiptTrustAnchors,
-      );
+      validateEvaluationQualificationBaseline(baseline, state.receiptTrustAnchors);
       const previous = latestBaselineByCasebook.get(baseline.casebookId);
       const baselineKey = `${baseline.casebookId}:${baseline.casebookRevision}:${baseline.envelope.receipt.contentSha256}:${baseline.envelope.signature.keyId}`;
       const count = (baselineCountByCasebook.get(baseline.casebookId) ?? 0) + 1;
@@ -10655,12 +8024,8 @@ export class LocalStore {
         qualificationBaselineIds.has(baseline.id) ||
         qualificationBaselineKeys.has(baselineKey) ||
         count > MAX_QUALIFICATION_BASELINES_PER_CASEBOOK ||
-        !state.evaluationCasebooks.some(
-          (casebook) => casebook.id === baseline.casebookId,
-        ) ||
-        !state.threads.some(
-          (thread) => thread.id === baseline.promotedByThreadId,
-        ) ||
+        !state.evaluationCasebooks.some((casebook) => casebook.id === baseline.casebookId) ||
+        !state.threads.some((thread) => thread.id === baseline.promotedByThreadId) ||
         !state.evaluationCasebookQualificationExecutions.some(
           (execution) =>
             execution.id === baseline.qualificationExecutionId &&
@@ -10669,9 +8034,7 @@ export class LocalStore {
         ) ||
         baseline.supersedesBaselineId !== previous?.id
       ) {
-        throw new Error(
-          `Persisted Evaluation qualification baseline is invalid: ${baseline.id}`,
-        );
+        throw new Error(`Persisted Evaluation qualification baseline is invalid: ${baseline.id}`);
       }
       qualificationBaselineIds.add(baseline.id);
       qualificationBaselineKeys.add(baselineKey);
@@ -10686,39 +8049,25 @@ export class LocalStore {
       }
       suiteIds.add(suite.id);
       if (!state.threads.some((thread) => thread.id === suite.threadId)) {
-        throw new Error(
-          `Persisted evaluation suite thread is missing: ${suite.id}`,
-        );
+        throw new Error(`Persisted evaluation suite thread is missing: ${suite.id}`);
       }
       assertEvaluationSuiteRuns(state.runs, suite);
     }
     const executionIds = new Set<string>();
     for (const execution of state.evaluationSuiteExecutions) {
       if (executionIds.has(execution.id)) {
-        throw new Error(
-          `Duplicate persisted evaluation suite execution: ${execution.id}`,
-        );
+        throw new Error(`Duplicate persisted evaluation suite execution: ${execution.id}`);
       }
       executionIds.add(execution.id);
-      validateEvaluationSuiteExecution(
-        execution,
-        state.evaluationSuites,
-        state.evaluations,
-        state.runs,
-      );
+      validateEvaluationSuiteExecution(execution, state.evaluationSuites, state.evaluations, state.runs);
     }
     return state;
   }
 
-  private async updateExtension(
-    extensionId: string,
-    update: (current: ExtensionRecord) => ExtensionRecord,
-  ): Promise<ExtensionRecord> {
+  private async updateExtension(extensionId: string, update: (current: ExtensionRecord) => ExtensionRecord): Promise<ExtensionRecord> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const index = this.state.extensions.findIndex(
-        (extension) => extension.id === extensionId,
-      );
+      const index = this.state.extensions.findIndex((extension) => extension.id === extensionId);
       const current = this.state.extensions[index];
       if (!current) throw new Error(`Extension not found: ${extensionId}`);
       const updated = update(structuredClone(current));
@@ -10732,24 +8081,14 @@ export class LocalStore {
     threadId: string,
     envelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumPromotionReceipt>,
   ): ReceiptTrustAnchorDirectoryQuorumPromotionBaseline {
-    if (
-      this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.length >=
-      MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_PROMOTION_BASELINES
-    ) {
+    if (this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.length >= MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_PROMOTION_BASELINES) {
       throw new Error(
         `Receipt trust anchor directory quorum promotion exceeds ${MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_PROMOTION_BASELINES} baselines`,
       );
     }
-    const current =
-      this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.at(-1);
-    const baseline = createReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
-      envelope,
-      threadId,
-      current?.id,
-    );
-    this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.push(
-      baseline,
-    );
+    const current = this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.at(-1);
+    const baseline = createReceiptTrustAnchorDirectoryQuorumPromotionBaseline(envelope, threadId, current?.id);
+    this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.push(baseline);
     return baseline;
   }
 
@@ -10758,27 +8097,20 @@ export class LocalStore {
     envelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum>,
   ): ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline {
     if (
-      this.state
-        .receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines
-        .length >= MAX_RECEIPT_TRUST_CHECKPOINT_REGISTRY_QUORUM_BASELINES
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines.length >=
+      MAX_RECEIPT_TRUST_CHECKPOINT_REGISTRY_QUORUM_BASELINES
     ) {
       throw new Error(
         `Receipt trust checkpoint registry quorum exceeds ${MAX_RECEIPT_TRUST_CHECKPOINT_REGISTRY_QUORUM_BASELINES} baselines`,
       );
     }
-    const current =
-      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines.at(
-        -1,
-      );
-    const baseline =
-      createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
-        envelope,
-        threadId,
-        current?.id,
-      );
-    this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines.push(
-      baseline,
+    const current = this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines.at(-1);
+    const baseline = createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+      envelope,
+      threadId,
+      current?.id,
     );
+    this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines.push(baseline);
     return baseline;
   }
 
@@ -10787,27 +8119,19 @@ export class LocalStore {
     envelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview>,
   ): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline {
     if (
-      this.state
-        .receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines
-        .length >= MAX_RECEIPT_TRUST_CHECKPOINT_REGISTRY_QUORUM_BASELINES
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines.length >=
+      MAX_RECEIPT_TRUST_CHECKPOINT_REGISTRY_QUORUM_BASELINES
     ) {
-      throw new Error(
-        `Receipt trust rotation approval policy exceeds ${MAX_RECEIPT_TRUST_CHECKPOINT_REGISTRY_QUORUM_BASELINES} baselines`,
-      );
+      throw new Error(`Receipt trust rotation approval policy exceeds ${MAX_RECEIPT_TRUST_CHECKPOINT_REGISTRY_QUORUM_BASELINES} baselines`);
     }
     const current =
-      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines.at(
-        -1,
-      );
-    const baseline =
-      createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
-        threadId,
-        envelope,
-        current?.id,
-      );
-    this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines.push(
-      baseline,
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines.at(-1);
+    const baseline = createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
+      threadId,
+      envelope,
+      current?.id,
     );
+    this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines.push(baseline);
     return baseline;
   }
 
@@ -10815,38 +8139,27 @@ export class LocalStore {
     threadId: string,
     result: SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
   ): ReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord {
-    if (
-      this.state.receiptTrustAnchorDirectoryQuorumActivationDecisions.length >=
-      MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_ACTIVATION_DECISIONS
-    ) {
+    if (this.state.receiptTrustAnchorDirectoryQuorumActivationDecisions.length >= MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_ACTIVATION_DECISIONS) {
       throw new Error(
         `Receipt trust anchor directory quorum activation exceeds ${MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_ACTIVATION_DECISIONS} decisions`,
       );
     }
-    const record =
-      createReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord({
-        signedByThreadId: threadId,
-        baseline: result.baseline,
-        verification: result.verification,
-        policyReview: result.policyReview,
-        sourceAlignment: result.sourceAlignment,
-        envelope: result.envelope,
-      });
-    this.state.receiptTrustAnchorDirectoryQuorumActivationDecisions.push(
-      record,
-    );
+    const record = createReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord({
+      signedByThreadId: threadId,
+      baseline: result.baseline,
+      verification: result.verification,
+      policyReview: result.policyReview,
+      sourceAlignment: result.sourceAlignment,
+      envelope: result.envelope,
+    });
+    this.state.receiptTrustAnchorDirectoryQuorumActivationDecisions.push(record);
     return record;
   }
 
-  private appendEventsToThread(
-    thread: ThreadRecord,
-    inputs: AppendEventInput[],
-  ): RunEvent[] {
+  private appendEventsToThread(thread: ThreadRecord, inputs: AppendEventInput[]): RunEvent[] {
     const events = inputs.map((input) => {
       if (input.threadId !== thread.id) {
-        throw new Error(
-          "Ledger event Thread does not match mutable projection",
-        );
+        throw new Error("Ledger event Thread does not match mutable projection");
       }
       const event: RunEvent = {
         id: createId("event"),
@@ -10869,15 +8182,9 @@ export class LocalStore {
     return events;
   }
 
-  private cancelPendingRunControlMessages(
-    thread: ThreadRecord,
-    runId: string,
-    reason: RunControlMessageCancellationReason,
-  ): RunEvent[] {
+  private cancelPendingRunControlMessages(thread: ThreadRecord, runId: string, reason: RunControlMessageCancellationReason): RunEvent[] {
     const currentEvents = this.requireLedger().listEvents(thread.id);
-    const pending = projectRunControlMessages(currentEvents, runId).filter(
-      (message) => message.status === "queued",
-    );
+    const pending = projectRunControlMessages(currentEvents, runId).filter((message) => message.status === "queued");
     return this.appendEventsToThread(
       thread,
       pending.map((message) => ({
@@ -10902,8 +8209,7 @@ export class LocalStore {
   ): RunEvent[] {
     const currentEvents = this.requireLedger().listEvents(thread.id);
     const pending = projectOperatorDecisions(currentEvents, runId).filter(
-      (decision) =>
-        decision.status === "pending" && decision.id !== preservedDecisionId,
+      (decision) => decision.status === "pending" && decision.id !== preservedDecisionId,
     );
     return this.appendEventsToThread(
       thread,
@@ -10937,51 +8243,27 @@ export class LocalStore {
       plans: this.state.plans,
     });
     if (input.source === "workflow") {
-      const plan = workflowExecution
-        ? this.state.plans.find(
-            (candidate) => candidate.id === workflowExecution.planId,
-          )
-        : undefined;
+      const plan = workflowExecution ? this.state.plans.find((candidate) => candidate.id === workflowExecution.planId) : undefined;
       if (!plan || plan.threadId !== thread.id || plan.status !== "active") {
-        throw new Error(
-          "Workflow Run requires its active same-Thread Plan capability",
-        );
+        throw new Error("Workflow Run requires its active same-Thread Plan capability");
       }
     } else if (workflowExecution) {
-      throw new Error(
-        "Workflow Plan capability requires a Workflow Run source",
-      );
+      throw new Error("Workflow Plan capability requires a Workflow Run source");
     }
-    const workflowPlanId =
-      workflowExecution?.planId ?? simulationExecution?.planId;
-    const activeRuns = this.state.runs.filter(
-      (run) =>
-        run.threadId === thread.id &&
-        (run.status === "queued" || run.status === "running"),
-    );
+    const workflowPlanId = workflowExecution?.planId ?? simulationExecution?.planId;
+    const activeRuns = this.state.runs.filter((run) => run.threadId === thread.id && (run.status === "queued" || run.status === "running"));
     const concurrentWorkflowRun =
       input.source === "workflow" &&
       activeRuns.length > 0 &&
-      activeRuns.every(
-        (run) =>
-          run.source === "workflow" && run.workflowPlanId === workflowPlanId,
-      );
+      activeRuns.every((run) => run.source === "workflow" && run.workflowPlanId === workflowPlanId);
     if (activeRuns.length > 0 && !concurrentWorkflowRun) {
       throw new Error(`Thread already has an active run: ${activeRuns[0]!.id}`);
     }
-    if (
-      concurrentWorkflowRun &&
-      activeRuns.length >= MAX_CONCURRENT_WORKFLOW_RUNS_PER_THREAD
-    ) {
-      throw new Error(
-        `Thread reached its concurrent Workflow Run limit (${MAX_CONCURRENT_WORKFLOW_RUNS_PER_THREAD})`,
-      );
+    if (concurrentWorkflowRun && activeRuns.length >= MAX_CONCURRENT_WORKFLOW_RUNS_PER_THREAD) {
+      throw new Error(`Thread reached its concurrent Workflow Run limit (${MAX_CONCURRENT_WORKFLOW_RUNS_PER_THREAD})`);
     }
-    const openOperatorDecision = projectOperatorDecisions(
-      this.requireLedger().listEvents(thread.id),
-    ).find(
-      (decision) =>
-        decision.status === "pending" || decision.status === "answered",
+    const openOperatorDecision = projectOperatorDecisions(this.requireLedger().listEvents(thread.id)).find(
+      (decision) => decision.status === "pending" || decision.status === "answered",
     );
     if (
       openOperatorDecision &&
@@ -10989,14 +8271,10 @@ export class LocalStore {
         input.operatorDecisionId !== openOperatorDecision.id ||
         input.parentRunId !== openOperatorDecision.runId)
     ) {
-      throw new Error(
-        `Thread is waiting for operator decision: ${openOperatorDecision.id}`,
-      );
+      throw new Error(`Thread is waiting for operator decision: ${openOperatorDecision.id}`);
     }
     if (!openOperatorDecision && input.operatorDecisionId) {
-      throw new Error(
-        `Operator decision not found for continuation: ${input.operatorDecisionId}`,
-      );
+      throw new Error(`Operator decision not found for continuation: ${input.operatorDecisionId}`);
     }
     if (thread.agentId !== input.agentId) {
       throw new Error("Run agent must match the thread agent");
@@ -11016,34 +8294,16 @@ export class LocalStore {
     });
     const executionMode = input.executionMode ?? "standard";
     if (openOperatorDecision) {
-      const originRun = this.state.runs.find(
-        (candidate) => candidate.id === openOperatorDecision.runId,
-      );
-      if (
-        !originRun ||
-        originRun.threadId !== thread.id ||
-        originRun.agentId !== input.agentId
-      ) {
-        throw new Error(
-          "Operator decision origin Run configuration is unavailable",
-        );
+      const originRun = this.state.runs.find((candidate) => candidate.id === openOperatorDecision.runId);
+      if (!originRun || originRun.threadId !== thread.id || originRun.agentId !== input.agentId) {
+        throw new Error("Operator decision origin Run configuration is unavailable");
       }
-      assertOperatorDecisionCapabilityContinuation(
-        effectiveRunAgent,
-        originRun,
-        input.model,
-      );
+      assertOperatorDecisionCapabilityContinuation(effectiveRunAgent, originRun, input.model);
     }
     const messageExperiment = input[AGENT_MESSAGE_EXPERIMENT_EXECUTION];
-    const modelInvocationExperiment =
-      input[MODEL_INVOCATION_EXPERIMENT_EXECUTION];
-    const toolInvocationExperiment =
-      input[TOOL_INVOCATION_EXPERIMENT_EXECUTION];
-    if (
-      input.source === "model_experiment" ||
-      executionMode === "model_experiment_single_call" ||
-      modelInvocationExperiment
-    ) {
+    const modelInvocationExperiment = input[MODEL_INVOCATION_EXPERIMENT_EXECUTION];
+    const toolInvocationExperiment = input[TOOL_INVOCATION_EXPERIMENT_EXECUTION];
+    if (input.source === "model_experiment" || executionMode === "model_experiment_single_call" || modelInvocationExperiment) {
       validateModelInvocationExperimentRunGate({
         source: input.source,
         executionMode,
@@ -11053,18 +8313,10 @@ export class LocalStore {
         targetModel: input.model ?? effectiveRunAgent.model,
         execution: modelInvocationExperiment,
         runs: this.state.runs,
-        sourceEvents: modelInvocationExperiment
-          ? this.requireLedger().listEvents(
-              modelInvocationExperiment.sourceThreadId,
-            )
-          : [],
+        sourceEvents: modelInvocationExperiment ? this.requireLedger().listEvents(modelInvocationExperiment.sourceThreadId) : [],
       });
     }
-    if (
-      input.source === "tool_experiment" ||
-      executionMode === "tool_experiment_read_only" ||
-      toolInvocationExperiment
-    ) {
+    if (input.source === "tool_experiment" || executionMode === "tool_experiment_read_only" || toolInvocationExperiment) {
       validateToolInvocationExperimentRunGate({
         source: input.source,
         executionMode,
@@ -11074,27 +8326,13 @@ export class LocalStore {
         targetModel: input.model ?? effectiveRunAgent.model,
         execution: toolInvocationExperiment,
         runs: this.state.runs,
-        sourceEvents: toolInvocationExperiment
-          ? this.requireLedger().listEvents(
-              toolInvocationExperiment.sourceThreadId,
-            )
-          : [],
+        sourceEvents: toolInvocationExperiment ? this.requireLedger().listEvents(toolInvocationExperiment.sourceThreadId) : [],
       });
     }
     if (executionMode === "agent_experiment_read_only") {
-      const branchRun = input.parentRunId
-        ? this.state.runs.find(
-            (candidate) => candidate.id === input.parentRunId,
-          )
-        : undefined;
-      const sourceRun = messageExperiment
-        ? this.state.runs.find(
-            (candidate) => candidate.id === messageExperiment.sourceRunId,
-          )
-        : undefined;
-      const sourceEvents = messageExperiment
-        ? this.requireLedger().listEvents(messageExperiment.sourceThreadId)
-        : [];
+      const branchRun = input.parentRunId ? this.state.runs.find((candidate) => candidate.id === input.parentRunId) : undefined;
+      const sourceRun = messageExperiment ? this.state.runs.find((candidate) => candidate.id === messageExperiment.sourceRunId) : undefined;
+      const sourceEvents = messageExperiment ? this.requireLedger().listEvents(messageExperiment.sourceThreadId) : [];
       if (messageExperiment) {
         validateAgentMessageExperimentToolResultRunGate({
           execution: messageExperiment,
@@ -11108,26 +8346,14 @@ export class LocalStore {
           event.type === "message.user",
       );
       const sourcePromptVariables = sourceEvents.filter(
-        (event) =>
-          event.runId === messageExperiment?.sourceRunId &&
-          event.type === "context.prompt_variables",
+        (event) => event.runId === messageExperiment?.sourceRunId && event.type === "context.prompt_variables",
       );
       const sourceConfiguration =
-        sourceRun?.configuration &&
-        "promptVariableSnapshotSha256" in sourceRun.configuration
-          ? sourceRun.configuration
-          : undefined;
+        sourceRun?.configuration && "promptVariableSnapshotSha256" in sourceRun.configuration ? sourceRun.configuration : undefined;
       const sourcePromptVariablePayload =
-        sourcePromptVariables.length === 1 &&
-        isRecord(sourcePromptVariables[0]?.payload)
-          ? sourcePromptVariables[0].payload
-          : undefined;
-      const sourcePromptVariableSnapshotSha256 =
-        sourceConfiguration?.promptVariableSnapshotSha256;
-      const sourceMessageText =
-        sourceMessage && isRecord(sourceMessage.payload)
-          ? sourceMessage.payload["text"]
-          : undefined;
+        sourcePromptVariables.length === 1 && isRecord(sourcePromptVariables[0]?.payload) ? sourcePromptVariables[0].payload : undefined;
+      const sourcePromptVariableSnapshotSha256 = sourceConfiguration?.promptVariableSnapshotSha256;
+      const sourceMessageText = sourceMessage && isRecord(sourceMessage.payload) ? sourceMessage.payload["text"] : undefined;
       const branchEvents =
         branchRun &&
         this.requireLedger()
@@ -11140,8 +8366,7 @@ export class LocalStore {
               event.visibility === "user" &&
               isRecord(event.payload) &&
               Object.keys(event.payload).length === 2 &&
-              event.payload["sourceThreadId"] ===
-                messageExperiment?.sourceThreadId &&
+              event.payload["sourceThreadId"] === messageExperiment?.sourceThreadId &&
               event.payload["sourceSeq"] === branchRun.branchFromSeq,
           );
       if (
@@ -11160,44 +8385,26 @@ export class LocalStore {
         sourceRun.status === "running" ||
         sourceRun.status === "queued" ||
         !sourceConfiguration ||
-        sourceConfiguration.contentSha256 !==
-          messageExperiment.sourceRunConfigurationSha256 ||
+        sourceConfiguration.contentSha256 !== messageExperiment.sourceRunConfigurationSha256 ||
         input.skillCatalogSha256 !== sourceConfiguration.skillCatalogSha256 ||
-        input.promptVariables?.catalogSha256 !==
-          sourceConfiguration.promptVariableCatalogSha256 ||
-        input.promptVariables?.snapshotSha256 !==
-          sourceConfiguration.promptVariableSnapshotSha256 ||
-        input.promptVariables?.renderedSystemPromptSha256 !==
-          sourceConfiguration.resolvedSystemPromptSha256 ||
-        sourcePromptVariablePayload?.["resolvedAt"] !==
-          messageExperiment.sourcePromptVariableResolvedAt ||
-        sourcePromptVariablePayload?.["contentSha256"] !==
-          sourcePromptVariableSnapshotSha256 ||
-        !Number.isFinite(
-          Date.parse(messageExperiment.sourcePromptVariableResolvedAt),
-        ) ||
+        input.promptVariables?.catalogSha256 !== sourceConfiguration.promptVariableCatalogSha256 ||
+        input.promptVariables?.snapshotSha256 !== sourceConfiguration.promptVariableSnapshotSha256 ||
+        input.promptVariables?.renderedSystemPromptSha256 !== sourceConfiguration.resolvedSystemPromptSha256 ||
+        sourcePromptVariablePayload?.["resolvedAt"] !== messageExperiment.sourcePromptVariableResolvedAt ||
+        sourcePromptVariablePayload?.["contentSha256"] !== sourcePromptVariableSnapshotSha256 ||
+        !Number.isFinite(Date.parse(messageExperiment.sourcePromptVariableResolvedAt)) ||
         sourceRun.agentRevision !== effectiveRunAgent.revision ||
         typeof sourceMessageText !== "string" ||
         sha256(sourceMessageText) !== messageExperiment.sourcePromptSha256 ||
         !/^[a-f0-9]{64}$/u.test(messageExperiment.previewSha256) ||
-        !/^[a-f0-9]{64}$/u.test(
-          messageExperiment.candidateWorkspaceSnapshotSha256,
-        )
+        !/^[a-f0-9]{64}$/u.test(messageExperiment.candidateWorkspaceSnapshotSha256)
       ) {
-        throw new Error(
-          "Read-only Agent experiment requires its verified message Branch capability",
-        );
+        throw new Error("Read-only Agent experiment requires its verified message Branch capability");
       }
     } else if (messageExperiment) {
-      throw new Error(
-        "Agent experiment capability requires read-only experiment execution",
-      );
+      throw new Error("Agent experiment capability requires read-only experiment execution");
     } else if (executionMode === "safe_read_only_recovery") {
-      const parent = input.parentRunId
-        ? this.state.runs.find(
-            (candidate) => candidate.id === input.parentRunId,
-          )
-        : undefined;
+      const parent = input.parentRunId ? this.state.runs.find((candidate) => candidate.id === input.parentRunId) : undefined;
       if (
         input.source !== "recovery" ||
         !parent ||
@@ -11205,9 +8412,7 @@ export class LocalStore {
         parent.agentId !== input.agentId ||
         parent.status !== "interrupted"
       ) {
-        throw new Error(
-          "Safe read-only recovery requires an interrupted parent Run",
-        );
+        throw new Error("Safe read-only recovery requires an interrupted parent Run");
       }
     } else if (isWorkflowReadOnlyChildExecutionMode(executionMode)) {
       validateWorkflowReadOnlyChildRunGate({
@@ -11216,18 +8421,14 @@ export class LocalStore {
         threadId: input.threadId,
         agentId: input.agentId,
         ...(input.parentRunId ? { parentRunId: input.parentRunId } : {}),
-        ...(workflowExecution
-          ? { workflowPlanId: workflowExecution.planId }
-          : {}),
+        ...(workflowExecution ? { workflowPlanId: workflowExecution.planId } : {}),
         runs: this.state.runs,
         events: this.requireLedger().listEvents(input.threadId),
       });
     }
     if (input.triggerId) {
       const triggerId = normalizeTriggerId(input.triggerId);
-      if (
-        this.state.runs.some((candidate) => candidate.triggerId === triggerId)
-      ) {
+      if (this.state.runs.some((candidate) => candidate.triggerId === triggerId)) {
         throw new Error(`Run trigger already exists: ${triggerId}`);
       }
       input = { ...input, triggerId };
@@ -11243,26 +8444,13 @@ export class LocalStore {
       startedAt: nowIso(),
       usage: emptyUsage(),
       agentRevision: effectiveRunAgent.revision,
-      limits: normalizeRunLimits(
-        effectiveRunAgent.runLimits ?? structuredClone(DEFAULT_RUN_LIMITS),
-      ),
-      configuration: createRunConfigurationFingerprint(
-        effectiveRunAgent,
-        input.model ?? effectiveRunAgent.model,
-        executionMode,
-        {
-          ...(input.skillCatalogSha256
-            ? { skillCatalogSha256: input.skillCatalogSha256 }
-            : {}),
-          ...(input.promptVariables
-            ? { promptVariables: input.promptVariables }
-            : {}),
-        },
-      ),
+      limits: normalizeRunLimits(effectiveRunAgent.runLimits ?? structuredClone(DEFAULT_RUN_LIMITS)),
+      configuration: createRunConfigurationFingerprint(effectiveRunAgent, input.model ?? effectiveRunAgent.model, executionMode, {
+        ...(input.skillCatalogSha256 ? { skillCatalogSha256: input.skillCatalogSha256 } : {}),
+        ...(input.promptVariables ? { promptVariables: input.promptVariables } : {}),
+      }),
       ...(input.parentRunId ? { parentRunId: input.parentRunId } : {}),
-      ...(input.branchFromSeq !== undefined
-        ? { branchFromSeq: input.branchFromSeq }
-        : {}),
+      ...(input.branchFromSeq !== undefined ? { branchFromSeq: input.branchFromSeq } : {}),
       ...(lease
         ? {
             lease: lease.summary,
@@ -11289,9 +8477,7 @@ export class LocalStore {
   }
 
   private mutableSchedule(scheduleId: string): PersistedAutomationSchedule {
-    const schedule = this.state.schedules.find(
-      (item) => item.id === scheduleId,
-    );
+    const schedule = this.state.schedules.find((item) => item.id === scheduleId);
     if (!schedule) throw new Error(`Schedule not found: ${scheduleId}`);
     return schedule;
   }
@@ -11303,9 +8489,7 @@ export class LocalStore {
   }
 
   private mutableInboundDelivery(deliveryId: string): PersistedInboundDelivery {
-    const delivery = this.state.inboundDeliveries.find(
-      (item) => item.id === deliveryId,
-    );
+    const delivery = this.state.inboundDeliveries.find((item) => item.id === deliveryId);
     if (!delivery) {
       throw new Error(`Inbound delivery not found: ${deliveryId}`);
     }
@@ -11337,34 +8521,18 @@ export class LocalStore {
     }
   }
 
-  private async persistState(
-    eventOrEvents?: RunEvent | RunEvent[],
-  ): Promise<void> {
+  private async persistState(eventOrEvents?: RunEvent | RunEvent[]): Promise<void> {
     const startedAt = monotonicNow();
     const serializationStartedAt = monotonicNow();
     const compactState = JSON.stringify(this.state);
     const serializationDurationMs = monotonicNow() - serializationStartedAt;
     const stateBytes = Buffer.byteLength(compactState, "utf8");
-    const events = Array.isArray(eventOrEvents)
-      ? eventOrEvents
-      : eventOrEvents
-        ? [eventOrEvents]
-        : [];
-    const eventBytes = events.reduce(
-      (total, event) =>
-        total + Buffer.byteLength(JSON.stringify(event), "utf8"),
-      0,
-    );
-    const touchedThreadIds = [
-      ...new Set(events.map((event) => event.threadId)),
-    ];
+    const events = Array.isArray(eventOrEvents) ? eventOrEvents : eventOrEvents ? [eventOrEvents] : [];
+    const eventBytes = events.reduce((total, event) => total + Buffer.byteLength(JSON.stringify(event), "utf8"), 0);
+    const touchedThreadIds = [...new Set(events.map((event) => event.threadId))];
     const ledgerCommitStartedAt = monotonicNow();
     try {
-      this.stateRevision = this.requireLedger().commit(
-        this.stateRevision,
-        compactState,
-        events,
-      );
+      this.stateRevision = this.requireLedger().commit(this.stateRevision, compactState, events);
     } catch (error) {
       this.persistenceMonitor.record({
         status: "failed",
@@ -11386,28 +8554,17 @@ export class LocalStore {
     }
     const ledgerCommitDurationMs = monotonicNow() - ledgerCommitStartedAt;
     const projectionStartedAt = monotonicNow();
-    const projections: Array<Promise<number>> = [
-      this.writeStateProjection(JSON.stringify(this.state, null, 2)),
-    ];
+    const projections: Array<Promise<number>> = [this.writeStateProjection(JSON.stringify(this.state, null, 2))];
     for (const threadId of touchedThreadIds) {
       projections.push(this.writeEventProjection(threadId));
     }
     const projectionResults = await Promise.allSettled(projections);
     const projectionDurationMs = monotonicNow() - projectionStartedAt;
-    const projectionFailureCount = projectionResults.filter(
-      (result) => result.status === "rejected",
-    ).length;
-    const stateProjectionBytes =
-      projectionResults[0]?.status === "fulfilled"
-        ? projectionResults[0].value
-        : 0;
+    const projectionFailureCount = projectionResults.filter((result) => result.status === "rejected").length;
+    const stateProjectionBytes = projectionResults[0]?.status === "fulfilled" ? projectionResults[0].value : 0;
     const eventProjectionBytes = projectionResults
       .slice(1)
-      .reduce(
-        (total, result) =>
-          total + (result.status === "fulfilled" ? result.value : 0),
-        0,
-      );
+      .reduce((total, result) => total + (result.status === "fulfilled" ? result.value : 0), 0);
     this.persistenceMonitor.record({
       status: "committed",
       revision: this.stateRevision,
@@ -11440,31 +8597,16 @@ export class LocalStore {
     this.restoreSnapshot(snapshot);
   }
 
-  private restoreSnapshot(snapshot: {
-    revision: number;
-    stateJson: string;
-  }): boolean {
+  private restoreSnapshot(snapshot: { revision: number; stateJson: string }): boolean {
     const parsed = JSON.parse(snapshot.stateJson) as PersistedState;
-    const capabilityBindingMetadataPresent = Object.hasOwn(
-      parsed,
-      "agentCapabilityBindings",
-    );
-    const capabilityBindingContent = JSON.stringify(
-      parsed.agentCapabilityBindings,
-    );
+    const capabilityBindingMetadataPresent = Object.hasOwn(parsed, "agentCapabilityBindings");
+    const capabilityBindingContent = JSON.stringify(parsed.agentCapabilityBindings);
     const migrateEvaluationCasebooks =
       Array.isArray(parsed.evaluationCasebooks) &&
-      parsed.evaluationCasebooks.some(
-        (casebook) =>
-          !Array.isArray((casebook as unknown as { cases?: unknown }).cases),
-      );
+      parsed.evaluationCasebooks.some((casebook) => !Array.isArray((casebook as unknown as { cases?: unknown }).cases));
     const migrateExtensionPackageHistory =
       Array.isArray(parsed.extensions) &&
-      parsed.extensions.some(
-        (extension) =>
-          Boolean(extension.packageBinding) &&
-          !Array.isArray(extension.packageHistory),
-      );
+      parsed.extensions.some((extension) => Boolean(extension.packageBinding) && !Array.isArray(extension.packageHistory));
     const requiresStateMigration =
       !Array.isArray(parsed.agentRevisions) ||
       !Array.isArray(parsed.evaluationAdjudications) ||
@@ -11474,27 +8616,13 @@ export class LocalStore {
       !Array.isArray(parsed.evaluationCasebookQualificationExecutions) ||
       !Array.isArray(parsed.receiptTrustAnchors) ||
       !Array.isArray(parsed.receiptTrustAnchorDirectorySubscriptions) ||
-      !Array.isArray(
-        parsed.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions,
-      ) ||
-      !Array.isArray(
-        parsed.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions,
-      ) ||
-      !Array.isArray(
-        parsed.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines,
-      ) ||
-      !Array.isArray(
-        parsed.receiptTrustAnchorDirectoryQuorumPromotionBaselines,
-      ) ||
-      !Array.isArray(
-        parsed.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines,
-      ) ||
-      !Array.isArray(
-        parsed.receiptTrustAnchorDirectoryQuorumActivationDecisions,
-      ) ||
-      !Array.isArray(
-        parsed.receiptTrustAnchorDirectoryQuorumActivationSelections,
-      ) ||
+      !Array.isArray(parsed.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions) ||
+      !Array.isArray(parsed.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions) ||
+      !Array.isArray(parsed.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines) ||
+      !Array.isArray(parsed.receiptTrustAnchorDirectoryQuorumPromotionBaselines) ||
+      !Array.isArray(parsed.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines) ||
+      !Array.isArray(parsed.receiptTrustAnchorDirectoryQuorumActivationDecisions) ||
+      !Array.isArray(parsed.receiptTrustAnchorDirectoryQuorumActivationSelections) ||
       !Array.isArray(parsed.extensionPublisherTrustAnchors) ||
       !Array.isArray(parsed.evaluationQualificationBaselines) ||
       !Array.isArray(parsed.executionPlanBlueprintOutcomeBaselines) ||
@@ -11502,16 +8630,12 @@ export class LocalStore {
       !Array.isArray(parsed.automaticRecoveryAttempts) ||
       migrateEvaluationCasebooks ||
       migrateExtensionPackageHistory;
-    this.state = this.validateState(
-      parsed,
-      this.listPersistedEvaluationEvents(parsed),
-    );
+    this.state = this.validateState(parsed, this.listPersistedEvaluationEvents(parsed));
     this.stateRevision = snapshot.revision;
     return (
       requiresStateMigration ||
       !capabilityBindingMetadataPresent ||
-      capabilityBindingContent !==
-        JSON.stringify(this.state.agentCapabilityBindings)
+      capabilityBindingContent !== JSON.stringify(this.state.agentCapabilityBindings)
     );
   }
 
@@ -11523,23 +8647,15 @@ export class LocalStore {
   private listPersistedEvaluationEvents(state: PersistedState): RunEvent[] {
     if (!Array.isArray(state.evaluations)) return [];
     const threadIds = new Set(
-      state.evaluations
-        .map((evaluation) => evaluation.threadId)
-        .filter((threadId): threadId is string => typeof threadId === "string"),
+      state.evaluations.map((evaluation) => evaluation.threadId).filter((threadId): threadId is string => typeof threadId === "string"),
     );
-    return [...threadIds].flatMap((threadId) =>
-      this.requireLedger().listEvents(threadId),
-    );
+    return [...threadIds].flatMap((threadId) => this.requireLedger().listEvents(threadId));
   }
 
   private async readLegacyEvents(): Promise<RunEvent[]> {
     const events: RunEvent[] = [];
-    const threads = new Map(
-      this.state.threads.map((thread) => [thread.id, thread]),
-    );
-    const files = (await readdir(this.eventsRoot))
-      .filter((file) => file.endsWith(".jsonl"))
-      .sort();
+    const threads = new Map(this.state.threads.map((thread) => [thread.id, thread]));
+    const files = (await readdir(this.eventsRoot)).filter((file) => file.endsWith(".jsonl")).sort();
     for (const file of files) {
       const threadId = file.slice(0, -".jsonl".length);
       const thread = threads.get(threadId);
@@ -11554,15 +8670,11 @@ export class LocalStore {
       for (const [index, event] of threadEvents.entries()) {
         const expectedSeq = index + 1;
         if (event.threadId !== threadId || event.seq !== expectedSeq) {
-          throw new Error(
-            `Legacy ledger sequence is invalid for ${threadId} at ${expectedSeq}`,
-          );
+          throw new Error(`Legacy ledger sequence is invalid for ${threadId} at ${expectedSeq}`);
         }
       }
       if (threadEvents.length < thread.eventCount) {
-        throw new Error(
-          `Legacy ledger is missing evidence for ${threadId}: expected ${thread.eventCount}, found ${threadEvents.length}`,
-        );
+        throw new Error(`Legacy ledger is missing evidence for ${threadId}: expected ${thread.eventCount}, found ${threadEvents.length}`);
       }
       if (threadEvents.length > thread.eventCount) {
         thread.eventCount = threadEvents.length;
@@ -11609,15 +8721,10 @@ export class LocalStore {
         validateThreadImportProvenanceLedgerReceipt(thread, threadEvents);
       }
       for (const [index, event] of threadEvents.entries()) {
-        assertArtifactReceiptEventBoundary(
-          event,
-          `Persisted Thread ${thread.id} events[${index}]`,
-        );
+        assertArtifactReceiptEventBoundary(event, `Persisted Thread ${thread.id} events[${index}]`);
       }
       assertRunEvaluationCompletedEventBindings({
-        evaluations: this.state.evaluations.filter(
-          (evaluation) => evaluation.threadId === thread.id,
-        ),
+        evaluations: this.state.evaluations.filter((evaluation) => evaluation.threadId === thread.id),
         events: threadEvents,
         label: `Persisted Thread ${thread.id}`,
       });
@@ -11629,9 +8736,7 @@ export class LocalStore {
       stats.delete(thread.id);
     }
     if (stats.size > 0) {
-      throw new Error(
-        `SQLite ledger contains events for unknown thread ${stats.keys().next().value}`,
-      );
+      throw new Error(`SQLite ledger contains events for unknown thread ${stats.keys().next().value}`);
     }
   }
 
@@ -11665,74 +8770,45 @@ function stripRunSecrets(run: PersistedRunRecord): RunRecord {
   return output;
 }
 
-function runControlMessageCancellationReason(
-  status: Exclude<RunStatus, "queued" | "running">,
-): RunControlMessageCancellationReason {
+function runControlMessageCancellationReason(status: Exclude<RunStatus, "queued" | "running">): RunControlMessageCancellationReason {
   if (status === "completed") return "run_completed_before_delivery";
   if (status === "cancelled") return "run_cancelled_before_delivery";
   if (status === "interrupted") return "run_interrupted_before_delivery";
   return "run_failed_before_delivery";
 }
 
-function operatorDecisionCancellationReason(
-  status: Exclude<RunStatus, "queued" | "running">,
-): OperatorDecisionCancellationReason {
+function operatorDecisionCancellationReason(status: Exclude<RunStatus, "queued" | "running">): OperatorDecisionCancellationReason {
   if (status === "completed") return "run_completed_without_wait";
   if (status === "cancelled") return "run_cancelled";
   return "run_failed";
 }
 
-function boundedStoreInteger(
-  value: number,
-  label: string,
-  minimum: number,
-  maximum: number,
-): number {
+function boundedStoreInteger(value: number, label: string, minimum: number, maximum: number): number {
   if (!Number.isInteger(value) || value < minimum || value > maximum) {
-    throw new Error(
-      `${label} must be an integer from ${minimum} to ${maximum}`,
-    );
+    throw new Error(`${label} must be an integer from ${minimum} to ${maximum}`);
   }
   return value;
 }
 
-function assertMemoryReplacementTargets(
-  targets: MemoryFact[],
-  replacement: MemoryFact,
-): void {
+function assertMemoryReplacementTargets(targets: MemoryFact[], replacement: MemoryFact): void {
   const consolidation = targets.length > 1;
   for (const target of targets) {
     if (target.status !== "active" && target.status !== "stale") {
-      throw new Error(
-        `Cannot ${consolidation ? "consolidate" : "correct"} memory in ${target.status} state`,
-      );
+      throw new Error(`Cannot ${consolidation ? "consolidate" : "correct"} memory in ${target.status} state`);
     }
-    if (
-      target.scope !== replacement.scope ||
-      target.agentId !== replacement.agentId
-    ) {
-      throw new Error(
-        `Memory ${consolidation ? "consolidation" : "correction"} must preserve scope and Agent`,
-      );
+    if (target.scope !== replacement.scope || target.agentId !== replacement.agentId) {
+      throw new Error(`Memory ${consolidation ? "consolidation" : "correction"} must preserve scope and Agent`);
     }
     if (target.content === replacement.content) {
-      throw new Error(
-        consolidation
-          ? "Memory consolidation must synthesize source content"
-          : "Memory correction must change content",
-      );
+      throw new Error(consolidation ? "Memory consolidation must synthesize source content" : "Memory correction must change content");
     }
     if (target.supersededByMemoryId) {
-      throw new Error(
-        `Memory is already superseded by ${target.supersededByMemoryId}`,
-      );
+      throw new Error(`Memory is already superseded by ${target.supersededByMemoryId}`);
     }
   }
 }
 
-function memoryReplacementKey(
-  fact: Pick<MemoryFact, "supersedesMemoryId" | "consolidatesMemoryIds">,
-): string {
+function memoryReplacementKey(fact: Pick<MemoryFact, "supersedesMemoryId" | "consolidatesMemoryIds">): string {
   return memoryReplacementTargetIds(fact).join(",");
 }
 
@@ -11743,15 +8819,9 @@ function validatePersistedRunEvaluation(
   subagents: SubagentTask[],
   sourceBindingEvents?: readonly RunEvent[],
 ): void {
-  const thread = threads.find(
-    (candidate) => candidate.id === evaluation.threadId,
-  );
-  const leftRun = runs.find(
-    (candidate) => candidate.id === evaluation.leftRunId,
-  );
-  const rightRun = runs.find(
-    (candidate) => candidate.id === evaluation.rightRunId,
-  );
+  const thread = threads.find((candidate) => candidate.id === evaluation.threadId);
+  const leftRun = runs.find((candidate) => candidate.id === evaluation.leftRunId);
+  const rightRun = runs.find((candidate) => candidate.id === evaluation.rightRunId);
   if (
     !/^evaluation_[a-z0-9_]{8,80}$/.test(evaluation.id) ||
     !thread ||
@@ -11761,9 +8831,7 @@ function validatePersistedRunEvaluation(
     leftRun.threadId !== evaluation.threadId ||
     rightRun.threadId !== evaluation.threadId
   ) {
-    throw new Error(
-      `Persisted Run evaluation reference is invalid: ${evaluation.id}`,
-    );
+    throw new Error(`Persisted Run evaluation reference is invalid: ${evaluation.id}`);
   }
   if (
     !/^[a-f0-9]{64}$/.test(evaluation.leftSnapshotSha256) ||
@@ -11771,9 +8839,7 @@ function validatePersistedRunEvaluation(
     !Number.isFinite(Date.parse(evaluation.createdAt)) ||
     !evaluation.evaluatorModel.provider.trim() ||
     !evaluation.evaluatorModel.id.trim() ||
-    !["left_better", "right_better", "tie", "inconclusive"].includes(
-      evaluation.verdict,
-    ) ||
+    !["left_better", "right_better", "tie", "inconclusive"].includes(evaluation.verdict) ||
     typeof evaluation.reason !== "string" ||
     !evaluation.reason.trim() ||
     evaluation.reason.length > 20_000 ||
@@ -11788,24 +8854,16 @@ function validatePersistedRunEvaluation(
     if (
       governance.kind !== "napier.run-evaluation-governance" ||
       governance.schemaVersion !== 1 ||
-      !["clean", "partial", "missing", "regressed"].includes(
-        governance.contextCoverageStatus,
-      ) ||
+      !["clean", "partial", "missing", "regressed"].includes(governance.contextCoverageStatus) ||
       !Number.isFinite(governance.contextCoverageRateDelta) ||
       !/^[a-f0-9]{64}$/.test(governance.contextCoverageDiagnosticsSha256) ||
       !/^[a-f0-9]{64}$/.test(governance.contextCoverageDeltaSha256) ||
       (governance.traceSummaryBoundaryStatus !== undefined &&
-        !["clean", "generic_present", "regressed"].includes(
-          governance.traceSummaryBoundaryStatus,
-        )) ||
-      (governance.traceSummaryBoundaryGenericDelta !== undefined &&
-        !Number.isSafeInteger(governance.traceSummaryBoundaryGenericDelta)) ||
+        !["clean", "generic_present", "regressed"].includes(governance.traceSummaryBoundaryStatus)) ||
+      (governance.traceSummaryBoundaryGenericDelta !== undefined && !Number.isSafeInteger(governance.traceSummaryBoundaryGenericDelta)) ||
       (governance.traceSummaryBoundaryDiagnosticsSha256 !== undefined &&
-        !/^[a-f0-9]{64}$/.test(
-          governance.traceSummaryBoundaryDiagnosticsSha256,
-        )) ||
-      (governance.traceSummaryBoundaryDeltaSha256 !== undefined &&
-        !/^[a-f0-9]{64}$/.test(governance.traceSummaryBoundaryDeltaSha256)) ||
+        !/^[a-f0-9]{64}$/.test(governance.traceSummaryBoundaryDiagnosticsSha256)) ||
+      (governance.traceSummaryBoundaryDeltaSha256 !== undefined && !/^[a-f0-9]{64}$/.test(governance.traceSummaryBoundaryDeltaSha256)) ||
       ([
         governance.traceSummaryBoundaryStatus,
         governance.traceSummaryBoundaryGenericDelta,
@@ -11821,9 +8879,7 @@ function validatePersistedRunEvaluation(
       !/^[a-f0-9]{64}$/.test(contentSha256) ||
       sha256(canonicalJson(governanceContent)) !== contentSha256
     ) {
-      throw new Error(
-        `Persisted Run evaluation governance is invalid: ${evaluation.id}`,
-      );
+      throw new Error(`Persisted Run evaluation governance is invalid: ${evaluation.id}`);
     }
     if (sourceBindingEvents) {
       assertRunEvaluationGovernanceSourceBinding({
@@ -11831,10 +8887,7 @@ function validatePersistedRunEvaluation(
         events: sourceBindingEvents,
         subagents,
         label: `Persisted Run evaluation ${evaluation.id}`,
-        skipSnapshotSourceBinding: isImportedHistoricalEvaluation(
-          evaluation,
-          thread.importProvenance,
-        ),
+        skipSnapshotSourceBinding: isImportedHistoricalEvaluation(evaluation, thread.importProvenance),
       });
     }
   }
@@ -11847,9 +8900,7 @@ function validatePersistedRunEvaluation(
     !Array.isArray(evaluation.scores) ||
     evaluation.scores.length > 100
   ) {
-    throw new Error(
-      `Persisted Run evaluation rubric is invalid: ${evaluation.id}`,
-    );
+    throw new Error(`Persisted Run evaluation rubric is invalid: ${evaluation.id}`);
   }
   const criterionIds = new Set<string>();
   for (const criterion of evaluation.rubric.criteria) {
@@ -11862,9 +8913,7 @@ function validatePersistedRunEvaluation(
       criterion.description.length > 5_000 ||
       criterionIds.has(criterion.id)
     ) {
-      throw new Error(
-        `Persisted Run evaluation criterion is invalid: ${evaluation.id}`,
-      );
+      throw new Error(`Persisted Run evaluation criterion is invalid: ${evaluation.id}`);
     }
     criterionIds.add(criterion.id);
   }
@@ -11882,9 +8931,7 @@ function validatePersistedRunEvaluation(
       !score.reason.trim() ||
       score.reason.length > 10_000
     ) {
-      throw new Error(
-        `Persisted Run evaluation score is invalid: ${evaluation.id}`,
-      );
+      throw new Error(`Persisted Run evaluation score is invalid: ${evaluation.id}`);
     }
     scoreCriterionIds.add(score.criterionId);
   }
@@ -11892,17 +8939,12 @@ function validatePersistedRunEvaluation(
 
 function assertEvaluationSuiteRuns(
   runs: PersistedRunRecord[],
-  suite: Pick<
-    EvaluationSuite,
-    "id" | "threadId" | "baselineRunId" | "candidateRunIds"
-  >,
+  suite: Pick<EvaluationSuite, "id" | "threadId" | "baselineRunId" | "candidateRunIds">,
 ): void {
   for (const runId of [suite.baselineRunId, ...suite.candidateRunIds]) {
     const run = runs.find((candidate) => candidate.id === runId);
     if (!run || run.threadId !== suite.threadId) {
-      throw new Error(
-        `Evaluation suite run must belong to the target thread: ${runId}`,
-      );
+      throw new Error(`Evaluation suite run must belong to the target thread: ${runId}`);
     }
     if (run.status === "queued" || run.status === "running") {
       throw new Error(`Evaluation suite run must be terminal: ${runId}`);
@@ -11910,14 +8952,8 @@ function assertEvaluationSuiteRuns(
   }
 }
 
-function isImportedHistoricalEvaluation(
-  evaluation: RunEvaluationRecord,
-  importProvenance: ThreadImportProvenance | undefined,
-): boolean {
-  return Boolean(
-    importProvenance &&
-    Date.parse(evaluation.createdAt) <= Date.parse(importProvenance.importedAt),
-  );
+function isImportedHistoricalEvaluation(evaluation: RunEvaluationRecord, importProvenance: ThreadImportProvenance | undefined): boolean {
+  return Boolean(importProvenance && Date.parse(evaluation.createdAt) <= Date.parse(importProvenance.importedAt));
 }
 
 function normalizePersistedEvaluationSuite(suite: EvaluationSuite): void {
@@ -11949,17 +8985,10 @@ function normalizePersistedEvaluationSuite(suite: EvaluationSuite): void {
     throw new Error(`Persisted evaluation suite model is invalid: ${suite.id}`);
   }
   if (!Number.isInteger(suite.revision) || suite.revision < 1) {
-    throw new Error(
-      `Persisted evaluation suite revision is invalid: ${suite.id}`,
-    );
+    throw new Error(`Persisted evaluation suite revision is invalid: ${suite.id}`);
   }
-  if (
-    !Number.isFinite(Date.parse(suite.createdAt)) ||
-    !Number.isFinite(Date.parse(suite.updatedAt))
-  ) {
-    throw new Error(
-      `Persisted evaluation suite timestamp is invalid: ${suite.id}`,
-    );
+  if (!Number.isFinite(Date.parse(suite.createdAt)) || !Number.isFinite(Date.parse(suite.updatedAt))) {
+    throw new Error(`Persisted evaluation suite timestamp is invalid: ${suite.id}`);
   }
 }
 
@@ -11988,8 +9017,7 @@ function validateEvaluationSuiteExecution(
     !Array.isArray(execution.candidateRunIds) ||
     execution.candidateRunIds.length < 1 ||
     execution.candidateRunIds.length > 8 ||
-    new Set(execution.candidateRunIds).size !==
-      execution.candidateRunIds.length ||
+    new Set(execution.candidateRunIds).size !== execution.candidateRunIds.length ||
     execution.candidateRunIds.includes(execution.baselineRunId)
   ) {
     throw new Error("Evaluation suite execution snapshot is invalid");
@@ -12018,19 +9046,14 @@ function validateEvaluationSuiteExecution(
   ) {
     throw new Error("Evaluation suite execution evidence is invalid");
   }
-  if (
-    !Array.isArray(execution.results) ||
-    execution.results.length !== execution.candidateRunIds.length
-  ) {
+  if (!Array.isArray(execution.results) || execution.results.length !== execution.candidateRunIds.length) {
     throw new Error("Evaluation suite execution results are incomplete");
   }
 
   const evaluationIds = new Set<string>();
   for (const [index, result] of execution.results.entries()) {
     const candidateRunId = execution.candidateRunIds[index];
-    const evaluation = evaluations.find(
-      (candidate) => candidate.id === result.evaluationId,
-    );
+    const evaluation = evaluations.find((candidate) => candidate.id === result.evaluationId);
     if (
       !candidateRunId ||
       result.candidateRunId !== candidateRunId ||
@@ -12047,18 +9070,12 @@ function validateEvaluationSuiteExecution(
       throw new Error("Evaluation suite case evidence is invalid");
     }
     evaluationIds.add(result.evaluationId);
-    const baselineAverageScore = scoreAverage(
-      evaluation.scores.map((score) => score.leftScore),
-    );
-    const candidateAverageScore = scoreAverage(
-      evaluation.scores.map((score) => score.rightScore),
-    );
+    const baselineAverageScore = scoreAverage(evaluation.scores.map((score) => score.leftScore));
+    const candidateAverageScore = scoreAverage(evaluation.scores.map((score) => score.rightScore));
     const expectedStatus =
-      evaluation.verdict === "inconclusive" ||
-      candidateAverageScore === undefined
+      evaluation.verdict === "inconclusive" || candidateAverageScore === undefined
         ? "inconclusive"
-        : (evaluation.verdict === "right_better" ||
-              evaluation.verdict === "tie") &&
+        : (evaluation.verdict === "right_better" || evaluation.verdict === "tie") &&
             candidateAverageScore >= execution.gate.minimumCandidateScore
           ? "passed"
           : "failed";
@@ -12071,26 +9088,16 @@ function validateEvaluationSuiteExecution(
     }
   }
 
-  const passedCount = execution.results.filter(
-    (result) => result.status === "passed",
-  ).length;
-  const failedCount = execution.results.filter(
-    (result) => result.status === "failed",
-  ).length;
-  const inconclusiveCount =
-    execution.results.length - passedCount - failedCount;
+  const passedCount = execution.results.filter((result) => result.status === "passed").length;
+  const failedCount = execution.results.filter((result) => result.status === "failed").length;
+  const inconclusiveCount = execution.results.length - passedCount - failedCount;
   const conclusiveCount = passedCount + failedCount;
   const passRate = conclusiveCount > 0 ? passedCount / conclusiveCount : 0;
   const averageCandidateScore = scoreAverage(
-    execution.results.flatMap((result) =>
-      result.candidateAverageScore === undefined
-        ? []
-        : [result.candidateAverageScore],
-    ),
+    execution.results.flatMap((result) => (result.candidateAverageScore === undefined ? [] : [result.candidateAverageScore])),
   );
   const status =
-    conclusiveCount === 0 ||
-    (!execution.gate.allowInconclusive && inconclusiveCount > 0)
+    conclusiveCount === 0 || (!execution.gate.allowInconclusive && inconclusiveCount > 0)
       ? "inconclusive"
       : passRate >= execution.gate.minimumPassRate
         ? "passed"
@@ -12105,31 +9112,17 @@ function validateEvaluationSuiteExecution(
   ) {
     throw new Error("Evaluation suite aggregate evidence is invalid");
   }
-  const {
-    id: _id,
-    contentSha256: _contentSha256,
-    startedAt: _startedAt,
-    finishedAt: _finishedAt,
-    ...hashInput
-  } = execution;
+  const { id: _id, contentSha256: _contentSha256, startedAt: _startedAt, finishedAt: _finishedAt, ...hashInput } = execution;
   if (execution.contentSha256 !== hashEvaluationSuiteExecution(hashInput)) {
     throw new Error("Evaluation suite execution content hash mismatch");
   }
 }
 
 function scoreAverage(values: number[]): number | undefined {
-  return values.length > 0
-    ? Number(
-        (
-          values.reduce((total, value) => total + value, 0) / values.length
-        ).toFixed(4),
-      )
-    : undefined;
+  return values.length > 0 ? Number((values.reduce((total, value) => total + value, 0) / values.length).toFixed(4)) : undefined;
 }
 
-function stripScheduleSecrets(
-  schedule: PersistedAutomationSchedule,
-): AutomationSchedule {
+function stripScheduleSecrets(schedule: PersistedAutomationSchedule): AutomationSchedule {
   const output = structuredClone(schedule);
   delete output.claimTokenSha256;
   return output;
@@ -12140,15 +9133,8 @@ function stripChannelSecrets(channel: PersistedInboundChannel): InboundChannel {
   return output;
 }
 
-function stripDeliverySecrets(
-  delivery: PersistedInboundDelivery,
-): InboundDelivery {
-  const {
-    idempotencySha256: _idempotencySha256,
-    message: _message,
-    model: _model,
-    ...output
-  } = structuredClone(delivery);
+function stripDeliverySecrets(delivery: PersistedInboundDelivery): InboundDelivery {
+  const { idempotencySha256: _idempotencySha256, message: _message, model: _model, ...output } = structuredClone(delivery);
   return output;
 }
 
@@ -12172,9 +9158,7 @@ function receiptTrustCheckpointRegistryQuorumBaselineKey(
   envelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum>,
 ): string {
   const receipt = envelope.receipt;
-  const candidate = receipt.candidates.find(
-    (item) => item.checkpointSha256 === receipt.selectedCheckpointSha256,
-  );
+  const candidate = receipt.candidates.find((item) => item.checkpointSha256 === receipt.selectedCheckpointSha256);
   return [
     receipt.selectedCheckpointSha256 ?? "",
     receipt.selectedSelectionSetSha256 ?? "",
@@ -12200,18 +9184,11 @@ function receiptTrustRotationApprovalPolicyBaselineKey(
   ].join(":");
 }
 
-function assertLeaseToken(
-  expectedSha256: string | undefined,
-  token: string | undefined,
-): void {
+function assertLeaseToken(expectedSha256: string | undefined, token: string | undefined): void {
   assertHashedToken(expectedSha256, token, "Lease token");
 }
 
-function assertHashedToken(
-  expectedSha256: string | undefined,
-  token: string | undefined,
-  label: string,
-): void {
+function assertHashedToken(expectedSha256: string | undefined, token: string | undefined, label: string): void {
   if (!expectedSha256 || !token) throw new Error(`${label} is required`);
   const expected = Buffer.from(expectedSha256, "hex");
   const actual = Buffer.from(sha256(token), "hex");
@@ -12237,11 +9214,7 @@ function normalizeLeaseOwner(value: string): string {
 
 function normalizeTriggerId(value: string): string {
   const normalized = value.trim();
-  if (
-    !normalized ||
-    normalized.length > 240 ||
-    /[\u0000-\u001f\u007f]/.test(normalized)
-  ) {
+  if (!normalized || normalized.length > 240 || /[\u0000-\u001f\u007f]/.test(normalized)) {
     throw new Error("Run trigger ID is invalid");
   }
   return normalized;
@@ -12256,16 +9229,9 @@ function normalizeChannelName(value: string): string {
   return normalized;
 }
 
-function normalizeInboundChannelAdapter(
-  adapter: unknown,
-): InboundChannelAdapter {
+function normalizeInboundChannelAdapter(adapter: unknown): InboundChannelAdapter {
   if (adapter === undefined) return DEFAULT_INBOUND_CHANNEL_ADAPTER;
-  if (
-    adapter === "napier_json" ||
-    adapter === "github_webhook" ||
-    adapter === "slack_event" ||
-    adapter === "linear_webhook"
-  ) {
+  if (adapter === "napier_json" || adapter === "github_webhook" || adapter === "slack_event" || adapter === "linear_webhook") {
     return adapter;
   }
   throw new Error("Inbound channel adapter is invalid");
@@ -12298,22 +9264,14 @@ function rebindImportedSubagentEventPayload(
     const taskId = idMap.get(source.taskId);
     const requestContentSha256 = idMap.get(source.requestContentSha256);
     const task = taskId ? tasks.get(taskId) : undefined;
-    const importedOutcomeSha256 =
-      source.status === "accepted" ? task?.outcome?.contentSha256 : undefined;
-    if (
-      !taskId ||
-      !requestContentSha256 ||
-      !task ||
-      (source.status === "accepted" && !importedOutcomeSha256)
-    ) {
+    const importedOutcomeSha256 = source.status === "accepted" ? task?.outcome?.contentSha256 : undefined;
+    if (!taskId || !requestContentSha256 || !task || (source.status === "accepted" && !importedOutcomeSha256)) {
       throw new Error("Imported Subagent outcome repair binding is missing");
     }
     const rebound = rebindSubagentOutcomeRepairOutcome(source, {
       taskId,
       requestContentSha256,
-      ...(importedOutcomeSha256
-        ? { outcomeSha256: importedOutcomeSha256 }
-        : {}),
+      ...(importedOutcomeSha256 ? { outcomeSha256: importedOutcomeSha256 } : {}),
     });
     idMap.set(source.contentSha256, rebound.contentSha256);
     return rebound as unknown as JsonValue;
@@ -12355,11 +9313,7 @@ function normalizeInboundChannelPolicy(request: CreateInboundChannelRequest): {
   retryPolicy: InboundRetryPolicy | undefined;
   signaturePolicy: Partial<InboundSignaturePolicy> | undefined;
 } {
-  const templateId =
-    request.policyTemplate ??
-    (request.retryPolicy || request.signaturePolicy
-      ? "custom"
-      : "legacy_bearer");
+  const templateId = request.policyTemplate ?? (request.retryPolicy || request.signaturePolicy ? "custom" : "legacy_bearer");
   if (templateId === "custom") {
     return {
       retryPolicy: request.retryPolicy,
@@ -12369,13 +9323,8 @@ function normalizeInboundChannelPolicy(request: CreateInboundChannelRequest): {
   if (!isNamedInboundChannelPolicyTemplateId(templateId)) {
     throw new Error("Inbound channel policy template is invalid");
   }
-  if (
-    request.retryPolicy !== undefined ||
-    request.signaturePolicy !== undefined
-  ) {
-    throw new Error(
-      "Inbound channel policy template cannot be combined with explicit policies",
-    );
+  if (request.retryPolicy !== undefined || request.signaturePolicy !== undefined) {
+    throw new Error("Inbound channel policy template cannot be combined with explicit policies");
   }
   const template = INBOUND_CHANNEL_POLICY_TEMPLATES[templateId];
   return {
@@ -12388,13 +9337,8 @@ function deriveInboundChannelPolicyTemplate(
   retryPolicy: InboundRetryPolicy,
   signaturePolicy: InboundSignaturePolicy,
 ): InboundChannelPolicyTemplateId {
-  for (const [templateId, template] of Object.entries(
-    INBOUND_CHANNEL_POLICY_TEMPLATES,
-  ) as Array<
-    [
-      NamedInboundChannelPolicyTemplateId,
-      (typeof INBOUND_CHANNEL_POLICY_TEMPLATES)[NamedInboundChannelPolicyTemplateId],
-    ]
+  for (const [templateId, template] of Object.entries(INBOUND_CHANNEL_POLICY_TEMPLATES) as Array<
+    [NamedInboundChannelPolicyTemplateId, (typeof INBOUND_CHANNEL_POLICY_TEMPLATES)[NamedInboundChannelPolicyTemplateId]]
   >) {
     if (
       sameInboundRetryPolicy(retryPolicy, template.retryPolicy) &&
@@ -12406,29 +9350,15 @@ function deriveInboundChannelPolicyTemplate(
   return "custom";
 }
 
-function isNamedInboundChannelPolicyTemplateId(
-  value: unknown,
-): value is NamedInboundChannelPolicyTemplateId {
-  return (
-    typeof value === "string" &&
-    Object.hasOwn(INBOUND_CHANNEL_POLICY_TEMPLATES, value)
-  );
+function isNamedInboundChannelPolicyTemplateId(value: unknown): value is NamedInboundChannelPolicyTemplateId {
+  return typeof value === "string" && Object.hasOwn(INBOUND_CHANNEL_POLICY_TEMPLATES, value);
 }
 
-function sameInboundRetryPolicy(
-  left: InboundRetryPolicy,
-  right: InboundRetryPolicy,
-): boolean {
-  return (
-    left.maxAttempts === right.maxAttempts &&
-    left.baseDelayMs === right.baseDelayMs
-  );
+function sameInboundRetryPolicy(left: InboundRetryPolicy, right: InboundRetryPolicy): boolean {
+  return left.maxAttempts === right.maxAttempts && left.baseDelayMs === right.baseDelayMs;
 }
 
-function sameInboundSignaturePolicy(
-  left: InboundSignaturePolicy,
-  right: InboundSignaturePolicy,
-): boolean {
+function sameInboundSignaturePolicy(left: InboundSignaturePolicy, right: InboundSignaturePolicy): boolean {
   return (
     left.required === right.required &&
     left.algorithm === right.algorithm &&
@@ -12438,10 +9368,7 @@ function sameInboundSignaturePolicy(
   );
 }
 
-function normalizeInboundRetryPolicy(
-  policy: InboundRetryPolicy | undefined,
-  allowDefault = true,
-): InboundRetryPolicy {
+function normalizeInboundRetryPolicy(policy: InboundRetryPolicy | undefined, allowDefault = true): InboundRetryPolicy {
   if (policy === undefined) {
     if (!allowDefault) {
       throw new Error("Inbound retry policy is required");
@@ -12452,23 +9379,15 @@ function normalizeInboundRetryPolicy(
     throw new Error("Inbound retry policy must be an object");
   }
   const normalized = policy;
-  if (
-    !Number.isInteger(normalized.maxAttempts) ||
-    normalized.maxAttempts < 1 ||
-    normalized.maxAttempts > MAX_INBOUND_ATTEMPTS
-  ) {
-    throw new Error(
-      `Inbound retry maxAttempts must be an integer from 1 to ${MAX_INBOUND_ATTEMPTS}`,
-    );
+  if (!Number.isInteger(normalized.maxAttempts) || normalized.maxAttempts < 1 || normalized.maxAttempts > MAX_INBOUND_ATTEMPTS) {
+    throw new Error(`Inbound retry maxAttempts must be an integer from 1 to ${MAX_INBOUND_ATTEMPTS}`);
   }
   if (
     !Number.isInteger(normalized.baseDelayMs) ||
     normalized.baseDelayMs < MIN_INBOUND_RETRY_BASE_MS ||
     normalized.baseDelayMs > MAX_INBOUND_RETRY_BASE_MS
   ) {
-    throw new Error(
-      `Inbound retry baseDelayMs must be an integer from ${MIN_INBOUND_RETRY_BASE_MS} to ${MAX_INBOUND_RETRY_BASE_MS}`,
-    );
+    throw new Error(`Inbound retry baseDelayMs must be an integer from ${MIN_INBOUND_RETRY_BASE_MS} to ${MAX_INBOUND_RETRY_BASE_MS}`);
   }
   return {
     maxAttempts: normalized.maxAttempts,
@@ -12476,21 +9395,16 @@ function normalizeInboundRetryPolicy(
   };
 }
 
-function normalizeInboundSignaturePolicy(
-  policy: Partial<InboundSignaturePolicy> | undefined,
-): InboundSignaturePolicy {
+function normalizeInboundSignaturePolicy(policy: Partial<InboundSignaturePolicy> | undefined): InboundSignaturePolicy {
   if (policy === undefined) {
     return structuredClone(DEFAULT_INBOUND_SIGNATURE_POLICY);
   }
   if (policy === null || typeof policy !== "object" || Array.isArray(policy)) {
     throw new Error("Inbound signature policy must be an object");
   }
-  const required =
-    typeof policy.required === "boolean" ? policy.required : false;
+  const required = typeof policy.required === "boolean" ? policy.required : false;
   const toleranceSeconds =
-    policy.toleranceSeconds === undefined
-      ? DEFAULT_INBOUND_SIGNATURE_POLICY.toleranceSeconds
-      : policy.toleranceSeconds;
+    policy.toleranceSeconds === undefined ? DEFAULT_INBOUND_SIGNATURE_POLICY.toleranceSeconds : policy.toleranceSeconds;
   if (
     !Number.isInteger(toleranceSeconds) ||
     toleranceSeconds < MIN_INBOUND_SIGNATURE_TOLERANCE_SECONDS ||
@@ -12511,11 +9425,7 @@ function normalizeInboundSignaturePolicy(
 
 function normalizeIdempotencyKey(value: string): string {
   const normalized = value.trim();
-  if (
-    normalized.length < 8 ||
-    normalized.length > 200 ||
-    /[\u0000-\u001f\u007f]/.test(normalized)
-  ) {
+  if (normalized.length < 8 || normalized.length > 200 || /[\u0000-\u001f\u007f]/.test(normalized)) {
     throw new Error("Inbound idempotency key must be 8-200 visible characters");
   }
   return normalized;
@@ -12530,10 +9440,7 @@ function normalizeInboundMessage(value: string): string {
   return normalized;
 }
 
-function normalizeOptionalSha256(
-  value: string | undefined,
-  label: string,
-): string | undefined {
+function normalizeOptionalSha256(value: string | undefined, label: string): string | undefined {
   if (value === undefined) return undefined;
   const normalized = value.trim().toLowerCase();
   if (!/^[a-f0-9]{64}$/.test(normalized)) {
@@ -12554,10 +9461,7 @@ function createExecutionPlanBlueprintRecommendationPolicyOverride(input: {
     apiVersion: NAPIER_API_VERSION,
     familySha256: input.family.familySha256,
     recommendationPolicy: input.recommendationPolicy,
-    recommendationPolicySha256:
-      executionPlanBlueprintRecommendationPolicySha256(
-        input.recommendationPolicy,
-      ),
+    recommendationPolicySha256: executionPlanBlueprintRecommendationPolicySha256(input.recommendationPolicy),
     portfolioSetSha256: input.portfolioSetSha256,
     familyRecordCount: input.family.recordCount,
     familyOutcomeQualifiedCount: input.family.outcomeQualifiedCount,
@@ -12570,28 +9474,18 @@ function createExecutionPlanBlueprintRecommendationPolicyOverride(input: {
   };
 }
 
-function validateExecutionPlanBlueprintRecommendationPolicyOverride(
-  value: unknown,
-): ExecutionPlanBlueprintRecommendationPolicyOverride {
+function validateExecutionPlanBlueprintRecommendationPolicyOverride(value: unknown): ExecutionPlanBlueprintRecommendationPolicyOverride {
   if (!isRecord(value)) {
-    throw new Error(
-      "Execution Plan blueprint recommendation policy override is invalid",
-    );
+    throw new Error("Execution Plan blueprint recommendation policy override is invalid");
   }
-  const override =
-    value as unknown as ExecutionPlanBlueprintRecommendationPolicyOverride;
-  const recommendationPolicy =
-    normalizeExecutionPlanBlueprintRecommendationPolicy(
-      override.recommendationPolicy?.templateId,
-    );
+  const override = value as unknown as ExecutionPlanBlueprintRecommendationPolicyOverride;
+  const recommendationPolicy = normalizeExecutionPlanBlueprintRecommendationPolicy(override.recommendationPolicy?.templateId);
   if (
-    override.kind !==
-      "napier.execution-plan-blueprint-recommendation-policy-override" ||
+    override.kind !== "napier.execution-plan-blueprint-recommendation-policy-override" ||
     override.schemaVersion !== 1 ||
     override.apiVersion !== NAPIER_API_VERSION ||
     !isSha256(override.familySha256) ||
-    override.recommendationPolicySha256 !==
-      executionPlanBlueprintRecommendationPolicySha256(recommendationPolicy) ||
+    override.recommendationPolicySha256 !== executionPlanBlueprintRecommendationPolicySha256(recommendationPolicy) ||
     !isSha256(override.portfolioSetSha256) ||
     !isNonNegativeInteger(override.familyRecordCount) ||
     !isNonNegativeInteger(override.familyOutcomeQualifiedCount) ||
@@ -12600,18 +9494,14 @@ function validateExecutionPlanBlueprintRecommendationPolicyOverride(
     !Number.isFinite(Date.parse(override.updatedAt)) ||
     !isSha256(override.contentSha256)
   ) {
-    throw new Error(
-      "Execution Plan blueprint recommendation policy override is invalid",
-    );
+    throw new Error("Execution Plan blueprint recommendation policy override is invalid");
   }
   const { contentSha256: _contentSha256, ...content } = {
     ...override,
     recommendationPolicy,
   };
   if (sha256(canonicalJson(content)) !== override.contentSha256) {
-    throw new Error(
-      "Execution Plan blueprint recommendation policy override hash mismatch",
-    );
+    throw new Error("Execution Plan blueprint recommendation policy override hash mismatch");
   }
   return structuredClone({
     ...override,
@@ -12632,8 +9522,7 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideList(input: {
     apiVersion: NAPIER_API_VERSION,
     overrideCount: overrides.length,
     portfolioSetSha256: input.portfolioSetSha256,
-    overrideSetSha256:
-      executionPlanBlueprintRecommendationPolicyOverrideSetSha256(overrides),
+    overrideSetSha256: executionPlanBlueprintRecommendationPolicyOverrideSetSha256(overrides),
     overrides,
   };
   return {
@@ -12643,9 +9532,7 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideList(input: {
   };
 }
 
-function normalizeExecutionPlanBlueprintSelectionObjective(
-  value: string | undefined,
-): string | undefined {
+function normalizeExecutionPlanBlueprintSelectionObjective(value: string | undefined): string | undefined {
   if (value === undefined) return undefined;
   const normalized = value.trim();
   if (normalized.length < 1 || normalized.length > 4_000) {
@@ -12660,17 +9547,12 @@ function normalizeExecutionPlanBlueprintRecommendationPolicy(
   const selected = templateId ?? "balanced";
   const policy = EXECUTION_PLAN_BLUEPRINT_RECOMMENDATION_POLICIES[selected];
   if (!policy) {
-    throw new Error(
-      "Execution plan blueprint recommendation policy is invalid",
-    );
+    throw new Error("Execution plan blueprint recommendation policy is invalid");
   }
   return structuredClone(policy);
 }
 
-function compareExecutionPlanBlueprintRecords(
-  left: ExecutionPlanBlueprintRecord,
-  right: ExecutionPlanBlueprintRecord,
-): number {
+function compareExecutionPlanBlueprintRecords(left: ExecutionPlanBlueprintRecord, right: ExecutionPlanBlueprintRecord): number {
   const updatedOrder = right.updatedAt.localeCompare(left.updatedAt);
   if (updatedOrder !== 0) return updatedOrder;
   return left.id.localeCompare(right.id);
@@ -12692,24 +9574,12 @@ function createExecutionPlanBlueprintSelectionCandidate(input: {
     input.outcomeQualification.status === "qualified" &&
     input.preview?.status === "ready";
   const diagnostics = uniqueStrings([
-    ...(input.sourceQualification.status === "qualified"
-      ? []
-      : [`source_${input.sourceQualification.status}`]),
-    ...input.sourceQualification.diagnostics.map(
-      (diagnostic) => `source_${diagnostic}`,
-    ),
-    ...(input.outcomeQualification.status === "qualified"
-      ? []
-      : [`outcome_${input.outcomeQualification.status}`]),
-    ...input.outcomeQualification.diagnostics.map(
-      (diagnostic) => `outcome_${diagnostic}`,
-    ),
-    ...(input.preview && input.preview.status !== "ready"
-      ? [`preview_${input.preview.status}`]
-      : []),
-    ...(input.preview?.diagnostics.map(
-      (diagnostic) => `preview_${diagnostic}`,
-    ) ?? []),
+    ...(input.sourceQualification.status === "qualified" ? [] : [`source_${input.sourceQualification.status}`]),
+    ...input.sourceQualification.diagnostics.map((diagnostic) => `source_${diagnostic}`),
+    ...(input.outcomeQualification.status === "qualified" ? [] : [`outcome_${input.outcomeQualification.status}`]),
+    ...input.outcomeQualification.diagnostics.map((diagnostic) => `outcome_${diagnostic}`),
+    ...(input.preview && input.preview.status !== "ready" ? [`preview_${input.preview.status}`] : []),
+    ...(input.preview?.diagnostics.map((diagnostic) => `preview_${diagnostic}`) ?? []),
   ]);
   return {
     recordId: input.record.id,
@@ -12729,47 +9599,27 @@ function createExecutionPlanBlueprintSelectionCandidate(input: {
       ? executionPlanBlueprintRecommendationScoreBps({
           outcomeCompletionBps: input.outcomeQualification.completionRateBps,
           familyCompletionBps: input.family.completionRateBps,
-          reviewedBaselineCoverageBps:
-            executionPlanBlueprintFamilyReviewedBaselineCoverageBps(
-              input.family,
-            ),
-          replayEvidenceBps: executionPlanBlueprintReplayEvidenceBps(
-            input.outcomeQualification.replayCount,
-          ),
+          reviewedBaselineCoverageBps: executionPlanBlueprintFamilyReviewedBaselineCoverageBps(input.family),
+          replayEvidenceBps: executionPlanBlueprintReplayEvidenceBps(input.outcomeQualification.replayCount),
           policy: input.recommendationPolicy,
         })
       : 0,
     recommendationPolicyTemplate: input.recommendationPolicy.templateId,
-    recommendationPolicySha256:
-      executionPlanBlueprintRecommendationPolicySha256(
-        input.recommendationPolicy,
-      ),
+    recommendationPolicySha256: executionPlanBlueprintRecommendationPolicySha256(input.recommendationPolicy),
     recommendationPolicySource: input.recommendationPolicySource,
-    ...(input.familyPolicyOverrideSha256
-      ? { familyPolicyOverrideSha256: input.familyPolicyOverrideSha256 }
-      : {}),
+    ...(input.familyPolicyOverrideSha256 ? { familyPolicyOverrideSha256: input.familyPolicyOverrideSha256 } : {}),
     ...(input.preview ? { previewStatus: input.preview.status } : {}),
-    ...(input.preview?.previewSha256
-      ? { previewSha256: input.preview.previewSha256 }
-      : {}),
-    ...(input.outcomeQualification.baselineId
-      ? { baselineId: input.outcomeQualification.baselineId }
-      : {}),
-    ...(input.outcomeQualification.baselineSha256
-      ? { baselineSha256: input.outcomeQualification.baselineSha256 }
-      : {}),
+    ...(input.preview?.previewSha256 ? { previewSha256: input.preview.previewSha256 } : {}),
+    ...(input.outcomeQualification.baselineId ? { baselineId: input.outcomeQualification.baselineId } : {}),
+    ...(input.outcomeQualification.baselineSha256 ? { baselineSha256: input.outcomeQualification.baselineSha256 } : {}),
     ...(input.outcomeQualification.baselineOutcomesSha256
       ? {
-          baselineOutcomesSha256:
-            input.outcomeQualification.baselineOutcomesSha256,
+          baselineOutcomesSha256: input.outcomeQualification.baselineOutcomesSha256,
         }
       : {}),
-    ...(input.latestBaseline?.promotedAt
-      ? { baselinePromotedAt: input.latestBaseline.promotedAt }
-      : {}),
+    ...(input.latestBaseline?.promotedAt ? { baselinePromotedAt: input.latestBaseline.promotedAt } : {}),
     currentOutcomesSha256: input.outcomeQualification.currentOutcomesSha256,
-    currentReplayHistorySha256:
-      input.outcomeQualification.currentReplayHistorySha256,
+    currentReplayHistorySha256: input.outcomeQualification.currentReplayHistorySha256,
     currentOutcomeSetSha256: input.outcomeQualification.currentOutcomeSetSha256,
     scoreBps: ready ? input.outcomeQualification.completionRateBps : 0,
     replayCount: input.outcomeQualification.replayCount,
@@ -12822,12 +9672,8 @@ function createExecutionPlanBlueprintPortfolioCalibrationEntry(input: {
     outcomeQualificationStatus: input.outcomeQualification.status,
     sourceDiagnostics: input.sourceQualification.diagnostics,
     outcomeDiagnostics: input.outcomeQualification.diagnostics,
-    ...(input.outcomeQualification.baselineSha256
-      ? { baselineSha256: input.outcomeQualification.baselineSha256 }
-      : {}),
-    ...(input.latestBaseline?.promotedAt
-      ? { baselinePromotedAt: input.latestBaseline.promotedAt }
-      : {}),
+    ...(input.outcomeQualification.baselineSha256 ? { baselineSha256: input.outcomeQualification.baselineSha256 } : {}),
+    ...(input.latestBaseline?.promotedAt ? { baselinePromotedAt: input.latestBaseline.promotedAt } : {}),
     reviewedBaseline: Boolean(input.latestBaseline?.reviewSha256),
     currentOutcomesSha256: input.outcomeQualification.currentOutcomesSha256,
     currentOutcomeSetSha256: input.outcomeQualification.currentOutcomeSetSha256,
@@ -12841,9 +9687,7 @@ function createExecutionPlanBlueprintPortfolioCalibrationEntry(input: {
   };
 }
 
-function executionPlanBlueprintFamilySha256(
-  blueprint: ExecutionPlanBlueprintRecord["blueprint"],
-): string {
+function executionPlanBlueprintFamilySha256(blueprint: ExecutionPlanBlueprintRecord["blueprint"]): string {
   return sha256(
     canonicalJson({
       stepCount: blueprint.stepCount,
@@ -12851,9 +9695,7 @@ function executionPlanBlueprintFamilySha256(
       steps: blueprint.steps
         .map((step) => ({
           idSha256: sha256(step.id),
-          dependsOnSha256: sha256(
-            canonicalJson([...(step.dependsOn ?? [])].sort()),
-          ),
+          dependsOnSha256: sha256(canonicalJson([...(step.dependsOn ?? [])].sort())),
         }))
         .sort((left, right) => left.idSha256.localeCompare(right.idSha256)),
       artifacts: (blueprint.artifacts ?? [])
@@ -12869,32 +9711,20 @@ function executionPlanBlueprintFamilySha256(
 function createExecutionPlanBlueprintPortfolioCalibration(
   entries: ExecutionPlanBlueprintPortfolioCalibrationEntry[],
 ): ExecutionPlanBlueprintPortfolioCalibration {
-  const families =
-    createExecutionPlanBlueprintPortfolioCalibrationFamilies(entries);
+  const families = createExecutionPlanBlueprintPortfolioCalibrationFamilies(entries);
   const content = {
     kind: "napier.execution-plan-blueprint-portfolio-calibration" as const,
     schemaVersion: 1 as const,
     apiVersion: NAPIER_API_VERSION,
     recordCount: entries.length,
-    activeCount: entries.filter((entry) => entry.recordStatus === "active")
-      .length,
-    archivedCount: entries.filter((entry) => entry.recordStatus === "archived")
-      .length,
+    activeCount: entries.filter((entry) => entry.recordStatus === "active").length,
+    archivedCount: entries.filter((entry) => entry.recordStatus === "archived").length,
     familyCount: families.length,
-    sourceQualifiedCount: entries.filter(
-      (entry) => entry.sourceQualificationStatus === "qualified",
-    ).length,
-    outcomeQualifiedCount: entries.filter(
-      (entry) => entry.outcomeQualificationStatus === "qualified",
-    ).length,
-    reviewedBaselineCount: entries.filter((entry) => entry.reviewedBaseline)
-      .length,
-    missingBaselineCount: entries.filter(
-      (entry) => entry.outcomeQualificationStatus === "missing_baseline",
-    ).length,
-    policyFailedCount: entries.filter(
-      (entry) => entry.outcomeQualificationStatus === "policy_failed",
-    ).length,
+    sourceQualifiedCount: entries.filter((entry) => entry.sourceQualificationStatus === "qualified").length,
+    outcomeQualifiedCount: entries.filter((entry) => entry.outcomeQualificationStatus === "qualified").length,
+    reviewedBaselineCount: entries.filter((entry) => entry.reviewedBaseline).length,
+    missingBaselineCount: entries.filter((entry) => entry.outcomeQualificationStatus === "missing_baseline").length,
+    policyFailedCount: entries.filter((entry) => entry.outcomeQualificationStatus === "policy_failed").length,
     portfolioSetSha256: executionPlanBlueprintPortfolioSetSha256(entries),
     families,
   };
@@ -12928,21 +9758,12 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview(inp
     schemaVersion: 1 as const,
     apiVersion: NAPIER_API_VERSION,
     overrideCount: reviews.length,
-    alignedCount: reviews.filter((review) => review.status === "aligned")
-      .length,
-    retireRecommendedCount: reviews.filter(
-      (review) => review.recommendation === "retire",
-    ).length,
-    missingFamilyCount: reviews.filter(
-      (review) => review.status === "family_missing",
-    ).length,
+    alignedCount: reviews.filter((review) => review.status === "aligned").length,
+    retireRecommendedCount: reviews.filter((review) => review.recommendation === "retire").length,
+    missingFamilyCount: reviews.filter((review) => review.status === "family_missing").length,
     portfolioSetSha256: input.portfolioSetSha256,
-    overrideSetSha256:
-      executionPlanBlueprintRecommendationPolicyOverrideSetSha256(overrides),
-    reviewSetSha256:
-      executionPlanBlueprintRecommendationPolicyOverrideDriftReviewSetSha256(
-        reviews,
-      ),
+    overrideSetSha256: executionPlanBlueprintRecommendationPolicyOverrideSetSha256(overrides),
+    reviewSetSha256: executionPlanBlueprintRecommendationPolicyOverrideDriftReviewSetSha256(reviews),
     reviews,
   };
   return {
@@ -12958,25 +9779,19 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewItem
   override: ExecutionPlanBlueprintRecommendationPolicyOverride;
   policies: ExecutionPlanBlueprintRecommendationPolicy[];
 }): ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewItem {
-  const family = input.families.find(
-    (candidate) => candidate.familySha256 === input.override.familySha256,
-  );
+  const family = input.families.find((candidate) => candidate.familySha256 === input.override.familySha256);
   if (!family) {
-    return createExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewContent(
-      {
-        familySha256: input.override.familySha256,
-        overrideSha256: input.override.contentSha256,
-        status: "family_missing",
-        recommendation: "retire",
-        diagnostics: ["family_missing"],
-        overridePolicyTemplate: input.override.recommendationPolicy.templateId,
-        overridePolicySha256: input.override.recommendationPolicySha256,
-      },
-    );
+    return createExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewContent({
+      familySha256: input.override.familySha256,
+      overrideSha256: input.override.contentSha256,
+      status: "family_missing",
+      recommendation: "retire",
+      diagnostics: ["family_missing"],
+      overridePolicyTemplate: input.override.recommendationPolicy.templateId,
+      overridePolicySha256: input.override.recommendationPolicySha256,
+    });
   }
-  const familyEntries = input.entries.filter(
-    (entry) => entry.familySha256 === family.familySha256,
-  );
+  const familyEntries = input.entries.filter((entry) => entry.familySha256 === family.familySha256);
   const familyResults = input.policies.map((policy) =>
     createExecutionPlanBlueprintRecommendationPolicyBacktestResult({
       entries: familyEntries,
@@ -12984,71 +9799,50 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewItem
       policy,
     }),
   );
-  const best = [...familyResults].sort(
-    compareExecutionPlanBlueprintRecommendationPolicyBacktestResults,
-  )[0];
+  const best = [...familyResults].sort(compareExecutionPlanBlueprintRecommendationPolicyBacktestResults)[0];
   const overrideResult = familyResults.find(
-    (result) =>
-      result.recommendationPolicy.templateId ===
-      input.override.recommendationPolicy.templateId,
+    (result) => result.recommendationPolicy.templateId === input.override.recommendationPolicy.templateId,
   );
   const diagnostics = uniqueStrings([
     ...(best?.selectedRecordId ? [] : ["no_qualified_candidate"]),
-    ...(best &&
-    best.recommendationPolicy.templateId !==
-      input.override.recommendationPolicy.templateId
+    ...(best && best.recommendationPolicy.templateId !== input.override.recommendationPolicy.templateId
       ? ["override_policy_not_best"]
       : []),
-    ...(overrideResult?.selectedRecordId &&
-    best?.selectedRecordId &&
-    overrideResult.selectedRecordId !== best.selectedRecordId
+    ...(overrideResult?.selectedRecordId && best?.selectedRecordId && overrideResult.selectedRecordId !== best.selectedRecordId
       ? ["override_selected_record_differs"]
       : []),
   ]);
   const aligned = diagnostics.length === 0;
-  return createExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewContent(
-    {
-      familySha256: input.override.familySha256,
-      overrideSha256: input.override.contentSha256,
-      status: aligned ? "aligned" : "retire_recommended",
-      recommendation: aligned ? "keep" : "retire",
-      diagnostics,
-      overridePolicyTemplate: input.override.recommendationPolicy.templateId,
-      overridePolicySha256: input.override.recommendationPolicySha256,
-      ...(overrideResult?.selectedRecordId
-        ? { overrideSelectedRecordId: overrideResult.selectedRecordId }
-        : {}),
-      ...(overrideResult?.selectedRecommendationScoreBps !== undefined
-        ? {
-            overrideSelectedRecommendationScoreBps:
-              overrideResult.selectedRecommendationScoreBps,
-          }
-        : {}),
-      ...(best
-        ? { bestPolicyTemplate: best.recommendationPolicy.templateId }
-        : {}),
-      ...(best ? { bestPolicySha256: best.recommendationPolicySha256 } : {}),
-      ...(best?.selectedRecordId
-        ? { bestSelectedRecordId: best.selectedRecordId }
-        : {}),
-      ...(best?.selectedRecommendationScoreBps !== undefined
-        ? {
-            bestSelectedRecommendationScoreBps:
-              best.selectedRecommendationScoreBps,
-          }
-        : {}),
-      familyRecordCount: family.recordCount,
-      familyOutcomeQualifiedCount: family.outcomeQualifiedCount,
-      familyCompletionRateBps: family.completionRateBps,
-    },
-  );
+  return createExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewContent({
+    familySha256: input.override.familySha256,
+    overrideSha256: input.override.contentSha256,
+    status: aligned ? "aligned" : "retire_recommended",
+    recommendation: aligned ? "keep" : "retire",
+    diagnostics,
+    overridePolicyTemplate: input.override.recommendationPolicy.templateId,
+    overridePolicySha256: input.override.recommendationPolicySha256,
+    ...(overrideResult?.selectedRecordId ? { overrideSelectedRecordId: overrideResult.selectedRecordId } : {}),
+    ...(overrideResult?.selectedRecommendationScoreBps !== undefined
+      ? {
+          overrideSelectedRecommendationScoreBps: overrideResult.selectedRecommendationScoreBps,
+        }
+      : {}),
+    ...(best ? { bestPolicyTemplate: best.recommendationPolicy.templateId } : {}),
+    ...(best ? { bestPolicySha256: best.recommendationPolicySha256 } : {}),
+    ...(best?.selectedRecordId ? { bestSelectedRecordId: best.selectedRecordId } : {}),
+    ...(best?.selectedRecommendationScoreBps !== undefined
+      ? {
+          bestSelectedRecommendationScoreBps: best.selectedRecommendationScoreBps,
+        }
+      : {}),
+    familyRecordCount: family.recordCount,
+    familyOutcomeQualifiedCount: family.outcomeQualifiedCount,
+    familyCompletionRateBps: family.completionRateBps,
+  });
 }
 
 function createExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewContent(
-  content: Omit<
-    ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewItem,
-    "reviewSha256"
-  >,
+  content: Omit<ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewItem, "reviewSha256">,
 ): ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewItem {
   return {
     ...content,
@@ -13070,10 +9864,8 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementResul
     apiVersion: NAPIER_API_VERSION,
     familySha256: input.override.familySha256,
     retiredOverrideSha256: input.override.contentSha256,
-    retiredRecommendationPolicyTemplate:
-      input.override.recommendationPolicy.templateId,
-    retiredRecommendationPolicySha256:
-      input.override.recommendationPolicySha256,
+    retiredRecommendationPolicyTemplate: input.override.recommendationPolicy.templateId,
+    retiredRecommendationPolicySha256: input.override.recommendationPolicySha256,
     portfolioSetSha256: input.portfolioSetSha256,
     overrideSetSha256: input.overrideSetSha256,
     driftReviewSetSha256: input.driftReviewSetSha256,
@@ -13090,15 +9882,11 @@ function validateExecutionPlanBlueprintRecommendationPolicyOverrideRetirementRes
   value: unknown,
 ): RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult {
   if (!isRecord(value)) {
-    throw new Error(
-      "Execution Plan blueprint recommendation policy override retirement is invalid",
-    );
+    throw new Error("Execution Plan blueprint recommendation policy override retirement is invalid");
   }
-  const retirement =
-    value as unknown as RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult;
+  const retirement = value as unknown as RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult;
   if (
-    retirement.kind !==
-      "napier.execution-plan-blueprint-recommendation-policy-override-retirement" ||
+    retirement.kind !== "napier.execution-plan-blueprint-recommendation-policy-override-retirement" ||
     retirement.schemaVersion !== 1 ||
     retirement.apiVersion !== NAPIER_API_VERSION ||
     !isSha256(retirement.familySha256) ||
@@ -13114,15 +9902,11 @@ function validateExecutionPlanBlueprintRecommendationPolicyOverrideRetirementRes
     !Number.isFinite(Date.parse(retirement.retiredAt)) ||
     !isSha256(retirement.contentSha256)
   ) {
-    throw new Error(
-      "Execution Plan blueprint recommendation policy override retirement is invalid",
-    );
+    throw new Error("Execution Plan blueprint recommendation policy override retirement is invalid");
   }
   const { contentSha256: _contentSha256, ...content } = retirement;
   if (sha256(canonicalJson(content)) !== retirement.contentSha256) {
-    throw new Error(
-      "Execution Plan blueprint recommendation policy override retirement hash mismatch",
-    );
+    throw new Error("Execution Plan blueprint recommendation policy override retirement hash mismatch");
   }
   return structuredClone(retirement);
 }
@@ -13133,9 +9917,7 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
   currentOverrideSetSha256: string;
 }): ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory {
   const retirements = input.retirements
-    .map(
-      validateExecutionPlanBlueprintRecommendationPolicyOverrideRetirementResult,
-    )
+    .map(validateExecutionPlanBlueprintRecommendationPolicyOverrideRetirementResult)
     .sort(compareExecutionPlanBlueprintRecommendationPolicyOverrideRetirements);
   const latest = retirements.at(-1);
   const content = {
@@ -13145,10 +9927,7 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
     retirementCount: retirements.length,
     portfolioSetSha256: input.portfolioSetSha256,
     currentOverrideSetSha256: input.currentOverrideSetSha256,
-    retirementSetSha256:
-      executionPlanBlueprintRecommendationPolicyOverrideRetirementSetSha256(
-        retirements,
-      ),
+    retirementSetSha256: executionPlanBlueprintRecommendationPolicyOverrideRetirementSetSha256(retirements),
     ...(latest ? { latestRetiredAt: latest.retiredAt } : {}),
     retirements,
   };
@@ -13166,29 +9945,14 @@ function verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
   const diagnostics: string[] = [];
   const record = isRecord(input) ? input : undefined;
   if (!record) diagnostics.push("history_not_object");
-  const declaredContentSha256 = isSha256(record?.["contentSha256"])
-    ? record["contentSha256"]
-    : undefined;
-  const recomputedContentSha256 = record
-    ? sha256(canonicalJson(retirementHistoryHashContent(record)))
-    : undefined;
-  const declaredPortfolioSetSha256 = isSha256(record?.["portfolioSetSha256"])
-    ? record["portfolioSetSha256"]
-    : undefined;
-  const declaredCurrentOverrideSetSha256 = isSha256(
-    record?.["currentOverrideSetSha256"],
-  )
-    ? record["currentOverrideSetSha256"]
-    : undefined;
-  const declaredRetirementSetSha256 = isSha256(record?.["retirementSetSha256"])
-    ? record["retirementSetSha256"]
-    : undefined;
-  const retirementCount = isNonNegativeInteger(record?.["retirementCount"])
-    ? record["retirementCount"]
-    : undefined;
+  const declaredContentSha256 = isSha256(record?.["contentSha256"]) ? record["contentSha256"] : undefined;
+  const recomputedContentSha256 = record ? sha256(canonicalJson(retirementHistoryHashContent(record))) : undefined;
+  const declaredPortfolioSetSha256 = isSha256(record?.["portfolioSetSha256"]) ? record["portfolioSetSha256"] : undefined;
+  const declaredCurrentOverrideSetSha256 = isSha256(record?.["currentOverrideSetSha256"]) ? record["currentOverrideSetSha256"] : undefined;
+  const declaredRetirementSetSha256 = isSha256(record?.["retirementSetSha256"]) ? record["retirementSetSha256"] : undefined;
+  const retirementCount = isNonNegativeInteger(record?.["retirementCount"]) ? record["retirementCount"] : undefined;
   const latestRetiredAt =
-    typeof record?.["latestRetiredAt"] === "string" &&
-    Number.isFinite(Date.parse(record["latestRetiredAt"]))
+    typeof record?.["latestRetiredAt"] === "string" && Number.isFinite(Date.parse(record["latestRetiredAt"]))
       ? record["latestRetiredAt"]
       : undefined;
   let recomputedRetirementSetSha256: string | undefined;
@@ -13196,20 +9960,14 @@ function verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
     diagnostics.push("retirements_not_array");
   } else if (Array.isArray(record?.["retirements"])) {
     try {
-      recomputedRetirementSetSha256 =
-        executionPlanBlueprintRecommendationPolicyOverrideRetirementSetSha256(
-          record["retirements"].map(
-            validateExecutionPlanBlueprintRecommendationPolicyOverrideRetirementResult,
-          ),
-        );
+      recomputedRetirementSetSha256 = executionPlanBlueprintRecommendationPolicyOverrideRetirementSetSha256(
+        record["retirements"].map(validateExecutionPlanBlueprintRecommendationPolicyOverrideRetirementResult),
+      );
     } catch {
       diagnostics.push("retirements_invalid");
     }
   }
-  if (
-    record?.["kind"] !==
-    "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history"
-  ) {
+  if (record?.["kind"] !== "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history") {
     diagnostics.push("kind_mismatch");
   }
   if (record?.["schemaVersion"] !== 1) diagnostics.push("schema_mismatch");
@@ -13217,17 +9975,10 @@ function verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
     diagnostics.push("api_version_mismatch");
   }
   if (!declaredContentSha256) diagnostics.push("content_hash_missing");
-  if (
-    declaredContentSha256 &&
-    recomputedContentSha256 &&
-    declaredContentSha256 !== recomputedContentSha256
-  ) {
+  if (declaredContentSha256 && recomputedContentSha256 && declaredContentSha256 !== recomputedContentSha256) {
     diagnostics.push("content_hash_mismatch");
   }
-  if (
-    declaredContentSha256 &&
-    declaredContentSha256 !== observed.contentSha256
-  ) {
+  if (declaredContentSha256 && declaredContentSha256 !== observed.contentSha256) {
     diagnostics.push("current_history_mismatch");
   }
   if (!declaredPortfolioSetSha256) diagnostics.push("portfolio_set_missing");
@@ -13241,11 +9992,7 @@ function verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
     diagnostics.push("current_override_set_mismatch");
   }
   if (!declaredRetirementSetSha256) diagnostics.push("retirement_set_missing");
-  if (
-    declaredRetirementSetSha256 &&
-    recomputedRetirementSetSha256 &&
-    declaredRetirementSetSha256 !== recomputedRetirementSetSha256
-  ) {
+  if (declaredRetirementSetSha256 && recomputedRetirementSetSha256 && declaredRetirementSetSha256 !== recomputedRetirementSetSha256) {
     diagnostics.push("retirement_set_hash_mismatch");
   }
   if (declaredRetirementSetSha256 !== observed.retirementSetSha256) {
@@ -13273,9 +10020,7 @@ function verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
     observedContentSha256: observed.contentSha256,
     ...(declaredPortfolioSetSha256 ? { declaredPortfolioSetSha256 } : {}),
     observedPortfolioSetSha256: observed.portfolioSetSha256,
-    ...(declaredCurrentOverrideSetSha256
-      ? { declaredCurrentOverrideSetSha256 }
-      : {}),
+    ...(declaredCurrentOverrideSetSha256 ? { declaredCurrentOverrideSetSha256 } : {}),
     observedCurrentOverrideSetSha256: observed.currentOverrideSetSha256,
     ...(declaredRetirementSetSha256 ? { declaredRetirementSetSha256 } : {}),
     ...(recomputedRetirementSetSha256 ? { recomputedRetirementSetSha256 } : {}),
@@ -13283,9 +10028,7 @@ function verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
     ...(retirementCount !== undefined ? { retirementCount } : {}),
     observedRetirementCount: observed.retirementCount,
     ...(latestRetiredAt ? { latestRetiredAt } : {}),
-    ...(observed.latestRetiredAt
-      ? { observedLatestRetiredAt: observed.latestRetiredAt }
-      : {}),
+    ...(observed.latestRetiredAt ? { observedLatestRetiredAt: observed.latestRetiredAt } : {}),
   };
   return {
     ...content,
@@ -13298,36 +10041,23 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
   histories: unknown[],
 ): ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle {
   const proofItems = histories.map((history, index) =>
-    createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItem(
-      history,
-      index,
-    ),
+    createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItem(history, index),
   );
   const validItems = proofItems.filter((item) => item.status === "valid");
-  const validContentHashes = validItems
-    .map((item) => item.declaredContentSha256)
-    .filter(isSha256);
-  const validPortfolioSetHashes = validItems
-    .map((item) => item.declaredPortfolioSetSha256)
-    .filter(isSha256);
-  const validCurrentOverrideSetHashes = validItems
-    .map((item) => item.declaredCurrentOverrideSetSha256)
-    .filter(isSha256);
-  const validRetirementSetHashes = validItems
-    .map((item) => item.declaredRetirementSetSha256)
-    .filter(isSha256);
+  const validContentHashes = validItems.map((item) => item.declaredContentSha256).filter(isSha256);
+  const validPortfolioSetHashes = validItems.map((item) => item.declaredPortfolioSetSha256).filter(isSha256);
+  const validCurrentOverrideSetHashes = validItems.map((item) => item.declaredCurrentOverrideSetSha256).filter(isSha256);
+  const validRetirementSetHashes = validItems.map((item) => item.declaredRetirementSetSha256).filter(isSha256);
   const distinctHistoryCount = new Set(validContentHashes).size;
   const distinctPortfolioSetCount = new Set(validPortfolioSetHashes).size;
-  const distinctCurrentOverrideSetCount = new Set(validCurrentOverrideSetHashes)
-    .size;
+  const distinctCurrentOverrideSetCount = new Set(validCurrentOverrideSetHashes).size;
   const distinctRetirementSetCount = new Set(validRetirementSetHashes).size;
   const diagnostics: string[] = [];
   if (histories.length < 2) diagnostics.push("history_count_below_min");
   if (proofItems.length !== validItems.length) {
     diagnostics.push("histories_invalid");
   }
-  if (distinctPortfolioSetCount > 1)
-    diagnostics.push("portfolio_set_divergent");
+  if (distinctPortfolioSetCount > 1) diagnostics.push("portfolio_set_divergent");
   if (distinctCurrentOverrideSetCount > 1) {
     diagnostics.push("current_override_set_divergent");
   }
@@ -13335,11 +10065,7 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
     diagnostics.push("retirement_set_divergent");
   }
   const status: ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle["status"] =
-    histories.length < 2 || proofItems.length !== validItems.length
-      ? "invalid"
-      : diagnostics.length > 0
-        ? "divergent"
-        : "aligned";
+    histories.length < 2 || proofItems.length !== validItems.length ? "invalid" : diagnostics.length > 0 ? "divergent" : "aligned";
   const content = {
     kind: "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history-proof-bundle" as const,
     schemaVersion: 1 as const,
@@ -13353,22 +10079,11 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
     distinctPortfolioSetCount,
     distinctCurrentOverrideSetCount,
     distinctRetirementSetCount,
-    historySetSha256:
-      executionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryBundleSetSha256(
-        validContentHashes,
-      ),
-    portfolioSetBundleSha256:
-      executionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryBundleSetSha256(
-        validPortfolioSetHashes,
-      ),
+    historySetSha256: executionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryBundleSetSha256(validContentHashes),
+    portfolioSetBundleSha256: executionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryBundleSetSha256(validPortfolioSetHashes),
     currentOverrideSetBundleSha256:
-      executionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryBundleSetSha256(
-        validCurrentOverrideSetHashes,
-      ),
-    retirementSetBundleSha256:
-      executionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryBundleSetSha256(
-        validRetirementSetHashes,
-      ),
+      executionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryBundleSetSha256(validCurrentOverrideSetHashes),
+    retirementSetBundleSha256: executionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryBundleSetSha256(validRetirementSetHashes),
     histories: proofItems,
   };
   return {
@@ -13385,29 +10100,14 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
   const diagnostics: string[] = [];
   const record = isRecord(input) ? input : undefined;
   if (!record) diagnostics.push("history_not_object");
-  const declaredContentSha256 = isSha256(record?.["contentSha256"])
-    ? record["contentSha256"]
-    : undefined;
-  const recomputedContentSha256 = record
-    ? sha256(canonicalJson(retirementHistoryHashContent(record)))
-    : undefined;
-  const declaredPortfolioSetSha256 = isSha256(record?.["portfolioSetSha256"])
-    ? record["portfolioSetSha256"]
-    : undefined;
-  const declaredCurrentOverrideSetSha256 = isSha256(
-    record?.["currentOverrideSetSha256"],
-  )
-    ? record["currentOverrideSetSha256"]
-    : undefined;
-  const declaredRetirementSetSha256 = isSha256(record?.["retirementSetSha256"])
-    ? record["retirementSetSha256"]
-    : undefined;
-  const retirementCount = isNonNegativeInteger(record?.["retirementCount"])
-    ? record["retirementCount"]
-    : undefined;
+  const declaredContentSha256 = isSha256(record?.["contentSha256"]) ? record["contentSha256"] : undefined;
+  const recomputedContentSha256 = record ? sha256(canonicalJson(retirementHistoryHashContent(record))) : undefined;
+  const declaredPortfolioSetSha256 = isSha256(record?.["portfolioSetSha256"]) ? record["portfolioSetSha256"] : undefined;
+  const declaredCurrentOverrideSetSha256 = isSha256(record?.["currentOverrideSetSha256"]) ? record["currentOverrideSetSha256"] : undefined;
+  const declaredRetirementSetSha256 = isSha256(record?.["retirementSetSha256"]) ? record["retirementSetSha256"] : undefined;
+  const retirementCount = isNonNegativeInteger(record?.["retirementCount"]) ? record["retirementCount"] : undefined;
   const latestRetiredAt =
-    typeof record?.["latestRetiredAt"] === "string" &&
-    Number.isFinite(Date.parse(record["latestRetiredAt"]))
+    typeof record?.["latestRetiredAt"] === "string" && Number.isFinite(Date.parse(record["latestRetiredAt"]))
       ? record["latestRetiredAt"]
       : undefined;
   let recomputedRetirementSetSha256: string | undefined;
@@ -13418,26 +10118,16 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
   } else if (Array.isArray(record?.["retirements"])) {
     try {
       const retirements = record["retirements"]
-        .map(
-          validateExecutionPlanBlueprintRecommendationPolicyOverrideRetirementResult,
-        )
-        .sort(
-          compareExecutionPlanBlueprintRecommendationPolicyOverrideRetirements,
-        );
-      recomputedRetirementSetSha256 =
-        executionPlanBlueprintRecommendationPolicyOverrideRetirementSetSha256(
-          retirements,
-        );
+        .map(validateExecutionPlanBlueprintRecommendationPolicyOverrideRetirementResult)
+        .sort(compareExecutionPlanBlueprintRecommendationPolicyOverrideRetirements);
+      recomputedRetirementSetSha256 = executionPlanBlueprintRecommendationPolicyOverrideRetirementSetSha256(retirements);
       recomputedRetirementCount = retirements.length;
       recomputedLatestRetiredAt = retirements.at(-1)?.retiredAt;
     } catch {
       diagnostics.push("retirements_invalid");
     }
   }
-  if (
-    record?.["kind"] !==
-    "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history"
-  ) {
+  if (record?.["kind"] !== "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history") {
     diagnostics.push("kind_mismatch");
   }
   if (record?.["schemaVersion"] !== 1) diagnostics.push("schema_mismatch");
@@ -13445,11 +10135,7 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
     diagnostics.push("api_version_mismatch");
   }
   if (!declaredContentSha256) diagnostics.push("content_hash_missing");
-  if (
-    declaredContentSha256 &&
-    recomputedContentSha256 &&
-    declaredContentSha256 !== recomputedContentSha256
-  ) {
+  if (declaredContentSha256 && recomputedContentSha256 && declaredContentSha256 !== recomputedContentSha256) {
     diagnostics.push("content_hash_mismatch");
   }
   if (!declaredPortfolioSetSha256) diagnostics.push("portfolio_set_missing");
@@ -13457,18 +10143,10 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
     diagnostics.push("current_override_set_missing");
   }
   if (!declaredRetirementSetSha256) diagnostics.push("retirement_set_missing");
-  if (
-    declaredRetirementSetSha256 &&
-    recomputedRetirementSetSha256 &&
-    declaredRetirementSetSha256 !== recomputedRetirementSetSha256
-  ) {
+  if (declaredRetirementSetSha256 && recomputedRetirementSetSha256 && declaredRetirementSetSha256 !== recomputedRetirementSetSha256) {
     diagnostics.push("retirement_set_hash_mismatch");
   }
-  if (
-    retirementCount !== undefined &&
-    recomputedRetirementCount !== undefined &&
-    retirementCount !== recomputedRetirementCount
-  ) {
+  if (retirementCount !== undefined && recomputedRetirementCount !== undefined && retirementCount !== recomputedRetirementCount) {
     diagnostics.push("retirement_count_mismatch");
   }
   if (record?.["latestRetiredAt"] !== undefined && !latestRetiredAt) {
@@ -13486,15 +10164,11 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
     ...(declaredContentSha256 ? { declaredContentSha256 } : {}),
     ...(recomputedContentSha256 ? { recomputedContentSha256 } : {}),
     ...(declaredPortfolioSetSha256 ? { declaredPortfolioSetSha256 } : {}),
-    ...(declaredCurrentOverrideSetSha256
-      ? { declaredCurrentOverrideSetSha256 }
-      : {}),
+    ...(declaredCurrentOverrideSetSha256 ? { declaredCurrentOverrideSetSha256 } : {}),
     ...(declaredRetirementSetSha256 ? { declaredRetirementSetSha256 } : {}),
     ...(recomputedRetirementSetSha256 ? { recomputedRetirementSetSha256 } : {}),
     ...(retirementCount !== undefined ? { retirementCount } : {}),
-    ...(recomputedRetirementCount !== undefined
-      ? { recomputedRetirementCount }
-      : {}),
+    ...(recomputedRetirementCount !== undefined ? { recomputedRetirementCount } : {}),
     ...(latestRetiredAt ? { latestRetiredAt } : {}),
     ...(recomputedLatestRetiredAt ? { recomputedLatestRetiredAt } : {}),
   };
@@ -13504,9 +10178,7 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
   };
 }
 
-function executionPlanBlueprintPortfolioSetSha256(
-  entries: ExecutionPlanBlueprintPortfolioCalibrationEntry[],
-): string {
+function executionPlanBlueprintPortfolioSetSha256(entries: ExecutionPlanBlueprintPortfolioCalibrationEntry[]): string {
   return sha256(
     canonicalJson(
       entries.map((entry) => ({
@@ -13516,9 +10188,7 @@ function executionPlanBlueprintPortfolioSetSha256(
         blueprintSha256: entry.blueprintSha256,
         sourceQualificationStatus: entry.sourceQualificationStatus,
         outcomeQualificationStatus: entry.outcomeQualificationStatus,
-        ...(entry.baselineSha256
-          ? { baselineSha256: entry.baselineSha256 }
-          : {}),
+        ...(entry.baselineSha256 ? { baselineSha256: entry.baselineSha256 } : {}),
         reviewedBaseline: entry.reviewedBaseline,
         currentOutcomesSha256: entry.currentOutcomesSha256,
         currentOutcomeSetSha256: entry.currentOutcomeSetSha256,
@@ -13551,17 +10221,11 @@ function createExecutionPlanBlueprintRecommendationPolicyBacktest(input: {
     schemaVersion: 1 as const,
     apiVersion: NAPIER_API_VERSION,
     recordCount: input.entries.length,
-    activeCount: input.entries.filter(
-      (entry) => entry.recordStatus === "active",
-    ).length,
+    activeCount: input.entries.filter((entry) => entry.recordStatus === "active").length,
     policyCount: results.length,
-    divergentSelectionCount: results.filter(
-      (result) => result.selectedRecordId !== referenceRecordId,
-    ).length,
+    divergentSelectionCount: results.filter((result) => result.selectedRecordId !== referenceRecordId).length,
     portfolioSetSha256: input.portfolioSetSha256,
-    policySetSha256: executionPlanBlueprintRecommendationPolicySetSha256(
-      input.policies,
-    ),
+    policySetSha256: executionPlanBlueprintRecommendationPolicySetSha256(input.policies),
     results,
   };
   return {
@@ -13576,9 +10240,7 @@ function createExecutionPlanBlueprintRecommendationPolicyBacktestResult(input: {
   families: ExecutionPlanBlueprintPortfolioCalibrationFamily[];
   policy: ExecutionPlanBlueprintRecommendationPolicy;
 }): ExecutionPlanBlueprintRecommendationPolicyBacktestResult {
-  const familyBySha256 = new Map(
-    input.families.map((family) => [family.familySha256, family]),
-  );
+  const familyBySha256 = new Map(input.families.map((family) => [family.familySha256, family]));
   const candidates = input.entries.map((entry) => {
     const family = familyBySha256.get(entry.familySha256);
     if (!family) {
@@ -13596,38 +10258,23 @@ function createExecutionPlanBlueprintRecommendationPolicyBacktestResult(input: {
     .at(0);
   const selectedCandidates = candidates
     .map((candidate) =>
-      selected && candidate.recordId === selected.recordId
-        ? { ...candidate, selectionStatus: "selected" as const }
-        : candidate,
+      selected && candidate.recordId === selected.recordId ? { ...candidate, selectionStatus: "selected" as const } : candidate,
     )
     .sort(compareExecutionPlanBlueprintRecommendationPolicyBacktestCandidates);
   const qualifiedCandidates = selectedCandidates.filter(
-    (candidate) =>
-      candidate.selectionStatus === "qualified" ||
-      candidate.selectionStatus === "selected",
+    (candidate) => candidate.selectionStatus === "qualified" || candidate.selectionStatus === "selected",
   );
-  const recommendationScoreTotal = qualifiedCandidates.reduce(
-    (total, candidate) => total + candidate.recommendationScoreBps,
-    0,
-  );
+  const recommendationScoreTotal = qualifiedCandidates.reduce((total, candidate) => total + candidate.recommendationScoreBps, 0);
   return {
     recommendationPolicy: input.policy,
-    recommendationPolicySha256:
-      executionPlanBlueprintRecommendationPolicySha256(input.policy),
+    recommendationPolicySha256: executionPlanBlueprintRecommendationPolicySha256(input.policy),
     candidateCount: selectedCandidates.length,
     qualifiedCandidateCount: qualifiedCandidates.length,
-    rejectedCandidateCount: selectedCandidates.filter(
-      (candidate) => candidate.selectionStatus === "rejected",
-    ).length,
+    rejectedCandidateCount: selectedCandidates.filter((candidate) => candidate.selectionStatus === "rejected").length,
     ...(selected ? { selectedRecordId: selected.recordId } : {}),
     ...(selected ? { selectedFamilySha256: selected.familySha256 } : {}),
-    ...(selected
-      ? { selectedRecommendationScoreBps: selected.recommendationScoreBps }
-      : {}),
-    averageRecommendationScoreBps:
-      qualifiedCandidates.length > 0
-        ? Math.round(recommendationScoreTotal / qualifiedCandidates.length)
-        : 0,
+    ...(selected ? { selectedRecommendationScoreBps: selected.recommendationScoreBps } : {}),
+    averageRecommendationScoreBps: qualifiedCandidates.length > 0 ? Math.round(recommendationScoreTotal / qualifiedCandidates.length) : 0,
     candidates: selectedCandidates,
   };
 }
@@ -13643,24 +10290,13 @@ function createExecutionPlanBlueprintRecommendationPolicyBacktestCandidate(input
     input.entry.outcomeQualificationStatus === "qualified";
   const diagnostics = uniqueStrings([
     ...(input.entry.recordStatus === "active" ? [] : ["record_archived"]),
-    ...(input.entry.sourceQualificationStatus === "qualified"
-      ? []
-      : [`source_${input.entry.sourceQualificationStatus}`]),
-    ...input.entry.sourceDiagnostics.map(
-      (diagnostic) => `source_${diagnostic}`,
-    ),
-    ...(input.entry.outcomeQualificationStatus === "qualified"
-      ? []
-      : [`outcome_${input.entry.outcomeQualificationStatus}`]),
-    ...input.entry.outcomeDiagnostics.map(
-      (diagnostic) => `outcome_${diagnostic}`,
-    ),
+    ...(input.entry.sourceQualificationStatus === "qualified" ? [] : [`source_${input.entry.sourceQualificationStatus}`]),
+    ...input.entry.sourceDiagnostics.map((diagnostic) => `source_${diagnostic}`),
+    ...(input.entry.outcomeQualificationStatus === "qualified" ? [] : [`outcome_${input.entry.outcomeQualificationStatus}`]),
+    ...input.entry.outcomeDiagnostics.map((diagnostic) => `outcome_${diagnostic}`),
   ]);
-  const reviewedBaselineCoverageBps =
-    executionPlanBlueprintFamilyReviewedBaselineCoverageBps(input.family);
-  const replayEvidenceBps = executionPlanBlueprintReplayEvidenceBps(
-    input.entry.replayCount,
-  );
+  const reviewedBaselineCoverageBps = executionPlanBlueprintFamilyReviewedBaselineCoverageBps(input.family);
+  const replayEvidenceBps = executionPlanBlueprintReplayEvidenceBps(input.entry.replayCount);
   return {
     recordId: input.entry.recordId,
     recordStatus: input.entry.recordStatus,
@@ -13702,16 +10338,13 @@ function compareExecutionPlanBlueprintRecommendationPolicyBacktestCandidates(
     executionPlanBlueprintRecommendationPolicyBacktestStatusRank(right) -
     executionPlanBlueprintRecommendationPolicyBacktestStatusRank(left);
   if (statusOrder !== 0) return statusOrder;
-  const recommendationOrder =
-    right.recommendationScoreBps - left.recommendationScoreBps;
+  const recommendationOrder = right.recommendationScoreBps - left.recommendationScoreBps;
   if (recommendationOrder !== 0) return recommendationOrder;
   const completionOrder = right.completionRateBps - left.completionRateBps;
   if (completionOrder !== 0) return completionOrder;
-  const familyCompletionOrder =
-    right.familyCompletionRateBps - left.familyCompletionRateBps;
+  const familyCompletionOrder = right.familyCompletionRateBps - left.familyCompletionRateBps;
   if (familyCompletionOrder !== 0) return familyCompletionOrder;
-  const reviewedOrder =
-    right.familyReviewedBaselineCount - left.familyReviewedBaselineCount;
+  const reviewedOrder = right.familyReviewedBaselineCount - left.familyReviewedBaselineCount;
   if (reviewedOrder !== 0) return reviewedOrder;
   const replayOrder = right.replayCount - left.replayCount;
   if (replayOrder !== 0) return replayOrder;
@@ -13734,21 +10367,15 @@ function compareExecutionPlanBlueprintRecommendationPolicyBacktestResults(
   left: ExecutionPlanBlueprintRecommendationPolicyBacktestResult,
   right: ExecutionPlanBlueprintRecommendationPolicyBacktestResult,
 ): number {
-  const selectedScoreOrder =
-    (right.selectedRecommendationScoreBps ?? -1) -
-    (left.selectedRecommendationScoreBps ?? -1);
+  const selectedScoreOrder = (right.selectedRecommendationScoreBps ?? -1) - (left.selectedRecommendationScoreBps ?? -1);
   if (selectedScoreOrder !== 0) return selectedScoreOrder;
-  const averageScoreOrder =
-    right.averageRecommendationScoreBps - left.averageRecommendationScoreBps;
+  const averageScoreOrder = right.averageRecommendationScoreBps - left.averageRecommendationScoreBps;
   if (averageScoreOrder !== 0) return averageScoreOrder;
-  const qualifiedOrder =
-    right.qualifiedCandidateCount - left.qualifiedCandidateCount;
+  const qualifiedOrder = right.qualifiedCandidateCount - left.qualifiedCandidateCount;
   if (qualifiedOrder !== 0) return qualifiedOrder;
   const candidateOrder = right.candidateCount - left.candidateCount;
   if (candidateOrder !== 0) return candidateOrder;
-  return left.recommendationPolicy.templateId.localeCompare(
-    right.recommendationPolicy.templateId,
-  );
+  return left.recommendationPolicy.templateId.localeCompare(right.recommendationPolicy.templateId);
 }
 
 function compareExecutionPlanBlueprintRecommendationPolicyOverrideRetirements(
@@ -13763,25 +10390,16 @@ function compareExecutionPlanBlueprintRecommendationPolicyOverrideRetirements(
 function createExecutionPlanBlueprintPortfolioCalibrationFamilies(
   entries: ExecutionPlanBlueprintPortfolioCalibrationEntry[],
 ): ExecutionPlanBlueprintPortfolioCalibrationFamily[] {
-  const byFamily = new Map<
-    string,
-    ExecutionPlanBlueprintPortfolioCalibrationEntry[]
-  >();
+  const byFamily = new Map<string, ExecutionPlanBlueprintPortfolioCalibrationEntry[]>();
   for (const entry of entries) {
     const current = byFamily.get(entry.familySha256) ?? [];
     current.push(entry);
     byFamily.set(entry.familySha256, current);
   }
   return [...byFamily.entries()]
-    .map(([familySha256, familyEntries]) =>
-      createExecutionPlanBlueprintPortfolioCalibrationFamily(
-        familySha256,
-        familyEntries,
-      ),
-    )
+    .map(([familySha256, familyEntries]) => createExecutionPlanBlueprintPortfolioCalibrationFamily(familySha256, familyEntries))
     .sort((left, right) => {
-      const qualifiedOrder =
-        right.outcomeQualifiedCount - left.outcomeQualifiedCount;
+      const qualifiedOrder = right.outcomeQualifiedCount - left.outcomeQualifiedCount;
       if (qualifiedOrder !== 0) return qualifiedOrder;
       const replayOrder = right.replayCount - left.replayCount;
       if (replayOrder !== 0) return replayOrder;
@@ -13793,14 +10411,8 @@ function createExecutionPlanBlueprintPortfolioCalibrationFamily(
   familySha256: string,
   entries: ExecutionPlanBlueprintPortfolioCalibrationEntry[],
 ): ExecutionPlanBlueprintPortfolioCalibrationFamily {
-  const replayCount = entries.reduce(
-    (total, entry) => total + entry.replayCount,
-    0,
-  );
-  const completedCount = entries.reduce(
-    (total, entry) => total + entry.completedCount,
-    0,
-  );
+  const replayCount = entries.reduce((total, entry) => total + entry.replayCount, 0);
+  const completedCount = entries.reduce((total, entry) => total + entry.completedCount, 0);
   const top = entries
     .filter(
       (entry) =>
@@ -13812,44 +10424,24 @@ function createExecutionPlanBlueprintPortfolioCalibrationFamily(
     .at(0);
   const latestBaseline = entries
     .filter((entry) => entry.baselineSha256 && entry.baselinePromotedAt)
-    .sort((left, right) =>
-      (right.baselinePromotedAt ?? "").localeCompare(
-        left.baselinePromotedAt ?? "",
-      ),
-    )
+    .sort((left, right) => (right.baselinePromotedAt ?? "").localeCompare(left.baselinePromotedAt ?? ""))
     .at(0);
   return {
     familySha256,
     recordCount: entries.length,
-    activeCount: entries.filter((entry) => entry.recordStatus === "active")
-      .length,
-    archivedCount: entries.filter((entry) => entry.recordStatus === "archived")
-      .length,
-    sourceQualifiedCount: entries.filter(
-      (entry) => entry.sourceQualificationStatus === "qualified",
-    ).length,
-    outcomeQualifiedCount: entries.filter(
-      (entry) => entry.outcomeQualificationStatus === "qualified",
-    ).length,
-    reviewedBaselineCount: entries.filter((entry) => entry.reviewedBaseline)
-      .length,
+    activeCount: entries.filter((entry) => entry.recordStatus === "active").length,
+    archivedCount: entries.filter((entry) => entry.recordStatus === "archived").length,
+    sourceQualifiedCount: entries.filter((entry) => entry.sourceQualificationStatus === "qualified").length,
+    outcomeQualifiedCount: entries.filter((entry) => entry.outcomeQualificationStatus === "qualified").length,
+    reviewedBaselineCount: entries.filter((entry) => entry.reviewedBaseline).length,
     replayCount,
     completedCount,
-    blockedCount: entries.reduce(
-      (total, entry) => total + entry.blockedCount,
-      0,
-    ),
-    invalidCount: entries.reduce(
-      (total, entry) => total + entry.invalidCount,
-      0,
-    ),
-    completionRateBps:
-      replayCount > 0 ? Math.round((completedCount / replayCount) * 10_000) : 0,
+    blockedCount: entries.reduce((total, entry) => total + entry.blockedCount, 0),
+    invalidCount: entries.reduce((total, entry) => total + entry.invalidCount, 0),
+    completionRateBps: replayCount > 0 ? Math.round((completedCount / replayCount) * 10_000) : 0,
     ...(top ? { topRecordId: top.recordId } : {}),
     ...(top ? { topRecordScoreBps: top.completionRateBps } : {}),
-    ...(latestBaseline?.baselineSha256
-      ? { latestBaselineSha256: latestBaseline.baselineSha256 }
-      : {}),
+    ...(latestBaseline?.baselineSha256 ? { latestBaselineSha256: latestBaseline.baselineSha256 } : {}),
   };
 }
 
@@ -13863,9 +10455,7 @@ function compareExecutionPlanBlueprintPortfolioEntries(
   if (replayOrder !== 0) return replayOrder;
   const completedOrder = right.completedCount - left.completedCount;
   if (completedOrder !== 0) return completedOrder;
-  const baselineOrder = (right.baselinePromotedAt ?? "").localeCompare(
-    left.baselinePromotedAt ?? "",
-  );
+  const baselineOrder = (right.baselinePromotedAt ?? "").localeCompare(left.baselinePromotedAt ?? "");
   if (baselineOrder !== 0) return baselineOrder;
   const recordOrder = right.recordUpdatedAt.localeCompare(left.recordUpdatedAt);
   if (recordOrder !== 0) return recordOrder;
@@ -13889,33 +10479,24 @@ function executionPlanBlueprintRecommendationScoreBps(input: {
   );
 }
 
-function executionPlanBlueprintFamilyReviewedBaselineCoverageBps(
-  family: ExecutionPlanBlueprintPortfolioCalibrationFamily,
-): number {
-  return family.recordCount > 0
-    ? Math.round((family.reviewedBaselineCount / family.recordCount) * 10_000)
-    : 0;
+function executionPlanBlueprintFamilyReviewedBaselineCoverageBps(family: ExecutionPlanBlueprintPortfolioCalibrationFamily): number {
+  return family.recordCount > 0 ? Math.round((family.reviewedBaselineCount / family.recordCount) * 10_000) : 0;
 }
 
 function executionPlanBlueprintReplayEvidenceBps(replayCount: number): number {
   return Math.min(10_000, replayCount * 1_000);
 }
 
-function executionPlanBlueprintRecommendationPolicySha256(
-  policy: ExecutionPlanBlueprintRecommendationPolicy,
-): string {
+function executionPlanBlueprintRecommendationPolicySha256(policy: ExecutionPlanBlueprintRecommendationPolicy): string {
   return sha256(canonicalJson(policy));
 }
 
-function executionPlanBlueprintRecommendationPolicySetSha256(
-  policies: ExecutionPlanBlueprintRecommendationPolicy[],
-): string {
+function executionPlanBlueprintRecommendationPolicySetSha256(policies: ExecutionPlanBlueprintRecommendationPolicy[]): string {
   return sha256(
     canonicalJson(
       policies.map((policy) => ({
         templateId: policy.templateId,
-        recommendationPolicySha256:
-          executionPlanBlueprintRecommendationPolicySha256(policy),
+        recommendationPolicySha256: executionPlanBlueprintRecommendationPolicySha256(policy),
       })),
     ),
   );
@@ -13931,9 +10512,7 @@ function executionPlanBlueprintRecommendationPolicyOverrideSetSha256(
           familySha256: override.familySha256,
           contentSha256: override.contentSha256,
         }))
-        .sort((left, right) =>
-          left.familySha256.localeCompare(right.familySha256),
-        ),
+        .sort((left, right) => left.familySha256.localeCompare(right.familySha256)),
     ),
   );
 }
@@ -13949,9 +10528,7 @@ function executionPlanBlueprintRecommendationPolicyOverrideDriftReviewSetSha256(
           overrideSha256: review.overrideSha256,
           reviewSha256: review.reviewSha256,
         }))
-        .sort((left, right) =>
-          left.familySha256.localeCompare(right.familySha256),
-        ),
+        .sort((left, right) => left.familySha256.localeCompare(right.familySha256)),
     ),
   );
 }
@@ -13968,9 +10545,7 @@ function executionPlanBlueprintRecommendationPolicyOverrideRetirementSetSha256(
           contentSha256: retirement.contentSha256,
         }))
         .sort((left, right) => {
-          const familyOrder = left.familySha256.localeCompare(
-            right.familySha256,
-          );
+          const familyOrder = left.familySha256.localeCompare(right.familySha256);
           if (familyOrder !== 0) return familyOrder;
           return left.contentSha256.localeCompare(right.contentSha256);
         }),
@@ -13978,16 +10553,13 @@ function executionPlanBlueprintRecommendationPolicyOverrideRetirementSetSha256(
   );
 }
 
-function executionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryBundleSetSha256(
-  hashes: string[],
-): string {
+function executionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryBundleSetSha256(hashes: string[]): string {
   return sha256(canonicalJson([...new Set(hashes)].sort()));
 }
 
 function listExecutionPlanBlueprintRecommendationPolicies(): ExecutionPlanBlueprintRecommendationPolicy[] {
-  return EXECUTION_PLAN_BLUEPRINT_RECOMMENDATION_POLICY_TEMPLATE_IDS.map(
-    (templateId) =>
-      normalizeExecutionPlanBlueprintRecommendationPolicy(templateId),
+  return EXECUTION_PLAN_BLUEPRINT_RECOMMENDATION_POLICY_TEMPLATE_IDS.map((templateId) =>
+    normalizeExecutionPlanBlueprintRecommendationPolicy(templateId),
   );
 }
 
@@ -14008,27 +10580,21 @@ function compareExecutionPlanBlueprintSelectionCandidates(
   left: ExecutionPlanBlueprintRecordSelectionCandidate,
   right: ExecutionPlanBlueprintRecordSelectionCandidate,
 ): number {
-  const recommendationOrder =
-    right.recommendationScoreBps - left.recommendationScoreBps;
+  const recommendationOrder = right.recommendationScoreBps - left.recommendationScoreBps;
   if (recommendationOrder !== 0) return recommendationOrder;
   const scoreOrder = right.scoreBps - left.scoreBps;
   if (scoreOrder !== 0) return scoreOrder;
-  const familyCompletionOrder =
-    right.familyCompletionRateBps - left.familyCompletionRateBps;
+  const familyCompletionOrder = right.familyCompletionRateBps - left.familyCompletionRateBps;
   if (familyCompletionOrder !== 0) return familyCompletionOrder;
-  const familyReviewedOrder =
-    right.familyReviewedBaselineCount - left.familyReviewedBaselineCount;
+  const familyReviewedOrder = right.familyReviewedBaselineCount - left.familyReviewedBaselineCount;
   if (familyReviewedOrder !== 0) return familyReviewedOrder;
-  const familyQualifiedOrder =
-    right.familyOutcomeQualifiedCount - left.familyOutcomeQualifiedCount;
+  const familyQualifiedOrder = right.familyOutcomeQualifiedCount - left.familyOutcomeQualifiedCount;
   if (familyQualifiedOrder !== 0) return familyQualifiedOrder;
   const replayOrder = right.replayCount - left.replayCount;
   if (replayOrder !== 0) return replayOrder;
   const completedOrder = right.completedCount - left.completedCount;
   if (completedOrder !== 0) return completedOrder;
-  const baselineOrder = (right.baselinePromotedAt ?? "").localeCompare(
-    left.baselinePromotedAt ?? "",
-  );
+  const baselineOrder = (right.baselinePromotedAt ?? "").localeCompare(left.baselinePromotedAt ?? "");
   if (baselineOrder !== 0) return baselineOrder;
   const recordOrder = right.recordUpdatedAt.localeCompare(left.recordUpdatedAt);
   if (recordOrder !== 0) return recordOrder;
@@ -14043,13 +10609,9 @@ function createExecutionPlanBlueprintRecordSelection(input: {
   recommendationPolicy: ExecutionPlanBlueprintRecommendationPolicy;
   familyPolicyOverrides: ExecutionPlanBlueprintRecommendationPolicyOverride[];
 }): ExecutionPlanBlueprintRecordSelection {
-  const selected = input.candidates.find(
-    (candidate) => candidate.selectionStatus === "selected",
-  );
+  const selected = input.candidates.find((candidate) => candidate.selectionStatus === "selected");
   const qualifiedCandidateCount = input.candidates.filter(
-    (candidate) =>
-      candidate.selectionStatus === "qualified" ||
-      candidate.selectionStatus === "selected",
+    (candidate) => candidate.selectionStatus === "qualified" || candidate.selectionStatus === "selected",
   ).length;
   const content = {
     kind: "napier.execution-plan-blueprint-selection" as const,
@@ -14059,61 +10621,39 @@ function createExecutionPlanBlueprintRecordSelection(input: {
     ...(input.objective ? { objectiveSha256: sha256(input.objective) } : {}),
     candidateCount: input.candidates.length,
     qualifiedCandidateCount,
-    rejectedCandidateCount: input.candidates.filter(
-      (candidate) => candidate.selectionStatus === "rejected",
-    ).length,
+    rejectedCandidateCount: input.candidates.filter((candidate) => candidate.selectionStatus === "rejected").length,
     ...(selected ? { selectedRecordId: selected.recordId } : {}),
-    ...(selected?.previewSha256
-      ? { selectedPreviewSha256: selected.previewSha256 }
-      : {}),
-    ...(selected?.baselineId
-      ? { selectedBaselineId: selected.baselineId }
-      : {}),
-    ...(selected?.baselineSha256
-      ? { selectedBaselineSha256: selected.baselineSha256 }
-      : {}),
+    ...(selected?.previewSha256 ? { selectedPreviewSha256: selected.previewSha256 } : {}),
+    ...(selected?.baselineId ? { selectedBaselineId: selected.baselineId } : {}),
+    ...(selected?.baselineSha256 ? { selectedBaselineSha256: selected.baselineSha256 } : {}),
     ...(selected ? { selectedScoreBps: selected.scoreBps } : {}),
     ...(selected ? { selectedFamilySha256: selected.familySha256 } : {}),
-    ...(selected
-      ? { selectedFamilyCompletionRateBps: selected.familyCompletionRateBps }
-      : {}),
-    ...(selected
-      ? { selectedRecommendationScoreBps: selected.recommendationScoreBps }
-      : {}),
+    ...(selected ? { selectedFamilyCompletionRateBps: selected.familyCompletionRateBps } : {}),
+    ...(selected ? { selectedRecommendationScoreBps: selected.recommendationScoreBps } : {}),
     ...(selected
       ? {
-          selectedRecommendationPolicyTemplate:
-            selected.recommendationPolicyTemplate,
+          selectedRecommendationPolicyTemplate: selected.recommendationPolicyTemplate,
         }
       : {}),
     ...(selected
       ? {
-          selectedRecommendationPolicySha256:
-            selected.recommendationPolicySha256,
+          selectedRecommendationPolicySha256: selected.recommendationPolicySha256,
         }
       : {}),
     ...(selected
       ? {
-          selectedRecommendationPolicySource:
-            selected.recommendationPolicySource,
+          selectedRecommendationPolicySource: selected.recommendationPolicySource,
         }
       : {}),
     ...(selected?.familyPolicyOverrideSha256
       ? {
-          selectedFamilyPolicyOverrideSha256:
-            selected.familyPolicyOverrideSha256,
+          selectedFamilyPolicyOverrideSha256: selected.familyPolicyOverrideSha256,
         }
       : {}),
     recommendationPolicy: input.recommendationPolicy,
-    recommendationPolicySha256:
-      executionPlanBlueprintRecommendationPolicySha256(
-        input.recommendationPolicy,
-      ),
+    recommendationPolicySha256: executionPlanBlueprintRecommendationPolicySha256(input.recommendationPolicy),
     familyPolicyOverrideCount: input.familyPolicyOverrides.length,
-    familyPolicyOverrideSetSha256:
-      executionPlanBlueprintRecommendationPolicyOverrideSetSha256(
-        input.familyPolicyOverrides,
-      ),
+    familyPolicyOverrideSetSha256: executionPlanBlueprintRecommendationPolicyOverrideSetSha256(input.familyPolicyOverrides),
     portfolioSetSha256: input.portfolioSetSha256,
     selectionSetSha256: sha256(
       canonicalJson(
@@ -14128,8 +10668,7 @@ function createExecutionPlanBlueprintRecordSelection(input: {
           recommendationPolicySource: candidate.recommendationPolicySource,
           ...(candidate.familyPolicyOverrideSha256
             ? {
-                familyPolicyOverrideSha256:
-                  candidate.familyPolicyOverrideSha256,
+                familyPolicyOverrideSha256: candidate.familyPolicyOverrideSha256,
               }
             : {}),
           familySha256: candidate.familySha256,
@@ -14139,15 +10678,9 @@ function createExecutionPlanBlueprintRecordSelection(input: {
           familyCompletionRateBps: candidate.familyCompletionRateBps,
           sourceQualificationStatus: candidate.sourceQualificationStatus,
           outcomeQualificationStatus: candidate.outcomeQualificationStatus,
-          ...(candidate.previewStatus
-            ? { previewStatus: candidate.previewStatus }
-            : {}),
-          ...(candidate.previewSha256
-            ? { previewSha256: candidate.previewSha256 }
-            : {}),
-          ...(candidate.baselineSha256
-            ? { baselineSha256: candidate.baselineSha256 }
-            : {}),
+          ...(candidate.previewStatus ? { previewStatus: candidate.previewStatus } : {}),
+          ...(candidate.previewSha256 ? { previewSha256: candidate.previewSha256 } : {}),
+          ...(candidate.baselineSha256 ? { baselineSha256: candidate.baselineSha256 } : {}),
           currentOutcomesSha256: candidate.currentOutcomesSha256,
           currentOutcomeSetSha256: candidate.currentOutcomeSetSha256,
         })),
@@ -14162,14 +10695,8 @@ function createExecutionPlanBlueprintRecordSelection(input: {
   };
 }
 
-function retirementHistoryHashContent(
-  record: Record<string, unknown>,
-): Record<string, unknown> {
-  const {
-    generatedAt: _generatedAt,
-    contentSha256: _contentSha256,
-    ...content
-  } = record;
+function retirementHistoryHashContent(record: Record<string, unknown>): Record<string, unknown> {
+  const { generatedAt: _generatedAt, contentSha256: _contentSha256, ...content } = record;
   return content;
 }
 
@@ -14177,14 +10704,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function validateThreadImportProvenance(
-  thread: ThreadRecord,
-  value: unknown,
-): ThreadImportProvenance {
+function validateThreadImportProvenance(thread: ThreadRecord, value: unknown): ThreadImportProvenance {
   if (!isRecord(value)) {
-    throw new Error(
-      `Persisted Thread import provenance is invalid: ${thread.id}`,
-    );
+    throw new Error(`Persisted Thread import provenance is invalid: ${thread.id}`);
   }
   const allowed = new Set([
     "sourceThreadId",
@@ -14198,16 +10720,12 @@ function validateThreadImportProvenance(
     "importedAt",
   ]);
   if (Object.keys(value).some((key) => !allowed.has(key))) {
-    throw new Error(
-      `Persisted Thread import provenance is invalid: ${thread.id}`,
-    );
+    throw new Error(`Persisted Thread import provenance is invalid: ${thread.id}`);
   }
   const sourceEventCount = value["sourceEventCount"];
   const localImportedThroughSeq = value["localImportedThroughSeq"];
-  const sourceModelContextEnvelopeCount =
-    value["sourceModelContextEnvelopeCount"];
-  const sourceEmbeddedModelContextEnvelopeCount =
-    value["sourceEmbeddedModelContextEnvelopeCount"];
+  const sourceModelContextEnvelopeCount = value["sourceModelContextEnvelopeCount"];
+  const sourceEmbeddedModelContextEnvelopeCount = value["sourceEmbeddedModelContextEnvelopeCount"];
   if (
     typeof value["sourceThreadId"] !== "string" ||
     !/^[a-z][a-z0-9_]{2,80}$/.test(value["sourceThreadId"]) ||
@@ -14217,18 +10735,13 @@ function validateThreadImportProvenance(
     !isSha256(value["sourceEventStreamSha256"]) ||
     !isNonNegativeInteger(sourceEventCount) ||
     (localImportedThroughSeq !== undefined &&
-      (!isNonNegativeInteger(localImportedThroughSeq) ||
-        localImportedThroughSeq > thread.eventCount)) ||
-    (sourceModelContextEnvelopeCount !== undefined &&
-      !isNonNegativeInteger(sourceModelContextEnvelopeCount)) ||
-    (sourceEmbeddedModelContextEnvelopeCount !== undefined &&
-      !isNonNegativeInteger(sourceEmbeddedModelContextEnvelopeCount)) ||
+      (!isNonNegativeInteger(localImportedThroughSeq) || localImportedThroughSeq > thread.eventCount)) ||
+    (sourceModelContextEnvelopeCount !== undefined && !isNonNegativeInteger(sourceModelContextEnvelopeCount)) ||
+    (sourceEmbeddedModelContextEnvelopeCount !== undefined && !isNonNegativeInteger(sourceEmbeddedModelContextEnvelopeCount)) ||
     typeof value["importedAt"] !== "string" ||
     !Number.isFinite(Date.parse(value["importedAt"]))
   ) {
-    throw new Error(
-      `Persisted Thread import provenance is invalid: ${thread.id}`,
-    );
+    throw new Error(`Persisted Thread import provenance is invalid: ${thread.id}`);
   }
   return {
     sourceThreadId: value["sourceThreadId"],
@@ -14236,28 +10749,17 @@ function validateThreadImportProvenance(
     sourceContentSha256: value["sourceContentSha256"],
     sourceEventStreamSha256: value["sourceEventStreamSha256"],
     sourceEventCount,
-    ...(localImportedThroughSeq !== undefined
-      ? { localImportedThroughSeq }
-      : {}),
-    ...(sourceModelContextEnvelopeCount !== undefined
-      ? { sourceModelContextEnvelopeCount }
-      : {}),
-    ...(sourceEmbeddedModelContextEnvelopeCount !== undefined
-      ? { sourceEmbeddedModelContextEnvelopeCount }
-      : {}),
+    ...(localImportedThroughSeq !== undefined ? { localImportedThroughSeq } : {}),
+    ...(sourceModelContextEnvelopeCount !== undefined ? { sourceModelContextEnvelopeCount } : {}),
+    ...(sourceEmbeddedModelContextEnvelopeCount !== undefined ? { sourceEmbeddedModelContextEnvelopeCount } : {}),
     importedAt: value["importedAt"],
   };
 }
 
-function validateThreadImportProvenanceLedgerReceipt(
-  thread: ThreadRecord,
-  events: RunEvent[],
-): void {
+function validateThreadImportProvenanceLedgerReceipt(thread: ThreadRecord, events: RunEvent[]): void {
   const provenance = thread.importProvenance;
   if (!provenance) return;
-  const receipts = events.filter(
-    (event) => event.type === THREAD_IMPORTED_EVENT,
-  );
+  const receipts = events.filter((event) => event.type === THREAD_IMPORTED_EVENT);
   if (receipts.length === 0) return;
   const receipt = receipts[0]!;
   const expectedPayload = threadImportProvenanceEventPayload(provenance);
@@ -14269,15 +10771,11 @@ function validateThreadImportProvenanceLedgerReceipt(
     receipt.createdAt !== provenance.importedAt ||
     canonicalJson(receipt.payload) !== canonicalJson(expectedPayload)
   ) {
-    throw new Error(
-      `Persisted Thread import provenance receipt is invalid: ${thread.id}`,
-    );
+    throw new Error(`Persisted Thread import provenance receipt is invalid: ${thread.id}`);
   }
 }
 
-function threadImportProvenanceEventPayload(
-  provenance: ThreadImportProvenance,
-): JsonValue {
+function threadImportProvenanceEventPayload(provenance: ThreadImportProvenance): JsonValue {
   return {
     kind: "napier.thread-import-provenance",
     sourceThreadId: provenance.sourceThreadId,
@@ -14286,17 +10784,13 @@ function threadImportProvenanceEventPayload(
     sourceEventStreamSha256: provenance.sourceEventStreamSha256,
     sourceEventCount: provenance.sourceEventCount,
     localImportedThroughSeq: threadImportProvenanceLocalCutoff(provenance),
-    sourceModelContextEnvelopeCount:
-      provenance.sourceModelContextEnvelopeCount ?? 0,
-    sourceEmbeddedModelContextEnvelopeCount:
-      provenance.sourceEmbeddedModelContextEnvelopeCount ?? 0,
+    sourceModelContextEnvelopeCount: provenance.sourceModelContextEnvelopeCount ?? 0,
+    sourceEmbeddedModelContextEnvelopeCount: provenance.sourceEmbeddedModelContextEnvelopeCount ?? 0,
     importedAt: provenance.importedAt,
   };
 }
 
-function threadImportProvenanceLocalCutoff(
-  provenance: ThreadImportProvenance,
-): number {
+function threadImportProvenanceLocalCutoff(provenance: ThreadImportProvenance): number {
   return provenance.localImportedThroughSeq ?? provenance.sourceEventCount;
 }
 
@@ -14315,9 +10809,7 @@ function inboundDeadLetterQualificationStatus(
   if (!delivery.bodySha256 || !delivery.adapterCatalogSha256) {
     return "evidence_missing";
   }
-  return delivery.adapterCatalogSha256 === currentAdapterCatalogSha256
-    ? "qualified"
-    : "adapter_catalog_drift";
+  return delivery.adapterCatalogSha256 === currentAdapterCatalogSha256 ? "qualified" : "adapter_catalog_drift";
 }
 
 function inboundDeadLetterQualificationSummary(
