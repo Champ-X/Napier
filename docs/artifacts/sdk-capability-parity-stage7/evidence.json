@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "256bbcb8484a5bdabc1392dcf18546fcc9df0802a8fbe1d0c535e33e0683d523",
+      "stdoutSha256": "6790c9f6ce26664c52b73615b456923e68fe9cb8f35d8268968d429ccb2ab04a",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "1478be5b0ecf4b762508966ed3623639744bd3535ddde74fc4cf4e711b19829c",
-      "receiptSha256": "8071860ea680b150e24c87b8a109c14b780694dfbeb78d052ad49ba85d86454d"
+      "evidenceSha256": "d25478fb183d4661f372e4ea75ca1947293f5f79e4d0158750b25d0772dde18a",
+      "receiptSha256": "d4954cad169b7e514dd6c15e7b76934471b41d75c78a22ff010051678a492a7d"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "be9a1ca220b66cff867c59cb65d82829c3476b06d30f08378318c70254c127c1",
+      "stdoutSha256": "503cf25fd6c9ce69c3b05c821ac00341c31877214145250c61b47c51bf63f38f",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "c2a1431efd84225a18f21adc9907cc37dc48862481c4a9f9a59630659a8c3b0f",
-      "receiptSha256": "2eed7753987e19d56560f4bf5fa6c939fe2c69ae5e7bde10f5a757410e11a84b"
+      "evidenceSha256": "18872015e187aa3fd4bd51e922539b95a40225c8f2e5582ab0c5f429805588cd",
+      "receiptSha256": "0f5b81a24447260c8ca4a00c723977d3ded264a0e675bf72ef37516a1536e871"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -1153,8 +1153,10 @@
         "packages/runtime/test/agent-capability-recommendation.test.ts",
         "packages/runtime/test/agent-capability-store-state.test.ts",
         "packages/runtime/test/agent-coder-subagent.test.ts",
+        "packages/runtime/test/agent-javascript-kernel.test.ts",
         "packages/runtime/test/agent-message-experiments.test.ts",
         "packages/runtime/test/agent-node-debugger.test.ts",
+        "packages/runtime/test/agent-runtime-utils.test.ts",
         "packages/runtime/test/agent-runtime.test.ts",
         "packages/runtime/test/agent-skill-load-vertical.test.ts",
         "packages/runtime/test/agent-skill-load.test.ts",
@@ -2982,11 +2984,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "1478be5b0ecf4b762508966ed3623639744bd3535ddde74fc4cf4e711b19829c",
+          "sha256": "d25478fb183d4661f372e4ea75ca1947293f5f79e4d0158750b25d0772dde18a",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "c2a1431efd84225a18f21adc9907cc37dc48862481c4a9f9a59630659a8c3b0f",
+          "sha256": "18872015e187aa3fd4bd51e922539b95a40225c8f2e5582ab0c5f429805588cd",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -3206,11 +3208,11 @@
           "lines": 80
         },
         "packages/runtime/src/agent-runtime-utils.ts": {
-          "sha256": "55c62cecf7f3cc31402355d620ff3b62e5ffcf47b987a231f4bfe675dd788c35",
-          "lines": 103
+          "sha256": "22e0d96b795447955846ffac03d9d18172ca97438e3e14fe249572d78bc9e01e",
+          "lines": 149
         },
         "packages/runtime/src/agent-runtime.ts": {
-          "sha256": "a34c8f95a5f8c0744f58754c1473bbf6d25a4c7ac597e3a3e8eada032fd05002",
+          "sha256": "97babbbfffabf1656592d6c80623cc5b1cc9311312e38bc5a519334ea08eb37f",
           "lines": 3353
         },
         "packages/runtime/src/agent-tool-ledger.ts": {
@@ -4085,6 +4087,10 @@
           "sha256": "d9f6d31a9f2e92836e4dc75921e746b16a1b22655e91098582de62f312d634f6",
           "lines": 416
         },
+        "packages/runtime/test/agent-javascript-kernel.test.ts": {
+          "sha256": "d5faad4b149d2ec7147868cdfc3537ce1541a9de101f2902ac9251eb731fbc05",
+          "lines": 305
+        },
         "packages/runtime/test/agent-message-experiments.test.ts": {
           "sha256": "6c6fd14b89c8d902717a320e172ebfe500aa111e9e3023bfc4fc98f7b90cc05d",
           "lines": 582
@@ -4093,8 +4099,12 @@
           "sha256": "4541d414697124e4abb485bcfccb070bbc0b5a9051066b1717d5ea063b0e33d5",
           "lines": 427
         },
+        "packages/runtime/test/agent-runtime-utils.test.ts": {
+          "sha256": "6467aa0bc2add1257a3af5070cfc97ff036afd21363ad2ffb8cf55ff9ece97cf",
+          "lines": 50
+        },
         "packages/runtime/test/agent-runtime.test.ts": {
-          "sha256": "492565eb895017d7799bd2859bb0827b2ca439a66392c64abf084f8e8ecd2c6d",
+          "sha256": "c3542df783dcc13451dd676443edb9ce296ba5d7a4637e0e38043dde4e60352b",
           "lines": 4302
         },
         "packages/runtime/test/agent-skill-load-vertical.test.ts": {
@@ -5219,7 +5229,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "02e5bb0b9e7ed6d53410e27d51c09017c2cc446ed6728e3749ae453635003a78"
+      "manifestSha256": "8e4ebde48d74074762a5dc7c32eb5b3ec2dfc6eb44bcb97b32cf571134beb150"
     },
     "executionClosure": {
       "algorithm": {
@@ -8707,12 +8717,12 @@
               "lines": 33
             },
             "packages/runtime/dist/agent-runtime-utils.js": {
-              "sha256": "d4ce60e1bbff60b9d5bfca94fb40a6f1a6e5f03f077d3616f2e2c217d3847540",
-              "lines": 78
+              "sha256": "c712fdb9956a4593116837af66b343c39332260e43362fba059b5a7b5fb550dd",
+              "lines": 100
             },
             "packages/runtime/dist/agent-runtime.js": {
-              "sha256": "9260b283fb865a1bc4acbc8fba6bfa7993094a099fd101002761f9e42b27e83d",
-              "lines": 2314
+              "sha256": "657b958c95a9e519850eccba2e0fb72800d96e1e16ae41de0e3a0c67e518147a",
+              "lines": 2311
             },
             "packages/runtime/dist/agent-sessions.js": {
               "sha256": "8b8aae5a5b13b8b797b2bd36886b394b48981892da6befe795c1657567bcad9a",
@@ -11267,11 +11277,11 @@
               "lines": 62
             },
             "packages/runtime/src/agent-runtime-utils.ts": {
-              "sha256": "55c62cecf7f3cc31402355d620ff3b62e5ffcf47b987a231f4bfe675dd788c35",
-              "lines": 103
+              "sha256": "22e0d96b795447955846ffac03d9d18172ca97438e3e14fe249572d78bc9e01e",
+              "lines": 149
             },
             "packages/runtime/src/agent-runtime.ts": {
-              "sha256": "a34c8f95a5f8c0744f58754c1473bbf6d25a4c7ac597e3a3e8eada032fd05002",
+              "sha256": "97babbbfffabf1656592d6c80623cc5b1cc9311312e38bc5a519334ea08eb37f",
               "lines": 3353
             },
             "packages/runtime/src/agent-sessions.ts": {
@@ -13763,7 +13773,7 @@
               "lines": 32
             }
           },
-          "manifestSha256": "a896e80f430ff200dd990d625c34d8cd57fd4aace82a4c37fd6f6346f9bdd82a"
+          "manifestSha256": "e39c273c4eeeb8ac30dc6d9918f5097b93f82c8144d4d4aa5ebcffa216b8ab3a"
         },
         "productionServerTrace": {
           "roots": [
@@ -16592,12 +16602,12 @@
               "lines": 33
             },
             "packages/runtime/dist/agent-runtime-utils.js": {
-              "sha256": "d4ce60e1bbff60b9d5bfca94fb40a6f1a6e5f03f077d3616f2e2c217d3847540",
-              "lines": 78
+              "sha256": "c712fdb9956a4593116837af66b343c39332260e43362fba059b5a7b5fb550dd",
+              "lines": 100
             },
             "packages/runtime/dist/agent-runtime.js": {
-              "sha256": "9260b283fb865a1bc4acbc8fba6bfa7993094a099fd101002761f9e42b27e83d",
-              "lines": 2314
+              "sha256": "657b958c95a9e519850eccba2e0fb72800d96e1e16ae41de0e3a0c67e518147a",
+              "lines": 2311
             },
             "packages/runtime/dist/agent-sessions.js": {
               "sha256": "8b8aae5a5b13b8b797b2bd36886b394b48981892da6befe795c1657567bcad9a",
@@ -19144,11 +19154,11 @@
               "lines": 62
             },
             "packages/runtime/src/agent-runtime-utils.ts": {
-              "sha256": "55c62cecf7f3cc31402355d620ff3b62e5ffcf47b987a231f4bfe675dd788c35",
-              "lines": 103
+              "sha256": "22e0d96b795447955846ffac03d9d18172ca97438e3e14fe249572d78bc9e01e",
+              "lines": 149
             },
             "packages/runtime/src/agent-runtime.ts": {
-              "sha256": "a34c8f95a5f8c0744f58754c1473bbf6d25a4c7ac597e3a3e8eada032fd05002",
+              "sha256": "97babbbfffabf1656592d6c80623cc5b1cc9311312e38bc5a519334ea08eb37f",
               "lines": 3353
             },
             "packages/runtime/src/agent-sessions.ts": {
@@ -21632,7 +21642,7 @@
               "lines": 45
             }
           },
-          "manifestSha256": "11bcc5c5b9e2e4118eff42d50315bcdd2fa469f362cbc953dda698ca9e3a985a"
+          "manifestSha256": "d256834f7e19cf7e7d46c5104f70bef33860f2b249ff911b60386d5099ee6874"
         }
       },
       "excludedCategories": [
@@ -21661,9 +21671,9 @@
           "reason": "evidence.json cannot contain its own content hash; the external Stage 8 repair commit binds that blob."
         }
       ],
-      "manifestSha256": "540246193c546dcb985903a649de74cc0d7641e221c7b28fabd6df0c3b4bbdff"
+      "manifestSha256": "b04cb97eb157098260203bc09698833a44140fbd31f8971c3c86f25f888e05c3"
     },
-    "manifestSha256": "e8b06e29eea6aa3f12658fd5341bdd89c6318c47e3136d833941877deb7687fa"
+    "manifestSha256": "48050107326d54a7b34d31cbecd225c7f3e5a817d8dfd63886426ea4a97cb4fd"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -21851,11 +21861,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "1478be5b0ecf4b762508966ed3623639744bd3535ddde74fc4cf4e711b19829c"
+      "sha256": "d25478fb183d4661f372e4ea75ca1947293f5f79e4d0158750b25d0772dde18a"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "c2a1431efd84225a18f21adc9907cc37dc48862481c4a9f9a59630659a8c3b0f"
+      "sha256": "18872015e187aa3fd4bd51e922539b95a40225c8f2e5582ab0c5f429805588cd"
     }
   }
 }

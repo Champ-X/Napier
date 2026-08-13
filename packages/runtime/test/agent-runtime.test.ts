@@ -1257,7 +1257,7 @@ describe("AgentRuntime demo path", () => {
     expect(run).toEqual(
       expect.objectContaining({
         status: "failed",
-        error: "Model call failed.",
+        error: "The model provider call failed. Verify the selected provider and model with Doctor, then retry or choose another configured model.",
       }),
     );
     const events = await store.listEvents(thread.id);
@@ -1273,7 +1273,7 @@ describe("AgentRuntime demo path", () => {
     expect(events.find((event) => event.type === "run.failed")?.payload).toEqual(
       expect.objectContaining({
         status: "failed",
-        message: "Model call failed.",
+        message: "The model provider call failed. Verify the selected provider and model with Doctor, then retry or choose another configured model.",
       }),
     );
     expect(JSON.stringify(events)).not.toContain(diagnostic);

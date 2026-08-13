@@ -245,7 +245,8 @@ describe("Agent persistent JavaScript kernel integration", () => {
     expect(failedRun).toEqual(
       expect.objectContaining({
         status: "failed",
-        error: "Model call failed.",
+        error:
+          "The model provider call failed. Verify the selected provider and model with Doctor, then retry or choose another configured model.",
       }),
     );
     expect(

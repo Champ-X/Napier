@@ -84,6 +84,52 @@ export function splitForStreaming(text: string, parts: number): string[] {
   return chunks;
 }
 
+export function publicModelFailureMessage(
+  stopReason: "error" | "aborted",
+  diagnostic: string | undefined,
+): string {
+  if (stopReason === "aborted") {
+    return "Model call was aborted. Retry when the task is ready to continue.";
+  }
+  const normalized = diagnostic?.toLowerCase() ?? "";
+  if (
+    /\b401\b|unauthori[sz]ed|authentication|invalid api[- ]?key|credential/u.test(
+      normalized,
+    )
+  ) {
+    return "Model provider authentication failed. Restore the selected credential reference, verify it with Doctor, then retry.";
+  }
+  if (
+    /\b429\b|rate.?limit|quota|insufficient (?:credits?|balance)|credit balance/u.test(
+      normalized,
+    )
+  ) {
+    return "Model provider capacity or quota was exhausted. Wait for the provider limit to reset or select another configured model, then retry.";
+  }
+  if (
+    /\b404\b|model.{0,32}(?:not found|unavailable|does not exist)|no endpoints? found|invalid model/u.test(
+      normalized,
+    )
+  ) {
+    return "The selected model is unavailable at the provider. Choose a current catalog model or verify the provider with Doctor, then retry.";
+  }
+  if (
+    /context.{0,24}(?:length|limit|window|too large)|maximum context|too many tokens|request too large/u.test(
+      normalized,
+    )
+  ) {
+    return "The model context exceeded the provider limit. Start a smaller follow-up or reduce attached context, then retry.";
+  }
+  if (
+    /\b(?:408|500|502|503|504)\b|timed? out|timeout|network|connection|overload|service unavailable|temporar|internal server error/u.test(
+      normalized,
+    )
+  ) {
+    return "The model provider or network failed temporarily. Retry the same Run; select another configured model if the failure persists.";
+  }
+  return "The model provider call failed. Verify the selected provider and model with Doctor, then retry or choose another configured model.";
+}
+
 export async function delay(
   milliseconds: number,
   signal: AbortSignal,

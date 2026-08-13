@@ -59,7 +59,7 @@ import {
   controlMessageEventKey,
   delay,
   formatPlanToolGuidance,
-  OperatorDecisionPendingError,
+  OperatorDecisionPendingError, publicModelFailureMessage,
   sha256Text,
   splitForStreaming,
   summarize,
@@ -2067,13 +2067,13 @@ export class AgentRuntime {
           onEvent,
         );
         budget.observePrimaryUsage(usage, Date.now(), usageAccounting);
-        if (modelFailure) {
+        if (modelFailure)
           throw new Error(
-            event.message.stopReason === "aborted"
-              ? "Model call was aborted."
-              : "Model call failed.",
+            publicModelFailureMessage(
+              event.message.stopReason === "aborted" ? "aborted" : "error",
+              event.message.errorMessage,
+            ),
           );
-        }
         if (hasToolCalls) return undefined;
         await this.recordModelAdvisorGate(
           run,
