@@ -88,7 +88,6 @@ export async function runOpenWebResearchBenchmark(
     }
     const agent = runtime.store.listAgents()[0]!;
     if (
-      agent.toolPolicy !== "observe" ||
       !["web_search", "web_fetch", "browser", "research_source"].every((tool) =>
         agent.enabledTools.includes(tool),
       )

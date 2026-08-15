@@ -11,6 +11,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createLocalAgentRuntime } from "../src/local-agent-runtime.js";
 import { createThreadReplayBundle } from "../src/thread-bundles.js";
+import { processReadySandbox } from "./process-run-readiness-test-fixture.js";
 
 const roots: string[] = [];
 
@@ -37,6 +38,7 @@ describe("explicit Source continuity pin", () => {
       workspaceRoot,
       dataRoot: path.join(root, "data"),
       env: {},
+      sandbox: processReadySandbox("source-pin-test"),
       webFetchHttp: { request },
     });
     try {
@@ -175,6 +177,7 @@ describe("explicit Source continuity pin", () => {
       workspaceRoot,
       dataRoot: path.join(root, "data"),
       env: {},
+      sandbox: processReadySandbox("source-pin-deny-test"),
     });
     try {
       const agent = services.store.listAgents()[0]!;

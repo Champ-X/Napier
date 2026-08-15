@@ -110,7 +110,7 @@ export function assertWebUiE2eReceipt(receipt) {
     WEB_UI_LONG_RUN_NARRATIVE_EXPECTATION,
   );
   assert.equal(
-    receipt?.longRun?.metrics.includes("21,200 / 250,000 tokens"),
+    receipt?.longRun?.metrics.includes("21,200 / 1,000,000 tokens"),
     true,
   );
   assert.equal(receipt?.longRun?.metrics.includes("$0.3100"), true);
@@ -189,7 +189,15 @@ export function assertViewportReceipt(viewport) {
       key === "conversation",
     );
   }
-  assert.equal(viewport.layoutSnapshot.conversation.height >= 100, true);
+  assert.equal(
+    viewport.layoutSnapshot.conversation.height >= 100,
+    true,
+    JSON.stringify({
+      viewport: { width: viewport.width, height: viewport.height },
+      conversation: viewport.layoutSnapshot.conversation,
+      composer: viewport.layoutSnapshot.composer,
+    }),
+  );
   assert.equal(
     within(
       viewport.layoutSnapshot.inspector,

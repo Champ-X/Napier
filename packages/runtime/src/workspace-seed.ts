@@ -9,6 +9,7 @@ import {
 import {
   DEFAULT_MODEL_ADVISOR_POLICY,
   DEFAULT_RUN_LIMITS,
+  DEFAULT_SUBAGENT_LIMITS,
   normalizeRunLimits,
 } from "./agents.js";
 import { recommendedCapabilityUpdate } from "./default-agent-capability-contract.js";
@@ -38,12 +39,7 @@ export function createWorkspaceSeed(): WorkspaceSeed {
     model: { provider: "napier", id: "demo" },
     thinkingLevel: "medium",
     ...recommendedCapabilityUpdate(),
-    subagentLimits: {
-      maxConcurrent: 2,
-      maxTotal: 4,
-      maxTurns: 8,
-      timeoutMs: 120_000,
-    },
+    subagentLimits: structuredClone(DEFAULT_SUBAGENT_LIMITS),
     runLimits: structuredClone(DEFAULT_RUN_LIMITS),
     modelAdvisor: structuredClone(DEFAULT_MODEL_ADVISOR_POLICY),
     revision: 1,

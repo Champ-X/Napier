@@ -84,7 +84,15 @@ export async function resolvePromptCapabilityProfile(
   const profile = internalResearchRecovery
     ? applyAgentCapabilityPresetOverride(base, "research", "user")
     : base;
-  if (!options.executionMode || options.executionMode === "standard") {
+  const requiresProcessReadiness =
+    sandbox.readinessVersion !== undefined &&
+    (options.capabilityPreset !== undefined ||
+      source === "schedule" ||
+      source === "channel");
+  if (
+    requiresProcessReadiness &&
+    (!options.executionMode || options.executionMode === "standard")
+  ) {
     await sharedProcessRunReadinessGate(
       sandbox,
       store.workspaceRoot,

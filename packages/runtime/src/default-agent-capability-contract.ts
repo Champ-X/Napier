@@ -7,6 +7,7 @@ import type {
   UpdateAgentProfileRequest,
 } from "@napier/contracts";
 import { AGENT_TOOL_NAMES } from "@napier/contracts";
+import { agentCapabilityPresetUpdate } from "@napier/contracts/agent-capabilities";
 import type {
   CapabilityDiffOperation,
   CapabilityManagedField,
@@ -15,7 +16,7 @@ import type {
 
 export const DEFAULT_AGENT_CAPABILITY_CONTRACT_ID =
   "napier.default-agent.capabilities" as const;
-export const DEFAULT_AGENT_CAPABILITY_CONTRACT_VERSION = 3 as const;
+export const DEFAULT_AGENT_CAPABILITY_CONTRACT_VERSION = 4 as const;
 
 export const DEFAULT_AGENT_CAPABILITY_TOOLS = [
   "list_files",
@@ -137,10 +138,24 @@ export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3_SHA256 = sha256(
   }),
 );
 
+export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4: ManagedCapabilityPayload =
+  deepFreeze(
+    managedCapabilityPayload(agentCapabilityPresetUpdate("safe_automation")),
+  );
+
+export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4_SHA256 = sha256(
+  canonicalJson({
+    schemaVersion: 1,
+    contractId: DEFAULT_AGENT_CAPABILITY_CONTRACT_ID,
+    contractVersion: 4,
+    ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4,
+  }),
+);
+
 export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION =
-  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3;
+  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4;
 export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256 =
-  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3_SHA256;
+  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4_SHA256;
 
 export const DEFAULT_AGENT_CAPABILITY_CONTRACT_HISTORY: readonly AgentCapabilityContractRecommendation[] =
   deepFreeze([
@@ -166,6 +181,14 @@ export const DEFAULT_AGENT_CAPABILITY_CONTRACT_HISTORY: readonly AgentCapability
       recommendationSha256: DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3_SHA256,
       recommendation: managedCapabilityPayload(
         DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3,
+      ),
+    },
+    {
+      contractId: DEFAULT_AGENT_CAPABILITY_CONTRACT_ID,
+      contractVersion: 4,
+      recommendationSha256: DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4_SHA256,
+      recommendation: managedCapabilityPayload(
+        DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4,
       ),
     },
   ]);

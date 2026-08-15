@@ -165,7 +165,7 @@ async function runWebArm(browser, origin, root) {
       name: "Upgrade while preserving overrides",
     })
     .click();
-  await card.getByText(/v3 · current · explicit_overrides/u).waitFor();
+  await card.getByText(/v4 · current · explicit_overrides/u).waitFor();
   const horizontalOverflowPx = await page.evaluate(
     () => document.documentElement.scrollWidth - window.innerWidth,
   );
@@ -234,8 +234,12 @@ async function seedV2Override(workspaceRoot, dataRoot) {
   const statePath = path.join(dataRoot, "workspace.json");
   const state = JSON.parse(await readFile(statePath, "utf8"));
   const profile = state.agents.find((agent) => agent.id === customized.id);
+  profile.toolPolicy = DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2.toolPolicy;
   profile.enabledTools = [
     ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2.enabledTools,
+  ];
+  profile.enabledSubagents = [
+    ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2.enabledSubagents,
   ];
   const index = state.agentRevisions.findIndex(
     (revision) =>
@@ -346,24 +350,42 @@ function acceptanceProjection(before, after, preview, extra) {
 
 function assertUpgradePreview(preview) {
   assert.equal(preview.sourceContractVersion, 2);
-  assert.equal(preview.targetContractVersion, 3);
+  assert.equal(preview.targetContractVersion, 4);
   assert.deepEqual(preview.explicitOverrideFields, ["enabledSkills"]);
-  assert.deepEqual(preview.operations, [
-    {
-      field: "enabledTools",
-      operation: "add",
-      value: "skill_load",
-      effect: "read",
-      risk: "low",
-    },
-  ]);
+  assert.equal(
+    preview.operations.some(
+      (operation) =>
+        operation.field === "toolPolicy" &&
+        operation.operation === "replace" &&
+        operation.value === "workspace",
+    ),
+    true,
+  );
+  for (const [field, value] of [
+    ["enabledTools", "skill_load"],
+    ["enabledTools", "workspace_process"],
+    ["enabledSubagents", "coder"],
+  ]) {
+    assert.equal(
+      preview.operations.some(
+        (operation) =>
+          operation.field === field &&
+          operation.operation === "add" &&
+          operation.value === value,
+      ),
+      true,
+    );
+  }
 }
 
 function assertUpgraded(before, after) {
   assert.equal(after.agent.revision, before.agent.revision + 1);
   assert.equal(after.revisionCount, before.revisionCount + 1);
   assert.deepEqual(after.agent.enabledSkills, before.agent.enabledSkills);
+  assert.equal(after.agent.toolPolicy, "workspace");
   assert.equal(after.agent.enabledTools.includes("skill_load"), true);
+  assert.equal(after.agent.enabledTools.includes("workspace_process"), true);
+  assert.equal(after.agent.enabledSubagents.includes("coder"), true);
   assert.equal(after.nonManagedSha256, before.nonManagedSha256);
   assert.equal(after.projection.driftState, "current");
   assert.equal(after.projection.ownership, "explicit_overrides");

@@ -1835,9 +1835,9 @@ describe("Execution Plan Workflow runtime", () => {
     ).toBe(false);
     timeoutFixture.store.close();
   }, 20_000);
-
   it("denies a write Tool node under the pinned observe policy", async () => {
     const fixture = await createFixture();
+    await fixture.store.updateAgent(fixture.store.getThread(fixture.targetThreadId).agentId, { toolPolicy: "observe", enabledTools: ["apply_patch"] });
     const definition = workflowDefinition(fixture.manifest.blueprint);
     const manifest = defineExecutionPlanWorkflow({
       ...definition,

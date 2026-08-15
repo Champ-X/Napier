@@ -104,15 +104,15 @@ import {
   verifyThreadReplayBundle,
 } from "@napier/runtime";
 import { afterEach, describe, expect, it } from "vitest";
-
 import { createApp, createServices as createNapierServices, inferWorkspaceRoot } from "../src/app.js";
+import { processReadySandbox } from "./process-run-readiness-test-fixture.js";
 
 const POLICY_RETIREMENT_SIGNING_ENV = "NAPIER_TEST_POLICY_RETIREMENT_SIGNING_KEY";
 const temporaryRoots: string[] = [];
 const openServices: Awaited<ReturnType<typeof createNapierServices>>[] = [];
 
 async function createServices(options: Parameters<typeof createNapierServices>[0]) {
-  const services = await createNapierServices(options);
+  const services = await createNapierServices({ sandbox: processReadySandbox("app-test-readiness"), ...options });
   openServices.push(services);
   return services;
 }
@@ -1707,7 +1707,7 @@ describe("Napier HTTP goal flow", () => {
       expect.objectContaining({
         revision: 2,
         source: "updated",
-        changedFields: expect.arrayContaining(["name", "systemPrompt", "toolPolicy", "modelAdvisor", "promptVariables", "toolLoopGuard"]),
+        changedFields: expect.arrayContaining(["name", "systemPrompt", "modelAdvisor", "promptVariables", "toolLoopGuard"]),
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
       expect.objectContaining({

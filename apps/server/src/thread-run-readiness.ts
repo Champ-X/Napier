@@ -27,6 +27,7 @@ export async function inspectThreadPromptReadiness(input: {
   capabilityPreset?: AgentCapabilityPresetId;
 }): Promise<ThreadPromptReadiness> {
   const thread = input.store.getThread(input.threadId);
+  if (!input.capabilityPreset) return { ready: true };
   const projection =
     await input.agentCapabilities.blockedRunReadinessProjection(
       thread.agentId,

@@ -834,10 +834,10 @@ describe("transactional LocalStore", () => {
     const migrated = await openStore(options);
     expect(migrated.getThread(thread.id).eventCount).toBe(3);
     expect(migrated.listAgents()[0]?.runLimits).toEqual({
-      maxTurns: 24,
-      maxTotalTokens: 250_000,
-      maxCostUsd: 10,
-      timeoutMs: 900_000,
+      maxTurns: 64,
+      maxTotalTokens: 1_000_000,
+      maxCostUsd: 25,
+      timeoutMs: 1_800_000,
     });
     expect(migrated.listAgentRevisions(migrated.listAgents()[0]!.id)).toEqual([
       expect.objectContaining({
@@ -850,7 +850,7 @@ describe("transactional LocalStore", () => {
     expect(migrated.listRuns(thread.id)[0]).toEqual(
       expect.objectContaining({
         agentRevision: 1,
-        limits: expect.objectContaining({ maxTurns: 24 }),
+        limits: expect.objectContaining({ maxTurns: 64 }),
       }),
     );
     expect(migrated.listRuns(thread.id)[0]).not.toHaveProperty("configuration");

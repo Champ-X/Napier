@@ -236,6 +236,39 @@ export function mergeNavigationBootstrap(
   };
 }
 
+export function mergeBackgroundBootstrap(
+  current: LiveReadyBootstrapResponse | undefined,
+  incoming: LiveReadyBootstrapResponse,
+): LiveReadyBootstrapResponse {
+  if (!current) return incoming;
+  const merged = mergeNavigationBootstrap(current, incoming);
+  const activeThread =
+    current.activeThread?.thread.id === incoming.activeThread?.thread.id && incoming.activeThread
+      ? preserveThreadDetailImportReceipt(incoming.activeThread, current.activeThread)
+      : current.activeThread;
+  const { activeThread: _incomingActiveThread, ...background } = merged;
+  return {
+    ...background,
+    ...(activeThread ? { activeThread } : {}),
+  };
+}
+
+export function mergeBackgroundThreadDetail(
+  current: LiveReadyBootstrapResponse | undefined,
+  refreshed: WebThreadDetail,
+): LiveReadyBootstrapResponse | undefined {
+  if (!current) return current;
+  const activeThread =
+    current.activeThread?.thread.id === refreshed.thread.id
+      ? preserveThreadDetailImportReceipt(refreshed, current.activeThread)
+      : current.activeThread;
+  return {
+    ...current,
+    threads: upsertThread(current.threads, refreshed.thread),
+    ...(activeThread ? { activeThread } : {}),
+  };
+}
+
 function appendEvent(
   detail: WebThreadDetail,
   event: RunEvent,

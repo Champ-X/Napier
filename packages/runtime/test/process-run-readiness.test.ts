@@ -10,6 +10,7 @@ import {
   createLocalAgentRuntime,
   UnsupportedSandboxAdapter,
 } from "../src/index.js";
+import { SwitchableSandboxAdapter } from "../src/sandbox-switchable.js";
 import {
   processRunReadinessMessage,
   ProcessRunReadinessError,
@@ -24,7 +25,7 @@ afterEach(async () => {
 });
 
 describe("Process Run readiness", () => {
-  it("blocks process-capable Runtime calls before creating a Run", async () => {
+  it("allows the full-capability default to start without an explicit process mode", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-process-gate-"));
     roots.push(root);
     const workspaceRoot = path.join(root, "workspace");
@@ -32,7 +33,40 @@ describe("Process Run readiness", () => {
     const services = await createLocalAgentRuntime({
       workspaceRoot,
       dataRoot: path.join(root, "state"),
-      sandbox: new UnsupportedSandboxAdapter("process-gate-test"),
+      sandbox: new SwitchableSandboxAdapter(
+        new UnsupportedSandboxAdapter("default-mode-test"),
+      ),
+    });
+    try {
+      const agent = services.store.listAgents()[0]!;
+      const thread = await services.store.createThread({
+        title: "Default full-capability Run",
+        agentId: agent.id,
+      });
+
+      await expect(
+        services.runtime.runPrompt({
+          threadId: thread.id,
+          text: "Answer without invoking a process tool.",
+        }),
+      ).resolves.toEqual(expect.objectContaining({ status: "completed" }));
+      expect(services.store.listRuns(thread.id)).toHaveLength(1);
+    } finally {
+      await services.shutdown();
+    }
+  });
+
+  it("blocks an explicit process-capable mode before creating a Run", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-process-gate-"));
+    roots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot);
+    const services = await createLocalAgentRuntime({
+      workspaceRoot,
+      dataRoot: path.join(root, "state"),
+      sandbox: new SwitchableSandboxAdapter(
+        new UnsupportedSandboxAdapter("process-gate-test"),
+      ),
     });
     try {
       const agent = services.store.listAgents()[0]!;
@@ -49,6 +83,7 @@ describe("Process Run readiness", () => {
         services.runtime.runPrompt({
           threadId: thread.id,
           text: "Do not create this Run.",
+          capabilityPreset: "safe_automation",
         }),
       ).rejects.toBeInstanceOf(ProcessRunReadinessError);
       expect(services.store.listRuns(thread.id)).toHaveLength(0);
@@ -66,7 +101,9 @@ describe("Process Run readiness", () => {
     const services = await createLocalAgentRuntime({
       workspaceRoot,
       dataRoot: path.join(root, "state"),
-      sandbox: new UnsupportedSandboxAdapter("automation-gate-test"),
+      sandbox: new SwitchableSandboxAdapter(
+        new UnsupportedSandboxAdapter("automation-gate-test"),
+      ),
     });
     try {
       const seeded = services.store.listAgents()[0]!;

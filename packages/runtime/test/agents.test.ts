@@ -180,6 +180,28 @@ describe("Agent profile updates", () => {
     ]);
   });
 
+  it("removes inherited coder delegation when a partial capability edit removes its prerequisites", () => {
+    const coderProfile = updateAgentProfile(PROFILE, {
+      toolPolicy: "workspace",
+      enabledTools: ["read_file", "apply_patch", "lsp_diagnostics"],
+      enabledSubagents: ["coder", "reviewer"],
+    });
+
+    const updated = updateAgentProfile(coderProfile, {
+      enabledTools: ["read_file"],
+    });
+
+    expect(updated.enabledSubagents).toEqual(["reviewer"]);
+    expect(() =>
+      updateAgentProfile(coderProfile, {
+        enabledTools: ["read_file"],
+        enabledSubagents: ["coder", "reviewer"],
+      }),
+    ).toThrow(
+      "Coder Subagents require workspace policy plus apply_patch and lsp_diagnostics",
+    );
+  });
+
   it("does not audit equivalent capability-set reordering", () => {
     const unsorted: AgentProfile = {
       ...PROFILE,

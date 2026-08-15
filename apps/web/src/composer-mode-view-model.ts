@@ -1,7 +1,6 @@
 import {
   AGENT_CAPABILITY_PRESETS,
   agentCapabilityPreset,
-  agentCapabilityStatus,
   type AgentCapabilityPresetId,
 } from "@napier/contracts/agent-capabilities";
 import type { AgentProfile } from "@napier/contracts";
@@ -34,7 +33,7 @@ const SANDBOX_PRESETS = new Set<AgentCapabilityPresetId>([
  * tool, skill, and delegation fields.
  */
 export function composerModes(
-  profile:
+  _profile:
     | Pick<
         AgentProfile,
         "toolPolicy" | "enabledTools" | "enabledSkills" | "enabledSubagents"
@@ -42,12 +41,11 @@ export function composerModes(
     | undefined,
   selectedPreset?: AgentCapabilityPresetId,
 ): ComposerMode[] {
-  const activeId = profile ? agentCapabilityStatus(profile).presetId : "custom";
   return AGENT_CAPABILITY_PRESETS.map((preset) => ({
     id: preset.id,
     label: preset.label,
     summary: preset.summary,
-    active: preset.id === (selectedPreset ?? activeId),
+    active: preset.id === selectedPreset,
     temporary: preset.id === selectedPreset,
     requiresSandbox: SANDBOX_PRESETS.has(preset.id),
   }));

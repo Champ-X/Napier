@@ -481,6 +481,14 @@ describe("temporary capability preset CLI", () => {
         agentId: agent.id,
         capabilityPreset: "coding",
       });
+      await services.store.appendEvent({
+        threadId: codingThread.id,
+        runId: coding.id,
+        type: "run.started",
+        category: "lifecycle",
+        visibility: "debug",
+        payload: { capabilityPreset: "coding" },
+      });
       await services.store.finishRun(coding.id, "interrupted");
 
       await expect(
@@ -495,6 +503,14 @@ describe("temporary capability preset CLI", () => {
         threadId: researchThread.id,
         agentId: agent.id,
         capabilityPreset: "research",
+      });
+      await services.store.appendEvent({
+        threadId: researchThread.id,
+        runId: research.id,
+        type: "run.started",
+        category: "lifecycle",
+        visibility: "debug",
+        payload: { capabilityPreset: "research" },
       });
       await services.store.finishRun(research.id, "interrupted");
 

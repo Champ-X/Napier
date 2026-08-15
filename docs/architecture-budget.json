@@ -37,7 +37,7 @@
     "apps/web/src/tool-event-view.ts": 678,
     "apps/web/src/trace-event-summary-view.ts": 754,
     "apps/web/src/TracePanel.tsx": 958,
-    "apps/web/src/use-workspace-view-model.ts": 2026,
+    "apps/web/src/use-workspace-view-model.ts": 2012,
     "apps/web/src/workflow-event-view.ts": 773,
     "apps/web/test/api.test.ts": 2488,
     "apps/web/test/plan-blueprint-library-view-model.test.ts": 1464,

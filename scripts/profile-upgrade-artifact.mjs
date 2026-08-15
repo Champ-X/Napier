@@ -102,11 +102,12 @@ function validUpgradeArm(value, entry, stalePreviewRejected) {
     value.entry === entry &&
     value.stalePreviewRejected === stalePreviewRejected &&
     value.sourceContractVersion === 2 &&
-    value.targetContractVersion === 3 &&
+    value.targetContractVersion === 4 &&
     value.revisionBefore === 2 &&
     value.revisionAfter === 3 &&
     value.revisionCountDelta === 1 &&
-    value.operationCount === 1 &&
+    Number.isSafeInteger(value.operationCount) &&
+    value.operationCount >= 4 &&
     SHA256.test(value.operationSetSha256 ?? "") &&
     SHA256.test(value.diffSha256 ?? "") &&
     canonicalJson(value.explicitOverrideFields) ===

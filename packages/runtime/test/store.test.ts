@@ -375,14 +375,14 @@ describe("LocalStore", () => {
     const updated = await store.updateAgent(original.id, {
       name: "Revisioned Napier",
       systemPrompt: "Preserve every revision as durable evidence.",
-      toolPolicy: "workspace",
+      toolPolicy: "observe",
     });
     expect(updated.revision).toBe(2);
     expect(store.listAgentRevisions(original.id)).toEqual([
       expect.objectContaining({
         revision: 2,
         source: "updated",
-        changedFields: ["name", "systemPrompt", "toolPolicy"],
+        changedFields: ["name", "systemPrompt", "toolPolicy", "enabledSubagents"],
       }),
       expect.objectContaining({ revision: 1, source: "created" }),
     ]);

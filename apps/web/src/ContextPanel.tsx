@@ -303,16 +303,16 @@ export default function ContextPanel({
     ),
   );
   const [agentMaxConcurrent, setAgentMaxConcurrent] = useState(
-    agent.subagentLimits?.maxConcurrent ?? 2,
+    agent.subagentLimits?.maxConcurrent ?? 4,
   );
   const [agentMaxTotal, setAgentMaxTotal] = useState(
-    agent.subagentLimits?.maxTotal ?? 4,
+    agent.subagentLimits?.maxTotal ?? 8,
   );
   const [agentMaxTurns, setAgentMaxTurns] = useState(
-    agent.subagentLimits?.maxTurns ?? 8,
+    agent.subagentLimits?.maxTurns ?? 16,
   );
   const [agentTimeoutSeconds, setAgentTimeoutSeconds] = useState(
-    Math.round((agent.subagentLimits?.timeoutMs ?? 120_000) / 1_000),
+    Math.round((agent.subagentLimits?.timeoutMs ?? 300_000) / 1_000),
   );
   const [configurationBusy, setConfigurationBusy] = useState(false);
   const [agentRevisions, setAgentRevisions] = useState<AgentProfileRevision[]>(
@@ -429,11 +429,11 @@ export default function ContextPanel({
         (agent.runLimits?.timeoutMs ?? DEFAULT_RUN_LIMITS.timeoutMs) / 1_000,
       ),
     );
-    setAgentMaxConcurrent(agent.subagentLimits?.maxConcurrent ?? 2);
-    setAgentMaxTotal(agent.subagentLimits?.maxTotal ?? 4);
-    setAgentMaxTurns(agent.subagentLimits?.maxTurns ?? 8);
+    setAgentMaxConcurrent(agent.subagentLimits?.maxConcurrent ?? 4);
+    setAgentMaxTotal(agent.subagentLimits?.maxTotal ?? 8);
+    setAgentMaxTurns(agent.subagentLimits?.maxTurns ?? 16);
     setAgentTimeoutSeconds(
-      Math.round((agent.subagentLimits?.timeoutMs ?? 120_000) / 1_000),
+      Math.round((agent.subagentLimits?.timeoutMs ?? 300_000) / 1_000),
     );
     setRollbackTarget(undefined);
   }, [agent.id, agent.revision]);

@@ -9,7 +9,9 @@ import {
   applyThreadStreamFrameToDetail,
   attachThreadRun,
   detachThreadRun,
+  mergeBackgroundBootstrap,
   mergeNavigationBootstrap,
+  mergeBackgroundThreadDetail,
   mergeRefreshedThreadBootstrap,
   threadRunViewState,
   type ThreadRunSessions,
@@ -139,6 +141,37 @@ describe("Thread Run stream state", () => {
     expect(merged.threads.find((thread) => thread.id === "thread_b")).toEqual(
       expect.objectContaining({ status: "idle", eventCount: 30 }),
     );
+  });
+
+  it("does not replace the selected Thread with a background detail refresh", () => {
+    const selected = detail("thread_b", []);
+    const background = {
+      ...detail("thread_a", []),
+      thread: summary("thread_a", "waiting", 42),
+    };
+    const current = bootstrap(selected, background.thread, selected.thread);
+
+    const merged = mergeBackgroundThreadDetail(current, background);
+
+    expect(merged?.activeThread?.thread.id).toBe("thread_b");
+    expect(merged?.threads.find((thread) => thread.id === "thread_a")).toEqual(
+      expect.objectContaining({ status: "waiting", eventCount: 42 }),
+    );
+  });
+
+  it("does not replace the selected Thread with a background configuration refresh", () => {
+    const selected = detail("thread_b", []);
+    const background = detail("thread_a", []);
+    const current = bootstrap(selected, background.thread, selected.thread);
+    const incoming = {
+      ...bootstrap(background, background.thread, selected.thread),
+      recommendedRunModel: { provider: "provider", id: "new-model" },
+    };
+
+    const merged = mergeBackgroundBootstrap(current, incoming);
+
+    expect(merged.activeThread?.thread.id).toBe("thread_b");
+    expect(merged.recommendedRunModel).toEqual(incoming.recommendedRunModel);
   });
 
   it("preserves newer background summaries when a navigation response is stale", () => {

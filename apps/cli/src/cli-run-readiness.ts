@@ -48,9 +48,8 @@ export async function assertCliRunReadiness(
   signal?: AbortSignal,
   dependencies: CliRunReadinessDependencies = {},
 ): Promise<void> {
-  const effective = presetId
-    ? { ...profile, ...agentCapabilityPresetUpdate(presetId) }
-    : profile;
+  if (!presetId) return;
+  const effective = { ...profile, ...agentCapabilityPresetUpdate(presetId) };
   if (!agentCapabilityStatus(effective).processExecution) return;
   const result = await (dependencies.processSandbox ?? probeShellRuntime)(
     services.workspaceRoot,
@@ -149,18 +148,16 @@ async function assertCliFrozenRunReadiness(
   signal?: AbortSignal,
   dependencies: CliRunReadinessDependencies = {},
 ): Promise<void> {
-  const configuration = run.configuration;
-  if (
-    !configuration ||
-    !agentCapabilityStatus({
-      toolPolicy: configuration.toolPolicy,
-      enabledTools: configuration.enabledTools,
-      enabledSkills: configuration.enabledSkills,
-      enabledSubagents: configuration.enabledSubagents,
-    }).processExecution
-  ) {
-    return;
-  }
+  const started = (await services.store.listEvents(run.threadId)).find(
+    (event) => event.runId === run.id && event.type === "run.started",
+  );
+  const preset =
+    started?.payload &&
+    !Array.isArray(started.payload) &&
+    typeof started.payload === "object"
+      ? started.payload["capabilityPreset"]
+      : undefined;
+  if (preset !== "coding" && preset !== "safe_automation") return;
   const result = await (dependencies.processSandbox ?? probeShellRuntime)(
     services.workspaceRoot,
     signal,

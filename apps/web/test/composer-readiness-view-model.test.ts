@@ -14,6 +14,7 @@ describe("Composer run readiness", () => {
       profile("research"),
       projection({
         policy: "observe",
+        preset: "research",
         tools: [
           tool("web_search", "available_unverified"),
           tool("web_fetch", "available_unverified"),
@@ -23,6 +24,7 @@ describe("Composer run readiness", () => {
       }),
       false,
       undefined,
+      "research",
     );
 
     expect(readiness.canRun).toBe(true);
@@ -56,6 +58,7 @@ describe("Composer run readiness", () => {
       profile("browser"),
       projection({
         policy: "observe",
+        preset: "browser",
         tools: [
           tool("web_search", "ready"),
           tool("web_fetch", "ready"),
@@ -65,6 +68,7 @@ describe("Composer run readiness", () => {
       }),
       false,
       undefined,
+      "browser",
     );
 
     expect(readiness.canRun).toBe(false);
@@ -79,11 +83,13 @@ describe("Composer run readiness", () => {
       profile("coding"),
       projection({
         policy: "workspace",
+        preset: "coding",
         tools: [],
         sandbox: sandbox("unavailable"),
       }),
       false,
       undefined,
+      "coding",
     );
     expect(unavailable.canRun).toBe(false);
     expect(unavailable.message).toContain("Sandbox unavailable");
@@ -95,15 +101,35 @@ describe("Composer run readiness", () => {
       profile("coding"),
       projection({
         policy: "workspace",
+        preset: "coding",
         tools: [],
         sandbox: sandbox("available_unverified", "host-direct"),
       }),
       false,
       undefined,
+      "coding",
     );
     expect(hostDirect.canRun).toBe(true);
     expect(hostDirect.level).toBe("warn");
     expect(hostDirect.message).toContain("without OS isolation");
+  });
+
+  it("does not pre-block the full Agent default on an unused process capability", () => {
+    const readiness = composerRunReadiness(
+      profile("coding"),
+      projection({
+        policy: "workspace",
+        tools: [],
+        sandbox: sandbox("unavailable"),
+      }),
+      false,
+      undefined,
+    );
+
+    expect(readiness.canRun).toBe(true);
+    expect(readiness.items.find((item) => item.id === "sandbox")).toEqual(
+      expect.objectContaining({ state: "inactive", value: "Not needed" }),
+    );
   });
 
   it("blocks sending while effective readiness is loading or unavailable", () => {
@@ -138,7 +164,15 @@ describe("Composer run readiness", () => {
     });
     const revised = { ...profile("research"), revision: 2 };
 
-    expect(composerRunReadiness(revised, current, false, undefined)).toEqual(
+    expect(
+      composerRunReadiness(
+        revised,
+        current,
+        false,
+        undefined,
+        "research",
+      ),
+    ).toEqual(
       expect.objectContaining({
         canRun: false,
         message: expect.stringContaining("Refreshing effective readiness"),
@@ -177,10 +211,12 @@ function profile(mode: "coding" | "research" | "browser"): AgentProfile {
 
 function projection({
   policy,
+  preset,
   tools,
   sandbox: sandboxRecord,
 }: {
   policy: EffectiveAgentCapabilityProjectionV1["toolPolicy"];
+  preset?: EffectiveAgentCapabilityProjectionV1["capabilityPreset"];
   tools: CapabilityReadinessRecord[];
   sandbox: CapabilityReadinessRecord;
 }): EffectiveAgentCapabilityProjectionV1 {
@@ -195,6 +231,7 @@ function projection({
     driftState: "current",
     ownership: "recommended",
     explicitOverrideFields: [],
+    ...(preset ? { capabilityPreset: preset } : {}),
     toolPolicy: policy,
     configuredTools: tools.map((item) => item.id.slice("tool:".length)),
     runtimeExposedTools: tools

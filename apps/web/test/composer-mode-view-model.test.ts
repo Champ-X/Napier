@@ -11,9 +11,9 @@ import {
 } from "../src/composer-mode-view-model";
 
 describe("Composer task modes", () => {
-  it("lists the five task modes next to the Composer and marks the active one", () => {
+  it("lists the five one-use task modes and marks only an explicit selection active", () => {
     const research = agentCapabilityPreset("research");
-    const modes = composerModes(research);
+    const modes = composerModes(research, "research");
     expect(modes.map((mode) => mode.id)).toEqual([
       "coding",
       "research",
@@ -38,6 +38,14 @@ describe("Composer task modes", () => {
       enabledSubagents: [],
     };
     expect(composerModes(custom).some((mode) => mode.active)).toBe(false);
+  });
+
+  it("does not treat the persistent full default as an explicit one-use mode", () => {
+    expect(
+      composerModes(agentCapabilityPreset("safe_automation")).some(
+        (mode) => mode.active,
+      ),
+    ).toBe(false);
   });
 
   it("does not gate read-only modes on the sandbox", () => {

@@ -213,31 +213,42 @@
 @media (max-width: 780px) {
   .agent-capability-composer {
     gap: 4px;
-    padding: 4px 5px 19px;
+    min-width: 0;
+    padding: 4px 5px;
   }
 
   .agent-capability-composer::after {
-    top: auto;
-    right: 5px;
-    bottom: 4px;
-    background: transparent;
+    display: none;
+  }
+
+  .composer-mode-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .composer-mode-row::-webkit-scrollbar {
+    display: none;
   }
 
   .composer-mode {
+    flex: 0 0 auto;
     padding: 2px 6px;
     font-size: 8px;
   }
 
   .composer-readiness-row {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .composer-readiness-item {
-    padding: 3px 4px;
-    font-size: 7px;
+    display: none;
   }
 
   .agent-capability-composer-status {
     grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .composer-hints .agent-capability-composer-status > span {
+    overflow: hidden;
+    font-size: 9px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }

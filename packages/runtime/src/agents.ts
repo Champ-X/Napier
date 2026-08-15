@@ -68,17 +68,17 @@ const AGENT_REVISION_SOURCES = new Set<AgentProfileRevisionSource>([
 ]);
 
 export const DEFAULT_SUBAGENT_LIMITS: Readonly<SubagentLimits> = {
-  maxConcurrent: 2,
-  maxTotal: 4,
-  maxTurns: 8,
-  timeoutMs: 120_000,
+  maxConcurrent: 4,
+  maxTotal: 8,
+  maxTurns: 16,
+  timeoutMs: 300_000,
 };
 
 export const DEFAULT_RUN_LIMITS: Readonly<RunLimits> = {
-  maxTurns: 24,
-  maxTotalTokens: 250_000,
-  maxCostUsd: 10,
-  timeoutMs: 900_000,
+  maxTurns: 64,
+  maxTotalTokens: 1_000_000,
+  maxCostUsd: 25,
+  timeoutMs: 1_800_000,
 };
 
 export const DEFAULT_AUTOMATIC_RECOVERY_POLICY: Readonly<AutomaticRecoveryPolicy> =
@@ -189,6 +189,9 @@ export function updateAgentProfile(
         )
       : {}),
   };
+  if (request.enabledSubagents === undefined && updated.enabledSubagents && !coderSubagentCapabilitiesAvailable(updated)) {
+    updated.enabledSubagents = updated.enabledSubagents.filter((role) => role !== "coder");
+  }
   assertIndependentAdvisorModel(updated);
   assertCoderSubagentCapabilities(updated);
   if (configSignature(updated) === configSignature(current)) {
@@ -621,16 +624,13 @@ function normalizeSubagents(
 }
 
 function assertCoderSubagentCapabilities(profile: AgentProfile): void {
-  if (
-    profile.enabledSubagents?.includes("coder") &&
-    (profile.toolPolicy === "observe" ||
-      !profile.enabledTools.includes("apply_patch") ||
-      !profile.enabledTools.includes("lsp_diagnostics"))
-  ) {
-    throw new Error(
-      "Coder Subagents require workspace policy plus apply_patch and lsp_diagnostics",
-    );
+  if (profile.enabledSubagents?.includes("coder") && !coderSubagentCapabilitiesAvailable(profile)) {
+    throw new Error("Coder Subagents require workspace policy plus apply_patch and lsp_diagnostics");
   }
+}
+function coderSubagentCapabilitiesAvailable(profile: AgentProfile): boolean {
+  return profile.toolPolicy !== "observe" && profile.enabledTools.includes("apply_patch") &&
+    profile.enabledTools.includes("lsp_diagnostics");
 }
 
 function preserveEquivalentSet<T extends string>(

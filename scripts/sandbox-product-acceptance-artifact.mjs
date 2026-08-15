@@ -276,8 +276,8 @@ function validFirstUseProfile(value) {
     value.revisionCountAfter === 1 &&
     value.credentialCountBefore === 0 &&
     value.credentialCountAfter === 0 &&
-    value.persistedToolPolicy === "observe" &&
-    value.persistedProcessExecution === false &&
+    value.persistedToolPolicy === "workspace" &&
+    value.persistedProcessExecution === true &&
     SHA256.test(value.profileSha256Before) &&
     SHA256.test(value.revisionSetSha256Before) &&
     SHA256.test(value.projectionSha256)

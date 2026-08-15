@@ -98,6 +98,8 @@ import {
   applyThreadStreamFrameToDetail,
   attachThreadRun,
   detachThreadRun,
+  mergeBackgroundBootstrap,
+  mergeBackgroundThreadDetail,
   mergeNavigationBootstrap,
   mergeRefreshedThreadBootstrap,
   resolveCachedThreadDetail,
@@ -108,7 +110,7 @@ import { messagePayload } from "./message-payload";
 import { commitThreadLocation, threadIdFromLocation } from "./thread-location";
 import { useBrowserInteractionConfirmation } from "./use-browser-interaction-confirmation";
 import { executeLoadedNextRunPrompt, useNextRunCapabilityPreset } from "./use-next-run-capability-preset";
-import { upsertThread, upsertThreadControlMessage } from "./thread-detail-view-state";
+import { upsertThreadControlMessage } from "./thread-detail-view-state";
 import { useRecoveredActiveRun } from "./use-active-run-state";
 import { useThreadNavigation } from "./use-thread-navigation";
 export type InspectorTab =
@@ -305,6 +307,7 @@ export function useWorkspaceViewModel() {
   useRecoveredActiveRun(
     detail,
     detail ? threadRunSessions[detail.thread.id] !== undefined : false,
+    selectedThreadIdRef,
     setDetail,
     setBootstrap,
   );
@@ -467,20 +470,17 @@ export function useWorkspaceViewModel() {
     [resolveThreadDetail],
   );
 
+  const commitRefreshedThreadDetail = useCallback((threadId: string, refreshed: WebThreadDetail): void => {
+    threadDetailCacheRef.current.set(threadId, refreshed);
+    setBootstrap((current) => mergeBackgroundThreadDetail(current, refreshed));
+    if (selectedThreadIdRef.current === threadId) setDetail(refreshed);
+  }, []);
+
   const refreshActiveThread = useCallback(async (): Promise<void> => {
     if (!detail) return;
-    const refreshed = await getThread(detail.thread.id);
-    setDetail(refreshed);
-    setBootstrap((current) =>
-      current
-        ? {
-            ...current,
-            threads: upsertThread(current.threads, refreshed.thread),
-            activeThread: refreshed,
-          }
-        : current,
-    );
-  }, [detail]);
+    const threadId = detail.thread.id;
+    commitRefreshedThreadDetail(threadId, await getThread(threadId));
+  }, [commitRefreshedThreadDetail, detail]);
 
   const startRunUi = useCallback((threadId: string, source: WebThreadDetail) => {
     threadDetailCacheRef.current.set(threadId, source);
@@ -671,43 +671,28 @@ export function useWorkspaceViewModel() {
 
   const saveGoal = useCallback(async () => {
     if (!detail || !goalDraft.trim()) return;
+    const threadId = detail.thread.id;
     try {
-      const updated = await setGoal(detail.thread.id, {
+      const updated = await setGoal(threadId, {
         objective: goalDraft.trim(),
       });
-      setDetail(updated);
+      commitRefreshedThreadDetail(threadId, updated);
       setGoalDraft("");
       setInspectorTab("goal");
-      setBootstrap((current) =>
-        current
-          ? {
-              ...current,
-              threads: upsertThread(current.threads, updated.thread),
-            }
-          : current,
-      );
     } catch (goalError) {
       setError(toErrorMessage(goalError));
     }
-  }, [detail, goalDraft]);
+  }, [commitRefreshedThreadDetail, detail, goalDraft]);
 
   const removeGoal = useCallback(async () => {
     if (!detail) return;
+    const threadId = detail.thread.id;
     try {
-      const updated = await clearGoal(detail.thread.id);
-      setDetail(updated);
-      setBootstrap((current) =>
-        current
-          ? {
-              ...current,
-              threads: upsertThread(current.threads, updated.thread),
-            }
-          : current,
-      );
+      commitRefreshedThreadDetail(threadId, await clearGoal(threadId));
     } catch (goalError) {
       setError(toErrorMessage(goalError));
     }
-  }, [detail]);
+  }, [commitRefreshedThreadDetail, detail]);
 
   const branchFrom = useCallback(
     async (seq: number) => {
@@ -766,13 +751,14 @@ export function useWorkspaceViewModel() {
             }
           : current,
       );
-      setDetail(await getThread(detail.thread.id));
+      commitRefreshedThreadDetail(detail.thread.id, await getThread(detail.thread.id));
       setInspectorTab("memory");
     } catch (memoryError) {
       setError(toErrorMessage(memoryError));
     }
   }, [
     bootstrap?.memories,
+    commitRefreshedThreadDetail,
     detail,
     memoryCategory,
     memoryConsolidatesIds,
@@ -865,13 +851,14 @@ export function useWorkspaceViewModel() {
           threadId: detail.thread.id,
         });
         const refreshed = await getBootstrap(detail.thread.id);
-        setBootstrap(refreshed);
-        setDetail(refreshed.activeThread);
+        if (refreshed.activeThread) {
+          commitRefreshedThreadDetail(detail.thread.id, refreshed.activeThread);
+        }
       } catch (memoryError) {
         setError(toErrorMessage(memoryError));
       }
     },
-    [detail],
+    [commitRefreshedThreadDetail, detail],
   );
 
   const commitExtension = useCallback(
@@ -884,17 +871,20 @@ export function useWorkspaceViewModel() {
             }
           : current,
       );
-      if (detail) setDetail(await getThread(detail.thread.id));
+      if (detail) {
+        commitRefreshedThreadDetail(detail.thread.id, await getThread(detail.thread.id));
+      }
     },
-    [detail],
+    [commitRefreshedThreadDetail, detail],
   );
 
   const refreshExtensionWorkspace = useCallback(async (): Promise<void> => {
     if (!detail) return;
     const refreshed = await getBootstrap(detail.thread.id);
-    setBootstrap(refreshed);
-    setDetail(refreshed.activeThread);
-  }, [detail]);
+    if (refreshed.activeThread) {
+      commitRefreshedThreadDetail(detail.thread.id, refreshed.activeThread);
+    }
+  }, [commitRefreshedThreadDetail, detail]);
 
   const runExtensionMutation = useCallback(
     async (busyId: string, operation: () => Promise<ExtensionRecord>): Promise<void> => {
@@ -1068,15 +1058,14 @@ export function useWorkspaceViewModel() {
           envelopeSha256: envelope.contentSha256,
         });
         const refreshed = await getThread(detail.thread.id);
-        setDetail(refreshed);
-        setBootstrap((current) => (current ? { ...current, activeThread: refreshed } : current));
+        commitRefreshedThreadDetail(detail.thread.id, refreshed);
       } catch (packageError) {
         setError(toErrorMessage(packageError));
       } finally {
         setExtensionBusyId(undefined);
       }
     },
-    [bootstrap, detail],
+    [bootstrap, commitRefreshedThreadDetail, detail],
   );
 
   const verifySignedExtensionPackageFile = useCallback(async (file: File): Promise<void> => {
@@ -1535,15 +1524,14 @@ export function useWorkspaceViewModel() {
       });
       const refreshed = await getThread(detail.thread.id);
       setRunComparison(comparison);
-      setDetail(refreshed);
-      setBootstrap((current) => (current ? { ...current, activeThread: refreshed } : current));
+      commitRefreshedThreadDetail(detail.thread.id, refreshed);
       setInspectorTab("lab");
     } catch (evaluationError) {
       setError(toErrorMessage(evaluationError));
     } finally {
       setLabBusyAction(undefined);
     }
-  }, [detail, labLeftRunId, labRightRunId, selectedModel.configured, selectedModelKey]);
+  }, [commitRefreshedThreadDetail, detail, labLeftRunId, labRightRunId, selectedModel.configured, selectedModelKey]);
 
   const exportOpenTelemetryTrace = useCallback(
     async (runId?: string): Promise<void> => {
@@ -1564,15 +1552,14 @@ export function useWorkspaceViewModel() {
           spanCount: artifact.spanCount,
         });
         const refreshed = await getThread(detail.thread.id);
-        setDetail(refreshed);
-        setBootstrap((current) => (current ? { ...current, activeThread: refreshed } : current));
+        commitRefreshedThreadDetail(detail.thread.id, refreshed);
       } catch (exportError) {
         setError(toErrorMessage(exportError));
       } finally {
         setTraceExportBusy(false);
       }
     },
-    [detail],
+    [commitRefreshedThreadDetail, detail],
   );
 
   const verifyOpenTelemetryTraceArtifactFile = useCallback(
@@ -1775,10 +1762,9 @@ export function useWorkspaceViewModel() {
         : current,
     );
   }, []);
-
   const commitConfigurationBootstrap = useCallback((refreshed: LiveReadyBootstrapResponse): void => {
-    setBootstrap(refreshed);
-    setDetail(refreshed.activeThread);
+    setBootstrap((current) => mergeBackgroundBootstrap(current, refreshed));
+    if (selectedThreadIdRef.current === refreshed.activeThread?.thread.id) setDetail(refreshed.activeThread);
     setSelectedModelKey((current) => (current === "napier/demo" ? modelKey(refreshed.recommendedRunModel) : current));
   }, []);
 

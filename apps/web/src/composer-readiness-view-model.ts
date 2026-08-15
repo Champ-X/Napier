@@ -1,8 +1,5 @@
 import type { AgentProfile } from "@napier/contracts";
-import {
-  agentCapabilityStatus,
-  type AgentCapabilityPresetId,
-} from "@napier/contracts/agent-capabilities";
+import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
 import type {
   CapabilityReadinessRecord,
   EffectiveAgentCapabilityProjectionV1,
@@ -46,9 +43,7 @@ export function composerRunReadiness(
   error: string | undefined,
   selectedPreset?: AgentCapabilityPresetId,
 ): ComposerRunReadiness {
-  const modeId =
-    selectedPreset ??
-    (profile ? agentCapabilityStatus(profile).presetId : "custom");
+  const modeId = selectedPreset ?? "custom";
   if (!projection) {
     if (loading) return initialComposerRunReadiness();
     const initial = initialComposerRunReadiness();

@@ -33,7 +33,7 @@ afterEach(async () => {
 });
 
 describe("default Agent web fetch integration", () => {
-  it("fetches and reads a Run-local Source in observe mode without durable body leakage", async () => {
+  it("fetches and reads a Run-local Source from the full default without durable body leakage", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-agent-fetch-"));
     roots.push(root);
     const workspaceRoot = path.join(root, "workspace");
@@ -72,7 +72,7 @@ describe("default Agent web fetch integration", () => {
     });
     try {
       const agent = services.store.listAgents()[0]!;
-      expect(agent.toolPolicy).toBe("observe");
+      expect(agent.toolPolicy).toBe("workspace");
       expect(agent.enabledTools).toContain("web_fetch");
       const thread = await services.store.createThread({
         title: "Default Agent URL fetch",
@@ -650,7 +650,7 @@ describe("default Agent web fetch integration", () => {
     });
     try {
       const agent = services.store.listAgents()[0]!;
-      expect(agent.toolPolicy).toBe("observe");
+      expect(agent.toolPolicy).toBe("workspace");
       expect(agent.enabledTools).toEqual(
         expect.arrayContaining(["web_fetch", "browser", "research_source"]),
       );

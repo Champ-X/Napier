@@ -6,6 +6,7 @@ import {
   agentCapabilityPresetUpdate,
   agentCapabilityStatus,
 } from "../packages/contracts/dist/agent-capabilities.js";
+import { DEFAULT_AGENT_CAPABILITY_RECOMMENDATION } from "../packages/runtime/dist/default-agent-capability-contract.js";
 import { canonicalJson, sha256 } from "../packages/runtime/dist/index.js";
 import { resolveContainerLaunchExecutable } from "../packages/runtime/dist/sandbox-container.js";
 import {
@@ -370,8 +371,20 @@ function verifyCodingRun(
   requireFirstUseValue(
     capabilityBefore.action === "status" &&
       capabilityBefore.agentRevision === 1 &&
-      capabilityBefore.status.toolPolicy === "observe" &&
-      capabilityBefore.status.processExecution === false,
+      capabilityBefore.status.toolPolicy === "workspace" &&
+      capabilityBefore.status.processExecution === true &&
+      sameStringSet(
+        agentBefore.agent.enabledTools,
+        DEFAULT_AGENT_CAPABILITY_RECOMMENDATION.enabledTools,
+      ) &&
+      sameStringSet(
+        agentBefore.agent.enabledSkills,
+        DEFAULT_AGENT_CAPABILITY_RECOMMENDATION.enabledSkills,
+      ) &&
+      sameStringSet(
+        agentBefore.agent.enabledSubagents,
+        DEFAULT_AGENT_CAPABILITY_RECOMMENDATION.enabledSubagents,
+      ),
     "First-use persisted capability baseline is invalid",
   );
   return {

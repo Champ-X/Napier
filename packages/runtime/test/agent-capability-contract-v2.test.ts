@@ -17,6 +17,8 @@ import {
   DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2_SHA256,
   DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3,
   DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3_SHA256,
+  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4,
+  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4_SHA256,
   createCapabilityRestorePreview,
   managedCapabilitySha256,
 } from "../src/default-agent-capability-contract.js";
@@ -31,8 +33,8 @@ afterEach(async () => {
   );
 });
 
-describe("default Agent Capability Contract v3", () => {
-  it("pins V1/V2 history and current Skill loader vectors", async () => {
+describe("default Agent Capability Contract history", () => {
+  it("pins V1-V3 history and current full-capability vectors", async () => {
     expect(DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V1).toEqual({
       toolPolicy: "observe",
       enabledTools: [
@@ -87,7 +89,7 @@ describe("default Agent Capability Contract v3", () => {
     expect(DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2_SHA256).toBe(
       "79c836e15a89df6ad76270de296665217aac7bb04b81421b9e6dc80487ea7613",
     );
-    expect(DEFAULT_AGENT_CAPABILITY_RECOMMENDATION).toEqual({
+    expect(DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3).toEqual({
       ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2,
       enabledTools: [
         ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2.enabledTools,
@@ -95,18 +97,18 @@ describe("default Agent Capability Contract v3", () => {
       ].sort(),
     });
     expect(DEFAULT_AGENT_CAPABILITY_RECOMMENDATION).toBe(
-      DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3,
+      DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4,
     );
-    expect(DEFAULT_AGENT_CAPABILITY_CONTRACT_VERSION).toBe(3);
+    expect(DEFAULT_AGENT_CAPABILITY_CONTRACT_VERSION).toBe(4);
     expect(DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256).toBe(
-      DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3_SHA256,
+      DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4_SHA256,
     );
 
     const services = await createRuntime();
     try {
       const agent = services.store.listAgents()[0]!;
       expect(managedCapabilitySha256(agent)).toBe(
-        "5dcd6cce2e85958e7aedf0f1a7451b89b9a66f1601d36bf081840772b5ab56c4",
+        "998ef4368f87b808689fe5cd5640762d74bf644a7fbf8cefda214b440ba989e1",
       );
       const preview = createCapabilityRestorePreview({
         ...agent,
@@ -116,19 +118,19 @@ describe("default Agent Capability Contract v3", () => {
         enabledSubagents: [],
       });
       expect(preview.diffSha256).toBe(
-        "22f7c14f45998eac250bed9bbf34535884fb2feb8ea964d6490677b41c5b1ed1",
+        "1ceab840365f7dde5a9179472cc30352017fab1210e2684397af0f05ed2b9f6e",
       );
       expect(
         (await services.agentCapabilities.project(agent.id)).projectionSha256,
       ).toBe(
-        "ecddb06ea4575bcac67f92007e8e07c8371ba86f6159a92d39f0dee74f8e7dbe",
+        "79b954dd03fb39c6de459cf25896bde1ff41751948a51f7401682121c262b265",
       );
     } finally {
       await services.shutdown();
     }
   });
 
-  it("projects a bound V2 profile as stale and upgrades it to V3", async () => {
+  it("projects a bound V2 profile as stale and upgrades it to V4", async () => {
     const fixture = await createRuntimeFixture();
     const initial = await fixture.create();
     const seeded = initial.store.listAgents()[0]!;
@@ -151,11 +153,15 @@ describe("default Agent Capability Contract v3", () => {
     );
     const v2Profile: AgentProfile = {
       ...state.agents[agentIndex]!,
+      toolPolicy: DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2.toolPolicy,
       enabledTools: [
         ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2.enabledTools,
       ],
       enabledSkills: [
         ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2.enabledSkills,
+      ],
+      enabledSubagents: [
+        ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2.enabledSubagents,
       ],
     };
     state.agents[agentIndex] = v2Profile;
@@ -188,7 +194,7 @@ describe("default Agent Capability Contract v3", () => {
       const stale = await services.agentCapabilities.project(seeded.id);
       expect(stale).toEqual(
         expect.objectContaining({
-          contractVersion: 3,
+          contractVersion: 4,
           driftState: "stale",
           ownership: "recommended",
           configuredSkills: [
@@ -199,26 +205,46 @@ describe("default Agent Capability Contract v3", () => {
             "software-delivery",
           ],
           restorePreview: expect.objectContaining({
-            contractVersion: 3,
-            operations: [
+            contractVersion: 4,
+            operations: expect.arrayContaining([
+              expect.objectContaining({
+                field: "toolPolicy",
+                operation: "replace",
+                value: "workspace",
+              }),
               expect.objectContaining({
                 field: "enabledTools",
                 operation: "add",
                 value: "skill_load",
               }),
-            ],
+              expect.objectContaining({
+                field: "enabledTools",
+                operation: "add",
+                value: "workspace_process",
+              }),
+            ]),
           }),
           upgradePreview: expect.objectContaining({
             sourceContractVersion: 2,
-            targetContractVersion: 3,
+            targetContractVersion: 4,
             explicitOverrideFields: [],
-            operations: [
+            operations: expect.arrayContaining([
+              expect.objectContaining({
+                field: "toolPolicy",
+                operation: "replace",
+                value: "workspace",
+              }),
               expect.objectContaining({
                 field: "enabledTools",
                 operation: "add",
                 value: "skill_load",
               }),
-            ],
+              expect.objectContaining({
+                field: "enabledSubagents",
+                operation: "add",
+                value: "coder",
+              }),
+            ]),
           }),
         }),
       );
@@ -233,7 +259,10 @@ describe("default Agent Capability Contract v3", () => {
           ownership: "recommended",
           configuredSkills:
             DEFAULT_AGENT_CAPABILITY_RECOMMENDATION.enabledSkills,
-          configuredTools: expect.arrayContaining(["skill_load"]),
+          configuredTools: expect.arrayContaining([
+            "skill_load",
+            "workspace_process",
+          ]),
         }),
       );
     } finally {
@@ -266,10 +295,14 @@ describe("default Agent Capability Contract v3", () => {
     );
     const v2Profile: AgentProfile = {
       ...state.agents[agentIndex]!,
+      toolPolicy: DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2.toolPolicy,
       enabledTools: [
         ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2.enabledTools,
       ],
       enabledSkills: ["research-brief"],
+      enabledSubagents: [
+        ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2.enabledSubagents,
+      ],
     };
     state.agents[agentIndex] = v2Profile;
     const revisionIndex = state.agentRevisions.findIndex(
@@ -306,13 +339,18 @@ describe("default Agent Capability Contract v3", () => {
           configuredSkills: ["research-brief"],
           upgradePreview: expect.objectContaining({
             explicitOverrideFields: ["enabledSkills"],
-            operations: [
+            operations: expect.arrayContaining([
+              expect.objectContaining({
+                field: "toolPolicy",
+                operation: "replace",
+                value: "workspace",
+              }),
               expect.objectContaining({
                 field: "enabledTools",
                 operation: "add",
                 value: "skill_load",
               }),
-            ],
+            ]),
           }),
         }),
       );
@@ -332,7 +370,10 @@ describe("default Agent Capability Contract v3", () => {
           ownership: "explicit_overrides",
           explicitOverrideFields: ["enabledSkills"],
           configuredSkills: ["research-brief"],
-          configuredTools: expect.arrayContaining(["skill_load"]),
+          configuredTools: expect.arrayContaining([
+            "skill_load",
+            "workspace_process",
+          ]),
         }),
       );
       expect(

@@ -21,7 +21,7 @@ afterEach(async () => {
 });
 
 describe("default Agent web search integration", () => {
-  it("executes live-search semantics in observe mode and keeps query/results out of the Ledger", async () => {
+  it("executes live-search semantics from the full default and keeps query/results out of the Ledger", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-agent-search-"));
     roots.push(root);
     const workspaceRoot = path.join(root, "workspace");
@@ -59,7 +59,7 @@ describe("default Agent web search integration", () => {
     });
     try {
       const agent = services.store.listAgents()[0]!;
-      expect(agent.toolPolicy).toBe("observe");
+      expect(agent.toolPolicy).toBe("workspace");
       expect(agent.enabledTools).toContain("web_search");
       const thread = await services.store.createThread({
         title: "Default Agent live search",

@@ -449,7 +449,7 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
     const roles = assertTextArray(
       agent["enabledSubagents"],
       "agent.enabledSubagents",
-      3,
+      4,
     );
     for (const role of roles) {
       assertEnum(role, SUBAGENT_ROLES, "agent.enabledSubagents");

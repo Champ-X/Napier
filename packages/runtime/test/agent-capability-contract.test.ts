@@ -28,6 +28,7 @@ import { inspectProcessSandboxReadiness } from "../src/process-run-readiness.js"
 import { CapabilityRestorePersistenceError } from "../src/agent-capability-store-mutations.js";
 
 const roots: string[] = [];
+const CODER_SAFE_TOOLS = ["apply_patch", "lsp_diagnostics", "read_file"];
 
 afterEach(async () => {
   await Promise.all(
@@ -196,12 +197,13 @@ describe("default Agent Capability Contract", () => {
       expect(projection.runtimeExposedTools).toContain("web_search");
       expect(projection.runtimeExposedTools).toContain("skill_load");
       expect(projection.runtimeExposedTools).toContain("skill_resource");
-      expect(projection.runtimeExposedTools).not.toContain("apply_patch");
+      expect(projection.runtimeExposedTools).toContain("apply_patch");
+      expect(projection.runtimeExposedTools).toContain("workspace_process");
       expect(projection.readiness).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             id: "tool:apply_patch",
-            status: "blocked_by_policy",
+            status: "ready",
           }),
           expect.objectContaining({
             id: "sandbox:unsupported",
@@ -284,7 +286,7 @@ describe("default Agent Capability Contract", () => {
         }),
       );
       const restricted = await services.store.updateAgent(renamed.id, {
-        enabledTools: ["list_files", "read_file", "search_files"],
+        enabledTools: [...CODER_SAFE_TOOLS, "list_files", "search_files"],
       });
       expect(
         services.store.getAgentCapabilityBinding(
@@ -301,7 +303,7 @@ describe("default Agent Capability Contract", () => {
         }),
       );
       const restrictedAgain = await services.store.updateAgent(restricted.id, {
-        enabledTools: ["read_file"],
+        enabledTools: CODER_SAFE_TOOLS,
       });
       expect(
         services.store.getAgentCapabilityBinding(
@@ -544,7 +546,7 @@ describe("default Agent Capability Contract", () => {
     }
   });
 
-  it("keeps V3 ownership under a simulated V4 recommendation history", async () => {
+  it("keeps current ownership under a simulated future recommendation history", async () => {
     const services = await createRuntime();
     try {
       const profile = services.store.listAgents()[0]!;
@@ -554,21 +556,21 @@ describe("default Agent Capability Contract", () => {
       );
       expect(lookup.status).toBe("valid");
       if (lookup.status !== "valid") throw new Error("binding missing");
-      const v4 = createAgentCapabilityContractRecommendation(4, {
+      const v5 = createAgentCapabilityContractRecommendation(5, {
         ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION,
         enabledSkills: [
           ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION.enabledSkills,
-          "future-v3-skill",
+          "future-v4-skill",
         ],
       });
-      const history = [...DEFAULT_AGENT_CAPABILITY_CONTRACT_HISTORY, v4];
+      const history = [...DEFAULT_AGENT_CAPABILITY_CONTRACT_HISTORY, v5];
       expect(validateCapabilityBinding(lookup.binding, history)).toEqual(
         lookup.binding,
       );
       expect(bindingMatchesProfile(lookup.binding, profile, history)).toBe(
         true,
       );
-      const renamed = { ...profile, revision: 2, name: "V3 runtime name" };
+      const renamed = { ...profile, revision: 2, name: "V4 runtime name" };
       const propagated = propagateUpdatedCapabilityBinding(
         lookup.binding,
         profile,
@@ -577,7 +579,7 @@ describe("default Agent Capability Contract", () => {
       );
       expect(propagated).toEqual(
         expect.objectContaining({
-          contractVersion: 3,
+          contractVersion: 4,
           recommendationSha256: DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256,
           ownership: "recommended",
           explicitOverrideFields: [],
@@ -586,7 +588,7 @@ describe("default Agent Capability Contract", () => {
       const customized = {
         ...renamed,
         revision: 3,
-        enabledSkills: ["future-v3-skill"],
+        enabledSkills: ["future-v4-skill"],
       };
       const overridden = propagateUpdatedCapabilityBinding(
         propagated,
@@ -596,7 +598,7 @@ describe("default Agent Capability Contract", () => {
       );
       expect(overridden).toEqual(
         expect.objectContaining({
-          contractVersion: 3,
+          contractVersion: 4,
           recommendationSha256: DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256,
           ownership: "explicit_overrides",
           explicitOverrideFields: ["enabledSkills"],
@@ -898,7 +900,7 @@ describe("default Agent Capability Contract", () => {
     });
     const seeded = services.store.listAgents()[0]!;
     const drifted = await services.store.updateAgent(seeded.id, {
-      enabledTools: ["read_file"],
+      enabledTools: CODER_SAFE_TOOLS,
     });
     const projection = await services.agentCapabilities.project(drifted.id);
     const commit = vi
@@ -993,7 +995,6 @@ describe("default Agent Capability Contract", () => {
 async function removeLedger(dataRoot: string): Promise<void> {
   await Promise.all(
     ["ledger.sqlite", "ledger.sqlite-shm", "ledger.sqlite-wal"].map((name) =>
-      rm(path.join(dataRoot, name), { force: true }),
-    ),
+      rm(path.join(dataRoot, name), { force: true })),
   );
 }
