@@ -1,7 +1,7 @@
 {
   "kind": "napier.profile-upgrade-stage21",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-13T09:25:53.411Z",
+  "generatedAt": "2026-08-15T13:44:41.441Z",
   "implementation": {
     "contractSha256": "95363e197ead8f44323d2cce05f92f2d6ea27993f8b9687a82a9c5e03554ec8a",
     "upgradeModelSha256": "c66af0ea1f3001844d59693f3d61bbe3faecb7b3defa22484c648ef06991bbb9",
@@ -9,7 +9,7 @@
     "serviceSha256": "fd93df031de52946ff5ed247816151a9fa177551e5ff5c7d4ab44fe131596d05",
     "storeMutationSha256": "32983eacd1ddb3ff7a7e087c9084e3b7c75ec55043c795f56cae27904b38a532",
     "storeSha256": "b578ac86b2992497495894fb63c54769325cb5810907d7f220d00f1a53309c89",
-    "cliSha256": "309bef43174945edbeeb2230c1b1f470cb0ef445d0169c506bd07264efe5c961",
+    "cliSha256": "b4605006c742e029d51308e8696b18b0d4aa55f40567ec375ebd97ed2e966737",
     "cliOptionsSha256": "32c879015e350b6eb95f471c68defe0346d280ffa8cd904c3ce0a4a643f61d9b",
     "httpSha256": "774414d1257736f2b40d2dfad479f1eb60f51edf2dbbffa389f988c60f40ff5a",
     "webApiSha256": "6ac293dc8e514d25d03503145379a34641e867a343e4640ad0a53214d53927f3",
@@ -95,5 +95,5 @@
       "Windows host product acceptance"
     ]
   },
-  "contentSha256": "3e9a6a767720adfeebb2f45be1177a5e0bfd7948eaa91e3bd332eda4de875c7c"
+  "contentSha256": "ad57d6f212213484bd198c91387b2858ed70dda964b6b29807cad03acf20648c"
 }
