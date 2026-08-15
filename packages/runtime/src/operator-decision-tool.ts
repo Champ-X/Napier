@@ -58,7 +58,7 @@ export function createOperatorDecisionTool(
     name: "request_operator_decision",
     label: "Request operator decision",
     description:
-      "Pause on one genuinely operator-owned choice only after evidence, the request, and sensible defaults cannot resolve it. Provide a 1-12 character header, one blocking question, 2-4 labeled options with implications, and multiSelect. This must be the turn's only tool call; recording ends the Run until the operator answer starts a linked continuation.",
+      "Pause only for an operator-owned choice that evidence, the request, and defaults cannot resolve. Never pre-confirm Browser interactions; call Browser directly for Napier's exact action-bound confirmation. Provide a 1-12 character header, one question, 2-4 labeled options with implications, and multiSelect. This must be the turn's only call; it ends the Run until a linked continuation.",
     parameters: operatorDecisionSchema,
     executionMode: "sequential",
     async execute(_toolCallId, input) {

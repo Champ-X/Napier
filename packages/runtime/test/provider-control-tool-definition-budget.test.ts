@@ -16,6 +16,12 @@ describe("Provider control tool definition budget", () => {
       createOperatorDecisionTool(options),
       createAgentMilestoneTool(options),
     ];
+    expect(tools[0]?.description).toContain(
+      "Never pre-confirm Browser interactions",
+    );
+    expect(tools[0]?.description).toContain(
+      "Napier's exact action-bound confirmation",
+    );
     const bytes = tools.reduce(
       (total, tool) =>
         total +

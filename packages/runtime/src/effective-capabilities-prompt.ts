@@ -31,7 +31,9 @@ export function formatEffectiveCapabilitiesPrompt(input: {
     `Active tools (${activeTools.length}): ${activeTools.join(", ") || "none"}.`,
     `Requested tools omitted or unavailable (${omittedTools.length}): ${omittedTools.join(", ") || "none"}.`,
     browserActive
-      ? `Browser backend: native_playwright. Browser interaction: ${browserReadOnly ? "read_only" : "confirmation_governed"}.`
+      ? browserReadOnly
+        ? "Browser backend: native_playwright. Browser interaction: read_only."
+        : "Browser backend: native_playwright. Browser interaction: confirmation_governed. Call the Browser action directly; Napier will request exact one-use action-bound confirmation, so do not pre-confirm it with request_operator_decision."
       : "Browser backend: unavailable for this request. Browser interaction: unavailable.",
     "These capabilities are authoritative for this request. Do not claim or silently substitute unavailable tools, isolation, Browser backends, permissions, or fallbacks.",
     "</effective_capabilities>",

@@ -24,6 +24,12 @@ describe("Effective Capabilities Prompt layer", () => {
     expect(prompt).toContain(
       "Browser backend: native_playwright. Browser interaction: confirmation_governed.",
     );
+    expect(prompt).toContain(
+      "Call the Browser action directly; Napier will request exact one-use action-bound confirmation",
+    );
+    expect(prompt).toContain(
+      "do not pre-confirm it with request_operator_decision",
+    );
   });
 
   it("fails capability claims closed for restricted execution", () => {
