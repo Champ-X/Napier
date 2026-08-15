@@ -2334,7 +2334,7 @@ results may be present. Their CAS lives under the data root with directory mode
 `0700`, file mode `0600`, fsynced temporary writes plus no-overwrite hard-link
 installation, post-install capacity revalidation, no symlink reads, and
 permission-drift rejection. One capsule is limited to 8 MiB;
-the store is limited to 256 capsules and 128 MiB. Portable Replay contains only
+the store is limited to 4,096 capsules and 128 MiB. Portable Replay contains only
 the validated receipt. Trace and durable `model.experiment.*` events exclude
 provider Context, candidate text, raw thinking, and tool arguments.
 

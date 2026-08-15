@@ -21,7 +21,10 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { AgentRuntime } from "../src/agent-runtime.js";
 import { canonicalJson, sha256 } from "../src/ed25519.js";
-import { MAX_MODEL_INVOCATION_CAPSULES } from "../src/model-invocation-capsule-store.js";
+import {
+  MAX_MODEL_INVOCATION_CAPSULES,
+  ModelInvocationCapsuleStore,
+} from "../src/model-invocation-capsule-store.js";
 import { createModelContextEnvelopeReceipt } from "../src/model-context-envelope.js";
 import { exportThreadReplayBundle } from "../src/replay.js";
 import { validateModelInvocationExperimentResult } from "../src/model-invocation-experiment-protocol.js";
@@ -275,9 +278,14 @@ describe("Model invocation checkpoint experiments", () => {
 
   it("keeps the local capsule count bounded under concurrent capture", async () => {
     const fixture = await createFixture();
+    const maxObjects = 8;
+    const capsules = new ModelInvocationCapsuleStore(
+      path.dirname(fixture.runtime.modelInvocationCapsules.rootPath),
+      maxObjects,
+    );
     const results = await Promise.allSettled(
       Array.from(
-        { length: MAX_MODEL_INVOCATION_CAPSULES + 8 },
+        { length: maxObjects + 8 },
         async (_, turnIndex) => {
           const context = {
             messages: [
@@ -294,7 +302,7 @@ describe("Model invocation checkpoint experiments", () => {
             messages: context.messages,
             tools: [],
           });
-          return fixture.runtime.modelInvocationCapsules.put({
+          return capsules.put({
             sourceThreadId: fixture.sourceThreadId,
             sourceRunId: "run_capacitytest",
             turnIndex,
@@ -306,20 +314,30 @@ describe("Model invocation checkpoint experiments", () => {
         },
       ),
     );
-    const entries = await readdir(
-      fixture.runtime.modelInvocationCapsules.rootPath,
-    );
+    const entries = await readdir(capsules.rootPath);
     const capsuleFiles = entries.filter((name) =>
       /^[a-f0-9]{64}\.json$/u.test(name),
     );
-    expect(capsuleFiles.length).toBeLessThanOrEqual(
-      MAX_MODEL_INVOCATION_CAPSULES,
-    );
+    expect(capsuleFiles.length).toBe(maxObjects);
     expect(
       results.filter((result) => result.status === "fulfilled"),
     ).toHaveLength(capsuleFiles.length);
     expect(results.some((result) => result.status === "rejected")).toBe(true);
     expect(entries).toEqual(capsuleFiles);
+  });
+
+  it("keeps the production object limit above sustained product use", () => {
+    expect(MAX_MODEL_INVOCATION_CAPSULES).toBeGreaterThanOrEqual(4_096);
+    expect(
+      () => new ModelInvocationCapsuleStore("ignored", 0),
+    ).toThrow("object limit is invalid");
+    expect(
+      () =>
+        new ModelInvocationCapsuleStore(
+          "ignored",
+          MAX_MODEL_INVOCATION_CAPSULES + 1,
+        ),
+    ).toThrow("object limit is invalid");
   });
 
   it("keeps pre-abort mutation-free and settles active cancellation", async () => {

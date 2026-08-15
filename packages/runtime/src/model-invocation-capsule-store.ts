@@ -11,20 +11,27 @@ import {
   validateModelInvocationCapsule,
 } from "./model-invocation-capsule.js";
 
-export const MAX_MODEL_INVOCATION_CAPSULES = 256;
+export const MAX_MODEL_INVOCATION_CAPSULES = 4_096;
 export const MAX_MODEL_INVOCATION_CAPSULE_STORAGE_BYTES = 128 * 1024 * 1024;
 
 export class ModelInvocationCapsuleStore {
   private readonly capsules: LocalPrivateCapsuleStore<ModelInvocationCapsule>;
   readonly rootPath: string;
 
-  constructor(dataRoot: string) {
+  constructor(dataRoot: string, maxObjects = MAX_MODEL_INVOCATION_CAPSULES) {
+    if (
+      !Number.isSafeInteger(maxObjects) ||
+      maxObjects < 1 ||
+      maxObjects > MAX_MODEL_INVOCATION_CAPSULES
+    ) {
+      throw new Error("Model invocation capsule object limit is invalid");
+    }
     this.capsules = new LocalPrivateCapsuleStore({
       dataRoot,
       directory: "model-invocations",
       label: "Model invocation",
       maxObjectBytes: MAX_MODEL_INVOCATION_CAPSULE_BYTES,
-      maxObjects: MAX_MODEL_INVOCATION_CAPSULES,
+      maxObjects,
       maxStorageBytes: MAX_MODEL_INVOCATION_CAPSULE_STORAGE_BYTES,
       parse(serialized) {
         return validateModelInvocationCapsule(JSON.parse(serialized));
