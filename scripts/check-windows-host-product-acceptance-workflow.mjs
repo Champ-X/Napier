@@ -143,7 +143,9 @@ function validateJob(jobs, errors) {
   if (
     typeof dockerStep?.run !== "string" ||
     !dockerStep.run.includes("wsl.exe --install Ubuntu --no-launch") ||
-    !dockerStep.run.includes("apt-get install -y docker.io") ||
+    !dockerStep.run.includes("apt-get install -y -qq docker.io") ||
+    !dockerStep.run.includes("[Convert]::ToBase64String(") ||
+    !dockerStep.run.includes("base64 -d | bash") ||
     !dockerStep.run.includes("tcp://127.0.0.1:2375")
   ) {
     errors.push("windows_acceptance_workflow_wsl_docker_invalid");
@@ -197,7 +199,9 @@ function validateCommandClosure(source, errors) {
     "runs-on: windows-2025",
     "Start isolated WSL2 Linux Docker",
     "wsl.exe --install Ubuntu --no-launch",
-    "apt-get install -y docker.io",
+    "apt-get install -y -qq docker.io",
+    "[Convert]::ToBase64String(",
+    "base64 -d | bash",
     "tcp://127.0.0.1:2375",
     "shell: pwsh",
     "node-version: 24.16.0",

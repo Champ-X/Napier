@@ -67,8 +67,8 @@ jobs:
           $wslScript = @'
           set -euo pipefail
           export DEBIAN_FRONTEND=noninteractive
-          apt-get update
-          apt-get install -y docker.io
+          apt-get update -qq
+          apt-get install -y -qq docker.io
           systemctl stop docker docker.socket >/dev/null 2>&1 || true
           install -d -m 0700 /etc/docker
           printf '%s\n' '{"hosts":["unix:///var/run/docker.sock","tcp://127.0.0.1:2375"],"iptables":true}' > /etc/docker/daemon.json
@@ -81,7 +81,11 @@ jobs:
           exit 1
           '@
           $wslScript = $wslScript -replace "`r", ""
-          wsl.exe -d Ubuntu --user root -- bash -lc $wslScript
+          $wslScriptBase64 = [Convert]::ToBase64String(
+            [Text.Encoding]::UTF8.GetBytes($wslScript)
+          )
+          wsl.exe -d Ubuntu --user root -- bash -lc `
+            "echo $wslScriptBase64 | base64 -d | bash"
           docker.exe --host tcp://127.0.0.1:2375 version `
             --format '{{.Server.Os}}/{{.Server.Arch}}'
 
