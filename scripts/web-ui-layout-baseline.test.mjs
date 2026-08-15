@@ -65,6 +65,17 @@ function fixture() {
           layoutRect: { x: 1_283, y: 186, width: 297, height: 156 },
         },
       },
+      {
+        width: 1_440,
+        height: 900,
+        layout: "desktop",
+        layoutSnapshot: {
+          workbench: { x: 252, y: 0, width: 850, height: 900 },
+        },
+        browserInspector: {
+          layoutRect: { x: 1_123, y: 186, width: 297, height: 156 },
+        },
+      },
     ],
   };
 }

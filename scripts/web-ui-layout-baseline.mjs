@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
+import { WEB_UI_LAYOUT_BASELINE_VIEWPORTS } from "./web-ui-e2e-contract.mjs";
+
 const DEFAULT_WEB_UI_LAYOUT_BASELINES = Object.freeze({
   "darwin/arm64": "docs/artifacts/web-ui-layout-baseline-0.1.0.json",
   "linux/arm64": "docs/artifacts/web-ui-layout-baseline-linux-0.1.0.json",
@@ -25,12 +27,20 @@ export function webUiLayoutBaseline(
   platform = process.platform,
   arch = process.arch,
 ) {
+  const baselineViewports = receipt.viewports.filter((viewport) =>
+    WEB_UI_LAYOUT_BASELINE_VIEWPORTS.some(
+      (candidate) =>
+        candidate.width === viewport.width &&
+        candidate.height === viewport.height &&
+        candidate.layout === viewport.layout,
+    ),
+  );
   return {
     kind: "napier.web-ui-layout-baseline",
     schemaVersion: 3,
     platform,
     arch,
-    viewports: receipt.viewports.map((viewport) => ({
+    viewports: baselineViewports.map((viewport) => ({
       width: viewport.width,
       height: viewport.height,
       layout: viewport.layout,

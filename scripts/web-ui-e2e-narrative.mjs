@@ -108,7 +108,7 @@ export async function verifyWebUiServerRestart(
   const page = await openWebUiPage(
     browserContext(browser),
     `${origin}/?thread=${encodeURIComponent(expected.threadId)}`,
-    { width: 1_600, height: 900 },
+    { width: 1_440, height: 900 },
   );
   let restarted;
   try {
@@ -171,7 +171,7 @@ export async function verifyWebUiRecoveryNarrative(browser, origin, expected) {
   const page = await openWebUiPage(
     browserContext(browser),
     `${origin}/?thread=${encodeURIComponent(expected.threadId)}`,
-    { width: 1_600, height: 900 },
+    { width: 1_440, height: 900 },
   );
   try {
     await page.waitForFunction(

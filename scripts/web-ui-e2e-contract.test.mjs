@@ -30,6 +30,16 @@ describe("Web UI E2E receipt contract", () => {
     expect(() => assertWebUiE2eReceipt(validReceipt())).not.toThrow();
   });
 
+  it("covers the required 1440px desktop and 390px mobile product paths", () => {
+    expect(WEB_UI_E2E_VIEWPORTS).toEqual([
+      { width: 1_600, height: 900, layout: "desktop" },
+      { width: 1_440, height: 900, layout: "desktop" },
+      { width: 1_200, height: 800, layout: "desktop" },
+      { width: 900, height: 800, layout: "drawer" },
+      { width: 390, height: 844, layout: "drawer" },
+    ]);
+  });
+
   it("rejects a viewport with horizontal overflow", () => {
     const receipt = validReceipt();
     receipt.viewports[3].geometry.horizontalOverflowPx = 1;

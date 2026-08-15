@@ -1,11 +1,16 @@
 import assert from "node:assert/strict";
 
 export const WEB_UI_E2E_KIND = "napier.web-ui-e2e";
-export const WEB_UI_E2E_VIEWPORTS = Object.freeze([
+export const WEB_UI_LAYOUT_BASELINE_VIEWPORTS = Object.freeze([
   Object.freeze({ width: 1_600, height: 900, layout: "desktop" }),
   Object.freeze({ width: 1_200, height: 800, layout: "desktop" }),
   Object.freeze({ width: 900, height: 800, layout: "drawer" }),
   Object.freeze({ width: 390, height: 844, layout: "drawer" }),
+]);
+export const WEB_UI_E2E_VIEWPORTS = Object.freeze([
+  WEB_UI_LAYOUT_BASELINE_VIEWPORTS[0],
+  Object.freeze({ width: 1_440, height: 900, layout: "desktop" }),
+  ...WEB_UI_LAYOUT_BASELINE_VIEWPORTS.slice(1),
 ]);
 export const INSPECTOR_GROUP_LABELS = Object.freeze([
   "Activity/Plan",

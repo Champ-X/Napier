@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "ba9002bf6bdfc3357cd5885fd76ea46957f24c174152c2ac9f6552884f914e22",
+      "stdoutSha256": "44938ba0a21399bac989f565f63a5c0ba9f9971b0e63a5255077ac216ee8d1b6",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "d9c1d173ef2d25f72b342259e7a5292374e96e77fcf5635f65a0b008cfe639b5",
-      "receiptSha256": "f3a53779c105dd94b8249b1d8c8d7ef44697892afdc83f784f7b1135f05eade8"
+      "evidenceSha256": "96578f258846ba3d5a52b81cf6891a997d9fd0c733c10d0a539162c6beee10b7",
+      "receiptSha256": "063204afc61deab6149e78a3617a09e4b39ca9110e9bf30c4a9cf1c98864a6f3"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "5955f92c28b884aefa3872b6127bb7a01877d648214adfc3fe6e68ca8d48ed7b",
+      "stdoutSha256": "9eedbb20d54521c9b4fbda49173fb063c4395642c603b348f2bd9f45932d4b13",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "1b219c51e8de794fc761c6bc32017234fe5ae53a33a7cf468aec9d7b7b70b4a5",
-      "receiptSha256": "8ed5977f1a19f89169e148042dc85b5d874a81cf176cb6478925f770ca2e576a"
+      "evidenceSha256": "8dcfd93edcf1fceb5875193232c107519cd636a8fd9056af8fc87288ccee1a12",
+      "receiptSha256": "1650f193d4ef98c6ae71f2ceabf737d0a10b8c201fe49e2dda998abebb2d1640"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -2984,11 +2984,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "d9c1d173ef2d25f72b342259e7a5292374e96e77fcf5635f65a0b008cfe639b5",
+          "sha256": "96578f258846ba3d5a52b81cf6891a997d9fd0c733c10d0a539162c6beee10b7",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "1b219c51e8de794fc761c6bc32017234fe5ae53a33a7cf468aec9d7b7b70b4a5",
+          "sha256": "8dcfd93edcf1fceb5875193232c107519cd636a8fd9056af8fc87288ccee1a12",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -5144,19 +5144,19 @@
           "lines": 326
         },
         "scripts/web-ui-e2e-contract.mjs": {
-          "sha256": "f9cf1b2dc6d10a119fcc6ca606466c53e49b3c6839a6c88a4a5c3edd2a8ed91c",
-          "lines": 380
+          "sha256": "ea9d2a4e0c1cb67870f520b690b2020c0bc818e1b78442f550c8577b32a46c67",
+          "lines": 385
         },
         "scripts/web-ui-e2e-contract.test.mjs": {
-          "sha256": "dbef33af7648b40856f274eacfc1eaf2a0141abb22415d27f2bf41037b50140b",
-          "lines": 276
+          "sha256": "e3c663aabb7351db74ff452fd618143982a32820360fe012acbefd512b7b6a71",
+          "lines": 286
         },
         "scripts/web-ui-e2e-fixture.mjs": {
           "sha256": "507ff0bea5e9cb3f3a2faffc5b46fbc4108f230ede7403d5e181d46f205340d1",
           "lines": 430
         },
         "scripts/web-ui-e2e-narrative.mjs": {
-          "sha256": "ac4dfca627404f200064cda8c930c8ddd01452b46f1db0ff3c13648cd5b9ba64",
+          "sha256": "20290c594d2956c4b5cd673359f94e19eb77d87a6aebb695db90bacd830b5e81",
           "lines": 338
         },
         "scripts/web-ui-e2e-runtime.mjs": {
@@ -5164,12 +5164,12 @@
           "lines": 256
         },
         "scripts/web-ui-layout-baseline.mjs": {
-          "sha256": "20fc4ad3876d1d340fe9240838136ccab3e093ac21cdcb394dd85d3141ac5213",
-          "lines": 73
+          "sha256": "8105d4e1e67ded7f38b107050ce24925b8dfd92f37c7999a57c31267910a7477",
+          "lines": 83
         },
         "scripts/web-ui-layout-baseline.test.mjs": {
-          "sha256": "54b536798e1e639e6255452006fa7905aadf21d6079686d9d747ffc49fe4d50c",
-          "lines": 70
+          "sha256": "5d1c806c2cb9fea39bc164dc8e763e9c8b65af07f0f9c833e1abf982666ea723",
+          "lines": 81
         },
         "scripts/windows-host-product-acceptance-artifact.mjs": {
           "sha256": "580bf72b7d35dc3e3dfbb927310dab2004efd75211fedea7b03a09f1f88332a0",
@@ -5229,7 +5229,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "14d394b9f890b917f4890272b99d8d4e3d2aecebb0029ea0823a038e05e11729"
+      "manifestSha256": "367a01db307edc8c50434e304ece29e9a8a9f4c85b2a891e1f7502bf04b8540f"
     },
     "executionClosure": {
       "algorithm": {
@@ -21673,7 +21673,7 @@
       ],
       "manifestSha256": "2eb6bcd3fd9063d7849f3d1daab63427ef42f7054a87f8806de4ad49a318fa63"
     },
-    "manifestSha256": "96e6c0bd29e10cbab4ba7fdb3d0c7f2dff1af1320f69b3be5967d7853589b3eb"
+    "manifestSha256": "49a24cd8532f2598dcfbacc277aaafbf1dbf7457bed6b294e1a09f29c8017a09"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -21861,11 +21861,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "d9c1d173ef2d25f72b342259e7a5292374e96e77fcf5635f65a0b008cfe639b5"
+      "sha256": "96578f258846ba3d5a52b81cf6891a997d9fd0c733c10d0a539162c6beee10b7"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "1b219c51e8de794fc761c6bc32017234fe5ae53a33a7cf468aec9d7b7b70b4a5"
+      "sha256": "8dcfd93edcf1fceb5875193232c107519cd636a8fd9056af8fc87288ccee1a12"
     }
   }
 }
