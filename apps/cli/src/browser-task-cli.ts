@@ -132,40 +132,14 @@ export async function executeBrowserTask(
     }
     return result.status === "completed" ? 0 : 1;
   } catch (error) {
-    const localError =
-      error instanceof BrowserUseLocalError && error.code === "backend_missing"
-        ? browserUseLocalSetupError(error, workspaceRoot, dataRoot)
-        : error;
-    const failure = timedOut
-      ? taskError(
-          options.backend,
-          "Browser task exceeded its wall-time limit",
-          "timeout",
-          sha256(`${options.backend}_timeout`),
-          "Reduce --max-steps or raise --timeout-ms, then start a fresh task",
-        )
-      : localError instanceof BrowserUseLocalError ||
-          localError instanceof BrowserUseCloudError
-        ? localError
-        : taskError(
-            options.backend,
-            controller.signal.aborted
-              ? timedOut
-                ? "Browser task exceeded its wall-time limit"
-                : "Browser task was stopped"
-              : "Browser task could not start",
-            controller.signal.aborted
-              ? timedOut
-                ? "timeout"
-                : "cancelled"
-              : "backend_failed",
-            sha256(`${options.backend}_failed`),
-            controller.signal.aborted
-              ? timedOut
-                ? "Reduce --max-steps or raise --timeout-ms, then start a fresh task"
-                : "Rerun the same command to start a fresh task"
-              : `Run napier doctor with --browser-backend ${options.backend}, then retry`,
-          );
+    const failure = browserTaskFailure({
+      error,
+      options,
+      timedOut,
+      aborted: controller.signal.aborted,
+      workspaceRoot,
+      dataRoot,
+    });
     if (options.jsonl) {
       await writeJsonLine(io.stdout, {
         kind: "napier.browser-task-error",
@@ -190,6 +164,49 @@ export async function executeBrowserTask(
     await credentialRuntime?.shutdown().catch(() => undefined);
     parentSignal?.removeEventListener("abort", forwardAbort);
   }
+}
+
+function browserTaskFailure(input: {
+  error: unknown;
+  options: CliBrowserTaskOptions;
+  timedOut: boolean;
+  aborted: boolean;
+  workspaceRoot: string;
+  dataRoot: string;
+}): BrowserUseLocalError | BrowserUseCloudError {
+  if (input.timedOut) {
+    return taskError(
+      input.options.backend,
+      "Browser task exceeded its wall-time limit",
+      "timeout",
+      sha256(`${input.options.backend}_timeout`),
+      "Reduce --max-steps or raise --timeout-ms, then start a fresh task",
+    );
+  }
+  const error =
+    input.error instanceof BrowserUseLocalError &&
+    input.error.code === "backend_missing"
+      ? browserUseLocalSetupError(
+          input.error,
+          input.workspaceRoot,
+          input.dataRoot,
+        )
+      : input.error;
+  if (
+    error instanceof BrowserUseLocalError ||
+    error instanceof BrowserUseCloudError
+  ) {
+    return error;
+  }
+  return taskError(
+    input.options.backend,
+    input.aborted ? "Browser task was stopped" : "Browser task could not start",
+    input.aborted ? "cancelled" : "backend_failed",
+    sha256(`${input.options.backend}_failed`),
+    input.aborted
+      ? "Rerun the same command to start a fresh task"
+      : `Run napier doctor with --browser-backend ${input.options.backend}, then retry`,
+  );
 }
 
 function browserUseLocalSetupError(
