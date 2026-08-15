@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "f714be19fc3e022b4bc3da3319aa9d35f5fb6060075a8ee437833cf5e5b2f216",
+      "stdoutSha256": "1833c835ea5488ee35227d37336a51a234c1c8cd6eedd4b641937bda1bd57d6e",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "1bb1020b82261b9a0cbaf2fc5645afbe6f6d95802f5868c523dcc8fb3b2fd4dd",
-      "receiptSha256": "8bbb25b042baae7c1d500232fee2b4239a0fb99971ae45529a9d78219a69439c"
+      "evidenceSha256": "1338cea904ae78705d663f8cef804feaecf4a4bda08a0af8a7aab5b8ac27e632",
+      "receiptSha256": "bc48e5881531ae295ef238926bbc1a3292bece27c9f80c59b815afc4f5ead629"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "5aede629984908a5389fe48f2a0c058fae7d0dd2b2670b3d62b1836d590d0950",
+      "stdoutSha256": "f676e1580f40cb3fefa7554cf4d94d6c4f2ae8735dd17b0c78b698670667ed5c",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "e09cc56daa63a51c0c03d006c8787f96e181e350562c1f538a2bd7fb72f63e44",
-      "receiptSha256": "899a0f59d8bb8d826f7011d4034faf8354473682c0499db670b1cc280427b364"
+      "evidenceSha256": "278bcb04d48fc9e4650a89d394bd7011dc4266f7b02a389925e67e06780370df",
+      "receiptSha256": "ae744d6e83e02c4658830d3ced6ecdf38120e7d1b93c7f56ca5aa43b2296e27d"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -1013,6 +1013,7 @@
         "packages/runtime/src/mcp-stdio.ts",
         "packages/runtime/src/model-adapters.ts",
         "packages/runtime/src/model-context-envelope.ts",
+        "packages/runtime/src/model-invocation-capsule-store.ts",
         "packages/runtime/src/model-invocation-capture.ts",
         "packages/runtime/src/model-invocation-experiments.ts",
         "packages/runtime/src/model-prompt-evidence-bindings.ts",
@@ -1192,6 +1193,7 @@
         "packages/runtime/test/model-adapter-capture.test.ts",
         "packages/runtime/test/model-adapters.test.ts",
         "packages/runtime/test/model-context-envelope.test.ts",
+        "packages/runtime/test/model-invocation-experiments.test.ts",
         "packages/runtime/test/model-prompt-evidence-bindings.test.ts",
         "packages/runtime/test/node-debugger-protocol-path-binding.test.ts",
         "packages/runtime/test/oci-command-runtime.test.ts",
@@ -2775,7 +2777,7 @@
           "lines": 259
         },
         "docs/architecture.md": {
-          "sha256": "582e4a32821b4eeacc3bebaae5e8c4ebcdc1183394787453602204a5dc42f9c3",
+          "sha256": "213cedbe2f5929a0c547cb9802de9518acb74b0280c1ce703bd733404bbaa632",
           "lines": 9699
         },
         "docs/artifacts/agent-capability-contract-stage7/evidence.json": {
@@ -2995,11 +2997,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "1bb1020b82261b9a0cbaf2fc5645afbe6f6d95802f5868c523dcc8fb3b2fd4dd",
+          "sha256": "1338cea904ae78705d663f8cef804feaecf4a4bda08a0af8a7aab5b8ac27e632",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "e09cc56daa63a51c0c03d006c8787f96e181e350562c1f538a2bd7fb72f63e44",
+          "sha256": "278bcb04d48fc9e4650a89d394bd7011dc4266f7b02a389925e67e06780370df",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -3529,6 +3531,10 @@
         "packages/runtime/src/model-context-envelope.ts": {
           "sha256": "0c4721b302640f8d1bff4ab13d46e28bab27cf7cc7b44403656d70a8cda48f25",
           "lines": 331
+        },
+        "packages/runtime/src/model-invocation-capsule-store.ts": {
+          "sha256": "41eab25d5bedf8c9edd93775c674f19ed964172625b3d0690044d4a745fa2639",
+          "lines": 60
         },
         "packages/runtime/src/model-invocation-capture.ts": {
           "sha256": "4b0b4a9fb08aaed3ef5fe16ed212d64b2517fc017652effe61c165a3c65bbe62",
@@ -4245,6 +4251,10 @@
         "packages/runtime/test/model-context-envelope.test.ts": {
           "sha256": "a3b63d22a1b3406698d98123ebc6ea35b02abfc6ea37bca0e2f36aa26f160d39",
           "lines": 190
+        },
+        "packages/runtime/test/model-invocation-experiments.test.ts": {
+          "sha256": "9d6509c0736b49037b89bd01de88b722867a9508f3a99727623b7fe20a91b54e",
+          "lines": 503
         },
         "packages/runtime/test/model-prompt-evidence-bindings.test.ts": {
           "sha256": "c5f53d9656312eb6b753ed7d48271a993b635f0138df790feac8c018aa6d139f",
@@ -5244,7 +5254,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "3e1362b5c8999c27a46db86048307d2d08c1d51099f17546be63d6fa5985b82e"
+      "manifestSha256": "19fdf255db5a673ff7ff38f19590db940f0e107800bb04bb91794f653abb5371"
     },
     "executionClosure": {
       "algorithm": {
@@ -9716,8 +9726,8 @@
               "lines": 253
             },
             "packages/runtime/dist/model-invocation-capsule-store.js": {
-              "sha256": "2dfbf99e6934f0b867746edd4b9188ba04a8353f27796eed08806b06ed675562",
-              "lines": 34
+              "sha256": "3b697c3acdc07e0547fe69d9c057f94c9820ada61b8aac158e56e47dfb2b49c8",
+              "lines": 39
             },
             "packages/runtime/dist/model-invocation-capsule.js": {
               "sha256": "16a027cf63736255c1f2157ca2d3da1cf8f860e5696e00b607d68782da784173",
@@ -12276,8 +12286,8 @@
               "lines": 331
             },
             "packages/runtime/src/model-invocation-capsule-store.ts": {
-              "sha256": "1517f59f5b708f5ebe3ba27f577c3ec4d8150f75a56d45221ff0ddb86a18a99c",
-              "lines": 53
+              "sha256": "41eab25d5bedf8c9edd93775c674f19ed964172625b3d0690044d4a745fa2639",
+              "lines": 60
             },
             "packages/runtime/src/model-invocation-capsule.ts": {
               "sha256": "b2d4e8a58948f8ed50c72ce32a66131d61844684808e915642cce65df1872a83",
@@ -13788,7 +13798,7 @@
               "lines": 32
             }
           },
-          "manifestSha256": "e840a8f54519f0fb78b1194f54634931b061d844bb5dfb71fef5afe395e5161c"
+          "manifestSha256": "e631ba8b64c2738fa6635d01aacf53bd0bdc223ff6348243ee40adf160fb10de"
         },
         "productionServerTrace": {
           "roots": [
@@ -17597,8 +17607,8 @@
               "lines": 253
             },
             "packages/runtime/dist/model-invocation-capsule-store.js": {
-              "sha256": "2dfbf99e6934f0b867746edd4b9188ba04a8353f27796eed08806b06ed675562",
-              "lines": 34
+              "sha256": "3b697c3acdc07e0547fe69d9c057f94c9820ada61b8aac158e56e47dfb2b49c8",
+              "lines": 39
             },
             "packages/runtime/dist/model-invocation-capsule.js": {
               "sha256": "16a027cf63736255c1f2157ca2d3da1cf8f860e5696e00b607d68782da784173",
@@ -20149,8 +20159,8 @@
               "lines": 331
             },
             "packages/runtime/src/model-invocation-capsule-store.ts": {
-              "sha256": "1517f59f5b708f5ebe3ba27f577c3ec4d8150f75a56d45221ff0ddb86a18a99c",
-              "lines": 53
+              "sha256": "41eab25d5bedf8c9edd93775c674f19ed964172625b3d0690044d4a745fa2639",
+              "lines": 60
             },
             "packages/runtime/src/model-invocation-capsule.ts": {
               "sha256": "b2d4e8a58948f8ed50c72ce32a66131d61844684808e915642cce65df1872a83",
@@ -21657,7 +21667,7 @@
               "lines": 45
             }
           },
-          "manifestSha256": "fae12ff2f58b949e4225d00e3c533149d20255c295f2bb88f4ccde56ffae25af"
+          "manifestSha256": "65d6ad607217f1009ea2b9360086d70ecdcf27194e5d0251457796c4fd0f0f78"
         }
       },
       "excludedCategories": [
@@ -21686,9 +21696,9 @@
           "reason": "evidence.json cannot contain its own content hash; the external Stage 8 repair commit binds that blob."
         }
       ],
-      "manifestSha256": "6398740f401c436de6f0fda8ef03397a236b37dbbe7d19e6ca4833bc484b71e7"
+      "manifestSha256": "28b1b4d1e66bae750deac6f56e1d6eae9db484c89bcb289fa41b80d8900c5778"
     },
-    "manifestSha256": "a61a4c4a73fced7f03d15747909867ec19d344116a37f1f70858afb21bc77af7"
+    "manifestSha256": "2636b22e7bc333ac4a206d4146d21d0eec3d2ef02fec034fb6d32fa99ae90968"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -21876,11 +21886,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "1bb1020b82261b9a0cbaf2fc5645afbe6f6d95802f5868c523dcc8fb3b2fd4dd"
+      "sha256": "1338cea904ae78705d663f8cef804feaecf4a4bda08a0af8a7aab5b8ac27e632"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "e09cc56daa63a51c0c03d006c8787f96e181e350562c1f538a2bd7fb72f63e44"
+      "sha256": "278bcb04d48fc9e4650a89d394bd7011dc4266f7b02a389925e67e06780370df"
     }
   }
 }
