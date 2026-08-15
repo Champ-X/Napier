@@ -1,7 +1,7 @@
 {
   "kind": "napier.profile-upgrade-stage21",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-15T13:44:41.441Z",
+  "generatedAt": "2026-08-15T13:48:07.952Z",
   "implementation": {
     "contractSha256": "95363e197ead8f44323d2cce05f92f2d6ea27993f8b9687a82a9c5e03554ec8a",
     "upgradeModelSha256": "c66af0ea1f3001844d59693f3d61bbe3faecb7b3defa22484c648ef06991bbb9",
@@ -95,5 +95,5 @@
       "Windows host product acceptance"
     ]
   },
-  "contentSha256": "ad57d6f212213484bd198c91387b2858ed70dda964b6b29807cad03acf20648c"
+  "contentSha256": "7cb80a8597da5c99075dd395073cac92ac204c3a09c212cc81591e680014e143"
 }

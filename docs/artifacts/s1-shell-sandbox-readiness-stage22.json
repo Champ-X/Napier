@@ -1,7 +1,7 @@
 {
   "kind": "napier.s1-shell-sandbox-readiness-stage22",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-15T13:44:53.227Z",
+  "generatedAt": "2026-08-15T13:48:09.300Z",
   "implementation": {
     "modelSha256": "5adf9c20cd914638326e744b7a90ab9d9e956240fa24adb3b34994401d46691d",
     "checkerSha256": "174fb44f4e628224815d34d92e06407f8aa6831d89dd8d7ac8cefd6c65c0d065",
@@ -175,14 +175,14 @@
         {
           "kind": "profile-upgrade-stage21",
           "path": "docs/artifacts/profile-upgrade-stage21.json",
-          "sha256": "b05ce985f20d2b96c4066dacc3c376b70d087df4da48f4512738b987490c2347",
+          "sha256": "5118c2192498a12ab3c58237385785a6c4e6ecbdb5482d8b67ba0051aed53507",
           "verifierSha256": "fa2ee85bfb674ee0bc27af7ec1f98395af42bd266d39a2cd4d4de25b0802d9bb"
         }
       ],
-      "evidenceSetSha256": "fa64fd032283b4c8a5458d66a055213c69f4eef46d79a8f94ba6c7b65a452f8b"
+      "evidenceSetSha256": "17e5d5004f2e4547d3dc9bc5810da5e36bd7c146bd47d92d02aae19dd5bacf30"
     }
   ],
-  "requirementSetSha256": "4b47d1811ef0e59c548640fb753126f696eb2395f47c3c7f81469d93474fb47c",
+  "requirementSetSha256": "5530b27c830ea27988b5e6a539b7ab14e8df467ab9c652033b96ca6668889c00",
   "externalRequirements": [
     {
       "id": "public_signed_external_release",
@@ -222,5 +222,5 @@
       "windows_host_product_acceptance"
     ]
   },
-  "contentSha256": "a32576077495885c3aee346651c20e778d952f130d1f16e36191aea42394973a"
+  "contentSha256": "c2960b85a07d36e9db5ae01715e4835af5aaf0353f530641bfc8ca007c1c5315"
 }

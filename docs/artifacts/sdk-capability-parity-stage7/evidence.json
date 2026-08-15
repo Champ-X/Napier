@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "cb5bf91b886c99b3747a936f71fd38f79ba97fb4ae7fce174f01dd961e74f36a",
+      "stdoutSha256": "75294de87ed3d779302e8f6ae3bdd035cb46794fe138c32f3398c81b3d8d29b9",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "ea72b0f9dd112bb1dd713ed4c450190e30d745dd470c1ef2477332056d4f3c78",
-      "receiptSha256": "ba736243c15bdb39b205f5986ca0272404a5c5c9b188c5bc809a8ed97e96c4c4"
+      "evidenceSha256": "7436c92de4e10693e1fd30acc4697782b248a745a9a1b9666699de1bd9e73608",
+      "receiptSha256": "bdce71687dd74b230254b6abfd4a94ac96e3e1c9f8706c580eb982987369116b"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "195f9085d083ff44a23b989d59d76e5782e323be9fa60352e2b1436875143011",
+      "stdoutSha256": "13dabac16b988be9a82817b9293f5b02a747a812bc07f0ea332a9d7d844a7daf",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "70c5d54a1bd1bd093950886676d48234b57650053b68d205933485b04e0c2095",
-      "receiptSha256": "ffea23ef33a4e65a4470d3eadb7280f069a2f547d8fa49c6f0c45154220e503f"
+      "evidenceSha256": "e99c2810fba423a1b8a81505436d8a3b252a5ace2bba9edad1afbd010aafc088",
+      "receiptSha256": "b18f8868df36095b12aa018628cc0c092d9ac487b3da27dae1c8db96c3ffae27"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -1466,8 +1466,8 @@
           "lines": 147
         },
         "apps/cli/src/browser-task-cli.ts": {
-          "sha256": "a3ce564c6953fa675833cd7272aa04bb7cf4aa07f9e5de2b35263bc97690a066",
-          "lines": 356
+          "sha256": "012e8b206d953fd224782c647b83b5f4be769981c6586abcf14659bbba8736fe",
+          "lines": 373
         },
         "apps/cli/src/browser-task-control-cli.ts": {
           "sha256": "c350d71e7368ccae0ce480b02ae9e96ba3e03667c219d433743b9e35031df3b1",
@@ -2938,7 +2938,7 @@
           "lines": 213
         },
         "docs/artifacts/profile-upgrade-stage21.json": {
-          "sha256": "b05ce985f20d2b96c4066dacc3c376b70d087df4da48f4512738b987490c2347",
+          "sha256": "5118c2192498a12ab3c58237385785a6c4e6ecbdb5482d8b67ba0051aed53507",
           "lines": 99
         },
         "docs/artifacts/prompt-regression-matrix-0.1.0.json": {
@@ -2946,7 +2946,7 @@
           "lines": 116
         },
         "docs/artifacts/release-artifacts-audit-0.1.0.json": {
-          "sha256": "4176ccc3071280c08d234c116e232c55ed32f7fc52e53bbb0a492fabec5c92ff",
+          "sha256": "efee703c6b2200f2551090196c0a54f47e7696b6dd710bbe1f2f68f5254c74e8",
           "lines": 973
         },
         "docs/artifacts/runtime-environment-audit-0.1.0.json": {
@@ -2954,7 +2954,7 @@
           "lines": 36
         },
         "docs/artifacts/s1-shell-sandbox-readiness-stage22.json": {
-          "sha256": "5eb0d43d0de2235d61799c60582c0474f49669181bc7375766cb7e44c2672e45",
+          "sha256": "d5a3ea5eaa6ab745281efa28e7d42b0abd922162ba07a344465af442d4783f6f",
           "lines": 226
         },
         "docs/artifacts/sandbox-acquisition-stage20.json": {
@@ -3002,11 +3002,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "ea72b0f9dd112bb1dd713ed4c450190e30d745dd470c1ef2477332056d4f3c78",
+          "sha256": "7436c92de4e10693e1fd30acc4697782b248a745a9a1b9666699de1bd9e73608",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "70c5d54a1bd1bd093950886676d48234b57650053b68d205933485b04e0c2095",
+          "sha256": "e99c2810fba423a1b8a81505436d8a3b252a5ace2bba9edad1afbd010aafc088",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -5259,7 +5259,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "9d806ceaaa93e6f4e9a83ed9f088130eb087b9ae11bf8439b4e44efee0de8a2b"
+      "manifestSha256": "8d84da3efcda201bfa527efeeeb6db184bba1d18a76709062314cae78792599c"
     },
     "executionClosure": {
       "algorithm": {
@@ -7047,8 +7047,8 @@
               "lines": 157
             },
             "apps/cli/dist/browser-task-cli.js": {
-              "sha256": "44f0cc6b995528996d336d4bb8310896a75d752a417842defded0ff82ba63d9b",
-              "lines": 228
+              "sha256": "29869db49d796d526179551bbb55e2079f92951b4f91937f89d2ad761a980e5a",
+              "lines": 231
             },
             "apps/cli/dist/browser-task-control-cli.js": {
               "sha256": "ddb86acd9f0cf81a01dca6e8fa4fee65d451de43059b2b951f6d896e045f041d",
@@ -7307,8 +7307,8 @@
               "lines": 263
             },
             "apps/cli/src/browser-task-cli.ts": {
-              "sha256": "a3ce564c6953fa675833cd7272aa04bb7cf4aa07f9e5de2b35263bc97690a066",
-              "lines": 356
+              "sha256": "012e8b206d953fd224782c647b83b5f4be769981c6586abcf14659bbba8736fe",
+              "lines": 373
             },
             "apps/cli/src/browser-task-control-cli.ts": {
               "sha256": "c350d71e7368ccae0ce480b02ae9e96ba3e03667c219d433743b9e35031df3b1",
@@ -13803,7 +13803,7 @@
               "lines": 32
             }
           },
-          "manifestSha256": "1c20601d87a87b5aa392c75f362722ea5fed2bc7f807d5229ea27e66ab5bf6d2"
+          "manifestSha256": "0a85681abbfd66b58538ad39f65f10afce8e11386a39d42775d44a43c7f9a292"
         },
         "productionServerTrace": {
           "roots": [
@@ -21701,9 +21701,9 @@
           "reason": "evidence.json cannot contain its own content hash; the external Stage 8 repair commit binds that blob."
         }
       ],
-      "manifestSha256": "24b3dd253409b7c1fa3b4819a8cddc54a007f333839d05a93cceb0917941b4d3"
+      "manifestSha256": "92b231de259f9f7685e903608c8a45e1a59626a9372004d4b7338cb30197254e"
     },
-    "manifestSha256": "c87394f9d728622c069920ed74df2e40489b08854e569b366ee14b0ce750dee3"
+    "manifestSha256": "16750783b27dd69388e4071deb2499d1946f0918d14930cce25b1d12666c1681"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -21891,11 +21891,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "ea72b0f9dd112bb1dd713ed4c450190e30d745dd470c1ef2477332056d4f3c78"
+      "sha256": "7436c92de4e10693e1fd30acc4697782b248a745a9a1b9666699de1bd9e73608"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "70c5d54a1bd1bd093950886676d48234b57650053b68d205933485b04e0c2095"
+      "sha256": "e99c2810fba423a1b8a81505436d8a3b252a5ace2bba9edad1afbd010aafc088"
     }
   }
 }
