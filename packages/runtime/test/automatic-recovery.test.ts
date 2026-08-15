@@ -326,6 +326,51 @@ describe("safe automatic recovery", () => {
     expect(right.listAutomaticRecoveryAttempts(thread.id)).toHaveLength(1);
   });
 
+  it("indexes recovery evidence once instead of rescanning every sweep", async () => {
+    const root = await createRoot();
+    const store = await createStore(root);
+    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      model: { provider: "faux-recovery-index", id: "faux-1" },
+      automaticRecovery: {
+        mode: "manual",
+        maxAttempts: 1,
+        backoffMs: 1_000,
+      },
+    });
+    const thread = await store.createThread({
+      title: "Recovery evidence index",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    await store.finishRun(run.id, "interrupted");
+    const originalListEvents = store.listEvents.bind(store);
+    let listEventCalls = 0;
+    store.listEvents = async (...arguments_) => {
+      listEventCalls += 1;
+      return originalListEvents(...arguments_);
+    };
+    const recovery = new RecoveryService(
+      store,
+      new AgentRuntime(store, new ModelRegistry()),
+      { workerId: "recoveryworker_evidence_index" },
+    );
+
+    await recovery.sweep();
+    const firstSweepCalls = listEventCalls;
+    await recovery.sweep();
+
+    expect(firstSweepCalls).toBeGreaterThan(0);
+    expect(listEventCalls).toBe(firstSweepCalls);
+    expect(
+      (await originalListEvents(thread.id)).filter(
+        (event) => event.type === "run.recovery.auto.skipped",
+      ),
+    ).toHaveLength(1);
+  });
+
   it("remaps a multi-interruption recovery chain before recomputing fixture hashes", async () => {
     const root = await createRoot();
     const setup = await createStore(root);

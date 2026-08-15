@@ -59,7 +59,8 @@ import {
   controlMessageEventKey,
   delay,
   formatPlanToolGuidance,
-  OperatorDecisionPendingError, publicModelFailureMessage,
+  OperatorDecisionPendingError,
+  publicModelFailureMessage,
   sha256Text,
   splitForStreaming,
   summarize,
@@ -118,6 +119,7 @@ import {
   parseMemoryProposalResponse,
 } from "./memory.js";
 import { modelAdapterReceipt } from "./model-adapters.js";
+import { ModelDeltaBatcher } from "./model-delta-batcher.js";
 import { ModelInvocationCapsuleStore } from "./model-invocation-capsule-store.js";
 import { captureCompiledModelInvocation } from "./model-invocation-capture.js";
 import { McpExtensionManager } from "./mcp.js";
@@ -1672,7 +1674,13 @@ export class AgentRuntime {
       onEvent,
     );
     let finalText = "";
-    await runAgentLoop(
+    const deltaBatcher = new ModelDeltaBatcher(
+      run.threadId,
+      run.id,
+      (input, sink) => this.record(input, sink),
+      onEvent,
+    );
+    const loop = runAgentLoop(
       [
         {
           role: "user",
@@ -1902,6 +1910,7 @@ export class AgentRuntime {
           currentModelContextEnvelope,
           toolResultLifecycle,
           privateSourceContent,
+          deltaBatcher,
           onEvent,
         );
         if (text !== undefined) finalText = text;
@@ -1909,6 +1918,7 @@ export class AgentRuntime {
       signal,
       streamWithModelContextEnvelope,
     );
+    await loop.finally(() => deltaBatcher.flush());
     if (signal.aborted && !budget.exhaustion) {
       throw new Error("Run was cancelled");
     }
@@ -1931,8 +1941,26 @@ export class AgentRuntime {
     modelContextEnvelope: ModelContextEnvelopeReceipt | undefined,
     toolResultLifecycle: AgentToolResultLifecycle,
     privateSourceContent: PrivateSourceModelContentBoundary,
+    deltaBatcher: ModelDeltaBatcher,
     onEvent?: EventSink,
   ): Promise<string | undefined> {
+    if (event.type === "message_update") {
+      const update = event.assistantMessageEvent;
+      if (update.type === "text_delta" || update.type === "thinking_delta") {
+        const redactCandidate = privateSourceContent.redact(
+          modelAdvisorPolicy.mode === "enforce",
+        );
+        await deltaBatcher.push(
+          update.type === "text_delta"
+            ? "model.text.delta"
+            : "model.thinking.delta",
+          update.delta,
+          redactCandidate,
+        );
+      }
+      return undefined;
+    }
+    await deltaBatcher.flush();
     if (event.type === "turn_start" || event.type === "turn_end") {
       await this.record(
         {
@@ -1945,35 +1973,6 @@ export class AgentRuntime {
         },
         onEvent,
       );
-      return undefined;
-    }
-    if (event.type === "message_update") {
-      const update = event.assistantMessageEvent;
-      if (update.type === "text_delta" || update.type === "thinking_delta") {
-        const redactCandidate = privateSourceContent.redact(
-          modelAdvisorPolicy.mode === "enforce",
-        );
-        await this.record(
-          {
-            threadId: run.threadId,
-            runId: run.id,
-            type:
-              update.type === "text_delta"
-                ? "model.text.delta"
-                : "model.thinking.delta",
-            category: "model",
-            visibility: "hidden",
-            payload: redactCandidate
-              ? {
-                  deltaSha256: sha256Text(update.delta),
-                  deltaBytes: Buffer.byteLength(update.delta, "utf8"),
-                  redacted: true,
-                }
-              : { delta: update.delta },
-          },
-          redactCandidate ? undefined : onEvent,
-        );
-      }
       return undefined;
     }
     if (event.type === "message_end") {

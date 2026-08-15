@@ -16,6 +16,10 @@ import { Type } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createPlanArtifactEventPayload } from "./plans.js";
+import {
+  appendPlanCreatedEvent,
+  appendPlanStepEvent,
+} from "./plan-tool-events.js";
 import { isPathInsideWorkspace } from "./policy.js";
 import { createReplanPolicyTemplate } from "./replan-policies.js";
 import type { LocalStore } from "./store.js";
@@ -210,10 +214,23 @@ export function createPlanTools(
     name: "update_plan_step",
     label: "Update plan step",
     description:
-      "Start, complete, block, skip, or reopen a plan step; complete/skip require concrete evidence.",
+      "Start, complete, block, skip, or reopen a plan step; complete/skip require evidence. Completing a ready step auto-starts it.",
     parameters: transitionPlanStepSchema,
     async execute(_toolCallId, input) {
-      const current = assertPlanThread(store, input.planId, run.threadId);
+      let current = assertPlanThread(store, input.planId, run.threadId);
+      if (
+        input.action === "complete" &&
+        current.steps.find((candidate) => candidate.id === input.stepId)
+          ?.status === "ready"
+      ) {
+        const started = await store.transitionPlanStep(
+          input.planId,
+          input.stepId,
+          { action: "start", runId: run.id },
+        );
+        await appendPlanStepEvent(store, run, started, input.stepId, "start");
+        current = started;
+      }
       const request: TransitionPlanStepRequest = {
         action: input.action,
         ...(input.action === "start" ? { runId: run.id } : {}),
@@ -229,29 +246,7 @@ export function createPlanTools(
         (candidate) => candidate.id === input.stepId,
       )!;
       if (plan.revision !== current.revision) {
-        await store.appendEvent({
-          threadId: run.threadId,
-          runId: run.id,
-          type: `plan.step.${stepEventSuffix(input.action)}`,
-          category: "plan",
-          visibility: "user",
-          payload: {
-            planId: plan.id,
-            stepId: step.id,
-            title: step.title,
-            status: step.status,
-            planStatus: plan.status,
-            criticalPathStepIds: plan.criticalPathStepIds,
-            readyStepIds: plan.readyStepIds,
-            blockedStepIds: plan.blockedStepIds,
-            activePhaseIndex: plan.activePhaseIndex,
-            parallelReadyStepIds: plan.parallelReadyStepIds,
-            phaseWaveCount: plan.phaseWaves.length,
-            phaseProjectionSha256: plan.phaseProjectionSha256,
-            evidence: step.evidence,
-            ...(step.blocker ? { blocker: step.blocker } : {}),
-          },
-        });
+        await appendPlanStepEvent(store, run, plan, step.id, input.action);
       }
       return planToolResult(
         plan,
@@ -924,34 +919,6 @@ async function walkDirectory(
   }
 }
 
-async function appendPlanCreatedEvent(
-  store: LocalStore,
-  run: RunRecord,
-  plan: ExecutionPlan,
-): Promise<void> {
-  await store.appendEvent({
-    threadId: run.threadId,
-    runId: run.id,
-    type: "plan.created",
-    category: "plan",
-    visibility: "user",
-    payload: {
-      planId: plan.id,
-      objective: plan.objective,
-      status: plan.status,
-      stepCount: plan.steps.length,
-      artifactCount: plan.artifacts.length,
-      criticalPathStepIds: plan.criticalPathStepIds,
-      readyStepIds: plan.readyStepIds,
-      blockedStepIds: plan.blockedStepIds,
-      activePhaseIndex: plan.activePhaseIndex,
-      parallelReadyStepIds: plan.parallelReadyStepIds,
-      phaseWaveCount: plan.phaseWaves.length,
-      phaseProjectionSha256: plan.phaseProjectionSha256,
-    },
-  });
-}
-
 function assertPlanThread(
   store: LocalStore,
   planId: string,
@@ -1018,14 +985,6 @@ function planToolResult<TDetails>(
     ],
     details,
   };
-}
-
-function stepEventSuffix(action: TransitionPlanStepRequest["action"]): string {
-  if (action === "start") return "started";
-  if (action === "complete") return "completed";
-  if (action === "block") return "blocked";
-  if (action === "skip") return "skipped";
-  return "reopened";
 }
 
 function isMissingFileError(error: unknown): boolean {

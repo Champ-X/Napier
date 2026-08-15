@@ -3,6 +3,7 @@ import type {
   AutomaticRecoveryAttempt,
   AutomaticRecoveryClaim,
   JsonValue,
+  RunEvent,
 } from "@napier/contracts";
 
 import { AgentRuntime } from "./agent-runtime.js";
@@ -36,6 +37,7 @@ export class RecoveryService {
   private timer: ReturnType<typeof setInterval> | undefined;
   private sweeping: Promise<RecoverySweepResult> | undefined;
   private readonly inFlight = new Set<Promise<void>>();
+  private readonly evidenceIndexes = new Map<string, Promise<Set<string>>>();
 
   constructor(
     readonly store: LocalStore,
@@ -233,20 +235,9 @@ export class RecoveryService {
   private async ensureAssessmentEvidence(
     assessment: AutomaticRecoveryAssessment,
   ): Promise<void> {
-    const events = await this.store.listEvents(assessment.threadId);
-    if (
-      events.some(
-        (event) =>
-          event.type === "run.recovery.auto.skipped" &&
-          isPayloadMatch(
-            event.payload,
-            "assessmentSha256",
-            assessment.contentSha256,
-          ),
-      )
-    ) {
-      return;
-    }
+    const evidence = await this.evidenceIndex(assessment.threadId);
+    const key = assessmentEvidenceKey(assessment.contentSha256);
+    if (evidence.has(key)) return;
     await this.record(assessment.threadId, "run.recovery.auto.skipped", {
       sourceRunId: assessment.runId,
       rootRunId: assessment.rootRunId,
@@ -256,22 +247,16 @@ export class RecoveryService {
       toolCalls: assessment.toolCalls,
       eventStreamSha256: assessment.eventRange.eventStreamSha256,
     });
+    evidence.add(key);
   }
 
   private async ensureAttemptEvidence(
     attempt: AutomaticRecoveryAttempt,
   ): Promise<void> {
     const eventType = attemptEventType(attempt.status);
-    const events = await this.store.listEvents(attempt.threadId);
-    if (
-      events.some(
-        (event) =>
-          event.type === eventType &&
-          isPayloadMatch(event.payload, "attemptId", attempt.id),
-      )
-    ) {
-      return;
-    }
+    const evidence = await this.evidenceIndex(attempt.threadId);
+    const key = attemptEvidenceKey(eventType, attempt.id);
+    if (evidence.has(key)) return;
     await this.record(attempt.threadId, eventType, {
       attemptId: attempt.id,
       revision: attempt.revision,
@@ -286,6 +271,21 @@ export class RecoveryService {
         : {}),
       ...(attempt.error ? { error: safeError(attempt.error) } : {}),
     });
+    evidence.add(key);
+  }
+
+  private evidenceIndex(threadId: string): Promise<Set<string>> {
+    const cached = this.evidenceIndexes.get(threadId);
+    if (cached) return cached;
+    const loading = this.store
+      .listEvents(threadId)
+      .then((events) => recoveryEvidenceIndex(events))
+      .catch((error: unknown) => {
+        this.evidenceIndexes.delete(threadId);
+        throw error;
+      });
+    this.evidenceIndexes.set(threadId, loading);
+    return loading;
   }
 
   private async record(
@@ -313,17 +313,34 @@ function attemptEventType(status: AutomaticRecoveryAttempt["status"]): string {
   return "run.recovery.auto.failed";
 }
 
-function isPayloadMatch(
-  payload: JsonValue,
-  key: string,
-  value: string | number,
-): boolean {
-  return Boolean(
-    payload &&
-    !Array.isArray(payload) &&
-    typeof payload === "object" &&
-    payload[key] === value,
-  );
+function recoveryEvidenceIndex(events: RunEvent[]): Set<string> {
+  const evidence = new Set<string>();
+  for (const event of events) {
+    const assessmentSha256 = payloadString(event.payload, "assessmentSha256");
+    if (event.type === "run.recovery.auto.skipped" && assessmentSha256) {
+      evidence.add(assessmentEvidenceKey(assessmentSha256));
+    }
+    const attemptId = payloadString(event.payload, "attemptId");
+    if (event.type.startsWith("run.recovery.auto.") && attemptId) {
+      evidence.add(attemptEvidenceKey(event.type, attemptId));
+    }
+  }
+  return evidence;
+}
+
+function assessmentEvidenceKey(contentSha256: string): string {
+  return `assessment:${contentSha256}`;
+}
+
+function attemptEvidenceKey(eventType: string, attemptId: string): string {
+  return `attempt:${eventType}:${attemptId}`;
+}
+
+function payloadString(payload: JsonValue, key: string): string | undefined {
+  if (!payload || Array.isArray(payload) || typeof payload !== "object") {
+    return undefined;
+  }
+  return typeof payload[key] === "string" ? payload[key] : undefined;
 }
 
 function boundedDuration(

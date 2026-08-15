@@ -3,6 +3,7 @@ import type { RunEvent } from "@napier/contracts";
 export interface ModelEventTraceView {
   action: string;
   redacted?: boolean;
+  chunkCount?: number;
   deltaBytes?: number;
   textBytes?: number;
   toolName?: string;
@@ -55,6 +56,7 @@ export function modelEventTraceView(
   return {
     action: event.type.slice("model.".length),
     ...booleanField(event.payload, "redacted"),
+    ...integerField(event.payload, "chunkCount"),
     ...integerField(event.payload, "deltaBytes"),
     ...integerField(event.payload, "textBytes"),
     ...(toolName ? { toolName } : {}),
@@ -95,6 +97,7 @@ export function modelEventTraceSummary(event: RunEvent): string | undefined {
   return [
     `model / ${view.action}`,
     ...(view.redacted !== undefined ? [`redacted ${view.redacted}`] : []),
+    ...(view.chunkCount !== undefined ? [`chunks ${view.chunkCount}`] : []),
     ...(view.deltaBytes !== undefined
       ? [`delta-bytes ${view.deltaBytes}`]
       : []),

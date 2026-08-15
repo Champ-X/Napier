@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "3d965c8a6f0e64e31656e00a8444d71fabcb9547143834a768275af4a868bac4",
+      "stdoutSha256": "9b267f1ff1a827221feed70c8ef07504e19fa38cfe405bdc4cc49f28f25ce514",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "4559e1382a9bb940b4a32708b9b7f4cf56fa09f4c17f691f6c6c4bd72c82b555",
-      "receiptSha256": "3116e0145c325934c8d8f0e25bd17435f06dfaafec498bf4e5d8cf4466d12c2a"
+      "evidenceSha256": "3898014361ef036fc98ccabd6ecd6e496c9749420d6442d0b2864abb413790c1",
+      "receiptSha256": "d830c82de0bae2fdd6067d441817dfdb13e5ac64f14a6f561e1661ef6dcbcc2c"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "9b7191b5044f97e1bc192116f3cfe60edca75cbce4692fc9b31ace1a998be4cd",
+      "stdoutSha256": "0ca04c4ee619df0d9ca18d2065206b64f5515daaa56eed7879edebbc4d9e5ab7",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "050483b471d7138683c3a9f6f3e80faf299b5acbac06c5c686f9cd15f816318a",
-      "receiptSha256": "b002983b16312d4f29ae19cb771818a58d8be7ed6dd2b1424410ef39e7ce0f3b"
+      "evidenceSha256": "17b91c47be920538782ff8daad67266ae9a95d24870f0f89b1a700a13f040194",
+      "receiptSha256": "71e067154fd174bec479e450aaf5013f980be9b47d34203e1524389b3804595f"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -489,6 +489,7 @@
         ".github/workflows/s1-shell-sandbox-completion.yml",
         ".github/workflows/windows-host-product-acceptance.yml",
         "README.md",
+        "ai-news-weekly/index.html",
         "apps/cli/package.json",
         "apps/cli/src/browser-confirmed-form-benchmark-cli.ts",
         "apps/cli/src/browser-task-cli.ts",
@@ -693,6 +694,7 @@
         "apps/web/src/model-advisor-event-view.ts",
         "apps/web/src/model-context-envelope-copy.ts",
         "apps/web/src/model-context-envelope-view.ts",
+        "apps/web/src/model-event-view.ts",
         "apps/web/src/model-response-view.ts",
         "apps/web/src/next-run-capability-preset-execution.ts",
         "apps/web/src/node-debugger-event-view.ts",
@@ -777,6 +779,7 @@
         "apps/web/test/model-adapter-ledger-dom.test.tsx",
         "apps/web/test/model-adapter-view.test.ts",
         "apps/web/test/model-context-envelope-view.test.ts",
+        "apps/web/test/model-event-view.test.ts",
         "apps/web/test/package-governance-event-view.test.ts",
         "apps/web/test/plan-event-view.test.ts",
         "apps/web/test/receipt-trust-api.test.ts",
@@ -1019,6 +1022,7 @@
         "packages/runtime/src/mcp-stdio.ts",
         "packages/runtime/src/model-adapters.ts",
         "packages/runtime/src/model-context-envelope.ts",
+        "packages/runtime/src/model-delta-batcher.ts",
         "packages/runtime/src/model-invocation-capsule-store.ts",
         "packages/runtime/src/model-invocation-capture.ts",
         "packages/runtime/src/model-invocation-experiments.ts",
@@ -1037,6 +1041,7 @@
         "packages/runtime/src/opentelemetry-payload-projection.ts",
         "packages/runtime/src/opentelemetry.ts",
         "packages/runtime/src/operator-decision-tool.ts",
+        "packages/runtime/src/plan-tool-events.ts",
         "packages/runtime/src/plan-tools.ts",
         "packages/runtime/src/plans.ts",
         "packages/runtime/src/policy.ts",
@@ -1055,6 +1060,7 @@
         "packages/runtime/src/provider-setup.ts",
         "packages/runtime/src/python-kernel-tool.ts",
         "packages/runtime/src/read-only-tool-names.ts",
+        "packages/runtime/src/recovery-service.ts",
         "packages/runtime/src/release-product-gate.ts",
         "packages/runtime/src/replay.ts",
         "packages/runtime/src/research-recovery-options.ts",
@@ -1164,6 +1170,7 @@
         "packages/runtime/test/agent-capability-recommendation.test.ts",
         "packages/runtime/test/agent-capability-store-state.test.ts",
         "packages/runtime/test/agent-coder-subagent.test.ts",
+        "packages/runtime/test/agent-delta-batching.test.ts",
         "packages/runtime/test/agent-javascript-kernel.test.ts",
         "packages/runtime/test/agent-message-experiments.test.ts",
         "packages/runtime/test/agent-node-debugger.test.ts",
@@ -1205,6 +1212,7 @@
         "packages/runtime/test/model-adapter-capture.test.ts",
         "packages/runtime/test/model-adapters.test.ts",
         "packages/runtime/test/model-context-envelope.test.ts",
+        "packages/runtime/test/model-delta-batcher.test.ts",
         "packages/runtime/test/model-invocation-experiments.test.ts",
         "packages/runtime/test/model-prompt-evidence-bindings.test.ts",
         "packages/runtime/test/node-debugger-protocol-path-binding.test.ts",
@@ -1217,6 +1225,7 @@
         "packages/runtime/test/oci-python-kernel.test.ts",
         "packages/runtime/test/oci-verification-runtime.test.ts",
         "packages/runtime/test/opentelemetry-prompt-evidence.test.ts",
+        "packages/runtime/test/plan-tool-transitions.test.ts",
         "packages/runtime/test/plans.test.ts",
         "packages/runtime/test/policy.test.ts",
         "packages/runtime/test/process-guardian.test.ts",
@@ -1452,7 +1461,8 @@
         "scripts/windows-host-product-acceptance-product.mjs",
         "scripts/windows-host-product-acceptance-support.mjs",
         "skills/artifact-studio/SKILL.md",
-        "skills/browser-automation/SKILL.md"
+        "skills/browser-automation/SKILL.md",
+        "skills/research-brief/SKILL.md"
       ],
       "files": {
         ".github/workflows/publish-sandbox.yml": {
@@ -1470,6 +1480,10 @@
         "README.md": {
           "sha256": "79c75514619ce291f368d71069e2943d703779eddad5c5fece8fdf8b902d8a7a",
           "lines": 7470
+        },
+        "ai-news-weekly/index.html": {
+          "sha256": "aaefc382ee1a125475cf5c16da1d33abc1b5499ef4efa5d538e4076a558b6fe3",
+          "lines": 408
         },
         "apps/cli/package.json": {
           "sha256": "10827e621b79325d37d27b5c4fbec4fbfa2dd5af2eb641aaf034d4926e3e38c4",
@@ -2283,6 +2297,10 @@
           "sha256": "adfd156ddb876b03e3d1cefcb7be3bbcd6c197b84dc2fe91f8cc61e84f460b6c",
           "lines": 292
         },
+        "apps/web/src/model-event-view.ts": {
+          "sha256": "d43d6444f78f277fd7e9998070356023bbb19177c7da20475f3fb2f8bcfbcbc2",
+          "lines": 216
+        },
         "apps/web/src/model-response-view.ts": {
           "sha256": "6c87c3cc2657e0f27e86e15c9565bef9f68c70113e595b07d847f85baa9ac68d",
           "lines": 101
@@ -2619,6 +2637,10 @@
           "sha256": "5ff0c6d0b59dc94647ce6fd328d6c893944a1d1fb6dea7c83d548210b8dbea37",
           "lines": 160
         },
+        "apps/web/test/model-event-view.test.ts": {
+          "sha256": "2e0716c75683256d2a13803067a86e5837010f02a6ed67b1e4e50a868626de7a",
+          "lines": 128
+        },
         "apps/web/test/package-governance-event-view.test.ts": {
           "sha256": "4fe8c619e372c413df91a91e577fd8ac861d88664e9d525fd7c6847b3171fa85",
           "lines": 140
@@ -2808,7 +2830,7 @@
           "lines": 11
         },
         "docs/architecture-budget.json": {
-          "sha256": "08399e941d702eb4f18b4a199d7fd443fbd776ee9762ac4566bb5c48fa41541a",
+          "sha256": "54a3a4a52012fc32e40ccd94eaeb230116e37d295695709060a707dbf4de03d5",
           "lines": 259
         },
         "docs/architecture.md": {
@@ -3032,11 +3054,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "4559e1382a9bb940b4a32708b9b7f4cf56fa09f4c17f691f6c6c4bd72c82b555",
+          "sha256": "3898014361ef036fc98ccabd6ecd6e496c9749420d6442d0b2864abb413790c1",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "050483b471d7138683c3a9f6f3e80faf299b5acbac06c5c686f9cd15f816318a",
+          "sha256": "17b91c47be920538782ff8daad67266ae9a95d24870f0f89b1a700a13f040194",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -3064,11 +3086,11 @@
           "lines": 101
         },
         "docs/artifacts/web-dist-0.1.0.sha256": {
-          "sha256": "d521e426d535925d49a43422248a26f9c7d056c0a361f392b71d6cf61ed0ba2f",
+          "sha256": "ecc49e08ef89bc6b6aac44dab7919bf0538e715cbb4502d3dd0c06172c711ade",
           "lines": 160
         },
         "docs/artifacts/web-dist-audit-0.1.0.json": {
-          "sha256": "0b024ad60910e07449d059617222cc635c57ec99beffaaaadc74df0ccd9f4e75",
+          "sha256": "5d75f097672ac1ac1377818d7409083761fc79839fec6c16bf7864422abd804d",
           "lines": 18
         },
         "docs/artifacts/web-ui-layout-baseline-0.1.0.json": {
@@ -3260,8 +3282,8 @@
           "lines": 149
         },
         "packages/runtime/src/agent-runtime.ts": {
-          "sha256": "97babbbfffabf1656592d6c80623cc5b1cc9311312e38bc5a519334ea08eb37f",
-          "lines": 3353
+          "sha256": "acd3ac86dc95e4eb44f10bb93b00c96509df1d89fb3a30c2a97328ec78e18fdf",
+          "lines": 3352
         },
         "packages/runtime/src/agent-tool-ledger.ts": {
           "sha256": "6c7116250473f1f4cb655164b882074c72b2330334c6e0775fa552f9b656d1bf",
@@ -3571,6 +3593,10 @@
           "sha256": "0c4721b302640f8d1bff4ab13d46e28bab27cf7cc7b44403656d70a8cda48f25",
           "lines": 331
         },
+        "packages/runtime/src/model-delta-batcher.ts": {
+          "sha256": "670a940671a8ffbc9a50409acb4d0b2877143f4df7feab09d1d0129463211a4b",
+          "lines": 136
+        },
         "packages/runtime/src/model-invocation-capsule-store.ts": {
           "sha256": "41eab25d5bedf8c9edd93775c674f19ed964172625b3d0690044d4a745fa2639",
           "lines": 60
@@ -3643,9 +3669,13 @@
           "sha256": "66f3e5cdf9c6b4dc998cf38fee7d46e917c193e49fc24b6a345b8670c575f0df",
           "lines": 94
         },
+        "packages/runtime/src/plan-tool-events.ts": {
+          "sha256": "9185d24c88253ad167764fb739ad9c0d4a77327e77eef1724640ff194f574510",
+          "lines": 76
+        },
         "packages/runtime/src/plan-tools.ts": {
-          "sha256": "fa08980fc9b85144f11941f53e1f54dfb4d0e346685c6bb5678cdc3fd722fedd",
-          "lines": 1033
+          "sha256": "120bfc646130bdae2a870cdb79c202b3b8f6b792411bc5bee4156b91e5dbebb9",
+          "lines": 992
         },
         "packages/runtime/src/plans.ts": {
           "sha256": "2caf9ddfc4bd1140dd656e74423561cebcb45ef1629127d572d3ebd239740341",
@@ -3714,6 +3744,10 @@
         "packages/runtime/src/read-only-tool-names.ts": {
           "sha256": "f83ed12a862a10a7c788f410bae287aecc7810ff9efbce5fbd8d9ce9dd520295",
           "lines": 40
+        },
+        "packages/runtime/src/recovery-service.ts": {
+          "sha256": "8ba128b67ef9e708f538a919fa834fd0e36e17ea3d4e2355ab78d7a03f32d60f",
+          "lines": 364
         },
         "packages/runtime/src/release-product-gate.ts": {
           "sha256": "546df21c2589f8e4a4f19161727142b0eb8cf60769b3bd06af0291ecea34b035",
@@ -4151,6 +4185,10 @@
           "sha256": "d9f6d31a9f2e92836e4dc75921e746b16a1b22655e91098582de62f312d634f6",
           "lines": 416
         },
+        "packages/runtime/test/agent-delta-batching.test.ts": {
+          "sha256": "7163b57208fe0720df51bc02585ffaa768c8b972723a47869e8c758659b4d3de",
+          "lines": 89
+        },
         "packages/runtime/test/agent-javascript-kernel.test.ts": {
           "sha256": "d5faad4b149d2ec7147868cdfc3537ce1541a9de101f2902ac9251eb731fbc05",
           "lines": 305
@@ -4208,8 +4246,8 @@
           "lines": 480
         },
         "packages/runtime/test/automatic-recovery.test.ts": {
-          "sha256": "8e084fb3b221cfe0bf029f24b5fe866e7f2e3dfe3ee10b81e3e2cbcf16f6ba1b",
-          "lines": 908
+          "sha256": "2d38e6653cb94d2c3944c210e310987f97877790fffaca169a44286186b6e76d",
+          "lines": 953
         },
         "packages/runtime/test/automation.test.ts": {
           "sha256": "5b1059388622ccb22d87c26b6abaff5210a6dc8d5ff10437e259e9e6e18b85b5",
@@ -4272,8 +4310,8 @@
           "lines": 410
         },
         "packages/runtime/test/launch-skills-quality.test.ts": {
-          "sha256": "425af63ec62310a346197aece30e92dced2775d3ae61a0daf2c99941ee4fd97a",
-          "lines": 59
+          "sha256": "2ed44fb79311f02b87bf304e22ffe3a051dd455261f7cbf2d5107807a4428b59",
+          "lines": 79
         },
         "packages/runtime/test/live-deepseek-smoke.test.ts": {
           "sha256": "c324fff942287f0d624be5fd46c037e88655fbf6503bbdc07227acbe7edc4a5b",
@@ -4314,6 +4352,10 @@
         "packages/runtime/test/model-context-envelope.test.ts": {
           "sha256": "a3b63d22a1b3406698d98123ebc6ea35b02abfc6ea37bca0e2f36aa26f160d39",
           "lines": 190
+        },
+        "packages/runtime/test/model-delta-batcher.test.ts": {
+          "sha256": "0495bab3983a31d94115573117b909a9a02f924c4712dce08df8f1abfe548031",
+          "lines": 119
         },
         "packages/runtime/test/model-invocation-experiments.test.ts": {
           "sha256": "9d6509c0736b49037b89bd01de88b722867a9508f3a99727623b7fe20a91b54e",
@@ -4362,6 +4404,10 @@
         "packages/runtime/test/opentelemetry-prompt-evidence.test.ts": {
           "sha256": "8273a2122bc2e45e999b2a6bcaf3e55c33991d8c418d99b23299b4805a113fb5",
           "lines": 410
+        },
+        "packages/runtime/test/plan-tool-transitions.test.ts": {
+          "sha256": "29ac4c61a475b13ddd60a7718923ad85f7112164328dd03aa494485ffc633ad0",
+          "lines": 97
         },
         "packages/runtime/test/plans.test.ts": {
           "sha256": "37fbb89f332aae9451544a6692675f3debcef7fcb46cf11161dfd0c189ae1e73",
@@ -5306,6 +5352,10 @@
         "skills/browser-automation/SKILL.md": {
           "sha256": "961a1e020a216394f279f4f19276adcf4f6926e3ba32be6dcd9627ef090193cf",
           "lines": 41
+        },
+        "skills/research-brief/SKILL.md": {
+          "sha256": "a601b2b0454c2fe29aafb50d0587d5a238b276eeb1be4e9cce0001b87e9cb01a",
+          "lines": 59
         }
       },
       "deletedPaths": [
@@ -5329,7 +5379,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "461ceeb44de074ec984b71116c3b8ea1e58e293c16c62c71046999a156861121"
+      "manifestSha256": "803a9b4e59908d394cc255a576ee133f6647b92f5e634c239648359f9feecd83"
     },
     "executionClosure": {
       "algorithm": {
@@ -5828,6 +5878,7 @@
             "packages/runtime/dist/model-advisor-evidence.js",
             "packages/runtime/dist/model-advisor.js",
             "packages/runtime/dist/model-context-envelope.js",
+            "packages/runtime/dist/model-delta-batcher.js",
             "packages/runtime/dist/model-invocation-capsule-store.js",
             "packages/runtime/dist/model-invocation-capsule.js",
             "packages/runtime/dist/model-invocation-capture.js",
@@ -5858,6 +5909,7 @@
             "packages/runtime/dist/operator-decisions.js",
             "packages/runtime/dist/ordered-run-event-writer.js",
             "packages/runtime/dist/plan-archives.js",
+            "packages/runtime/dist/plan-tool-events.js",
             "packages/runtime/dist/plan-tools.js",
             "packages/runtime/dist/plans.js",
             "packages/runtime/dist/policy.js",
@@ -6677,6 +6729,7 @@
             "packages/runtime/src/model-advisor-evidence.ts",
             "packages/runtime/src/model-advisor.ts",
             "packages/runtime/src/model-context-envelope.ts",
+            "packages/runtime/src/model-delta-batcher.ts",
             "packages/runtime/src/model-invocation-capsule-store.ts",
             "packages/runtime/src/model-invocation-capsule.ts",
             "packages/runtime/src/model-invocation-capture.ts",
@@ -6707,6 +6760,7 @@
             "packages/runtime/src/operator-decisions.ts",
             "packages/runtime/src/ordered-run-event-writer.ts",
             "packages/runtime/src/plan-archives.ts",
+            "packages/runtime/src/plan-tool-events.ts",
             "packages/runtime/src/plan-tools.ts",
             "packages/runtime/src/plans.ts",
             "packages/runtime/src/policy.ts",
@@ -7093,16 +7147,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 847,
-            "sourceCounterparts": 842,
+            "executionFiles": 849,
+            "sourceCounterparts": 844,
             "packageManifests": 2,
-            "allFiles": 1691
+            "allFiles": 1695
           },
           "executionAreaCounts": {
             "apps/cli/dist": 65,
             "apps/server/dist": 112,
             "packages/contracts/dist": 23,
-            "packages/runtime/dist": 639,
+            "packages/runtime/dist": 641,
             "packages/runtime/test/fixtures": 3,
             "packages/sdk/dist": 3,
             "scripts": 2
@@ -8821,8 +8875,8 @@
               "lines": 100
             },
             "packages/runtime/dist/agent-runtime.js": {
-              "sha256": "657b958c95a9e519850eccba2e0fb72800d96e1e16ae41de0e3a0c67e518147a",
-              "lines": 2311
+              "sha256": "4262e6e0fc27cc3d8ca9a03582462815b53e640e299a89d4448b0a4d6aae2fc4",
+              "lines": 2302
             },
             "packages/runtime/dist/agent-sessions.js": {
               "sha256": "8b8aae5a5b13b8b797b2bd36886b394b48981892da6befe795c1657567bcad9a",
@@ -9800,6 +9854,10 @@
               "sha256": "d13bbcaa9f7ec90c6b31b9dced109c54a180327e04f020589291ccab9f194b92",
               "lines": 253
             },
+            "packages/runtime/dist/model-delta-batcher.js": {
+              "sha256": "7a317c1d5ca124cf344fef3842fb6519d27eb75e4240b71b84c5d6c96dd9d635",
+              "lines": 104
+            },
             "packages/runtime/dist/model-invocation-capsule-store.js": {
               "sha256": "3b697c3acdc07e0547fe69d9c057f94c9820ada61b8aac158e56e47dfb2b49c8",
               "lines": 39
@@ -9920,9 +9978,13 @@
               "sha256": "3cad892b8183fb8162f7291a6b1b36ae6243ce5c3122d7c8316aad7f316cb6cc",
               "lines": 484
             },
+            "packages/runtime/dist/plan-tool-events.js": {
+              "sha256": "ab4074d2079f9bbbd3c6ab255af4f82240df949aea479f2119acd0e0a03752eb",
+              "lines": 60
+            },
             "packages/runtime/dist/plan-tools.js": {
-              "sha256": "92106d441e37571c0c16afa7ce0af4b9608b44d241d8815b966f5c9177e35920",
-              "lines": 754
+              "sha256": "fa67c18ecc28099403bffee07372895628599879d337cda4ef6ebe75ac258fc9",
+              "lines": 706
             },
             "packages/runtime/dist/plans.js": {
               "sha256": "54b031e6c530ee3e795c3b1c9d7b209778e032d095f90edf32016a55ee1c96da",
@@ -10049,8 +10111,8 @@
               "lines": 1140
             },
             "packages/runtime/dist/recovery-service.js": {
-              "sha256": "032d27e05591f7636a86df07163a41ce68ce2f8976e99141354c661d7815539c",
-              "lines": 245
+              "sha256": "61f178ba44c196bd712d496876ba4d03021d323e5fd1ef4818196b5644680f6a",
+              "lines": 280
             },
             "packages/runtime/dist/release-product-gate.js": {
               "sha256": "9d090e1b1af1d30740907384196a9d568d62310efac13c063c47e85e582191c9",
@@ -11381,8 +11443,8 @@
               "lines": 149
             },
             "packages/runtime/src/agent-runtime.ts": {
-              "sha256": "97babbbfffabf1656592d6c80623cc5b1cc9311312e38bc5a519334ea08eb37f",
-              "lines": 3353
+              "sha256": "acd3ac86dc95e4eb44f10bb93b00c96509df1d89fb3a30c2a97328ec78e18fdf",
+              "lines": 3352
             },
             "packages/runtime/src/agent-sessions.ts": {
               "sha256": "a574277be8cf473bec7156a598d18b254925a2d2553b64fb01415345d46b3a77",
@@ -12360,6 +12422,10 @@
               "sha256": "0c4721b302640f8d1bff4ab13d46e28bab27cf7cc7b44403656d70a8cda48f25",
               "lines": 331
             },
+            "packages/runtime/src/model-delta-batcher.ts": {
+              "sha256": "670a940671a8ffbc9a50409acb4d0b2877143f4df7feab09d1d0129463211a4b",
+              "lines": 136
+            },
             "packages/runtime/src/model-invocation-capsule-store.ts": {
               "sha256": "41eab25d5bedf8c9edd93775c674f19ed964172625b3d0690044d4a745fa2639",
               "lines": 60
@@ -12480,9 +12546,13 @@
               "sha256": "bec026eeba4dde9ac4150c92711cd5551e95a5513b79e96b8430d8bfc973c507",
               "lines": 578
             },
+            "packages/runtime/src/plan-tool-events.ts": {
+              "sha256": "9185d24c88253ad167764fb739ad9c0d4a77327e77eef1724640ff194f574510",
+              "lines": 76
+            },
             "packages/runtime/src/plan-tools.ts": {
-              "sha256": "fa08980fc9b85144f11941f53e1f54dfb4d0e346685c6bb5678cdc3fd722fedd",
-              "lines": 1033
+              "sha256": "120bfc646130bdae2a870cdb79c202b3b8f6b792411bc5bee4156b91e5dbebb9",
+              "lines": 992
             },
             "packages/runtime/src/plans.ts": {
               "sha256": "2caf9ddfc4bd1140dd656e74423561cebcb45ef1629127d572d3ebd239740341",
@@ -12609,8 +12679,8 @@
               "lines": 1524
             },
             "packages/runtime/src/recovery-service.ts": {
-              "sha256": "61b4fcb458402e6cce12e07718ad8f2dc7611793c66a7ffda10cfe5bfc0ce21b",
-              "lines": 347
+              "sha256": "8ba128b67ef9e708f538a919fa834fd0e36e17ea3d4e2355ab78d7a03f32d60f",
+              "lines": 364
             },
             "packages/runtime/src/release-product-gate.ts": {
               "sha256": "546df21c2589f8e4a4f19161727142b0eb8cf60769b3bd06af0291ecea34b035",
@@ -13873,7 +13943,7 @@
               "lines": 32
             }
           },
-          "manifestSha256": "f75d1475d659ecf0dca8efca604c7d33ff34aeb7499582c11bca65c6367c07d1"
+          "manifestSha256": "538766fad2a870e8f6dd6acd5d790b98ef3bbb9622ef9e71b4c8e004ffcf1081"
         },
         "productionServerTrace": {
           "roots": [
@@ -14293,6 +14363,7 @@
             "packages/runtime/dist/model-advisor-evidence.js",
             "packages/runtime/dist/model-advisor.js",
             "packages/runtime/dist/model-context-envelope.js",
+            "packages/runtime/dist/model-delta-batcher.js",
             "packages/runtime/dist/model-invocation-capsule-store.js",
             "packages/runtime/dist/model-invocation-capsule.js",
             "packages/runtime/dist/model-invocation-capture.js",
@@ -14323,6 +14394,7 @@
             "packages/runtime/dist/operator-decisions.js",
             "packages/runtime/dist/ordered-run-event-writer.js",
             "packages/runtime/dist/plan-archives.js",
+            "packages/runtime/dist/plan-tool-events.js",
             "packages/runtime/dist/plan-tools.js",
             "packages/runtime/dist/plans.js",
             "packages/runtime/dist/policy.js",
@@ -15075,6 +15147,7 @@
             "packages/runtime/src/model-advisor-evidence.ts",
             "packages/runtime/src/model-advisor.ts",
             "packages/runtime/src/model-context-envelope.ts",
+            "packages/runtime/src/model-delta-batcher.ts",
             "packages/runtime/src/model-invocation-capsule-store.ts",
             "packages/runtime/src/model-invocation-capsule.ts",
             "packages/runtime/src/model-invocation-capture.ts",
@@ -15105,6 +15178,7 @@
             "packages/runtime/src/operator-decisions.ts",
             "packages/runtime/src/ordered-run-event-writer.ts",
             "packages/runtime/src/plan-archives.ts",
+            "packages/runtime/src/plan-tool-events.ts",
             "packages/runtime/src/plan-tools.ts",
             "packages/runtime/src/plans.ts",
             "packages/runtime/src/policy.ts",
@@ -15491,16 +15565,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 780,
-            "sourceCounterparts": 776,
+            "executionFiles": 782,
+            "sourceCounterparts": 778,
             "packageManifests": 3,
-            "allFiles": 1559
+            "allFiles": 1563
           },
           "executionAreaCounts": {
             "apps/server/dist": 113,
             "other": 1,
             "packages/contracts/dist": 23,
-            "packages/runtime/dist": 637,
+            "packages/runtime/dist": 639,
             "packages/sdk/dist": 3,
             "scripts": 3
           },
@@ -16706,8 +16780,8 @@
               "lines": 100
             },
             "packages/runtime/dist/agent-runtime.js": {
-              "sha256": "657b958c95a9e519850eccba2e0fb72800d96e1e16ae41de0e3a0c67e518147a",
-              "lines": 2311
+              "sha256": "4262e6e0fc27cc3d8ca9a03582462815b53e640e299a89d4448b0a4d6aae2fc4",
+              "lines": 2302
             },
             "packages/runtime/dist/agent-sessions.js": {
               "sha256": "8b8aae5a5b13b8b797b2bd36886b394b48981892da6befe795c1657567bcad9a",
@@ -17681,6 +17755,10 @@
               "sha256": "d13bbcaa9f7ec90c6b31b9dced109c54a180327e04f020589291ccab9f194b92",
               "lines": 253
             },
+            "packages/runtime/dist/model-delta-batcher.js": {
+              "sha256": "7a317c1d5ca124cf344fef3842fb6519d27eb75e4240b71b84c5d6c96dd9d635",
+              "lines": 104
+            },
             "packages/runtime/dist/model-invocation-capsule-store.js": {
               "sha256": "3b697c3acdc07e0547fe69d9c057f94c9820ada61b8aac158e56e47dfb2b49c8",
               "lines": 39
@@ -17801,9 +17879,13 @@
               "sha256": "3cad892b8183fb8162f7291a6b1b36ae6243ce5c3122d7c8316aad7f316cb6cc",
               "lines": 484
             },
+            "packages/runtime/dist/plan-tool-events.js": {
+              "sha256": "ab4074d2079f9bbbd3c6ab255af4f82240df949aea479f2119acd0e0a03752eb",
+              "lines": 60
+            },
             "packages/runtime/dist/plan-tools.js": {
-              "sha256": "92106d441e37571c0c16afa7ce0af4b9608b44d241d8815b966f5c9177e35920",
-              "lines": 754
+              "sha256": "fa67c18ecc28099403bffee07372895628599879d337cda4ef6ebe75ac258fc9",
+              "lines": 706
             },
             "packages/runtime/dist/plans.js": {
               "sha256": "54b031e6c530ee3e795c3b1c9d7b209778e032d095f90edf32016a55ee1c96da",
@@ -17930,8 +18012,8 @@
               "lines": 1140
             },
             "packages/runtime/dist/recovery-service.js": {
-              "sha256": "032d27e05591f7636a86df07163a41ce68ce2f8976e99141354c661d7815539c",
-              "lines": 245
+              "sha256": "61f178ba44c196bd712d496876ba4d03021d323e5fd1ef4818196b5644680f6a",
+              "lines": 280
             },
             "packages/runtime/dist/release-product-gate.js": {
               "sha256": "9d090e1b1af1d30740907384196a9d568d62310efac13c063c47e85e582191c9",
@@ -19258,8 +19340,8 @@
               "lines": 149
             },
             "packages/runtime/src/agent-runtime.ts": {
-              "sha256": "97babbbfffabf1656592d6c80623cc5b1cc9311312e38bc5a519334ea08eb37f",
-              "lines": 3353
+              "sha256": "acd3ac86dc95e4eb44f10bb93b00c96509df1d89fb3a30c2a97328ec78e18fdf",
+              "lines": 3352
             },
             "packages/runtime/src/agent-sessions.ts": {
               "sha256": "a574277be8cf473bec7156a598d18b254925a2d2553b64fb01415345d46b3a77",
@@ -20233,6 +20315,10 @@
               "sha256": "0c4721b302640f8d1bff4ab13d46e28bab27cf7cc7b44403656d70a8cda48f25",
               "lines": 331
             },
+            "packages/runtime/src/model-delta-batcher.ts": {
+              "sha256": "670a940671a8ffbc9a50409acb4d0b2877143f4df7feab09d1d0129463211a4b",
+              "lines": 136
+            },
             "packages/runtime/src/model-invocation-capsule-store.ts": {
               "sha256": "41eab25d5bedf8c9edd93775c674f19ed964172625b3d0690044d4a745fa2639",
               "lines": 60
@@ -20353,9 +20439,13 @@
               "sha256": "bec026eeba4dde9ac4150c92711cd5551e95a5513b79e96b8430d8bfc973c507",
               "lines": 578
             },
+            "packages/runtime/src/plan-tool-events.ts": {
+              "sha256": "9185d24c88253ad167764fb739ad9c0d4a77327e77eef1724640ff194f574510",
+              "lines": 76
+            },
             "packages/runtime/src/plan-tools.ts": {
-              "sha256": "fa08980fc9b85144f11941f53e1f54dfb4d0e346685c6bb5678cdc3fd722fedd",
-              "lines": 1033
+              "sha256": "120bfc646130bdae2a870cdb79c202b3b8f6b792411bc5bee4156b91e5dbebb9",
+              "lines": 992
             },
             "packages/runtime/src/plans.ts": {
               "sha256": "2caf9ddfc4bd1140dd656e74423561cebcb45ef1629127d572d3ebd239740341",
@@ -20482,8 +20572,8 @@
               "lines": 1524
             },
             "packages/runtime/src/recovery-service.ts": {
-              "sha256": "61b4fcb458402e6cce12e07718ad8f2dc7611793c66a7ffda10cfe5bfc0ce21b",
-              "lines": 347
+              "sha256": "8ba128b67ef9e708f538a919fa834fd0e36e17ea3d4e2355ab78d7a03f32d60f",
+              "lines": 364
             },
             "packages/runtime/src/release-product-gate.ts": {
               "sha256": "546df21c2589f8e4a4f19161727142b0eb8cf60769b3bd06af0291ecea34b035",
@@ -21742,7 +21832,7 @@
               "lines": 45
             }
           },
-          "manifestSha256": "eb30f1475c77e39f39c0cb511ef1dbdb2831feebef389518f4465c912bfe4fcc"
+          "manifestSha256": "22ebb77bb624f3f0015b906f0bf4d81c51f5140282bc5655d552348ac21a37f9"
         }
       },
       "excludedCategories": [
@@ -21771,9 +21861,9 @@
           "reason": "evidence.json cannot contain its own content hash; the external Stage 8 repair commit binds that blob."
         }
       ],
-      "manifestSha256": "300f64e7f3c1e1cba54ca4f2a881c8cc79fedd36778df0fa15fff8b9f2d00e27"
+      "manifestSha256": "c98b254d8af0e4fe51322f131483409a5ec0e84f86fa7c66b22a621c87393131"
     },
-    "manifestSha256": "f9f8e9d9be06d17e4365aa6641c3fea8cb6f0d5808e2521a7ce82273038b6896"
+    "manifestSha256": "b641d939d956c20ee5caebd597d4ff4498c66c51417dab10b41d29f45b0fb393"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -21961,11 +22051,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "4559e1382a9bb940b4a32708b9b7f4cf56fa09f4c17f691f6c6c4bd72c82b555"
+      "sha256": "3898014361ef036fc98ccabd6ecd6e496c9749420d6442d0b2864abb413790c1"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "050483b471d7138683c3a9f6f3e80faf299b5acbac06c5c686f9cd15f816318a"
+      "sha256": "17b91c47be920538782ff8daad67266ae9a95d24870f0f89b1a700a13f040194"
     }
   }
 }

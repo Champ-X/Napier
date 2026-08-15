@@ -13,6 +13,7 @@ describe("Model event trace view", () => {
       text: "TOP_SECRET_ACCUMULATED_TEXT",
     });
     const redacted = modelEvent("model.text.delta", {
+      chunkCount: 12,
       deltaSha256: "a".repeat(64),
       deltaBytes: 17,
       textSha256: "b".repeat(64),
@@ -22,7 +23,7 @@ describe("Model event trace view", () => {
 
     expect(modelEventTraceSummary(raw)).toBe("model / text.delta");
     expect(modelEventTraceSummary(redacted)).toBe(
-      `model / text.delta / redacted true / delta-bytes 17 / text-bytes 88 / delta ${"a".repeat(12)} / text ${"b".repeat(12)}`,
+      `model / text.delta / redacted true / chunks 12 / delta-bytes 17 / text-bytes 88 / delta ${"a".repeat(12)} / text ${"b".repeat(12)}`,
     );
     expect(modelEventTraceSummary(raw)).not.toContain("TOP_SECRET");
     expect(modelEventTraceSummary(redacted)).not.toContain("TOP_SECRET");
@@ -31,6 +32,7 @@ describe("Model event trace view", () => {
   it("projects thinking deltas without raw reasoning text", () => {
     const event = modelEvent("model.thinking.delta", {
       delta: "TOP_SECRET_REASONING_DELTA",
+      chunkCount: 8,
       deltaSha256: "c".repeat(64),
       deltaBytes: 24,
       redacted: true,
@@ -39,11 +41,12 @@ describe("Model event trace view", () => {
     expect(modelEventTraceView(event)).toEqual({
       action: "thinking.delta",
       redacted: true,
+      chunkCount: 8,
       deltaBytes: 24,
       deltaSha256: "c".repeat(64),
     });
     expect(modelEventTraceSummary(event)).toBe(
-      `model / thinking.delta / redacted true / delta-bytes 24 / delta ${"c".repeat(12)}`,
+      `model / thinking.delta / redacted true / chunks 8 / delta-bytes 24 / delta ${"c".repeat(12)}`,
     );
     expect(modelEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });

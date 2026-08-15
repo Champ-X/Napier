@@ -56,4 +56,24 @@ describe("launch Skill quality contract", () => {
     }
     expect(Buffer.byteLength(content, "utf8")).toBeLessThanOrEqual(4 * 1024);
   });
+
+  it("keeps Research Brief bounded by evidence sufficiency", async () => {
+    const workspaceRoot = path.resolve(import.meta.dirname, "../../..");
+    const content = await readFile(
+      path.join(workspaceRoot, "skills/research-brief/SKILL.md"),
+      "utf8",
+    );
+
+    for (const requirement of [
+      "at most 6 discovery searches",
+      "Do not keep searching",
+      "transition to",
+      "artifact production",
+      "do not repeatedly retry",
+    ]) {
+      expect(content).toContain(requirement);
+    }
+    expect(content).toMatch(/8 fetched\s+sources/u);
+    expect(Buffer.byteLength(content, "utf8")).toBeLessThanOrEqual(4 * 1024);
+  });
 });
