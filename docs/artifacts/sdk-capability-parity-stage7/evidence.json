@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "d21d23747cf0e14c34d2e5faad930987380545e0d11d23a7a2c3adc31e02aa30",
+      "stdoutSha256": "40f8a780cb9db61949e430efec78af560a79ddbe2664b9942405df03c0550523",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "85c09218629714277f58db99cc84692446e947f99b8eb7611ffc4606d7cfeecc",
-      "receiptSha256": "0268f551c355b375f787d1a399b55b050c827a430f44f6e961b146c3fe79d4f5"
+      "evidenceSha256": "6e9b4a19080584c1bc3f07caacfc4944081242295f9f13618b669bb9aa1215fa",
+      "receiptSha256": "f6a0751645d24f0e0c6a237aab811e2e1f68915e31c8ac9f25949b473d5a25df"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "466c857323a3f608616995435ce2577ddac8c62e5f96c12b6098b988dcce74bb",
+      "stdoutSha256": "2b435ca4582fb2864d6c47bdde5b3b411816018233f622d472f37a1d56440841",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "18c0684565793cdca6b8d32fd354d781dd2ef894b5e400af6008c62e7ff30cf5",
-      "receiptSha256": "3e41c4b8629db12ba74ca40db1b4873844d5c738f2f5675177fcf87b765263f7"
+      "evidenceSha256": "6b94d794df8b5c40c8df463a1fccd225874e2659440cb25350fc1edec21dc9c8",
+      "receiptSha256": "de02f50ce261770016da2276e4642c085078aa988a7a95b67536d307890a077b"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -2985,11 +2985,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "85c09218629714277f58db99cc84692446e947f99b8eb7611ffc4606d7cfeecc",
+          "sha256": "6e9b4a19080584c1bc3f07caacfc4944081242295f9f13618b669bb9aa1215fa",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "18c0684565793cdca6b8d32fd354d781dd2ef894b5e400af6008c62e7ff30cf5",
+          "sha256": "6b94d794df8b5c40c8df463a1fccd225874e2659440cb25350fc1edec21dc9c8",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -3029,7 +3029,7 @@
           "lines": 204
         },
         "docs/artifacts/web-ui-layout-baseline-linux-0.1.0.json": {
-          "sha256": "68442522dd9a61f5486ff05749e6975e1b415342590eda1280a8de2d09553986",
+          "sha256": "14c529aeef9529a4fa1061c9a08cedae20b61121251900eb639af1b1323f56c8",
           "lines": 204
         },
         "docs/artifacts/web-ui-layout-baseline-linux-x64-0.1.0.json": {
@@ -5234,7 +5234,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "c298104fd6a1c010ca5cf192ce1264e7d3d28d66c51fab20980a4165cf73e44a"
+      "manifestSha256": "4cd40a4c8816a10a1efb42a767b7163b7ddab7c3ab29f808fefcaffcafa0649c"
     },
     "executionClosure": {
       "algorithm": {
@@ -21678,7 +21678,7 @@
       ],
       "manifestSha256": "2eb6bcd3fd9063d7849f3d1daab63427ef42f7054a87f8806de4ad49a318fa63"
     },
-    "manifestSha256": "89ac2171f008be8a7bc7150507107b777653c0daa72b8bddd69e2c88e9a2f1dd"
+    "manifestSha256": "75e648dfd3c9f316d158be0d8be8d368a8d691e5b51cb9e6f30991926fb44d57"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -21866,11 +21866,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "85c09218629714277f58db99cc84692446e947f99b8eb7611ffc4606d7cfeecc"
+      "sha256": "6e9b4a19080584c1bc3f07caacfc4944081242295f9f13618b669bb9aa1215fa"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "18c0684565793cdca6b8d32fd354d781dd2ef894b5e400af6008c62e7ff30cf5"
+      "sha256": "6b94d794df8b5c40c8df463a1fccd225874e2659440cb25350fc1edec21dc9c8"
     }
   }
 }

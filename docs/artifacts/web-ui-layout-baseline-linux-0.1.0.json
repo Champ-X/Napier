@@ -80,13 +80,13 @@
           "x": 252,
           "y": 137,
           "width": 610,
-          "height": 185
+          "height": 177
         },
         "composer": {
           "x": 321,
-          "y": 542,
+          "y": 534,
           "width": 517,
-          "height": 239
+          "height": 247
         },
         "inspector": {
           "x": 862,
@@ -129,13 +129,13 @@
           "x": 232,
           "y": 137,
           "width": 668,
-          "height": 194
+          "height": 177
         },
         "composer": {
           "x": 301,
-          "y": 551,
+          "y": 534,
           "width": 575,
-          "height": 230
+          "height": 247
         },
         "inspector": {
           "x": 470,
@@ -178,13 +178,13 @@
           "x": 68,
           "y": 283,
           "width": 322,
-          "height": 118
+          "height": 103
         },
         "composer": {
           "x": 109,
-          "y": 531,
+          "y": 516,
           "width": 269,
-          "height": 303
+          "height": 318
         },
         "inspector": {
           "x": 84,
