@@ -189,13 +189,17 @@ export async function verifyCasebookQualificationTrials(page, expected) {
   let activeRequests = 0;
   let maximumConcurrentRequests = 0;
   await page.route(pattern, async (route) => {
+    const request = qualificationTrialRequest(route.request());
+    if (!request) {
+      await route.fallback();
+      return;
+    }
     requestCount += 1;
     activeRequests += 1;
     maximumConcurrentRequests = Math.max(
       maximumConcurrentRequests,
       activeRequests,
     );
-    const request = route.request().postDataJSON();
     assert.equal(request.threadId.length > 0, true);
     assert.equal(request.model.provider, "openai");
     assert.equal(request.gate.minimumAgreementRate, 0.8);
@@ -248,6 +252,17 @@ export async function verifyCasebookQualificationTrials(page, expected) {
     await page.unroute(pattern);
     await page.locator("#inspector-group-activity").click();
   }
+}
+
+export function qualificationTrialRequest(request) {
+  if (request.method() !== "POST") return undefined;
+  const value = request.postDataJSON();
+  assert.equal(
+    value !== null && typeof value === "object" && !Array.isArray(value),
+    true,
+    "Qualification trial request body is invalid",
+  );
+  return value;
 }
 
 async function completedEvidenceRun(store, threadId, agentId, text) {
