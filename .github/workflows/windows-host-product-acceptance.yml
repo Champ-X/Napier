@@ -64,11 +64,12 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
           wsl.exe --install Ubuntu --no-launch
-          wsl.exe -d Ubuntu --user root -- bash -lc @'
+          $wslScript = @'
           set -euo pipefail
           export DEBIAN_FRONTEND=noninteractive
           apt-get update
           apt-get install -y docker.io
+          systemctl stop docker docker.socket >/dev/null 2>&1 || true
           install -d -m 0700 /etc/docker
           printf '%s\n' '{"hosts":["unix:///var/run/docker.sock","tcp://127.0.0.1:2375"],"iptables":true}' > /etc/docker/daemon.json
           nohup dockerd --config-file=/etc/docker/daemon.json >/tmp/napier-dockerd.log 2>&1 &
@@ -79,6 +80,8 @@ jobs:
           cat /tmp/napier-dockerd.log
           exit 1
           '@
+          $wslScript = $wslScript -replace "`r", ""
+          wsl.exe -d Ubuntu --user root -- bash -lc $wslScript
           docker.exe --host tcp://127.0.0.1:2375 version `
             --format '{{.Server.Os}}/{{.Server.Arch}}'
 
