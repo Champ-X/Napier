@@ -6,7 +6,7 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "a290e7a30ef5bc6454580a01d9fae95f1df8f48b2c454625c3ff3000d510b301",
+  "artifactSetSha256": "2aa6dea6207e164fdc79603cadb726960770f662db7a61ace809a585f0ab238b",
   "artifacts": [
     {
       "kind": "package-lock-audit",
@@ -148,8 +148,8 @@
     },
     {
       "kind": "controlled-harness-evidence",
-      "path": "docs/artifacts/controlled-harness-evidence-0.1.1.json",
-      "sha256": "01d3c50bfaa7cbb4f2b91a7f41b319b237c2ee817fcfa9b361ca37f627292757",
+      "path": "docs/artifacts/controlled-harness-evidence-0.1.2.json",
+      "sha256": "b5628dd9d1df66af2fece619ea4c7e9c08ee790856e92fadf87b41473338803c",
       "valid": true
     },
     {

@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "60acabf772f7731ef9042c38ff0990d719defb201af220de747199cee0451952",
+      "stdoutSha256": "f714be19fc3e022b4bc3da3319aa9d35f5fb6060075a8ee437833cf5e5b2f216",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "7e6d4649693c4f31134b96dc4083477da8fc00f6b6b23c414476896e62bc5585",
-      "receiptSha256": "aa4b8a674df5cea1028cf7885428070777214aa244cabb76f0482a61f4a816dd"
+      "evidenceSha256": "1bb1020b82261b9a0cbaf2fc5645afbe6f6d95802f5868c523dcc8fb3b2fd4dd",
+      "receiptSha256": "8bbb25b042baae7c1d500232fee2b4239a0fb99971ae45529a9d78219a69439c"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "391b840ea2287158e8267422fea940ea97da4249fd86a97655bbaf3b9da5172d",
+      "stdoutSha256": "5aede629984908a5389fe48f2a0c058fae7d0dd2b2670b3d62b1836d590d0950",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "c3e69523ddc76ddbc3d4a825c32f5fdafacddf6a807c3ca1e9a9c5b564bff410",
-      "receiptSha256": "9b751a8d8bd76890509ce7cac2b1abb472d4359cd64f8d691215b91a65431ebe"
+      "evidenceSha256": "e09cc56daa63a51c0c03d006c8787f96e181e350562c1f538a2bd7fb72f63e44",
+      "receiptSha256": "899a0f59d8bb8d826f7011d4034faf8354473682c0499db670b1cc280427b364"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -843,6 +843,7 @@
         "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-6766737f84f84714.json",
         "docs/artifacts/controlled-harness-evidence-0.1.0.json",
         "docs/artifacts/controlled-harness-evidence-0.1.1.json",
+        "docs/artifacts/controlled-harness-evidence-0.1.2.json",
         "docs/artifacts/linux-host-product-acceptance-stage19.json",
         "docs/artifacts/management-openapi-0.1.0.json",
         "docs/artifacts/management-openapi-compatibility-0.1.0.json",
@@ -2486,7 +2487,7 @@
           "lines": 252
         },
         "apps/web/test/controlled-harness-evidence-control.test.tsx": {
-          "sha256": "5fddb45ad7017a2cc4bce2c6aa8192abd746a610c76e3b74196b46ab09a27855",
+          "sha256": "265a7f54302252370fce38e2c488b560d159904a03c638af1e923d234005e49a",
           "lines": 296
         },
         "apps/web/test/conversation-activity-view-model.test.ts": {
@@ -2602,7 +2603,7 @@
           "lines": 537
         },
         "apps/web/test/release-product-trial-control.test.tsx": {
-          "sha256": "aba8417e9964537683200f695978e5c997cf9978aeeea3f67bad6f1aec7b905f",
+          "sha256": "d98fa6c649349d7338e4d84ac526602a9bb338cce0b8986b8c2d225f840753cc",
           "lines": 158
         },
         "apps/web/test/research-source-event-view.test.ts": {
@@ -2865,6 +2866,10 @@
           "sha256": "01d3c50bfaa7cbb4f2b91a7f41b319b237c2ee817fcfa9b361ca37f627292757",
           "lines": 283
         },
+        "docs/artifacts/controlled-harness-evidence-0.1.2.json": {
+          "sha256": "b5628dd9d1df66af2fece619ea4c7e9c08ee790856e92fadf87b41473338803c",
+          "lines": 283
+        },
         "docs/artifacts/linux-host-product-acceptance-stage19.json": {
           "sha256": "fae24386a28ebf69ccd0c3dfe9f91e4ecf35807176d6394c860e2462a33bf8d9",
           "lines": 556
@@ -2934,7 +2939,7 @@
           "lines": 116
         },
         "docs/artifacts/release-artifacts-audit-0.1.0.json": {
-          "sha256": "e1692c1dd86eda0357f199ef02a5574bc10e6ffb31a09404488b67237561aff4",
+          "sha256": "e0ffef01faab5c5fc005324d01748330a95403f40b42d5ad5e2d4a2c12d9068e",
           "lines": 973
         },
         "docs/artifacts/runtime-environment-audit-0.1.0.json": {
@@ -2990,11 +2995,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "7e6d4649693c4f31134b96dc4083477da8fc00f6b6b23c414476896e62bc5585",
+          "sha256": "1bb1020b82261b9a0cbaf2fc5645afbe6f6d95802f5868c523dcc8fb3b2fd4dd",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "c3e69523ddc76ddbc3d4a825c32f5fdafacddf6a807c3ca1e9a9c5b564bff410",
+          "sha256": "e09cc56daa63a51c0c03d006c8787f96e181e350562c1f538a2bd7fb72f63e44",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -3354,8 +3359,8 @@
           "lines": 95
         },
         "packages/runtime/src/effective-capabilities-prompt.ts": {
-          "sha256": "c5b119886ad9b30e9a0e1f058666463967f4fcd14a4b5de1a8a826de72bac008",
-          "lines": 43
+          "sha256": "8ce497d8f947d8f4b663641c71929ce542ed6d4db3a1457dbc162db40396fc1b",
+          "lines": 45
         },
         "packages/runtime/src/evaluation-casebook-qualification.ts": {
           "sha256": "7c6c9b4c6b6b6b2c47605f2deec7bcfcb0a417a6b0b600079eef3068bdd305f7",
@@ -3590,7 +3595,7 @@
           "lines": 1948
         },
         "packages/runtime/src/operator-decision-tool.ts": {
-          "sha256": "90aec18fdbd3c1592425c2a80b91e1fc29634ef24839ddf163cd90500b27446f",
+          "sha256": "66f3e5cdf9c6b4dc998cf38fee7d46e917c193e49fc24b6a345b8670c575f0df",
           "lines": 94
         },
         "packages/runtime/src/plan-tools.ts": {
@@ -3666,7 +3671,7 @@
           "lines": 40
         },
         "packages/runtime/src/release-product-gate.ts": {
-          "sha256": "bd0faff50b79c543834e0e86ceea95e06c44129fd6bcf16487afa07ec0322726",
+          "sha256": "546df21c2589f8e4a4f19161727142b0eb8cf60769b3bd06af0291ecea34b035",
           "lines": 376
         },
         "packages/runtime/src/replay.ts": {
@@ -4182,8 +4187,8 @@
           "lines": 189
         },
         "packages/runtime/test/effective-capabilities-prompt.test.ts": {
-          "sha256": "a64cb4b034677020baaa6c31bcd322b83c5de65f44592b0b432bc2da95499c10",
-          "lines": 44
+          "sha256": "5c491e23d7c1c23e3bb9327c464c0f45df39e526d60ce1250950415fd80f3276",
+          "lines": 50
         },
         "packages/runtime/test/evaluation-casebooks.test.ts": {
           "sha256": "c1e58f7ed499d6d377a4a0d465c6d7c6609247790cbe6169e9dec9d57f59d44e",
@@ -4334,8 +4339,8 @@
           "lines": 53
         },
         "packages/runtime/test/provider-control-tool-definition-budget.test.ts": {
-          "sha256": "1a5bb6897032cdf21adbc36fd347bbd8cf600b7750530385168c640bd7732e0b",
-          "lines": 36
+          "sha256": "ede2998df6fd0abed6243e1c84bc1cbad70295e8abd3eba023bbdd91d2863495",
+          "lines": 42
         },
         "packages/runtime/test/provider-data-frame-tool-definition-budget.test.ts": {
           "sha256": "aed987735e6b949a35be359b804a4b867afe67bba80fc7aa7ee4974f863135e2",
@@ -4406,7 +4411,7 @@
           "lines": 46
         },
         "packages/runtime/test/release-product-gate.test.ts": {
-          "sha256": "819d5e0394a124efb04df4ac9a99a95a1e441fbda81f8ac61cc7ae73860f2819",
+          "sha256": "6f4ef543b6e452d59a9c5915729234a2ba274939e0c5aafcda07f80fd07d1044",
           "lines": 201
         },
         "packages/runtime/test/replan-review.test.ts": {
@@ -4614,11 +4619,11 @@
           "lines": 134
         },
         "scripts/check-release-artifacts.mjs": {
-          "sha256": "ac9367f5d615b4c61e64140277a4867941a8491f7dc2074d62a29963dffa0c28",
+          "sha256": "550f76747b1690bfbf48b89534f9a96d4a02dcaa376ef07d2e4afcffe2662f3c",
           "lines": 2004
         },
         "scripts/check-release-artifacts.test.mjs": {
-          "sha256": "d13150f92a9cbd6e0d6a62b4a39e74624c2a6e62d9da2d6cf64a900b87727cdd",
+          "sha256": "3a7ae3b3af5d58baa0b46d6845fc506ffdf8e82611ab455f2aa7a5ddcd1cae14",
           "lines": 1965
         },
         "scripts/check-runtime-environment.mjs": {
@@ -4798,7 +4803,7 @@
           "lines": 172
         },
         "scripts/create-controlled-harness-evidence.mjs": {
-          "sha256": "dd876b083c4986a0dca7dde59cd7cc862c5c8cf54ab293804bc761d542807343",
+          "sha256": "9adb86f2b02b6174380196946056a0c1190c9b0ced55bb4233a8b468f686503e",
           "lines": 345
         },
         "scripts/generate-management-openapi.mjs": {
@@ -5146,7 +5151,7 @@
           "lines": 262
         },
         "scripts/web-ui-e2e-casebook.mjs": {
-          "sha256": "a5b337ddc941e458c29e3bf1e225e4228ae4d9eaab4ad22a265f9e8986959259",
+          "sha256": "2389091f301088bc742c5b6b6cd2f0203cd4f0e604ddf032ccbc061c9e42646b",
           "lines": 341
         },
         "scripts/web-ui-e2e-casebook.test.mjs": {
@@ -5158,7 +5163,7 @@
           "lines": 385
         },
         "scripts/web-ui-e2e-contract.test.mjs": {
-          "sha256": "455d6d24aaadcd73f9652258e842609729fc081f9fa302a4fc262b322fcde425",
+          "sha256": "edb76e4b17b9c6d60467cba020606d5a0448e9df14250547b11b18605f11199c",
           "lines": 286
         },
         "scripts/web-ui-e2e-fixture.mjs": {
@@ -5239,7 +5244,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "2f97f312d12409677e1f7fd6b761ecfbfbe04e284464cf268933e66990090afa"
+      "manifestSha256": "3e1362b5c8999c27a46db86048307d2d08c1d51099f17546be63d6fa5985b82e"
     },
     "executionClosure": {
       "algorithm": {
@@ -9115,8 +9120,8 @@
               "lines": 98
             },
             "packages/runtime/dist/effective-capabilities-prompt.js": {
-              "sha256": "75a5da623045632d4aaafebfa9aa481775edc9ff124fc72c1c2dcbf968b73ec0",
-              "lines": 29
+              "sha256": "837f250000faec99d170bab737cbdacf945d182bb9386e8df6026e081e05722f",
+              "lines": 31
             },
             "packages/runtime/dist/embedded-agents.js": {
               "sha256": "8a9f155844949670eca637f1e06790bd2995e70f3e1f0fe37586f68ad1aa649e",
@@ -9815,7 +9820,7 @@
               "lines": 1453
             },
             "packages/runtime/dist/operator-decision-tool.js": {
-              "sha256": "9a50764edf3e0189a33d3f592fa87fa261fe48c07394d1dbb9ed523775896d73",
+              "sha256": "5cb4d4cdd3694f23f872eea25fe5f993c86e55a6ac53f97a53ba38ef21e48906",
               "lines": 64
             },
             "packages/runtime/dist/operator-decisions.js": {
@@ -9963,7 +9968,7 @@
               "lines": 245
             },
             "packages/runtime/dist/release-product-gate.js": {
-              "sha256": "7cc9cd73ebe819fe4ea1c15ed0a9b4073c3364c1e4fa6cb59ebe54096a4ce6d2",
+              "sha256": "9d090e1b1af1d30740907384196a9d568d62310efac13c063c47e85e582191c9",
               "lines": 259
             },
             "packages/runtime/dist/replan-policies.js": {
@@ -11675,8 +11680,8 @@
               "lines": 142
             },
             "packages/runtime/src/effective-capabilities-prompt.ts": {
-              "sha256": "c5b119886ad9b30e9a0e1f058666463967f4fcd14a4b5de1a8a826de72bac008",
-              "lines": 43
+              "sha256": "8ce497d8f947d8f4b663641c71929ce542ed6d4db3a1457dbc162db40396fc1b",
+              "lines": 45
             },
             "packages/runtime/src/embedded-agents.ts": {
               "sha256": "de46545b60c6254a021564519cedcd54dcbdaf9813abca61737a5cda9f50720e",
@@ -12375,7 +12380,7 @@
               "lines": 1948
             },
             "packages/runtime/src/operator-decision-tool.ts": {
-              "sha256": "90aec18fdbd3c1592425c2a80b91e1fc29634ef24839ddf163cd90500b27446f",
+              "sha256": "66f3e5cdf9c6b4dc998cf38fee7d46e917c193e49fc24b6a345b8670c575f0df",
               "lines": 94
             },
             "packages/runtime/src/operator-decisions.ts": {
@@ -12523,7 +12528,7 @@
               "lines": 347
             },
             "packages/runtime/src/release-product-gate.ts": {
-              "sha256": "bd0faff50b79c543834e0e86ceea95e06c44129fd6bcf16487afa07ec0322726",
+              "sha256": "546df21c2589f8e4a4f19161727142b0eb8cf60769b3bd06af0291ecea34b035",
               "lines": 376
             },
             "packages/runtime/src/replan-policies.ts": {
@@ -13783,7 +13788,7 @@
               "lines": 32
             }
           },
-          "manifestSha256": "f0e65900a7b12c68c52c3387c8a534fe87cd4f1520148b5dbdd618ceecce6071"
+          "manifestSha256": "e840a8f54519f0fb78b1194f54634931b061d844bb5dfb71fef5afe395e5161c"
         },
         "productionServerTrace": {
           "roots": [
@@ -16996,8 +17001,8 @@
               "lines": 98
             },
             "packages/runtime/dist/effective-capabilities-prompt.js": {
-              "sha256": "75a5da623045632d4aaafebfa9aa481775edc9ff124fc72c1c2dcbf968b73ec0",
-              "lines": 29
+              "sha256": "837f250000faec99d170bab737cbdacf945d182bb9386e8df6026e081e05722f",
+              "lines": 31
             },
             "packages/runtime/dist/embedded-agents.js": {
               "sha256": "8a9f155844949670eca637f1e06790bd2995e70f3e1f0fe37586f68ad1aa649e",
@@ -17696,7 +17701,7 @@
               "lines": 1453
             },
             "packages/runtime/dist/operator-decision-tool.js": {
-              "sha256": "9a50764edf3e0189a33d3f592fa87fa261fe48c07394d1dbb9ed523775896d73",
+              "sha256": "5cb4d4cdd3694f23f872eea25fe5f993c86e55a6ac53f97a53ba38ef21e48906",
               "lines": 64
             },
             "packages/runtime/dist/operator-decisions.js": {
@@ -17844,7 +17849,7 @@
               "lines": 245
             },
             "packages/runtime/dist/release-product-gate.js": {
-              "sha256": "7cc9cd73ebe819fe4ea1c15ed0a9b4073c3364c1e4fa6cb59ebe54096a4ce6d2",
+              "sha256": "9d090e1b1af1d30740907384196a9d568d62310efac13c063c47e85e582191c9",
               "lines": 259
             },
             "packages/runtime/dist/replan-policies.js": {
@@ -19548,8 +19553,8 @@
               "lines": 142
             },
             "packages/runtime/src/effective-capabilities-prompt.ts": {
-              "sha256": "c5b119886ad9b30e9a0e1f058666463967f4fcd14a4b5de1a8a826de72bac008",
-              "lines": 43
+              "sha256": "8ce497d8f947d8f4b663641c71929ce542ed6d4db3a1457dbc162db40396fc1b",
+              "lines": 45
             },
             "packages/runtime/src/embedded-agents.ts": {
               "sha256": "de46545b60c6254a021564519cedcd54dcbdaf9813abca61737a5cda9f50720e",
@@ -20248,7 +20253,7 @@
               "lines": 1948
             },
             "packages/runtime/src/operator-decision-tool.ts": {
-              "sha256": "90aec18fdbd3c1592425c2a80b91e1fc29634ef24839ddf163cd90500b27446f",
+              "sha256": "66f3e5cdf9c6b4dc998cf38fee7d46e917c193e49fc24b6a345b8670c575f0df",
               "lines": 94
             },
             "packages/runtime/src/operator-decisions.ts": {
@@ -20396,7 +20401,7 @@
               "lines": 347
             },
             "packages/runtime/src/release-product-gate.ts": {
-              "sha256": "bd0faff50b79c543834e0e86ceea95e06c44129fd6bcf16487afa07ec0322726",
+              "sha256": "546df21c2589f8e4a4f19161727142b0eb8cf60769b3bd06af0291ecea34b035",
               "lines": 376
             },
             "packages/runtime/src/replan-policies.ts": {
@@ -21652,7 +21657,7 @@
               "lines": 45
             }
           },
-          "manifestSha256": "ac1a9463c3888740df4dfbd52d3fb631860cb5f144db0e60f12c214164679dce"
+          "manifestSha256": "fae12ff2f58b949e4225d00e3c533149d20255c295f2bb88f4ccde56ffae25af"
         }
       },
       "excludedCategories": [
@@ -21681,9 +21686,9 @@
           "reason": "evidence.json cannot contain its own content hash; the external Stage 8 repair commit binds that blob."
         }
       ],
-      "manifestSha256": "2147122d730e4c45e0336c6b03d6d6a4f3b956592959af08caec49455099d4f6"
+      "manifestSha256": "6398740f401c436de6f0fda8ef03397a236b37dbbe7d19e6ca4833bc484b71e7"
     },
-    "manifestSha256": "3a7bec97d5c3a575bc417b75f4f12350a7d7dc8e86eb24d08f2192d4e5f21908"
+    "manifestSha256": "a61a4c4a73fced7f03d15747909867ec19d344116a37f1f70858afb21bc77af7"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -21871,11 +21876,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "7e6d4649693c4f31134b96dc4083477da8fc00f6b6b23c414476896e62bc5585"
+      "sha256": "1bb1020b82261b9a0cbaf2fc5645afbe6f6d95802f5868c523dcc8fb3b2fd4dd"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "c3e69523ddc76ddbc3d4a825c32f5fdafacddf6a807c3ca1e9a9c5b564bff410"
+      "sha256": "e09cc56daa63a51c0c03d006c8787f96e181e350562c1f538a2bd7fb72f63e44"
     }
   }
 }

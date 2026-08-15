@@ -677,7 +677,7 @@ describe("release artifacts audit", () => {
     const { root } = await createFixture();
     const evidencePath = path.join(
       root,
-      "docs/artifacts/controlled-harness-evidence-0.1.1.json",
+      "docs/artifacts/controlled-harness-evidence-0.1.2.json",
     );
     const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
     evidence.comparisonGates[0].napierPassed = 99;
@@ -1355,7 +1355,7 @@ async function createFixture() {
     "linux-host-product-acceptance-stage19.json",
     "sandbox-acquisition-stage20.json",
     "profile-upgrade-stage21.json",
-    "controlled-harness-evidence-0.1.1.json",
+    "controlled-harness-evidence-0.1.2.json",
   ]) {
     await cp(
       path.resolve("docs/artifacts", fileName),

@@ -1,0 +1,283 @@
+{
+  "kind": "napier.controlled-harness-evidence",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-13T08:35:00.064Z",
+  "productVersion": "0.1.2",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "sources": [
+    {
+      "role": "coding_seed",
+      "contentSha256": "0d0b1e40af28767d897cfbd8cab9cbaf933ec408d6ed55a6ae22ea1d418ff862"
+    },
+    {
+      "role": "browser_autonomy",
+      "contentSha256": "6fecdfcc3e41d459f337b770618588fafb3ddb22efa7ffe83f9135f79d33536a"
+    },
+    {
+      "role": "coding_seed",
+      "contentSha256": "752fb49c1c06cbf2d634c423d2d2ccc12c3d5fa3b88c98e5d03f9ba843516e29"
+    },
+    {
+      "role": "open_web_campaign",
+      "contentSha256": "d108a2049df3c910ec386c2be50d7509bfdfda49f2205af40e0ca2f9979de8d6"
+    },
+    {
+      "role": "coding_seed",
+      "contentSha256": "f650841139ebeb491532eed3f86f77d69ab8801e0eb0a6a49ae3be0bd80bff51"
+    }
+  ],
+  "comparisons": [
+    {
+      "domain": "search",
+      "baseline": "omp",
+      "caseCount": 3,
+      "trialCount": 3,
+      "decisiveTrialCount": 3,
+      "excludedTrialCount": 0,
+      "napierPassed": 2,
+      "baselinePassed": 2,
+      "napierOnlyPassed": 1,
+      "baselineOnlyPassed": 1,
+      "napierSecretLeakDetected": false,
+      "napierUnconfirmedSideEffectDetected": false,
+      "fairness": {
+        "sameModel": true,
+        "samePrompt": true,
+        "isolatedWorkspace": true,
+        "samePermissions": true
+      },
+      "sourceArtifactSha256s": [
+        "d108a2049df3c910ec386c2be50d7509bfdfda49f2205af40e0ca2f9979de8d6"
+      ]
+    },
+    {
+      "domain": "browser_omp",
+      "baseline": "omp",
+      "caseCount": 3,
+      "trialCount": 3,
+      "decisiveTrialCount": 2,
+      "excludedTrialCount": 1,
+      "napierPassed": 2,
+      "baselinePassed": 2,
+      "napierOnlyPassed": 0,
+      "baselineOnlyPassed": 0,
+      "napierSecretLeakDetected": false,
+      "napierUnconfirmedSideEffectDetected": false,
+      "fairness": {
+        "sameModel": true,
+        "samePrompt": true,
+        "isolatedWorkspace": true,
+        "samePermissions": true
+      },
+      "sourceArtifactSha256s": [
+        "d108a2049df3c910ec386c2be50d7509bfdfda49f2205af40e0ca2f9979de8d6"
+      ]
+    },
+    {
+      "domain": "coding",
+      "baseline": "omp",
+      "caseCount": 10,
+      "trialCount": 13,
+      "decisiveTrialCount": 13,
+      "excludedTrialCount": 0,
+      "napierPassed": 13,
+      "baselinePassed": 12,
+      "napierOnlyPassed": 1,
+      "baselineOnlyPassed": 0,
+      "napierSecretLeakDetected": false,
+      "napierUnconfirmedSideEffectDetected": false,
+      "fairness": {
+        "sameModel": true,
+        "samePrompt": true,
+        "isolatedWorkspace": true,
+        "samePermissions": true
+      },
+      "sourceArtifactSha256s": [
+        "f650841139ebeb491532eed3f86f77d69ab8801e0eb0a6a49ae3be0bd80bff51",
+        "752fb49c1c06cbf2d634c423d2d2ccc12c3d5fa3b88c98e5d03f9ba843516e29",
+        "0d0b1e40af28767d897cfbd8cab9cbaf933ec408d6ed55a6ae22ea1d418ff862"
+      ]
+    },
+    {
+      "domain": "browser_autonomy",
+      "baseline": "browser_use",
+      "caseCount": 1,
+      "trialCount": 3,
+      "decisiveTrialCount": 3,
+      "excludedTrialCount": 0,
+      "napierPassed": 3,
+      "baselinePassed": 3,
+      "napierOnlyPassed": 0,
+      "baselineOnlyPassed": 0,
+      "napierSecretLeakDetected": false,
+      "napierUnconfirmedSideEffectDetected": false,
+      "fairness": {
+        "sameModel": true,
+        "samePrompt": true,
+        "isolatedWorkspace": true,
+        "samePermissions": true
+      },
+      "sourceArtifactSha256s": [
+        "6fecdfcc3e41d459f337b770618588fafb3ddb22efa7ffe83f9135f79d33536a"
+      ]
+    }
+  ],
+  "advantage": {
+    "metric": "evidence",
+    "baseline": "omp",
+    "direction": "higher",
+    "unit": "verifiable_final_evidence_rate",
+    "napierValue": 1,
+    "baselineValue": 0.777778,
+    "napierSampleCount": 9,
+    "baselineSampleCount": 9,
+    "sourceArtifactSha256s": [
+      "d108a2049df3c910ec386c2be50d7509bfdfda49f2205af40e0ca2f9979de8d6"
+    ]
+  },
+  "comparisonGates": [
+    {
+      "domain": "search",
+      "baseline": "omp",
+      "caseCount": 3,
+      "trialCount": 3,
+      "decisiveTrialCount": 3,
+      "excludedTrialCount": 0,
+      "napierPassed": 2,
+      "baselinePassed": 2,
+      "napierOnlyPassed": 1,
+      "baselineOnlyPassed": 1,
+      "napierSecretLeakDetected": false,
+      "napierUnconfirmedSideEffectDetected": false,
+      "fairness": {
+        "sameModel": true,
+        "samePrompt": true,
+        "isolatedWorkspace": true,
+        "samePermissions": true
+      },
+      "sourceArtifactSha256s": [
+        "d108a2049df3c910ec386c2be50d7509bfdfda49f2205af40e0ca2f9979de8d6"
+      ],
+      "minimumCaseCount": 2,
+      "minimumTrialCount": 2,
+      "minimumDecisiveTrialCount": 2,
+      "minimumDecisiveCoverage": 0.6666666666666666,
+      "sampleReady": true,
+      "verdict": "napier_not_worse",
+      "comparisonReady": true
+    },
+    {
+      "domain": "browser_omp",
+      "baseline": "omp",
+      "caseCount": 3,
+      "trialCount": 3,
+      "decisiveTrialCount": 2,
+      "excludedTrialCount": 1,
+      "napierPassed": 2,
+      "baselinePassed": 2,
+      "napierOnlyPassed": 0,
+      "baselineOnlyPassed": 0,
+      "napierSecretLeakDetected": false,
+      "napierUnconfirmedSideEffectDetected": false,
+      "fairness": {
+        "sameModel": true,
+        "samePrompt": true,
+        "isolatedWorkspace": true,
+        "samePermissions": true
+      },
+      "sourceArtifactSha256s": [
+        "d108a2049df3c910ec386c2be50d7509bfdfda49f2205af40e0ca2f9979de8d6"
+      ],
+      "minimumCaseCount": 2,
+      "minimumTrialCount": 2,
+      "minimumDecisiveTrialCount": 2,
+      "minimumDecisiveCoverage": 0.6666666666666666,
+      "sampleReady": true,
+      "verdict": "napier_not_worse",
+      "comparisonReady": true
+    },
+    {
+      "domain": "coding",
+      "baseline": "omp",
+      "caseCount": 10,
+      "trialCount": 13,
+      "decisiveTrialCount": 13,
+      "excludedTrialCount": 0,
+      "napierPassed": 13,
+      "baselinePassed": 12,
+      "napierOnlyPassed": 1,
+      "baselineOnlyPassed": 0,
+      "napierSecretLeakDetected": false,
+      "napierUnconfirmedSideEffectDetected": false,
+      "fairness": {
+        "sameModel": true,
+        "samePrompt": true,
+        "isolatedWorkspace": true,
+        "samePermissions": true
+      },
+      "sourceArtifactSha256s": [
+        "f650841139ebeb491532eed3f86f77d69ab8801e0eb0a6a49ae3be0bd80bff51",
+        "752fb49c1c06cbf2d634c423d2d2ccc12c3d5fa3b88c98e5d03f9ba843516e29",
+        "0d0b1e40af28767d897cfbd8cab9cbaf933ec408d6ed55a6ae22ea1d418ff862"
+      ],
+      "minimumCaseCount": 3,
+      "minimumTrialCount": 3,
+      "minimumDecisiveTrialCount": 3,
+      "minimumDecisiveCoverage": 0.6666666666666666,
+      "sampleReady": true,
+      "verdict": "napier_not_worse",
+      "comparisonReady": true
+    },
+    {
+      "domain": "browser_autonomy",
+      "baseline": "browser_use",
+      "caseCount": 1,
+      "trialCount": 3,
+      "decisiveTrialCount": 3,
+      "excludedTrialCount": 0,
+      "napierPassed": 3,
+      "baselinePassed": 3,
+      "napierOnlyPassed": 0,
+      "baselineOnlyPassed": 0,
+      "napierSecretLeakDetected": false,
+      "napierUnconfirmedSideEffectDetected": false,
+      "fairness": {
+        "sameModel": true,
+        "samePrompt": true,
+        "isolatedWorkspace": true,
+        "samePermissions": true
+      },
+      "sourceArtifactSha256s": [
+        "6fecdfcc3e41d459f337b770618588fafb3ddb22efa7ffe83f9135f79d33536a"
+      ],
+      "minimumCaseCount": 1,
+      "minimumTrialCount": 3,
+      "minimumDecisiveTrialCount": 3,
+      "minimumDecisiveCoverage": 0.6666666666666666,
+      "sampleReady": true,
+      "verdict": "napier_not_worse",
+      "comparisonReady": true
+    }
+  ],
+  "advantageGate": {
+    "metric": "evidence",
+    "baseline": "omp",
+    "direction": "higher",
+    "unit": "verifiable_final_evidence_rate",
+    "napierValue": 1,
+    "baselineValue": 0.777778,
+    "napierSampleCount": 9,
+    "baselineSampleCount": 9,
+    "sourceArtifactSha256s": [
+      "d108a2049df3c910ec386c2be50d7509bfdfda49f2205af40e0ca2f9979de8d6"
+    ],
+    "minimumSampleCount": 3,
+    "advantageReady": true
+  },
+  "controlledTrackReady": true,
+  "blockers": [],
+  "contentSha256": "c2664170cf1fdc6c1ac3bc785b3ec8d276aff5d980275ada99e205df2523213f"
+}

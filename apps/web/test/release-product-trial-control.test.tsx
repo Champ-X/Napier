@@ -32,7 +32,7 @@ describe("ReleaseProductTrialControl", () => {
         ...emptyProjection,
         versions: [
           {
-            productVersion: "0.1.1",
+            productVersion: "0.1.2",
             caseCount: 10,
             coveredCaseCount: 1,
             trialCount: 1,
@@ -86,7 +86,7 @@ describe("ReleaseProductTrialControl", () => {
         casebookId: casebook.id,
         templateCaseId: "settings",
         runId: run.id,
-        productVersion: "0.1.1",
+        productVersion: "0.1.2",
         status: "passed",
         uxScore: 5,
       }),
@@ -131,7 +131,7 @@ const run = {
 const emptyProjection: ReleaseProductGateProjection = {
   kind: "napier.release-product-gate",
   schemaVersion: 1,
-  currentProductVersion: "0.1.1",
+  currentProductVersion: "0.1.2",
   casebookId: casebook.id,
   templateId: template.id,
   templateVersion: 1,

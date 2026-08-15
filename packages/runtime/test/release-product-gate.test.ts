@@ -21,7 +21,7 @@ describe("Release Product Gate", () => {
       templateId: RELEASE_PRODUCT_CASEBOOK_TEMPLATE_ID,
     });
     const cases = evaluationCasebookTemplates()[0]!.cases;
-    const trials = ["0.0.9", "0.1.0", NAPIER_PRODUCT_VERSION].flatMap(
+    const trials = ["0.1.0", "0.1.1", NAPIER_PRODUCT_VERSION].flatMap(
       (productVersion, versionIndex) =>
         cases.map((item, caseIndex) =>
           createReleaseProductTrial(
@@ -52,8 +52,8 @@ describe("Release Product Gate", () => {
     const projection = projectReleaseProductGate(casebook, trials);
     expect(projection.defaultTrackReady).toBe(true);
     expect(projection.consecutivePassingVersions).toEqual([
-      "0.0.9",
       "0.1.0",
+      "0.1.1",
       NAPIER_PRODUCT_VERSION,
     ]);
     expect(projection.versions.at(-1)).toEqual(
