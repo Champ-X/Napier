@@ -91,7 +91,7 @@ export function createWindowsHostProductAcceptanceReceipt(input) {
       sliceComplete: true,
       s1Complete: false,
       freshWindowsCheckout: true,
-      selfHostedWindowsRunner: true,
+      githubHostedWindowsRunner: true,
       windowsHostProductAcceptance: true,
       stage13ProductLifecycle: true,
       externalRegistryPublished: false,
@@ -199,13 +199,13 @@ function validHost(value) {
     typeof value.osRelease === "string" &&
     value.osRelease.length > 0 &&
     value.osRelease.length <= 100 &&
-    value.runnerEnvironment === "self-hosted" &&
+    value.runnerEnvironment === "github-hosted" &&
     value.runnerOs === "Windows" &&
     value.runnerArch === "X64" &&
     value.nodeVersion === WINDOWS_ACCEPTANCE_NODE_VERSION &&
     VERSION.test(value.npmVersion) &&
-    value.dockerEndpointKind === "npipe-local-docker-engine" &&
-    value.dockerEndpointSha256 === sha256("npipe:////./pipe/docker_engine") &&
+    value.dockerEndpointKind === "wsl2-loopback-linux-docker-engine" &&
+    value.dockerEndpointSha256 === sha256("tcp://127.0.0.1:2375") &&
     value.dockerServerOs === "linux" &&
     value.dockerServerArch === "amd64" &&
     VERSION.test(value.dockerServerVersion) &&
@@ -361,7 +361,7 @@ function validScope(value) {
       "sliceComplete",
       "s1Complete",
       "freshWindowsCheckout",
-      "selfHostedWindowsRunner",
+      "githubHostedWindowsRunner",
       "windowsHostProductAcceptance",
       "stage13ProductLifecycle",
       "externalRegistryPublished",
@@ -373,7 +373,7 @@ function validScope(value) {
     value.sliceComplete === true &&
     value.s1Complete === false &&
     value.freshWindowsCheckout === true &&
-    value.selfHostedWindowsRunner === true &&
+    value.githubHostedWindowsRunner === true &&
     value.windowsHostProductAcceptance === true &&
     value.stage13ProductLifecycle === true &&
     value.externalRegistryPublished === false &&

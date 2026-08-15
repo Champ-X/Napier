@@ -163,6 +163,8 @@ export async function createWindowsAcceptanceEnvironment(environment, root) {
     "RUNNER_OS",
     "RUNNER_ARCH",
     "RUNNER_TEMP",
+    "NAPIER_CONTAINER_WINDOWS_WSL_MOUNTS",
+    "NAPIER_CONTAINER_SANDBOX_SCRATCH_DIR",
   ];
   return {
     ...Object.fromEntries(
@@ -176,7 +178,7 @@ export async function createWindowsAcceptanceEnvironment(environment, root) {
     TEMP: temporary,
     TMP: temporary,
     DOCKER_CONFIG: dockerConfig,
-    DOCKER_HOST: "npipe:////./pipe/docker_engine",
+    DOCKER_HOST: environment.DOCKER_HOST ?? "npipe:////./pipe/docker_engine",
     NPM_CONFIG_USERCONFIG: npmUserConfig,
     NPM_CONFIG_GLOBALCONFIG: npmGlobalConfig,
     NPM_CONFIG_CACHE: npmCache,

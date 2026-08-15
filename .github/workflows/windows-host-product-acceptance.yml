@@ -20,11 +20,7 @@ concurrency:
 jobs:
   accept:
     if: github.repository == 'Champ-X/Napier' && github.ref == 'refs/heads/main'
-    runs-on:
-      - self-hosted
-      - Windows
-      - X64
-      - napier-windows-docker
+    runs-on: windows-2025
     timeout-minutes: 60
     defaults:
       run:
@@ -64,12 +60,33 @@ jobs:
         with:
           node-version: 24.16.0
 
-      - name: Recover the dedicated runner baseline
+      - name: Start isolated WSL2 Linux Docker
+        run: |
+          $ErrorActionPreference = "Stop"
+          wsl.exe --install Ubuntu --no-launch
+          wsl.exe -d Ubuntu --user root -- bash -lc @'
+          set -euo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update
+          apt-get install -y docker.io
+          install -d -m 0700 /etc/docker
+          printf '%s\n' '{"hosts":["unix:///var/run/docker.sock","tcp://127.0.0.1:2375"],"iptables":true}' > /etc/docker/daemon.json
+          nohup dockerd --config-file=/etc/docker/daemon.json >/tmp/napier-dockerd.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            docker info >/dev/null 2>&1 && exit 0
+            sleep 1
+          done
+          cat /tmp/napier-dockerd.log
+          exit 1
+          '@
+          docker.exe --host tcp://127.0.0.1:2375 version `
+            --format '{{.Server.Os}}/{{.Server.Arch}}'
+
+      - name: Capture hosted runner baseline
         env:
-          IMAGE_BASELINE_PATH: ${{ runner.tool_cache }}\napier-windows-image-baseline.txt
-          IMAGE_BASELINE_TEMP_PATH: ${{ runner.tool_cache }}\napier-windows-image-baseline.tmp
+          IMAGE_BASELINE_PATH: ${{ runner.temp }}\napier-windows-image-baseline.txt
           CONTROL_DOCKER_CONFIG: ${{ runner.temp }}\napier-windows-control-docker
-          DOCKER_HOST: npipe:////./pipe/docker_engine
+          DOCKER_HOST: tcp://127.0.0.1:2375
         run: |
           $ErrorActionPreference = "Stop"
           Remove-Item Env:DOCKER_AUTH_CONFIG -ErrorAction SilentlyContinue
@@ -82,34 +99,10 @@ jobs:
             -Value '{"auths":{}}' `
             -Encoding ascii
           $env:DOCKER_CONFIG = $env:CONTROL_DOCKER_CONFIG
-          Remove-Item -LiteralPath $env:IMAGE_BASELINE_TEMP_PATH -Force -ErrorAction SilentlyContinue
           docker.exe container ls --all --quiet --filter "name=napier-" |
             ForEach-Object { docker.exe container rm --force $_ | Out-Null }
           docker.exe network ls --quiet --filter "name=napier-network-" |
             ForEach-Object { docker.exe network rm $_ | Out-Null }
-          if (Test-Path -LiteralPath $env:IMAGE_BASELINE_PATH) {
-            $previousBaseline = @(
-              Get-Content -LiteralPath $env:IMAGE_BASELINE_PATH |
-                Where-Object { $_ }
-            )
-            if ($previousBaseline | Where-Object { $_ -notmatch '^sha256:[a-f0-9]{64}$' }) {
-              throw "Previous Docker image baseline is invalid"
-            }
-            $currentImages = @(
-              docker.exe image ls --all --no-trunc --format "{{.ID}}" |
-                Sort-Object -Unique
-            )
-            $currentImages |
-              Where-Object { $_ -notin $previousBaseline } |
-              ForEach-Object { docker.exe image rm --force $_ | Out-Null }
-            $recoveredImages = @(
-              docker.exe image ls --all --no-trunc --format "{{.ID}}" |
-                Sort-Object -Unique
-            )
-            if (Compare-Object $previousBaseline $recoveredImages) {
-              throw "Previous Docker image baseline could not be recovered"
-            }
-          }
           docker.exe image ls --quiet --filter "reference=napier-windows-acceptance:*" |
             Sort-Object -Unique |
             ForEach-Object { docker.exe image rm --force $_ | Out-Null }
@@ -133,20 +126,10 @@ jobs:
             throw "Docker image baseline is invalid"
           }
           [System.IO.File]::WriteAllLines(
-            $env:IMAGE_BASELINE_TEMP_PATH,
+            $env:IMAGE_BASELINE_PATH,
             [string[]]$imageBaseline,
             [System.Text.Encoding]::ASCII
           )
-          if (Test-Path -LiteralPath $env:IMAGE_BASELINE_PATH) {
-            [System.IO.File]::Replace(
-              $env:IMAGE_BASELINE_TEMP_PATH,
-              $env:IMAGE_BASELINE_PATH,
-              $null
-            )
-          } else {
-            Move-Item -LiteralPath $env:IMAGE_BASELINE_TEMP_PATH `
-              -Destination $env:IMAGE_BASELINE_PATH
-          }
           if (git.exe status --porcelain=v1 --untracked-files=all) {
             throw "Dedicated runner baseline recovery failed"
           }
@@ -158,6 +141,9 @@ jobs:
           RUNNER_ENVIRONMENT: ${{ runner.environment }}
           RUNNER_OS: ${{ runner.os }}
           RUNNER_ARCH: ${{ runner.arch }}
+          DOCKER_HOST: tcp://127.0.0.1:2375
+          NAPIER_CONTAINER_WINDOWS_WSL_MOUNTS: "1"
+          NAPIER_CONTAINER_SANDBOX_SCRATCH_DIR: ${{ runner.temp }}\napier-sandbox-scratch
         run: |
           $ErrorActionPreference = "Stop"
           if (Test-Path -LiteralPath $env:RECEIPT_PATH) {
@@ -192,10 +178,9 @@ jobs:
         if: always()
         env:
           RECEIPT_PATH: ${{ runner.temp }}\napier-windows-host-product-acceptance.json
-          IMAGE_BASELINE_PATH: ${{ runner.tool_cache }}\napier-windows-image-baseline.txt
-          IMAGE_BASELINE_TEMP_PATH: ${{ runner.tool_cache }}\napier-windows-image-baseline.tmp
+          IMAGE_BASELINE_PATH: ${{ runner.temp }}\napier-windows-image-baseline.txt
           CONTROL_DOCKER_CONFIG: ${{ runner.temp }}\napier-windows-control-docker
-          DOCKER_HOST: npipe:////./pipe/docker_engine
+          DOCKER_HOST: tcp://127.0.0.1:2375
         run: |
           $ErrorActionPreference = "Stop"
           Remove-Item Env:DOCKER_AUTH_CONFIG -ErrorAction SilentlyContinue
@@ -269,7 +254,6 @@ jobs:
             }
             Remove-Item -LiteralPath $env:IMAGE_BASELINE_PATH -Force
           }
-          Remove-Item -LiteralPath $env:IMAGE_BASELINE_TEMP_PATH -Force -ErrorAction SilentlyContinue
           Remove-Item -LiteralPath $env:CONTROL_DOCKER_CONFIG -Recurse -Force -ErrorAction SilentlyContinue
           if (Test-Path -LiteralPath $env:RECEIPT_PATH) {
             throw "Windows receipt remains after cleanup"

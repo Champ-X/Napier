@@ -42,10 +42,12 @@ describe("Windows host product acceptance workflow", () => {
         WINDIR: "C:\\Windows",
         GITHUB_RUN_ID: "123",
         GITHUB_RUN_ATTEMPT: "1",
-        RUNNER_ENVIRONMENT: "self-hosted",
+        RUNNER_ENVIRONMENT: "github-hosted",
         RUNNER_OS: "Windows",
         RUNNER_ARCH: "X64",
         RUNNER_TEMP: root,
+        DOCKER_HOST: "tcp://127.0.0.1:2375",
+        NAPIER_CONTAINER_WINDOWS_WSL_MOUNTS: "1",
         GITHUB_TOKEN: "secret",
         NODE_AUTH_TOKEN: "secret",
         NPM_TOKEN: "secret",
@@ -56,7 +58,8 @@ describe("Windows host product acceptance workflow", () => {
 
     expect(environment).toEqual(
       expect.objectContaining({
-        DOCKER_HOST: "npipe:////./pipe/docker_engine",
+        DOCKER_HOST: "tcp://127.0.0.1:2375",
+        NAPIER_CONTAINER_WINDOWS_WSL_MOUNTS: "1",
         NPM_CONFIG_REGISTRY: "https://registry.npmjs.org/",
         NPM_CONFIG_AUDIT: "false",
         NPM_CONFIG_FUND: "false",
@@ -88,7 +91,7 @@ describe("Windows host product acceptance workflow", () => {
     process.env.RUNNER_TEMP = root;
     process.env.GITHUB_RUN_ID = "123";
     process.env.GITHUB_RUN_ATTEMPT = "1";
-    process.env.RUNNER_ENVIRONMENT = "self-hosted";
+    process.env.RUNNER_ENVIRONMENT = "github-hosted";
     process.env.RUNNER_OS = "Windows";
     process.env.RUNNER_ARCH = "X64";
     process.env.GITHUB_TOKEN = "secret";
@@ -106,7 +109,7 @@ describe("Windows host product acceptance workflow", () => {
         RUNNER_TEMP: root,
         GITHUB_RUN_ID: "123",
         GITHUB_RUN_ATTEMPT: "1",
-        RUNNER_ENVIRONMENT: "self-hosted",
+        RUNNER_ENVIRONMENT: "github-hosted",
         RUNNER_OS: "Windows",
         RUNNER_ARCH: "X64",
         GITHUB_TOKEN: "secret",
@@ -123,7 +126,7 @@ describe("Windows host product acceptance workflow", () => {
     }
   });
 
-  it("accepts the current manual, least-privilege, self-hosted gate", async () => {
+  it("accepts the current manual, least-privilege, hosted WSL2 gate", async () => {
     await expect(auditWindowsHostProductAcceptanceWorkflow()).resolves.toEqual({
       valid: true,
       errors: [],
@@ -131,7 +134,7 @@ describe("Windows host product acceptance workflow", () => {
     });
   });
 
-  it("rejects automatic triggers, hosted runners, permissions, and tags", async () => {
+  it("rejects automatic triggers, self-hosted runners, permissions, and WSL removal", async () => {
     for (const mutate of [
       (source) =>
         source.replace(
@@ -140,8 +143,8 @@ describe("Windows host product acceptance workflow", () => {
         ),
       (source) =>
         source.replace(
-          "    runs-on:\n      - self-hosted\n      - Windows\n      - X64\n      - napier-windows-docker",
           "    runs-on: windows-2025",
+          "    runs-on:\n      - self-hosted\n      - Windows\n      - X64\n      - napier-windows-docker",
         ),
       (source) =>
         source.replace(
@@ -150,8 +153,8 @@ describe("Windows host product acceptance workflow", () => {
         ),
       (source) =>
         source.replace(
-          "      - napier-windows-docker",
-          "      - generic-windows",
+          "          wsl.exe --install Ubuntu --no-launch",
+          "          Write-Host 'WSL disabled'",
         ),
     ]) {
       const root = await fixtureRoot(mutate);
@@ -216,7 +219,7 @@ describe("Windows host product acceptance workflow", () => {
     for (const mutateLive of [
       (source) =>
         source.replace(
-          'const DOCKER_ENDPOINT = "npipe:////./pipe/docker_engine"',
+          'const DOCKER_ENDPOINT = "tcp://127.0.0.1:2375"',
           'const DOCKER_ENDPOINT = "tcp://remote.example:2375"',
         ),
       (source) =>

@@ -69,12 +69,18 @@ describe("OCI image-bound command runtime", () => {
       client,
       "npipe:////./pipe/docker_engine",
     );
+    const loopback = await resolveContainerDaemonIdentity(
+      process.execPath,
+      client,
+      "tcp://127.0.0.1:2375",
+    );
 
     expect(unix).toEqual({
       location: "local",
       endpointSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
     });
     expect(pipe.endpointSha256).not.toBe(unix.endpointSha256);
+    expect(loopback.endpointSha256).not.toBe(unix.endpointSha256);
     expect(unix).not.toHaveProperty("endpoint");
     expect(client).not.toHaveBeenCalled();
     await expect(
@@ -88,7 +94,7 @@ describe("OCI image-bound command runtime", () => {
       resolveContainerDaemonIdentity(
         process.execPath,
         client,
-        "tcp://127.0.0.1:2375",
+        "tcp://0.0.0.0:2375",
       ),
     ).rejects.toThrow("local Docker daemon endpoint");
     await expect(

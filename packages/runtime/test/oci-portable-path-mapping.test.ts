@@ -6,6 +6,7 @@ import {
   resolveContainerUserIdentity,
 } from "../src/sandbox-container-runtime.js";
 import { buildOciContainerArgs } from "../src/sandbox-oci-launch-arguments.js";
+import { containerBindSourceMapper } from "../src/sandbox-container.js";
 import type { SandboxLaunchRequest } from "../src/sandbox-types.js";
 
 const REQUEST: SandboxLaunchRequest = {
@@ -82,6 +83,50 @@ describe("OCI portable non-POSIX path mapping", () => {
       "-p",
       "/workspace/packages/example/tsconfig.json",
     ]);
+  });
+
+  it("maps Windows bind sources only for an explicit WSL daemon", () => {
+    const user = resolveContainerUserIdentity(undefined, "win32");
+    const mapping = createOciContainerPathMapping(REQUEST, user, "win32");
+    const mapper = containerBindSourceMapper(
+      { NAPIER_CONTAINER_WINDOWS_WSL_MOUNTS: "1" },
+      "win32",
+    );
+    const args = buildOciContainerArgs(
+      REQUEST,
+      "C:\\scratch",
+      "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      `napier-${"b".repeat(32)}`,
+      user,
+      undefined,
+      "linux/amd64",
+      mapping,
+      "win32",
+      mapper,
+    );
+    const serialized = args.join("\0");
+
+    expect(serialized).toContain(
+      "--mount\0type=bind,source=/mnt/c/repo,target=/workspace,readonly",
+    );
+    expect(serialized).toContain(
+      "--mount\0type=bind,source=/mnt/c/repo/generated,target=/workspace/generated",
+    );
+    expect(serialized).toContain(
+      "--mount\0type=bind,source=/mnt/c/toolchain/node_modules,target=/opt/napier-host-runtime/0,readonly",
+    );
+    expect(serialized).toContain(
+      "--env-file\0/mnt/c/scratch/environment.list",
+    );
+    expect(() => mapper("\\\\server\\share\\secret")).toThrow(
+      "mount source is unsupported",
+    );
+    expect(() =>
+      containerBindSourceMapper(
+        { NAPIER_CONTAINER_WINDOWS_WSL_MOUNTS: "1" },
+        "linux",
+      ),
+    ).toThrow("requires Windows");
   });
 
   it("rejects portable write and Git paths outside approved mounts", () => {

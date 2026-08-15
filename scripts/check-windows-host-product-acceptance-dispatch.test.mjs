@@ -25,25 +25,12 @@ afterEach(async () => {
 });
 
 describe("Windows host acceptance dispatch", () => {
-  it.each([
-    ["missing", [], [], ["windows_runner_missing"]],
-    [
-      "offline",
-      [runner({ status: "offline" })],
-      [],
-      ["windows_runner_offline"],
-    ],
-    ["busy", [runner({ busy: true })], [], ["windows_runner_busy"]],
-    [
-      "active",
-      [runner()],
-      [workflowRun({ id: 90, status: "queued" })],
-      ["windows_acceptance_run_active"],
-    ],
-  ])(
-    "blocks without dispatch when runner capacity is %s",
-    async (_name, runners, runs, blockers) => {
-      const fixture = dispatchFixture({ runners, runs });
+  it(
+    "blocks without dispatch while one hosted acceptance run is active",
+    async () => {
+      const fixture = dispatchFixture({
+        runs: [workflowRun({ id: 90, status: "queued" })],
+      });
       const preview =
         await previewWindowsHostProductAcceptanceDispatch(fixture);
 
@@ -53,7 +40,7 @@ describe("Windows host acceptance dispatch", () => {
       expect(preview).toEqual(
         expect.objectContaining({
           status: "blocked",
-          blockers,
+          blockers: ["windows_acceptance_run_active"],
           sourceSha: SOURCE_SHA,
           scope: expect.objectContaining({
             dispatchAllowed: false,
@@ -78,7 +65,7 @@ describe("Windows host acceptance dispatch", () => {
   );
 
   it("dispatches once and resolves one exact new source-bound run", async () => {
-    const fixture = dispatchFixture({ runners: [runner()], runs: [] });
+    const fixture = dispatchFixture({ runs: [] });
     const preview = await previewWindowsHostProductAcceptanceDispatch(fixture);
     expect(preview.status).toBe("ready");
 
@@ -121,7 +108,7 @@ describe("Windows host acceptance dispatch", () => {
     ]);
     const blockedPreview = structuredClone(preview);
     blockedPreview.status = "blocked";
-    blockedPreview.blockers = ["windows_runner_busy"];
+    blockedPreview.blockers = ["windows_acceptance_run_active"];
     blockedPreview.scope.dispatchAllowed = false;
     expect(
       validateWindowsHostProductAcceptanceDispatchResult(
@@ -132,9 +119,9 @@ describe("Windows host acceptance dispatch", () => {
   });
 
   it("rejects stale/wrong-main/duplicates and reports indeterminate dispatches", async () => {
-    const stale = dispatchFixture({ runners: [runner()], runs: [] });
+    const stale = dispatchFixture({ runs: [] });
     const preview = await previewWindowsHostProductAcceptanceDispatch(stale);
-    stale.runners[0].busy = true;
+    stale.runs.push(workflowRun({ id: 90, status: "queued" }));
     await expect(
       applyWindowsHostProductAcceptanceDispatch({
         ...stale,
@@ -143,7 +130,6 @@ describe("Windows host acceptance dispatch", () => {
     ).rejects.toThrow("preview is stale");
 
     const wrongMain = dispatchFixture({
-      runners: [runner()],
       runs: [],
       mainSha: "b".repeat(40),
     });
@@ -151,16 +137,17 @@ describe("Windows host acceptance dispatch", () => {
       previewWindowsHostProductAcceptanceDispatch(wrongMain),
     ).rejects.toThrow("not exact current main");
 
-    const duplicateRunners = dispatchFixture({
-      runners: [runner({ id: 1 }), runner({ id: 1 })],
-      runs: [],
+    const duplicateRuns = dispatchFixture({
+      runs: [
+        workflowRun({ id: 90, status: "queued" }),
+        workflowRun({ id: 90, status: "queued" }),
+      ],
     });
     await expect(
-      previewWindowsHostProductAcceptanceDispatch(duplicateRunners),
+      previewWindowsHostProductAcceptanceDispatch(duplicateRuns),
     ).rejects.toThrow();
 
     const invalidDispatch = dispatchFixture({
-      runners: [runner()],
       runs: [],
       dispatchedRun: workflowRun({
         id: 101,
@@ -188,7 +175,6 @@ describe("Windows host acceptance dispatch", () => {
     );
 
     const missingUrl = dispatchFixture({
-      runners: [runner()],
       runs: [],
       dispatchStdout: "",
     });
@@ -220,7 +206,7 @@ describe("Windows host acceptance dispatch", () => {
         `#!/bin/sh
 case "$*" in
   *"/commits/main"*) printf '{"sha":"${SOURCE_SHA}"}' ;;
-  *"/actions/runners"*) printf '{"total_count":0,"runners":[]}' ;;
+  *"status=queued"*) printf '{"total_count":1,"workflow_runs":[${JSON.stringify(workflowRun({ id: 90, status: "queued" }))}]}' ;;
   *"/actions/workflows/"*) printf '{"total_count":0,"workflow_runs":[]}' ;;
   *) printf '%s\n' '${secret}' >&2; exit 1 ;;
 esac
@@ -261,14 +247,13 @@ printf '%s\n' '${SOURCE_SHA}'
     expect(JSON.parse(result.stdout)).toEqual(
       expect.objectContaining({
         status: "blocked",
-        blockers: ["windows_runner_missing"],
+        blockers: ["windows_acceptance_run_active"],
       }),
     );
   });
 
   it("returns indeterminate after a dispatch request with unknown outcome", async () => {
     const commandFailure = dispatchFixture({
-      runners: [runner()],
       runs: [],
       dispatchError: true,
     });
@@ -292,7 +277,6 @@ printf '%s\n' '${SOURCE_SHA}'
     );
 
     const lookupFailure = dispatchFixture({
-      runners: [runner()],
       runs: [],
       lookupError: true,
     });
@@ -324,7 +308,6 @@ printf '%s\n' '${SOURCE_SHA}'
         `#!/bin/sh
 case "$*" in
   *"/commits/main"*) printf '{"sha":"${SOURCE_SHA}"}' ;;
-  *"/actions/runners"*) printf '{"total_count":1,"runners":[{"id":7,"status":"online","busy":false,"labels":[{"name":"self-hosted"},{"name":"Windows"},{"name":"X64"},{"name":"napier-windows-docker"}]}]}' ;;
   *"/actions/workflows/"*) printf '{"total_count":0,"workflow_runs":[]}' ;;
   "workflow run"*) printf '%s\n' 'https://github.com/Champ-X/Napier/actions/runs/101' ;;
   *"/actions/runs/101"*) printf '{"id":101,"run_attempt":1,"event":"workflow_dispatch","status":"queued","head_branch":"main","head_sha":"${"b".repeat(40)}","path":".github/workflows/windows-host-product-acceptance.yml","display_title":"Windows Docker host acceptance @ ${SOURCE_SHA}","repository":{"full_name":"Champ-X/Napier"},"head_repository":{"full_name":"Champ-X/Napier"}}' ;;
@@ -391,7 +374,6 @@ async function runDispatchCli(root, args) {
 }
 
 function dispatchFixture({
-  runners,
   runs,
   mainSha = SOURCE_SHA,
   dispatchedRun = workflowRun({ id: 101, status: "queued" }),
@@ -404,7 +386,7 @@ function dispatchFixture({
   const fixture = {
     repoRoot: process.cwd(),
     sourceSha: SOURCE_SHA,
-    runners,
+    runs,
     commands,
     runGit: async () => ({ stdout: `${SOURCE_SHA}\n`, stderr: "" }),
     runGh: async (args) => {
@@ -417,15 +399,6 @@ function dispatchFixture({
       }
       if (endpoint.includes("/commits/main")) {
         return { stdout: JSON.stringify({ sha: mainSha }), stderr: "" };
-      }
-      if (endpoint.includes("/actions/runners")) {
-        return {
-          stdout: JSON.stringify({
-            total_count: runners.length,
-            runners,
-          }),
-          stderr: "",
-        };
       }
       if (endpoint.includes("/actions/workflows/")) {
         const requestedStatus = WINDOWS_ACCEPTANCE_ACTIVE_RUN_STATUSES.find(
@@ -449,20 +422,6 @@ function dispatchFixture({
     },
   };
   return fixture;
-}
-
-function runner({ id = 7, status = "online", busy = false } = {}) {
-  return {
-    id,
-    status,
-    busy,
-    labels: [
-      { name: "self-hosted" },
-      { name: "Windows" },
-      { name: "X64" },
-      { name: "napier-windows-docker" },
-    ],
-  };
 }
 
 function workflowRun({ id, status, headSha = SOURCE_SHA }) {

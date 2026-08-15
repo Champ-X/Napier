@@ -15,7 +15,6 @@ import {
 import {
   WINDOWS_ACCEPTANCE_ACTIVE_RUN_STATUSES,
   WINDOWS_ACCEPTANCE_RUNNER_LABELS as REQUIRED_LABELS,
-  validatedWindowsRunnerState,
   validatedWindowsRunState,
   windowsActiveRunPage,
 } from "./windows-host-product-acceptance-dispatch-state.mjs";
@@ -119,13 +118,8 @@ async function inspectDispatchState(options) {
   }
   const runGh = options.runGh ?? runGithubCli;
   const runGit = options.runGit ?? runGitCli;
-  const [main, runners, runs, localHead] = await Promise.all([
+  const [main, runs, localHead] = await Promise.all([
     githubJson(runGh, `repos/${REPOSITORY}/commits/main`, repoRoot),
-    githubJson(
-      runGh,
-      `repos/${REPOSITORY}/actions/runners?per_page=100`,
-      repoRoot,
-    ),
     workflowRuns(runGh, repoRoot),
     runGit(["rev-parse", "HEAD"], { cwd: repoRoot }),
   ]);
@@ -134,19 +128,11 @@ async function inspectDispatchState(options) {
       "Windows acceptance dispatch source is not exact current main",
     );
   }
-  const runnerState = validatedWindowsRunnerState(runners);
   const runState = validatedWindowsRunState(runs, {
     repository: REPOSITORY,
     workflow: WINDOWS_ACCEPTANCE_WORKFLOW,
   });
   const blockers = [];
-  if (runnerState.matching.length === 0) {
-    blockers.push("windows_runner_missing");
-  } else if (runnerState.online.length === 0) {
-    blockers.push("windows_runner_offline");
-  } else if (runnerState.idle.length === 0) {
-    blockers.push("windows_runner_busy");
-  }
   if (runState.active.length > 0) {
     blockers.push("windows_acceptance_run_active");
   }
@@ -157,10 +143,12 @@ async function inspectDispatchState(options) {
     workflow: WINDOWS_ACCEPTANCE_WORKFLOW,
     sourceSha,
     requiredLabels: REQUIRED_LABELS,
-    matchingRunnerCount: runnerState.matching.length,
-    onlineRunnerCount: runnerState.online.length,
-    idleRunnerCount: runnerState.idle.length,
-    runnerStateSha256: sha256(canonicalJson(runnerState.matching)),
+    matchingRunnerCount: 1,
+    onlineRunnerCount: 1,
+    idleRunnerCount: runState.active.length === 0 ? 1 : 0,
+    runnerStateSha256: sha256(
+      canonicalJson([{ image: REQUIRED_LABELS[0], status: "hosted" }]),
+    ),
     activeRunCount: runState.active.length,
     activeRunStateSha256: sha256(canonicalJson(runState.active)),
     status: blockers.length === 0 ? "ready" : "blocked",
@@ -385,24 +373,12 @@ async function workflowRuns(runGh, cwd) {
 }
 
 function validPreviewState(value) {
-  const allowedBlockers = [
-    "windows_runner_missing",
-    "windows_runner_offline",
-    "windows_runner_busy",
-    "windows_acceptance_run_active",
-  ];
+  const allowedBlockers = ["windows_acceptance_run_active"];
   const blockersValid =
     Array.isArray(value.blockers) &&
     value.blockers.every((blocker) => allowedBlockers.includes(blocker)) &&
     new Set(value.blockers).size === value.blockers.length;
   const expectedBlockers = [];
-  if (value.matchingRunnerCount === 0) {
-    expectedBlockers.push("windows_runner_missing");
-  } else if (value.onlineRunnerCount === 0) {
-    expectedBlockers.push("windows_runner_offline");
-  } else if (value.idleRunnerCount === 0) {
-    expectedBlockers.push("windows_runner_busy");
-  }
   if (value.activeRunCount > 0) {
     expectedBlockers.push("windows_acceptance_run_active");
   }
@@ -411,6 +387,9 @@ function validPreviewState(value) {
     blockersValid &&
     canonicalJson(value.blockers) === canonicalJson(expectedBlockers) &&
     value.status === (ready ? "ready" : "blocked") &&
+    value.matchingRunnerCount === 1 &&
+    value.onlineRunnerCount === 1 &&
+    value.idleRunnerCount === (value.activeRunCount === 0 ? 1 : 0) &&
     canonicalJson(value.scope) ===
       canonicalJson({
         currentMainVerified: true,

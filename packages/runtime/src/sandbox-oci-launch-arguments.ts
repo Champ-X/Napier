@@ -34,6 +34,7 @@ export function buildOciContainerArgs(
     user,
   ),
   hostPlatform: NodeJS.Platform = process.platform,
+  bindSourceMapper: (source: string) => string = (source) => source,
 ): string[] {
   const hostPath = hostPlatform === "win32" ? path.win32 : path.posix;
   validateLaunchRequest(request, hostPlatform);
@@ -82,7 +83,7 @@ export function buildOciContainerArgs(
     "--env",
     "TMPDIR=/tmp",
     "--env-file",
-    containerEnvironmentFile(sandboxHome, hostPlatform),
+    bindSourceMapper(containerEnvironmentFile(sandboxHome, hostPlatform)),
   ];
   if (workspaceMounted) {
     args.push(
@@ -92,6 +93,7 @@ export function buildOciContainerArgs(
         pathMapping.workspaceTarget,
         !capabilities.has("workspace.write") || writePaths.length > 0,
         hostPlatform,
+        bindSourceMapper,
       ),
     );
     for (const [index, writePath] of writePaths.entries()) {
@@ -102,6 +104,7 @@ export function buildOciContainerArgs(
           pathMapping.writeTargets[index]!,
           false,
           hostPlatform,
+          bindSourceMapper,
         ),
       );
     }
@@ -116,6 +119,7 @@ export function buildOciContainerArgs(
         pathMapping.runtimeTargets[index]!,
         true,
         hostPlatform,
+        bindSourceMapper,
       ),
     );
   }
@@ -152,11 +156,16 @@ function bindMount(
   target: string,
   readonly: boolean,
   platform: NodeJS.Platform,
+  sourceMapper: (source: string) => string,
 ): string {
   const hostPath = platform === "win32" ? path.win32 : path.posix;
+  const resolvedSource = sourceMapper(hostPath.resolve(source));
+  if (!path.posix.isAbsolute(resolvedSource) && !hostPath.isAbsolute(resolvedSource)) {
+    throw new Error("OCI bind mount source mapping is invalid");
+  }
   return [
     "type=bind",
-    `source=${hostPath.resolve(source)}`,
+    `source=${resolvedSource}`,
     `target=${path.posix.resolve(target)}`,
     readonly ? "readonly" : "",
   ]

@@ -21,6 +21,7 @@ import { resolveContainerNodeDebuggerRuntime } from "./sandbox-container-node-de
 import { createOciContainerPathMapping } from "./sandbox-container-path-mapping.js";
 import { resolveContainerVerificationRuntime } from "./sandbox-container-verification-runtime.js";
 import {
+  containerBindSourceMapper,
   containerScratchBaseDir,
   containerClientEnvironment,
   resolveContainerLaunchExecutable,
@@ -60,6 +61,7 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
   private readonly userIds: ContainerUserIds | undefined;
   private readonly daemonEndpoint: string | undefined;
   private readonly createLocalServiceProjection: typeof createHostProjection;
+  private readonly bindSourceMapper: (source: string) => string;
   private readonly expectedIdentity:
     | {
         clientExecutableSha256: string;
@@ -108,6 +110,7 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
     this.daemonEndpoint = options.daemonEndpoint;
     this.createLocalServiceProjection =
       options.createLocalServiceProjection ?? createHostProjection;
+    this.bindSourceMapper = containerBindSourceMapper();
     this.expectedIdentity = options.expectedIdentity;
     this.setupIdentitySha256 = options.expectedIdentity?.identitySha256;
   }
@@ -221,6 +224,8 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
         networkName,
         identity.imagePlatform,
         pathMapping,
+        process.platform,
+        this.bindSourceMapper,
       );
       const target = {
         command: identity.clientExecutable,

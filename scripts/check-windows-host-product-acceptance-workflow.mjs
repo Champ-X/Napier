@@ -13,12 +13,7 @@ const REQUIRED_ACTIONS = new Map([
   ["actions/setup-node", "249970729cb0ef3589644e2896645e5dc5ba9c38"],
   ["actions/upload-artifact", "ea165f8d65b6e75b540449e92b4886f43607fa02"],
 ]);
-const RUNNER_LABELS = [
-  "self-hosted",
-  "Windows",
-  "X64",
-  "napier-windows-docker",
-];
+const RUNNER_IMAGE = "windows-2025";
 
 export async function auditWindowsHostProductAcceptanceWorkflow(options = {}) {
   const repoRoot = path.resolve(options.repoRoot ?? defaultRepoRoot);
@@ -99,8 +94,7 @@ function validateJob(jobs, errors) {
     accept.if !==
       "github.repository == 'Champ-X/Napier' && github.ref == 'refs/heads/main'" ||
     accept["timeout-minutes"] !== 60 ||
-    !Array.isArray(accept["runs-on"]) ||
-    accept["runs-on"].join("\n") !== RUNNER_LABELS.join("\n") ||
+    accept["runs-on"] !== RUNNER_IMAGE ||
     accept.defaults?.run?.shell !== "pwsh" ||
     !Array.isArray(accept.steps)
   ) {
@@ -141,13 +135,22 @@ function validateJob(jobs, errors) {
   if (byName.get("Remove acceptance output")?.if !== "always()") {
     errors.push("windows_acceptance_workflow_cleanup_invalid");
   }
-  const baselineStep = byName.get("Recover the dedicated runner baseline");
+  const dockerStep = byName.get("Start isolated WSL2 Linux Docker");
+  const baselineStep = byName.get("Capture hosted runner baseline");
   const cleanupStep = byName.get("Remove acceptance output");
   const baseline = baselineStep?.run;
   const cleanup = cleanupStep?.run;
+  if (
+    typeof dockerStep?.run !== "string" ||
+    !dockerStep.run.includes("wsl.exe --install Ubuntu --no-launch") ||
+    !dockerStep.run.includes("apt-get install -y docker.io") ||
+    !dockerStep.run.includes("tcp://127.0.0.1:2375")
+  ) {
+    errors.push("windows_acceptance_workflow_wsl_docker_invalid");
+  }
   for (const step of [baselineStep, cleanupStep]) {
     if (
-      step?.env?.DOCKER_HOST !== "npipe:////./pipe/docker_engine" ||
+      step?.env?.DOCKER_HOST !== "tcp://127.0.0.1:2375" ||
       step?.env?.CONTROL_DOCKER_CONFIG !==
         "${{ runner.temp }}\\napier-windows-control-docker"
     ) {
@@ -191,16 +194,17 @@ function validateCommandClosure(source, errors) {
   const required = [
     "workflow_dispatch:",
     "github.ref == 'refs/heads/main'",
-    "- self-hosted",
-    "- Windows",
-    "- X64",
-    "- napier-windows-docker",
+    "runs-on: windows-2025",
+    "Start isolated WSL2 Linux Docker",
+    "wsl.exe --install Ubuntu --no-launch",
+    "apt-get install -y docker.io",
+    "tcp://127.0.0.1:2375",
     "shell: pwsh",
     "node-version: 24.16.0",
     "persist-credentials: false",
     "git.exe rev-parse refs/remotes/origin/main",
     "git.exe status --porcelain=v1 --untracked-files=all",
-    "Recover the dedicated runner baseline",
+    "Capture hosted runner baseline",
     'name=napier-"',
     'name=napier-network-"',
     "reference=napier-windows-acceptance:*",
@@ -227,25 +231,21 @@ function validateCommandClosure(source, errors) {
     "Napier official image tag remains after cleanup",
     "Windows receipt remains after cleanup",
     "Checkout remains dirty after cleanup",
-    "IMAGE_BASELINE_PATH: ${{ runner.tool_cache }}",
-    "IMAGE_BASELINE_TEMP_PATH: ${{ runner.tool_cache }}",
+    "IMAGE_BASELINE_PATH: ${{ runner.temp }}",
     "CONTROL_DOCKER_CONFIG: ${{ runner.temp }}",
-    "DOCKER_HOST: npipe:////./pipe/docker_engine",
+    "DOCKER_HOST: tcp://127.0.0.1:2375",
     "Remove-Item Env:DOCKER_AUTH_CONFIG",
     'Set-Content -LiteralPath "$env:CONTROL_DOCKER_CONFIG\\config.json"',
     "-Value '{\"auths\":{}}'",
     "$env:DOCKER_CONFIG = $env:CONTROL_DOCKER_CONFIG",
     'docker.exe image ls --all --no-trunc --format "{{.ID}}"',
     "[System.IO.File]::WriteAllLines(",
-    "[System.IO.File]::Replace(",
-    "Move-Item -LiteralPath $env:IMAGE_BASELINE_TEMP_PATH",
-    "Previous Docker image baseline is invalid",
-    "Previous Docker image baseline could not be recovered",
     "Docker image baseline is invalid during cleanup",
     "Where-Object { $_ -notin $baseline }",
     "if (Compare-Object $expected $observed) {",
     "Docker image baseline was not restored",
     "Remove-Item -LiteralPath $env:IMAGE_BASELINE_PATH -Force",
+    'NAPIER_CONTAINER_WINDOWS_WSL_MOUNTS: "1"',
   ];
   for (const fragment of required) {
     if (!source.includes(fragment)) {
@@ -257,7 +257,8 @@ function validateCommandClosure(source, errors) {
     "push:",
     "schedule:",
     "ubuntu-",
-    "windows-202",
+    "self-hosted",
+    "napier-windows-docker",
     "packages: write",
     "id-token: write",
     "secrets.",
@@ -274,13 +275,14 @@ function validateCommandClosure(source, errors) {
 
 function validateLiveClosure(source, errors) {
   const required = [
-    'const DOCKER_ENDPOINT = "npipe:////./pipe/docker_engine"',
+    'const DOCKER_ENDPOINT = "tcp://127.0.0.1:2375"',
     'process.platform !== "win32"',
     'process.arch !== "x64"',
     'requiredEnvironment("RUNNER_ENVIRONMENT")',
     'requiredEnvironment("RUNNER_OS")',
     'requiredEnvironment("RUNNER_ARCH")',
-    'identity.runnerEnvironment !== "self-hosted"',
+    'requiredEnvironment("DOCKER_HOST")',
+    'identity.runnerEnvironment !== "github-hosted"',
     'identity.runnerOs !== "Windows"',
     'identity.runnerArch !== "X64"',
     'docker.os !== "linux"',
@@ -309,7 +311,6 @@ function validateLiveClosure(source, errors) {
   }
   const forbidden = [
     "windowsHostProductAcceptance: false",
-    "DOCKER_HOST",
     "--no-sandbox",
     "rawCommandOutput: true",
   ];
@@ -329,7 +330,7 @@ function validateSupportClosure(source, errors) {
     "runWindowsAcceptanceCli",
     'flag: "wx"',
     "receipt must be written outside the checkout",
-    '"npipe:////./pipe/docker_engine"',
+    'environment.DOCKER_HOST ?? "npipe:////./pipe/docker_engine"',
     '"https://registry.npmjs.org/"',
     `writeFile(path.join(dockerConfig, "config.json"), '{"auths":{}}\\n'`,
     "NPM_CONFIG_USERCONFIG:",

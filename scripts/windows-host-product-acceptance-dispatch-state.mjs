@@ -1,8 +1,5 @@
 export const WINDOWS_ACCEPTANCE_RUNNER_LABELS = [
-  "self-hosted",
-  "Windows",
-  "X64",
-  "napier-windows-docker",
+  "windows-2025",
 ];
 export const WINDOWS_ACCEPTANCE_ACTIVE_RUN_STATUSES = [
   "requested",

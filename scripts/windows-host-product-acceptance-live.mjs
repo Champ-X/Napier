@@ -39,7 +39,7 @@ import {
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
 const MAX_DOCKER_OUTPUT_BYTES = 4 * 1024 * 1024;
-const DOCKER_ENDPOINT = "npipe:////./pipe/docker_engine";
+const DOCKER_ENDPOINT = "tcp://127.0.0.1:2375";
 
 export async function runWindowsHostProductAcceptance(input) {
   const receiptInput = await withWindowsAcceptanceEnvironment(() =>
@@ -228,12 +228,7 @@ async function inspectCleanSource(repoRoot, sourceSha) {
 }
 
 function inspectWindowsHost(npmCli) {
-  const endpoint = windowsCommandOutput("docker.exe", [
-    "context",
-    "inspect",
-    "--format",
-    "{{.Endpoints.docker.Host}}",
-  ]).toLowerCase();
+  const endpoint = requiredEnvironment("DOCKER_HOST").toLowerCase();
   const docker = JSON.parse(
     windowsCommandOutput("docker.exe", [
       "version",
@@ -250,14 +245,14 @@ function inspectWindowsHost(npmCli) {
     runnerArch: requiredEnvironment("RUNNER_ARCH"),
     nodeVersion: process.version,
     npmVersion: windowsCommandOutput(process.execPath, [npmCli, "--version"]),
-    dockerEndpointKind: "npipe-local-docker-engine",
+    dockerEndpointKind: "wsl2-loopback-linux-docker-engine",
     dockerEndpointSha256: sha256(endpoint),
     dockerServerOs: docker.os,
     dockerServerArch: docker.arch,
     dockerServerVersion: docker.version,
   };
   if (
-    identity.runnerEnvironment !== "self-hosted" ||
+    identity.runnerEnvironment !== "github-hosted" ||
     identity.runnerOs !== "Windows" ||
     identity.runnerArch !== "X64" ||
     identity.nodeVersion !== WINDOWS_ACCEPTANCE_NODE_VERSION ||

@@ -988,15 +988,16 @@ release signing identity/transparency, and external attestation remain open.
 
 Windows host acceptance has a separate manual control plane,
 `.github/workflows/windows-host-product-acceptance.yml`. It has
-`contents:read` only and targets the exact self-hosted label conjunction
-`[self-hosted, Windows, X64, napier-windows-docker]`. Checkout and artifact
-upload Actions are full-SHA pinned. Dispatch accepts one exact 40-character
-source SHA; the job requires that SHA to equal `HEAD`, `GITHUB_SHA`, and the
-fetched `origin/main` tip before any install or build.
+`contents:read` only and targets GitHub's `windows-2025` image. Checkout and
+artifact upload Actions are full-SHA pinned. Dispatch accepts one exact
+40-character source SHA; the job requires that SHA to equal `HEAD`,
+`GITHUB_SHA`, and the fetched `origin/main` tip before any install or build.
 
 The host harness accepts only Node 24.16.0 on `win32/x64`, GitHub's
-`runner.environment=self-hosted`, and Docker Desktop's local
-`npipe:////./pipe/docker_engine` endpoint backed by a `linux/amd64` server.
+`runner.environment=github-hosted`, and an isolated WSL2 Linux Docker daemon
+exposed only on `tcp://127.0.0.1:2375`. Windows bind sources are explicitly
+mapped to their `/mnt/<drive>/...` WSL paths only for this opt-in daemon; the
+normal Docker Desktop/npipe path is unchanged.
 Runtime PATH discovery expands the fixed Docker candidate to `docker.exe` on
 Windows and does not admit `.cmd` or `.bat` shims. The harness resolves the
 regular setup-node `node_modules/npm/bin/npm-cli.js` asset and executes it with
@@ -1004,8 +1005,8 @@ the pinned `node.exe`, so install/build do not depend on shell-specific `.cmd`
 resolution.
 The lifecycle replaces ambient process state with a fixed system-variable
 allowlist, an empty npm user/global config bound to the public registry, an
-empty Docker auth config, and the exact local npipe endpoint. GitHub/npm/model/
-Docker credentials from the self-hosted runner are absent rather than merely
+empty Docker auth config, and the exact loopback endpoint. GitHub/npm/model/
+Docker credentials from the hosted runner are absent rather than merely
 redacted from evidence. Preflight and `always()` cleanup use a separate empty
 Docker config. Isolated home/cache/config/temp roots are removed in `finally`
 before the receipt can claim `temporaryEnvironmentRemoved=true`.
@@ -1028,24 +1029,21 @@ single JSON file.
 
 Normal completion restores the prior image tag, checked-in SBOM/provenance,
 container/network/image baseline, checkout, dependency tree, and build-output
-absence. A dedicated-runner preflight and `always()` cleanup provide the
+absence. A hosted-runner preflight and `always()` cleanup provide the
 cancellation/restart path: they remove Napier containers, networks, acceptance
 images, the official local tag, scratch/data roots, receipt, dependencies, and
 build output; hard-reset the exact checkout; and fail if residue remains. An
-atomically replaced image-ID journal lives under the persistent self-hosted
-runner tool cache. A later dispatch first removes containers/networks, then
-uses that journal to delete image IDs added by a hard-killed predecessor and
-requires exact baseline equality before recording its own baseline. Malformed
-or unrecoverable journals fail closed. This runner is therefore intentionally
-dedicated rather than a shared workstation.
+image-ID baseline lives only under the current hosted job's temporary root.
+Cleanup removes every image added after that baseline and requires exact
+baseline equality before the ephemeral runner is released.
 
 Static verification covers the manual trigger, least privilege, exact runner
-labels, pinned Actions, source-main binding, identity variables, receipt
-upload, both cleanup paths, Windows/npipe/Linux-daemon checks, ConPTY package,
+image, pinned Actions, source-main binding, identity variables, receipt
+upload, both cleanup paths, Windows/WSL2/Linux-daemon checks, ConPTY package,
 Stage 13 reuse, and evidence/resource restoration. This proves a fail-closed
-control plane only. Until a matching runner executes it and the uploaded
-receipt verifies, `windowsHostProductAcceptance=true` is not an accepted
-repository fact and no retained Windows receipt exists.
+control plane only. Until the hosted runner executes it and the uploaded receipt
+verifies, `windowsHostProductAcceptance=true` is not an accepted repository
+fact and no retained Windows receipt exists.
 
 The external publication control plane is a manual GitHub Actions workflow,
 `.github/workflows/publish-sandbox.yml`. It is `workflow_dispatch` only, binds
@@ -9549,8 +9547,8 @@ external publication evidence directory
   -> source SHA + workflow run identity
 
 Windows host receipt
-  -> exact Windows x64 self-hosted identity
-  -> local Docker Desktop Linux daemon
+  -> exact Windows x64 github-hosted identity
+  -> isolated WSL2 Linux Docker daemon
   -> ConPTY + Stage 13 product lifecycle
   -> resource/checkout restoration
   -> source SHA + workflow run identity

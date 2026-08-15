@@ -7,6 +7,8 @@ import path from "node:path";
 export const CONTAINER_IMAGE_ENV = "NAPIER_CONTAINER_SANDBOX_IMAGE";
 const CONTAINER_EXECUTABLE_CANDIDATES = ["docker"] as const;
 const CONTAINER_SCRATCH_DIR_ENV = "NAPIER_CONTAINER_SANDBOX_SCRATCH_DIR";
+const CONTAINER_WINDOWS_WSL_MOUNTS_ENV =
+  "NAPIER_CONTAINER_WINDOWS_WSL_MOUNTS";
 const CONTAINER_PROBE_TIMEOUT_MS = 3_000;
 const MAX_CONTAINER_ENVIRONMENT_ENTRIES = 128;
 const MAX_CONTAINER_ENVIRONMENT_BYTES = 64 * 1024;
@@ -168,6 +170,30 @@ export async function containerScratchBaseDir(): Promise<string> {
     return configured;
   }
   return tmpdir();
+}
+
+export function containerBindSourceMapper(
+  environment: NodeJS.ProcessEnv = process.env,
+  platform: NodeJS.Platform = process.platform,
+): (source: string) => string {
+  if (environment[CONTAINER_WINDOWS_WSL_MOUNTS_ENV]?.trim() !== "1") {
+    return (source) => source;
+  }
+  if (platform !== "win32") {
+    throw new Error("Windows WSL container mount mapping requires Windows");
+  }
+  return (source) => {
+    const resolved = path.win32.resolve(source);
+    const match = /^([A-Za-z]):\\(.*)$/u.exec(resolved);
+    if (!match) {
+      throw new Error("Windows WSL container mount source is unsupported");
+    }
+    return path.posix.join(
+      "/mnt",
+      match[1]!.toLowerCase(),
+      ...match[2]!.split("\\").filter(Boolean),
+    );
+  };
 }
 
 /**

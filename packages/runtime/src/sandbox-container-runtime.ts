@@ -212,8 +212,11 @@ function isLocalContainerEndpoint(endpoint: string): boolean {
     return endpoint.slice("unix://".length).startsWith("/");
   }
   const lower = endpoint.toLowerCase();
+  const loopback = /^tcp:\/\/127\.0\.0\.1:([1-9][0-9]{0,4})$/u.exec(lower);
   return (
-    lower.startsWith("npipe:////./pipe/") || /^fd:\/\/(?:[0-9]+)?$/u.test(lower)
+    lower.startsWith("npipe:////./pipe/") ||
+    /^fd:\/\/(?:[0-9]+)?$/u.test(lower) ||
+    (loopback !== null && Number(loopback[1]) <= 65_535)
   );
 }
 
