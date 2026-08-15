@@ -1,7 +1,7 @@
 {
   "kind": "napier.s1-shell-sandbox-readiness-stage22",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-13T15:03:04.082Z",
+  "generatedAt": "2026-08-15T13:12:48.456Z",
   "implementation": {
     "modelSha256": "5adf9c20cd914638326e744b7a90ab9d9e956240fa24adb3b34994401d46691d",
     "checkerSha256": "174fb44f4e628224815d34d92e06407f8aa6831d89dd8d7ac8cefd6c65c0d065",
@@ -24,12 +24,12 @@
     "releaseDispatchVisibilitySha256": "e11d566944863d17e9a559437ccdbdaca222ebe251d2f763d7596ce7271c8d2d",
     "releaseDispatchCheckSha256": "11230d45dad1431f440970c23d8b65032722104c88d506c2471bd0429248535a",
     "githubDispatchIoSha256": "b779afffdab41065203ff1d98993b21bca3df7b46b67227eeceb41b45b7baac7",
-    "windowsDispatchModelSha256": "182d33c37ea5facfd18404a105aa60e8a3b222db57fcb9b7458cace12e79f921",
-    "windowsDispatchStateSha256": "1973b1a70e19812d82036f3872b483bf5e9093bd9c28b805efb029510259b4e5",
+    "windowsDispatchModelSha256": "dee7caed12dfe00d5f2ae34290cce3e70ab29bed7f9f54b85ba613b65d9cc9bb",
+    "windowsDispatchStateSha256": "e6f6846606bf1b1409518613f3419d91bbd2945467aeb74fbee76d60bb962ecc",
     "windowsDispatchIoSha256": "7ecabfb003a3e0a3a6b6051ce09576086177296639b0c9b37a958bb440597846",
     "windowsDispatchCheckSha256": "cf4aa9c9ee1d5b5c234f91c0f34098b4f0fd6c524e7dc252367f37835d15a6c7",
     "windowsCheckerSha256": "78c5900806d27bb2622c31ba55669e755f385d1ee8bc139bbad76fa4021d3d44",
-    "windowsModelSha256": "580bf72b7d35dc3e3dfbb927310dab2004efd75211fedea7b03a09f1f88332a0"
+    "windowsModelSha256": "4fac0cd0e13fe10e9738a17a8619be96ecbf606d7fe202acc2c52293269c8a1a"
   },
   "requirements": [
     {
@@ -51,7 +51,7 @@
         {
           "kind": "sandbox-multi-architecture-stage14",
           "path": "docs/artifacts/sandbox-multi-architecture-stage14.json",
-          "sha256": "f530efee76ddc7d0b056f59da9e080bbb8fe39434fd54668f80fa6d70e465f29",
+          "sha256": "52db6c96c8c2a26ed8f0dfc2c2666835dce5e93183171a007e2d8b1860b31da9",
           "verifierSha256": "e65d26760740fba26a5c94ef9549a3f5307a73d6f3289a1c03194437290da9bc"
         },
         {
@@ -61,7 +61,7 @@
           "verifierSha256": "7b11e003c4666979f6567408c02d97a65a269806deae82d0bb3450a042b29408"
         }
       ],
-      "evidenceSetSha256": "fb4c7f984dc9ba418658332cb124945e1a641f3ac83e8d90501deeca00e46f39"
+      "evidenceSetSha256": "22b820c242614ca7726102993537c341df0b49ca611c7050297891348c5d399b"
     },
     {
       "id": "setup_doctor_lifecycle",
@@ -70,7 +70,7 @@
         {
           "kind": "sandbox-product-acceptance-stage13",
           "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-          "sha256": "8f89ee909a2b17057d6d700ab977dabb38cb2ca3e0a8b22cedc6747ced083230",
+          "sha256": "a8f61e89c3dd06a99f866729dbb39f4915a31db6cc5de0646573025ec9f17e8c",
           "verifierSha256": "0ab91832a93c9a7bbddc676d8d516c9fa5923f1666a5742b59a1da3d29bc892e"
         },
         {
@@ -86,7 +86,7 @@
           "verifierSha256": "e1272cfa34b7bc00913198faf222007b9403b3ce799d9cfd918b68920bcab386"
         }
       ],
-      "evidenceSetSha256": "49d4fa092544dc444fbd35e8eb45cbe0df8e8ce8d19e84d23b133cd7f5aac871"
+      "evidenceSetSha256": "f35cb8be67973ade96feb05a5c8524d0a332fa5eb5239aa9851c3d557f7686c6"
     },
     {
       "id": "daemon_execution_recovery",
@@ -95,19 +95,19 @@
         {
           "kind": "sandbox-product-acceptance-stage13",
           "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-          "sha256": "8f89ee909a2b17057d6d700ab977dabb38cb2ca3e0a8b22cedc6747ced083230",
+          "sha256": "a8f61e89c3dd06a99f866729dbb39f4915a31db6cc5de0646573025ec9f17e8c",
           "verifierSha256": "0ab91832a93c9a7bbddc676d8d516c9fa5923f1666a5742b59a1da3d29bc892e"
         },
         {
           "kind": "oci-crash-recovery-stage11",
           "path": "docs/artifacts/oci-crash-recovery-stage11.json",
-          "sha256": "e986bd29ca96433f5e3388bf4bcf17fc4eae6c0ce4195d625dd1e3858457d29a",
+          "sha256": "4636c4aab0662ed531acc9d9c5c8e81d6063d5a834ec7f50a566f0d2f4e6cf53",
           "verifierSha256": "d733b13f7da23d1397d236cdb55ffcca108b7a696e5b89d94f2f94a1fc503946"
         },
         {
           "kind": "sandbox-portable-process-stage15",
           "path": "docs/artifacts/sandbox-portable-process-stage15.json",
-          "sha256": "93300ac749c702e38f836c2734f2f9dbcfb99191968f7f8e6f85b888d6a3dd7f",
+          "sha256": "1e2b0fb1004019b7b7038c20f756f49730daa7c07bd97773f54fe086f53f79e9",
           "verifierSha256": "733858d0eb96f0e06835aa02ef0e35c8186d5affe3e4fbb22b253a3621934a4a"
         },
         {
@@ -129,7 +129,7 @@
           "verifierSha256": "e1272cfa34b7bc00913198faf222007b9403b3ce799d9cfd918b68920bcab386"
         }
       ],
-      "evidenceSetSha256": "6c88df8463767dd654b651d245ed65828c10a8fd1947886485bd813b890822f2"
+      "evidenceSetSha256": "cc372b2417b41030704b23c9b36fd62a6512e8712b59a2d3c6180e6591979ac4"
     },
     {
       "id": "isolation_and_fail_closed_limits",
@@ -150,23 +150,23 @@
         {
           "kind": "sandbox-security-casebook-stage12",
           "path": "docs/artifacts/sandbox-security-casebook-stage12.json",
-          "sha256": "56ad40e77e56d94ec0f84c25b02f6e28cd725dc18a52401a25c3cb378fc9edb2",
+          "sha256": "9b63ca42947482d82ccb52937e8a5189ea5e30f447641339fcba8f43e90fee55",
           "verifierSha256": "c355fb89806073b5ce0e3c09be26e0c0451a1b387d68e452432b82734edbf603"
         },
         {
           "kind": "sandbox-product-acceptance-stage13",
           "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-          "sha256": "8f89ee909a2b17057d6d700ab977dabb38cb2ca3e0a8b22cedc6747ced083230",
+          "sha256": "a8f61e89c3dd06a99f866729dbb39f4915a31db6cc5de0646573025ec9f17e8c",
           "verifierSha256": "0ab91832a93c9a7bbddc676d8d516c9fa5923f1666a5742b59a1da3d29bc892e"
         },
         {
           "kind": "oci-crash-recovery-stage11",
           "path": "docs/artifacts/oci-crash-recovery-stage11.json",
-          "sha256": "e986bd29ca96433f5e3388bf4bcf17fc4eae6c0ce4195d625dd1e3858457d29a",
+          "sha256": "4636c4aab0662ed531acc9d9c5c8e81d6063d5a834ec7f50a566f0d2f4e6cf53",
           "verifierSha256": "d733b13f7da23d1397d236cdb55ffcca108b7a696e5b89d94f2f94a1fc503946"
         }
       ],
-      "evidenceSetSha256": "bf43078079410fd3d6a5d6513712c7ff83c47006b9b0afc87b8ac79abc4197a3"
+      "evidenceSetSha256": "5c3e42452947461da8a3090317b0cefed0f6b5404b01119ba11a1ff153963a58"
     },
     {
       "id": "run_scoped_mode_and_profile_upgrade",
@@ -182,7 +182,7 @@
       "evidenceSetSha256": "15b404a40b3a0ae990ef6b05b2e13f3068a47c87f495b22ad064a8fab6a43128"
     }
   ],
-  "requirementSetSha256": "6d60a7be355958db46c1a37a396ef9a61a71f3245c335e7dfc68f7af8a3e39bd",
+  "requirementSetSha256": "4e634a8155320de93e3bfc99d72f201638ac3b9f094e290f2844bb9bb02e1fa4",
   "externalRequirements": [
     {
       "id": "public_signed_external_release",
@@ -222,5 +222,5 @@
       "windows_host_product_acceptance"
     ]
   },
-  "contentSha256": "e0ccef5e0b3cc94589a6b3dea74dba5fe448e85ca6c426e87a1b40ad0bcd7dd7"
+  "contentSha256": "267e055d2d7dca37b9455450b9e80cce0bcf81ecb6439c9cf568bf0d89d0c21d"
 }

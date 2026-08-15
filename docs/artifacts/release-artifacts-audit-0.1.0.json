@@ -6,7 +6,7 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "2aa6dea6207e164fdc79603cadb726960770f662db7a61ace809a585f0ab238b",
+  "artifactSetSha256": "735ea6e6b537d49446f2e95d92e05263024876701de5e14ac44d55959e94971a",
   "artifacts": [
     {
       "kind": "package-lock-audit",
@@ -41,31 +41,31 @@
     {
       "kind": "oci-crash-recovery-stage11",
       "path": "docs/artifacts/oci-crash-recovery-stage11.json",
-      "sha256": "e986bd29ca96433f5e3388bf4bcf17fc4eae6c0ce4195d625dd1e3858457d29a",
+      "sha256": "4636c4aab0662ed531acc9d9c5c8e81d6063d5a834ec7f50a566f0d2f4e6cf53",
       "valid": true
     },
     {
       "kind": "sandbox-security-casebook-stage12",
       "path": "docs/artifacts/sandbox-security-casebook-stage12.json",
-      "sha256": "56ad40e77e56d94ec0f84c25b02f6e28cd725dc18a52401a25c3cb378fc9edb2",
+      "sha256": "9b63ca42947482d82ccb52937e8a5189ea5e30f447641339fcba8f43e90fee55",
       "valid": true
     },
     {
       "kind": "sandbox-product-acceptance-stage13",
       "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-      "sha256": "8f89ee909a2b17057d6d700ab977dabb38cb2ca3e0a8b22cedc6747ced083230",
+      "sha256": "a8f61e89c3dd06a99f866729dbb39f4915a31db6cc5de0646573025ec9f17e8c",
       "valid": true
     },
     {
       "kind": "sandbox-multi-architecture-stage14",
       "path": "docs/artifacts/sandbox-multi-architecture-stage14.json",
-      "sha256": "f530efee76ddc7d0b056f59da9e080bbb8fe39434fd54668f80fa6d70e465f29",
+      "sha256": "52db6c96c8c2a26ed8f0dfc2c2666835dce5e93183171a007e2d8b1860b31da9",
       "valid": true
     },
     {
       "kind": "sandbox-portable-process-stage15",
       "path": "docs/artifacts/sandbox-portable-process-stage15.json",
-      "sha256": "93300ac749c702e38f836c2734f2f9dbcfb99191968f7f8e6f85b888d6a3dd7f",
+      "sha256": "1e2b0fb1004019b7b7038c20f756f49730daa7c07bd97773f54fe086f53f79e9",
       "valid": true
     },
     {
@@ -107,7 +107,7 @@
     {
       "kind": "s1-shell-sandbox-readiness-stage22",
       "path": "docs/artifacts/s1-shell-sandbox-readiness-stage22.json",
-      "sha256": "5c0ea92433c8c3d20eec49228a0ac0b3e7b7223f38bb861662086ec6553a48e6",
+      "sha256": "b780e02a88c42a4db7b2fbed05afe734534e77cd4cd921ddfe246bf422611fd4",
       "valid": true
     },
     {

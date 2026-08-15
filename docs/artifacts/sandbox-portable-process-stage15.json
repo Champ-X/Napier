@@ -1,18 +1,18 @@
 {
   "kind": "napier.sandbox-portable-process-stage15",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-11T13:30:38.671Z",
+  "generatedAt": "2026-08-15T13:12:47.740Z",
   "image": {
     "id": "sha256:aac9f04b81bf3994d8c4629381ff11eb728094c7a2facd452d7ff99e224ec662",
     "platform": "linux/arm64",
     "provenanceSha256": "644470d4c5d573eacbe0ec3d95c0584090dc4e24e9d7c6af89f1ae95419fa6fb"
   },
   "implementation": {
-    "containerIdentitySha256": "212658e6fde768bd4bd0e648ab787a5cc4fe1f5707925930523d10be22bc0330",
+    "containerIdentitySha256": "ed83e9a2b2584a4ac08a1b61c4ff4bb7de2f281e9739e435984db5c8e93e2314",
     "pathMappingSha256": "1f56ece466497569a30b3eb90c4276fa6bfee439da71f75ea75213c5e38934d5",
     "launchPolicySha256": "7dcde3a01b32f46f95c8cade2d673231b007da6225c7b058b6f6fed592abe0fa",
-    "launchArgumentsSha256": "8e5eec25188b6f9d323e71d7d300ac6fd57996a0d29b19351886815be96f5c88",
-    "ociAdapterSha256": "74c37f02870cb9a8ec4e849df200589b2921e91011c9ffe34805e17ed28fa4b0",
+    "launchArgumentsSha256": "c3eefc0a292f7f3964a39808cfe80e590f0f7ac00fff69a11b3c85c166c348bd",
+    "ociAdapterSha256": "43fbd4ed87afc95f844066d8c7ec9fbd0572342c324e734e0f0c18ec293cc8d8",
     "gitProcessSha256": "79f65622d4205c86f64a36c2b93d0b00e6cfd3901e48141586b0a2fe9903db68",
     "verificationSha256": "8a2e0f0a37b478a832b3c7b6b1442a57a302e3ee508d302b43c1efa48ecc92a0",
     "checkScriptSha256": "733858d0eb96f0e06835aa02ef0e35c8186d5affe3e4fbb22b253a3621934a4a",
@@ -61,8 +61,8 @@
       "testVersion": "4.1.9",
       "typecheckRuntimeIdentitySha256": "a3e6623be52ce462ede52866ee5910844b4405553d1a311791440755a1ad86cd",
       "testRuntimeIdentitySha256": "a3e6623be52ce462ede52866ee5910844b4405553d1a311791440755a1ad86cd",
-      "typecheckResultSha256": "e989a37bfd34dde7847b18f0551f404ca96e706ec4855bd72b4e8e3d1d6803cc",
-      "testResultSha256": "d716b64ce247ad56a58674862cbf3c6e8c9c670c686c7583fefc443e6ff41443"
+      "typecheckResultSha256": "908af05ee8cc93573bd9327d3e7f1fb7e1963175cc193772fe3f033d27a86648",
+      "testResultSha256": "dfbcd53ea5f017c6ffc5b65aefb9f34c9857c93ca5e3de255e875565d48f5398"
     },
     "scopedWrite": {
       "status": "passed",
@@ -103,5 +103,5 @@
       "image signature and external attestation"
     ]
   },
-  "contentSha256": "9a9f50fca22b9e35a4dfd33e4bfd9d116b167c329d8f047b6db5ea21e28d53fa"
+  "contentSha256": "301eb34c4b0d02327651e8bb1e561667f624c6e4b2ad1e15307f6effac5a30bb"
 }

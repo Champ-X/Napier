@@ -1,7 +1,7 @@
 {
   "kind": "napier.oci-crash-recovery-stage11",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-13T04:11:52.210Z",
+  "generatedAt": "2026-08-15T13:09:10.549Z",
   "image": {
     "id": "sha256:aac9f04b81bf3994d8c4629381ff11eb728094c7a2facd452d7ff99e224ec662",
     "platform": "linux/arm64",
@@ -11,11 +11,11 @@
     "resourcePolicySha256": "e95d7afc88833609b7b3ef268725c5df36148241c36430bf0f7988a967a16448",
     "guardianContractSha256": "2f5cbc3c300cb34e69f54bb56ee884afdb47b790458a3923b6839c8cc7049ec0",
     "guardianWorkerSha256": "fe9bd34fb2a0bc6e060e9394b635baaa91a35eccf38f35aa2fa9e97149a3e604",
-    "containerIdentitySha256": "212658e6fde768bd4bd0e648ab787a5cc4fe1f5707925930523d10be22bc0330",
+    "containerIdentitySha256": "ed83e9a2b2584a4ac08a1b61c4ff4bb7de2f281e9739e435984db5c8e93e2314",
     "pathMappingSha256": "1f56ece466497569a30b3eb90c4276fa6bfee439da71f75ea75213c5e38934d5",
     "launchPolicySha256": "7dcde3a01b32f46f95c8cade2d673231b007da6225c7b058b6f6fed592abe0fa",
-    "ociAdapterSha256": "74c37f02870cb9a8ec4e849df200589b2921e91011c9ffe34805e17ed28fa4b0",
-    "ociLaunchArgumentsSha256": "8e5eec25188b6f9d323e71d7d300ac6fd57996a0d29b19351886815be96f5c88",
+    "ociAdapterSha256": "43fbd4ed87afc95f844066d8c7ec9fbd0572342c324e734e0f0c18ec293cc8d8",
+    "ociLaunchArgumentsSha256": "c3eefc0a292f7f3964a39808cfe80e590f0f7ac00fff69a11b3c85c166c348bd",
     "checkScriptSha256": "d733b13f7da23d1397d236cdb55ffcca108b7a696e5b89d94f2f94a1fc503946",
     "artifactVerifierSha256": "bc938cf31a56c4e8103514f209acc11041dd3e53e46db9251fcd62cd4fde16be",
     "liveHarnessSha256": "d07b57dd62a14e3460bd7e2ab38fabc94262003d1d6d2221824d541e98dd508d",
@@ -26,8 +26,8 @@
       "index": 1,
       "runtimeSignal": "SIGKILL",
       "serviceReady": true,
-      "serviceIdentitySha256": "2e75aeaf6080ceeeaa06445f6d0b34966ec720d1a0783daeba4794d5da266504",
-      "endpointSha256": "acadbb0da9b9978decc01ab93a9a4857f4817b08857f214eaa8dffd37d5d504f",
+      "serviceIdentitySha256": "efe3dd00613d58c0808a40040dfd7b152d2693a17ef22b9cd4c80c9a5126669a",
+      "endpointSha256": "425c500a2a89369bfd674640872dd4fb6cceeb0136491893ff91dae20f21e28f",
       "containerDeltaCount": 1,
       "networkDeltaCount": 1,
       "scratchDeltaCount": 1,
@@ -36,14 +36,14 @@
       "scratchCleanupVerified": true,
       "endpointClosedVerified": true,
       "exactBaselineRestored": true,
-      "cleanupDurationMs": 373
+      "cleanupDurationMs": 376
     },
     {
       "index": 2,
       "runtimeSignal": "SIGKILL",
       "serviceReady": true,
-      "serviceIdentitySha256": "415ac731aa39c348ef4282a1228ded74566c566cade3fa32685c9a8f733cc37d",
-      "endpointSha256": "46d06331b121ec487c7d2bb4c5be79441486ef79a4704da77e5b1242fcf9d101",
+      "serviceIdentitySha256": "49ac021cfc32d258c59d5bd8b75ba38a9bc8c7ee35ea4b093255e5b3e95d82e2",
+      "endpointSha256": "b69799b815f4e7c480e0ed8a7113da0ea4dd58fe7ba4dd32a6cc69a6063a8fea",
       "containerDeltaCount": 1,
       "networkDeltaCount": 1,
       "scratchDeltaCount": 1,
@@ -52,7 +52,7 @@
       "scratchCleanupVerified": true,
       "endpointClosedVerified": true,
       "exactBaselineRestored": true,
-      "cleanupDurationMs": 371
+      "cleanupDurationMs": 369
     }
   ],
   "recovery": {
@@ -87,5 +87,5 @@
       "full file-network-secret-resource failure injection"
     ]
   },
-  "contentSha256": "1dda222900bc8e78487f54928c43ab9c20c69244afad1767950f57955f2b280e"
+  "contentSha256": "b024c2428e404e7ed4f4bb28f6a5379fd973e6dd078b6cd142db1aa4dab3ab2f"
 }
