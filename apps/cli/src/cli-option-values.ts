@@ -15,6 +15,10 @@ export function requiredValue(
   return value;
 }
 
+export function shellArgument(value: string): string {
+  return `'${value.replaceAll("'", `'\\''`)}'`;
+}
+
 export function requiredResourceId(
   values: Map<string, string>,
   flag: string,

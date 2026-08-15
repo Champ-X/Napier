@@ -9,6 +9,7 @@ import {
 } from "@napier/runtime";
 
 import type { CliSetupOptions } from "./cli-setup-options.js";
+import { shellArgument } from "./cli-option-values.js";
 import { writeJsonLine, writeLine } from "./cli-output.js";
 import type { CliIo } from "./cli-runtime.js";
 import type { BrowserUseLocalSetupDependencies } from "@napier/runtime";
@@ -184,7 +185,7 @@ async function writeOutput(
               "Recovery: install uv and current Chrome on a supported host, then rerun this preview",
             ]
           : [
-              `Apply: napier setup --workspace '${options.workspace}' --component browser-use-local --expected-preview ${output.contentSha256} --apply`,
+              `Apply: ${browserUseLocalSetupCommand(options, output.contentSha256)}`,
             ]),
       ].join("\n"),
     );
@@ -199,7 +200,38 @@ async function writeOutput(
       `Action: ${output.action}`,
       "Telemetry: disabled",
       "Cloud sync: disabled",
-      "Next: napier doctor --workspace 'WORKSPACE_PATH' --browser-backend browser_use_local --offline",
+      `Next: ${browserUseLocalDoctorCommand(options)}`,
     ].join("\n"),
   );
+}
+
+function browserUseLocalSetupCommand(
+  options: CliSetupOptions,
+  contentSha256: string,
+): string {
+  return [
+    "napier setup",
+    "--workspace",
+    shellArgument(options.workspace),
+    ...(options.dataRoot
+      ? ["--data-root", shellArgument(options.dataRoot)]
+      : []),
+    "--component browser-use-local",
+    "--expected-preview",
+    contentSha256,
+    "--apply",
+  ].join(" ");
+}
+
+function browserUseLocalDoctorCommand(options: CliSetupOptions): string {
+  return [
+    "napier doctor",
+    "--workspace",
+    shellArgument(options.workspace),
+    ...(options.dataRoot
+      ? ["--data-root", shellArgument(options.dataRoot)]
+      : []),
+    "--browser-backend browser_use_local",
+    "--offline",
+  ].join(" ");
 }

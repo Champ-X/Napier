@@ -14,6 +14,7 @@ import {
 
 import type { CliBrowserTaskOptions } from "./cli-browser-task-options.js";
 import { subscribeBrowserTaskControls } from "./browser-task-control-cli.js";
+import { shellArgument } from "./cli-option-values.js";
 import { writeJsonLine, writeLine } from "./cli-output.js";
 import type { CliIo, RunCliDependencies } from "./cli-runtime.js";
 import { canonicalWorkspace } from "./workspace-path.js";
@@ -40,9 +41,14 @@ export async function executeBrowserTask(
   let credentialRuntime:
     | Awaited<ReturnType<RunCliDependencies["createRuntime"]>>
     | undefined;
+  let workspaceRoot = path.resolve(io.cwd, options.workspace);
+  let dataRoot = path.resolve(
+    io.cwd,
+    options.dataRoot ?? path.join(options.workspace, ".napier"),
+  );
   try {
-    const workspaceRoot = await canonicalWorkspace(options.workspace, io.cwd);
-    const dataRoot = path.resolve(
+    workspaceRoot = await canonicalWorkspace(options.workspace, io.cwd);
+    dataRoot = path.resolve(
       io.cwd,
       options.dataRoot ?? path.join(workspaceRoot, ".napier"),
     );
@@ -126,6 +132,10 @@ export async function executeBrowserTask(
     }
     return result.status === "completed" ? 0 : 1;
   } catch (error) {
+    const localError =
+      error instanceof BrowserUseLocalError && error.code === "backend_missing"
+        ? browserUseLocalSetupError(error, workspaceRoot, dataRoot)
+        : error;
     const failure = timedOut
       ? taskError(
           options.backend,
@@ -134,9 +144,9 @@ export async function executeBrowserTask(
           sha256(`${options.backend}_timeout`),
           "Reduce --max-steps or raise --timeout-ms, then start a fresh task",
         )
-      : error instanceof BrowserUseLocalError ||
-          error instanceof BrowserUseCloudError
-        ? error
+      : localError instanceof BrowserUseLocalError ||
+          localError instanceof BrowserUseCloudError
+        ? localError
         : taskError(
             options.backend,
             controller.signal.aborted
@@ -180,6 +190,27 @@ export async function executeBrowserTask(
     await credentialRuntime?.shutdown().catch(() => undefined);
     parentSignal?.removeEventListener("abort", forwardAbort);
   }
+}
+
+function browserUseLocalSetupError(
+  error: BrowserUseLocalError,
+  workspaceRoot: string,
+  dataRoot: string,
+): BrowserUseLocalError {
+  const recovery = [
+    "Install or update Chrome, then run napier setup",
+    "--workspace",
+    shellArgument(workspaceRoot),
+    "--data-root",
+    shellArgument(dataRoot),
+    "--component browser-use-local",
+  ].join(" ");
+  return new BrowserUseLocalError(
+    error.message,
+    error.code,
+    error.diagnosticSha256,
+    recovery,
+  );
 }
 
 async function resolveBrowserTaskCredential(

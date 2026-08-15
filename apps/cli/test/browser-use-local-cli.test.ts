@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { PassThrough, Writable } from "node:stream";
@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { parseCliArgs, runCli } from "../src/cli.js";
 import { subscribeBrowserTaskControls } from "../src/browser-task-control-cli.js";
+import { shellArgument } from "../src/cli-option-values.js";
 import type { CliIo, RunCliDependencies } from "../src/cli-runtime.js";
 
 const roots: string[] = [];
@@ -145,7 +146,7 @@ describe("Browser Use local CLI", () => {
 
   it("resolves a real stored environment reference before the local backend readiness check", async () => {
     const fixture = await createFixture();
-    const dataRoot = path.join(fixture.workspace, ".napier");
+    const dataRoot = path.join(fixture.root, "state with ' quote");
     const store = new LocalStore({
       workspaceRoot: fixture.workspace,
       dataRoot,
@@ -167,6 +168,8 @@ describe("Browser Use local CLI", () => {
         "browser-task",
         "--workspace",
         fixture.workspace,
+        "--data-root",
+        dataRoot,
         "--backend",
         "browser_use_local",
         "--task",
@@ -184,9 +187,18 @@ describe("Browser Use local CLI", () => {
     );
 
     expect(code).toBe(1);
+    const workspaceRoot = await realpath(fixture.workspace);
     expect(JSON.parse(stdout.text())).toMatchObject({
       kind: "napier.browser-task-error",
       code: "backend_missing",
+      recovery: [
+        "Install or update Chrome, then run napier setup",
+        "--workspace",
+        shellArgument(workspaceRoot),
+        "--data-root",
+        shellArgument(dataRoot),
+        "--component browser-use-local",
+      ].join(" "),
     });
     expect(stdout.text()).not.toContain("private-cli-reference");
     expect(stdout.text()).not.toContain("NAPIER_CLI_REFERENCE_KEY");
@@ -259,6 +271,49 @@ describe("Browser Use local CLI", () => {
     );
     const { contentSha256, ...content } = preview;
     expect(contentSha256).toBe(sha256(canonicalJson(content as never)));
+  });
+
+  it("keeps a custom data root in the copyable setup apply command", async () => {
+    const fixture = await createFixture();
+    const dataRoot = path.join(fixture.root, "state with ' quote");
+    const dependencies: RunCliDependencies = {
+      createRuntime: vi.fn(),
+      browserUseLocalSetup: {
+        uvExecutable: "uv",
+        runProcess: async (request) =>
+          request.args[0] === "--version"
+            ? processResult("uv 0.11.28\n")
+            : processResult(""),
+      },
+    };
+    const stdout = new CaptureWritable();
+    const code = await runCli(
+      [
+        "setup",
+        "--workspace",
+        fixture.workspace,
+        "--data-root",
+        dataRoot,
+        "--component",
+        "browser-use-local",
+      ],
+      cliIo(fixture.root, stdout, new CaptureWritable()),
+      dependencies,
+    );
+
+    expect(code).toBe(0);
+    expect(stdout.text()).toContain(
+      [
+        "Apply: napier setup",
+        "--workspace",
+        shellArgument(fixture.workspace),
+        "--data-root",
+        shellArgument(dataRoot),
+        "--component browser-use-local",
+        "--expected-preview",
+      ].join(" "),
+    );
+    expect(stdout.text()).toContain("--apply");
   });
 
   it("fails safely before backend launch when the credential locator is empty", async () => {

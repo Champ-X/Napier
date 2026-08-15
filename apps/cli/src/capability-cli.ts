@@ -12,6 +12,7 @@ import type { AgentProfile } from "@napier/contracts";
 import type { EffectiveAgentCapabilityProjectionV1 } from "@napier/contracts/agent-capability-contract";
 
 import type { CliCapabilityOptions } from "./cli-capability-options.js";
+import { shellArgument } from "./cli-option-values.js";
 import { writeJsonLine, writeLine } from "./cli-output.js";
 import type { CliIo, RunCliDependencies } from "./cli-runtime.js";
 import { canonicalWorkspace } from "./workspace-path.js";
@@ -287,10 +288,6 @@ function capabilityApplyCommand(
     diffSha256,
     "--apply",
   ].join(" ");
-}
-
-function shellArgument(value: string): string {
-  return `'${value.replaceAll("'", `'\\''`)}'`;
 }
 
 function browserInteractionLabel(
