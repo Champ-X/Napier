@@ -4,6 +4,7 @@ import path from "node:path";
 
 import type { ControlledHarnessEvidenceContent } from "@napier/contracts/controlled-harness-evidence";
 import { createControlledHarnessEvidence } from "@napier/runtime/controlled-harness-evidence";
+import { NAPIER_PRODUCT_VERSION } from "@napier/runtime/release-product-gate";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createApp, createServices } from "../src/app.js";
@@ -110,7 +111,7 @@ function content(): ControlledHarnessEvidenceContent {
     kind: "napier.controlled-harness-evidence",
     schemaVersion: 1,
     generatedAt: "2026-08-13T00:00:00.000Z",
-    productVersion: "0.1.0",
+    productVersion: NAPIER_PRODUCT_VERSION,
     model: { provider: "deepseek", id: "deepseek-v4-flash" },
     sources: [
       { role: "open_web_campaign", contentSha256: openWebSha },

@@ -107,7 +107,7 @@ const defaultManagementOpenApiCompatibilityPath =
 const defaultCodingExecutorComparisonPath =
   "docs/artifacts/benchmarks/napier-omp-coding-comparison-seed-20260806.json";
 const defaultControlledHarnessEvidencePath =
-  "docs/artifacts/controlled-harness-evidence-0.1.0.json";
+  "docs/artifacts/controlled-harness-evidence-0.1.1.json";
 const defaultWorkflowBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-workflow_document_map_reduce_v1-b8bead9bcd08f431.json";
 const defaultDataBenchmarkSeriesPath =

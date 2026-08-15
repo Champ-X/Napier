@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "40f8a780cb9db61949e430efec78af560a79ddbe2664b9942405df03c0550523",
+      "stdoutSha256": "60acabf772f7731ef9042c38ff0990d719defb201af220de747199cee0451952",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "6e9b4a19080584c1bc3f07caacfc4944081242295f9f13618b669bb9aa1215fa",
-      "receiptSha256": "f6a0751645d24f0e0c6a237aab811e2e1f68915e31c8ac9f25949b473d5a25df"
+      "evidenceSha256": "7e6d4649693c4f31134b96dc4083477da8fc00f6b6b23c414476896e62bc5585",
+      "receiptSha256": "aa4b8a674df5cea1028cf7885428070777214aa244cabb76f0482a61f4a816dd"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "2b435ca4582fb2864d6c47bdde5b3b411816018233f622d472f37a1d56440841",
+      "stdoutSha256": "391b840ea2287158e8267422fea940ea97da4249fd86a97655bbaf3b9da5172d",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "6b94d794df8b5c40c8df463a1fccd225874e2659440cb25350fc1edec21dc9c8",
-      "receiptSha256": "de02f50ce261770016da2276e4642c085078aa988a7a95b67536d307890a077b"
+      "evidenceSha256": "c3e69523ddc76ddbc3d4a825c32f5fdafacddf6a807c3ca1e9a9c5b564bff410",
+      "receiptSha256": "9b751a8d8bd76890509ce7cac2b1abb472d4359cd64f8d691215b91a65431ebe"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -842,6 +842,7 @@
         "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-06c3c6466c0b47f9.json",
         "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-6766737f84f84714.json",
         "docs/artifacts/controlled-harness-evidence-0.1.0.json",
+        "docs/artifacts/controlled-harness-evidence-0.1.1.json",
         "docs/artifacts/linux-host-product-acceptance-stage19.json",
         "docs/artifacts/management-openapi-0.1.0.json",
         "docs/artifacts/management-openapi-compatibility-0.1.0.json",
@@ -1825,8 +1826,8 @@
           "lines": 325
         },
         "apps/server/test/controlled-harness-evidence-http.test.ts": {
-          "sha256": "06b425a0ed668b16f4149f79b090a21e18c64354f4e31ef2e145eae6e5ce4f62",
-          "lines": 186
+          "sha256": "e9a63a0fd56924845dbbfff69552eb4a4af52b1c6c606243556cbe2e3186d3b2",
+          "lines": 187
         },
         "apps/server/test/evaluation-casebook-http-validation.test.ts": {
           "sha256": "506a198843d52c0a31dfd608370ddbf99328a1a2e9868a9ebb511d084a8f8f49",
@@ -1837,8 +1838,8 @@
           "lines": 294
         },
         "apps/server/test/release-product-trial-http.test.ts": {
-          "sha256": "4fc788785179b21ab4acc10858d4ad2b2ef12fa0f395620a018757fcc3609483",
-          "lines": 209
+          "sha256": "2134404a425aac3ad58cdbc47acc411ad5d6af9e3a3ab65b0cec35bbd0153c45",
+          "lines": 212
         },
         "apps/server/test/sandbox-setup-http.test.ts": {
           "sha256": "f955fa30994b1830701489e34e37027d0311171d7f4abd91de86e359e436d1d1",
@@ -2485,7 +2486,7 @@
           "lines": 252
         },
         "apps/web/test/controlled-harness-evidence-control.test.tsx": {
-          "sha256": "67d5c9ace9f8f8df76900a2204dcd32a8d3ec98aab6a9f38c4bf37359d93165f",
+          "sha256": "5fddb45ad7017a2cc4bce2c6aa8192abd746a610c76e3b74196b46ab09a27855",
           "lines": 296
         },
         "apps/web/test/conversation-activity-view-model.test.ts": {
@@ -2601,7 +2602,7 @@
           "lines": 537
         },
         "apps/web/test/release-product-trial-control.test.tsx": {
-          "sha256": "bd74436cb59d1c668723de7d11154f9bd1c334ccac5ea6b6f03c11519bb33feb",
+          "sha256": "aba8417e9964537683200f695978e5c997cf9978aeeea3f67bad6f1aec7b905f",
           "lines": 158
         },
         "apps/web/test/research-source-event-view.test.ts": {
@@ -2860,6 +2861,10 @@
           "sha256": "9aeecc9c4a3026a1021ba4108e1c3a54ef768d20e92f70fbf2a956fad4b87963",
           "lines": 283
         },
+        "docs/artifacts/controlled-harness-evidence-0.1.1.json": {
+          "sha256": "01d3c50bfaa7cbb4f2b91a7f41b319b237c2ee817fcfa9b361ca37f627292757",
+          "lines": 283
+        },
         "docs/artifacts/linux-host-product-acceptance-stage19.json": {
           "sha256": "fae24386a28ebf69ccd0c3dfe9f91e4ecf35807176d6394c860e2462a33bf8d9",
           "lines": 556
@@ -2929,7 +2934,7 @@
           "lines": 116
         },
         "docs/artifacts/release-artifacts-audit-0.1.0.json": {
-          "sha256": "7dc20be4697c86b6d0264984d6d995df6d8184496687dedc75c70e6a3501901c",
+          "sha256": "e1692c1dd86eda0357f199ef02a5574bc10e6ffb31a09404488b67237561aff4",
           "lines": 973
         },
         "docs/artifacts/runtime-environment-audit-0.1.0.json": {
@@ -2985,11 +2990,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "6e9b4a19080584c1bc3f07caacfc4944081242295f9f13618b669bb9aa1215fa",
+          "sha256": "7e6d4649693c4f31134b96dc4083477da8fc00f6b6b23c414476896e62bc5585",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "6b94d794df8b5c40c8df463a1fccd225874e2659440cb25350fc1edec21dc9c8",
+          "sha256": "c3e69523ddc76ddbc3d4a825c32f5fdafacddf6a807c3ca1e9a9c5b564bff410",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -3661,7 +3666,7 @@
           "lines": 40
         },
         "packages/runtime/src/release-product-gate.ts": {
-          "sha256": "7c2e731ef3edc1c4bd5c168e532703beae6c79457a0e9f0ee660196b888e8d35",
+          "sha256": "bd0faff50b79c543834e0e86ceea95e06c44129fd6bcf16487afa07ec0322726",
           "lines": 376
         },
         "packages/runtime/src/replay.ts": {
@@ -4401,8 +4406,8 @@
           "lines": 46
         },
         "packages/runtime/test/release-product-gate.test.ts": {
-          "sha256": "ad09cf360840438c3e5db92bb8417baad4c3717be268d2eb42636c95f9119dfb",
-          "lines": 200
+          "sha256": "819d5e0394a124efb04df4ac9a99a95a1e441fbda81f8ac61cc7ae73860f2819",
+          "lines": 201
         },
         "packages/runtime/test/replan-review.test.ts": {
           "sha256": "27a137bb3214ab069a1e0aba3755ddb3be0c687c1266f59a8acc3678cf051685",
@@ -4609,11 +4614,11 @@
           "lines": 134
         },
         "scripts/check-release-artifacts.mjs": {
-          "sha256": "7475a58152b8dd0d369b95031f02f45f045a006e73c0ca4c68f64ff6573b455f",
+          "sha256": "ac9367f5d615b4c61e64140277a4867941a8491f7dc2074d62a29963dffa0c28",
           "lines": 2004
         },
         "scripts/check-release-artifacts.test.mjs": {
-          "sha256": "ab5df76c0811398d5229cf4054fdf3988983e0f2a69e319b7ec13deb923adc4a",
+          "sha256": "d13150f92a9cbd6e0d6a62b4a39e74624c2a6e62d9da2d6cf64a900b87727cdd",
           "lines": 1965
         },
         "scripts/check-runtime-environment.mjs": {
@@ -4793,7 +4798,7 @@
           "lines": 172
         },
         "scripts/create-controlled-harness-evidence.mjs": {
-          "sha256": "ddca19cc942506fc9202628c3761d70041fd4566c28c723843e629441894c742",
+          "sha256": "dd876b083c4986a0dca7dde59cd7cc862c5c8cf54ab293804bc761d542807343",
           "lines": 345
         },
         "scripts/generate-management-openapi.mjs": {
@@ -5141,7 +5146,7 @@
           "lines": 262
         },
         "scripts/web-ui-e2e-casebook.mjs": {
-          "sha256": "a01184df44028377c5c754284aa2b27bf6e34620626dc1151c6708cc3a5352ac",
+          "sha256": "a5b337ddc941e458c29e3bf1e225e4228ae4d9eaab4ad22a265f9e8986959259",
           "lines": 341
         },
         "scripts/web-ui-e2e-casebook.test.mjs": {
@@ -5153,7 +5158,7 @@
           "lines": 385
         },
         "scripts/web-ui-e2e-contract.test.mjs": {
-          "sha256": "e3c663aabb7351db74ff452fd618143982a32820360fe012acbefd512b7b6a71",
+          "sha256": "455d6d24aaadcd73f9652258e842609729fc081f9fa302a4fc262b322fcde425",
           "lines": 286
         },
         "scripts/web-ui-e2e-fixture.mjs": {
@@ -5234,7 +5239,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "4cd40a4c8816a10a1efb42a767b7163b7ddab7c3ab29f808fefcaffcafa0649c"
+      "manifestSha256": "2f97f312d12409677e1f7fd6b761ecfbfbe04e284464cf268933e66990090afa"
     },
     "executionClosure": {
       "algorithm": {
@@ -9958,7 +9963,7 @@
               "lines": 245
             },
             "packages/runtime/dist/release-product-gate.js": {
-              "sha256": "87d7fb1e5708b436dd84572a8879c798da125a519f73492904e6f0c3b788c8ac",
+              "sha256": "7cc9cd73ebe819fe4ea1c15ed0a9b4073c3364c1e4fa6cb59ebe54096a4ce6d2",
               "lines": 259
             },
             "packages/runtime/dist/replan-policies.js": {
@@ -12518,7 +12523,7 @@
               "lines": 347
             },
             "packages/runtime/src/release-product-gate.ts": {
-              "sha256": "7c2e731ef3edc1c4bd5c168e532703beae6c79457a0e9f0ee660196b888e8d35",
+              "sha256": "bd0faff50b79c543834e0e86ceea95e06c44129fd6bcf16487afa07ec0322726",
               "lines": 376
             },
             "packages/runtime/src/replan-policies.ts": {
@@ -13778,7 +13783,7 @@
               "lines": 32
             }
           },
-          "manifestSha256": "4c69bb4f23e9a8b6284250f22636e7d55cce63a2c8ee09e63437cb9416f2ea0e"
+          "manifestSha256": "f0e65900a7b12c68c52c3387c8a534fe87cd4f1520148b5dbdd618ceecce6071"
         },
         "productionServerTrace": {
           "roots": [
@@ -17839,7 +17844,7 @@
               "lines": 245
             },
             "packages/runtime/dist/release-product-gate.js": {
-              "sha256": "87d7fb1e5708b436dd84572a8879c798da125a519f73492904e6f0c3b788c8ac",
+              "sha256": "7cc9cd73ebe819fe4ea1c15ed0a9b4073c3364c1e4fa6cb59ebe54096a4ce6d2",
               "lines": 259
             },
             "packages/runtime/dist/replan-policies.js": {
@@ -20391,7 +20396,7 @@
               "lines": 347
             },
             "packages/runtime/src/release-product-gate.ts": {
-              "sha256": "7c2e731ef3edc1c4bd5c168e532703beae6c79457a0e9f0ee660196b888e8d35",
+              "sha256": "bd0faff50b79c543834e0e86ceea95e06c44129fd6bcf16487afa07ec0322726",
               "lines": 376
             },
             "packages/runtime/src/replan-policies.ts": {
@@ -21647,7 +21652,7 @@
               "lines": 45
             }
           },
-          "manifestSha256": "1fcbcf822d1ee44daa7a0c82bcd6b7208da5352348f259e24bd2b8c85e496418"
+          "manifestSha256": "ac1a9463c3888740df4dfbd52d3fb631860cb5f144db0e60f12c214164679dce"
         }
       },
       "excludedCategories": [
@@ -21676,9 +21681,9 @@
           "reason": "evidence.json cannot contain its own content hash; the external Stage 8 repair commit binds that blob."
         }
       ],
-      "manifestSha256": "2eb6bcd3fd9063d7849f3d1daab63427ef42f7054a87f8806de4ad49a318fa63"
+      "manifestSha256": "2147122d730e4c45e0336c6b03d6d6a4f3b956592959af08caec49455099d4f6"
     },
-    "manifestSha256": "75e648dfd3c9f316d158be0d8be8d368a8d691e5b51cb9e6f30991926fb44d57"
+    "manifestSha256": "3a7bec97d5c3a575bc417b75f4f12350a7d7dc8e86eb24d08f2192d4e5f21908"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -21866,11 +21871,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "6e9b4a19080584c1bc3f07caacfc4944081242295f9f13618b669bb9aa1215fa"
+      "sha256": "7e6d4649693c4f31134b96dc4083477da8fc00f6b6b23c414476896e62bc5585"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "6b94d794df8b5c40c8df463a1fccd225874e2659440cb25350fc1edec21dc9c8"
+      "sha256": "c3e69523ddc76ddbc3d4a825c32f5fdafacddf6a807c3ca1e9a9c5b564bff410"
     }
   }
 }

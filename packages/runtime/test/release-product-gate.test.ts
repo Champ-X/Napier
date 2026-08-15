@@ -9,6 +9,7 @@ import {
 } from "../src/evaluation-casebook-templates.js";
 import {
   createReleaseProductTrial,
+  NAPIER_PRODUCT_VERSION,
   parseReleaseProductTrial,
   projectReleaseProductGate,
 } from "../src/release-product-gate.js";
@@ -20,7 +21,7 @@ describe("Release Product Gate", () => {
       templateId: RELEASE_PRODUCT_CASEBOOK_TEMPLATE_ID,
     });
     const cases = evaluationCasebookTemplates()[0]!.cases;
-    const trials = ["0.0.8", "0.0.9", "0.1.0"].flatMap(
+    const trials = ["0.0.9", "0.1.0", NAPIER_PRODUCT_VERSION].flatMap(
       (productVersion, versionIndex) =>
         cases.map((item, caseIndex) =>
           createReleaseProductTrial(
@@ -51,13 +52,13 @@ describe("Release Product Gate", () => {
     const projection = projectReleaseProductGate(casebook, trials);
     expect(projection.defaultTrackReady).toBe(true);
     expect(projection.consecutivePassingVersions).toEqual([
-      "0.0.8",
       "0.0.9",
       "0.1.0",
+      NAPIER_PRODUCT_VERSION,
     ]);
     expect(projection.versions.at(-1)).toEqual(
       expect.objectContaining({
-        productVersion: "0.1.0",
+        productVersion: NAPIER_PRODUCT_VERSION,
         coveredCaseCount: 10,
         successRate: 1,
         meanUxScore: 4,
@@ -80,7 +81,7 @@ describe("Release Product Gate", () => {
         casebookId: casebook.id,
         templateCaseId: "high-risk-confirmation",
         runId: criticalFailure.runId,
-        productVersion: "0.1.0",
+        productVersion: NAPIER_PRODUCT_VERSION,
         status: "failed",
         failureReason: "manual_intervention",
         configurationInterventions: 0,
@@ -91,7 +92,7 @@ describe("Release Product Gate", () => {
       {
         id: criticalFailure.id,
         recordedAt: criticalFailure.recordedAt,
-        currentProductVersion: "0.1.0",
+        currentProductVersion: NAPIER_PRODUCT_VERSION,
       },
     );
     const failed = projectReleaseProductGate(casebook, [
@@ -121,7 +122,7 @@ describe("Release Product Gate", () => {
         casebookId: casebook.id,
         templateCaseId: "settings",
         runId: "run_releaseparse01",
-        productVersion: "0.1.0",
+        productVersion: NAPIER_PRODUCT_VERSION,
         status: "passed",
         configurationInterventions: 0,
         humanInterventions: 0,
@@ -142,7 +143,7 @@ describe("Release Product Gate", () => {
     const request = {
       casebookId: casebook.id,
       templateCaseId: "settings",
-      productVersion: "0.1.0",
+      productVersion: NAPIER_PRODUCT_VERSION,
       configurationInterventions: 0,
       humanInterventions: 0,
       recoveryEvents: 0,
@@ -155,7 +156,7 @@ describe("Release Product Gate", () => {
         productVersion: "0.0.9",
         status: "passed",
       }),
-    ).toThrow("running product version: 0.1.0");
+    ).toThrow(`running product version: ${NAPIER_PRODUCT_VERSION}`);
     const failed = createReleaseProductTrial(
       casebook,
       completedRun("run_releaseattempt1"),

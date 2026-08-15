@@ -6,6 +6,7 @@ import type {
   ReleaseProductGateProjection,
   ReleaseProductTrial,
 } from "@napier/contracts/release-product-trial";
+import { NAPIER_PRODUCT_VERSION } from "@napier/runtime/release-product-gate";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createApp, createServices } from "../src/app.js";
@@ -69,7 +70,7 @@ describe("Release Product Trial HTTP", () => {
           casebookId: casebook.id,
           templateCaseId: "settings",
           runId: run.id,
-          productVersion: "0.1.0",
+          productVersion: NAPIER_PRODUCT_VERSION,
           status: "passed",
           configurationInterventions: 1,
           humanInterventions: 0,
@@ -95,7 +96,7 @@ describe("Release Product Trial HTTP", () => {
         templateCaseId: "settings",
         runId: run.id,
         runStatus: "completed",
-        productVersion: "0.1.0",
+        productVersion: NAPIER_PRODUCT_VERSION,
         status: "passed",
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
@@ -139,7 +140,9 @@ describe("Release Product Trial HTTP", () => {
     expect(forgedVersion.status).toBe(409);
     expect(await forgedVersion.json()).toEqual(
       expect.objectContaining({
-        error: expect.stringContaining("running product version: 0.1.0"),
+        error: expect.stringContaining(
+          `running product version: ${NAPIER_PRODUCT_VERSION}`,
+        ),
       }),
     );
     const researchThread = await services.store.createThread({
@@ -160,7 +163,7 @@ describe("Release Product Trial HTTP", () => {
           casebookId: casebook.id,
           templateCaseId: "network-reference",
           runId: researchRun.id,
-          productVersion: "0.1.0",
+          productVersion: NAPIER_PRODUCT_VERSION,
           status: "passed",
           configurationInterventions: 0,
           humanInterventions: 0,

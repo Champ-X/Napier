@@ -164,7 +164,7 @@ export async function verifyCasebookQualificationTrials(page, expected) {
     .setInputFiles(
       path.resolve(
         import.meta.dirname,
-        "../docs/artifacts/controlled-harness-evidence-0.1.0.json",
+        "../docs/artifacts/controlled-harness-evidence-0.1.1.json",
       ),
     );
   await page.waitForFunction(

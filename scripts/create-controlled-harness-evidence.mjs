@@ -35,7 +35,7 @@ const defaults = {
   ),
   outputPath: path.join(
     repoRoot,
-    "docs/artifacts/controlled-harness-evidence-0.1.0.json",
+    "docs/artifacts/controlled-harness-evidence-0.1.1.json",
   ),
 };
 
@@ -307,7 +307,7 @@ function comparisonFromPairs({
 function parseArgs(argv) {
   const options = {
     ...defaults,
-    productVersion: "0.1.0",
+    productVersion: "0.1.1",
   };
   for (let index = 0; index < argv.length; index += 1) {
     const flag = argv[index];

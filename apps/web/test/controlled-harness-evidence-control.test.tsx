@@ -208,7 +208,7 @@ const evidence = {
   kind: "napier.controlled-harness-evidence",
   schemaVersion: 1,
   generatedAt: "2026-08-13T00:00:00.000Z",
-  productVersion: "0.1.0",
+  productVersion: "0.1.1",
   model: { provider: "deepseek", id: "deepseek-v4-flash" },
   sources: [],
   comparisons: comparisonGates,
@@ -248,7 +248,7 @@ const evidence = {
 const emptyGate: ControlledHarnessGateProjection = {
   kind: "napier.controlled-harness-gate",
   schemaVersion: 1,
-  currentProductVersion: "0.1.0",
+  currentProductVersion: "0.1.1",
   casebookId: casebook.id,
   evidenceCount: 0,
   comparisonGates: [],

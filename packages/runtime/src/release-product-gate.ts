@@ -17,7 +17,7 @@ import {
 } from "./evaluation-casebook-templates.js";
 import { createId, nowIso } from "./ids.js";
 
-export const NAPIER_PRODUCT_VERSION = "0.1.0";
+export const NAPIER_PRODUCT_VERSION = "0.1.1";
 export const RELEASE_PRODUCT_MINIMUM_SUCCESS_RATE = 0.9;
 export const RELEASE_PRODUCT_REQUIRED_CONSECUTIVE_VERSIONS = 3;
 export const RELEASE_PRODUCT_TRIAL_EVENT_TYPE =

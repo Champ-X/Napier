@@ -187,7 +187,7 @@ function validReceipt() {
               qualificationBlocked: true,
               productTrialRunOptions: 3,
               productTrialRecorded:
-                "0.1.0 · incomplete1/10 Cases · 100% success · UX 5/5",
+                "0.1.1 · incomplete1/10 Cases · 100% success · UX 5/5",
               controlledHarnessGate: "ready",
               controlledHarnessEvidence:
                 "Coding vs OMP13/12 passed · 13/13 decisivenapier not worse · minimum 3 decisive Trials · 67% decisive coverageBrowser autonomy vs Browser Use3/3 passed · 3/3 decisivenapier not worse · minimum 3 decisive Trials · 67% decisive coverageQuantified advantageevidence vs OMP · proven · Napier 1.000 vs OMP 0.778 verifiable final evidence rate · n=9/9",
