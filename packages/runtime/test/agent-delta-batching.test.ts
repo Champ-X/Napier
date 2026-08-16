@@ -33,7 +33,14 @@ describe("Agent model delta batching", () => {
       dataRoot: path.join(root, "data"),
     });
     await store.initialize();
-    const reasoning = "x".repeat(40_000);
+    const reasoning = Array.from(
+      { length: 2_000 },
+      (_, index) =>
+        `packages/runtime/src/file-${String(index)}.ts symbol_${String(index)} `,
+    )
+      .join("")
+      .padEnd(40_000, "z")
+      .slice(0, 40_000);
     const provider = fauxProvider({
       provider: "faux-delta-batching",
       models: [{ id: "reasoning", reasoning: true }],

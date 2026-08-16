@@ -45,7 +45,8 @@ export function assertModelPromptEvidenceBindings(
       event.type !== MODEL_CONTEXT_ENVELOPE_EVENT &&
       event.type !== MODEL_ADAPTER_EVENT &&
       event.type !== COMPILED_PROMPT_PACKAGE_EVENT &&
-      event.type !== "model.response"
+      event.type !== "model.response" &&
+      event.type !== "model.thinking_loop.detected"
     ) {
       continue;
     }
@@ -71,7 +72,23 @@ export function assertModelPromptEvidenceBindings(
       });
     } else {
       const turnIndex = responseTurnIndex(event);
-      if (turnIndex !== undefined) run.responses.set(turnIndex, event);
+      const payload =
+        event.payload &&
+        typeof event.payload === "object" &&
+        !Array.isArray(event.payload)
+          ? event.payload
+          : undefined;
+      if (
+        turnIndex !== undefined &&
+        (event.type === "model.response" || payload?.["action"] === "retry")
+      ) {
+        if (run.responses.has(turnIndex)) {
+          throw new Error(
+            `${label} terminal binding is duplicated: ${event.runId}`,
+          );
+        }
+        run.responses.set(turnIndex, event);
+      }
     }
   }
   for (const [runId, run] of runs) {

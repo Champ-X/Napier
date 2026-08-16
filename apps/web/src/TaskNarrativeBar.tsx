@@ -12,6 +12,9 @@ import type { ThreadDetail } from "@napier/contracts";
 import { taskNarrative } from "./task-narrative-view-model";
 
 const LazyTaskCompletionSummary = lazy(() => import("./TaskCompletionSummary"));
+const LazyDefaultProductTrialRecorder = lazy(
+  () => import("./DefaultProductTrialRecorder"),
+);
 
 export function TaskNarrativeBar({
   detail,
@@ -30,6 +33,7 @@ export function TaskNarrativeBar({
         | "operatorDecisions"
         | "automaticRecoveryAssessments"
         | "automaticRecoveryAttempts"
+        | "activePlan"
       >
     | undefined;
   browserControlsAvailable: boolean;
@@ -74,6 +78,7 @@ export function TaskNarrativeBar({
         <LazyTaskCompletionSummary
           completedItems={narrative.completedItems}
           plans={detail?.plans ?? []}
+          activePlan={detail?.activePlan}
           onOpenArtifact={onOpenArtifact}
         />
       </Suspense>
@@ -104,6 +109,14 @@ export function TaskNarrativeBar({
             </button>
           ) : null}
         </div>
+      ) : null}
+      {detail ? (
+        <Suspense fallback={null}>
+          <LazyDefaultProductTrialRecorder
+            threadId={detail.thread.id}
+            runs={detail.runs}
+          />
+        </Suspense>
       ) : null}
     </section>
   );

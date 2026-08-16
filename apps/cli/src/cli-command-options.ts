@@ -10,6 +10,10 @@ import {
 } from "./cli-doctor-options.js";
 import { RUN_VALUE_OPTIONS } from "./cli-run-options.js";
 import {
+  PLUGIN_FLAG_OPTIONS,
+  PLUGIN_VALUE_OPTIONS,
+} from "./cli-plugin-options.js";
+import {
   SETUP_FLAG_OPTIONS,
   SETUP_VALUE_OPTIONS,
 } from "./cli-setup-options.js";
@@ -32,6 +36,7 @@ const COMMANDS = new Set([
   "model-experiment",
   "tool-experiment",
   "rpc",
+  "plugins",
   "workflow",
 ]);
 
@@ -62,6 +67,7 @@ export function commandValueOptions(
   if (command === "model-experiment") return domains.modelExperiment;
   if (command === "tool-experiment") return domains.toolExperiment;
   if (command === "rpc") return domains.rpc;
+  if (command === "plugins") return PLUGIN_VALUE_OPTIONS;
   return WORKFLOW_VALUE_OPTIONS;
 }
 
@@ -76,6 +82,7 @@ export function commandFlagOptions(
   if (command === "doctor") return DOCTOR_FLAG_OPTIONS;
   if (command === "capabilities") return CAPABILITY_FLAG_OPTIONS;
   if (command === "setup") return SETUP_FLAG_OPTIONS;
+  if (command === "plugins") return PLUGIN_FLAG_OPTIONS;
   if (command === "workflow") return WORKFLOW_FLAG_OPTIONS;
   if (command === "experiment") return domains.experiment;
   if (command === "model-experiment") return domains.modelExperiment;

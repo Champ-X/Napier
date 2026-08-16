@@ -17,6 +17,7 @@ import type {
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { PLAN_STEP_STATUSES } from "./plan-step-transition.js";
 import {
   canonicalWorkflowExperimentStrings,
   subtractWorkflowExperimentMetrics,
@@ -43,14 +44,6 @@ const PLAN_STATUSES = new Set<ExecutionPlanStatus>([
   "completed",
   "blocked",
   "cancelled",
-]);
-const STEP_STATUSES = new Set<PlanStepStatus>([
-  "pending",
-  "ready",
-  "running",
-  "completed",
-  "blocked",
-  "skipped",
 ]);
 const RUN_SOURCES = new Set<RunInvocationSource>([
   "workflow",
@@ -445,7 +438,7 @@ function validateObservation(
     new Set(["inputSha256", "outputSha256"]),
   );
   if (
-    !STEP_STATUSES.has(observation["status"] as PlanStepStatus) ||
+    !PLAN_STEP_STATUSES.has(observation["status"] as PlanStepStatus) ||
     (observation["inputSha256"] !== undefined &&
       !hash(observation["inputSha256"])) ||
     (observation["outputSha256"] !== undefined &&

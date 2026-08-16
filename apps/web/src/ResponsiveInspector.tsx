@@ -15,10 +15,21 @@ export function ResponsiveInspector({
   const inspectorId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const inspectorRef = useRef<HTMLElement>(null);
+  const restoreFocusRef = useRef(false);
+  const close = () => {
+    restoreFocusRef.current = true;
+    setOpen(false);
+  };
 
   useEffect(() => {
     if (openRequest > 0) setOpen(true);
   }, [openRequest]);
+
+  useEffect(() => {
+    if (open || !restoreFocusRef.current) return;
+    restoreFocusRef.current = false;
+    triggerRef.current?.focus();
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -31,8 +42,7 @@ export function ResponsiveInspector({
     }, 200);
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setOpen(false);
-        triggerRef.current?.focus();
+        close();
       }
     };
     window.addEventListener("keydown", closeOnEscape);
@@ -60,10 +70,7 @@ export function ResponsiveInspector({
           className="inspector-drawer-backdrop"
           type="button"
           aria-label={`Close ${label}`}
-          onClick={() => {
-            setOpen(false);
-            triggerRef.current?.focus();
-          }}
+          onClick={close}
         />
       ) : null}
       <aside
@@ -77,14 +84,7 @@ export function ResponsiveInspector({
             <PanelRightClose size={15} aria-hidden="true" />
             {label}
           </span>
-          <button
-            type="button"
-            aria-label={`Close ${label}`}
-            onClick={() => {
-              setOpen(false);
-              triggerRef.current?.focus();
-            }}
-          >
+          <button type="button" aria-label={`Close ${label}`} onClick={close}>
             <X size={15} aria-hidden="true" />
           </button>
         </header>

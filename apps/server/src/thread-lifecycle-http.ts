@@ -1,4 +1,5 @@
 import {
+  type AgentKernel,
   createGoal,
   createId,
   type LocalStore,
@@ -20,6 +21,7 @@ import {
   parseSetGoalRequest,
 } from "./thread-lifecycle-http-validation.js";
 import { setThreadDetailProjectionHeaders } from "./thread-lifecycle-http-response.js";
+import { attachKernelThreadProjections } from "./kernel-thread-projections.js";
 
 const MAX_THREAD_CREATE_REQUEST_BYTES = 8 * 1024;
 const MAX_GOAL_REQUEST_BYTES = 8 * 1024;
@@ -39,6 +41,20 @@ type ThreadLifecycleHttpStore = Pick<
 
 export interface ThreadLifecycleHttpServices {
   store: ThreadLifecycleHttpStore;
+  kernel: Pick<
+    AgentKernel,
+    | "activePlans"
+    | "conversationActivityCandidates"
+    | "conversationActivityEvents"
+    | "conversationArtifacts"
+    | "conversationCitations"
+    | "conversationMessages"
+    | "conversationPlans"
+    | "conversationRecoveries"
+    | "conversationSubagents"
+    | "operatorDecisions"
+    | "taskNarratives"
+  >;
 }
 
 export function registerThreadLifecycleHttp(
@@ -46,9 +62,7 @@ export function registerThreadLifecycleHttp(
   services: ThreadLifecycleHttpServices,
 ): void {
   app.get("/api/threads/:threadId", async (context) => {
-    const detail = await services.store.getDetail(
-      context.req.param("threadId"),
-    );
+    const detail = await projectDetail(services, context.req.param("threadId"));
     setThreadDetailProjectionHeaders(context, detail);
     return context.json(detail);
   });
@@ -80,7 +94,7 @@ export function registerThreadLifecycleHttp(
       title: normalizeThreadTitle(body.title),
       agentId: agent.id,
     });
-    const detail = await services.store.getDetail(thread.id);
+    const detail = await projectDetail(services, thread.id);
     setThreadDetailProjectionHeaders(context, detail);
     return context.json(detail, 201);
   });
@@ -124,6 +138,7 @@ export function registerThreadLifecycleHttp(
       bundle,
       request.title,
     );
+    await attachKernelThreadProjections(detail, services.kernel);
     setThreadDetailProjectionHeaders(context, detail);
     return context.json(detail, 201);
   });
@@ -132,7 +147,7 @@ export function registerThreadLifecycleHttp(
     const threadId = context.req.param("threadId");
     try {
       await services.store.trashThread(threadId);
-      const detail = await services.store.getDetail(threadId);
+      const detail = await projectDetail(services, threadId);
       setThreadDetailProjectionHeaders(context, detail);
       return context.json(detail);
     } catch (error) {
@@ -153,7 +168,7 @@ export function registerThreadLifecycleHttp(
     const threadId = context.req.param("threadId");
     try {
       await services.store.restoreThread(threadId);
-      const detail = await services.store.getDetail(threadId);
+      const detail = await projectDetail(services, threadId);
       setThreadDetailProjectionHeaders(context, detail);
       return context.json(detail);
     } catch (error) {
@@ -166,10 +181,14 @@ export function registerThreadLifecycleHttp(
     }
   });
 
-  registerGoalHttp(app, services.store);
+  registerGoalHttp(app, services);
 }
 
-function registerGoalHttp(app: Hono, store: ThreadLifecycleHttpStore): void {
+function registerGoalHttp(
+  app: Hono,
+  services: ThreadLifecycleHttpServices,
+): void {
+  const store = services.store;
   app.put("/api/threads/:threadId/goal", async (context) => {
     let input: unknown;
     try {
@@ -201,7 +220,7 @@ function registerGoalHttp(app: Hono, store: ThreadLifecycleHttpStore): void {
         maxContinuations: goal.maxContinuations,
       },
     });
-    const detail = await store.getDetail(threadId);
+    const detail = await projectDetail(services, threadId);
     setThreadDetailProjectionHeaders(context, detail);
     return context.json(detail);
   });
@@ -217,8 +236,18 @@ function registerGoalHttp(app: Hono, store: ThreadLifecycleHttpStore): void {
       visibility: "user",
       payload: {},
     });
-    const detail = await store.getDetail(threadId);
+    const detail = await projectDetail(services, threadId);
     setThreadDetailProjectionHeaders(context, detail);
     return context.json(detail);
   });
+}
+
+async function projectDetail(
+  services: ThreadLifecycleHttpServices,
+  threadId: string,
+) {
+  const detail = await services.store.getDetail(threadId, {
+    kernelProjections: false,
+  });
+  return attachKernelThreadProjections(detail, services.kernel);
 }

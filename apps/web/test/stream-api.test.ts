@@ -1394,9 +1394,9 @@ describe("streaming Run API client", () => {
     const snapshot = streamSnapshotFrame(
       "thread_1",
       [],
-      [streamRunRecord("thread_1", "run_5")],
+      [streamRunRecord("thread_1", "run_recovery")],
     );
-    const doneFrame = streamDoneFrame("run_5", "completed", snapshot);
+    const doneFrame = streamDoneFrame("run_recovery", "completed", snapshot);
     vi.stubGlobal(
       "fetch",
       vi.fn(async (path: string, init?: RequestInit) => {

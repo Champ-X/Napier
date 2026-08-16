@@ -103,7 +103,7 @@ import {
   validateEvaluationSuiteGateReceipt,
   verifyThreadReplayBundle,
 } from "@napier/runtime";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createApp, createServices as createNapierServices, inferWorkspaceRoot } from "../src/app.js";
 import { processReadySandbox } from "./process-run-readiness-test-fixture.js";
 
@@ -112,7 +112,10 @@ const temporaryRoots: string[] = [];
 const openServices: Awaited<ReturnType<typeof createNapierServices>>[] = [];
 
 async function createServices(options: Parameters<typeof createNapierServices>[0]) {
-  const services = await createNapierServices({ sandbox: processReadySandbox("app-test-readiness"), ...options });
+  const services = await createNapierServices({
+    sandbox: processReadySandbox("app-test-readiness"),
+    ...options,
+  });
   openServices.push(services);
   return services;
 }
@@ -178,7 +181,7 @@ describe("Napier HTTP goal flow", () => {
     expect(response.headers.get("x-napier-store-last-event-bytes")).toBeNull();
     expect(response.headers.get("x-napier-store-last-projection-bytes")).toBeNull();
     expect(response.headers.get("x-napier-ledger-latest-migration-version")).toBe(String(LEDGER_SCHEMA_VERSION));
-    expect(response.headers.get("x-napier-ledger-latest-migration-name")).toBe("schema_migration_history");
+    expect(response.headers.get("x-napier-ledger-latest-migration-name")).toBe("normalized_run_leases");
     expect(health).toEqual(
       expect.objectContaining({
         status: "ok",
@@ -202,7 +205,7 @@ describe("Napier HTTP goal flow", () => {
           migrations: expect.arrayContaining([
             expect.objectContaining({
               version: LEDGER_SCHEMA_VERSION,
-              name: "schema_migration_history",
+              name: "normalized_run_leases",
             }),
           ]),
         }),
@@ -254,12 +257,8 @@ describe("Napier HTTP goal flow", () => {
         }),
       ),
     );
-    const noStoreHelpers = sources
-      .flatMap((source) => extractFunctions(source))
-      .filter(({ body }) => body.includes('"Cache-Control", "no-store"'));
-    const missingContentHash = noStoreHelpers
-      .filter(({ body }) => !bodyCallsContentHashHelper(body))
-      .map(({ line, name }) => `${name}:${line}`);
+    const noStoreHelpers = sources.flatMap((source) => extractFunctions(source)).filter(({ body }) => body.includes('"Cache-Control", "no-store"'));
+    const missingContentHash = noStoreHelpers.filter(({ body }) => !bodyCallsContentHashHelper(body)).map(({ line, name }) => `${name}:${line}`);
 
     expect(missingContentHash).toEqual([]);
   });
@@ -589,13 +588,13 @@ describe("Napier HTTP goal flow", () => {
       waitForOperatorDecisionId: requested.decision.id,
     });
     const endpointPath = `/api/threads/${thread.id}/operator-decisions`;
-
+    const legacyList = vi.spyOn(services.store, "listOperatorDecisions");
     const listResponse = await app.request(endpointPath);
     expect(listResponse.status).toBe(200);
     const listed = (await listResponse.json()) as OperatorDecision[];
     expect(listed).toEqual([requested.decision]);
     expectOperatorDecisionListHeaders(listResponse, thread.id, listed);
-
+    expect(legacyList).not.toHaveBeenCalled();
     const invalidAnswerResponse = await app.request(`${endpointPath}/${requested.decision.id}/answer`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -1254,9 +1253,7 @@ describe("Napier HTTP goal flow", () => {
       );
     }
     const detail = (await (await app.request(`/api/threads/${created.thread.id}`)).json()) as ThreadDetail;
-    expect(
-      detail.events.find((event) => event.type === "memory.approved" && event.payload["memoryId"] === consolidation.id)?.payload,
-    ).toEqual(
+    expect(detail.events.find((event) => event.type === "memory.approved" && event.payload["memoryId"] === consolidation.id)?.payload).toEqual(
       expect.objectContaining({
         consolidatesMemoryIds: sources.map((source) => source.id).sort(),
         consolidatedMemoryStatus: "archived",
@@ -2008,9 +2005,7 @@ describe("Napier HTTP goal flow", () => {
       }),
     ]);
     expect(detail.runs[0]?.lease).toBeUndefined();
-    expect(detail.events.map((event) => event.type)).toEqual(
-      expect.arrayContaining(["schedule.created", "schedule.claimed", "schedule.completed"]),
-    );
+    expect(detail.events.map((event) => event.type)).toEqual(expect.arrayContaining(["schedule.created", "schedule.claimed", "schedule.completed"]));
     const createdEvent = detail.events.find((event) => event.type === "schedule.created");
     expect(JSON.stringify(createdEvent?.payload)).not.toContain("Review durable evidence on schedule.");
 
@@ -3010,10 +3005,7 @@ describe("Napier HTTP goal flow", () => {
         status: "evidence_missing",
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         currentAdapterCatalogSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
-        diagnostics: expect.arrayContaining([
-          "Inbound body SHA-256 evidence is missing.",
-          "Inbound adapter catalog SHA-256 evidence is missing.",
-        ]),
+        diagnostics: expect.arrayContaining(["Inbound body SHA-256 evidence is missing.", "Inbound adapter catalog SHA-256 evidence is missing."]),
       }),
     );
 
@@ -3169,9 +3161,7 @@ describe("Napier HTTP goal flow", () => {
     expect(tamperedVerifyResponse.headers.get("x-napier-observed-delivery-count")).toBe(String(deadLetters.deliveryCount));
     expect(tamperedVerifyResponse.headers.get("x-napier-observed-qualified-count")).toBe(String(deadLetters.qualifiedCount));
     expect(tamperedVerifyResponse.headers.get("x-napier-observed-evidence-missing-count")).toBe(String(deadLetters.evidenceMissingCount));
-    expect(tamperedVerifyResponse.headers.get("x-napier-observed-adapter-catalog-drift-count")).toBe(
-      String(deadLetters.adapterCatalogDriftCount),
-    );
+    expect(tamperedVerifyResponse.headers.get("x-napier-observed-adapter-catalog-drift-count")).toBe(String(deadLetters.adapterCatalogDriftCount));
     expect(await tamperedVerifyResponse.json()).toEqual(
       expect.objectContaining({
         status: "invalid",
@@ -3277,9 +3267,7 @@ describe("Napier HTTP goal flow", () => {
       }),
     );
     expect(retryApplyResponse.headers.get("x-napier-preview-candidate-set-sha256")).toBe(retryApply.previewCandidateSetSha256);
-    expect(retryApplyResponse.headers.get("x-napier-preview-retryable-delivery-ids-sha256")).toBe(
-      retryApply.previewRetryableDeliveryIdsSha256,
-    );
+    expect(retryApplyResponse.headers.get("x-napier-preview-retryable-delivery-ids-sha256")).toBe(retryApply.previewRetryableDeliveryIdsSha256);
     expect(retryApplyResponse.headers.get("x-napier-preview-blocked-delivery-ids-sha256")).toBe(retryApply.previewBlockedDeliveryIdsSha256);
     expect(retryApplyResponse.headers.get("x-napier-retried-delivery-ids-sha256")).toBe(retryApply.retriedDeliveryIdsSha256);
     expect(retryApplyResponse.headers.get("x-napier-skipped-delivery-ids-sha256")).toBe(retryApply.skippedDeliveryIdsSha256);
@@ -3712,9 +3700,7 @@ describe("Napier HTTP goal flow", () => {
     expect(downloadArtifactResponse.headers.get("Cache-Control")).toBe("no-store");
     expect(downloadArtifactResponse.headers.get("X-Napier-Content-SHA256")).toBe(expectedReportSha256);
     expect(downloadArtifactResponse.headers.get("X-Napier-Content-SHA256-Mode")).toBe("stable");
-    expect(downloadArtifactResponse.headers.get("X-Napier-Plan-Artifact-Path-SHA256")).toBe(
-      createHash("sha256").update("report.md").digest("hex"),
-    );
+    expect(downloadArtifactResponse.headers.get("X-Napier-Plan-Artifact-Path-SHA256")).toBe(createHash("sha256").update("report.md").digest("hex"));
     expect(downloadArtifactResponse.headers.get("X-Napier-Plan-Artifact-Size-Bytes")).toBe(String(Buffer.byteLength(reportContents)));
     expect(downloadArtifactResponse.headers.get("Content-Disposition")).toBe(
       `attachment; filename="napier-artifact-report-${expectedReportSha256.slice(0, 12)}-report.md"`,
@@ -3746,14 +3732,11 @@ describe("Napier HTTP goal flow", () => {
         }),
       }),
     ]);
-    const invalidFileVerifyMediaTypeResponse = await app.request(
-      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/file/verify`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ contents: reportContents }),
-      },
-    );
+    const invalidFileVerifyMediaTypeResponse = await app.request(`/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/file/verify`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ contents: reportContents }),
+    });
     expect(invalidFileVerifyMediaTypeResponse.status).toBe(400);
     await expect(invalidFileVerifyMediaTypeResponse.json()).resolves.toEqual({
       error: "Plan artifact file verification request must use application/octet-stream",
@@ -3794,14 +3777,11 @@ describe("Napier HTTP goal flow", () => {
     expect(fileVerifyResponse.headers.get("X-Napier-Observed-Artifact-SHA256")).toBe(expectedReportSha256);
     const tamperedFileContents = `${reportContents}\nTampered archive copy.\n`;
     const tamperedFileSha256 = createHash("sha256").update(tamperedFileContents).digest("hex");
-    const tamperedFileVerifyResponse = await app.request(
-      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/file/verify`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/octet-stream" },
-        body: tamperedFileContents,
-      },
-    );
+    const tamperedFileVerifyResponse = await app.request(`/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/file/verify`, {
+      method: "POST",
+      headers: { "content-type": "application/octet-stream" },
+      body: tamperedFileContents,
+    });
     expect(tamperedFileVerifyResponse.status).toBe(200);
     expect(tamperedFileVerifyResponse.headers.get("X-Napier-Verification-Status")).toBe("drifted");
     await expect(tamperedFileVerifyResponse.json()).resolves.toEqual(
@@ -3829,17 +3809,14 @@ describe("Napier HTTP goal flow", () => {
         observedSizeBytes: 0,
       }),
     );
-    const oversizedFileVerifyResponse = await app.request(
-      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/file/verify`,
-      {
-        method: "POST",
-        headers: {
-          "content-type": "application/octet-stream",
-          "content-length": String(32 * 1024 * 1024 + 1),
-        },
-        body: "x",
+    const oversizedFileVerifyResponse = await app.request(`/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/file/verify`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/octet-stream",
+        "content-length": String(32 * 1024 * 1024 + 1),
       },
-    );
+      body: "x",
+    });
     expect(oversizedFileVerifyResponse.status).toBe(413);
     await expect(oversizedFileVerifyResponse.json()).resolves.toEqual({
       error: "Plan artifact file verification request exceeds 33554432 bytes",
@@ -3896,14 +3873,10 @@ describe("Napier HTTP goal flow", () => {
     expect(previewArtifactResponse.headers.get("Cache-Control")).toBe("no-store");
     expect(previewArtifactResponse.headers.get("X-Napier-Plan-Revision")).toBe(String(previewedPlan.revision));
     expect(previewArtifactResponse.headers.get("X-Napier-Plan-Artifact-Status")).toBe("verified");
-    expect(previewArtifactResponse.headers.get("X-Napier-Plan-Artifact-Path-SHA256")).toBe(
-      createHash("sha256").update("report.md").digest("hex"),
-    );
+    expect(previewArtifactResponse.headers.get("X-Napier-Plan-Artifact-Path-SHA256")).toBe(createHash("sha256").update("report.md").digest("hex"));
     expect(previewArtifactResponse.headers.get("X-Napier-Plan-Artifact-SHA256")).toBe(expectedReportSha256);
     expect(previewArtifactResponse.headers.get("X-Napier-Plan-Artifact-Size-Bytes")).toBe(String(Buffer.byteLength(reportContents)));
-    expect(previewArtifactResponse.headers.get("X-Napier-Plan-Artifact-Line-Count")).toBe(
-      String(reportContents.split(/\r\n|\r|\n/u).length),
-    );
+    expect(previewArtifactResponse.headers.get("X-Napier-Plan-Artifact-Line-Count")).toBe(String(reportContents.split(/\r\n|\r|\n/u).length));
     const previewText = await previewArtifactResponse.text();
     const previewBody = JSON.parse(previewText) as {
       text: string;
@@ -3913,9 +3886,7 @@ describe("Napier HTTP goal flow", () => {
       lineCount: number;
     } & LedgerEventReceiptBody;
     expect(previewArtifactResponse.headers.get("X-Napier-Content-SHA256")).toBe(createHash("sha256").update(previewText).digest("hex"));
-    expect(previewArtifactResponse.headers.get("X-Napier-Plan-Artifact-Text-SHA256")).toBe(
-      createHash("sha256").update(reportContents).digest("hex"),
-    );
+    expect(previewArtifactResponse.headers.get("X-Napier-Plan-Artifact-Text-SHA256")).toBe(createHash("sha256").update(reportContents).digest("hex"));
     expect(previewBody).toEqual(
       expect.objectContaining({
         text: reportContents,
@@ -4152,9 +4123,7 @@ describe("Napier HTTP goal flow", () => {
         }),
       }),
     ]);
-    expect(createHash("sha256").update(JSON.stringify(dataProfileVerificationEvents[0])).digest("hex")).toBe(
-      dataProfileVerifyBody.ledgerEventSha256,
-    );
+    expect(createHash("sha256").update(JSON.stringify(dataProfileVerificationEvents[0])).digest("hex")).toBe(dataProfileVerifyBody.ledgerEventSha256);
     expect(JSON.stringify(dataProfileVerificationEvents)).not.toContain("alpha");
     expect(JSON.stringify(dataProfileVerificationEvents)).not.toContain("beta");
     expect(JSON.stringify(dataProfileVerificationEvents)).not.toContain("tampered");
@@ -4168,9 +4137,7 @@ describe("Napier HTTP goal flow", () => {
     expect(currentDriftCheckResponse.headers.get("X-Napier-Plan-Artifact-Expected-SHA256")).toBe(expectedReportSha256);
     expect(currentDriftCheckResponse.headers.get("X-Napier-Plan-Artifact-Observed-SHA256")).toBe(expectedReportSha256);
     const currentDriftText = await currentDriftCheckResponse.text();
-    expect(currentDriftCheckResponse.headers.get("X-Napier-Content-SHA256")).toBe(
-      createHash("sha256").update(currentDriftText).digest("hex"),
-    );
+    expect(currentDriftCheckResponse.headers.get("X-Napier-Content-SHA256")).toBe(createHash("sha256").update(currentDriftText).digest("hex"));
     const currentDriftBody = JSON.parse(currentDriftText) as LedgerEventReceiptBody & {
       result: string;
       expectedSha256: string;
@@ -4433,10 +4400,7 @@ describe("Napier HTTP goal flow", () => {
       expect.objectContaining({
         threadId: blueprintThread.thread.id,
         objective: "Reuse the verified report workflow.",
-        steps: expect.arrayContaining([
-          expect.objectContaining({ id: "produce" }),
-          expect.objectContaining({ id: "audit", dependsOn: ["produce"] }),
-        ]),
+        steps: expect.arrayContaining([expect.objectContaining({ id: "produce" }), expect.objectContaining({ id: "audit", dependsOn: ["produce"] })]),
       }),
     );
     expect((await services.store.listEvents(blueprintThread.thread.id)).map((event) => event.payload)).toEqual(
@@ -4510,8 +4474,7 @@ describe("Napier HTTP goal flow", () => {
 
     const archivedBlueprintQualificationResponse = await app.request(`/api/plan-blueprints/${savedBlueprint.record.id}/qualification`);
     expect(archivedBlueprintQualificationResponse.status).toBe(200);
-    const archivedBlueprintQualification =
-      (await archivedBlueprintQualificationResponse.json()) as ExecutionPlanBlueprintRecordQualification;
+    const archivedBlueprintQualification = (await archivedBlueprintQualificationResponse.json()) as ExecutionPlanBlueprintRecordQualification;
     expect(archivedBlueprintQualification).toEqual(
       expect.objectContaining({
         status: "archived",
@@ -4650,8 +4613,7 @@ describe("Napier HTTP goal flow", () => {
       }),
     });
     expect(tamperedReplayEventVerifyResponse.status).toBe(200);
-    const tamperedReplayEventVerification =
-      (await tamperedReplayEventVerifyResponse.json()) as ExecutionPlanBlueprintRecordReplayEventVerification;
+    const tamperedReplayEventVerification = (await tamperedReplayEventVerifyResponse.json()) as ExecutionPlanBlueprintRecordReplayEventVerification;
     expect(tamperedReplayEventVerification).toEqual(
       expect.objectContaining({
         status: "invalid",
@@ -4663,10 +4625,7 @@ describe("Napier HTTP goal flow", () => {
     );
     expectExecutionPlanBlueprintRecordReplayEventVerificationHeaders(tamperedReplayEventVerifyResponse, tamperedReplayEventVerification);
     expect(recordPlan.steps).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ id: "produce" }),
-        expect.objectContaining({ id: "audit", dependsOn: ["produce"] }),
-      ]),
+      expect.arrayContaining([expect.objectContaining({ id: "produce" }), expect.objectContaining({ id: "audit", dependsOn: ["produce"] })]),
     );
     expect(recordThreadEvents.map((event) => event.payload)).toEqual(
       expect.arrayContaining([
@@ -4750,10 +4709,7 @@ describe("Napier HTTP goal flow", () => {
         observedEventSetSha256: replayHistory.eventSetSha256,
       }),
     );
-    expectExecutionPlanBlueprintRecordReplayHistoryVerificationHeaders(
-      tamperedReplayHistoryVerifyResponse,
-      tamperedReplayHistoryVerification,
-    );
+    expectExecutionPlanBlueprintRecordReplayHistoryVerificationHeaders(tamperedReplayHistoryVerifyResponse, tamperedReplayHistoryVerification);
 
     const replayOutcomesResponse = await app.request(`/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes`);
     expect(replayOutcomesResponse.status).toBe(200);
@@ -4796,8 +4752,7 @@ describe("Napier HTTP goal flow", () => {
       body: JSON.stringify({ outcomes: replayOutcomes }),
     });
     expect(replayOutcomesVerifyResponse.status).toBe(200);
-    const replayOutcomesVerification =
-      (await replayOutcomesVerifyResponse.json()) as ExecutionPlanBlueprintRecordReplayOutcomesVerification;
+    const replayOutcomesVerification = (await replayOutcomesVerifyResponse.json()) as ExecutionPlanBlueprintRecordReplayOutcomesVerification;
     expect(replayOutcomesVerification).toEqual(
       expect.objectContaining({
         status: "valid",
@@ -4819,16 +4774,13 @@ describe("Napier HTTP goal flow", () => {
     );
     expectExecutionPlanBlueprintRecordReplayOutcomesVerificationHeaders(replayOutcomesVerifyResponse, replayOutcomesVerification);
 
-    const tamperedReplayOutcomesVerifyResponse = await app.request(
-      `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/verify`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          outcomes: { ...replayOutcomes, outcomeSetSha256: "0".repeat(64) },
-        }),
-      },
-    );
+    const tamperedReplayOutcomesVerifyResponse = await app.request(`/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/verify`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        outcomes: { ...replayOutcomes, outcomeSetSha256: "0".repeat(64) },
+      }),
+    });
     expect(tamperedReplayOutcomesVerifyResponse.status).toBe(200);
     const tamperedReplayOutcomesVerification =
       (await tamperedReplayOutcomesVerifyResponse.json()) as ExecutionPlanBlueprintRecordReplayOutcomesVerification;
@@ -4840,10 +4792,7 @@ describe("Napier HTTP goal flow", () => {
         observedOutcomeSetSha256: replayOutcomes.outcomeSetSha256,
       }),
     );
-    expectExecutionPlanBlueprintRecordReplayOutcomesVerificationHeaders(
-      tamperedReplayOutcomesVerifyResponse,
-      tamperedReplayOutcomesVerification,
-    );
+    expectExecutionPlanBlueprintRecordReplayOutcomesVerificationHeaders(tamperedReplayOutcomesVerifyResponse, tamperedReplayOutcomesVerification);
 
     const invalidReplayOutcomesRequest = await app.request(`/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/verify`, {
       method: "POST",
@@ -4864,12 +4813,9 @@ describe("Napier HTTP goal flow", () => {
     expect(emptyOutcomeBaselines).toEqual([]);
     expectExecutionPlanBlueprintRecordOutcomeBaselineListHeaders(emptyOutcomeBaselinesResponse, emptyOutcomeBaselines);
 
-    const missingOutcomeQualificationResponse = await app.request(
-      `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/qualification`,
-    );
+    const missingOutcomeQualificationResponse = await app.request(`/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/qualification`);
     expect(missingOutcomeQualificationResponse.status).toBe(200);
-    const missingOutcomeQualification =
-      (await missingOutcomeQualificationResponse.json()) as ExecutionPlanBlueprintRecordOutcomeQualification;
+    const missingOutcomeQualification = (await missingOutcomeQualificationResponse.json()) as ExecutionPlanBlueprintRecordOutcomeQualification;
     expect(missingOutcomeQualification).toEqual(
       expect.objectContaining({
         status: "missing_baseline",
@@ -4923,19 +4869,16 @@ describe("Napier HTTP goal flow", () => {
     });
     expectExecutionPlanBlueprintRecordOutcomeBaselinePromotionHeaders(outcomeBaselineResponse, outcomeBaselineResult);
 
-    const duplicateOutcomeBaselineResponse = await app.request(
-      `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/baselines`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          outcomes: replayOutcomes,
-          policy: {
-            minCompletionRateBps: 0,
-          },
-        }),
-      },
-    );
+    const duplicateOutcomeBaselineResponse = await app.request(`/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/baselines`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        outcomes: replayOutcomes,
+        policy: {
+          minCompletionRateBps: 0,
+        },
+      }),
+    });
     expect(duplicateOutcomeBaselineResponse.status).toBe(200);
     const duplicateOutcomeBaselineResult =
       (await duplicateOutcomeBaselineResponse.json()) as PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult;
@@ -4951,9 +4894,7 @@ describe("Napier HTTP goal flow", () => {
     expect(outcomeBaselines).toEqual([outcomeBaselineResult.baseline]);
     expectExecutionPlanBlueprintRecordOutcomeBaselineListHeaders(outcomeBaselinesResponse, outcomeBaselines);
 
-    const outcomeQualificationResponse = await app.request(
-      `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/qualification`,
-    );
+    const outcomeQualificationResponse = await app.request(`/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/qualification`);
     expect(outcomeQualificationResponse.status).toBe(200);
     const outcomeQualification = (await outcomeQualificationResponse.json()) as ExecutionPlanBlueprintRecordOutcomeQualification;
     expect(outcomeQualification).toEqual(
@@ -5186,23 +5127,19 @@ describe("Napier HTTP goal flow", () => {
     );
     expectExecutionPlanBlueprintRecordOutcomeReviewHeaders(promotedOutcomeReviewResponse, promotedOutcomeReview);
 
-    const reviewedOutcomeBaselineResponse = await app.request(
-      `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/baselines`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          outcomes: replayOutcomes,
-          policy: {
-            minCompletionRateBps: 0,
-          },
-          review: promotedOutcomeReview,
-        }),
-      },
-    );
+    const reviewedOutcomeBaselineResponse = await app.request(`/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/baselines`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        outcomes: replayOutcomes,
+        policy: {
+          minCompletionRateBps: 0,
+        },
+        review: promotedOutcomeReview,
+      }),
+    });
     expect(reviewedOutcomeBaselineResponse.status).toBe(201);
-    const reviewedOutcomeBaselineResult =
-      (await reviewedOutcomeBaselineResponse.json()) as PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult;
+    const reviewedOutcomeBaselineResult = (await reviewedOutcomeBaselineResponse.json()) as PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult;
     expect(reviewedOutcomeBaselineResult).toEqual({
       created: true,
       baseline: expect.objectContaining({
@@ -5232,9 +5169,7 @@ describe("Napier HTTP goal flow", () => {
     });
     expectExecutionPlanBlueprintRecordOutcomeBaselinePromotionHeaders(reviewedOutcomeBaselineResponse, reviewedOutcomeBaselineResult);
 
-    const reviewedOutcomeBaselinesResponse = await app.request(
-      `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/baselines`,
-    );
+    const reviewedOutcomeBaselinesResponse = await app.request(`/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/baselines`);
     expect(reviewedOutcomeBaselinesResponse.status).toBe(200);
     const reviewedOutcomeBaselines = (await reviewedOutcomeBaselinesResponse.json()) as ExecutionPlanBlueprintRecordOutcomeBaseline[];
     expect(reviewedOutcomeBaselines).toEqual([outcomeBaselineResult.baseline, reviewedOutcomeBaselineResult.baseline]);
@@ -5253,21 +5188,18 @@ describe("Napier HTTP goal flow", () => {
       error: "Execution plan blueprint outcome baseline request is invalid",
     });
 
-    const inconclusiveReviewPromotionResponse = await app.request(
-      `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/baselines`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          outcomes: replayOutcomes,
-          policy: {
-            minCompletionRateBps: 0,
-          },
-          review: outcomeReview,
-          reviewGate: { minScore: 0 },
-        }),
-      },
-    );
+    const inconclusiveReviewPromotionResponse = await app.request(`/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/baselines`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        outcomes: replayOutcomes,
+        policy: {
+          minCompletionRateBps: 0,
+        },
+        review: outcomeReview,
+        reviewGate: { minScore: 0 },
+      }),
+    });
     expect(inconclusiveReviewPromotionResponse.status).toBe(409);
     expect(await inconclusiveReviewPromotionResponse.json()).toEqual({
       error: "Execution plan blueprint outcome baseline review failed: review_not_promote,review_risk_above_max",
@@ -5331,11 +5263,7 @@ describe("Napier HTTP goal flow", () => {
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
-    expect(policyBacktest.results.map((result) => result.recommendationPolicy.templateId)).toEqual([
-      "balanced",
-      "delivery_first",
-      "portfolio_first",
-    ]);
+    expect(policyBacktest.results.map((result) => result.recommendationPolicy.templateId)).toEqual(["balanced", "delivery_first", "portfolio_first"]);
     expect(policyBacktest.results.map((result) => result.selectedRecommendationScoreBps)).toEqual([1_600, 1_100, 2_100]);
     for (const result of policyBacktest.results) {
       expect(result).toEqual(
@@ -5417,9 +5345,7 @@ describe("Napier HTTP goal flow", () => {
     );
     expectExecutionPlanBlueprintRecommendationPolicyOverrideListHeaders(policyOverrideListResponse, policyOverrideList);
 
-    const policyOverrideDriftReviewResponse = await app.request(
-      "/api/plan-blueprints/portfolio/recommendation-policy-overrides/drift-review",
-    );
+    const policyOverrideDriftReviewResponse = await app.request("/api/plan-blueprints/portfolio/recommendation-policy-overrides/drift-review");
     expect(policyOverrideDriftReviewResponse.status).toBe(200);
     const policyOverrideDriftReview =
       (await policyOverrideDriftReviewResponse.json()) as ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview;
@@ -5458,10 +5384,7 @@ describe("Napier HTTP goal flow", () => {
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
-    expectExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewHeaders(
-      policyOverrideDriftReviewResponse,
-      policyOverrideDriftReview,
-    );
+    expectExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewHeaders(policyOverrideDriftReviewResponse, policyOverrideDriftReview);
 
     const overrideSelectionThread = (await (
       await app.request("/api/threads", {
@@ -5522,11 +5445,8 @@ describe("Napier HTTP goal flow", () => {
     const driftedPolicyOverride = (await driftedPolicyOverrideResponse.json()) as ExecutionPlanBlueprintRecommendationPolicyOverride;
     const driftedPolicyOverrideListResponse = await app.request("/api/plan-blueprints/portfolio/recommendation-policy-overrides");
     expect(driftedPolicyOverrideListResponse.status).toBe(200);
-    const driftedPolicyOverrideList =
-      (await driftedPolicyOverrideListResponse.json()) as ExecutionPlanBlueprintRecommendationPolicyOverrideList;
-    const driftedPolicyOverrideReviewResponse = await app.request(
-      "/api/plan-blueprints/portfolio/recommendation-policy-overrides/drift-review",
-    );
+    const driftedPolicyOverrideList = (await driftedPolicyOverrideListResponse.json()) as ExecutionPlanBlueprintRecommendationPolicyOverrideList;
+    const driftedPolicyOverrideReviewResponse = await app.request("/api/plan-blueprints/portfolio/recommendation-policy-overrides/drift-review");
     expect(driftedPolicyOverrideReviewResponse.status).toBe(200);
     const driftedPolicyOverrideReview =
       (await driftedPolicyOverrideReviewResponse.json()) as ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview;
@@ -5581,8 +5501,7 @@ describe("Napier HTTP goal flow", () => {
     expectExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHeaders(policyOverrideRetirementResponse, policyOverrideRetirement);
     const retiredPolicyOverrideListResponse = await app.request("/api/plan-blueprints/portfolio/recommendation-policy-overrides");
     expect(retiredPolicyOverrideListResponse.status).toBe(200);
-    const retiredPolicyOverrideList =
-      (await retiredPolicyOverrideListResponse.json()) as ExecutionPlanBlueprintRecommendationPolicyOverrideList;
+    const retiredPolicyOverrideList = (await retiredPolicyOverrideListResponse.json()) as ExecutionPlanBlueprintRecommendationPolicyOverrideList;
     expect(retiredPolicyOverrideList).toEqual(
       expect.objectContaining({
         overrideCount: 0,
@@ -5590,9 +5509,7 @@ describe("Napier HTTP goal flow", () => {
         overrideSetSha256: policyOverrideRetirement.remainingOverrideSetSha256,
       }),
     );
-    const policyOverrideRetirementHistoryResponse = await app.request(
-      "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements",
-    );
+    const policyOverrideRetirementHistoryResponse = await app.request("/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements");
     expect(policyOverrideRetirementHistoryResponse.status).toBe(200);
     const policyOverrideRetirementHistory =
       (await policyOverrideRetirementHistoryResponse.json()) as ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory;
@@ -5832,9 +5749,7 @@ describe("Napier HTTP goal flow", () => {
     expect(signedPolicyOverrideRetirementHistoryProofBundleResponse.headers.get("x-napier-receipt-artifact-sha256")).toBe(
       signedPolicyOverrideRetirementHistoryProofBundle.signature.receiptArtifactSha256,
     );
-    expect(signedPolicyOverrideRetirementHistoryProofBundleResponse.headers.get("x-napier-signature-key-id")).toBe(
-      policyRetirementAnchor.keyId,
-    );
+    expect(signedPolicyOverrideRetirementHistoryProofBundleResponse.headers.get("x-napier-signature-key-id")).toBe(policyRetirementAnchor.keyId);
 
     const signedPolicyOverrideRetirementHistoryProofBundleVerificationResponse = await app.request("/api/receipt-trust/verify", {
       method: "POST",
@@ -5862,9 +5777,7 @@ describe("Napier HTTP goal flow", () => {
     expect(signedPolicyOverrideRetirementHistoryProofBundleVerificationResponse.headers.get("x-napier-content-sha256")).toBe(
       responseSha256(signedPolicyOverrideRetirementHistoryProofBundleVerification),
     );
-    expect(signedPolicyOverrideRetirementHistoryProofBundleVerificationResponse.headers.get("x-napier-receipt-verification-status")).toBe(
-      "trusted",
-    );
+    expect(signedPolicyOverrideRetirementHistoryProofBundleVerificationResponse.headers.get("x-napier-receipt-verification-status")).toBe("trusted");
     expect(signedPolicyOverrideRetirementHistoryProofBundleVerificationResponse.headers.get("x-napier-receipt-kind")).toBe(
       "policy_retirement_proof_bundle",
     );
@@ -5900,19 +5813,16 @@ describe("Napier HTTP goal flow", () => {
       error: "Execution plan blueprint recommendation policy override portfolio set changed",
     });
 
-    const invalidOutcomeBaselineResponse = await app.request(
-      `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/baselines`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          outcomes: replayOutcomes,
-          policy: {
-            unknown: true,
-          },
-        }),
-      },
-    );
+    const invalidOutcomeBaselineResponse = await app.request(`/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/baselines`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        outcomes: replayOutcomes,
+        policy: {
+          unknown: true,
+        },
+      }),
+    });
     expect(invalidOutcomeBaselineResponse.status).toBe(400);
     expect(await invalidOutcomeBaselineResponse.json()).toEqual({
       error: "Execution plan blueprint outcome baseline request is invalid",
@@ -6120,13 +6030,10 @@ describe("Napier HTTP goal flow", () => {
         ],
       }),
     );
-    const manifestVerifyResponse = await app.request(
-      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/bundle-dir/manifest/verify`,
-      {
-        method: "POST",
-        body: JSON.stringify({ manifest }),
-      },
-    );
+    const manifestVerifyResponse = await app.request(`/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/bundle-dir/manifest/verify`, {
+      method: "POST",
+      body: JSON.stringify({ manifest }),
+    });
     expect(manifestVerifyResponse.status).toBe(200);
     expect(manifestVerifyResponse.headers.get("Cache-Control")).toBe("no-store");
     expect(manifestVerifyResponse.headers.get("X-Napier-Verification-Status")).toBe("valid");
@@ -6155,37 +6062,29 @@ describe("Napier HTTP goal flow", () => {
       }),
     );
     expect(manifestVerifyBody.declaredEntrySetSha256).toBe(manifestVerifyBody.observedEntrySetSha256);
-    const tamperedManifestResponse = await app.request(
-      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/bundle-dir/manifest/verify`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          manifest: {
-            ...manifest,
-            entries: [
-              ...manifest.entries,
-              {
-                kind: "file",
-                path: "tampered.txt",
-                sha256: "f".repeat(64),
-                sizeBytes: 1,
-              },
-            ],
-          },
-        }),
-      },
-    );
+    const tamperedManifestResponse = await app.request(`/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/bundle-dir/manifest/verify`, {
+      method: "POST",
+      body: JSON.stringify({
+        manifest: {
+          ...manifest,
+          entries: [
+            ...manifest.entries,
+            {
+              kind: "file",
+              path: "tampered.txt",
+              sha256: "f".repeat(64),
+              sizeBytes: 1,
+            },
+          ],
+        },
+      }),
+    });
     expect(tamperedManifestResponse.status).toBe(200);
     expect(tamperedManifestResponse.headers.get("X-Napier-Verification-Status")).toBe("drifted");
     await expect(tamperedManifestResponse.json()).resolves.toEqual(
       expect.objectContaining({
         verificationStatus: "drifted",
-        diagnostics: [
-          "declared_manifest_hash_mismatch",
-          "declared_entry_count_mismatch",
-          "declared_file_count_mismatch",
-          "entry_set_mismatch",
-        ],
+        diagnostics: ["declared_manifest_hash_mismatch", "declared_entry_count_mismatch", "declared_file_count_mismatch", "entry_set_mismatch"],
       }),
     );
     const manifestVerificationEvents = (await services.store.listEvents(created.thread.id)).filter(
@@ -6218,9 +6117,7 @@ describe("Napier HTTP goal flow", () => {
         }),
       }),
     ]);
-    expect(createHash("sha256").update(JSON.stringify(manifestVerificationEvents[0])).digest("hex")).toBe(
-      manifestVerifyBody.ledgerEventSha256,
-    );
+    expect(createHash("sha256").update(JSON.stringify(manifestVerificationEvents[0])).digest("hex")).toBe(manifestVerifyBody.ledgerEventSha256);
     expect(JSON.stringify(manifestVerificationEvents)).not.toContain("alpha.txt");
     expect(JSON.stringify(manifestVerificationEvents)).not.toContain("nested/beta.txt");
     expect(JSON.stringify(manifestVerificationEvents)).not.toContain("tampered.txt");
@@ -6529,9 +6426,7 @@ describe("Napier HTTP goal flow", () => {
         reviewSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
-    expect(reviewResponse.headers.get("x-napier-replan-review-model-context-envelope-sha256")).toBe(
-      review.modelContextEnvelope?.contentSha256,
-    );
+    expect(reviewResponse.headers.get("x-napier-replan-review-model-context-envelope-sha256")).toBe(review.modelContextEnvelope?.contentSha256);
     expect(services.store.getPlan(plan.id).revision).toBe(blocked.revision);
     expect((await services.store.listEvents(created.thread.id)).map((event) => event.type)).not.toContain("plan.replan_draft.reviewed");
   });
@@ -6541,11 +6436,7 @@ describe("Napier HTTP goal flow", () => {
     temporaryRoots.push(root);
     const workspaceRoot = path.join(root, "workspace");
     await mkdir(path.join(workspaceRoot, "src"), { recursive: true });
-    await writeFile(
-      path.join(workspaceRoot, "src/public-api.ts"),
-      "export const durable = true;\nexport const inspectable = true;\n",
-      "utf8",
-    );
+    await writeFile(path.join(workspaceRoot, "src/public-api.ts"), "export const durable = true;\nexport const inspectable = true;\n", "utf8");
     const services = await createServices({
       dataRoot: path.join(root, "data"),
       workspaceRoot,
@@ -6662,11 +6553,7 @@ describe("Napier HTTP goal flow", () => {
     expect(verificationResponse.headers.get("x-napier-subagent-task-id")).toBe(task.id);
     expect(verificationResponse.headers.get("x-napier-evidence-aligned-count")).toBe("1");
 
-    await writeFile(
-      path.join(workspaceRoot, "src/public-api.ts"),
-      "export const durable = false;\nexport const inspectable = true;\n",
-      "utf8",
-    );
+    await writeFile(path.join(workspaceRoot, "src/public-api.ts"), "export const durable = false;\nexport const inspectable = true;\n", "utf8");
     const driftResponse = await app.request(`/api/threads/${created.thread.id}/subagents/${task.id}/outcome/verify`, { method: "POST" });
     const drift = (await driftResponse.json()) as SubagentOutcomeEvidenceVerification;
     expect(drift).toEqual(
@@ -7136,10 +7023,7 @@ describe("Napier HTTP goal flow", () => {
 
     const services = await createServices(options);
     const faux = fauxProvider({ provider: "faux-server-recovery" });
-    faux.setResponses([
-      fauxAssistantMessage("Recovered after inspecting durable evidence and current state."),
-      fauxAssistantMessage('{"facts":[]}'),
-    ]);
+    faux.setResponses([fauxAssistantMessage("Recovered after inspecting durable evidence and current state."), fauxAssistantMessage('{"facts":[]}')]);
     services.models.registerProvider(faux.provider);
     const app = createApp(services);
 
@@ -8405,12 +8289,8 @@ describe("Napier HTTP goal flow", () => {
         }),
       }),
     );
-    expect(fixture.events.filter((event) => event.runId === fixtureEvaluationRun!.id).map((event) => event.type)).toEqual([
-      "evaluation.completed",
-    ]);
-    const fixtureQualificationRun = fixture.runs.find(
-      (run) => run.id !== left!.id && run.id !== right!.id && run.id !== fixtureEvaluationRun!.id,
-    );
+    expect(fixture.events.filter((event) => event.runId === fixtureEvaluationRun!.id).map((event) => event.type)).toEqual(["evaluation.completed"]);
+    const fixtureQualificationRun = fixture.runs.find((run) => run.id !== left!.id && run.id !== right!.id && run.id !== fixtureEvaluationRun!.id);
     expect(fixtureQualificationRun).toEqual(
       expect.objectContaining({
         status: "completed",
@@ -8447,8 +8327,7 @@ describe("Napier HTTP goal flow", () => {
       evaluationCount: fixture.evaluations.length,
       modelContextEnvelopeCount: fixture.events.filter((event) => event.type === "context.model_envelope").length,
       embeddedModelContextEnvelopeCount: fixture.events.filter(
-        (event) =>
-          event.payload && !Array.isArray(event.payload) && typeof event.payload === "object" && "modelContextEnvelope" in event.payload,
+        (event) => event.payload && !Array.isArray(event.payload) && typeof event.payload === "object" && "modelContextEnvelope" in event.payload,
       ).length,
     });
     expect(services.store.listThreads()).toHaveLength(threadCountBeforeVerification);
@@ -8634,11 +8513,7 @@ type LedgerEventReceiptBody = {
   ledgerEventSha256: string;
 };
 
-function expectLedgerEventReceiptProjection(
-  response: Response,
-  body: LedgerEventReceiptBody,
-  event: { id: string; seq: number } | undefined,
-): void {
+function expectLedgerEventReceiptProjection(response: Response, body: LedgerEventReceiptBody, event: { id: string; seq: number } | undefined): void {
   expect(response.headers.get("X-Napier-Ledger-Event-Id")).toBe(body.ledgerEventId);
   expect(response.headers.get("X-Napier-Ledger-Event-Seq")).toBe(String(body.ledgerEventSeq));
   expect(response.headers.get("X-Napier-Ledger-Event-SHA256")).toBe(body.ledgerEventSha256);
@@ -8786,12 +8661,8 @@ function expectUsagePriceTableCatalogHeaders(response: Response, catalog: UsageP
   expect(response.headers.get("cache-control")).toBe("no-store");
   expect(response.headers.get("x-napier-content-sha256")).toBe(catalog.contentSha256);
   expect(response.headers.get("x-napier-usage-price-table-count")).toBe(String(catalog.tables.length));
-  expect(response.headers.get("x-napier-usage-price-provider-count")).toBe(
-    String(new Set(catalog.tables.map((table) => table.provider)).size),
-  );
-  expect(response.headers.get("x-napier-usage-price-providers-sha256")).toBe(
-    responseSha256(catalog.tables.map((table) => table.provider).sort()),
-  );
+  expect(response.headers.get("x-napier-usage-price-provider-count")).toBe(String(new Set(catalog.tables.map((table) => table.provider)).size));
+  expect(response.headers.get("x-napier-usage-price-providers-sha256")).toBe(responseSha256(catalog.tables.map((table) => table.provider).sort()));
 }
 
 function expectUsagePriceTableVerificationHeaders(response: Response, verification: UsagePriceTableVerification): void {
@@ -8875,9 +8746,7 @@ function expectMemoryListHeaders(response: Response, memories: MemoryFact[], age
   expect(response.headers.get("x-napier-agent-id")).toBe(agentId ?? null);
   expect(response.headers.get("x-napier-memory-count")).toBe(String(memories.length));
   for (const status of ["proposed", "active", "stale", "rejected", "archived"] satisfies MemoryFact["status"][]) {
-    expect(response.headers.get(`x-napier-memory-${status}-count`)).toBe(
-      String(memories.filter((memory) => memory.status === status).length),
-    );
+    expect(response.headers.get(`x-napier-memory-${status}-count`)).toBe(String(memories.filter((memory) => memory.status === status).length));
   }
 }
 
@@ -9011,9 +8880,7 @@ function expectRunControlMessageListHeaders(response: Response, threadId: string
   expect(response.headers.get("x-napier-thread-id")).toBe(threadId);
   expect(response.headers.get("x-napier-run-id")).toBe(runId);
   expect(response.headers.get("x-napier-run-control-message-count")).toBe(String(messages.length));
-  expect(response.headers.get("x-napier-run-control-queued-count")).toBe(
-    String(messages.filter((message) => message.status === "queued").length),
-  );
+  expect(response.headers.get("x-napier-run-control-queued-count")).toBe(String(messages.filter((message) => message.status === "queued").length));
   expect(response.headers.get("x-napier-run-control-delivered-count")).toBe(
     String(messages.filter((message) => message.status === "delivered").length),
   );
@@ -9069,12 +8936,7 @@ function expectThreadStopHeaders(response: Response, threadId: string, receipt: 
   expect(response.headers.get("x-napier-thread-stopped")).toBe(String(receipt.stopped));
 }
 
-function expectThreadResumeStreamHeaders(
-  response: Response,
-  threadId: string,
-  runId?: string,
-  model?: { provider: string; id: string },
-): void {
+function expectThreadResumeStreamHeaders(response: Response, threadId: string, runId?: string, model?: { provider: string; id: string }): void {
   expect(response.headers.get("cache-control")).toBe("no-cache");
   expect(response.headers.get("x-napier-thread-id")).toBe(threadId);
   expect(response.headers.get("x-napier-resume-requested")).toBe("true");
@@ -9096,9 +8958,7 @@ function expectThreadPromptStreamHeaders(response: Response, threadId: string, m
 function expectThreadRunStreamErrorHeaders(response: Response): void {
   expect(response.headers.get("x-napier-stream-error-code")).toBe("run_failed");
   expect(response.headers.get("x-napier-stream-error-diagnostic")).toBe("sha256");
-  expect(response.headers.get("x-napier-stream-error-message-sha256")).toBe(
-    createHash("sha256").update("Run failed while streaming.").digest("hex"),
-  );
+  expect(response.headers.get("x-napier-stream-error-message-sha256")).toBe(createHash("sha256").update("Run failed while streaming.").digest("hex"));
 }
 
 function expectExecutionPlanListHeaders(response: Response, threadId: string, plans: ExecutionPlan[]): void {
@@ -9111,9 +8971,7 @@ function expectExecutionPlanListHeaders(response: Response, threadId: string, pl
     expect(response.headers.get(`x-napier-plan-${status}-count`)).toBe(String(plans.filter((plan) => plan.status === status).length));
   }
   expect(response.headers.get("x-napier-plan-step-count")).toBe(String(plans.reduce((total, plan) => total + plan.steps.length, 0)));
-  expect(response.headers.get("x-napier-plan-artifact-count")).toBe(
-    String(plans.reduce((total, plan) => total + plan.artifacts.length, 0)),
-  );
+  expect(response.headers.get("x-napier-plan-artifact-count")).toBe(String(plans.reduce((total, plan) => total + plan.artifacts.length, 0)));
   expect(response.headers.get("x-napier-plan-replan-count")).toBe(String(plans.reduce((total, plan) => total + plan.replans.length, 0)));
 }
 
@@ -9132,9 +8990,7 @@ function expectExecutionPlanHeaders(response: Response, plan: ExecutionPlan): vo
   expect(response.headers.get("x-napier-plan-ready-step-count")).toBe(String(plan.readyStepIds.length));
   expect(response.headers.get("x-napier-plan-blocked-step-count")).toBe(String(plan.blockedStepIds.length));
   expect(response.headers.get("x-napier-plan-phase-count")).toBe(String(plan.phaseWaves.length));
-  expect(response.headers.get("x-napier-plan-active-phase-index")).toBe(
-    plan.activePhaseIndex === null ? "" : String(plan.activePhaseIndex),
-  );
+  expect(response.headers.get("x-napier-plan-active-phase-index")).toBe(plan.activePhaseIndex === null ? "" : String(plan.activePhaseIndex));
   expect(response.headers.get("x-napier-plan-parallel-ready-step-count")).toBe(String(plan.parallelReadyStepIds.length));
   expect(response.headers.get("x-napier-plan-phase-projection-sha256")).toBe(plan.phaseProjectionSha256);
   expect(response.headers.get("x-napier-replan-recommendation")).toBe(String(Boolean(plan.replanRecommendation)));
@@ -9154,9 +9010,7 @@ function expectExecutionPlanReplanDraftReviewHeaders(response: Response, review:
   expect(response.headers.get("x-napier-replan-review-verdict")).toBe(review.verdict);
   expect(response.headers.get("x-napier-replan-review-risk")).toBe(review.risk);
   expect(response.headers.get("x-napier-replan-review-score")).toBe(String(review.score));
-  expect(response.headers.get("x-napier-replan-review-model-context-envelope-sha256")).toBe(
-    review.modelContextEnvelope?.contentSha256 ?? null,
-  );
+  expect(response.headers.get("x-napier-replan-review-model-context-envelope-sha256")).toBe(review.modelContextEnvelope?.contentSha256 ?? null);
 }
 
 function expectExecutionPlanArchiveHeaders(response: Response, archive: ExecutionPlanArchive): void {
@@ -9248,9 +9102,7 @@ function expectExecutionPlanBlueprintRecordListHeaders(response: Response, recor
   expect(response.headers.get("cache-control")).toBe("no-store");
   expect(response.headers.get("x-napier-content-sha256")).toBe(contentSha256);
   expect(response.headers.get("x-napier-plan-blueprint-count")).toBe(String(records.length));
-  expect(response.headers.get("x-napier-plan-blueprint-active-count")).toBe(
-    String(records.filter((record) => record.status === "active").length),
-  );
+  expect(response.headers.get("x-napier-plan-blueprint-active-count")).toBe(String(records.filter((record) => record.status === "active").length));
   expect(response.headers.get("x-napier-plan-blueprint-archived-count")).toBe(
     String(records.filter((record) => record.status === "archived").length),
   );
@@ -9288,9 +9140,7 @@ function expectExecutionPlanBlueprintRecordPreviewHeaders(response: Response, pr
   expect(response.headers.get("x-napier-thread-id")).toBe(preview.threadId);
   expect(response.headers.get("x-napier-has-open-plan")).toBe(String(preview.hasOpenPlan));
   expect(response.headers.get("x-napier-diagnostic-count")).toBe(String(preview.diagnostics.length));
-  expect(response.headers.get("x-napier-diagnostics-sha256")).toBe(
-    createHash("sha256").update(JSON.stringify(preview.diagnostics)).digest("hex"),
-  );
+  expect(response.headers.get("x-napier-diagnostics-sha256")).toBe(createHash("sha256").update(JSON.stringify(preview.diagnostics)).digest("hex"));
   expect(response.headers.get("x-napier-qualification-status")).toBe(preview.qualification.status);
   if (preview.plan) {
     expect(response.headers.get("x-napier-plan-id")).toBe(preview.plan.id);
@@ -9299,10 +9149,7 @@ function expectExecutionPlanBlueprintRecordPreviewHeaders(response: Response, pr
   }
 }
 
-function expectExecutionPlanBlueprintRecordReplayHistoryHeaders(
-  response: Response,
-  history: ExecutionPlanBlueprintRecordReplayHistory,
-): void {
+function expectExecutionPlanBlueprintRecordReplayHistoryHeaders(response: Response, history: ExecutionPlanBlueprintRecordReplayHistory): void {
   expect(response.headers.get("cache-control")).toBe("no-store");
   expect(response.headers.get("x-napier-content-sha256")).toBe(history.contentSha256);
   expect(response.headers.get("x-napier-content-sha256-mode")).toBe("stable");
@@ -9334,18 +9181,13 @@ function expectExecutionPlanBlueprintRecordReplayHistoryVerificationHeaders(
   expect(response.headers.get("x-napier-observed-content-sha256")).toBe(verification.observedContentSha256 ?? null);
   expect(response.headers.get("x-napier-declared-event-set-sha256")).toBe(verification.declaredEventSetSha256 ?? null);
   expect(response.headers.get("x-napier-observed-event-set-sha256")).toBe(verification.observedEventSetSha256 ?? null);
-  expect(response.headers.get("x-napier-replay-count")).toBe(
-    verification.replayCount === undefined ? null : String(verification.replayCount),
-  );
+  expect(response.headers.get("x-napier-replay-count")).toBe(verification.replayCount === undefined ? null : String(verification.replayCount));
   expect(response.headers.get("x-napier-observed-replay-count")).toBe(
     verification.observedReplayCount === undefined ? null : String(verification.observedReplayCount),
   );
 }
 
-function expectExecutionPlanBlueprintRecordReplayOutcomesHeaders(
-  response: Response,
-  outcomes: ExecutionPlanBlueprintRecordReplayOutcomes,
-): void {
+function expectExecutionPlanBlueprintRecordReplayOutcomesHeaders(response: Response, outcomes: ExecutionPlanBlueprintRecordReplayOutcomes): void {
   expect(response.headers.get("cache-control")).toBe("no-store");
   expect(response.headers.get("x-napier-content-sha256")).toBe(outcomes.contentSha256);
   expect(response.headers.get("x-napier-content-sha256-mode")).toBe("stable");
@@ -9431,9 +9273,7 @@ function expectExecutionPlanBlueprintRecordOutcomeBaselineMetadataHeaders(
   expect(response.headers.get("x-napier-blueprint-replay-invalid-count")).toBe(String(baseline.invalidCount));
   expect(response.headers.get("x-napier-blueprint-replay-completion-rate-bps")).toBe(String(baseline.completionRateBps));
   expect(response.headers.get("x-napier-blueprint-outcome-policy-min-replay-count")).toBe(String(baseline.policy.minReplayCount));
-  expect(response.headers.get("x-napier-blueprint-outcome-policy-min-completion-rate-bps")).toBe(
-    String(baseline.policy.minCompletionRateBps),
-  );
+  expect(response.headers.get("x-napier-blueprint-outcome-policy-min-completion-rate-bps")).toBe(String(baseline.policy.minCompletionRateBps));
   expect(response.headers.get("x-napier-blueprint-outcome-policy-max-blocked-count")).toBe(String(baseline.policy.maxBlockedCount));
   expect(response.headers.get("x-napier-blueprint-outcome-policy-max-invalid-count")).toBe(String(baseline.policy.maxInvalidCount));
   expect(response.headers.get("x-napier-blueprint-outcome-review-gate-min-score")).toBe(
@@ -9490,10 +9330,7 @@ function expectExecutionPlanBlueprintRecordOutcomeQualificationHeaders(
   );
 }
 
-function expectExecutionPlanBlueprintRecordOutcomeReviewHeaders(
-  response: Response,
-  review: ExecutionPlanBlueprintRecordOutcomeReview,
-): void {
+function expectExecutionPlanBlueprintRecordOutcomeReviewHeaders(response: Response, review: ExecutionPlanBlueprintRecordOutcomeReview): void {
   expect(response.headers.get("cache-control")).toBe("no-store");
   expect(response.headers.get("x-napier-content-sha256")).toBe(review.reviewSha256);
   expect(response.headers.get("x-napier-content-sha256-mode")).toBe("stable");
@@ -9557,21 +9394,14 @@ function expectExecutionPlanBlueprintRecordSelectionHeaders(response: Response, 
   expect(response.headers.get("x-napier-selected-blueprint-recommendation-policy-template")).toBe(
     selection.selectedRecommendationPolicyTemplate ?? null,
   );
-  expect(response.headers.get("x-napier-selected-blueprint-recommendation-policy-sha256")).toBe(
-    selection.selectedRecommendationPolicySha256 ?? null,
-  );
-  expect(response.headers.get("x-napier-selected-blueprint-recommendation-policy-source")).toBe(
-    selection.selectedRecommendationPolicySource ?? null,
-  );
+  expect(response.headers.get("x-napier-selected-blueprint-recommendation-policy-sha256")).toBe(selection.selectedRecommendationPolicySha256 ?? null);
+  expect(response.headers.get("x-napier-selected-blueprint-recommendation-policy-source")).toBe(selection.selectedRecommendationPolicySource ?? null);
   expect(response.headers.get("x-napier-selected-blueprint-family-policy-override-sha256")).toBe(
     selection.selectedFamilyPolicyOverrideSha256 ?? null,
   );
 }
 
-function expectExecutionPlanBlueprintPortfolioCalibrationHeaders(
-  response: Response,
-  calibration: ExecutionPlanBlueprintPortfolioCalibration,
-): void {
+function expectExecutionPlanBlueprintPortfolioCalibrationHeaders(response: Response, calibration: ExecutionPlanBlueprintPortfolioCalibration): void {
   expect(response.headers.get("cache-control")).toBe("no-store");
   expect(response.headers.get("x-napier-content-sha256")).toBe(calibration.contentSha256);
   expect(response.headers.get("x-napier-content-sha256-mode")).toBe("stable");
@@ -9597,9 +9427,7 @@ function expectExecutionPlanBlueprintRecommendationPolicyBacktestHeaders(
   expect(response.headers.get("x-napier-blueprint-portfolio-record-count")).toBe(String(backtest.recordCount));
   expect(response.headers.get("x-napier-blueprint-portfolio-active-count")).toBe(String(backtest.activeCount));
   expect(response.headers.get("x-napier-blueprint-recommendation-policy-count")).toBe(String(backtest.policyCount));
-  expect(response.headers.get("x-napier-blueprint-recommendation-policy-divergent-selection-count")).toBe(
-    String(backtest.divergentSelectionCount),
-  );
+  expect(response.headers.get("x-napier-blueprint-recommendation-policy-divergent-selection-count")).toBe(String(backtest.divergentSelectionCount));
   expect(response.headers.get("x-napier-blueprint-portfolio-set-sha256")).toBe(backtest.portfolioSetSha256);
   expect(response.headers.get("x-napier-blueprint-recommendation-policy-set-sha256")).toBe(backtest.policySetSha256);
 }
@@ -9641,9 +9469,7 @@ function expectExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewHead
   expect(response.headers.get("x-napier-content-sha256-mode")).toBe("stable");
   expect(response.headers.get("x-napier-blueprint-family-policy-override-count")).toBe(String(review.overrideCount));
   expect(response.headers.get("x-napier-blueprint-family-policy-override-aligned-count")).toBe(String(review.alignedCount));
-  expect(response.headers.get("x-napier-blueprint-family-policy-override-retire-recommended-count")).toBe(
-    String(review.retireRecommendedCount),
-  );
+  expect(response.headers.get("x-napier-blueprint-family-policy-override-retire-recommended-count")).toBe(String(review.retireRecommendedCount));
   expect(response.headers.get("x-napier-blueprint-family-policy-override-missing-family-count")).toBe(String(review.missingFamilyCount));
   expect(response.headers.get("x-napier-blueprint-portfolio-set-sha256")).toBe(review.portfolioSetSha256);
   expect(response.headers.get("x-napier-blueprint-family-policy-override-set-sha256")).toBe(review.overrideSetSha256);
@@ -9711,9 +9537,7 @@ function expectExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
   expect(response.headers.get("x-napier-observed-blueprint-family-policy-override-retirement-set-sha256")).toBe(
     verification.observedRetirementSetSha256,
   );
-  expect(response.headers.get("x-napier-blueprint-family-policy-override-retirement-count")).toBe(
-    verification.retirementCount?.toString() ?? null,
-  );
+  expect(response.headers.get("x-napier-blueprint-family-policy-override-retirement-count")).toBe(verification.retirementCount?.toString() ?? null);
   expect(response.headers.get("x-napier-observed-blueprint-family-policy-override-retirement-count")).toBe(
     String(verification.observedRetirementCount),
   );
@@ -9750,16 +9574,12 @@ function expectExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
   expect(response.headers.get("x-napier-blueprint-family-policy-override-retirement-set-distinct-count")).toBe(
     String(proofBundle.distinctRetirementSetCount),
   );
-  expect(response.headers.get("x-napier-blueprint-family-policy-override-retirement-history-set-sha256")).toBe(
-    proofBundle.historySetSha256,
-  );
+  expect(response.headers.get("x-napier-blueprint-family-policy-override-retirement-history-set-sha256")).toBe(proofBundle.historySetSha256);
   expect(response.headers.get("x-napier-blueprint-portfolio-set-bundle-sha256")).toBe(proofBundle.portfolioSetBundleSha256);
   expect(response.headers.get("x-napier-blueprint-family-policy-override-current-set-bundle-sha256")).toBe(
     proofBundle.currentOverrideSetBundleSha256,
   );
-  expect(response.headers.get("x-napier-blueprint-family-policy-override-retirement-set-bundle-sha256")).toBe(
-    proofBundle.retirementSetBundleSha256,
-  );
+  expect(response.headers.get("x-napier-blueprint-family-policy-override-retirement-set-bundle-sha256")).toBe(proofBundle.retirementSetBundleSha256);
 }
 
 function expectExecutionPlanBlueprintRecordReplayEventVerificationHeaders(
@@ -9784,10 +9604,7 @@ function expectExecutionPlanBlueprintRecordReplayEventVerificationHeaders(
   expect(response.headers.get("x-napier-blueprint-preview-sha256")).toBe(verification.observedReplay?.previewSha256 ?? null);
 }
 
-function expectExecutionPlanBlueprintRecordQualificationHeaders(
-  response: Response,
-  qualification: ExecutionPlanBlueprintRecordQualification,
-): void {
+function expectExecutionPlanBlueprintRecordQualificationHeaders(response: Response, qualification: ExecutionPlanBlueprintRecordQualification): void {
   const contentSha256 = createHash("sha256").update(JSON.stringify(qualification)).digest("hex");
   expect(response.headers.get("cache-control")).toBe("no-store");
   expect(response.headers.get("x-napier-content-sha256")).toBe(contentSha256);
@@ -9892,9 +9709,7 @@ function expectRunReplaySnapshotVerificationHeaders(response: Response, verifica
   expect(response.headers.get("x-napier-event-count")).toBe(String(verification.eventCount));
   expect(response.headers.get("x-napier-subagent-count")).toBe(String(verification.subagentCount));
   expect(response.headers.get("x-napier-model-context-envelope-count")).toBe(String(verification.modelContextEnvelopeCount));
-  expect(response.headers.get("x-napier-embedded-model-context-envelope-count")).toBe(
-    String(verification.embeddedModelContextEnvelopeCount),
-  );
+  expect(response.headers.get("x-napier-embedded-model-context-envelope-count")).toBe(String(verification.embeddedModelContextEnvelopeCount));
   expect(response.headers.get("x-napier-diagnostic-count")).toBe(String(verification.diagnostics.length));
   expect(response.headers.get("x-napier-diagnostics-sha256")).toBe(responseSha256(verification.diagnostics));
   expect(response.headers.get("x-napier-thread-id")).toBe(verification.threadId ?? null);
@@ -9922,9 +9737,7 @@ function expectThreadReplayBundleHeaders(response: Response, bundle: ThreadRepla
   expect(response.headers.get("x-napier-plan-count")).toBe(String(verification.planCount));
   expect(response.headers.get("x-napier-evaluation-count")).toBe(String(verification.evaluationCount));
   expect(response.headers.get("x-napier-model-context-envelope-count")).toBe(String(verification.modelContextEnvelopeCount));
-  expect(response.headers.get("x-napier-embedded-model-context-envelope-count")).toBe(
-    String(verification.embeddedModelContextEnvelopeCount),
-  );
+  expect(response.headers.get("x-napier-embedded-model-context-envelope-count")).toBe(String(verification.embeddedModelContextEnvelopeCount));
   expectEventBoundaryHeaders(response, bundle.events);
 }
 
@@ -9939,9 +9752,7 @@ function expectThreadReplayBundleVerificationHeaders(response: Response, verific
   expect(response.headers.get("x-napier-plan-count")).toBe(String(verification.planCount));
   expect(response.headers.get("x-napier-evaluation-count")).toBe(String(verification.evaluationCount));
   expect(response.headers.get("x-napier-model-context-envelope-count")).toBe(String(verification.modelContextEnvelopeCount));
-  expect(response.headers.get("x-napier-embedded-model-context-envelope-count")).toBe(
-    String(verification.embeddedModelContextEnvelopeCount),
-  );
+  expect(response.headers.get("x-napier-embedded-model-context-envelope-count")).toBe(String(verification.embeddedModelContextEnvelopeCount));
   expect(response.headers.get("x-napier-diagnostic-count")).toBe(String(verification.diagnostics.length));
   expect(response.headers.get("x-napier-diagnostics-sha256")).toBe(responseSha256(verification.diagnostics));
   expect(response.headers.get("x-napier-thread-id")).toBe(verification.threadId ?? null);
@@ -9979,22 +9790,14 @@ function expectRunComparisonHeaders(response: Response, comparison: RunCompariso
   expect(response.headers.get("x-napier-context-coverage-embedded-envelope-delta")).toBe(
     String(comparison.contextCoverageDelta.embeddedEnvelopeDelta),
   );
-  expect(response.headers.get("x-napier-context-coverage-diagnostic-count")).toBe(
-    String(comparison.contextCoverageDelta.diagnostics.length),
-  );
-  expect(response.headers.get("x-napier-context-coverage-diagnostics-sha256")).toBe(
-    responseSha256(comparison.contextCoverageDelta.diagnostics),
-  );
+  expect(response.headers.get("x-napier-context-coverage-diagnostic-count")).toBe(String(comparison.contextCoverageDelta.diagnostics.length));
+  expect(response.headers.get("x-napier-context-coverage-diagnostics-sha256")).toBe(responseSha256(comparison.contextCoverageDelta.diagnostics));
   expect(response.headers.get("x-napier-trace-summary-boundary-status")).toBe(comparison.traceSummaryBoundaryDelta.status);
-  expect(response.headers.get("x-napier-trace-summary-boundary-left-generic-count")).toBe(
-    String(comparison.traceSummaryBoundaryDelta.left.generic),
-  );
+  expect(response.headers.get("x-napier-trace-summary-boundary-left-generic-count")).toBe(String(comparison.traceSummaryBoundaryDelta.left.generic));
   expect(response.headers.get("x-napier-trace-summary-boundary-right-generic-count")).toBe(
     String(comparison.traceSummaryBoundaryDelta.right.generic),
   );
-  expect(response.headers.get("x-napier-trace-summary-boundary-generic-delta")).toBe(
-    String(comparison.traceSummaryBoundaryDelta.genericDelta),
-  );
+  expect(response.headers.get("x-napier-trace-summary-boundary-generic-delta")).toBe(String(comparison.traceSummaryBoundaryDelta.genericDelta));
   expect(response.headers.get("x-napier-trace-summary-boundary-diagnostic-count")).toBe(
     String(comparison.traceSummaryBoundaryDelta.diagnostics.length),
   );
@@ -10085,13 +9888,8 @@ function expectRunEvaluationRecordHeaders(response: Response, evaluation: RunEva
     expect(response.headers.get("x-napier-context-coverage-diagnostics-sha256")).toBe(
       evaluation.comparisonGovernance.contextCoverageDiagnosticsSha256,
     );
-    if (
-      evaluation.comparisonGovernance.traceSummaryBoundaryStatus &&
-      evaluation.comparisonGovernance.traceSummaryBoundaryDiagnosticsSha256
-    ) {
-      expect(response.headers.get("x-napier-trace-summary-boundary-status")).toBe(
-        evaluation.comparisonGovernance.traceSummaryBoundaryStatus,
-      );
+    if (evaluation.comparisonGovernance.traceSummaryBoundaryStatus && evaluation.comparisonGovernance.traceSummaryBoundaryDiagnosticsSha256) {
+      expect(response.headers.get("x-napier-trace-summary-boundary-status")).toBe(evaluation.comparisonGovernance.traceSummaryBoundaryStatus);
       expect(response.headers.get("x-napier-trace-summary-boundary-diagnostics-sha256")).toBe(
         evaluation.comparisonGovernance.traceSummaryBoundaryDiagnosticsSha256,
       );
@@ -10272,10 +10070,7 @@ function expectEvaluationCasebookQualificationListHeaders(
   );
 }
 
-function expectEvaluationCasebookQualificationExecutionHeaders(
-  response: Response,
-  execution: EvaluationCasebookQualificationExecution,
-): void {
+function expectEvaluationCasebookQualificationExecutionHeaders(response: Response, execution: EvaluationCasebookQualificationExecution): void {
   expect(response.headers.get("cache-control")).toBe("no-store");
   expect(response.headers.get("x-napier-content-sha256")).toBe(execution.contentSha256);
   expect(response.headers.get("x-napier-casebook-id")).toBe(execution.casebookId);
@@ -10329,9 +10124,7 @@ function expectEvaluationSuiteListHeaders(response: Response, threadId: string, 
   expect(response.headers.get("x-napier-content-sha256")).toBe(contentSha256);
   expect(response.headers.get("x-napier-thread-id")).toBe(threadId);
   expect(response.headers.get("x-napier-evaluation-suite-count")).toBe(String(suites.length));
-  expect(response.headers.get("x-napier-evaluation-suite-revision-count")).toBe(
-    String(suites.reduce((total, suite) => total + suite.revision, 0)),
-  );
+  expect(response.headers.get("x-napier-evaluation-suite-revision-count")).toBe(String(suites.reduce((total, suite) => total + suite.revision, 0)));
   expect(response.headers.get("x-napier-evaluation-suite-candidate-count")).toBe(
     String(suites.reduce((total, suite) => total + suite.candidateRunIds.length, 0)),
   );
@@ -10485,12 +10278,8 @@ function expectAutomationScheduleListHeaders(response: Response, schedules: Auto
 
 function expectAutomationScheduleCountHeaders(response: Response, schedules: AutomationSchedule[]): void {
   expect(response.headers.get("x-napier-schedule-count")).toBe(String(schedules.length));
-  expect(response.headers.get("x-napier-active-schedule-count")).toBe(
-    String(schedules.filter((schedule) => schedule.status === "active").length),
-  );
-  expect(response.headers.get("x-napier-paused-schedule-count")).toBe(
-    String(schedules.filter((schedule) => schedule.status === "paused").length),
-  );
+  expect(response.headers.get("x-napier-active-schedule-count")).toBe(String(schedules.filter((schedule) => schedule.status === "active").length));
+  expect(response.headers.get("x-napier-paused-schedule-count")).toBe(String(schedules.filter((schedule) => schedule.status === "paused").length));
 }
 
 function expectInboundChannelProjectionHeaders(
@@ -10520,12 +10309,8 @@ function expectInboundChannelListHeaders(response: Response, channels: CreatedIn
 
 function expectInboundChannelCountHeaders(response: Response, channels: CreatedInboundChannel["channel"][]): void {
   expect(response.headers.get("x-napier-channel-count")).toBe(String(channels.length));
-  expect(response.headers.get("x-napier-active-channel-count")).toBe(
-    String(channels.filter((channel) => channel.status === "active").length),
-  );
-  expect(response.headers.get("x-napier-disabled-channel-count")).toBe(
-    String(channels.filter((channel) => channel.status === "disabled").length),
-  );
+  expect(response.headers.get("x-napier-active-channel-count")).toBe(String(channels.filter((channel) => channel.status === "active").length));
+  expect(response.headers.get("x-napier-disabled-channel-count")).toBe(String(channels.filter((channel) => channel.status === "disabled").length));
 }
 
 function expectInboundDeliveryListHeaders(response: Response, channelId: string, deliveries: InboundDelivery[]): void {
@@ -10604,9 +10389,7 @@ function expectInboundDeadLetterExportHeaders(response: Response, artifact: Inbo
     String(artifact.deliveries.filter((delivery) => delivery.retryDisposition === "retry_exhausted").length),
   );
   expect(response.headers.get("x-napier-current-adapter-catalog-sha256")).toBe(artifact.currentAdapterCatalogSha256 ?? null);
-  expect(response.headers.get("x-napier-qualified-count")).toBe(
-    artifact.qualifiedCount === undefined ? null : String(artifact.qualifiedCount),
-  );
+  expect(response.headers.get("x-napier-qualified-count")).toBe(artifact.qualifiedCount === undefined ? null : String(artifact.qualifiedCount));
   expect(response.headers.get("x-napier-evidence-missing-count")).toBe(
     artifact.evidenceMissingCount === undefined ? null : String(artifact.evidenceMissingCount),
   );
@@ -10684,10 +10467,7 @@ function expectInboundDeadLetterRetryHistoryHeaders(response: Response, history:
   expect(response.headers.get("x-napier-last-event-seq")).toBe(history.toSeq === undefined ? null : String(history.toSeq));
 }
 
-function expectInboundDeadLetterRetryHistoryVerificationHeaders(
-  response: Response,
-  verification: InboundDeadLetterRetryHistoryVerification,
-): void {
+function expectInboundDeadLetterRetryHistoryVerificationHeaders(response: Response, verification: InboundDeadLetterRetryHistoryVerification): void {
   expect(response.headers.get("cache-control")).toBe("no-store");
   expect(response.headers.get("x-napier-content-sha256")).toBe(verification.contentSha256);
   expect(response.headers.get("x-napier-verification-status")).toBe(verification.status);

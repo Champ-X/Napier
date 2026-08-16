@@ -112,7 +112,9 @@ function artifact(): ConversationArtifact {
     id: "event_1",
     seq: 1,
     createdAt: "2026-08-08T00:00:00.000Z",
+    attemptScope: "current",
     threadId: "thread_1",
+    runId: "run_1",
     planId: "plan_1",
     planRevision: 3,
     artifact: {

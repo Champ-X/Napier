@@ -2,20 +2,28 @@ import assert from "node:assert/strict";
 
 export const WEB_UI_E2E_KIND = "napier.web-ui-e2e";
 export const WEB_UI_LAYOUT_BASELINE_VIEWPORTS = Object.freeze([
-  Object.freeze({ width: 1_600, height: 900, layout: "desktop" }),
-  Object.freeze({ width: 1_200, height: 800, layout: "desktop" }),
+  Object.freeze({ width: 1_600, height: 900, layout: "drawer" }),
+  Object.freeze({ width: 1_200, height: 800, layout: "drawer" }),
   Object.freeze({ width: 900, height: 800, layout: "drawer" }),
   Object.freeze({ width: 390, height: 844, layout: "drawer" }),
 ]);
 export const WEB_UI_E2E_VIEWPORTS = Object.freeze([
   WEB_UI_LAYOUT_BASELINE_VIEWPORTS[0],
-  Object.freeze({ width: 1_440, height: 900, layout: "desktop" }),
+  Object.freeze({ width: 1_440, height: 900, layout: "drawer" }),
   ...WEB_UI_LAYOUT_BASELINE_VIEWPORTS.slice(1),
 ]);
 export const INSPECTOR_GROUP_LABELS = Object.freeze([
-  "Activity/Plan",
-  "Files/Artifacts",
+  "Task",
   "Inspect",
+  "Studio",
+]);
+export const DEFAULT_PRODUCT_TRIAL_CASE_IDS = Object.freeze([
+  "network-reference",
+  "coding-verification",
+  "dynamic-browser",
+  "high-risk-confirmation",
+  "artifact-delivery",
+  "long-task-recovery",
 ]);
 export const WEB_UI_NARRATIVE_EXPECTATION = Object.freeze({
   title: "Ship verified research brief",
@@ -76,7 +84,9 @@ export function assertWebUiE2eReceipt(receipt) {
     })),
     WEB_UI_E2E_VIEWPORTS,
   );
-  receipt.viewports.forEach(assertViewportReceipt);
+  receipt.viewports.forEach((viewport) =>
+    assertViewportReceipt(viewport, receipt.fixture.latestTerminalRunId),
+  );
   assert.deepEqual(
     {
       title: receipt.recovery.title,
@@ -117,9 +127,9 @@ export function assertWebUiE2eReceipt(receipt) {
   assert.equal(receipt?.longRun?.artifactControlVisible, false);
   assert.equal(receipt?.longRun?.refreshPreserved, true);
   assert.deepEqual(receipt?.longRun?.activityAggregation?.summaries, [
-    "Read file · 12 calls",
-    "Web search · 5 searches",
-    "Action · 3 steps",
+    "Inspect · 12 steps",
+    "Research · 5 steps",
+    "Inspect · 3 steps",
   ]);
   assert.equal(
     receipt?.longRun?.activityAggregation?.collapsedMountedChildren,
@@ -160,7 +170,7 @@ export function assertWebUiE2eReceipt(receipt) {
   return receipt;
 }
 
-export function assertViewportReceipt(viewport) {
+export function assertViewportReceipt(viewport, latestTerminalRunId) {
   const expected = WEB_UI_E2E_VIEWPORTS.find(
     (candidate) =>
       candidate.width === viewport?.width &&
@@ -169,7 +179,7 @@ export function assertViewportReceipt(viewport) {
   assert.ok(expected, "Web UI E2E viewport is not part of the contract");
   assert.equal(viewport.layout, expected.layout);
   assert.deepEqual(viewport.inspector.groupLabels, INSPECTOR_GROUP_LABELS);
-  assert.equal(viewport.inspector.defaultGroup, "activity");
+  assert.equal(viewport.inspector.defaultGroup, "task");
   assert.equal(viewport.inspector.defaultTool, "plan");
   assert.equal(viewport.inspector.panelLabelledBy, "inspector-tab-plan");
   assert.equal(viewport.inspector.minimumGroupHeight >= 44, true);
@@ -291,6 +301,26 @@ export function assertViewportReceipt(viewport) {
     viewport.browserInspector.credentialRecoveryCode,
     "credential_missing",
   );
+  assert.equal(viewport.defaultProductTrial.collapsedByDefault, true);
+  assert.equal(viewport.defaultProductTrial.expanded, true);
+  assert.equal(viewport.defaultProductTrial.reCollapsed, true);
+  assert.equal(
+    viewport.defaultProductTrial.trigger,
+    "Record default product trial",
+  );
+  assert.deepEqual(
+    viewport.defaultProductTrial.optionValues,
+    DEFAULT_PRODUCT_TRIAL_CASE_IDS,
+  );
+  assert.equal(
+    viewport.defaultProductTrial.selectedCaseId,
+    DEFAULT_PRODUCT_TRIAL_CASE_IDS[0],
+  );
+  assert.equal(viewport.defaultProductTrial.selectedRunId, latestTerminalRunId);
+  assert.equal(viewport.defaultProductTrial.productVersion, "0.1.2");
+  assert.equal(viewport.defaultProductTrial.releaseControlVisible, true);
+  assert.equal(viewport.defaultProductTrial.horizontalOverflowPx, 0);
+  assert.equal(viewport.defaultProductTrial.withinNarrative, true);
   if (viewport.width === 1_600) {
     assert.equal(viewport.casebookTrials.onboardingAvailable, true);
     assert.equal(viewport.casebookTrials.onboardingComposerLoaded, true);
@@ -345,21 +375,15 @@ export function assertViewportReceipt(viewport) {
   assert.equal(viewport.console.errorCount, 0);
   assert.match(viewport.screenshot.sha256, SHA256);
   assert.equal(viewport.screenshot.bytes > 0, true);
-  if (viewport.layout === "desktop") {
-    assert.equal(viewport.inspector.desktopVisible, true);
-    assert.equal(viewport.inspector.drawerTriggerHidden, true);
-  } else {
-    assert.equal(viewport.inspector.initiallyHidden, true);
-    assert.equal(viewport.inspector.drawerTriggerVisible, true);
-    assert.equal(viewport.inspector.drawerOpened, true);
-    assert.equal(
-      viewport.inspector.openFocusTarget,
-      "inspector-group-activity",
-    );
-    assert.equal(viewport.inspector.escapeRestoredTriggerFocus, true);
-    assert.equal(viewport.inspector.closedAfterEscape, true);
-    assert.equal(viewport.geometry.drawerWithinViewport, true);
-  }
+  assert.equal(viewport.inspector.desktopVisible, false);
+  assert.equal(viewport.inspector.drawerTriggerHidden, false);
+  assert.equal(viewport.inspector.initiallyHidden, true);
+  assert.equal(viewport.inspector.drawerTriggerVisible, true);
+  assert.equal(viewport.inspector.drawerOpened, true);
+  assert.equal(viewport.inspector.openFocusTarget, "inspector-group-task");
+  assert.equal(viewport.inspector.escapeRestoredTriggerFocus, true);
+  assert.equal(viewport.inspector.closedAfterEscape, true);
+  assert.equal(viewport.geometry.drawerWithinViewport, true);
   if (viewport.width === 390) {
     assert.equal(viewport.geometry.navigationLabelOverflowPx, 0);
   }

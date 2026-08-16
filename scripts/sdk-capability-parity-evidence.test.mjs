@@ -9,6 +9,10 @@ import {
   sha256Text,
   verifyArtifacts,
 } from "./sdk-capability-parity-evidence.mjs";
+import {
+  currentRepairPaths,
+  isProtectedExcludedPath,
+} from "./sdk-capability-parity-identity.mjs";
 
 const EVIDENCE_DIRECTORY = path.resolve(
   "docs/artifacts/sdk-capability-parity-stage7",
@@ -26,13 +30,19 @@ describe("SDK capability parity evidence verifier", () => {
 
   test("excludes protected user files from the repair snapshot", async () => {
     const evidence = await readJson(EVIDENCE_DIRECTORY, "evidence.json");
-    expect(evidence.identity.repairSnapshot.changedPaths).not.toContain(
-      "goal.md",
-    );
-    expect(evidence.identity.repairSnapshot.deletedPaths).not.toContain(
-      "goal.md",
-    );
-    expect(evidence.identity.repairSnapshot.files["goal.md"]).toBeUndefined();
+    const recordedPaths = [
+      ...evidence.identity.repairSnapshot.changedPaths,
+      ...evidence.identity.repairSnapshot.deletedPaths,
+      ...Object.keys(evidence.identity.repairSnapshot.files),
+    ];
+    expect(recordedPaths.filter(isProtectedExcludedPath)).toEqual([]);
+    expect(
+      (await currentRepairPaths()).filter(isProtectedExcludedPath),
+    ).toEqual([]);
+    expect(isProtectedExcludedPath("goal.md")).toBe(true);
+    expect(isProtectedExcludedPath("ai-news-weekly/index.html")).toBe(true);
+    expect(isProtectedExcludedPath("kakeya/.verify-harness.cjs")).toBe(true);
+    expect(isProtectedExcludedPath("apps/web/src/App.tsx")).toBe(false);
   });
 
   test("locks the deterministic execution closures and exclusions", async () => {
@@ -40,31 +50,31 @@ describe("SDK capability parity evidence verifier", () => {
     const { fourStateParity, productionServerTrace } =
       evidence.identity.executionClosure.groups;
     expect(fourStateParity.counts).toEqual({
-      executionFiles: 847,
-      sourceCounterparts: 842,
+      executionFiles: 925,
+      sourceCounterparts: 920,
       packageManifests: 2,
-      allFiles: 1691,
+      allFiles: 1847,
     });
     expect(fourStateParity.executionAreaCounts).toEqual({
-      "apps/cli/dist": 65,
-      "apps/server/dist": 112,
+      "apps/cli/dist": 67,
+      "apps/server/dist": 113,
       "packages/contracts/dist": 23,
-      "packages/runtime/dist": 639,
+      "packages/runtime/dist": 714,
       "packages/runtime/test/fixtures": 3,
       "packages/sdk/dist": 3,
       scripts: 2,
     });
     expect(productionServerTrace.counts).toEqual({
-      executionFiles: 780,
-      sourceCounterparts: 776,
+      executionFiles: 856,
+      sourceCounterparts: 852,
       packageManifests: 3,
-      allFiles: 1559,
+      allFiles: 1711,
     });
     expect(productionServerTrace.executionAreaCounts).toEqual({
-      "apps/server/dist": 113,
+      "apps/server/dist": 114,
       other: 1,
       "packages/contracts/dist": 23,
-      "packages/runtime/dist": 637,
+      "packages/runtime/dist": 712,
       "packages/sdk/dist": 3,
       scripts: 3,
     });

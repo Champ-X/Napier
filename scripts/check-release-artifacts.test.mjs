@@ -83,6 +83,13 @@ describe("release artifacts audit", () => {
       "management-openapi-compatibility",
       "coding-executor-comparison",
       "controlled-harness-evidence",
+      "default-product-source-bound-smoke",
+      "default-product-source-manifest",
+      "default-product-consolidated-m4",
+      "default-product-breadth-m4",
+      "default-product-coding-rerun-m4",
+      "default-product-critical-coverage-m4",
+      "default-product-trial-m4",
       "workflow-benchmark-series",
       "workflow-benchmark-result-1",
       "workflow-benchmark-ledger-1",
@@ -604,7 +611,7 @@ describe("release artifacts audit", () => {
       "sandbox-external-publication-retained",
       "sandbox-external-publication-authority-retained",
     ]);
-    expect(result.artifacts).toHaveLength(162);
+    expect(result.artifacts).toHaveLength(169);
   });
 
   it("fails when the product performance baseline is tampered", async () => {
@@ -688,6 +695,106 @@ describe("release artifacts audit", () => {
     expect(result.ok).toBe(false);
     expect(result.errors).toContain(
       "controlled harness evidence: artifact_invalid",
+    );
+  });
+
+  it("fails when the Default Product Trial evidence is tampered", async () => {
+    const { root } = await createFixture();
+    const evidencePath = path.join(
+      root,
+      "docs/artifacts/default-product-trial-m4-0.1.2.json",
+    );
+    const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
+    evidence.trials[0].uxScore = 5;
+    await writeJson(evidencePath, evidence);
+
+    const result = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("default product trial:"),
+      ]),
+    );
+  });
+
+  it("fails when the consolidated Default Product Gate is tampered", async () => {
+    const { root } = await createFixture();
+    const evidencePath = path.join(
+      root,
+      "docs/artifacts/default-product-consolidated-m4-0.1.2.json",
+    );
+    const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
+    evidence.adoptions[0].sourceGate.trials[0].uxScore = 1;
+    await writeJson(evidencePath, evidence);
+
+    const result = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("default product consolidated:"),
+      ]),
+    );
+  });
+
+  it("fails when the focused Default Product Coding rerun is tampered", async () => {
+    const { root } = await createFixture();
+    const evidencePath = path.join(
+      root,
+      "docs/artifacts/default-product-coding-rerun-m4-0.1.2.json",
+    );
+    const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
+    evidence.trials[0].uxScore = 5;
+    await writeJson(evidencePath, evidence);
+
+    const result = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("default product coding rerun:"),
+      ]),
+    );
+  });
+
+  it("fails when the focused Default Product critical coverage is tampered", async () => {
+    const { root } = await createFixture();
+    const evidencePath = path.join(
+      root,
+      "docs/artifacts/default-product-critical-coverage-m4-0.1.2.json",
+    );
+    const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
+    evidence.trials[1].uxScore = 5;
+    await writeJson(evidencePath, evidence);
+
+    const result = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("default product critical coverage:"),
+      ]),
+    );
+  });
+
+  it("fails when the focused Default Product breadth evidence is tampered", async () => {
+    const { root } = await createFixture();
+    const evidencePath = path.join(
+      root,
+      "docs/artifacts/default-product-breadth-m4-0.1.2.json",
+    );
+    const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
+    evidence.trials[1].uxScore = 5;
+    await writeJson(evidencePath, evidence);
+
+    const result = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("default product breadth:"),
+      ]),
     );
   });
 
@@ -1356,6 +1463,13 @@ async function createFixture() {
     "sandbox-acquisition-stage20.json",
     "profile-upgrade-stage21.json",
     "controlled-harness-evidence-0.1.2.json",
+    "default-product-source-bound-smoke-m4-0.1.3.json",
+    "default-product-source-manifest-0.1.3.json",
+    "default-product-consolidated-m4-0.1.2.json",
+    "default-product-breadth-m4-0.1.2.json",
+    "default-product-coding-rerun-m4-0.1.2.json",
+    "default-product-critical-coverage-m4-0.1.2.json",
+    "default-product-trial-m4-0.1.2.json",
   ]) {
     await cp(
       path.resolve("docs/artifacts", fileName),

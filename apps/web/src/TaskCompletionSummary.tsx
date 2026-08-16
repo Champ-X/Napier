@@ -5,13 +5,15 @@ import type { ExecutionPlan } from "@napier/contracts";
 export default function TaskCompletionSummary({
   completedItems,
   plans,
+  activePlan,
   onOpenArtifact,
 }: {
   completedItems: string[];
   plans: ExecutionPlan[];
+  activePlan?: import("@napier/contracts").ThreadDetail["activePlan"];
   onOpenArtifact(path: string): void;
 }) {
-  const paths = taskArtifactPaths(plans);
+  const paths = taskArtifactPaths(plans, activePlan);
   if (completedItems.length === 0 && paths.length === 0) return null;
   return (
     <div className="task-narrative-completed">
@@ -36,7 +38,14 @@ export default function TaskCompletionSummary({
   );
 }
 
-export function taskArtifactPaths(plans: readonly ExecutionPlan[]): string[] {
+export function taskArtifactPaths(
+  plans: readonly ExecutionPlan[],
+  activePlan?: Pick<
+    NonNullable<import("@napier/contracts").ThreadDetail["activePlan"]>,
+    "outputPaths"
+  >,
+): string[] {
+  if (activePlan) return activePlan.outputPaths;
   const plan =
     plans.findLast(
       (candidate) =>

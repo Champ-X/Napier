@@ -12,9 +12,11 @@ import type {
   ExtensionPublisherTrustAnchor,
   ExtensionRecord,
 } from "@napier/contracts";
+import type { KernelPluginInspection } from "@napier/contracts/kernel-plugins";
 
 import { extensionCopy as copy } from "./extension-copy";
 import ExtensionPackageDesk from "./ExtensionPackageDesk";
+import KernelPluginDesk from "./KernelPluginDesk";
 import type {
   ExtensionPackageDeploymentConfirmation,
   ExtensionPackageReceipt,
@@ -27,6 +29,7 @@ type Proposal = Omit<CreateMcpExtensionRequest, "threadId">;
 
 export interface ExtensionPanelProps {
   extensions: ExtensionRecord[];
+  plugins: KernelPluginInspection[];
   publisherAnchors: ExtensionPublisherTrustAnchor[];
   agentId: string;
   busyId: string | undefined;
@@ -49,33 +52,24 @@ export interface ExtensionPanelProps {
   onToggle: (extensionId: string, enabled: boolean) => void;
   onCreatePublisher: (draft: ExtensionPublisherDraft) => Promise<void>;
   onRevokePublisher: (anchorId: string) => Promise<void>;
-  onSignPackage: (
-    extensionId: string,
-    draft: ExtensionPackageSignDraft,
-  ) => Promise<void>;
+  onSignPackage: (extensionId: string, draft: ExtensionPackageSignDraft) => Promise<void>;
   onVerifyPackage: (file: File) => Promise<void>;
   onImportPackage: (file: File) => Promise<void>;
   onExportPackageLockfile: () => Promise<void>;
-  onDownloadPackageChannelIndex: (
-    trustAnchorId: string,
-    publisher: string,
-  ) => Promise<void>;
+  onDownloadPackageChannelIndex: (trustAnchorId: string, publisher: string) => Promise<void>;
   onPublishPackageRollout: (name: string) => Promise<void>;
   onPreviewPackageRollout: (channelId: string) => Promise<void>;
   onPreviewPackageUpdate: (extensionId: string, file: File) => Promise<void>;
-  onApplyPackageUpdate: (
-    confirmation: ExtensionPackageUpdateConfirmation,
-  ) => Promise<void>;
+  onApplyPackageUpdate: (confirmation: ExtensionPackageUpdateConfirmation) => Promise<void>;
   onCancelPackageUpdate: () => void;
   onPreviewPackageDeployment: (files: File[]) => Promise<void>;
-  onApplyPackageDeployment: (
-    confirmation: ExtensionPackageDeploymentConfirmation,
-  ) => Promise<void>;
+  onApplyPackageDeployment: (confirmation: ExtensionPackageDeploymentConfirmation) => Promise<void>;
   onCancelPackageDeployment: () => void;
 }
 
 export default function ExtensionPanel({
   extensions,
+  plugins,
   publisherAnchors,
   agentId,
   busyId,
@@ -107,9 +101,7 @@ export default function ExtensionPanel({
   onCancelPackageDeployment,
 }: ExtensionPanelProps) {
   const [name, setName] = useState("");
-  const [transportType, setTransportType] = useState<
-    "streamable_http" | "stdio"
-  >("streamable_http");
+  const [transportType, setTransportType] = useState<"streamable_http" | "stdio">("streamable_http");
   const [url, setUrl] = useState("");
   const [headerName, setHeaderName] = useState("");
   const [headerEnv, setHeaderEnv] = useState("");
@@ -126,25 +118,14 @@ export default function ExtensionPanel({
   const [error, setError] = useState<string>();
 
   const activeTools = extensions.reduce(
-    (count, extension) =>
-      count +
-      extension.tools.filter((tool) => tool.reviewStatus === "approved").length,
+    (count, extension) => count + extension.tools.filter((tool) => tool.reviewStatus === "approved").length,
     0,
   );
   const formBusy = busyId === "new";
-  const canSubmit =
-    name.trim().length > 0 &&
-    (transportType === "streamable_http"
-      ? url.trim().length > 0
-      : command.trim().length > 0);
+  const canSubmit = name.trim().length > 0 && (transportType === "streamable_http" ? url.trim().length > 0 : command.trim().length > 0);
   const derivedCapabilities = useMemo(() => {
-    const capabilities = [
-      transportType === "streamable_http" ? "network.connect" : "process.spawn",
-    ];
-    if (
-      (transportType === "streamable_http" && headerName && headerEnv) ||
-      (transportType === "stdio" && envTarget && envSource)
-    ) {
+    const capabilities = [transportType === "streamable_http" ? "network.connect" : "process.spawn"];
+    if ((transportType === "streamable_http" && headerName && headerEnv) || (transportType === "stdio" && envTarget && envSource)) {
       capabilities.push("secrets.env");
     }
     if (transportType === "stdio" && cwd.trim()) {
@@ -175,9 +156,7 @@ export default function ExtensionPanel({
       transport = {
         type: "streamable_http",
         url: url.trim(),
-        ...(normalizedHeader && normalizedEnv
-          ? { headerEnv: { [normalizedHeader]: normalizedEnv } }
-          : {}),
+        ...(normalizedHeader && normalizedEnv ? { headerEnv: { [normalizedHeader]: normalizedEnv } } : {}),
       };
     } else {
       const normalizedCommand = command.trim();
@@ -200,9 +179,7 @@ export default function ExtensionPanel({
         command: normalizedCommand,
         ...(args.length > 0 ? { args } : {}),
         ...(cwd.trim() ? { cwd: cwd.trim() } : {}),
-        ...(normalizedTarget && normalizedSource
-          ? { env: { [normalizedTarget]: normalizedSource } }
-          : {}),
+        ...(normalizedTarget && normalizedSource ? { env: { [normalizedTarget]: normalizedSource } } : {}),
       };
       if (network) capabilities.push("network.connect");
       if (workspaceRead || workspaceWrite || cwd.trim()) {
@@ -241,10 +218,7 @@ export default function ExtensionPanel({
   };
 
   return (
-    <section
-      className="panel-section extensions-panel"
-      aria-labelledby="extensions-title"
-    >
+    <section className="panel-section extensions-panel" aria-labelledby="extensions-title">
       <div className="panel-heading">
         <div>
           <span>{copy.eyebrow}</span>
@@ -260,6 +234,8 @@ export default function ExtensionPanel({
           {error}
         </div>
       ) : null}
+
+      <KernelPluginDesk plugins={plugins} />
 
       <ExtensionPackageDesk
         anchors={publisherAnchors}
@@ -374,12 +350,7 @@ export default function ExtensionPanel({
         <fieldset>
           <legend>{copy.requestedAccess}</legend>
           <label>
-            <input
-              type="checkbox"
-              checked={externalRead}
-              disabled={formBusy}
-              onChange={(event) => setExternalRead(event.target.checked)}
-            />
+            <input type="checkbox" checked={externalRead} disabled={formBusy} onChange={(event) => setExternalRead(event.target.checked)} />
             {copy.read}
           </label>
           <label>
@@ -393,10 +364,7 @@ export default function ExtensionPanel({
           </label>
         </fieldset>
 
-        <div
-          className="extension-derived-access"
-          aria-label={copy.derivedAccess}
-        >
+        <div className="extension-derived-access" aria-label={copy.derivedAccess}>
           <span>{copy.derivedAccess}</span>
           <div>
             {derivedCapabilities.map((capability) => (
@@ -405,23 +373,13 @@ export default function ExtensionPanel({
           </div>
         </div>
 
-        <button
-          className="primary-wide"
-          type="submit"
-          disabled={formBusy || !canSubmit}
-        >
-          {transportType === "stdio" ? (
-            <TerminalSquare size={14} aria-hidden="true" />
-          ) : (
-            <Cable size={14} aria-hidden="true" />
-          )}
+        <button className="primary-wide" type="submit" disabled={formBusy || !canSubmit}>
+          {transportType === "stdio" ? <TerminalSquare size={14} aria-hidden="true" /> : <Cable size={14} aria-hidden="true" />}
           {copy.propose}
         </button>
       </form>
 
-      {extensions.length === 0 ? (
-        <p className="empty-panel">{copy.empty}</p>
-      ) : null}
+      {extensions.length === 0 ? <p className="empty-panel">{copy.empty}</p> : null}
       <div className="extension-list">
         {extensions.map((extension) => (
           <ExtensionCard
@@ -596,21 +554,11 @@ function StdioTransportFields({
       <fieldset className="extension-sandbox-access">
         <legend>{copy.sandboxAccess}</legend>
         <label>
-          <input
-            type="checkbox"
-            checked={network}
-            disabled={disabled}
-            onChange={(event) => onNetwork(event.target.checked)}
-          />
+          <input type="checkbox" checked={network} disabled={disabled} onChange={(event) => onNetwork(event.target.checked)} />
           {copy.network}
         </label>
         <label>
-          <input
-            type="checkbox"
-            checked={workspaceRead}
-            disabled={disabled}
-            onChange={(event) => onWorkspaceRead(event.target.checked)}
-          />
+          <input type="checkbox" checked={workspaceRead} disabled={disabled} onChange={(event) => onWorkspaceRead(event.target.checked)} />
           {copy.workspaceRead}
         </label>
         <label>
@@ -660,64 +608,42 @@ function ExtensionCard({
 }) {
   const [routingHints, setRoutingHints] = useState<Record<string, string>>({});
   const enabled = extension.enabledAgentIds.includes(agentId);
-  const approvedTools = extension.tools.filter(
-    (tool) => tool.reviewStatus === "approved",
-  ).length;
-  const locator =
-    extension.transport.type === "streamable_http"
-      ? extension.transport.url
-      : extension.transport.command;
+  const approvedTools = extension.tools.filter((tool) => tool.reviewStatus === "approved").length;
+  const locator = extension.transport.type === "streamable_http" ? extension.transport.url : extension.transport.command;
   const mappingCount =
     extension.transport.type === "streamable_http"
       ? Object.keys(extension.transport.headerEnv ?? {}).length
       : Object.keys(extension.transport.env ?? {}).length;
   const packageEnvelope = extension.packageBinding?.envelope;
-  const packageAnchor = packageEnvelope
-    ? publisherAnchors.find(
-        (anchor) => anchor.keyId === packageEnvelope.signature.keyId,
-      )
-    : undefined;
-  const packageStatus: ExtensionPackageVerificationStatus | undefined =
-    !packageEnvelope
-      ? undefined
-      : !packageAnchor
-        ? "unknown_key"
-        : packageAnchor.status === "revoked"
-          ? "revoked"
-          : packageEnvelope.manifest.expiresAt &&
-              Date.parse(packageEnvelope.manifest.expiresAt) <= Date.now()
-            ? "expired"
-            : "trusted";
-  const packageTrusted =
-    packageStatus === undefined || packageStatus === "trusted";
+  const packageAnchor = packageEnvelope ? publisherAnchors.find((anchor) => anchor.keyId === packageEnvelope.signature.keyId) : undefined;
+  const packageStatus: ExtensionPackageVerificationStatus | undefined = !packageEnvelope
+    ? undefined
+    : !packageAnchor
+      ? "unknown_key"
+      : packageAnchor.status === "revoked"
+        ? "revoked"
+        : packageEnvelope.manifest.expiresAt && Date.parse(packageEnvelope.manifest.expiresAt) <= Date.now()
+          ? "expired"
+          : "trusted";
+  const packageTrusted = packageStatus === undefined || packageStatus === "trusted";
   return (
     <article className={`extension-card extension-${extension.trustStatus}`}>
       <header>
         <div>
           <span className="extension-glyph" aria-hidden="true">
-            {extension.transport.type === "stdio" ? (
-              <TerminalSquare size={13} />
-            ) : (
-              <Cable size={13} />
-            )}
+            {extension.transport.type === "stdio" ? <TerminalSquare size={13} /> : <Cable size={13} />}
           </span>
           <div>
             <strong>{extension.name}</strong>
             <code>{locator}</code>
           </div>
         </div>
-        <span className="extension-state">
-          {copy.statuses[extension.trustStatus]}
-        </span>
+        <span className="extension-state">{copy.statuses[extension.trustStatus]}</span>
       </header>
 
       <div className="extension-tags">
-        <span>
-          {extension.transport.type === "stdio" ? copy.stdio : copy.http}
-        </span>
-        {extension.packageBinding ? (
-          <span>{copy.packages.packageBadge}</span>
-        ) : null}
+        <span>{extension.transport.type === "stdio" ? copy.stdio : copy.http}</span>
+        {extension.packageBinding ? <span>{copy.packages.packageBadge}</span> : null}
         {extension.requestedCapabilities.map((capability) => (
           <span key={capability}>{capability}</span>
         ))}
@@ -740,11 +666,7 @@ function ExtensionCard({
           <dl>
             <div>
               <dt>{copy.packages.packageTrust}</dt>
-              <dd>
-                {packageStatus
-                  ? copy.packages.verificationStatuses[packageStatus]
-                  : ""}
-              </dd>
+              <dd>{packageStatus ? copy.packages.verificationStatuses[packageStatus] : ""}</dd>
             </div>
             <div>
               <dt>{copy.packages.publisher}</dt>
@@ -760,34 +682,21 @@ function ExtensionCard({
             </div>
             <div>
               <dt>{copy.packages.dependencies}</dt>
-              <dd>
-                {extension.packageBinding.envelope.manifest.dependencies
-                  ?.length ?? 0}
-              </dd>
+              <dd>{extension.packageBinding.envelope.manifest.dependencies?.length ?? 0}</dd>
             </div>
             <div>
               <dt>{copy.packages.publisherKey}</dt>
               <dd>
                 <code title={extension.packageBinding.envelope.signature.keyId}>
-                  {extension.packageBinding.envelope.signature.keyId.slice(
-                    0,
-                    12,
-                  )}
+                  {extension.packageBinding.envelope.signature.keyId.slice(0, 12)}
                 </code>
               </dd>
             </div>
             <div>
               <dt>{copy.packages.manifest}</dt>
               <dd>
-                <code
-                  title={
-                    extension.packageBinding.envelope.manifest.contentSha256
-                  }
-                >
-                  {extension.packageBinding.envelope.manifest.contentSha256.slice(
-                    0,
-                    12,
-                  )}
+                <code title={extension.packageBinding.envelope.manifest.contentSha256}>
+                  {extension.packageBinding.envelope.manifest.contentSha256.slice(0, 12)}
                 </code>
               </dd>
             </div>
@@ -795,16 +704,8 @@ function ExtensionCard({
               <div>
                 <dt>{copy.packages.executable}</dt>
                 <dd>
-                  <code
-                    title={
-                      extension.packageBinding.envelope.manifest.executable
-                        .sha256
-                    }
-                  >
-                    {extension.packageBinding.envelope.manifest.executable.sha256.slice(
-                      0,
-                      12,
-                    )}
+                  <code title={extension.packageBinding.envelope.manifest.executable.sha256}>
+                    {extension.packageBinding.envelope.manifest.executable.sha256.slice(0, 12)}
                   </code>
                 </dd>
               </div>
@@ -820,9 +721,7 @@ function ExtensionCard({
       ) : null}
       {extension.transport.type === "stdio" ? (
         <div className="extension-transport-detail">
-          {extension.transport.args?.length ? (
-            <code>{extension.transport.args.join(" ")}</code>
-          ) : null}
+          {extension.transport.args?.length ? <code>{extension.transport.args.join(" ")}</code> : null}
           {extension.transport.cwd ? (
             <span>
               cwd <code>{extension.transport.cwd}</code>
@@ -843,55 +742,30 @@ function ExtensionCard({
 
       <div className="extension-actions">
         {extension.trustStatus !== "approved" ? (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onReview(extension.id, "approve")}
-          >
+          <button type="button" disabled={busy} onClick={() => onReview(extension.id, "approve")}>
             <Check size={11} aria-hidden="true" />
             {copy.approve}
           </button>
         ) : null}
         {extension.trustStatus === "pending" ? (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onReview(extension.id, "reject")}
-          >
+          <button type="button" disabled={busy} onClick={() => onReview(extension.id, "reject")}>
             <X size={11} aria-hidden="true" />
             {copy.reject}
           </button>
         ) : null}
-        {extension.trustStatus === "approved" &&
-        extension.connection.status !== "ready" &&
-        packageTrusted ? (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onConnect(extension.id)}
-          >
+        {extension.trustStatus === "approved" && extension.connection.status !== "ready" && packageTrusted ? (
+          <button type="button" disabled={busy} onClick={() => onConnect(extension.id)}>
             <Cable size={11} aria-hidden="true" />
             {copy.connect}
           </button>
         ) : null}
-        {extension.trustStatus === "approved" &&
-        extension.connection.status === "ready" ? (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onDisconnect(extension.id)}
-          >
+        {extension.trustStatus === "approved" && extension.connection.status === "ready" ? (
+          <button type="button" disabled={busy} onClick={() => onDisconnect(extension.id)}>
             {copy.disconnect}
           </button>
         ) : null}
-        {extension.trustStatus === "approved" &&
-        approvedTools > 0 &&
-        packageTrusted ? (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onToggle(extension.id, !enabled)}
-          >
+        {extension.trustStatus === "approved" && approvedTools > 0 && packageTrusted ? (
+          <button type="button" disabled={busy} onClick={() => onToggle(extension.id, !enabled)}>
             {enabled ? copy.disable : copy.enable}
           </button>
         ) : null}
@@ -931,12 +805,7 @@ function ExtensionCard({
               </label>
               <div className="extension-tool-meta">
                 <span>
-                  {copy.effect}:{" "}
-                  {tool.effect === "unknown"
-                    ? copy.unknown
-                    : tool.effect === "read"
-                      ? copy.read
-                      : copy.write}
+                  {copy.effect}: {tool.effect === "unknown" ? copy.unknown : tool.effect === "read" ? copy.read : copy.write}
                 </span>
                 <span>
                   {copy.schema} {tool.schemaSha256.slice(0, 8)}
@@ -944,63 +813,35 @@ function ExtensionCard({
               </div>
               <footer>
                 {tool.reviewStatus === "approved" ? (
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() =>
-                      onToolReview(extension.id, tool.name, "reject")
-                    }
-                  >
+                  <button type="button" disabled={busy} onClick={() => onToolReview(extension.id, tool.name, "reject")}>
                     {copy.revoke}
                   </button>
                 ) : (
                   <>
-                    {extension.approvedCapabilities.includes(
-                      "external.read",
-                    ) ? (
+                    {extension.approvedCapabilities.includes("external.read") ? (
                       <button
                         type="button"
                         disabled={busy}
                         onClick={() =>
-                          onToolReview(
-                            extension.id,
-                            tool.name,
-                            "approve",
-                            "read",
-                            routingHints[tool.name] ?? tool.routingHint ?? "",
-                          )
+                          onToolReview(extension.id, tool.name, "approve", "read", routingHints[tool.name] ?? tool.routingHint ?? "")
                         }
                       >
                         {copy.approveRead}
                       </button>
                     ) : null}
-                    {extension.approvedCapabilities.includes(
-                      "external.write",
-                    ) ? (
+                    {extension.approvedCapabilities.includes("external.write") ? (
                       <button
                         type="button"
                         disabled={busy}
                         onClick={() =>
-                          onToolReview(
-                            extension.id,
-                            tool.name,
-                            "approve",
-                            "write",
-                            routingHints[tool.name] ?? tool.routingHint ?? "",
-                          )
+                          onToolReview(extension.id, tool.name, "approve", "write", routingHints[tool.name] ?? tool.routingHint ?? "")
                         }
                       >
                         {copy.approveWrite}
                       </button>
                     ) : null}
                     {tool.reviewStatus === "pending" ? (
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() =>
-                          onToolReview(extension.id, tool.name, "reject")
-                        }
-                      >
+                      <button type="button" disabled={busy} onClick={() => onToolReview(extension.id, tool.name, "reject")}>
                         {copy.reject}
                       </button>
                     ) : null}

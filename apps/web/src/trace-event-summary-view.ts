@@ -29,7 +29,7 @@ import { scheduleEventTraceSummary } from "./schedule-event-view";
 import { sha256Canonical } from "./stable-digest";
 import { subagentEventTraceSummary } from "./subagent-event-view";
 import { threadImportedSummary } from "./thread-imported-view";
-import { toolEventTraceSummary } from "./tool-event-view";
+import { toolTraceSummary } from "./tool-trace-summary";
 import { workflowEventTraceSummary } from "./workflow-event-view";
 import { workspaceFileEventTraceSummary } from "./workspace-file-event-view";
 import { workspaceProcessEventTraceSummary } from "./workspace-process-event-view";
@@ -187,7 +187,7 @@ export function traceEventSummaryView(event: RunEvent): TraceEventSummaryView {
     return classifiedSummary(event, modelResponseTraceSummary(event), "fixed");
   }
   if (event.type.startsWith("tool.")) {
-    return classifiedSummary(event, toolEventTraceSummary(event), "fixed");
+    return classifiedSummary(event, toolTraceSummary(event), "fixed");
   }
   if (event.type.startsWith("goal.")) {
     return classifiedSummary(event, goalEventTraceSummary(event), "fixed");

@@ -74,6 +74,35 @@ describe("Model Prompt evidence bindings", () => {
       ]),
     ).toThrow("count is invalid");
   });
+
+  it("accepts one retry discard as the terminal Prompt binding", () => {
+    const fixture = evidence();
+    const retryEvent = event(
+      fixture.responseEvent.seq,
+      "model.thinking_loop.detected",
+      {
+        ...fixture.responseEvent.payload,
+        action: "retry",
+      },
+    );
+    expect(() =>
+      assertModelPromptEvidenceBindings([
+        fixture.envelopeEvent,
+        fixture.adapterEvent,
+        fixture.packageEvent,
+        retryEvent,
+      ]),
+    ).not.toThrow();
+    expect(() =>
+      assertModelPromptEvidenceBindings([
+        fixture.envelopeEvent,
+        fixture.adapterEvent,
+        fixture.packageEvent,
+        retryEvent,
+        { ...fixture.responseEvent, seq: fixture.responseEvent.seq + 1 },
+      ]),
+    ).toThrow("terminal binding is duplicated");
+  });
 });
 
 function evidence(turnIndex = 0, sequenceOffset = 0) {

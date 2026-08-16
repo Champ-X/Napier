@@ -47,6 +47,7 @@ export interface RuntimeStorePort {
     status: TerminalRunStatus,
     options?: {
       error?: string;
+      outcome?: NonNullable<RunRecord["outcome"]>;
       usage?: RunRecord["usage"];
     },
   ): Promise<RunRecord>;

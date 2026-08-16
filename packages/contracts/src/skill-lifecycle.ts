@@ -26,6 +26,7 @@ export type SkillLifecycleProjectionState =
 
 export const SKILL_APPLICATION_MODES = [
   "research_evidence_cited",
+  "data_analysis_transformed",
   "software_change_verified",
   "software_change_observed",
 ] as const;

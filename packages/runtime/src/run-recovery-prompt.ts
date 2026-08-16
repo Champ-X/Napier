@@ -1,4 +1,4 @@
-import type { RunEvent, RunRecord } from "@napier/contracts";
+import type { ExecutionPlan, RunEvent, RunRecord } from "@napier/contracts";
 
 import { validateResearchSourceCapsuleReceipt } from "./research-source-capsule.js";
 import { validateWebFetchStateCapsuleReceipt } from "./web-fetch-capsule.js";
@@ -7,9 +7,11 @@ import { isWebFetchStateToolName } from "./web-fetch-state-tool.js";
 export function buildRunRecoveryPrompt(
   run: RunRecord,
   activeObjective: string | undefined,
-  events: RunEvent[],
+  context: RunEvent[] | { events: RunEvent[]; plans?: ExecutionPlan[] },
   mode: "manual" | "automatic" = "manual",
 ): string {
+  const events = Array.isArray(context) ? context : context.events;
+  const plans = Array.isArray(context) ? [] : (context.plans ?? []);
   const evidence = events
     .filter(
       (event) =>
@@ -41,6 +43,7 @@ export function buildRunRecoveryPrompt(
     "A tool.started event without a matching terminal event has an unknown outcome.",
     "Inspect current workspace or external state before repeating any operation that may have side effects.",
     "Do not claim the interrupted work completed unless new evidence verifies it.",
+    mode === "manual" ? recoveryPlanHint(plans) : "",
     mode === "manual" ? recoveryResearchSourceHint(events) : "",
     mode === "manual" ? recoveryWebFetchHint(events) : "",
     "",
@@ -51,6 +54,31 @@ export function buildRunRecoveryPrompt(
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+function recoveryPlanHint(plans: ExecutionPlan[]): string {
+  const current = plans
+    .filter((plan) => plan.status === "active" || plan.status === "blocked")
+    .slice(-4)
+    .map((plan) => ({
+      planId: plan.id,
+      revision: plan.revision,
+      status: plan.status,
+      steps: plan.steps.map((step) => ({
+        stepId: step.id,
+        status: step.status,
+        ...(step.runId ? { runId: step.runId } : {}),
+      })),
+      artifacts: plan.artifacts.map((artifact) => ({
+        artifactId: artifact.id,
+        status: artifact.status,
+      })),
+    }));
+  if (current.length === 0) return "";
+  return [
+    "Current durable Plan targets are listed below. Reinspect current state, then use update_plan_step reopen/complete and update_plan_artifact as appropriate; an expected artifact must be recorded produced before verify. Do not create a duplicate Plan.",
+    `<recovery-plan-context>${JSON.stringify({ plans: current })}</recovery-plan-context>`,
+  ].join("\n");
 }
 
 function recoveryEventSummary(event: RunEvent): string {

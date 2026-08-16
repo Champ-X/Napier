@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./kernel-browser-inspector-slot": "./src/kernel-browser-inspector-slot.ts"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json --noEmit && vite build",
     "dev": "vite --host 127.0.0.1",

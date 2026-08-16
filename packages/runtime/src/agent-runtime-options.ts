@@ -50,6 +50,7 @@ export interface RunPromptOptions {
   [SKILL_CONTINUATION_SNAPSHOT]?: SkillContinuationSnapshot;
   recovery?: {
     mode: "manual" | "automatic";
+    intentId?: string;
     attemptId?: string;
     assessmentSha256?: string;
   };

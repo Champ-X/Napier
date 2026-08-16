@@ -8,7 +8,7 @@ import {
 } from "../src/InspectorNavigation";
 
 describe("Inspector navigation", () => {
-  it("uses three progressive-disclosure groups without dropping tools", () => {
+  it("uses Task, Inspect, and Studio progressive-disclosure groups", () => {
     expect(
       INSPECTOR_GROUPS.map(({ id, label, defaultTab, tabs }) => ({
         id,
@@ -18,27 +18,25 @@ describe("Inspector navigation", () => {
       })),
     ).toEqual([
       {
-        id: "activity",
-        label: "Activity/Plan",
+        id: "task",
+        label: "Task",
         defaultTab: "plan",
-        tabs: ["plan", "goal"],
-      },
-      {
-        id: "files",
-        label: "Files/Artifacts",
-        defaultTab: "files",
-        tabs: ["files"],
+        tabs: ["plan", "goal", "files"],
       },
       {
         id: "inspect",
         label: "Inspect",
-        defaultTab: "context",
+        defaultTab: "browser",
+        tabs: ["browser", "trace", "processes"],
+      },
+      {
+        id: "studio",
+        label: "Studio",
+        defaultTab: "studio",
         tabs: [
-          "context",
-          "browser",
-          "trace",
-          "processes",
+          "studio",
           "lab",
+          "context",
           "memory",
           "extensions",
           "automations",
@@ -49,24 +47,13 @@ describe("Inspector navigation", () => {
 
   it("keeps the current tool first within its group", () => {
     expect(inspectorGroup("trace").id).toBe("inspect");
-    expect(inspectorTabs("trace")).toEqual([
-      "trace",
-      "context",
-      "browser",
-      "processes",
+    expect(inspectorTabs("trace")).toEqual(["trace", "browser", "processes"]);
+    expect(inspectorTabs("goal")).toEqual(["goal", "plan", "files"]);
+    expect(inspectorTabs("files")).toEqual(["files", "plan", "goal"]);
+    expect(inspectorTabs("studio")).toEqual([
+      "studio",
       "lab",
-      "memory",
-      "extensions",
-      "automations",
-    ]);
-    expect(inspectorTabs("goal")).toEqual(["goal", "plan"]);
-    expect(inspectorTabs("files")).toEqual(["files"]);
-    expect(inspectorTabs("browser")).toEqual([
-      "browser",
       "context",
-      "trace",
-      "processes",
-      "lab",
       "memory",
       "extensions",
       "automations",

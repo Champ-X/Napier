@@ -20,6 +20,10 @@
       "types": "./dist/management-http.d.ts",
       "import": "./dist/management-http.js"
     },
+    "./kernel-plugins": {
+      "types": "./dist/kernel-plugins.d.ts",
+      "import": "./dist/kernel-plugins.js"
+    },
     "./browser-interaction-confirmation": {
       "types": "./dist/browser-interaction-confirmation.d.ts",
       "import": "./dist/browser-interaction-confirmation.js"

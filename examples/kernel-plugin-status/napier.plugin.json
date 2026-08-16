@@ -1,0 +1,27 @@
+{
+  "kind": "napier.kernel-plugin-manifest",
+  "schemaVersion": 1,
+  "apiVersion": "2026-07-25",
+  "id": "plugin.status-example",
+  "version": "0.1.0",
+  "displayName": "Status Example",
+  "description": "Example first-party Status Example projection plugin.",
+  "trust": "first_party",
+  "dependencies": [],
+  "capabilities": ["projection"],
+  "permissions": [],
+  "entries": {
+    "host": {
+      "package": "@napier/plugin-status-example",
+      "export": "./host"
+    }
+  },
+  "contributions": {
+    "tools": [],
+    "providers": [],
+    "prompts": [],
+    "projections": ["status.example.status"],
+    "uiSlots": []
+  },
+  "contentSha256": "4e8dc6985a922cdf42a6c60727b1754bc531eb3970585d83426f6df0a8cf6a09"
+}

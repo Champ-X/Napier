@@ -26,6 +26,7 @@ import {
   validateAgentProfileRevision,
 } from "./agents.js";
 import { assertArtifactReceiptEventBoundary } from "./artifact-receipts.js";
+import { ARTIFACT_MANIFEST_STATUSES } from "./artifact-status.js";
 import {
   hashAutomaticRecoveryEventStream,
   validateAutomaticRecoveryAssessment,
@@ -67,6 +68,8 @@ import {
   projectPromptVariableSnapshots,
 } from "./prompt-variables.js";
 import { validateRunConfigurationFingerprint } from "./run-config.js";
+import { assertOutcome } from "./run-outcomes.js";
+import { PLAN_STEP_STATUSES } from "./plan-step-transition.js";
 import {
   createToolLoopGuardContextReceipt,
   normalizeToolLoopGuardPolicy,
@@ -100,14 +103,6 @@ const MAX_SUBAGENTS = 10_000;
 const THREAD_IMPORTED_EVENT = "thread.imported";
 const RESOURCE_ID = /^[a-z][a-z0-9_]{2,80}$/;
 const THREAD_STATUSES = new Set(["idle", "running", "waiting", "failed"]);
-const RUN_STATUSES = new Set([
-  "queued",
-  "running",
-  "completed",
-  "failed",
-  "cancelled",
-  "interrupted",
-]);
 const RUN_SOURCES = new Set([
   "user",
   "recovery",
@@ -147,21 +142,6 @@ const GOAL_BLOCKERS = new Set([
   "goal_not_met_yet",
 ]);
 const PLAN_STATUSES = new Set(["active", "completed", "blocked", "cancelled"]);
-const PLAN_STEP_STATUSES = new Set([
-  "pending",
-  "ready",
-  "running",
-  "completed",
-  "blocked",
-  "skipped",
-]);
-const ARTIFACT_STATUSES = new Set([
-  "expected",
-  "produced",
-  "verified",
-  "missing",
-  "superseded",
-]);
 const SUBAGENT_STATUSES = new Set([
   "pending",
   "running",
@@ -579,7 +559,7 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
         `Thread replay bundle run ownership is invalid: ${runId}`,
       );
     }
-    assertEnum(run["status"], RUN_STATUSES, `runs[${index}].status`);
+    assertOutcome(run["status"], run["outcome"], `runs[${index}]`);
     if (run["source"] !== undefined) {
       assertEnum(run["source"], RUN_SOURCES, `runs[${index}].source`);
     }
@@ -1002,7 +982,11 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
         10_000,
       );
       assertText(artifact["evidence"], "plan artifact evidence", 20_000);
-      assertEnum(artifact["status"], ARTIFACT_STATUSES, "plan artifact status");
+      assertEnum(
+        artifact["status"],
+        ARTIFACT_MANIFEST_STATUSES,
+        "plan artifact status",
+      );
       if (artifact["sha256"] !== undefined) {
         assertSha256(artifact["sha256"], "plan artifact sha256");
       }

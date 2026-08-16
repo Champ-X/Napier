@@ -18,12 +18,16 @@ import type {
 import { recommendedDefaultRunModel } from "@napier/contracts/default-run-model";
 
 import { createModelAdapterModels } from "./model-adapters.js";
+import type { ModelTurnDeadlinePolicy } from "./model-turn-deadline.js";
+import type { ToolDeadlinePolicy } from "./tool-deadline-policy.js";
 
 export const MAX_MODELS_PER_PROVIDER = 18;
 export const MAX_PROJECTED_LIVE_MODELS = 512;
 
 export class ModelRegistry {
   readonly models: MutableModels;
+  modelTurnDeadlinePolicy?: Partial<ModelTurnDeadlinePolicy>;
+  toolDeadlinePolicy?: Partial<ToolDeadlinePolicy>;
 
   constructor(credentials?: CredentialStore) {
     const models = createModelAdapterModels(

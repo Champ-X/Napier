@@ -8,6 +8,8 @@ import {
   createOperatorDecisionContinuedPayload,
   createOperatorDecisionRequestedPayload,
   formatOperatorDecisionContinuation,
+  applyOperatorDecisionEvent,
+  operatorDecisionProjectionView,
   projectOperatorDecisions,
 } from "../src/operator-decisions.js";
 
@@ -29,6 +31,49 @@ function event(seq: number, type: string, payload: JsonValue): RunEvent {
 }
 
 describe("Operator decisions", () => {
+  it("applies strict decisions incrementally with the same canonical view", () => {
+    const requested = event(
+      1,
+      "operator.decision.requested",
+      createOperatorDecisionRequestedPayload({
+        decisionId: "decision_increment1",
+        request: {
+          header: "Scope",
+          question: "Which scope?",
+          options: [
+            { label: "One", description: "First." },
+            { label: "Two", description: "Second." },
+          ],
+          multiSelect: false,
+        },
+      }),
+    );
+    let state = applyOperatorDecisionEvent(new Map(), requested);
+    const pending = operatorDecisionProjectionView(state)[0]!;
+    const answered = event(
+      2,
+      "operator.decision.answered",
+      createOperatorDecisionAnsweredPayload({
+        decision: pending,
+        answer: { selectedOptionIds: ["option_2"] },
+      }),
+    );
+    state = applyOperatorDecisionEvent(state, answered);
+    const answer = operatorDecisionProjectionView(state)[0]!;
+    const continued = event(
+      3,
+      "operator.decision.continued",
+      createOperatorDecisionContinuedPayload({
+        decision: answer,
+        continuationRunId: "run_incrementtail",
+      }),
+    );
+    state = applyOperatorDecisionEvent(state, continued);
+    expect(operatorDecisionProjectionView(state)).toEqual(
+      projectOperatorDecisions([continued, requested, answered]),
+    );
+  });
+
   it("projects a strict hash-bound pending decision", () => {
     const payload = createOperatorDecisionRequestedPayload({
       decisionId: "decision_pending1234",

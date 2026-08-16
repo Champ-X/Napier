@@ -202,7 +202,7 @@ function validUninstall(value) {
   );
 }
 
-export function validSandboxFirstUseCodingAcceptance(value) {
+export function validSandboxFirstUseCodingAcceptance(value, options = {}) {
   return (
     isRecord(value) &&
     exactKeys(value, [
@@ -221,7 +221,10 @@ export function validSandboxFirstUseCodingAcceptance(value) {
     value.freshDataRoot === true &&
     SHA256.test(value.workspaceFixtureSha256) &&
     validFirstUseSetup(value.setup) &&
-    validFirstUseProfile(value.profile) &&
+    validFirstUseProfile(
+      value.profile,
+      options.allowLegacyReadOnlyProfile === true,
+    ) &&
     validFirstUseRun(value.run) &&
     validFirstUseDoctor(value.doctor) &&
     validFirstUseUninstall(value.uninstall) &&
@@ -252,7 +255,14 @@ function validFirstUseSetup(value) {
   );
 }
 
-function validFirstUseProfile(value) {
+function validFirstUseProfile(value, allowLegacyReadOnly) {
+  const current =
+    value?.persistedToolPolicy === "workspace" &&
+    value?.persistedProcessExecution === true;
+  const legacy =
+    allowLegacyReadOnly &&
+    value?.persistedToolPolicy === "observe" &&
+    value?.persistedProcessExecution === false;
   return (
     isRecord(value) &&
     exactKeys(value, [
@@ -276,8 +286,7 @@ function validFirstUseProfile(value) {
     value.revisionCountAfter === 1 &&
     value.credentialCountBefore === 0 &&
     value.credentialCountAfter === 0 &&
-    value.persistedToolPolicy === "workspace" &&
-    value.persistedProcessExecution === true &&
+    (current || legacy) &&
     SHA256.test(value.profileSha256Before) &&
     SHA256.test(value.revisionSetSha256Before) &&
     SHA256.test(value.projectionSha256)

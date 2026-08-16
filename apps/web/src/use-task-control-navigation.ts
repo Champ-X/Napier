@@ -53,6 +53,7 @@ export function useTaskControlNavigation({
   return {
     browserControlsAvailable,
     inspectorOpenRequest,
+    openInspector,
     openArtifact,
     openBrowserControls,
   };

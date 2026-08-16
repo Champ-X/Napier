@@ -6,18 +6,18 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "d6b7d437ab6e08c44b2dac8b57530c83283620bb3c6f32b0c4257dd176b7c1ca",
+  "artifactSetSha256": "f97e36ae75299622ac34a4cdaf9aadff921e84f1b9fa4ff3b08b3c86d10745e2",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "8df13598cc7541523fee3a0982573568fdc7079d04dfd0d72c9811dd22ae2f7e",
+      "sha256": "ec7b0e2800352e82b4a5b90f01c0cbce3a5fd6008aeb9a4cb4e29b875efbff03",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "5845e306267598357a27f835d548c63550439f0be9715727b47e667e01f6e9ad",
+      "sha256": "8eaeab2ee1768c27497a1e488ae02134e8e58a24905124ee73d8ba4b15cf5ee7",
       "valid": true
     },
     {
@@ -53,7 +53,7 @@
     {
       "kind": "sandbox-product-acceptance-stage13",
       "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-      "sha256": "a8f61e89c3dd06a99f866729dbb39f4915a31db6cc5de0646573025ec9f17e8c",
+      "sha256": "89c9ec57d0ba5dc6be917fb295cc0fae5bb204a3909b370934c4f44bf609df86",
       "valid": true
     },
     {
@@ -89,7 +89,7 @@
     {
       "kind": "linux-host-product-acceptance-stage19",
       "path": "docs/artifacts/linux-host-product-acceptance-stage19.json",
-      "sha256": "fae24386a28ebf69ccd0c3dfe9f91e4ecf35807176d6394c860e2462a33bf8d9",
+      "sha256": "921812a96428bd627e128bfde3d4f4f6abe35132f83237e7360e81cb9640b0c1",
       "valid": true
     },
     {
@@ -101,13 +101,13 @@
     {
       "kind": "profile-upgrade-stage21",
       "path": "docs/artifacts/profile-upgrade-stage21.json",
-      "sha256": "5118c2192498a12ab3c58237385785a6c4e6ecbdb5482d8b67ba0051aed53507",
+      "sha256": "2b80516b2d604ebf5117248d9879d9ce7f65d23ae0b9e723007d247c249fb5a0",
       "valid": true
     },
     {
       "kind": "s1-shell-sandbox-readiness-stage22",
       "path": "docs/artifacts/s1-shell-sandbox-readiness-stage22.json",
-      "sha256": "d5a3ea5eaa6ab745281efa28e7d42b0abd922162ba07a344465af442d4783f6f",
+      "sha256": "92e726cf84f7ab32b9f0c2b710450e089eaec8a7b0850e51bc8503026d759c12",
       "valid": true
     },
     {
@@ -119,13 +119,13 @@
     {
       "kind": "web-dist-audit",
       "path": "docs/artifacts/web-dist-audit-0.1.0.json",
-      "sha256": "645f212f49408f27b8c07c109c87f58a96bd7120dd320e267214b5d2bc1d6bf8",
+      "sha256": "1c48dd9e2c41cf2800fc2a0112ee743940e0f1676211467dbd75f83ad93ec0ea",
       "valid": true
     },
     {
       "kind": "web-dist-manifest",
       "path": "docs/artifacts/web-dist-0.1.0.sha256",
-      "sha256": "4a8d94ea15ec106089ce9056353e55b53303e02e3d864d07007ca7fe29ad1c61",
+      "sha256": "39c848ed69d5caea5e4d8de720c8544c06ae0a61b20f1dd3bb2b6823a59ef371",
       "valid": true
     },
     {
@@ -150,6 +150,48 @@
       "kind": "controlled-harness-evidence",
       "path": "docs/artifacts/controlled-harness-evidence-0.1.2.json",
       "sha256": "b5628dd9d1df66af2fece619ea4c7e9c08ee790856e92fadf87b41473338803c",
+      "valid": true
+    },
+    {
+      "kind": "default-product-source-bound-smoke",
+      "path": "docs/artifacts/default-product-source-bound-smoke-m4-0.1.3.json",
+      "sha256": "c94263657a2907b5bae5511136697aec3020de89434e1611c2b93e1c5a41e2fc",
+      "valid": true
+    },
+    {
+      "kind": "default-product-source-manifest",
+      "path": "docs/artifacts/default-product-source-manifest-0.1.3.json",
+      "sha256": "94e3ed9ff936c259712d347c6130aa8f4eb7245a7da43581ea07979c9c4b548f",
+      "valid": true
+    },
+    {
+      "kind": "default-product-consolidated-m4",
+      "path": "docs/artifacts/default-product-consolidated-m4-0.1.2.json",
+      "sha256": "0c6c30db0ae08812bd1cff73560f149ba96a6a7d5ac813a38ce17e2131dc2928",
+      "valid": true
+    },
+    {
+      "kind": "default-product-breadth-m4",
+      "path": "docs/artifacts/default-product-breadth-m4-0.1.2.json",
+      "sha256": "d6979c2b2a9e7e154a4082db215ffc129750e9fd62f16242096dd35c76739cf8",
+      "valid": true
+    },
+    {
+      "kind": "default-product-coding-rerun-m4",
+      "path": "docs/artifacts/default-product-coding-rerun-m4-0.1.2.json",
+      "sha256": "b744d3ff1107df33afbff183e0630313ddc677b630e6de9d4079331c7d79b640",
+      "valid": true
+    },
+    {
+      "kind": "default-product-critical-coverage-m4",
+      "path": "docs/artifacts/default-product-critical-coverage-m4-0.1.2.json",
+      "sha256": "bc7a3580d0bb8e5f576ea42e63306132ebcd188a4d71010724e51719c813ffdc",
+      "valid": true
+    },
+    {
+      "kind": "default-product-trial-m4",
+      "path": "docs/artifacts/default-product-trial-m4-0.1.2.json",
+      "sha256": "f83a7edbc673388806d5f58f4e6faf2f7e1e9d9ccfec16bdcb96705f3bde38c4",
       "valid": true
     },
     {

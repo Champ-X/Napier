@@ -11,6 +11,7 @@ import {
   Scale,
   Search,
   Target,
+  Wrench,
 } from "lucide-react";
 import type { KeyboardEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -19,7 +20,7 @@ import { copy } from "./copy";
 import { InspectorTabButton } from "./InspectorTabButton";
 import type { InspectorTab } from "./use-workspace-view-model";
 
-export type InspectorGroupId = "activity" | "files" | "inspect";
+export type InspectorGroupId = "task" | "inspect" | "studio";
 
 export const INSPECTOR_GROUPS: ReadonlyArray<{
   id: InspectorGroupId;
@@ -29,34 +30,25 @@ export const INSPECTOR_GROUPS: ReadonlyArray<{
   tabs: readonly InspectorTab[];
 }> = [
   {
-    id: "activity",
-    label: "Activity/Plan",
-    icon: Activity,
+    id: "task",
+    label: "Task",
+    icon: ClipboardList,
     defaultTab: "plan",
-    tabs: ["plan", "goal"],
-  },
-  {
-    id: "files",
-    label: "Files/Artifacts",
-    icon: FolderArchive,
-    defaultTab: "files",
-    tabs: ["files"],
+    tabs: ["plan", "goal", "files"],
   },
   {
     id: "inspect",
     label: "Inspect",
     icon: Search,
-    defaultTab: "context",
-    tabs: [
-      "context",
-      "browser",
-      "trace",
-      "processes",
-      "lab",
-      "memory",
-      "extensions",
-      "automations",
-    ],
+    defaultTab: "browser",
+    tabs: ["browser", "trace", "processes"],
+  },
+  {
+    id: "studio",
+    label: "Studio",
+    icon: Wrench,
+    defaultTab: "studio",
+    tabs: ["studio", "lab", "context", "memory", "extensions", "automations"],
   },
 ];
 
@@ -67,6 +59,7 @@ const TAB_ICONS: Record<InspectorTab, typeof Activity> = {
   files: FolderArchive,
   lab: Scale,
   plan: ClipboardList,
+  studio: Wrench,
   goal: Target,
   memory: Brain,
   extensions: Cable,
@@ -76,6 +69,7 @@ const TAB_ICONS: Record<InspectorTab, typeof Activity> = {
 const TAB_LABELS: Record<InspectorTab, string> = {
   ...copy.tabs,
   browser: "Browser",
+  studio: "Studio",
 };
 
 export function InspectorNavigation({

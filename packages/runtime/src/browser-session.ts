@@ -21,6 +21,12 @@ import {
   type RunBrowserSessionManagerOptions,
 } from "./browser-session-model.js";
 import { resolvePublicHost, validatePublicHttpUrl } from "./public-network.js";
+import { localServiceUrl } from "./run-local-service-leases.js";
+import {
+  assertBrowserSessionNotAborted,
+  shutdownBrowserSessions,
+  waitForBrowserSessionTurn,
+} from "./browser-session-shutdown.js";
 
 export * from "./browser-session-model.js";
 export { resolveBrowserRuntime } from "./browser-runtime.js";
@@ -50,7 +56,7 @@ export class RunBrowserSessionManager {
     return this.serialized(
       key,
       async () => {
-        assertNotAborted(signal);
+        assertBrowserSessionNotAborted(signal);
         const session = this.sessions.get(key);
         if (!session || !session.healthy) {
           throw new Error("Browser Session is not active for this Run");
@@ -75,7 +81,7 @@ export class RunBrowserSessionManager {
     return this.serialized(
       key,
       async () => {
-        assertNotAborted(signal);
+        assertBrowserSessionNotAborted(signal);
         const session = this.sessions.get(key);
         if (!session || !session.healthy) {
           throw new Error("Browser Session is not active for this Run");
@@ -137,7 +143,7 @@ export class RunBrowserSessionManager {
     return this.serialized(
       key,
       async () => {
-        assertNotAborted(signal);
+        assertBrowserSessionNotAborted(signal);
         const session = this.sessions.get(key);
         if (!session || !session.healthy) {
           throw new Error("Browser Session is not active for this Run");
@@ -295,7 +301,7 @@ export class RunBrowserSessionManager {
     return this.serialized(
       key,
       async () => {
-        assertNotAborted(signal);
+        assertBrowserSessionNotAborted(signal);
         if (request.action === "start") {
           if (this.sessions.has(key)) {
             throw new Error("Browser Session is already active for this Run");
@@ -310,9 +316,9 @@ export class RunBrowserSessionManager {
           this.startingSessions += 1;
           let session: PersistentBrowserSession;
           try {
-            await preflightStartUrl(request.url, this.options);
-            assertNotAborted(signal);
-            session = await PersistentBrowserSession.start(this.options);
+            await preflightStartUrl(owner, request.url, this.options);
+            assertBrowserSessionNotAborted(signal);
+            session = await PersistentBrowserSession.start(this.options, owner);
           } finally {
             this.startingSessions -= 1;
           }
@@ -357,6 +363,10 @@ export class RunBrowserSessionManager {
     const session = this.sessions.get(key);
     this.sessions.delete(key);
     await session?.close();
+  }
+
+  async shutdown(): Promise<void> {
+    await shutdownBrowserSessions(this.sessions, this.tails);
   }
 
   private async runOperation(
@@ -404,7 +414,7 @@ export class RunBrowserSessionManager {
       if (this.tails.get(key) === tail) this.tails.delete(key);
     });
     try {
-      await waitForTurn(previous, signal);
+      await waitForBrowserSessionTurn(previous, signal);
       return await operation();
     } finally {
       release();
@@ -420,7 +430,7 @@ export class RunBrowserSessionManager {
     return await this.serialized(
       key,
       async () => {
-        assertNotAborted(signal);
+        assertBrowserSessionNotAborted(signal);
         const session = this.sessions.get(key);
         if (!session || !session.healthy) {
           throw new Error("Browser Session is not active for this Run");
@@ -455,41 +465,13 @@ function ownerKey(owner: BrowserSessionOwner): string {
 }
 
 async function preflightStartUrl(
+  owner: BrowserSessionOwner,
   value: string,
   options: RunBrowserSessionManagerOptions,
 ): Promise<void> {
+  if (localServiceUrl(options.localServiceLeases, owner, value)) return;
   const url = validatePublicHttpUrl(value);
   await resolvePublicHost(url.hostname, {
     ...(options.lookup ? { lookup: options.lookup } : {}),
   });
-}
-
-async function waitForTurn(
-  previous: Promise<void>,
-  signal?: AbortSignal,
-): Promise<void> {
-  if (!signal) {
-    await previous.catch(() => undefined);
-    return;
-  }
-  assertNotAborted(signal);
-  let abort!: () => void;
-  try {
-    await Promise.race([
-      previous.catch(() => undefined),
-      new Promise<never>((_, reject) => {
-        abort = () =>
-          reject(new Error("Browser Session operation was cancelled"));
-        signal.addEventListener("abort", abort, { once: true });
-      }),
-    ]);
-  } finally {
-    signal.removeEventListener("abort", abort);
-  }
-}
-
-function assertNotAborted(signal: AbortSignal | undefined): void {
-  if (signal?.aborted) {
-    throw new Error("Browser Session operation was cancelled");
-  }
 }

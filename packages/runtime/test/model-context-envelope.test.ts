@@ -142,7 +142,7 @@ describe("model context envelope", () => {
     expect(validateModelContextEnvelopeReceipt(legacy)).toEqual(legacy);
   });
 
-  it("requires each envelope to have exactly one bound model response", () => {
+  it("requires each envelope to have exactly one response or retry binding", () => {
     const receipt = createModelContextEnvelopeReceipt({
       turnIndex: 0,
       systemPrompt: "System",
@@ -160,28 +160,53 @@ describe("model context envelope", () => {
       createdAt: "2026-07-25T00:00:00.000Z",
       payload: receipt,
     };
+    const responseEvent: RunEvent = {
+      ...envelopeEvent,
+      id: "event_response",
+      seq: 2,
+      type: "model.response",
+      payload: {
+        modelContextEnvelopeSha256: receipt.contentSha256,
+        modelContextEnvelopeTurnIndex: receipt.turnIndex,
+        modelContextMessageSetSha256: receipt.messageSetSha256,
+        modelContextToolDefinitionSetSha256: receipt.toolDefinitionSetSha256,
+      },
+    };
+    const retryEvent: RunEvent = {
+      ...responseEvent,
+      id: "event_retry",
+      type: "model.thinking_loop.detected",
+      payload: { ...responseEvent.payload, action: "retry" },
+    };
     expect(() =>
       assertModelContextEnvelopeEventBindings([envelopeEvent]),
-    ).toThrow("response binding count is invalid");
+    ).toThrow("terminal binding count is invalid");
 
+    expect(() =>
+      assertModelContextEnvelopeEventBindings([envelopeEvent, responseEvent]),
+    ).not.toThrow();
+    expect(() =>
+      assertModelContextEnvelopeEventBindings([envelopeEvent, retryEvent]),
+    ).not.toThrow();
+    expect(() =>
+      assertModelContextEnvelopeEventBindings([
+        envelopeEvent,
+        retryEvent,
+        { ...responseEvent, seq: 3 },
+      ]),
+    ).toThrow("terminal binding is invalid");
     expect(() =>
       assertModelContextEnvelopeEventBindings([
         envelopeEvent,
         {
-          ...envelopeEvent,
-          id: "event_response",
-          seq: 2,
-          type: "model.response",
+          ...retryEvent,
           payload: {
-            modelContextEnvelopeSha256: receipt.contentSha256,
-            modelContextEnvelopeTurnIndex: receipt.turnIndex,
-            modelContextMessageSetSha256: receipt.messageSetSha256,
-            modelContextToolDefinitionSetSha256:
-              receipt.toolDefinitionSetSha256,
+            ...retryEvent.payload,
+            modelContextEnvelopeSha256: "f".repeat(64),
           },
         },
       ]),
-    ).not.toThrow();
+    ).toThrow("terminal binding is invalid");
   });
 });
 

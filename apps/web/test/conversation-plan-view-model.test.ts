@@ -1,4 +1,4 @@
-import type { ExecutionPlan, RunEvent } from "@napier/contracts";
+import type { ExecutionPlan, RunEvent, RunRecord } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -90,6 +90,89 @@ describe("Conversation plans", () => {
       1,
     );
   });
+
+  it("keeps recovery work current through shared event-bound intent identity", () => {
+    const currentPlan = plan("active", "running");
+    currentPlan.steps[1]!.runId = "run_interrupted";
+    const events = [
+      startedEvent(1, "run_interrupted", "intent_delivery0001"),
+      eventForRun(2, "run_interrupted", "plan.step.started", {
+        planId: currentPlan.id,
+        stepId: "step_verify",
+      }),
+      startedEvent(3, "run_recovery", "intent_delivery0001"),
+    ];
+
+    expect(
+      conversationPlans(events, [currentPlan], 4, [
+        run("run_interrupted", "interrupted"),
+        run("run_recovery", "running"),
+      ])[0]?.attemptScope,
+    ).toBe("current");
+  });
+
+  it("marks prior Plan work previous after a newer unrelated intent starts", () => {
+    const previousPlan = plan("completed", "completed");
+    previousPlan.steps[1]!.runId = "run_previous";
+    const events = [
+      startedEvent(1, "run_previous", "intent_previous0001"),
+      eventForRun(2, "run_previous", "plan.step.completed", {
+        planId: previousPlan.id,
+        stepId: "step_ship",
+      }),
+      startedEvent(3, "run_current", "intent_current00001"),
+    ];
+
+    expect(
+      conversationPlans(events, [previousPlan], 4, [
+        run("run_previous", "completed"),
+        run("run_current", "running"),
+      ])[0]?.attemptScope,
+    ).toBe("previous");
+  });
+
+  it("uses the server Active Plan summary for compact counts and steps", () => {
+    const current = plan("active", "running");
+    const projected = {
+      planId: current.id,
+      revision: current.revision,
+      status: current.status,
+      objective: current.objective,
+      completedStepCount: 9,
+      settledStepCount: 10,
+      stepCount: 11,
+      nextStep: current.steps[2]!,
+      verifiedArtifactCount: 7,
+      producedArtifactCount: 6,
+      missingArtifactCount: 5,
+      outputPaths: [],
+      activePhaseIndex: 1,
+      phaseCount: 2,
+      eventWatermark: 2,
+    } satisfies NonNullable<import("@napier/contracts").ThreadDetail["activePlan"]>;
+    const item = conversationPlans(
+      [
+        event(2, "plan.step.started", {
+          planId: current.id,
+          stepId: "step_verify",
+        }),
+      ],
+      [current],
+      4,
+      [],
+      projected,
+    )[0]!;
+
+    expect(item).toEqual(
+      expect.objectContaining({
+        completedStepCount: 9,
+        settledStepCount: 10,
+        verifiedArtifactCount: 7,
+        producedArtifactCount: 6,
+        missingArtifactCount: 5,
+      }),
+    );
+  });
 });
 
 function plan(
@@ -177,15 +260,46 @@ function event(
   payload: RunEvent["payload"],
   visibility: RunEvent["visibility"] = "user",
 ): RunEvent {
+  return eventForRun(seq, "run_1", type, payload, visibility);
+}
+
+function eventForRun(
+  seq: number,
+  runId: string,
+  type: string,
+  payload: RunEvent["payload"],
+  visibility: RunEvent["visibility"] = "user",
+): RunEvent {
   return {
     id: `event_${String(seq)}`,
     threadId: "thread_1",
-    runId: "run_1",
+    runId,
     seq,
     type,
     category: "plan",
     visibility,
     createdAt: `2026-08-08T00:00:0${String(seq)}.000Z`,
     payload,
+  };
+}
+
+function startedEvent(seq: number, runId: string, intentId: string): RunEvent {
+  return eventForRun(seq, runId, "run.started", { intentId }, "debug");
+}
+
+function run(id: string, status: RunRecord["status"]): RunRecord {
+  return {
+    id,
+    threadId: "thread_1",
+    agentId: "agent_1",
+    status,
+    startedAt: `2026-08-08T00:00:0${id === "run_current" || id === "run_recovery" ? "3" : "1"}.000Z`,
+    usage: {
+      inputTokens: 0,
+      outputTokens: 0,
+      cacheReadTokens: 0,
+      cacheWriteTokens: 0,
+      costUsd: 0,
+    },
   };
 }

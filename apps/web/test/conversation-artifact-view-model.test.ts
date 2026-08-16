@@ -1,4 +1,4 @@
-import type { ExecutionPlan, RunEvent } from "@napier/contracts";
+import type { ExecutionPlan, RunEvent, RunRecord } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -31,6 +31,7 @@ describe("Conversation artifacts", () => {
         id: "event_2",
         seq: 2,
         threadId: "thread_1",
+        runId: "run_1",
         planId: "plan_1",
         planRevision: 3,
         artifact: expect.objectContaining({
@@ -128,14 +129,61 @@ describe("Conversation artifacts", () => {
     ).toEqual([
       {
         path: "artifacts/report.md",
-        targetId: "conversation-artifact-plan_1-artifact_report-5",
+        targetId: conversationArtifactTargetId(verified),
       },
       {
         path: "artifacts/output.txt",
-        targetId: "conversation-artifact-plan_1-artifact_output-6",
+        targetId: conversationArtifactTargetId(produced),
       },
     ]);
     expect(conversationArtifactTargetId(produced)).not.toContain(":");
+  });
+
+  it("keeps a recovery candidate current through shared event-bound intent identity", () => {
+    const currentPlan = plan();
+    currentPlan.artifacts[0] = {
+      ...currentPlan.artifacts[0]!,
+      status: "candidate",
+      sourceRunId: "run_interrupted",
+    };
+    const artifacts = conversationArtifacts(
+      [
+        startedEvent(1, "run_interrupted", "intent_delivery0001"),
+        eventForRun(2, "run_interrupted", "plan.artifact.candidate", "user", {
+          planId: "plan_1",
+          artifactId: "artifact_report",
+        }),
+        startedEvent(3, "run_recovery", "intent_delivery0001"),
+      ],
+      [currentPlan],
+      6,
+      [run("run_interrupted", "interrupted"), run("run_recovery", "running")],
+    );
+
+    expect(artifacts[0]).toEqual(
+      expect.objectContaining({
+        attemptScope: "current",
+        artifact: expect.objectContaining({ status: "candidate" }),
+      }),
+    );
+  });
+
+  it("marks artifacts previous after a newer unrelated intent starts", () => {
+    const artifacts = conversationArtifacts(
+      [
+        startedEvent(1, "run_previous", "intent_previous0001"),
+        eventForRun(2, "run_previous", "plan.artifact.verified", "user", {
+          planId: "plan_1",
+          artifactId: "artifact_report",
+        }),
+        startedEvent(3, "run_current", "intent_current00001"),
+      ],
+      [plan()],
+      6,
+      [run("run_previous", "completed"), run("run_current", "running")],
+    );
+
+    expect(artifacts[0]?.attemptScope).toBe("previous");
   });
 });
 
@@ -182,15 +230,46 @@ function event(
   visibility: RunEvent["visibility"],
   payload: RunEvent["payload"],
 ): RunEvent {
+  return eventForRun(seq, "run_1", type, visibility, payload);
+}
+
+function eventForRun(
+  seq: number,
+  runId: string,
+  type: string,
+  visibility: RunEvent["visibility"],
+  payload: RunEvent["payload"],
+): RunEvent {
   return {
     id: `event_${String(seq)}`,
     threadId: "thread_1",
-    runId: "run_1",
+    runId,
     seq,
     type,
     category: "plan",
     visibility,
     createdAt: `2026-08-08T00:00:0${String(seq)}.000Z`,
     payload,
+  };
+}
+
+function startedEvent(seq: number, runId: string, intentId: string): RunEvent {
+  return eventForRun(seq, runId, "run.started", "debug", { intentId });
+}
+
+function run(id: string, status: RunRecord["status"]): RunRecord {
+  return {
+    id,
+    threadId: "thread_1",
+    agentId: "agent_1",
+    status,
+    startedAt: `2026-08-08T00:00:0${id === "run_current" || id === "run_recovery" ? "3" : "1"}.000Z`,
+    usage: {
+      inputTokens: 0,
+      outputTokens: 0,
+      cacheReadTokens: 0,
+      cacheWriteTokens: 0,
+      costUsd: 0,
+    },
   };
 }

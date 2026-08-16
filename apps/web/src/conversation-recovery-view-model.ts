@@ -2,53 +2,19 @@ import type {
   AutomaticRecoveryAssessment,
   AutomaticRecoveryAttempt,
   RunEvent,
+  ThreadDetail,
 } from "@napier/contracts";
 import { runEventTraceView } from "./run-event-view";
 
-export type ConversationRecoveryStatus =
-  | AutomaticRecoveryAttempt["status"]
-  | "skipped";
+export type ConversationRecovery = NonNullable<
+  ThreadDetail["recoveries"]
+>[number];
+export type ConversationRecoveryStatus = ConversationRecovery["status"];
 export type ConversationRecoveryBudgetReason =
   | "turns"
   | "tokens"
   | "cost"
   | "timeout";
-
-export interface ConversationRecovery {
-  id: string;
-  seq: number;
-  createdAt: string;
-  status: ConversationRecoveryStatus;
-  assessment: {
-    contentSha256: string;
-    interruptedRunId: string;
-    rootRunId: string;
-    eligible: boolean;
-    blockReasons: AutomaticRecoveryAssessment["blockReasons"];
-    policy: AutomaticRecoveryAssessment["policy"];
-    toolCalls: AutomaticRecoveryAssessment["toolCalls"];
-    eventRange: AutomaticRecoveryAssessment["eventRange"];
-    priorAttempts: number;
-    assessedAt: string;
-  };
-  attempt?: {
-    id: string;
-    status: AutomaticRecoveryAttempt["status"];
-    attempt: number;
-    maxAttempts: number;
-    recoveryRunId?: string;
-    revision: number;
-  };
-  settlement?: {
-    budgetReason: ConversationRecoveryBudgetReason;
-    limit?: number;
-    observedTurns?: number;
-    observedTotalTokens?: number;
-    observedCostUsd?: number;
-    observedElapsedMs?: number;
-  };
-  eventIds: string[];
-}
 
 const AUTOMATIC_RECOVERY_EVENT =
   /^run\.recovery\.auto\.(skipped|claimed|started|completed|failed|interrupted|abandoned)$/u;

@@ -57,6 +57,24 @@ describe("artifact manifest view model", () => {
     });
     expect(
       projectArtifactManifestActions(
+        artifactFixture({ status: "candidate", kind: "file" }),
+      ),
+    ).toEqual({
+      canProduce: true,
+      canVerify: false,
+      canMarkMissing: true,
+      canDownload: false,
+      canVerifyFileArchive: false,
+      canPreview: false,
+      canProfileData: false,
+      canInspectManifest: false,
+      canCheckDrift: false,
+      verifyMode: "verify",
+      missingMode: "missing",
+      hasActions: true,
+    });
+    expect(
+      projectArtifactManifestActions(
         artifactFixture({ status: "produced", kind: "directory" }),
       ),
     ).toEqual({

@@ -5,6 +5,7 @@ import {
   Clock3,
   GitBranch,
 } from "lucide-react";
+import { useEffect } from "react";
 
 import type { RunEvent } from "@napier/contracts";
 import type { WebThreadDetail } from "./api";
@@ -14,9 +15,11 @@ import {
 } from "./conversation-approval-view-model";
 import {
   conversationArtifactEventKey,
+  conversationArtifactTargetId,
   conversationArtifactWorkspaceLinks,
   conversationArtifacts,
 } from "./conversation-artifact-view-model";
+import { clearInvalidConversationArtifactAnchor } from "./conversation-artifact-anchor";
 import {
   conversationCitationLinks,
   conversationCitations,
@@ -36,6 +39,8 @@ import { conversationToolActivities } from "./conversation-tool-activity-view-mo
 import { copy } from "./copy";
 import {
   conversationActivities,
+  conversationActivitiesFromCandidates,
+  excludeConversationActivityCandidates,
   type ConversationActivity,
 } from "./conversation-activity-view-model";
 import { ConversationArtifactCard } from "./ConversationArtifactCard";
@@ -75,80 +80,105 @@ export function ConversationLedger({
   onLedgerChanged: () => Promise<void>;
 }) {
   const events = detail?.events ?? [];
+  const activitySource = detail?.activityEvents ?? events;
   const plans = detail?.plans ?? [];
-  const artifacts = conversationArtifacts(events, plans);
+  const runs = detail?.runs ?? [];
+  const artifacts =
+    detail?.artifacts ?? conversationArtifacts(events, plans, 6, runs);
+  const artifactAnchorIds = artifacts.map(conversationArtifactTargetId);
+  const artifactAnchorKey = artifactAnchorIds.join("|");
+  useEffect(() => {
+    const validate = () =>
+      clearInvalidConversationArtifactAnchor(new Set(artifactAnchorIds));
+    validate();
+    window.addEventListener("hashchange", validate);
+    return () => window.removeEventListener("hashchange", validate);
+  }, [artifactAnchorKey]);
   const artifactKeys = new Set(
     artifacts.map((item) => `${item.planId}:${item.artifact.id}`),
   );
   const workspaceLinks: MessageWorkspaceLink[] =
     conversationArtifactWorkspaceLinks(artifacts);
-  const citations = conversationCitations(events);
+  const citations = detail?.citations ?? conversationCitations(events);
   const citationLinks: MessageCitationLink[] =
     conversationCitationLinks(citations);
   const citationEventIds = new Set(citations.map((citation) => citation.id));
-  const citationCallIds = new Set(
-    events
-      .filter((event) => citationEventIds.has(event.id))
-      .flatMap((event) => eventCallId(event) ?? []),
-  );
+  const citationCallIds = new Set(citations.map((citation) => citation.callId));
   const networkActivities = conversationNetworkActivities(
-    events,
-    events.length,
+    activitySource,
+    activitySource.length,
   );
   const networkCallIds = new Set(
     networkActivities.map((activity) => activity.callId),
   );
   const browserActivities = conversationBrowserActivities(
-    events,
-    events.length,
+    activitySource,
+    activitySource.length,
   );
   const browserCallIds = new Set(
     browserActivities.map((activity) => activity.callId),
   );
   const toolItems = conversationToolActivities(
-    events,
+    activitySource,
     new Set([...citationCallIds, ...networkCallIds, ...browserCallIds]),
-    events.length,
+    activitySource.length,
   );
   const toolEventIds = new Set(
     toolItems.flatMap((activity) => activity.eventIds),
   );
-  const planItems = conversationPlans(events, plans);
+  const planItems =
+    detail?.conversationPlans ??
+    conversationPlans(events, plans, 4, runs, detail?.activePlan);
   const planIds = new Set(planItems.map((item) => item.plan.id));
   const approvals = conversationApprovals(detail?.operatorDecisions ?? []);
   const approvalIds = new Set(
     approvals.map((approval) => approval.decision.id),
   );
-  const subagentItems = conversationSubagents(events, detail?.subagents ?? []);
+  const subagentItems =
+    detail?.subagentCards ??
+    conversationSubagents(events, detail?.subagents ?? []);
   const subagentIds = new Set(
     subagentItems.map((subagent) => subagent.task.id),
   );
-  const recoveryItems = conversationRecoveries(
-    events,
-    detail?.automaticRecoveryAssessments ?? [],
-    detail?.automaticRecoveryAttempts ?? [],
-  );
+  const recoveryItems =
+    detail?.recoveries ??
+    conversationRecoveries(
+      events,
+      detail?.automaticRecoveryAssessments ?? [],
+      detail?.automaticRecoveryAttempts ?? [],
+    );
   const recoveryEventIds = new Set(
     recoveryItems.flatMap((recovery) => recovery.eventIds),
   );
-  const activityEvents = events.filter((event) => {
-    const key = conversationArtifactEventKey(event);
-    const callId = eventCallId(event);
-    const planId = conversationPlanEventId(event);
-    const approvalId = conversationApprovalEventId(event);
-    const subagentId = conversationSubagentEventId(event);
-    return (
-      !citationEventIds.has(event.id) &&
-      !recoveryEventIds.has(event.id) &&
-      !toolEventIds.has(event.id) &&
-      (!callId || !networkCallIds.has(callId)) &&
-      (!callId || !browserCallIds.has(callId)) &&
-      (!planId || !planIds.has(planId)) &&
-      (!approvalId || !approvalIds.has(approvalId)) &&
-      (!subagentId || !subagentIds.has(subagentId)) &&
-      (!key || !artifactKeys.has(`${key[0]}:${key[1]}`))
-    );
-  });
+  const excludedEventIds = new Set([
+    ...citationEventIds,
+    ...recoveryEventIds,
+    ...toolEventIds,
+  ]);
+  const excludedCallIds = new Set([...networkCallIds, ...browserCallIds]);
+  const genericActivities = detail?.activityCandidates
+    ? conversationActivitiesFromCandidates(
+        excludeConversationActivityCandidates(detail.activityCandidates, {
+          eventIds: excludedEventIds,
+          callIds: excludedCallIds,
+          planIds,
+          decisionIds: approvalIds,
+          taskIds: subagentIds,
+          artifactKeys,
+        }),
+      )
+    : conversationActivities(
+        events.filter((event) =>
+          includeLegacyActivity(event, {
+            excludedEventIds,
+            excludedCallIds,
+            planIds,
+            approvalIds,
+            subagentIds,
+            artifactKeys,
+          }),
+        ),
+      );
   const feed = groupConversationFeed(
     [
       ...messages.map((message) => ({
@@ -156,7 +186,7 @@ export function ConversationLedger({
         seq: message.seq,
         message,
       })),
-      ...conversationActivities(activityEvents).map((activity) => ({
+      ...genericActivities.map((activity) => ({
         kind: "activity" as const,
         seq: activity.seq,
         activity,
@@ -411,6 +441,32 @@ function eventCallId(event: RunEvent): string | undefined {
   }
   const callId = event.payload["callId"];
   return typeof callId === "string" ? callId : undefined;
+}
+
+function includeLegacyActivity(
+  event: RunEvent,
+  exclusions: {
+    excludedEventIds: ReadonlySet<string>;
+    excludedCallIds: ReadonlySet<string>;
+    planIds: ReadonlySet<string>;
+    approvalIds: ReadonlySet<string>;
+    subagentIds: ReadonlySet<string>;
+    artifactKeys: ReadonlySet<string>;
+  },
+): boolean {
+  const key = conversationArtifactEventKey(event);
+  const callId = eventCallId(event);
+  const planId = conversationPlanEventId(event);
+  const approvalId = conversationApprovalEventId(event);
+  const subagentId = conversationSubagentEventId(event);
+  return (
+    !exclusions.excludedEventIds.has(event.id) &&
+    (!callId || !exclusions.excludedCallIds.has(callId)) &&
+    (!planId || !exclusions.planIds.has(planId)) &&
+    (!approvalId || !exclusions.approvalIds.has(approvalId)) &&
+    (!subagentId || !exclusions.subagentIds.has(subagentId)) &&
+    (!key || !exclusions.artifactKeys.has(`${key[0]}:${key[1]}`))
+  );
 }
 
 function formatTime(value: string): string {

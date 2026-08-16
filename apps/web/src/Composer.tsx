@@ -1,8 +1,9 @@
 import type { KeyboardEvent } from "react";
 import { lazy, Suspense, useCallback, useState } from "react";
-import { Command, Send, Square } from "lucide-react";
+import { Command, Send, SlidersHorizontal, Square } from "lucide-react";
 
 import type { AgentProfile } from "@napier/contracts";
+import type { InspectorTab } from "./use-workspace-view-model";
 import { copy } from "./copy";
 import {
   initialComposerRunReadiness,
@@ -14,6 +15,7 @@ import type { useWorkspaceViewModel } from "./use-workspace-view-model";
 const LazyComposerCapabilityControl = lazy(
   () => import("./ComposerCapabilityControl"),
 );
+const LazyProviderSetupCard = lazy(() => import("./ProviderSetupCard"));
 
 type WorkspaceViewModel = ReturnType<typeof useWorkspaceViewModel>;
 
@@ -25,6 +27,7 @@ export function Composer({
   activeAgent,
   activeModel,
   canStartRun,
+  onOpenInspector,
 }: {
   vm: Pick<
     WorkspaceViewModel,
@@ -39,13 +42,14 @@ export function Composer({
     | "setControlMessageMode"
     | "openOperatorDecision"
     | "browserInteractionConfirmation"
-    | "setInspectorTab"
     | "nextRunCapabilityPreset"
     | "setNextRunCapabilityPreset"
+    | "commitConfigurationBootstrap"
   >;
   activeAgent: AgentProfile | undefined;
   activeModel: SelectedModelAvailability;
   canStartRun: boolean;
+  onOpenInspector: (tab: InspectorTab) => void;
 }) {
   const [runReadiness, setRunReadiness] = useState<ComposerRunReadiness>(
     initialComposerRunReadiness,
@@ -94,16 +98,28 @@ export function Composer({
       />
       <div className="composer-footer">
         <div className="composer-hints">
-          <Suspense fallback={<span>Capability contract loading...</span>}>
-            <LazyComposerCapabilityControl
-              agent={activeAgent}
-              disabled={vm.isRunning || !vm.detail}
-              selectedPreset={vm.nextRunCapabilityPreset}
-              onSelectedPresetChange={vm.setNextRunCapabilityPreset}
-              onReview={() => vm.setInspectorTab("context")}
-              onReadinessChange={setRunReadiness}
-            />
-          </Suspense>
+          <details className="composer-options">
+            <summary>
+              <SlidersHorizontal size={12} aria-hidden="true" />
+              Run options
+            </summary>
+            <div className="composer-options-popover">
+              <Suspense fallback={<span>Checking run options...</span>}>
+                <LazyComposerCapabilityControl
+                  agent={activeAgent}
+                  disabled={vm.isRunning || !vm.detail}
+                  selectedPreset={vm.nextRunCapabilityPreset}
+                  onSelectedPresetChange={vm.setNextRunCapabilityPreset}
+                  onReview={() => onOpenInspector("context")}
+                  onReadinessChange={setRunReadiness}
+                />
+                <LazyProviderSetupCard
+                  onBootstrapUpdated={vm.commitConfigurationBootstrap}
+                  threadId={vm.detail?.thread.id}
+                />
+              </Suspense>
+            </div>
+          </details>
           <span>
             <Command size={12} aria-hidden="true" />
             {copy.shortcut}

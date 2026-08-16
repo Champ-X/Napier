@@ -1,19 +1,18 @@
-import type { ExecutionPlan, PlanStep, RunEvent } from "@napier/contracts";
+import type {
+  ExecutionPlan,
+  RunEvent,
+  RunRecord,
+  ThreadDetail,
+} from "@napier/contracts";
+import {
+  currentRunAttempt,
+  projectRunIntentIds,
+  runIdsBelongToCurrentAttempt,
+} from "./run-intent-id";
 
-export interface ConversationPlan {
-  id: string;
-  seq: number;
-  createdAt: string;
-  plan: ExecutionPlan;
-  completedStepCount: number;
-  settledStepCount: number;
-  runningStep?: PlanStep;
-  blockedStep?: PlanStep;
-  nextStep?: PlanStep;
-  verifiedArtifactCount: number;
-  producedArtifactCount: number;
-  missingArtifactCount: number;
-}
+export type ConversationPlan = NonNullable<
+  ThreadDetail["conversationPlans"]
+>[number];
 
 const PLAN_TIMELINE_EVENT =
   /^plan\.(created|replanned|step\.(started|completed|blocked|skipped|reopened))$/u;
@@ -22,7 +21,11 @@ export function conversationPlans(
   events: RunEvent[],
   plans: ExecutionPlan[],
   limit = 4,
+  runs: RunRecord[] = [],
+  activePlan?: import("@napier/contracts").ThreadDetail["activePlan"],
 ): ConversationPlan[] {
+  const intentIds = projectRunIntentIds(events);
+  const attempt = currentRunAttempt(runs, events, intentIds);
   const plansById = new Map(plans.map((plan) => [plan.id, plan]));
   const latestByPlan = new Map<string, ConversationPlan>();
   for (const event of events) {
@@ -30,7 +33,15 @@ export function conversationPlans(
     if (!planId) continue;
     const plan = plansById.get(planId);
     if (!plan) continue;
-    latestByPlan.set(planId, projectConversationPlan(event, plan));
+    latestByPlan.set(
+      planId,
+      projectConversationPlan(
+        event,
+        plan,
+        attemptScope(event, plan, attempt, intentIds),
+        plan.id === activePlan?.planId ? activePlan : undefined,
+      ),
+    );
   }
   return [...latestByPlan.values()]
     .sort((left, right) => left.seq - right.seq)
@@ -56,44 +67,97 @@ export function conversationPlanEventId(event: RunEvent): string | undefined {
 function projectConversationPlan(
   event: RunEvent,
   plan: ExecutionPlan,
+  attemptScope: ConversationPlan["attemptScope"],
+  projected?: import("@napier/contracts").ThreadDetail["activePlan"],
 ): ConversationPlan {
   return {
     id: event.id,
     seq: event.seq,
     createdAt: event.createdAt,
-    plan,
-    completedStepCount: plan.steps.filter((step) => step.status === "completed")
-      .length,
-    settledStepCount: plan.steps.filter(
-      (step) => step.status === "completed" || step.status === "skipped",
-    ).length,
+    attemptScope,
+    plan: {
+      id: plan.id,
+      status: plan.status,
+      revision: plan.revision,
+      objective: plan.objective,
+      steps: plan.steps.map(stepView),
+      activePhaseIndex: plan.activePhaseIndex,
+      phaseCount: plan.phaseWaves.length,
+    },
+    completedStepCount:
+      projected?.completedStepCount ??
+      plan.steps.filter((step) => step.status === "completed").length,
+    settledStepCount:
+      projected?.settledStepCount ??
+      plan.steps.filter(
+        (step) => step.status === "completed" || step.status === "skipped",
+      ).length,
     ...optionalStep(
       "runningStep",
-      plan.steps.find((step) => step.status === "running"),
+      projected?.runningStep ??
+        plan.steps.find((step) => step.status === "running"),
     ),
     ...optionalStep(
       "blockedStep",
-      plan.steps.find((step) => step.status === "blocked"),
+      projected?.blockedStep ??
+        plan.steps.find((step) => step.status === "blocked"),
     ),
     ...optionalStep(
       "nextStep",
-      plan.steps.find((step) => step.status === "ready"),
+      projected?.nextStep ?? plan.steps.find((step) => step.status === "ready"),
     ),
-    verifiedArtifactCount: plan.artifacts.filter(
-      (artifact) => artifact.status === "verified",
-    ).length,
-    producedArtifactCount: plan.artifacts.filter(
-      (artifact) => artifact.status === "produced",
-    ).length,
-    missingArtifactCount: plan.artifacts.filter(
-      (artifact) => artifact.status === "missing",
-    ).length,
+    verifiedArtifactCount:
+      projected?.verifiedArtifactCount ??
+      plan.artifacts.filter((artifact) => artifact.status === "verified")
+        .length,
+    producedArtifactCount:
+      projected?.producedArtifactCount ??
+      plan.artifacts.filter((artifact) => artifact.status === "produced")
+        .length,
+    missingArtifactCount:
+      projected?.missingArtifactCount ??
+      plan.artifacts.filter((artifact) => artifact.status === "missing").length,
   };
+}
+
+function attemptScope(
+  event: RunEvent,
+  plan: ExecutionPlan,
+  current: ReturnType<typeof currentRunAttempt>,
+  intentIds: ReadonlyMap<string, string>,
+): ConversationPlan["attemptScope"] {
+  return runIdsBelongToCurrentAttempt(
+    [
+      event.runId,
+      ...plan.steps.flatMap((step) => (step.runId ? [step.runId] : [])),
+      ...plan.artifacts.flatMap((artifact) =>
+        artifact.sourceRunId ? [artifact.sourceRunId] : [],
+      ),
+    ],
+    current,
+    intentIds,
+  )
+    ? "current"
+    : "previous";
 }
 
 function optionalStep<Key extends "runningStep" | "blockedStep" | "nextStep">(
   key: Key,
-  step: PlanStep | undefined,
-): Partial<Record<Key, PlanStep>> {
-  return step ? ({ [key]: step } as Record<Key, PlanStep>) : {};
+  step: ExecutionPlan["steps"][number] | undefined,
+): Partial<Record<Key, ConversationPlan[Key]>> {
+  return step
+    ? ({ [key]: stepView(step) } as Record<Key, ConversationPlan[Key]>)
+    : {};
+}
+
+function stepView(
+  step: ExecutionPlan["steps"][number],
+): ConversationPlan["plan"]["steps"][number] {
+  return {
+    id: step.id,
+    title: step.title,
+    status: step.status,
+    evidenceRecorded: Boolean(step.evidence),
+    ...(step.blocker ? { blocker: step.blocker } : {}),
+  };
 }

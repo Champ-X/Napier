@@ -1,5 +1,6 @@
 import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
 import {
+  type AgentKernel,
   builtinUsagePriceTableCatalog,
   type LocalStore,
   type ModelRegistry,
@@ -13,6 +14,7 @@ import {
   setBodyContentSha256Header,
   jsonByteLength,
 } from "./http-response-evidence.js";
+import { attachKernelThreadProjections } from "./kernel-thread-projections.js";
 import {
   inboundChannelAdapterCatalog,
   inboundChannelAdapterIdsSha256,
@@ -45,13 +47,48 @@ type BootstrapStore = Pick<
 > &
   Partial<Pick<LocalStore, "listVisibleThreads" | "workspaceRoot">>;
 
+type BootstrapServices = {
+  store: BootstrapStore;
+  models: ModelRegistry;
+  kernel?: {
+    threadSummaries: Pick<AgentKernel["threadSummaries"], "listVisible">;
+    taskNarratives: Pick<AgentKernel["taskNarratives"], "project">;
+    activePlans: Pick<AgentKernel["activePlans"], "project">;
+    conversationActivityCandidates: Pick<
+      AgentKernel["conversationActivityCandidates"],
+      "project"
+    >;
+    conversationMessages: Pick<AgentKernel["conversationMessages"], "project">;
+    conversationPlans: Pick<AgentKernel["conversationPlans"], "project">;
+    conversationArtifacts: Pick<
+      AgentKernel["conversationArtifacts"],
+      "project"
+    >;
+    conversationActivityEvents: Pick<
+      AgentKernel["conversationActivityEvents"],
+      "project"
+    >;
+    conversationCitations: Pick<
+      AgentKernel["conversationCitations"],
+      "project"
+    >;
+    conversationRecoveries: Pick<
+      AgentKernel["conversationRecoveries"],
+      "project"
+    >;
+    conversationSubagents: Pick<
+      AgentKernel["conversationSubagents"],
+      "project"
+    >;
+    operatorDecisions: Pick<AgentKernel["operatorDecisions"], "project">;
+    plugins?: Pick<AgentKernel["plugins"], "inspect">;
+  };
+  skillUserHome?: string;
+};
+
 export function registerBootstrapHttp(
   app: Hono,
-  services: {
-    store: BootstrapStore;
-    models: ModelRegistry;
-    skillUserHome?: string;
-  },
+  services: BootstrapServices,
 ): void {
   app.get("/api/bootstrap", async (context) => {
     const response = await createBootstrapResponse(
@@ -64,19 +101,21 @@ export function registerBootstrapHttp(
 }
 
 async function createBootstrapResponse(
-  services: {
-    store: BootstrapStore;
-    models: ModelRegistry;
-    skillUserHome?: string;
-  },
+  services: BootstrapServices,
   requestedThreadId?: string,
 ): Promise<LiveReadyBootstrapResponse> {
-  const threads =
-    services.store.listVisibleThreads?.() ?? services.store.listThreads();
+  const threads = services.kernel
+    ? await services.kernel.threadSummaries.listVisible()
+    : (services.store.listVisibleThreads?.() ?? services.store.listThreads());
   const activeThreadId = requestedThreadId ?? threads[0]?.id;
   const activeThread = activeThreadId
-    ? await services.store.getDetail(activeThreadId)
+    ? await services.store.getDetail(activeThreadId, {
+        kernelProjections: false,
+      })
     : undefined;
+  if (activeThread && services.kernel) {
+    await attachKernelThreadProjections(activeThread, services.kernel);
+  }
   const agents = services.store.listAgents();
   const credentials = services.store.listCredentialReferences();
   const models = await services.models.list();
@@ -101,6 +140,9 @@ async function createBootstrapResponse(
     models,
     memories: services.store.listMemories(),
     extensions: services.store.listExtensions(),
+    ...(services.kernel?.plugins
+      ? { plugins: services.kernel.plugins.inspect() }
+      : {}),
     extensionPublisherTrustAnchors:
       services.store.listExtensionPublisherTrustAnchors(),
     extensionPackageRolloutChannels:

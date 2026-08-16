@@ -7,7 +7,6 @@ import {
   SkipForward,
 } from "lucide-react";
 
-import type { PlanStep } from "@napier/contracts";
 import type { ConversationPlan } from "./conversation-plan-view-model";
 
 export function ConversationPlanCard({ item }: { item: ConversationPlan }) {
@@ -21,7 +20,8 @@ export function ConversationPlanCard({ item }: { item: ConversationPlan }) {
         <ClipboardList size={15} aria-hidden="true" />
         <div>
           <span>
-            Plan · {item.plan.status} · r{item.plan.revision}
+            {item.attemptScope === "current" ? "Current" : "Previous"} Plan ·{" "}
+            {item.plan.status} · r{item.plan.revision}
           </span>
           <strong>{planSummary(item)}</strong>
         </div>
@@ -68,7 +68,7 @@ export function ConversationPlanCard({ item }: { item: ConversationPlan }) {
             {item.plan.activePhaseIndex === null
               ? "Settled"
               : `${item.plan.activePhaseIndex + 1}/${Math.max(
-                  item.plan.phaseWaves.length,
+                  item.plan.phaseCount,
                   item.plan.activePhaseIndex + 1,
                 )}`}
           </dd>
@@ -92,7 +92,7 @@ function planSummary(item: ConversationPlan): string {
   return "Plan is waiting for the next transition";
 }
 
-function stepIcon(step: PlanStep) {
+function stepIcon(step: ConversationPlan["plan"]["steps"][number]) {
   if (step.status === "completed") {
     return <CheckCircle2 size={13} aria-hidden="true" />;
   }
@@ -110,9 +110,13 @@ function stepIcon(step: PlanStep) {
   return <Circle size={13} aria-hidden="true" />;
 }
 
-function stepStatusText(step: PlanStep): string {
+function stepStatusText(
+  step: ConversationPlan["plan"]["steps"][number],
+): string {
   if (step.status === "blocked" && step.blocker) return step.blocker;
-  if (step.status === "completed" && step.evidence) return "Evidence recorded";
+  if (step.status === "completed" && step.evidenceRecorded) {
+    return "Evidence recorded";
+  }
   return step.status;
 }
 

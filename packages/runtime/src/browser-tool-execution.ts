@@ -4,7 +4,7 @@ import type {
 } from "./browser-confirmed-action.js";
 import type { BrowserOutputArtifactRegistrar } from "./browser-output-artifact.js";
 import { settleBrowserToolOutput } from "./browser-tool-output.js";
-import type { RunBrowserSessionManager } from "./browser-session.js";
+import type { BrowserSessionPort } from "./browser-session-port.js";
 import type {
   BrowserSessionOwner,
   BrowserSessionRequest,
@@ -17,7 +17,7 @@ type ConfirmedBrowserRequest = Extract<
 >;
 
 export async function executeBrowserTool(input: {
-  manager: RunBrowserSessionManager;
+  manager: BrowserSessionPort;
   owner: BrowserSessionOwner;
   callId: string;
   request: BrowserSessionRequest;

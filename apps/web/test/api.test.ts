@@ -128,12 +128,12 @@ describe("Web JSON API wrappers", () => {
         },
       },
       ledger: {
-        schemaVersion: 2,
+        schemaVersion: 4,
         quickCheck: "ok",
         migrations: [
           {
-            version: 2,
-            name: "schema_migration_history",
+            version: 4,
+            name: "normalized_run_leases",
             appliedAt: "2026-07-26T00:00:00.000Z",
           },
         ],

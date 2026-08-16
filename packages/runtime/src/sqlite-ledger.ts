@@ -2,12 +2,26 @@ import { DatabaseSync } from "node:sqlite";
 
 import type { RunEvent } from "@napier/contracts";
 
+import {
+  listRunLeases,
+  renewRunLease,
+  runLeasesFromStateJson,
+  synchronizeRunLeases,
+  type LedgerRunLease,
+} from "./sqlite-run-leases.js";
+import {
+  LEDGER_SCHEMA_VERSION,
+  migrateLedgerSchema,
+} from "./sqlite-ledger-schema.js";
+
 export const LEDGER_DATABASE_FILENAME = "ledger.sqlite";
-export const LEDGER_SCHEMA_VERSION = 2;
+export { LEDGER_SCHEMA_VERSION } from "./sqlite-ledger-schema.js";
 
 export interface LedgerSnapshot {
   revision: number;
+  snapshotRevision: number;
   stateJson: string;
+  runLeases: LedgerRunLease[];
 }
 
 export interface LedgerEventStats {
@@ -34,6 +48,18 @@ export class ConcurrentStoreUpdateError extends Error {
       `Concurrent store update detected: expected revision ${expectedRevision}, found ${actualRevision}`,
     );
     this.name = "ConcurrentStoreUpdateError";
+  }
+}
+
+export class ConcurrentRunLeaseUpdateError extends Error {
+  constructor(
+    readonly runId: string,
+    readonly expectedRevision: number,
+  ) {
+    super(
+      `Concurrent Run lease update detected: ${runId} expected revision ${String(expectedRevision)}`,
+    );
+    this.name = "ConcurrentRunLeaseUpdateError";
   }
 }
 
@@ -69,7 +95,7 @@ export class SqliteLedger {
         PRAGMA trusted_schema = OFF;
 
       `);
-      this.migrateSchema(database, versionRow.user_version);
+      migrateLedgerSchema(database, versionRow.user_version);
       const integrity = database.prepare("PRAGMA quick_check").get() as
         | { quick_check: string }
         | undefined;
@@ -121,17 +147,17 @@ export class SqliteLedger {
   }
 
   readSnapshot(): LedgerSnapshot | undefined {
-    const row = this.requireDatabase()
-      .prepare(
-        "SELECT revision, state_json FROM workspace_state WHERE singleton = 1",
-      )
-      .get() as { revision: number; state_json: string } | undefined;
-    return row
-      ? {
-          revision: row.revision,
-          stateJson: row.state_json,
-        }
-      : undefined;
+    const database = this.requireDatabase();
+    const ownsTransaction = !database.isTransaction;
+    if (ownsTransaction) database.exec("BEGIN");
+    try {
+      const snapshot = readSnapshot(database);
+      if (ownsTransaction) database.exec("COMMIT");
+      return snapshot;
+    } catch (error) {
+      if (ownsTransaction) rollback(database);
+      throw error;
+    }
   }
 
   bootstrap(stateJson: string, events: RunEvent[]): LedgerSnapshot {
@@ -146,16 +172,22 @@ export class SqliteLedger {
       database
         .prepare(
           `INSERT INTO workspace_state
-            (singleton, revision, state_json, updated_at)
-           VALUES (1, 1, ?, ?)`,
+            (singleton, revision, snapshot_revision, state_json, updated_at)
+           VALUES (1, 1, 1, ?, ?)`,
         )
         .run(stateJson, new Date().toISOString());
       const insertEvent = this.prepareEventInsert();
       for (const event of events) {
         this.insertEvent(insertEvent, event);
       }
+      synchronizeRunLeases(database, runLeasesFromStateJson(stateJson));
       database.exec("COMMIT");
-      return { revision: 1, stateJson };
+      return {
+        revision: 1,
+        snapshotRevision: 1,
+        stateJson,
+        runLeases: listRunLeases(database),
+      };
     } catch (error) {
       rollback(database);
       throw error;
@@ -189,18 +221,19 @@ export class SqliteLedger {
         database
           .prepare(
             `INSERT INTO workspace_state
-              (singleton, revision, state_json, updated_at)
-             VALUES (1, ?, ?, ?)`,
+              (singleton, revision, snapshot_revision, state_json, updated_at)
+             VALUES (1, ?, ?, ?, ?)`,
           )
-          .run(nextRevision, stateJson, new Date().toISOString());
+          .run(nextRevision, nextRevision, stateJson, new Date().toISOString());
       } else {
         const result = database
           .prepare(
             `UPDATE workspace_state
-             SET revision = ?, state_json = ?, updated_at = ?
+             SET revision = ?, snapshot_revision = ?, state_json = ?, updated_at = ?
              WHERE singleton = 1 AND revision = ?`,
           )
           .run(
+            nextRevision,
             nextRevision,
             stateJson,
             new Date().toISOString(),
@@ -212,6 +245,49 @@ export class SqliteLedger {
             this.readSnapshot()?.revision ?? 0,
           );
         }
+      }
+      synchronizeRunLeases(database, runLeasesFromStateJson(stateJson));
+      database.exec("COMMIT");
+      return nextRevision;
+    } catch (error) {
+      rollback(database);
+      throw error;
+    }
+  }
+
+  commitEvents(
+    expectedRevision: number,
+    eventOrEvents: RunEvent | RunEvent[],
+  ): number {
+    const database = this.requireDatabase();
+    database.exec("BEGIN IMMEDIATE");
+    try {
+      const current = this.readSnapshot();
+      const actualRevision = current?.revision ?? 0;
+      if (!current || actualRevision !== expectedRevision) {
+        throw new ConcurrentStoreUpdateError(expectedRevision, actualRevision);
+      }
+      const events = Array.isArray(eventOrEvents)
+        ? eventOrEvents
+        : [eventOrEvents];
+      if (events.length !== 1) {
+        throw new Error("Event-only commit requires exactly one event");
+      }
+      const insertEvent = this.prepareEventInsert();
+      for (const event of events) this.insertEvent(insertEvent, event);
+      const nextRevision = actualRevision + 1;
+      const result = database
+        .prepare(
+          `UPDATE workspace_state
+           SET revision = ?, updated_at = ?
+           WHERE singleton = 1 AND revision = ?`,
+        )
+        .run(nextRevision, new Date().toISOString(), actualRevision);
+      if (Number(result.changes) !== 1) {
+        throw new ConcurrentStoreUpdateError(
+          expectedRevision,
+          this.readSnapshot()?.revision ?? 0,
+        );
       }
       database.exec("COMMIT");
       return nextRevision;
@@ -253,6 +329,31 @@ export class SqliteLedger {
     }));
   }
 
+  renewRunLease(input: {
+    runId: string;
+    tokenSha256: string;
+    expectedRevision: number;
+    heartbeatAt: string;
+    expiresAt: string;
+  }): LedgerRunLease {
+    const database = this.requireDatabase();
+    database.exec("BEGIN IMMEDIATE");
+    try {
+      const lease = renewRunLease(database, input);
+      if (!lease) {
+        throw new ConcurrentRunLeaseUpdateError(
+          input.runId,
+          input.expectedRevision,
+        );
+      }
+      database.exec("COMMIT");
+      return lease;
+    } catch (error) {
+      rollback(database);
+      throw error;
+    }
+  }
+
   private prepareEventInsert() {
     return this.requireDatabase().prepare(
       `INSERT INTO ledger_events (
@@ -292,77 +393,30 @@ export class SqliteLedger {
     }
     return this.database;
   }
+}
 
-  private migrateSchema(database: DatabaseSync, currentVersion: number): void {
-    database.exec("BEGIN IMMEDIATE");
-    try {
-      database.exec(`
-        CREATE TABLE IF NOT EXISTS workspace_state (
-          singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
-          revision INTEGER NOT NULL CHECK (revision >= 1),
-          state_json TEXT NOT NULL CHECK (json_valid(state_json)),
-          updated_at TEXT NOT NULL
-        ) STRICT;
-
-        CREATE TABLE IF NOT EXISTS ledger_events (
-          thread_id TEXT NOT NULL,
-          seq INTEGER NOT NULL CHECK (seq >= 1),
-          event_id TEXT NOT NULL UNIQUE,
-          run_id TEXT NOT NULL,
-          event_type TEXT NOT NULL,
-          category TEXT NOT NULL,
-          visibility TEXT NOT NULL,
-          created_at TEXT NOT NULL,
-          event_json TEXT NOT NULL CHECK (json_valid(event_json)),
-          PRIMARY KEY (thread_id, seq)
-        ) STRICT;
-
-        CREATE INDEX IF NOT EXISTS ledger_events_run
-          ON ledger_events (run_id, seq);
-      `);
-      if (currentVersion <= 1) {
-        database.exec(`
-          CREATE TABLE IF NOT EXISTS ledger_schema_migrations (
-            version INTEGER PRIMARY KEY CHECK (version >= 1),
-            name TEXT NOT NULL,
-            applied_at TEXT NOT NULL
-          ) STRICT;
-        `);
-        const appliedAt = new Date().toISOString();
-        database
-          .prepare(
-            `INSERT OR IGNORE INTO ledger_schema_migrations
-              (version, name, applied_at)
-             VALUES (?, ?, ?)`,
-          )
-          .run(
-            1,
-            currentVersion === 0 ? "initial_schema" : "initial_schema_backfill",
-            appliedAt,
-          );
-        database
-          .prepare(
-            `INSERT OR IGNORE INTO ledger_schema_migrations
-              (version, name, applied_at)
-             VALUES (?, ?, ?)`,
-          )
-          .run(2, "schema_migration_history", appliedAt);
-        database.exec(`PRAGMA user_version = ${LEDGER_SCHEMA_VERSION}`);
-      } else {
-        database.exec(`
-          CREATE TABLE IF NOT EXISTS ledger_schema_migrations (
-            version INTEGER PRIMARY KEY CHECK (version >= 1),
-            name TEXT NOT NULL,
-            applied_at TEXT NOT NULL
-          ) STRICT;
-        `);
+function readSnapshot(database: DatabaseSync): LedgerSnapshot | undefined {
+  const row = database
+    .prepare(
+      `SELECT revision, snapshot_revision, state_json
+       FROM workspace_state
+       WHERE singleton = 1`,
+    )
+    .get() as
+    | {
+        revision: number;
+        snapshot_revision: number;
+        state_json: string;
       }
-      database.exec("COMMIT");
-    } catch (error) {
-      rollback(database);
-      throw error;
-    }
-  }
+    | undefined;
+  return row
+    ? {
+        revision: row.revision,
+        snapshotRevision: row.snapshot_revision,
+        stateJson: row.state_json,
+        runLeases: listRunLeases(database),
+      }
+    : undefined;
 }
 
 function rollback(database: DatabaseSync): void {

@@ -7,12 +7,13 @@ import type {
   RunRecord,
 } from "@napier/contracts";
 import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
+import { assertRunIntent, createRunIntentId } from "./run-intents.js";
 
 export function createAgentRunStartedPayload(input: {
   agent: Pick<AgentProfile, "id" | "revision">;
   model: ModelRef;
   source: RunInvocationSource;
-  run: Pick<RunRecord, "agentRevision" | "configuration">;
+  run: Pick<RunRecord, "id" | "agentRevision" | "configuration">;
   limits: RunLimits;
   triggerId: string | undefined;
   capabilityPreset: AgentCapabilityPresetId | undefined;
@@ -21,16 +22,20 @@ export function createAgentRunStartedPayload(input: {
   recovery:
     | {
         mode: "manual" | "automatic";
+        intentId?: string;
         attemptId?: string;
         assessmentSha256?: string;
       }
     | undefined;
 }): JsonValue {
+  const intentId = input.recovery?.intentId ?? createRunIntentId(input.run.id);
+  assertRunIntent(intentId);
   return JSON.parse(
     JSON.stringify({
       agentId: input.agent.id,
       model: `${input.model.provider}/${input.model.id}`,
       source: input.source,
+      intentId,
       agentRevision: input.run.agentRevision ?? input.agent.revision,
       limits: input.limits,
       ...(input.run.configuration

@@ -81,7 +81,10 @@ export function ConversationArtifactCard({
       <header>
         <Icon size={16} aria-hidden="true" />
         <div>
-          <span>Artifact · {item.artifact.status}</span>
+          <span>
+            {item.attemptScope === "current" ? "Current" : "Previous"} Artifact
+            · {item.artifact.status}
+          </span>
           <strong>{item.artifact.path}</strong>
         </div>
         <time dateTime={item.createdAt}>{formatTime(item.createdAt)}</time>

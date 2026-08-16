@@ -10,8 +10,8 @@ import {
   MAX_BROWSER_SCROLL_PIXELS,
   MAX_BROWSER_SESSION_TABS,
   MAX_BROWSER_WAIT_MS,
-  RunBrowserSessionManager,
 } from "./browser-session.js";
+import type { BrowserSessionPort } from "./browser-session-port.js";
 import type { BrowserConfirmedActionManager } from "./browser-confirmed-action.js";
 import type { BrowserOutputArtifactRegistrar } from "./browser-output-artifact.js";
 import { executeBrowserTool } from "./browser-tool-execution.js";
@@ -248,7 +248,7 @@ const READ_ONLY_BROWSER_ACTIONS = new Set([
 ]);
 
 export function createBrowserTool(
-  manager: RunBrowserSessionManager,
+  manager: BrowserSessionPort,
   owner: BrowserSessionOwner,
   options: {
     readOnly?: boolean;

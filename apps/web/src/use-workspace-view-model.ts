@@ -119,7 +119,7 @@ export type InspectorTab =
   | "processes"
   | "files"
   | "lab"
-  | "plan"
+  | "plan" | "studio"
   | "goal"
   | "memory"
   | "extensions"
@@ -333,7 +333,7 @@ export function useWorkspaceViewModel() {
   useEffect(() => {
     void loadBootstrap(threadIdFromLocation());
   }, [loadBootstrap]);
-  const messages = useMemo<MessageView[]>(() => {
+  const messages = useMemo<MessageView[]>(() => { if (detail?.messages) return detail.messages;
     return (detail?.events ?? []).flatMap((event): MessageView[] => {
       if (event.type !== "message.user" && event.type !== "message.assistant") return [];
       const payload = messagePayload(event);
@@ -349,7 +349,7 @@ export function useWorkspaceViewModel() {
         },
       ];
     });
-  }, [detail?.events]);
+  }, [detail?.events, detail?.messages]);
 
   const visibleTrace = useMemo(
     () =>

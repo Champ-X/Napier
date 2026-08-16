@@ -318,7 +318,7 @@ export interface NapierServices extends Pick<
   | "store"
   | "models"
   | "extensions"
-  | "runtime"
+  | "runtime" | "kernel"
   | "agentCapabilities"
   | "workflows"
   | "workflowExperiments"
@@ -352,7 +352,7 @@ export async function createServices(options?: ServerServiceOptions): Promise<Na
   const workspaceRoot = path.resolve(options?.workspaceRoot ?? process.env["NAPIER_WORKSPACE"] ?? inferWorkspaceRoot(process.cwd()));
   const dataRoot = path.resolve(options?.dataRoot ?? process.env["NAPIER_HOME"] ?? path.join(workspaceRoot, ".napier"));
   const local = await createLocalAgentRuntime({
-    workspaceRoot,
+    kernelProfile: "web", workspaceRoot,
     dataRoot,
     env: options?.env ?? process.env,
     browserInteractionConfirmation: { available: true },
@@ -367,7 +367,7 @@ export async function createServices(options?: ServerServiceOptions): Promise<Na
     extensions,
     workspaceProcesses,
     workspaceFileMutations,
-    runtime,
+    runtime, kernel,
     workflows,
     workflowExperiments,
     agentMessageExperiments,
@@ -395,7 +395,7 @@ export async function createServices(options?: ServerServiceOptions): Promise<Na
     store,
     models,
     extensions,
-    runtime,
+    runtime, kernel,
     workflows,
     workflowExperiments,
     agentMessageExperiments,

@@ -9,9 +9,9 @@ import {
   captureEvidenceIdentity,
   deterministicExecutionClosure,
   IMPLEMENTATION_COMMIT,
+  isProtectedExcludedPath,
   immutableImplementationIdentity,
   LINE_BUDGET_FILES,
-  PROTECTED_EXCLUDED_PATHS,
   repairSnapshotForPaths,
   currentRepairSnapshot,
 } from "./sdk-capability-parity-identity.mjs";
@@ -148,7 +148,13 @@ export function createEvidence(input) {
       withReceiptHash({ ...review, source: "validated_stage7_review_history" }),
     ),
     protectedFiles: {
-      excluded: [".env", "goal.md", "docs/napier-interview-deep-dive.zh-CN.md"],
+      excluded: [
+        ".env",
+        "goal.md",
+        "docs/napier-interview-deep-dive.zh-CN.md",
+        "ai-news-weekly/",
+        "kakeya/",
+      ],
       verification: "external_names_only_G08",
     },
     cleanup: {
@@ -258,7 +264,13 @@ async function verifyEvidence(value, texts, fourState, trace, options) {
     ),
   );
   assert.deepEqual(value.protectedFiles, {
-    excluded: [".env", "goal.md", "docs/napier-interview-deep-dive.zh-CN.md"],
+    excluded: [
+      ".env",
+      "goal.md",
+      "docs/napier-interview-deep-dive.zh-CN.md",
+      "ai-news-weekly/",
+      "kakeya/",
+    ],
     verification: "external_names_only_G08",
   });
   assert.deepEqual(value.cleanup, {
@@ -294,10 +306,14 @@ async function verifyIdentity(value, verifyCurrent) {
     [...value.repairSnapshot.deletedPaths].sort(),
     value.repairSnapshot.deletedPaths,
   );
-  for (const file of PROTECTED_EXCLUDED_PATHS) {
-    assert.equal(value.repairSnapshot.changedPaths.includes(file), false);
-    assert.equal(value.repairSnapshot.deletedPaths.includes(file), false);
-    assert.equal(value.repairSnapshot.files[file], undefined);
+  for (const file of value.repairSnapshot.changedPaths) {
+    assert.equal(isProtectedExcludedPath(file), false);
+  }
+  for (const file of value.repairSnapshot.deletedPaths) {
+    assert.equal(isProtectedExcludedPath(file), false);
+  }
+  for (const file of Object.keys(value.repairSnapshot.files)) {
+    assert.equal(isProtectedExcludedPath(file), false);
   }
   for (const file of value.repairSnapshot.deletedPaths) {
     assert.ok(value.repairSnapshot.changedPaths.includes(file));

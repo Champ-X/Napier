@@ -39,6 +39,7 @@ export interface ReleaseProductTrial {
   runStartedAt: string;
   runFinishedAt: string;
   productVersion: string;
+  releaseIdentitySha256?: string;
   status: ReleaseProductTrialStatus;
   failureReason?: ReleaseProductTrialFailureReason;
   configurationInterventions: number;
@@ -46,6 +47,16 @@ export interface ReleaseProductTrial {
   recoveryEvents: number;
   uxScore: number;
   recordedAt: string;
+  contentSha256: string;
+}
+
+export interface ReleaseProductTrialAdoption {
+  id: string;
+  casebookId: string;
+  sourceCasebookId: string;
+  sourceGate: ReleaseProductGateProjection;
+  sourceTrialIds: string[];
+  adoptedAt: string;
   contentSha256: string;
 }
 
@@ -70,6 +81,7 @@ export interface ReleaseProductVersionGate {
   recoveryEvents: number;
   criticalCaseIds: string[];
   failedCriticalCaseIds: string[];
+  releaseIdentitySha256?: string;
   status: ReleaseProductVersionGateStatus;
   firstRecordedAt?: string;
   lastRecordedAt?: string;
@@ -79,6 +91,7 @@ export interface ReleaseProductGateProjection {
   kind: "napier.release-product-gate";
   schemaVersion: 1;
   currentProductVersion: string;
+  currentReleaseIdentitySha256?: string;
   casebookId: string;
   templateId: string;
   templateVersion: number;
@@ -88,5 +101,6 @@ export interface ReleaseProductGateProjection {
   consecutivePassingVersions: string[];
   defaultTrackReady: boolean;
   trials: ReleaseProductTrial[];
+  adoptions?: ReleaseProductTrialAdoption[];
   contentSha256: string;
 }

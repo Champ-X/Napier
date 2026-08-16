@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile } from "node:fs/promises";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import path from "node:path";
 
@@ -76,8 +76,6 @@ import {
   type CredentialAvailability,
   type CredentialReference,
   type CreateEvaluationSuiteRequest,
-  type EventCategory,
-  type EventVisibility,
   type EvaluationAdjudication,
   type EvaluationCalibrationReport,
   type EvaluationCasebook,
@@ -212,7 +210,6 @@ import {
   type ThreadStatus,
   type ThreadSummary,
   type TrustedReceiptEnvelope,
-  type TransitionPlanStepRequest,
   type UpdateArtifactManifestRequest,
   type UpdateAgentProfileRequest,
   type UpdateEvaluationCasebookRequest,
@@ -253,6 +250,9 @@ import { loadThreadDetail } from "./thread-detail.js";
 import { createThreadRecord, findThread, sortedThreads, threadRuns } from "./thread-records.js";
 import { mutateThreadTrash, visibleThreads } from "./thread-trash.js";
 import { createWorkspaceSeed } from "./workspace-seed.js";
+import { compatibilityCheckpointRequired, StoreCompatibilityProjectionWriter } from "./store-compatibility-projections.js";
+import { persistStoreMutation } from "./store-persistence.js";
+import { applyThreadSummaryEvent, replayThreadSummaryTails, threadMessagePreview } from "./store-thread-summary-projection.js";
 
 import { assertOperatorDecisionCapabilityContinuation } from "./agent-capability-override.js";
 import { resolveStoredRunCapabilityProfile } from "./internal-research-recovery-authorization.js";
@@ -266,6 +266,8 @@ import {
   storedAgentCapabilityBinding,
   updatedAgentCapabilityBinding,
 } from "./agent-capability-store-state.js";
+import { assertRunEventAdmission, type AppendEventInput } from "./run-event-admission.js";
+export type { AppendEventInput } from "./run-event-admission.js";
 import {
   commitRecommendedCapabilitiesState,
   type CapabilityCommitOperation,
@@ -483,6 +485,7 @@ import {
   assertPlanArtifactEventBindings,
   createExecutionPlan,
   interruptPlanRun,
+  type InternalPlanStepRequest,
   recoverCompletedPlanStep as recoverCompletedPlanStepProjection,
   refreshPlanProjection,
   replanExecutionPlan,
@@ -523,8 +526,14 @@ import {
   verifyExecutionPlanBlueprintRecordReplayOutcomesProjection,
 } from "./execution-plan-blueprint-replay-verification.js";
 import { advanceSchedule, createAutomationSchedule, updateAutomationSchedule } from "./schedules.js";
-import { ConcurrentStoreUpdateError, LEDGER_DATABASE_FILENAME, type LedgerSchemaReport, SqliteLedger } from "./sqlite-ledger.js";
-import { monotonicNow, StorePersistenceMonitor } from "./store-observability.js";
+import {
+  ConcurrentRunLeaseUpdateError,
+  ConcurrentStoreUpdateError,
+  LEDGER_DATABASE_FILENAME,
+  type LedgerSchemaReport,
+  SqliteLedger,
+} from "./sqlite-ledger.js";
+import { StorePersistenceMonitor } from "./store-observability.js";
 import { storeCanonicalJson as canonicalJson, storeSha256 as sha256 } from "./store-hashing.js";
 import {
   createRunConfigurationFingerprint,
@@ -556,6 +565,16 @@ import {
   nextPendingRunControlMessage,
   projectRunControlMessages,
 } from "./run-control-messages.js";
+import { applyOutcome, assertOutcome, settleThread } from "./run-outcomes.js";
+import {
+  createRunLeaseBinding,
+  normalizeLeaseOwner,
+  renewNormalizedRunLease,
+  type RunLeaseOptions,
+  validateRunLeaseTtl,
+} from "./run-lease-renewal.js";
+export type { RunLeaseOptions } from "./run-lease-renewal.js";
+import { applyNormalizedRunLeases } from "./run-lease-state.js";
 import { assertSubagentOutcomeBinding, rebindSubagentOutcome } from "./subagent-outcomes.js";
 import {
   rebindSubagentOutcomeRepairOutcome,
@@ -574,7 +593,7 @@ import { MODEL_INVOCATION_EXPERIMENT_EXECUTION, type ModelInvocationExperimentEx
 import { validateModelInvocationExperimentRunGate } from "./model-invocation-experiment-run-gate.js";
 import { TOOL_INVOCATION_EXPERIMENT_EXECUTION, type ToolInvocationExperimentExecution } from "./tool-invocation-experiment-execution.js";
 import { validateToolInvocationExperimentRunGate } from "./tool-invocation-experiment-run-gate.js";
-
+import { NAPIER_RELEASE_IDENTITY_SHA256, normalizeRunReleaseIdentity } from "./release-product-identity-policy.js";
 export const DEFAULT_INBOUND_RETRY_POLICY: Readonly<InboundRetryPolicy> = {
   maxAttempts: 3,
   baseDelayMs: 5_000,
@@ -702,15 +721,6 @@ interface PersistedState {
   inboundDeliveries: PersistedInboundDelivery[];
 }
 
-export interface AppendEventInput {
-  threadId: string;
-  runId: string;
-  type: string;
-  category: EventCategory;
-  visibility?: EventVisibility;
-  payload: JsonValue;
-}
-
 export interface QueueRunControlMessageInput {
   threadId: string;
   runId: string;
@@ -763,11 +773,6 @@ export interface CreateRunInput {
   [AGENT_MESSAGE_EXPERIMENT_EXECUTION]?: AgentMessageExperimentExecution;
   [MODEL_INVOCATION_EXPERIMENT_EXECUTION]?: ModelInvocationExperimentExecution;
   [TOOL_INVOCATION_EXPERIMENT_EXECUTION]?: ToolInvocationExperimentExecution;
-}
-
-export interface RunLeaseOptions {
-  ownerId: string;
-  ttlMs: number;
 }
 
 export interface SettleScheduleClaimInput {
@@ -922,7 +927,10 @@ class SerialQueue {
         try {
           return await operation();
         } catch (error) {
-          if (!(error instanceof ConcurrentStoreUpdateError) || attempt >= this.maxConflictRetries) {
+          if (
+            (!(error instanceof ConcurrentStoreUpdateError) && !(error instanceof ConcurrentRunLeaseUpdateError)) ||
+            attempt >= this.maxConflictRetries
+          ) {
             throw error;
           }
         }
@@ -952,6 +960,7 @@ export class LocalStore {
   private readonly stateQueue: SerialQueue;
   private readonly threadQueues = new Map<string, SerialQueue>();
   private readonly persistenceMonitor = new StorePersistenceMonitor();
+  private readonly compatibilityProjections: StoreCompatibilityProjectionWriter;
   private ledger: SqliteLedger | undefined;
   private state: PersistedState = structuredClone(EMPTY_STATE);
   private stateRevision = 0;
@@ -964,6 +973,9 @@ export class LocalStore {
     this.eventsRoot = path.join(this.dataRoot, "events");
     this.databasePath = path.join(this.dataRoot, LEDGER_DATABASE_FILENAME);
     this.stateQueue = new SerialQueue(() => this.refreshStateFromLedger(), 4);
+    this.compatibilityProjections = new StoreCompatibilityProjectionWriter(this.statePath, this.eventsRoot, (threadId, afterSeq) =>
+      this.requireLedger().listEvents(threadId, afterSeq),
+    );
   }
 
   async initialize(interruptActiveRuns = false): Promise<void> {
@@ -988,7 +1000,10 @@ export class LocalStore {
           const imported = ledger.bootstrap(JSON.stringify(this.state), events);
           this.restoreSnapshot(imported);
           restored = true;
-          await this.writeStateProjection(imported.stateJson);
+          await this.compatibilityProjections.writeAll(
+            imported.stateJson,
+            this.state.threads.map((thread) => thread.id),
+          );
         } catch (error) {
           if (!isMissingFileError(error)) throw error;
           this.state = structuredClone(EMPTY_STATE);
@@ -1012,6 +1027,24 @@ export class LocalStore {
     this.ledger?.close();
     this.ledger = undefined;
     this.initialized = false;
+  }
+
+  async shutdown(): Promise<void> {
+    try {
+      await this.flushCompatibilityProjections();
+    } finally {
+      this.close();
+    }
+  }
+
+  async flushCompatibilityProjections(): Promise<void> {
+    this.assertInitialized();
+    await this.stateQueue.run(() =>
+      this.compatibilityProjections.flush(
+        JSON.stringify(this.state, null, 2),
+        this.state.threads.map((thread) => thread.id),
+      ),
+    );
   }
 
   getWorkspaceSummary(): WorkspaceSummary {
@@ -4401,7 +4434,7 @@ export class LocalStore {
     });
   }
 
-  async transitionPlanStep(planId: string, stepId: string, request: TransitionPlanStepRequest): Promise<ExecutionPlan> {
+  async transitionPlanStep(planId: string, stepId: string, request: InternalPlanStepRequest): Promise<ExecutionPlan> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
       const index = this.state.plans.findIndex((candidate) => candidate.id === planId);
@@ -5820,8 +5853,8 @@ export class LocalStore {
     });
   }
 
-  async getDetail(threadId: string): Promise<ThreadDetail> {
-    return loadThreadDetail(this, threadId);
+  async getDetail(threadId: string, options?: { kernelProjections?: boolean }): Promise<ThreadDetail> {
+    return loadThreadDetail(this, threadId, options);
   }
 
   async listRunControlMessages(threadId: string, runId?: string): Promise<RunControlMessage[]> {
@@ -6423,50 +6456,29 @@ export class LocalStore {
 
   async createLeasedRun(input: CreateRunInput, leaseOptions: RunLeaseOptions): Promise<RunLeaseHandle> {
     this.assertInitialized();
-    const ttlMs = validateLeaseTtl(leaseOptions.ttlMs);
-    const ownerId = normalizeLeaseOwner(leaseOptions.ownerId);
+    const lease = createRunLeaseBinding(leaseOptions);
     return this.stateQueue.run(async () => {
-      const token = createLeaseToken();
-      const acquiredAt = nowIso();
-      const run = this.createRunRecord(input, {
-        tokenSha256: sha256(token),
-        summary: {
-          ownerId,
-          acquiredAt,
-          heartbeatAt: acquiredAt,
-          expiresAt: new Date(Date.parse(acquiredAt) + ttlMs).toISOString(),
-          revision: 1,
-        },
-      });
+      const run = this.createRunRecord(input, lease.binding);
       await this.persistState();
       return {
         run: structuredClone(stripRunSecrets(run)),
-        token,
+        token: lease.token,
       };
     });
   }
 
   async renewRunLease(runId: string, token: string, ttlMs: number): Promise<RunRecord> {
     this.assertInitialized();
-    const normalizedTtl = validateLeaseTtl(ttlMs);
+    const normalizedTtl = validateRunLeaseTtl(ttlMs);
     return this.stateQueue.run(async () => {
-      const run = this.mutableRun(runId);
-      assertLeaseToken(run.leaseTokenSha256, token);
-      if (!run.lease || run.status !== "running") {
-        throw new Error("Run lease is not active");
-      }
-      if (Date.parse(run.lease.expiresAt) <= Date.now()) {
-        throw new Error("Run lease has expired");
-      }
-      const heartbeatAt = nowIso();
-      run.lease = {
-        ...run.lease,
-        heartbeatAt,
-        expiresAt: new Date(Date.parse(heartbeatAt) + normalizedTtl).toISOString(),
-        revision: run.lease.revision + 1,
-      };
-      await this.persistState();
-      return structuredClone(stripRunSecrets(run));
+      return renewNormalizedRunLease({
+        run: this.mutableRun(runId),
+        token,
+        ttlMs: normalizedTtl,
+        workspaceRevision: this.stateRevision,
+        ledger: this.requireLedger(),
+        monitor: this.persistenceMonitor,
+      });
     });
   }
 
@@ -6909,6 +6921,7 @@ export class LocalStore {
     status: Exclude<RunStatus, "queued" | "running">,
     options: {
       error?: string;
+      outcome?: NonNullable<RunRecord["outcome"]>;
       usage?: RunRecord["usage"];
       leaseToken?: string;
       waitForOperatorDecisionId?: string;
@@ -6929,7 +6942,7 @@ export class LocalStore {
       if (options.waitForOperatorDecisionId && (status !== "completed" || !waitingDecision)) {
         throw new Error("Run cannot wait without its pending operator decision");
       }
-      run.status = status;
+      applyOutcome(run, status, options.outcome);
       run.finishedAt = nowIso();
       if (options.error) run.error = options.error;
       if (options.usage) run.usage = structuredClone(options.usage);
@@ -6961,16 +6974,7 @@ export class LocalStore {
       const openDecision = projectOperatorDecisions([...this.requireLedger().listEvents(thread.id), ...cancellationEvents]).find(
         (decision) => decision.status === "pending" || decision.status === "answered",
       );
-      thread.status =
-        remainingActiveRuns.length > 0
-          ? "running"
-          : waitingDecision || openDecision
-            ? "waiting"
-            : status === "completed" || status === "cancelled"
-              ? "idle"
-              : status === "interrupted"
-                ? "waiting"
-                : "failed";
+      thread.status = settleThread(status, options.outcome, remainingActiveRuns.length > 0, Boolean(waitingDecision || openDecision));
       await this.persistState(cancellationEvents);
       return structuredClone(stripRunSecrets(run));
     });
@@ -7004,9 +7008,13 @@ export class LocalStore {
     return this.threadQueue(input.threadId).run(() =>
       this.stateQueue.run(async () => {
         const currentThread = this.mutableThread(input.threadId);
+        assertRunEventAdmission(
+          input,
+          this.state.runs.find((run) => run.id === input.runId),
+        );
         const [event] = this.appendEventsToThread(currentThread, [input]);
         if (!event) throw new Error("Ledger event was not created");
-        await this.persistState(event);
+        await this.persistState(event, "event");
         return structuredClone(event);
       }),
     );
@@ -7212,10 +7220,10 @@ export class LocalStore {
     };
     const snapshot = this.requireLedger().bootstrap(JSON.stringify(state), events);
     this.restoreSnapshot(snapshot);
-    await Promise.allSettled([
-      this.writeStateProjection(JSON.stringify(this.state, null, 2)),
-      ...this.state.threads.map((item) => this.writeEventProjection(item.id)),
-    ]);
+    await this.compatibilityProjections.writeAll(
+      JSON.stringify(this.state, null, 2),
+      this.state.threads.map((item) => item.id),
+    );
   }
 
   private validateState(state: PersistedState, sourceBindingEvents?: readonly RunEvent[]): PersistedState {
@@ -7571,6 +7579,7 @@ export class LocalStore {
     state.agentCapabilityBindings = ensureCurrentCapabilityBindings(state.agentCapabilityBindings, state.agents, state.agentRevisions);
     for (const run of state.runs) {
       const agent = state.agents.find((candidate) => candidate.id === run.agentId);
+      assertOutcome(run.status, run.outcome);
       if (run.workflowPlanId !== undefined) {
         this.validateResourceId(run.workflowPlanId);
         const workflowPlan = state.plans.find((candidate) => candidate.id === run.workflowPlanId);
@@ -7585,7 +7594,7 @@ export class LocalStore {
         throw new Error(`Persisted Workflow simulation Run Plan binding is missing: ${run.id}`);
       }
       const configuration = run.configuration ? validateRunConfigurationFingerprint(run.configuration) : undefined;
-      if (configuration) run.configuration = configuration;
+      if (configuration) run.configuration = configuration; normalizeRunReleaseIdentity(run);
       if (!Number.isInteger(run.agentRevision) || Number(run.agentRevision) < 1) {
         run.agentRevision = configuration?.agentRevision ?? agent?.revision ?? 1;
       }
@@ -8173,10 +8182,7 @@ export class LocalStore {
         payload: input.payload,
       };
       assertArtifactReceiptEventBoundary(event, `Ledger event ${input.type}`);
-      thread.eventCount = event.seq;
-      thread.updatedAt = event.createdAt;
-      const message = extractMessagePreview(event);
-      if (message) thread.lastMessage = message;
+      applyThreadSummaryEvent(thread, event);
       return event;
     });
     return events;
@@ -8440,7 +8446,7 @@ export class LocalStore {
       status: "running",
       ...(input.source ? { source: input.source } : {}),
       ...(workflowPlanId ? { workflowPlanId } : {}),
-      ...(input.triggerId ? { triggerId: input.triggerId } : {}),
+      ...(input.triggerId ? { triggerId: input.triggerId } : {}), releaseIdentitySha256: NAPIER_RELEASE_IDENTITY_SHA256,
       startedAt: nowIso(),
       usage: emptyUsage(),
       agentRevision: effectiveRunAgent.revision,
@@ -8510,75 +8516,24 @@ export class LocalStore {
     return queue;
   }
 
-  private eventPath(threadId: string): string {
-    this.validateResourceId(threadId);
-    return path.join(this.eventsRoot, `${threadId}.jsonl`);
-  }
-
   private validateResourceId(id: string): void {
     if (!/^[a-z][a-z0-9_]{2,80}$/.test(id)) {
       throw new Error(`Invalid resource ID: ${id}`);
     }
   }
 
-  private async persistState(eventOrEvents?: RunEvent | RunEvent[]): Promise<void> {
-    const startedAt = monotonicNow();
-    const serializationStartedAt = monotonicNow();
-    const compactState = JSON.stringify(this.state);
-    const serializationDurationMs = monotonicNow() - serializationStartedAt;
-    const stateBytes = Buffer.byteLength(compactState, "utf8");
+  private async persistState(eventOrEvents?: RunEvent | RunEvent[], mode: "snapshot" | "event" = "snapshot"): Promise<void> {
     const events = Array.isArray(eventOrEvents) ? eventOrEvents : eventOrEvents ? [eventOrEvents] : [];
-    const eventBytes = events.reduce((total, event) => total + Buffer.byteLength(JSON.stringify(event), "utf8"), 0);
-    const touchedThreadIds = [...new Set(events.map((event) => event.threadId))];
-    const ledgerCommitStartedAt = monotonicNow();
-    try {
-      this.stateRevision = this.requireLedger().commit(this.stateRevision, compactState, events);
-    } catch (error) {
-      this.persistenceMonitor.record({
-        status: "failed",
-        revision: this.stateRevision,
-        stateBytes,
-        eventCount: events.length,
-        eventBytes,
-        touchedThreadCount: touchedThreadIds.length,
-        stateProjectionBytes: 0,
-        eventProjectionBytes: 0,
-        serializationDurationMs,
-        ledgerCommitDurationMs: monotonicNow() - ledgerCommitStartedAt,
-        projectionDurationMs: 0,
-        totalDurationMs: monotonicNow() - startedAt,
-        projectionFailureCount: 0,
-      });
-      this.refreshStateFromLedger(true);
-      throw error;
-    }
-    const ledgerCommitDurationMs = monotonicNow() - ledgerCommitStartedAt;
-    const projectionStartedAt = monotonicNow();
-    const projections: Array<Promise<number>> = [this.writeStateProjection(JSON.stringify(this.state, null, 2))];
-    for (const threadId of touchedThreadIds) {
-      projections.push(this.writeEventProjection(threadId));
-    }
-    const projectionResults = await Promise.allSettled(projections);
-    const projectionDurationMs = monotonicNow() - projectionStartedAt;
-    const projectionFailureCount = projectionResults.filter((result) => result.status === "rejected").length;
-    const stateProjectionBytes = projectionResults[0]?.status === "fulfilled" ? projectionResults[0].value : 0;
-    const eventProjectionBytes = projectionResults
-      .slice(1)
-      .reduce((total, result) => total + (result.status === "fulfilled" ? result.value : 0), 0);
-    this.persistenceMonitor.record({
-      status: "committed",
-      revision: this.stateRevision,
-      stateBytes,
-      eventCount: events.length,
-      eventBytes,
-      touchedThreadCount: touchedThreadIds.length,
-      stateProjectionBytes,
-      eventProjectionBytes,
-      serializationDurationMs,
-      ledgerCommitDurationMs,
-      projectionDurationMs,
-      totalDurationMs: monotonicNow() - startedAt,
-      projectionFailureCount,
+    const snapshotRequired = mode === "snapshot" || compatibilityCheckpointRequired(events);
+    this.stateRevision = await persistStoreMutation({
+      expectedRevision: this.stateRevision,
+      ...(snapshotRequired ? { snapshotJson: () => JSON.stringify(this.state) } : {}),
+      compatibilityStateJson: () => JSON.stringify(this.state, null, 2),
+      events,
+      ledger: this.requireLedger(),
+      monitor: this.persistenceMonitor,
+      compatibility: this.compatibilityProjections,
+      onCommitFailure: () => this.refreshStateFromLedger(true),
     });
   }
 
@@ -8591,13 +8546,27 @@ export class LocalStore {
 
   private refreshStateFromLedger(force = false): void {
     const snapshot = this.ledger?.readSnapshot();
-    if (!snapshot || (!force && snapshot.revision === this.stateRevision)) {
+    if (!snapshot) return;
+    if (!force && snapshot.revision === this.stateRevision) {
+      applyNormalizedRunLeases(this.state.runs, snapshot.runLeases);
       return;
     }
     this.restoreSnapshot(snapshot);
   }
 
-  private restoreSnapshot(snapshot: { revision: number; stateJson: string }): boolean {
+  private restoreSnapshot(snapshot: {
+    revision: number;
+    snapshotRevision: number;
+    stateJson: string;
+    runLeases: import("./sqlite-run-leases.js").LedgerRunLease[];
+  }): boolean {
+    if (
+      !Number.isSafeInteger(snapshot.snapshotRevision) ||
+      snapshot.snapshotRevision < 1 ||
+      snapshot.snapshotRevision > snapshot.revision
+    ) {
+      throw new Error("SQLite ledger snapshot watermark is invalid");
+    }
     const parsed = JSON.parse(snapshot.stateJson) as PersistedState;
     const capabilityBindingMetadataPresent = Object.hasOwn(parsed, "agentCapabilityBindings");
     const capabilityBindingContent = JSON.stringify(parsed.agentCapabilityBindings);
@@ -8631,6 +8600,13 @@ export class LocalStore {
       migrateEvaluationCasebooks ||
       migrateExtensionPackageHistory;
     this.state = this.validateState(parsed, this.listPersistedEvaluationEvents(parsed));
+    applyNormalizedRunLeases(this.state.runs, snapshot.runLeases);
+    replayThreadSummaryTails({
+      threads: this.state.threads,
+      expectedEventCount: snapshot.revision - snapshot.snapshotRevision,
+      listEvents: (threadId, afterSeq) => this.requireLedger().listEvents(threadId, afterSeq),
+    });
+    this.compatibilityProjections.markSnapshotDirty(this.state.threads.map((thread) => thread.id));
     this.stateRevision = snapshot.revision;
     return (
       requiresStateMigration ||
@@ -8682,7 +8658,7 @@ export class LocalStore {
         if (lastEvent) {
           thread.updatedAt = lastEvent.createdAt;
           for (let index = threadEvents.length - 1; index >= 0; index -= 1) {
-            const message = extractMessagePreview(threadEvents[index]!);
+            const message = threadMessagePreview(threadEvents[index]!);
             if (message) {
               thread.lastMessage = message;
               break;
@@ -8738,29 +8714,6 @@ export class LocalStore {
     if (stats.size > 0) {
       throw new Error(`SQLite ledger contains events for unknown thread ${stats.keys().next().value}`);
     }
-  }
-
-  private async writeStateProjection(stateJson: string): Promise<number> {
-    const temporaryPath = this.projectionTemporaryPath(this.statePath);
-    const contents = `${stateJson}\n`;
-    await writeFile(temporaryPath, contents, "utf8");
-    await rename(temporaryPath, this.statePath);
-    return Buffer.byteLength(contents, "utf8");
-  }
-
-  private async writeEventProjection(threadId: string): Promise<number> {
-    const eventPath = this.eventPath(threadId);
-    const temporaryPath = this.projectionTemporaryPath(eventPath);
-    const events = this.requireLedger().listEvents(threadId);
-    const contents = events.map((event) => JSON.stringify(event)).join("\n");
-    const projection = contents ? `${contents}\n` : "";
-    await writeFile(temporaryPath, projection, "utf8");
-    await rename(temporaryPath, eventPath);
-    return Buffer.byteLength(projection, "utf8");
-  }
-
-  private projectionTemporaryPath(targetPath: string): string {
-    return `${targetPath}.${process.pid}.${randomBytes(6).toString("hex")}.tmp`;
   }
 }
 
@@ -9202,14 +9155,6 @@ function validateLeaseTtl(value: number): number {
     throw new Error("Lease TTL must be an integer from 5000 to 600000 ms");
   }
   return value;
-}
-
-function normalizeLeaseOwner(value: string): string {
-  const normalized = value.trim();
-  if (!/^[a-z][a-z0-9_.:-]{2,127}$/.test(normalized)) {
-    throw new Error("Lease owner ID is invalid");
-  }
-  return normalized;
 }
 
 function normalizeTriggerId(value: string): string {
@@ -10847,21 +10792,6 @@ function normalizeInboundModel(model: { provider: string; id: string }) {
     throw new Error("Inbound model is invalid");
   }
   return { provider, id };
-}
-
-function extractMessagePreview(event: RunEvent): string | undefined {
-  if (
-    (event.type !== "message.user" && event.type !== "message.assistant") ||
-    event.category !== "message" ||
-    !event.payload ||
-    Array.isArray(event.payload) ||
-    typeof event.payload !== "object"
-  ) {
-    return undefined;
-  }
-  const text = event.payload["text"];
-  if (typeof text !== "string") return undefined;
-  return text.replace(/\s+/g, " ").trim().slice(0, 180);
 }
 
 function isMissingFileError(error: unknown): boolean {

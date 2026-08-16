@@ -89,6 +89,7 @@ describe("Run event trace view", () => {
       limit: 1,
       observed: {
         turns: 1,
+        inFlightTurns: 1,
         totalTokens: 128,
         costUsd: 0.015,
         elapsedMs: 2500,
@@ -117,7 +118,7 @@ describe("Run event trace view", () => {
     });
 
     expect(runEventTraceSummary(budget)).toBe(
-      "run / budget.exhausted / status exhausted / reason turns / limit 1 / observed-turns 1 / observed-tokens 128 / observed-cost 0.015000 / observed-ms 2500",
+      "run / budget.exhausted / status exhausted / reason turns / limit 1 / observed-turns 1 / observed-in-flight 1 / observed-tokens 128 / observed-cost 0.015000 / observed-ms 2500",
     );
     expect(runEventTraceSummary(autoFailed)).toBe(
       `run / recovery.auto.failed / status failed / attempt-id 1234567890 / recovery-run 1234567890 / source-run 1234567890 / root-run 1234567890 / attempt 2/3 / assessment ${"b".repeat(12)}`,
@@ -128,6 +129,35 @@ describe("Run event trace view", () => {
     expect(runEventTraceSummary(budget)).not.toContain("TOP_SECRET");
     expect(runEventTraceSummary(autoFailed)).not.toContain("TOP_SECRET");
     expect(runEventTraceSummary(autoSkipped)).not.toContain("TOP_SECRET");
+  });
+
+  it("projects finalization reserve metadata without diagnostics", () => {
+    const reserved = runEvent("run.finalization.reserved", {
+      status: "reserved",
+      reasons: ["turns", "tokens"],
+      observed: {
+        turns: 58,
+        inFlightTurns: 0,
+        totalTokens: 900,
+        costUsd: 0.5,
+        elapsedMs: 420_000,
+      },
+      limits: {
+        maxTurns: 64,
+        maxTotalTokens: 1_000,
+        maxCostUsd: 25,
+        timeoutMs: 600_000,
+      },
+      reservedTurns: 6,
+      reservedTokens: 100,
+      reservedTimeoutMs: 180_000,
+      message: "TOP_SECRET_RESERVE_MESSAGE",
+    });
+
+    expect(runEventTraceSummary(reserved)).toBe(
+      "run / finalization.reserved / status reserved / reasons turns,tokens / observed-turns 58 / observed-in-flight 0 / observed-tokens 900 / observed-cost 0.500000 / observed-ms 420000 / max-turns 64 / max-tokens 1000 / max-cost 25 / timeout-ms 600000 / reserved-turns 6 / reserved-tokens 100 / reserved-ms 180000",
+    );
+    expect(runEventTraceSummary(reserved)).not.toContain("TOP_SECRET");
   });
 
   it("fails closed for malformed and unknown run receipts", () => {

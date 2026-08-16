@@ -64,6 +64,48 @@ describe("Skill lifecycle Trace projection", () => {
     );
   });
 
+  it("renders bounded Data application proof", () => {
+    const applicationMode = "data_analysis_transformed" as const;
+    const proofEventSeqs = [8, 11];
+    const core = {
+      kind: "napier.skill-lifecycle-projection" as const,
+      schemaVersion: 1 as const,
+      operation: "skill.lifecycle.project" as const,
+      state: "applied" as const,
+      skillName: "data-analysis",
+      requestedNameSha256: hash("data-analysis"),
+      source: "project" as const,
+      rootKind: "project_legacy" as const,
+      candidateRootKinds: [],
+      catalogSha256: "1".repeat(64),
+      availabilitySetSha256: "2".repeat(64),
+      snapshotManifestSha256: "3".repeat(64),
+      contextSeq: 2,
+      selectedSeq: 4,
+      terminalSeq: 6,
+      receiptContentSha256: "4".repeat(64),
+      applicationMode,
+      proofEventSeqs,
+      proofEventSetSha256: skillProofEventSetSha256(
+        applicationMode,
+        proofEventSeqs,
+      ),
+    };
+    const event = skillEvent({
+      ...core,
+      contentSha256: hash(canonical(core)),
+    });
+
+    expect(skillLifecycleEventTraceSummary(event)).toContain(
+      "proof data_analysis_transformed",
+    );
+    expect(skillLifecycleEventTraceView(event)).toMatchObject({
+      state: "applied",
+      applicationMode,
+      proofEventCount: 2,
+    });
+  });
+
   it("renders a catalog-bound unavailable state separately from failure", () => {
     const core = {
       kind: "napier.skill-lifecycle-projection" as const,

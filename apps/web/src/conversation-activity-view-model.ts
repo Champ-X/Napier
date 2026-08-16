@@ -1,4 +1,4 @@
-import type { RunEvent } from "@napier/contracts";
+import type { RunEvent, ThreadDetail } from "@napier/contracts";
 
 export type ConversationActivityTone =
   | "working"
@@ -18,6 +18,19 @@ export interface ConversationActivity {
   count: number;
 }
 
+export type ConversationActivityCandidate = NonNullable<
+  ThreadDetail["activityCandidates"]
+>[number];
+
+export interface ConversationActivityExclusions {
+  eventIds: ReadonlySet<string>;
+  callIds: ReadonlySet<string>;
+  planIds: ReadonlySet<string>;
+  decisionIds: ReadonlySet<string>;
+  taskIds: ReadonlySet<string>;
+  artifactKeys: ReadonlySet<string>;
+}
+
 const ACTIVITY_PREFIXES = [
   "run.",
   "tool.",
@@ -35,22 +48,49 @@ export function conversationActivities(
   events: RunEvent[],
   limit = 12,
 ): ConversationActivity[] {
-  const activities = events.flatMap((event): ConversationActivity[] => {
-    if (!isConversationActivity(event)) return [];
-    return [
-      {
-        id: event.id,
-        seq: event.seq,
-        type: event.type,
-        label: activityLabel(event.type),
-        summary: activitySummary(event),
-        tone: activityTone(event.type),
-        createdAt: event.createdAt,
-        count: 1,
-      },
-    ];
-  });
-  return collapseActivities(activities).slice(-limit);
+  const candidates = events.flatMap(
+    (event): ConversationActivityCandidate[] => {
+      if (!isConversationActivity(event)) return [];
+      return [
+        {
+          id: event.id,
+          seq: event.seq,
+          type: event.type,
+          label: activityLabel(event.type),
+          summary: activitySummary(event),
+          tone: activityTone(event.type),
+          createdAt: event.createdAt,
+        },
+      ];
+    },
+  );
+  return conversationActivitiesFromCandidates(candidates, limit);
+}
+
+export function conversationActivitiesFromCandidates(
+  candidates: readonly ConversationActivityCandidate[],
+  limit = 12,
+): ConversationActivity[] {
+  return collapseActivities(
+    candidates.map((candidate) => ({ ...candidate, count: 1 })),
+  ).slice(-limit);
+}
+
+export function excludeConversationActivityCandidates(
+  candidates: readonly ConversationActivityCandidate[],
+  exclusions: ConversationActivityExclusions,
+): ConversationActivityCandidate[] {
+  return candidates.filter(
+    (candidate) =>
+      !exclusions.eventIds.has(candidate.id) &&
+      (!candidate.callId || !exclusions.callIds.has(candidate.callId)) &&
+      (!candidate.planId || !exclusions.planIds.has(candidate.planId)) &&
+      (!candidate.decisionId ||
+        !exclusions.decisionIds.has(candidate.decisionId)) &&
+      (!candidate.taskId || !exclusions.taskIds.has(candidate.taskId)) &&
+      (!candidate.artifactKey ||
+        !exclusions.artifactKeys.has(candidate.artifactKey)),
+  );
 }
 
 function isConversationActivity(event: RunEvent): boolean {

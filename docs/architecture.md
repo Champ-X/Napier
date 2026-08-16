@@ -3128,12 +3128,16 @@ multi-restart/offline-wait/budget Long-horizon, durable Goal no-progress,
 Process recovery, Research, and UX Benchmark Series plus all forty-seven
 Result/Ledger pairs into one
 `napier.release-artifacts-audit` receipt. The gate also recursively verifies
-the open-web executor campaign, both sibling reports, and both failed-attempt
-receipts. Before hashing retained Benchmark files, it performs full semantic
-verification for every Series/campaign/report/attempt contract. It stores only
-artifact kinds, repo-relative paths, SHA-256 values, validity booleans, package
-name/version, and a canonical artifact-set digest. The current receipt contains
-131 artifacts and binds set SHA-256 `eefedf6f04a03de7...`.
+the open-web executor campaign, both sibling reports, both failed-attempt
+receipts, the privacy-bounded six-case Default Product Trial Gate, and the
+separate focused Coding-rerun, critical-coverage, and breadth Gates. Before
+hashing retained files, it performs full semantic verification for every
+Series/campaign/report/attempt/Trial contract. It stores only artifact kinds,
+repo-relative paths, SHA-256 values, validity booleans, package name/version,
+and a canonical artifact-set digest. The release set also includes the
+immutable ten-case Default Product consolidated Gate described below. The
+current receipt contains 167 artifacts and binds set SHA-256
+`f97e36ae75299622ac34a4cdaf9aadff921e84f1b9fa4ff3b08b3c86d10745e2`.
 Verification re-runs the component and Benchmark verifiers and fails if any
 underlying artifact or the aggregate receipt drifts.
 
@@ -3156,12 +3160,56 @@ compare-and-swap guard. Local instances refresh before mutations and retry a
 bounded number of revision conflicts; the database primary key
 `(thread_id, seq)` independently enforces sequence uniqueness.
 
+`workspace.json` and per-Thread JSONL remain compatibility artifacts, not part
+of the authoritative commit path. Ordinary events commit only to SQLite
+through an event-only CAS transaction: insert exactly one event and advance
+`workspace_state.revision` without replacing `state_json`.
+`snapshot_revision` identifies the revision represented by that JSON. Startup
+and multi-instance refresh require the number of contiguous Ledger tail events
+to equal `revision - snapshot_revision`, then replay only `eventCount`,
+`updatedAt`, and message preview into Thread summaries. A forged or incomplete
+tail fails closed. The Store writes a coherent full state plus every dirty
+Thread compatibility projection on state-only commits, turn or terminal
+boundaries, each 64-event interval, explicit flush, and managed shutdown.
+Normal checkpoints inspect only the bounded JSONL tail, verify it against the
+authoritative SQLite event at the same sequence, and append the missing
+contiguous suffix under shared cross-instance file locks. Existing bytes and
+inode remain intact; event projection metrics count only appended bytes.
+Malformed, incomplete, over-8-MiB, divergent, or non-contiguous tails fail
+closed. Full JSONL replacement is reserved for initial workspace creation and
+validated legacy import. A crash before a checkpoint can leave compatibility
+files and state JSON behind the latest revision; reopening still recovers the
+complete bounded tail from the database, while legacy-only migration continues
+to validate the JSON/JSONL pair fail-closed.
+
+Events produced by asynchronous live work can opt into `run_active` admission.
+The Store evaluates that precondition inside its serialized, refresh-before-
+mutation commit path, immediately before assigning the next Thread sequence.
+If another Runtime instance has already moved the Run out of `queued` or
+`running`, the event is rejected before SQLite revision, Thread `eventCount`,
+or projection watermark can advance. Model delta batches use this mode and
+discard only the typed terminal-race rejection; unrelated persistence failures
+retain the batch for retry. Explicit retrospective audit evidence, including a
+model-stream cancellation failure observed after settlement, does not request
+active-Run admission and remains appendable by design.
+
 Schema version 2 adds the `ledger_schema_migrations` table. New databases
 record both the initial schema and migration-history boundary; existing schema
-1 ledgers migrate online inside `BEGIN IMMEDIATE`, backfill the initial record,
-advance `PRAGMA user_version`, and then run `quick_check`. `/api/health`
-returns the shared `HealthResponse` contract and projects only schema version,
-quick-check status, migration metadata, and public runtime readiness metadata.
+1 ledgers migrate online inside `BEGIN IMMEDIATE` and backfill the initial
+record. Schema version 3 adds `snapshot_revision` and the event-only state
+snapshot boundary; existing ledgers initialize it to their current revision.
+Schema version 4 adds normalized `run_leases`. Run creation and terminal
+settlement still synchronize lease lifecycle with the full state transaction,
+but periodic heartbeat renewal updates only the exact Run row under token-hash,
+lease-revision, and unexpired-CAS guards. Snapshot reads atomically combine
+`workspace_state` and `run_leases`; normalized rows overlay stale lease fields
+in `state_json`. A later full state commit upserts only an equal/newer lease
+revision, so an older Store snapshot cannot downgrade a concurrent heartbeat.
+Heartbeat persistence records zero state/event/projection bytes and does not
+advance the workspace revision. Migration advances `PRAGMA user_version` and
+then runs `quick_check`. `/api/health` returns the shared `HealthResponse`
+contract and projects only schema version, quick-check status, migration
+metadata, and public runtime readiness metadata.
 Its response is no-store and mirrors response hash, service/status, Node
 version/platform/arch, runtime component count/hash, SQLite/OpenSSL/libuv/V8
 versions, Ledger schema version, quick-check status, migration count,
@@ -3505,6 +3553,23 @@ hash-evidence contract. The Web test directory is part of the Web TypeScript
 project, so those contracts are typechecked during the production Web build as
 well as executed by Vitest.
 
+Manual interrupted-Run recovery has two distinct identities by design. The
+resume request and `X-Napier-Run-Id` response header bind the interrupted origin
+Run selected by the operator; Runtime creates a new `source=recovery` child Run,
+and all SSE event/done frames belong to that child. The Web stream validator
+therefore verifies the origin header first, binds stream identity from the
+first actual event/done frame, and rejects any subsequent child-Run drift. It
+must not pre-seed SSE identity from the origin request ID.
+
+Manual recovery prompts also include a bounded current-Plan register for up to
+four active/blocked Plans. It contains only Plan ID/revision/status, step
+ID/status/owning Run ID, and artifact ID/status; descriptions, paths, evidence
+text, and bytes are excluded. Recovery already has the ordinary Plan tools, so
+this register lets it target the retained Plan: inspect current state, reopen
+interrupted steps, record existing expected bytes as produced before verifying
+them, and complete only after evidence is durable. Automatic read-only recovery
+receives no Plan-mutation register.
+
 The same commit primitive accepts an event batch for full-thread import. Every
 imported event and the new Agent/Agent Revision/Thread/Run/Plan/Evaluation/
 Evaluation Adjudication/Evaluation Suite/Suite Execution/Subagent projection
@@ -3538,6 +3603,97 @@ Qualification executions are workspace-global durable records bound to one
 historical Casebook revision and one audit Thread. Startup validates every
 case result against that revision, while retention keeps the latest 20
 executions per Casebook.
+
+The ordinary task-status projection also has a lazy, post-Run Default Product
+Trial recorder. It does not derive a second evaluation contract: it loads the
+workspace-global `release-product-v1` Casebook and template, chooses the latest
+terminal Run from the active Thread, filters the template to the six M4 core
+case IDs in canonical order, and mounts the existing versioned Release Product
+Trial control. Missing or incomplete template state fails closed. Casebook
+creation remains an explicit user action; trial writes continue through the
+existing strict HTTP parser, Run/Thread ownership check, duplicate
+Run/version guard, and hash-bound Ledger event.
+
+The recorder is a separate Web chunk mounted after the ordinary narrative row.
+It is collapsed by default and spans the task strip only when a terminal Run
+exists. The advanced ten-case template, qualification, controlled-harness, and
+gate-history controls remain in the lazy Evaluation Lab boundary. Production
+E2E verifies collapsed/expanded/re-collapsed behavior, fixed six-case ordering,
+latest-Run binding, version projection, zero horizontal overflow, and zero
+console errors at 1600, 1440, 1200, 900, and 390 pixels.
+
+The first six-case campaign and the later focused Coding rerun remain separate
+Casebook projections. This preserves historical identity: the earlier
+configuration-inconclusive Coding Trial is not rewritten after a later host can
+activate Sandbox. The focused artifact retains one passed `coding-verification`
+Trial and is independently recomputed through `parseReleaseProductTrial` and
+`projectReleaseProductGate`. It records no prompt, assistant output, command
+output, URL, reasoning, or credential fields.
+
+The live Coding rerun used `OciContainerSandboxAdapter` with the immutable
+`napier-sandbox:0.1.0` image. For Colima, both the isolated Workspace and
+`NAPIER_CONTAINER_SCRATCH_DIR` must resolve beneath a VM-shared host path; a
+fresh `/tmp` root fails before Node execution because the daemon cannot mount
+it. `DOCKER_HOST` can explicitly name the local Unix socket without relaxing
+the existing local-endpoint check or importing Docker configuration into the
+isolated `HOME`.
+
+The Settings/Shell critical-coverage campaign is another separate Casebook
+projection. Settings binds a completed DeepSeek Run after visible provider
+setup. Shell binds a completed `workspace_process` Session with runtime
+`shell`, PTY dimensions, terminal status, Sandbox/provider boundary, output
+hash, and Workspace-delta facts retained in the Ledger while the Gate retains
+only Trial hashes and bounded intervention metrics.
+
+That Shell run exposed an action-first classification defect. The generic
+build/edit expression matched `process.stdout.write` and “no workspace
+writes”, then forced a mutation even after `message.assistant` had produced a
+valid result. `RunProgressGovernor.needsActionFirst` now requires
+`userResultCount === 0`, and bare `write` matches only when followed by a
+concrete Workspace deliverable. This preserves action-first for genuine
+build/edit work while preventing post-result or negative-write redirects.
+
+The breadth campaign covers URL/PDF and Skill without merging Casebook
+identities. `web_fetch` retains PDF page markers in normalized Run-local Source
+lines, so a Trial can bind format/page/line evidence while keeping source bytes
+and URL out of its Gate. Data Skill application uses a separate bounded leaf:
+`skillDataAnalysisProof` requires one complete `inspect_data` receipt followed
+by one successful `napier.data-frame` transform whose `sourceSha256` equals the
+inspected file SHA-256. The lifecycle projection adds
+`data_analysis_transformed` with only the two proof event sequence numbers and
+their proof-set SHA-256; rows, plan operations, paths, and Skill text stay out
+of that projection.
+
+Release Product consolidation is additive rather than a Trial rewrite.
+`ReleaseProductTrialAdoption` names a new destination Casebook, embeds one
+complete direct source Gate, selects original Trial IDs, and hashes the whole
+envelope. `parseDirectReleaseProductGate` independently parses every source
+Trial and recomputes the exact direct Gate before an adoption can affect
+coverage. Transitive adoption, same-Casebook adoption, unknown/duplicate Trial
+IDs, extra Trial keys, source Gate drift, and duplicate selected Trial IDs fail
+closed.
+
+`projectReleaseProductGate` keeps destination-native `trials` separate from
+adoption envelopes, then scores only direct, verified selected source Trials.
+The source Casebook, Thread, Run, Trial, version, timestamps, metrics, and
+content hashes remain unchanged; the destination does not claim those Runs
+were executed in its Store. The retained
+`default-product-consolidated-m4-0.1.2.json` has zero native Trials, four source
+Gate adoptions, and ten unique selected Runs covering all fixed cases. Version
+`0.1.2` passes at 10/10 and 100%, but the gate truthfully projects only one
+consecutive passing version and leaves `defaultTrackReady=false`. Two distinct
+later product versions require fresh evidence; relabeling or copying the
+retained version is not a valid repetition.
+
+Starting with Default Product `0.1.3`, version evidence is source-bound.
+`release-product-source-manifest.mjs` hashes the production Server/Web,
+Contracts/Runtime, bundled Skills, Sandbox build inputs, and package/build
+metadata while excluding only the normalized identity declaration. Runtime
+build verifies the sealed manifest before TypeScript compilation. Store freezes
+that identity on Run creation, Trial recording requires exact Run continuity,
+and version scoring requires one matching identity. Consecutive passing
+versions must be immediate SemVer successors with distinct release identities;
+chronological ordering alone cannot satisfy readiness.
 
 Reviewer ballots and consensus resolutions are Thread-owned durable evidence.
 One lane exists per evaluation/reviewer ID, while every lane retains up to 50
@@ -8433,6 +8589,100 @@ both fail closed, and the runtime closes the capability set by deriving
 `process.spawn`, `secrets.env`, and required workspace access from the transport
 configuration. Proposal ledger events retain provenance and capability evidence
 without serializing executable or environment locator details.
+
+First-party in-process plugins use a separate execution boundary from external
+MCP packages but share one product entrance in the Extensions Workbench. A
+strict hash-bound manifest declares plugin ID/version, SemVer dependencies,
+capabilities, permissions, host/client package entries, and tool/provider/
+prompt/projection/UI-slot contributions. The manifest currently accepts only
+`trust=first_party`; externally sourced code remains on the existing signed MCP
+package, approval, and sandbox path rather than gaining in-process authority.
+
+`KernelPluginRegistry` installs definitions disabled, gates enablement on exact
+dependency status/version, creates one owner-scoped Kernel service/hook scope,
+rolls back partial setup, blocks dependency-breaking disable/uninstall, and
+unloads dependents before dependencies at shutdown. Owner disposal removes
+resolved services, hooks, projection definitions, and cached projection state.
+Kernel inspection and `/api/bootstrap` expose only manifest metadata and
+enabled state. The Web renders that projection read-only; no browser control can
+install, enable, or disable an in-process plugin.
+
+Artifact is the first migrated built-in. `plugin.artifact@1.0.0` owns
+`projection.conversation-artifacts` and the `conversation.artifacts`
+definition. `AgentKernel.conversationArtifacts` is a dynamic facade over the
+registry, so disabling the plugin removes the service and makes the facade fail
+closed; re-enabling recreates and resolves the same service without changing
+Server consumers.
+
+Search is the second migrated built-in. `plugin.search@1.0.0` declares the
+`web_search` tool and `network.public` permission, owns the
+`runtime.web-search` service, and attaches the selected `WebSearchExecutor` to
+one dynamic slot used by `AgentCapabilityRuntime`. Tool assembly checks slot
+availability: disabling Search removes the service and omits `web_search` from
+new Runs even when the Agent profile still requests it; re-enabling eagerly
+resolves the service and restores provider execution. No existing Run or
+provider registry is replaced mid-call.
+
+Browser is the third migrated built-in. `plugin.browser@1.0.0` owns the shared
+Run Browser Session manager through `runtime.browser-session`; its manifest
+declares the `browser` tool plus public-network, Browser-control, and
+workspace read/write permissions. It also declares the real
+`@napier/web/kernel-browser-inspector-slot` client entry and one
+`inspector.panel` contribution. One `DynamicBrowserSessionPort` is injected
+across Browser tool execution, rendered Fetch fallback, Browser-backed Research
+Source capture, live view, takeover, interaction confirmation, active-Session
+checks, and Run cancellation.
+
+Disablement first closes every active Session and clears serialization tails,
+then detaches the port. New Runs omit both Browser and Browser-backed Research
+Source schemas, and Fetch remains available while reporting Browser fallback
+unavailable. Custom non-Browser Research Source providers remain independent.
+Live view/takeover status reports no active Session and action paths fail
+closed. Re-enabling eagerly reattaches the same manager and restores every
+surface without bypassing existing isolated profiles, public-network checks,
+one-use confirmation, pause-bound takeover, sensitive-target handoff, output
+Artifact registration, or bounded source-capture validation.
+
+Web does not evaluate manifest package strings as import expressions. A static
+`KernelPluginInspectorSlots` catalog imports one reviewed descriptor from the
+declared `@napier/web` subpath. Resolution requires exact plugin ID, version,
+complete manifest SHA-256, enabled status, client entry, `ui_slot` capability,
+and `inspector.panel` contribution before the descriptor's lazy loader can
+mount `BrowserInspectorPanel`. Disabled, unknown, stale-version, rehashed,
+entry-drifted, or under-declared plugins resolve to no client component. This is
+the finite-slot model: adding another client contribution requires a reviewed
+Web build and catalog entry; bootstrap metadata alone never executes code.
+
+`napier plugins --workspace <path> --scaffold <plugin.id>` is the minimal
+first-party authoring path. It canonicalizes the Workspace, rejects protected,
+escaping, existing, or symlink-mediated targets, and writes exactly five files:
+the strict hash-bound manifest, package metadata, TypeScript configuration,
+projection host example, and lifecycle README. The operation is all-or-cleanup
+for its target and emits a content-addressed receipt over the manifest and
+ordered file set. `examples/kernel-plugin-status` is the checked instance and
+compiles through the public `@napier/runtime` and `@napier/contracts` exports.
+The example demonstrates `install -> enable -> inspect -> disable -> uninstall`
+against `KernelPluginRegistry`; the scaffold command itself deliberately does
+not load code or persist plugin enablement. Persisted desired state and
+restart-time reconciliation remain a separate M3 control-plane slice.
+
+Optional built-in desired state is stored separately from the Workspace Ledger
+in private `kernel-plugins.json`. The strict schema pins the complete sorted
+Artifact/Browser/Search catalog to exact built-in versions and a content hash.
+Artifact must remain enabled because Server thread projection assembly requires
+it; only Browser and Search are mutable. Missing state means all built-ins
+enabled. Invalid shape, catalog/version drift, required-plugin disablement, or
+hash mismatch fails Runtime startup rather than falling back.
+
+The CLI is the only mutation surface. `plugins --enable|--disable` creates a
+hash-bound transition over current binding/state and next state; apply requires
+the exact preview hash, takes a cross-process path lock, revalidates current
+bytes, and atomically replaces a mode-`0600` file with directory fsync. The
+running Runtime is not hot-mutated: the next startup installs the normal
+first-party catalog and disables optional plugins whose desired state is off.
+All manifests remain visible through read-only inspection. This preserves
+dependency/lifecycle cleanup, keeps browser mutation authority absent, and
+avoids coupling local process configuration to event replay/import.
 
 Transport approval and tool approval are separate. A connection may be tested
 without making any discovered tool model-visible. Re-discovery preserves review

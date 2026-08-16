@@ -67,11 +67,8 @@ import { browserPageLocator } from "./browser-page-locator.js";
 import { performBrowserPageUpload } from "./browser-page-upload.js";
 import { sha256 } from "./ed25519.js";
 import { FixedIpHttpProxy } from "./fixed-ip-http-proxy.js";
-import {
-  type PublicHostLookup,
-  resolvePublicHost,
-  validatePublicHttpUrl,
-} from "./public-network.js";
+import type { BrowserSessionOwner } from "./browser-session-model.js";
+import { BrowserAllowedUrls } from "./browser-allowed-url.js";
 
 export class PersistentBrowserSession {
   readonly idSha256 = sha256(`browser-session:${randomUUID()}`);
@@ -92,7 +89,7 @@ export class PersistentBrowserSession {
 
   private constructor(
     private readonly workspaceRoot: string,
-    private readonly lookup: PublicHostLookup | undefined,
+    private readonly urls: BrowserAllowedUrls,
     private readonly runtime: BrowserRuntimeBinding,
     private readonly proxy: BrowserNetworkProxy,
     private readonly browser: Browser,
@@ -107,6 +104,7 @@ export class PersistentBrowserSession {
 
   static async start(
     options: RunBrowserSessionManagerOptions,
+    owner: BrowserSessionOwner,
   ): Promise<PersistentBrowserSession> {
     const runtime = await (options.resolveRuntime
       ? options.resolveRuntime()
@@ -134,7 +132,11 @@ export class PersistentBrowserSession {
       const page = await context.newPage();
       const session = new PersistentBrowserSession(
         options.workspaceRoot,
-        options.lookup,
+        new BrowserAllowedUrls(
+          owner,
+          options.localServiceLeases,
+          options.lookup,
+        ),
         runtime,
         proxy,
         browser,
@@ -460,10 +462,7 @@ export class PersistentBrowserSession {
     }
     let url: URL;
     try {
-      url = validatePublicHttpUrl(request.url());
-      await resolvePublicHost(url.hostname, {
-        ...(this.lookup ? { lookup: this.lookup } : {}),
-      });
+      url = await this.urls.resolve(request.url());
     } catch {
       this.blockedRequestCount += 1;
       await route.abort("blockedbyclient").catch(() => undefined);
@@ -482,10 +481,7 @@ export class PersistentBrowserSession {
     value: string,
     allowCrossOrigin: boolean,
   ): Promise<URL> {
-    const url = validatePublicHttpUrl(value);
-    await resolvePublicHost(url.hostname, {
-      ...(this.lookup ? { lookup: this.lookup } : {}),
-    });
+    const url = await this.urls.resolve(value);
     await this.navigation.preflight(page, url, allowCrossOrigin);
     return url;
   }

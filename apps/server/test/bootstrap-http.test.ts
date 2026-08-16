@@ -93,6 +93,303 @@ describe("Bootstrap HTTP", () => {
     expect(agent.model).toEqual({ provider: "napier", id: "demo" });
   });
 
+  it("uses the Kernel Thread projection without changing the bootstrap contract", async () => {
+    const agent = seedAgent();
+    const legacyThread = threadSummary();
+    const projectedThread = {
+      ...legacyThread,
+      id: "thread_projected_bootstrap",
+      title: "Projected bootstrap",
+      updatedAt: "2026-08-16T00:00:00.000Z",
+    };
+    const projectedDetail = threadDetail(agent, projectedThread);
+    const store = bootstrapStore(agent, legacyThread, projectedDetail);
+    const listVisible = vi.fn(async () => [projectedThread]);
+    const project = vi.fn(async () => ({
+      view: {
+        phase: "completed" as const,
+        phaseLabel: "Settled",
+        currentAction: "Projected by Kernel",
+        completedItems: [],
+      },
+    }));
+    const projectActivePlan = vi.fn(async () => ({ view: undefined }));
+    const projectMessages = vi.fn(async () => ({
+      view: [
+        {
+          id: "event_projected",
+          seq: 1,
+          role: "assistant" as const,
+          text: "Projected message",
+          model: "napier/demo",
+          createdAt: "2026-08-16T00:00:00.000Z",
+        },
+      ],
+    }));
+    const projectConversationPlans = vi.fn(async () => ({ view: [] }));
+    const projectArtifacts = vi.fn(async () => ({ view: [] }));
+    const projectActivityEvents = vi.fn(async () => ({ view: [] }));
+    const projectActivityCandidates = vi.fn(async () => ({
+      view: [
+        {
+          id: "event_activity",
+          seq: 5,
+          type: "run.no_progress",
+          label: "Run",
+          summary: "Run no progress",
+          tone: "info" as const,
+          createdAt: "2026-08-16T00:00:05.000Z",
+        },
+      ],
+    }));
+    const projectCitations = vi.fn(async () => ({
+      view: [
+        {
+          id: "event_citation",
+          seq: 2,
+          createdAt: "2026-08-16T00:00:02.000Z",
+          callId: "call_research",
+          citationId: "citation_projected1",
+          sourceId: "source_projected1",
+          sourceKind: "web_fetch" as const,
+          startLine: 2,
+          endLine: 4,
+          sourceContentSha256: "a".repeat(64),
+          sourceTitleSha256: "b".repeat(64),
+          quoteSha256: "c".repeat(64),
+          claimSha256: "d".repeat(64),
+        },
+      ],
+    }));
+    const projectRecoveries = vi.fn(async () => ({
+      view: [
+        {
+          id: "run_interrupted",
+          seq: 3,
+          createdAt: "2026-08-16T00:00:03.000Z",
+          status: "skipped" as const,
+          assessment: {
+            contentSha256: "e".repeat(64),
+            interruptedRunId: "run_interrupted",
+            rootRunId: "run_interrupted",
+            eligible: false,
+            blockReasons: ["unsafe_tool_effect" as const],
+            policy: {
+              mode: "safe_read_only" as const,
+              maxAttempts: 2,
+              backoffMs: 1_000,
+            },
+            toolCalls: {
+              total: 1,
+              readOnly: 0,
+              unsafe: 1,
+              unknownEffect: 0,
+              unresolved: 0,
+            },
+            eventRange: {
+              fromSeq: 1,
+              toSeq: 2,
+              eventCount: 2,
+              eventStreamSha256: "f".repeat(64),
+            },
+            priorAttempts: 0,
+            assessedAt: "2026-08-16T00:00:02.000Z",
+          },
+          eventIds: ["event_recovery"],
+        },
+      ],
+    }));
+    const projectSubagents = vi.fn(async () => ({
+      view: [
+        {
+          id: "event_subagent",
+          seq: 4,
+          createdAt: "2026-08-16T00:00:04.000Z",
+          task: {
+            id: "task_projected1",
+            role: "reviewer" as const,
+            description: "Review projected evidence",
+            status: "completed" as const,
+            model: { provider: "napier", id: "demo" },
+            stepCount: 2,
+            turnCount: 1,
+            usage: { inputTokens: 100, outputTokens: 20 },
+            stopReason: "completed" as const,
+            outcome: {
+              summary: "The projected evidence is complete.",
+              items: [],
+            },
+          },
+          itemCount: 0,
+          evidenceCount: 0,
+          unknownCount: 0,
+          blockerCount: 0,
+          warningCount: 0,
+        },
+      ],
+    }));
+    const projectOperatorDecisions = vi.fn(async () => ({ view: [] }));
+    const inspectPlugins = vi.fn(() => [
+      {
+        id: "plugin.artifact",
+        version: "1.0.0",
+        displayName: "Artifact",
+        description: "Projects authoritative artifacts.",
+        status: "enabled" as const,
+        trust: "first_party" as const,
+        dependencies: [],
+        capabilities: ["projection"],
+        permissions: [],
+        hostEntry: "@napier/runtime/kernel-artifact-plugin",
+        contributions: {
+          tools: [],
+          providers: [],
+          prompts: [],
+          projections: ["conversation.artifacts"],
+          uiSlots: [],
+        },
+        contentSha256: "f".repeat(64),
+      },
+      {
+        id: "plugin.search",
+        version: "1.0.0",
+        displayName: "Search",
+        description: "Provides live public Web Search.",
+        status: "enabled" as const,
+        trust: "first_party" as const,
+        dependencies: [],
+        capabilities: ["tool", "ui_slot"],
+        permissions: ["network.public"],
+        hostEntry: "@napier/runtime/kernel-search-plugin",
+        contributions: {
+          tools: ["web_search"],
+          providers: [],
+          prompts: [],
+          projections: [],
+          uiSlots: [],
+        },
+        contentSha256: "e".repeat(64),
+      },
+      {
+        id: "plugin.browser",
+        version: "1.0.0",
+        displayName: "Browser",
+        description: "Provides isolated Browser Sessions.",
+        status: "enabled" as const,
+        trust: "first_party" as const,
+        dependencies: [],
+        capabilities: ["tool"],
+        permissions: [
+          "browser.control",
+          "network.public",
+          "workspace.read",
+          "workspace.write",
+        ],
+        hostEntry: "@napier/runtime/kernel-browser-plugin",
+        clientEntry: "@napier/web/kernel-browser-inspector-slot",
+        contributions: {
+          tools: ["browser"],
+          providers: [],
+          prompts: [],
+          projections: [],
+          uiSlots: ["inspector.panel"],
+        },
+        contentSha256: "d".repeat(64),
+      },
+    ]);
+    const app = new Hono();
+    registerBootstrapHttp(app, {
+      store: store as never,
+      kernel: {
+        threadSummaries: { listVisible },
+        taskNarratives: { project },
+        activePlans: { project: projectActivePlan },
+        conversationActivityCandidates: {
+          project: projectActivityCandidates,
+        },
+        conversationMessages: { project: projectMessages },
+        conversationPlans: { project: projectConversationPlans },
+        conversationArtifacts: { project: projectArtifacts },
+        conversationActivityEvents: { project: projectActivityEvents },
+        conversationCitations: { project: projectCitations },
+        conversationRecoveries: { project: projectRecoveries },
+        conversationSubagents: { project: projectSubagents },
+        operatorDecisions: { project: projectOperatorDecisions },
+        plugins: { inspect: inspectPlugins },
+      },
+      models: {
+        list: vi.fn(async () => []),
+        recommendDefaultRunModel: vi.fn(async () => ({
+          provider: "napier",
+          id: "demo",
+        })),
+      } as never,
+    });
+
+    const response = await app.request("/api/bootstrap");
+    const bootstrap = (await response.json()) as LiveReadyBootstrapResponse;
+
+    expect(response.status).toBe(200);
+    expect(listVisible).toHaveBeenCalledOnce();
+    expect(project).toHaveBeenCalledWith(projectedThread.id);
+    expect(projectActivePlan).toHaveBeenCalledWith(projectedThread.id);
+    expect(projectActivityCandidates).toHaveBeenCalledWith(projectedThread.id);
+    expect(projectMessages).toHaveBeenCalledWith(projectedThread.id);
+    expect(projectConversationPlans).toHaveBeenCalledWith(projectedThread.id);
+    expect(projectArtifacts).toHaveBeenCalledWith(projectedThread.id);
+    expect(projectActivityEvents).toHaveBeenCalledWith(projectedThread.id);
+    expect(projectCitations).toHaveBeenCalledWith(projectedThread.id);
+    expect(projectRecoveries).toHaveBeenCalledWith(projectedThread.id);
+    expect(projectSubagents).toHaveBeenCalledWith(projectedThread.id);
+    expect(projectOperatorDecisions).toHaveBeenCalledWith(projectedThread.id);
+    expect(inspectPlugins).toHaveBeenCalledOnce();
+    expect(store.listThreads).not.toHaveBeenCalled();
+    expect(bootstrap.threads).toEqual([projectedThread]);
+    expect(bootstrap.activeThread?.thread.id).toBe(projectedThread.id);
+    expect(bootstrap.activeThread?.taskNarrative?.currentAction).toBe(
+      "Projected by Kernel",
+    );
+    expect(bootstrap.activeThread?.messages?.[0]?.text).toBe(
+      "Projected message",
+    );
+    expect(bootstrap.activeThread?.citations?.[0]?.citationId).toBe(
+      "citation_projected1",
+    );
+    expect(bootstrap.activeThread?.recoveries?.[0]?.status).toBe("skipped");
+    expect(bootstrap.activeThread?.subagentCards?.[0]?.task.status).toBe(
+      "completed",
+    );
+    expect(bootstrap.activeThread?.activityCandidates?.[0]?.type).toBe(
+      "run.no_progress",
+    );
+    expect(bootstrap.plugins).toEqual([
+      expect.objectContaining({
+        id: "plugin.artifact",
+        status: "enabled",
+        contributions: expect.objectContaining({
+          projections: ["conversation.artifacts"],
+        }),
+      }),
+      expect.objectContaining({
+        id: "plugin.search",
+        status: "enabled",
+        permissions: ["network.public"],
+        contributions: expect.objectContaining({ tools: ["web_search"] }),
+      }),
+      expect.objectContaining({
+        id: "plugin.browser",
+        status: "enabled",
+        permissions: expect.arrayContaining([
+          "browser.control",
+          "workspace.write",
+        ]),
+        contributions: expect.objectContaining({ tools: ["browser"] }),
+        clientEntry: "@napier/web/kernel-browser-inspector-slot",
+      }),
+    ]);
+    expect(response.headers.get("x-napier-content-sha256-mode")).toBe("body");
+  });
+
   it("discovers project-standard Skills for Web configuration", async () => {
     const workspaceRoot = await mkdtemp(
       path.join(tmpdir(), "napier-bootstrap-skills-"),

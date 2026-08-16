@@ -368,7 +368,11 @@ function appendWebTools(
   profile: AgentProfile,
   webSearch: WebSearchExecutor | undefined,
 ): void {
-  if (profile.enabledTools.includes("web_search") && webSearch) {
+  if (
+    profile.enabledTools.includes("web_search") &&
+    webSearch &&
+    webSearch.available?.() !== false
+  ) {
     tools.push(createWebSearchTool(webSearch));
   }
 }

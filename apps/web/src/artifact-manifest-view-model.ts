@@ -57,13 +57,15 @@ export function projectArtifactManifestEvidence(
 export function projectArtifactManifestActions(
   artifact: ArtifactManifestEntry,
 ): ArtifactManifestActionsProjection {
-  const canProduce =
-    artifact.status === "expected" || artifact.status === "missing";
+  const preProduced = ["expected", "candidate", "missing"].includes(
+    artifact.status,
+  );
+  const canProduce = preProduced;
   const canVerify =
     (artifact.status === "produced" || artifact.status === "verified") &&
     (artifact.kind === "file" || artifact.kind === "directory");
   const canMarkMissing =
-    artifact.status === "expected" ||
+    preProduced ||
     artifact.status === "produced" ||
     (artifact.status === "verified" &&
       (artifact.kind === "file" || artifact.kind === "directory"));

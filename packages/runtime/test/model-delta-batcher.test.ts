@@ -2,6 +2,7 @@ import type { RunEvent } from "@napier/contracts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ModelDeltaBatcher } from "../src/model-delta-batcher.js";
+import { RunEventAdmissionError } from "../src/run-event-admission.js";
 import type { AppendEventInput } from "../src/store.js";
 
 describe("Model delta batching", () => {
@@ -89,6 +90,55 @@ describe("Model delta batching", () => {
       delta: "live",
     });
   });
+
+  it("discards a pending batch rejected after Run termination", async () => {
+    const attempted: AppendEventInput[] = [];
+    const batcher = new ModelDeltaBatcher(
+      "thread_delta",
+      "run_delta",
+      async (input) => {
+        attempted.push(input);
+        throw new RunEventAdmissionError("completed");
+      },
+    );
+
+    await batcher.push("model.text.delta", "late", false);
+    await expect(batcher.flush()).resolves.toBeUndefined();
+    await expect(batcher.flush()).resolves.toBeUndefined();
+
+    expect(attempted).toEqual([
+      expect.objectContaining({
+        type: "model.text.delta",
+        admission: "run_active",
+      }),
+    ]);
+  });
+
+  it("retains a pending batch after an unrelated persistence failure", async () => {
+    const attempted: AppendEventInput[] = [];
+    let fail = true;
+    const batcher = new ModelDeltaBatcher(
+      "thread_delta",
+      "run_delta",
+      async (input) => {
+        attempted.push(input);
+        if (fail) throw new Error("disk unavailable");
+        return event(input, attempted.length);
+      },
+    );
+
+    await batcher.push("model.text.delta", "retry", false);
+    await expect(batcher.flush()).rejects.toThrow("disk unavailable");
+    fail = false;
+    await expect(batcher.flush()).resolves.toBeUndefined();
+
+    expect(attempted).toHaveLength(2);
+    expect(attempted[1]?.payload).toEqual({
+      chunkCount: 1,
+      deltaBytes: 5,
+      delta: "retry",
+    });
+  });
 });
 
 function fixture(
@@ -102,18 +152,26 @@ function fixture(
     "run_delta",
     async (input, onEvent) => {
       recorded.push(input);
-      const event: RunEvent = {
-        id: `event_${String(++seq)}`,
-        ...input,
-        seq,
-        visibility: input.visibility ?? "debug",
-        createdAt: "2026-08-16T00:00:00.000Z",
-      };
-      await onEvent?.(event);
-      if (onEvent) streamed.push(event);
-      return event;
+      const recordedEvent = event(input, ++seq);
+      await onEvent?.(recordedEvent);
+      if (onEvent) streamed.push(recordedEvent);
+      return recordedEvent;
     },
     async () => undefined,
     now,
   );
+}
+
+function event(input: AppendEventInput, seq: number): RunEvent {
+  return {
+    id: `event_${String(seq)}`,
+    threadId: input.threadId,
+    runId: input.runId,
+    type: input.type,
+    category: input.category,
+    visibility: input.visibility ?? "debug",
+    payload: input.payload,
+    seq,
+    createdAt: "2026-08-16T00:00:00.000Z",
+  };
 }

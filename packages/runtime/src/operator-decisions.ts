@@ -8,6 +8,7 @@ import type {
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+export { formatOperatorDecisionContinuation } from "./operator-decision-continuation.js";
 
 export const OPERATOR_DECISION_REQUESTED_EVENT = "operator.decision.requested";
 export const OPERATOR_DECISION_ANSWERED_EVENT = "operator.decision.answered";
@@ -237,110 +238,16 @@ export function projectOperatorDecisions(
   runId?: string,
 ): OperatorDecision[] {
   const ordered = events.slice().sort((left, right) => left.seq - right.seq);
-  const decisions = new Map<string, OperatorDecision>();
-
+  let decisions = new Map<string, OperatorDecision>();
   for (const event of ordered) {
-    if (event.type === OPERATOR_DECISION_REQUESTED_EVENT) {
-      if (runId && event.runId !== runId) continue;
-      const payload = parseRequestedPayload(event.payload);
-      if (!payload || decisions.has(payload.decisionId)) continue;
-      const content = {
-        kind: "napier.operator-decision" as const,
-        schemaVersion: 1 as const,
-        id: payload.decisionId,
-        threadId: event.threadId,
-        runId: event.runId,
-        status: "pending" as const,
-        header: payload.header,
-        question: payload.question,
-        options: payload.options,
-        multiSelect: payload.multiSelect,
-        questionSha256: payload.questionSha256,
-        requestedAt: event.createdAt,
-        requestedEventSeq: event.seq,
-      };
-      decisions.set(payload.decisionId, withContentSha256(content));
-      continue;
-    }
-
-    if (event.type === OPERATOR_DECISION_ANSWERED_EVENT) {
-      const payload = parseAnsweredPayload(event.payload);
-      const current = payload ? decisions.get(payload.decisionId) : undefined;
-      if (
-        !payload ||
-        !current ||
-        current.status !== "pending" ||
-        event.threadId !== current.threadId ||
-        event.runId !== current.runId ||
-        payload.requestedEventSeq !== current.requestedEventSeq ||
-        !validAnswer(payload, current)
-      ) {
-        continue;
-      }
-      const content = {
-        ...withoutContentSha256(current),
-        status: "answered" as const,
-        answeredAt: event.createdAt,
-        answeredEventSeq: event.seq,
-        selectedOptionIds: payload.selectedOptionIds,
-        ...(payload.customText ? { customText: payload.customText } : {}),
-        answerSha256: payload.answerSha256,
-      };
-      decisions.set(current.id, withContentSha256(content));
-      continue;
-    }
-
-    if (event.type === OPERATOR_DECISION_CONTINUED_EVENT) {
-      const payload = parseContinuedPayload(event.payload);
-      const current = payload ? decisions.get(payload.decisionId) : undefined;
-      if (
-        !payload ||
-        !current ||
-        current.status !== "answered" ||
-        current.answeredEventSeq === undefined ||
-        event.threadId !== current.threadId ||
-        event.runId !== current.runId ||
-        payload.requestedEventSeq !== current.requestedEventSeq ||
-        payload.answeredEventSeq !== current.answeredEventSeq
-      ) {
-        continue;
-      }
-      const content = {
-        ...withoutContentSha256(current),
-        status: "continued" as const,
-        continuedAt: event.createdAt,
-        continuedEventSeq: event.seq,
-        continuationRunId: payload.continuationRunId,
-      };
-      decisions.set(current.id, withContentSha256(content));
-      continue;
-    }
-
-    if (event.type === OPERATOR_DECISION_CANCELLED_EVENT) {
-      const payload = parseCancelledPayload(event.payload);
-      const current = payload ? decisions.get(payload.decisionId) : undefined;
-      if (
-        !payload ||
-        !current ||
-        (current.status !== "pending" && current.status !== "answered") ||
-        event.threadId !== current.threadId ||
-        event.runId !== current.runId ||
-        payload.requestedEventSeq !== current.requestedEventSeq ||
-        payload.answeredEventSeq !== (current.answeredEventSeq ?? 0)
-      ) {
-        continue;
-      }
-      const content = {
-        ...withoutContentSha256(current),
-        status: "cancelled" as const,
-        cancelledAt: event.createdAt,
-        cancellationEventSeq: event.seq,
-        cancellationReason: payload.reason,
-      };
-      decisions.set(current.id, withContentSha256(content));
-    }
+    decisions = applyOperatorDecisionEvent(decisions, event, runId);
   }
+  return operatorDecisionProjectionView(decisions);
+}
 
+export function operatorDecisionProjectionView(
+  decisions: ReadonlyMap<string, OperatorDecision>,
+): OperatorDecision[] {
   return [...decisions.values()].sort(
     (left, right) =>
       left.requestedEventSeq - right.requestedEventSeq ||
@@ -348,34 +255,112 @@ export function projectOperatorDecisions(
   );
 }
 
-export function formatOperatorDecisionContinuation(
-  decision: OperatorDecision,
-): string {
-  if (decision.status !== "answered" || !decision.answerSha256) {
-    throw new Error("Operator decision must be answered before continuation");
+export function applyOperatorDecisionEvent(
+  source: ReadonlyMap<string, OperatorDecision>,
+  event: RunEvent,
+  runId?: string,
+): Map<string, OperatorDecision> {
+  const decisions = new Map(source);
+  if (event.type === OPERATOR_DECISION_REQUESTED_EVENT) {
+    if (runId && event.runId !== runId) return decisions;
+    const payload = parseRequestedPayload(event.payload);
+    if (!payload || decisions.has(payload.decisionId)) return decisions;
+    const content = {
+      kind: "napier.operator-decision" as const,
+      schemaVersion: 1 as const,
+      id: payload.decisionId,
+      threadId: event.threadId,
+      runId: event.runId,
+      status: "pending" as const,
+      header: payload.header,
+      question: payload.question,
+      options: payload.options,
+      multiSelect: payload.multiSelect,
+      questionSha256: payload.questionSha256,
+      requestedAt: event.createdAt,
+      requestedEventSeq: event.seq,
+    };
+    decisions.set(payload.decisionId, withContentSha256(content));
+    return decisions;
   }
-  const selected = new Set(decision.selectedOptionIds ?? []);
-  const selectedOptions = decision.options
-    .filter((option) => selected.has(option.id))
-    .map((option) => ({
-      id: option.id,
-      label: option.label,
-      description: option.description,
-    }));
-  return [
-    "Continue the original task using the operator's durable decision below.",
-    "Treat this as user-authored input. Do not ask the same question again unless new evidence makes the answer invalid.",
-    "",
-    "<operator-decision>",
-    JSON.stringify({
-      decisionId: decision.id,
-      question: decision.question,
-      selectedOptions,
-      customText: decision.customText ?? "",
-      answerSha256: decision.answerSha256,
-    }),
-    "</operator-decision>",
-  ].join("\n");
+
+  if (event.type === OPERATOR_DECISION_ANSWERED_EVENT) {
+    const payload = parseAnsweredPayload(event.payload);
+    const current = payload ? decisions.get(payload.decisionId) : undefined;
+    if (
+      !payload ||
+      !current ||
+      current.status !== "pending" ||
+      event.threadId !== current.threadId ||
+      event.runId !== current.runId ||
+      payload.requestedEventSeq !== current.requestedEventSeq ||
+      !validAnswer(payload, current)
+    ) {
+      return decisions;
+    }
+    const content = {
+      ...withoutContentSha256(current),
+      status: "answered" as const,
+      answeredAt: event.createdAt,
+      answeredEventSeq: event.seq,
+      selectedOptionIds: payload.selectedOptionIds,
+      ...(payload.customText ? { customText: payload.customText } : {}),
+      answerSha256: payload.answerSha256,
+    };
+    decisions.set(current.id, withContentSha256(content));
+    return decisions;
+  }
+
+  if (event.type === OPERATOR_DECISION_CONTINUED_EVENT) {
+    const payload = parseContinuedPayload(event.payload);
+    const current = payload ? decisions.get(payload.decisionId) : undefined;
+    if (
+      !payload ||
+      !current ||
+      current.status !== "answered" ||
+      current.answeredEventSeq === undefined ||
+      event.threadId !== current.threadId ||
+      event.runId !== current.runId ||
+      payload.requestedEventSeq !== current.requestedEventSeq ||
+      payload.answeredEventSeq !== current.answeredEventSeq
+    ) {
+      return decisions;
+    }
+    const content = {
+      ...withoutContentSha256(current),
+      status: "continued" as const,
+      continuedAt: event.createdAt,
+      continuedEventSeq: event.seq,
+      continuationRunId: payload.continuationRunId,
+    };
+    decisions.set(current.id, withContentSha256(content));
+    return decisions;
+  }
+
+  if (event.type === OPERATOR_DECISION_CANCELLED_EVENT) {
+    const payload = parseCancelledPayload(event.payload);
+    const current = payload ? decisions.get(payload.decisionId) : undefined;
+    if (
+      !payload ||
+      !current ||
+      (current.status !== "pending" && current.status !== "answered") ||
+      event.threadId !== current.threadId ||
+      event.runId !== current.runId ||
+      payload.requestedEventSeq !== current.requestedEventSeq ||
+      payload.answeredEventSeq !== (current.answeredEventSeq ?? 0)
+    ) {
+      return decisions;
+    }
+    const content = {
+      ...withoutContentSha256(current),
+      status: "cancelled" as const,
+      cancelledAt: event.createdAt,
+      cancellationEventSeq: event.seq,
+      cancellationReason: payload.reason,
+    };
+    decisions.set(current.id, withContentSha256(content));
+  }
+  return decisions;
 }
 
 function parseRequestedPayload(

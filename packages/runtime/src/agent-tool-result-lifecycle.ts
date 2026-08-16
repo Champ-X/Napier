@@ -21,6 +21,12 @@ import type { ToolInvocationResultCapsuleStore } from "./tool-invocation-result-
 import type { LocalStore } from "./store.js";
 import { isSkillLoadFailure } from "./skill-load-contracts.js";
 import { isSkillLoadAgentTool } from "./skill-load-tool.js";
+import type { ModelRegistry } from "./models.js";
+import type { RunBudgetTracker } from "./run-budget.js";
+import {
+  wrapToolsWithDeadlines,
+  type ToolDeadlineManager,
+} from "./tool-deadline.js";
 
 export interface AgentToolResultLifecycleOptions {
   store: LocalStore;
@@ -28,16 +34,58 @@ export interface AgentToolResultLifecycleOptions {
   tools: AgentTool[];
   invocationCapsules: ToolInvocationCapsuleStore;
   resultCapsules: ToolInvocationResultCapsuleStore;
+  budget: RunBudgetTracker;
+  registry: ModelRegistry;
+  deferredTools: AgentTool[];
   replay?: FrozenToolResultReplayController;
   onEvent?: (event: RunEvent) => Promise<void> | void;
+}
+
+export function toolLife(
+  host: {
+    store: LocalStore;
+    modelRegistry: ModelRegistry;
+    toolInvocationCapsules: ToolInvocationCapsuleStore;
+    toolInvocationResultCapsules: ToolInvocationResultCapsuleStore;
+  },
+  values: [RunBudgetTracker, RunRecord, AgentTool[], AgentTool[]],
+  optional: [
+    FrozenToolResultReplayController | undefined,
+    ((event: RunEvent) => Promise<void> | void) | undefined,
+  ],
+): AgentToolResultLifecycle {
+  const [budget, run, tools, deferredTools] = values;
+  const [replay, onEvent] = optional;
+  return new AgentToolResultLifecycle({
+    store: host.store,
+    registry: host.modelRegistry,
+    invocationCapsules: host.toolInvocationCapsules,
+    resultCapsules: host.toolInvocationResultCapsules,
+    budget,
+    run,
+    tools,
+    deferredTools,
+    ...(replay ? { replay } : {}),
+    ...(onEvent ? { onEvent } : {}),
+  });
 }
 
 export class AgentToolResultLifecycle {
   private readonly definitions: Map<string, AgentTool>;
   private readonly captured = new Map<string, ToolInvocationCapsuleReceipt>();
+  readonly deadlines: ToolDeadlineManager;
 
   constructor(private readonly options: AgentToolResultLifecycleOptions) {
     this.definitions = new Map(options.tools.map((tool) => [tool.name, tool]));
+    this.deadlines = wrapToolsWithDeadlines({
+      budget: options.budget,
+      deferredTools: options.deferredTools,
+      immediateTools: options.tools,
+      registry: options.registry,
+      run: options.run,
+      store: options.store,
+      ...(options.onEvent ? { onEvent: options.onEvent } : {}),
+    });
     if (options.replay) {
       for (const [index, tool] of options.tools.entries()) {
         options.tools[index] = {
@@ -183,7 +231,10 @@ export class AgentToolResultLifecycle {
   }
 
   shouldStopAfterTurn(): boolean {
-    return this.options.replay?.shouldStopAfterTurn() ?? false;
+    return (
+      Boolean(this.deadlines.error) ||
+      (this.options.replay?.shouldStopAfterTurn() ?? false)
+    );
   }
 
   private async append(

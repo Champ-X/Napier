@@ -1,6 +1,6 @@
 import { AgentKernelRuntime } from "./agent-kernels.js";
 import type { BrowserLiveViewReceipt } from "@napier/contracts/browser-live-view";
-import { RunBrowserSessionManager } from "./browser-session.js";
+import type { BrowserSessionPort } from "./browser-session-port.js";
 import type {
   BrowserSessionOperationResult,
   BrowserSessionRequest,
@@ -30,17 +30,18 @@ export class AgentSessionRuntime {
   private readonly kernels: AgentKernelRuntime;
   private readonly debuggerManager: NodeDebuggerManager | undefined;
   private readonly languageServers: RunLspSessionManager;
-  private readonly browsers: RunBrowserSessionManager;
+  private readonly browsers: BrowserSessionPort;
   private readonly browserOutputArtifacts:
     | BrowserOutputArtifactRegistrar
     | undefined;
   private readonly researchSources: RunResearchSourceManager;
+  private readonly researchSourcesRequireBrowser: boolean;
 
   constructor(
     processes: WorkspaceProcessManager | undefined,
     workspaceRoot: string,
     sandbox: OsSandboxAdapter,
-    browserSessions?: RunBrowserSessionManager,
+    browserSessions: BrowserSessionPort,
     researchSourceCaptures?: BrowserSourceCaptureProvider,
     webFetchCaptures?: WebFetchResearchCaptureProvider,
     researchSourceCapsules?: ResearchSourceCapsuleStore,
@@ -50,11 +51,11 @@ export class AgentSessionRuntime {
   ) {
     this.kernels = new AgentKernelRuntime(processes);
     this.languageServers = new RunLspSessionManager(sandbox, workspaceRoot);
-    this.browsers =
-      browserSessions ?? new RunBrowserSessionManager({ workspaceRoot });
+    this.browsers = browserSessions;
     this.browserOutputArtifacts = store
       ? new BrowserOutputArtifactRegistrar(store)
       : undefined;
+    this.researchSourcesRequireBrowser = researchSourceCaptures === undefined;
     this.researchSources = new RunResearchSourceManager(
       researchSourceCaptures ?? this.browsers,
       workspaceRoot,
@@ -101,7 +102,10 @@ export class AgentSessionRuntime {
       | ReturnType<typeof createBrowserTool>
       | ReturnType<typeof createResearchSourceTool>
     > = [];
-    if (enabledTools.includes("browser")) {
+    if (
+      enabledTools.includes("browser") &&
+      this.browsers.available?.() !== false
+    ) {
       tools.push(
         createBrowserTool(this.browsers, context, {
           readOnly: options.readOnlyBrowser,
@@ -117,7 +121,11 @@ export class AgentSessionRuntime {
         }),
       );
     }
-    if (enabledTools.includes("research_source")) {
+    if (
+      enabledTools.includes("research_source") &&
+      (!this.researchSourcesRequireBrowser ||
+        this.browsers.available?.() !== false)
+    ) {
       tools.push(createResearchSourceTool(this.researchSources, context));
     }
     return tools;
@@ -204,6 +212,10 @@ export class AgentSessionRuntime {
 
   hasActiveBrowserSession(owner: { threadId: string; runId: string }): boolean {
     return this.browsers.hasActiveSession(owner);
+  }
+
+  browserAvailable(): boolean {
+    return this.browsers.available?.() !== false;
   }
 
   async cancelDebuggerRun(request: {

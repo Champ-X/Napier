@@ -4,8 +4,11 @@ import { FatalState, LoadingShell } from "./AppInitialStates";
 import { Composer } from "./Composer";
 import { ConversationWorkspace } from "./ConversationWorkspace";
 import { copy } from "./copy";
+import { ExtensionInspectorSurface } from "./ExtensionInspectorSurface";
 import { InspectorNavigation, InspectorPanel } from "./InspectorNavigation";
+import { KernelPluginInspectorSlots } from "./KernelPluginInspectorSlots";
 import { LedgerNavigation } from "./LedgerNavigation";
+import { PlanInspectorSurface } from "./PlanInspectorSurface";
 import { ResponsiveInspector } from "./ResponsiveInspector";
 import { TaskNarrativeBoundary } from "./TaskNarrativeBoundary";
 import { useTaskControlNavigation } from "./use-task-control-navigation";
@@ -13,15 +16,12 @@ import { useWorkspaceViewModel } from "./use-workspace-view-model";
 import { WorkbenchDeferredDecisions, WorkbenchDeferredNotices } from "./WorkbenchDeferredPanels";
 import { WorkbenchHeader } from "./WorkbenchHeader";
 const LazyContextPanel = lazy(() => import("./ContextPanel"));
-const LazyBrowserInspectorPanel = lazy(() => import("./BrowserInspectorPanel"));
 const LazyGoalPanel = lazy(() => import("./GoalPanel"));
 const LazyAutomationPanel = lazy(() => import("./AutomationPanel"));
-const LazyExtensionPanel = lazy(() => import("./ExtensionPanel"));
 const LazyFilesPanel = lazy(() => import("./FilesPanel"));
 const LazyMemoryPanel = lazy(() => import("./MemoryPanel"));
 const LazyProcessPanel = lazy(() => import("./ProcessPanel"));
 const LazyRunLabPanel = lazy(() => import("./RunLabPanel"));
-const LazyPlanPanel = lazy(() => import("./PlanPanel"));
 const LazyTracePanel = lazy(() => import("./TracePanel"));
 export function App() {
   const vm = useWorkspaceViewModel();
@@ -74,9 +74,15 @@ export function App() {
           onStop={() => void vm.stop()}
         />
         <WorkbenchDeferredNotices vm={vm} />
-        <ConversationWorkspace vm={vm} canStart={activeModel.configured} endRef={conversationEnd} />
+        <ConversationWorkspace vm={vm} endRef={conversationEnd} />
         <WorkbenchDeferredDecisions vm={vm} browserControlsAvailable={taskControls.browserControlsAvailable} />
-        <Composer vm={vm} activeAgent={activeAgent} activeModel={activeModel} canStartRun={canStartRun} />
+        <Composer
+          vm={vm}
+          activeAgent={activeAgent}
+          activeModel={activeModel}
+          canStartRun={canStartRun}
+          onOpenInspector={taskControls.openInspector}
+        />
       </main>
 
       <ResponsiveInspector label={copy.inspect} openRequest={taskControls.inspectorOpenRequest}>
@@ -121,13 +127,18 @@ export function App() {
               <LazyProcessPanel threadId={vm.detail.thread.id} onThreadChanged={vm.refreshActiveThread} />
             </Suspense>
           ) : null}
-          <Suspense fallback={null}>
-            <LazyBrowserInspectorPanel
-              activeTab={vm.inspectorTab}
-              events={vm.detail?.events ?? []}
-              activeRunId={vm.activeRunId} taskContext={{ models: vm.bootstrap.models, credentials: vm.bootstrap.credentials, selectedModel: activeModel }}
-            />
-          </Suspense>
+          <KernelPluginInspectorSlots
+            plugins={vm.bootstrap.plugins} activeTab={vm.inspectorTab}
+            browser={{
+              events: vm.detail?.events ?? [],
+              activeRunId: vm.activeRunId,
+              taskContext: {
+                models: vm.bootstrap.models,
+                credentials: vm.bootstrap.credentials,
+                selectedModel: activeModel,
+              },
+            }}
+          />
           {vm.inspectorTab === "files" && vm.detail ? (
             <Suspense
               fallback={
@@ -178,27 +189,18 @@ export function App() {
               />
             </Suspense>
           ) : null}
-          {vm.inspectorTab === "plan" ? (
-            <Suspense
-              fallback={
-                <div className="context-loading" role="status">
-                  {copy.planLoading}
-                </div>
-              }
-            >
-              <LazyPlanPanel
-                threadId={vm.detail?.thread.id}
-                plans={vm.detail?.plans ?? []}
-                events={vm.detail?.events ?? []}
-                running={vm.isRunning}
-                selectedModelKey={vm.selectedModelKey}
-                selectedModelConfigured={activeModel.configured}
-                onContinue={() => void vm.submit(copy.planNextPrompt)}
-                onDraftApplied={() => void vm.refreshActiveThread()}
-                onOpenThread={vm.selectThread}
-              />
-            </Suspense>
-          ) : null}
+          <PlanInspectorSurface
+            surface={vm.inspectorTab}
+            threadId={vm.detail?.thread.id}
+            plans={vm.detail?.plans ?? []}
+            events={vm.detail?.events ?? []}
+            running={vm.isRunning}
+            selectedModelKey={vm.selectedModelKey}
+            selectedModelConfigured={activeModel.configured}
+            onContinue={() => void vm.submit(copy.planNextPrompt)}
+            onDraftApplied={() => void vm.refreshActiveThread()}
+            onOpenThread={vm.selectThread}
+          />
           {vm.inspectorTab === "goal" ? (
             <Suspense
               fallback={
@@ -245,50 +247,7 @@ export function App() {
               />
             </Suspense>
           ) : null}
-          {vm.inspectorTab === "extensions" && activeAgent ? (
-            <Suspense
-              fallback={
-                <div className="context-loading" role="status">
-                  {copy.extensionLoading}
-                </div>
-              }
-            >
-              <LazyExtensionPanel
-                extensions={vm.bootstrap.extensions}
-                publisherAnchors={vm.bootstrap.extensionPublisherTrustAnchors}
-                agentId={activeAgent.id}
-                busyId={vm.extensionBusyId}
-                packageReceipt={vm.extensionPackageReceipt}
-                packageDeploymentPreview={vm.extensionPackageDeploymentPreview}
-                packageRolloutPreview={vm.extensionPackageRolloutPreview}
-                packageRolloutChannels={vm.bootstrap.extensionPackageRolloutChannels}
-                packageUpdatePreview={vm.extensionPackageUpdatePreview}
-                onPropose={vm.proposeMcpExtension}
-                onReview={(extensionId, action) => void vm.reviewExtensionTrust(extensionId, action)}
-                onConnect={(extensionId) => void vm.connectMcpExtension(extensionId)}
-                onDisconnect={(extensionId) => void vm.disconnectMcpExtension(extensionId)}
-                onToolReview={(extensionId, toolName, action, effect, routingHint) =>
-                  void vm.reviewExtensionTool(extensionId, toolName, action, effect, routingHint)
-                }
-                onToggle={(extensionId, enabled) => void vm.toggleExtension(extensionId, enabled)}
-                onCreatePublisher={vm.createExtensionPublisher}
-                onRevokePublisher={vm.revokeExtensionPublisher}
-                onSignPackage={vm.downloadSignedExtensionPackage}
-                onVerifyPackage={vm.verifySignedExtensionPackageFile}
-                onImportPackage={vm.importSignedExtensionPackageFile}
-                onExportPackageLockfile={vm.exportExtensionPackageLockfile}
-                onDownloadPackageChannelIndex={vm.downloadExtensionPackageChannelIndex}
-                onPublishPackageRollout={vm.publishExtensionPackageRolloutChannel}
-                onPreviewPackageRollout={vm.previewExtensionPackageRolloutChannel}
-                onPreviewPackageUpdate={vm.previewExtensionPackageUpdateFile}
-                onApplyPackageUpdate={vm.applyExtensionPackageUpdate}
-                onCancelPackageUpdate={vm.cancelExtensionPackageUpdate}
-                onPreviewPackageDeployment={vm.previewExtensionPackageDeploymentFiles}
-                onApplyPackageDeployment={vm.applyExtensionPackageDeployment}
-                onCancelPackageDeployment={vm.cancelExtensionPackageDeployment}
-              />
-            </Suspense>
-          ) : null}
+          {activeAgent ? <ExtensionInspectorSurface vm={vm} agentId={activeAgent.id} /> : null}
           {vm.inspectorTab === "automations" && vm.detail ? (
             <Suspense
               fallback={
@@ -307,7 +266,9 @@ export function App() {
                 recoveryPending={
                   vm.detail.thread.status === "waiting" &&
                   vm.detail.runs.some(
-                    (run) => run.status === "interrupted" && !vm.detail?.automaticRecoveryAssessments.some((assessment) => assessment.runId === run.id),
+                    (run) =>
+                      run.status === "interrupted" &&
+                      !vm.detail?.automaticRecoveryAssessments.some((assessment) => assessment.runId === run.id),
                   )
                 }
                 onBootstrapUpdated={vm.commitConfigurationBootstrap}

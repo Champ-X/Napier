@@ -26,11 +26,15 @@ export function streamRunErrorFrame(
 
 export function streamEventFrame(
   event: RunEvent,
+  projections?: NonNullable<
+    Extract<StreamFrame, { type: "event" }>["projections"]
+  >,
 ): Extract<StreamFrame, { type: "event" }> {
   return {
     type: "event",
     event,
     eventSha256: sha256(JSON.stringify(event)),
+    ...(projections ? { projections } : {}),
   };
 }
 

@@ -15,6 +15,96 @@ const LIMITS: RunLimits = {
 };
 
 describe("RunBudgetTracker", () => {
+  it("includes an active primary turn until terminal usage arrives", () => {
+    const budget = new RunBudgetTracker(LIMITS, 1_000);
+    budget.beginPrimaryTurn(1_050);
+
+    expect(budget.observed(1_100)).toEqual(
+      expect.objectContaining({
+        turns: 1,
+        inFlightTurns: 1,
+      }),
+    );
+
+    budget.observePrimaryUsage(
+      {
+        inputTokens: 1,
+        outputTokens: 1,
+        cacheReadTokens: 0,
+        cacheWriteTokens: 0,
+        costUsd: 0,
+      },
+      1_150,
+    );
+
+    expect(budget.observed(1_150)).toEqual(
+      expect.objectContaining({
+        turns: 1,
+        inFlightTurns: 0,
+      }),
+    );
+  });
+
+  it("enters finalization reserve at the earliest bounded threshold", () => {
+    const turnBudget = new RunBudgetTracker(
+      { ...LIMITS, maxTurns: 8, maxTotalTokens: 10_000 },
+      1_000,
+    );
+    turnBudget.beginPrimaryTurn(1_010);
+    turnBudget.observePrimaryUsage(
+      {
+        inputTokens: 1,
+        outputTokens: 1,
+        cacheReadTokens: 0,
+        cacheWriteTokens: 0,
+        costUsd: 0,
+      },
+      1_020,
+    );
+    turnBudget.beginPrimaryTurn(1_030);
+    turnBudget.observePrimaryUsage(emptyUsage(), 1_040);
+    expect(turnBudget.finalizationReserveBeforeNextPrimaryTurn(1_050)).toEqual(
+      expect.objectContaining({
+        reasons: ["turns"],
+        reservedTurns: 6,
+      }),
+    );
+
+    const timeBudget = new RunBudgetTracker(
+      { ...LIMITS, maxTurns: 64, timeoutMs: 600_000 },
+      1_000,
+    );
+    expect(
+      timeBudget.finalizationReserveBeforeNextPrimaryTurn(421_000),
+    ).toEqual(
+      expect.objectContaining({
+        reasons: ["timeout"],
+        reservedTimeoutMs: 180_000,
+      }),
+    );
+
+    const tokenBudget = new RunBudgetTracker(
+      { ...LIMITS, maxTurns: 64, maxTotalTokens: 1_000 },
+      1_000,
+    );
+    tokenBudget.observeAuxiliaryUsage(
+      {
+        inputTokens: 900,
+        outputTokens: 0,
+        cacheReadTokens: 0,
+        cacheWriteTokens: 0,
+        costUsd: 0,
+      },
+      1_100,
+    );
+    expect(tokenBudget.finalizationReserveBeforeNextPrimaryTurn(1_100)).toEqual(
+      expect.objectContaining({
+        reasons: ["tokens"],
+        reservedTokens: 100,
+      }),
+    );
+  });
+
   it("allows a final response at an exact token ceiling but blocks another call", () => {
     const budget = new RunBudgetTracker(LIMITS, 1_000);
     budget.observePrimaryUsage(

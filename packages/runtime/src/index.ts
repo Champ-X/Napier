@@ -6,7 +6,7 @@ export * from "./agent-message-experiment-protocol.js";
 export * from "./agent-message-experiment-run-gate.js";
 export * from "./agent-message-experiment-source.js";
 export * from "./agent-message-experiments.js";
-export * from "./agent-kernels.js";
+export * from "./kernel.js";
 export * from "./agent-sessions.js";
 export * from "./agent-milestones.js";
 export * from "./agents.js";

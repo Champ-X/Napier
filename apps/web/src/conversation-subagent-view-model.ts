@@ -1,16 +1,8 @@
-import type { RunEvent, SubagentTask } from "@napier/contracts";
+import type { RunEvent, SubagentTask, ThreadDetail } from "@napier/contracts";
 
-export interface ConversationSubagent {
-  id: string;
-  seq: number;
-  createdAt: string;
-  task: SubagentTask;
-  itemCount: number;
-  evidenceCount: number;
-  unknownCount: number;
-  blockerCount: number;
-  warningCount: number;
-}
+export type ConversationSubagent = NonNullable<
+  ThreadDetail["subagentCards"]
+>[number];
 
 const SUBAGENT_EVENT =
   /^subagent\.(queued|started|step|completed|failed|cancelled|timed_out|outcome\.(repair\.(requested|outcome)|accepted|rejected))$/u;
@@ -62,7 +54,34 @@ function projectSubagent(
     id: event.id,
     seq: event.seq,
     createdAt: event.createdAt,
-    task,
+    task: {
+      id: task.id,
+      role: task.role,
+      description: task.description,
+      status: task.status,
+      model: { ...task.model },
+      stepCount: task.stepCount,
+      turnCount: task.turnCount,
+      usage: {
+        inputTokens: task.usage.inputTokens,
+        outputTokens: task.usage.outputTokens,
+      },
+      ...(task.stopReason ? { stopReason: task.stopReason } : {}),
+      ...(task.error ? { hasError: true as const } : {}),
+      ...(task.outcome
+        ? {
+            outcome: {
+              summary: task.outcome.summary,
+              items: items.slice(0, 5).map((item) => ({
+                kind: item.kind,
+                severity: item.severity,
+                title: item.title,
+                evidenceCount: item.evidence.length,
+              })),
+            },
+          }
+        : {}),
+    },
     itemCount: task.outcome?.itemCount ?? items.length,
     evidenceCount:
       task.outcome?.evidenceCount ??

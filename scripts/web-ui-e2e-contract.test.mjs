@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import rootPackage from "../package.json" with { type: "json" };
 import {
   assertWebUiE2eReceipt,
+  DEFAULT_PRODUCT_TRIAL_CASE_IDS,
   INSPECTOR_GROUP_LABELS,
   WEB_UI_E2E_KIND,
   WEB_UI_LONG_RUN_NARRATIVE_EXPECTATION,
@@ -32,9 +33,9 @@ describe("Web UI E2E receipt contract", () => {
 
   it("covers the required 1440px desktop and 390px mobile product paths", () => {
     expect(WEB_UI_E2E_VIEWPORTS).toEqual([
-      { width: 1_600, height: 900, layout: "desktop" },
-      { width: 1_440, height: 900, layout: "desktop" },
-      { width: 1_200, height: 800, layout: "desktop" },
+      { width: 1_600, height: 900, layout: "drawer" },
+      { width: 1_440, height: 900, layout: "drawer" },
+      { width: 1_200, height: 800, layout: "drawer" },
       { width: 900, height: 800, layout: "drawer" },
       { width: 390, height: 844, layout: "drawer" },
     ]);
@@ -45,6 +46,14 @@ describe("Web UI E2E receipt contract", () => {
     receipt.viewports[3].geometry.horizontalOverflowPx = 1;
     expect(() => assertWebUiE2eReceipt(receipt)).toThrow(
       /Expected values to be strictly equal/u,
+    );
+  });
+
+  it("rejects drift from the six default Product Trial cases", () => {
+    const receipt = validReceipt();
+    receipt.viewports[0].defaultProductTrial.optionValues.pop();
+    expect(() => assertWebUiE2eReceipt(receipt)).toThrow(
+      /Expected values to be strictly deep-equal/u,
     );
   });
 
@@ -92,30 +101,30 @@ function validReceipt() {
     },
     fixture: {
       threadId: "thread_fixture01",
+      latestTerminalRunId: "run_fixture01",
       ...WEB_UI_NARRATIVE_EXPECTATION,
     },
     viewports: WEB_UI_E2E_VIEWPORTS.map((viewport) => ({
       ...viewport,
       inspector: {
         groupLabels: [...INSPECTOR_GROUP_LABELS],
-        defaultGroup: "activity",
+        defaultGroup: "task",
         defaultTool: "plan",
         panelLabelledBy: "inspector-tab-plan",
         minimumGroupHeight: 44,
         minimumToolHeight: 44,
-        desktopVisible: viewport.layout === "desktop",
-        drawerTriggerHidden: viewport.layout === "desktop",
-        initiallyHidden: viewport.layout === "drawer",
-        drawerTriggerVisible: viewport.layout === "drawer",
-        drawerOpened: viewport.layout === "drawer",
-        openFocusTarget:
-          viewport.layout === "drawer" ? "inspector-group-activity" : "",
-        escapeRestoredTriggerFocus: viewport.layout === "drawer",
-        closedAfterEscape: viewport.layout === "drawer",
+        desktopVisible: false,
+        drawerTriggerHidden: false,
+        initiallyHidden: true,
+        drawerTriggerVisible: true,
+        drawerOpened: true,
+        openFocusTarget: "inspector-group-task",
+        escapeRestoredTriggerFocus: true,
+        closedAfterEscape: true,
       },
       geometry: {
         horizontalOverflowPx: 0,
-        drawerWithinViewport: viewport.layout === "drawer",
+        drawerWithinViewport: true,
         navigationLabelOverflowPx: 0,
       },
       layoutSnapshot: Object.fromEntries(
@@ -177,6 +186,19 @@ function validReceipt() {
           "The selected browser task credential is missing. Set BROWSER_USE_API_KEY in the server environment.",
         credentialRecoveryCode: "credential_missing",
       },
+      defaultProductTrial: {
+        collapsedByDefault: true,
+        expanded: true,
+        reCollapsed: true,
+        trigger: "Record default product trial",
+        optionValues: [...DEFAULT_PRODUCT_TRIAL_CASE_IDS],
+        selectedCaseId: DEFAULT_PRODUCT_TRIAL_CASE_IDS[0],
+        selectedRunId: "run_fixture01",
+        productVersion: "0.1.2",
+        releaseControlVisible: true,
+        horizontalOverflowPx: 0,
+        withinNarrative: true,
+      },
       ...(viewport.width === 1_600
         ? {
             casebookTrials: {
@@ -223,14 +245,14 @@ function validReceipt() {
     },
     longRun: {
       ...WEB_UI_LONG_RUN_NARRATIVE_EXPECTATION,
-      metrics: "30m 0s / 45m 0s · 21,200 / 250,000 tokens · $0.3100 / $10.00",
+      metrics: "30m 0s / 45m 0s · 21,200 / 1,000,000 tokens · $0.3100 / $10.00",
       artifactControlVisible: false,
       refreshPreserved: true,
       activityAggregation: {
         summaries: [
-          "Read file · 12 calls",
-          "Web search · 5 searches",
-          "Action · 3 steps",
+          "Inspect · 12 steps",
+          "Research · 5 steps",
+          "Inspect · 3 steps",
         ],
         collapsedMountedChildren: 0,
         expandedMountedChildren: 12,

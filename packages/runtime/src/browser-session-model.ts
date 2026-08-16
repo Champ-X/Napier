@@ -12,6 +12,7 @@ import type {
   FixedIpProxySnapshot,
 } from "./fixed-ip-http-proxy.js";
 import type { PublicHostLookup } from "./public-network.js";
+import type { RunLocalServiceLeaseRegistry } from "./run-local-service-leases.js";
 
 export const MAX_ACTIVE_BROWSER_SESSIONS = 2;
 export const MAX_BROWSER_SESSION_TABS = 4;
@@ -284,6 +285,7 @@ export interface BrowserRuntimeBinding {
 
 export interface RunBrowserSessionManagerOptions {
   workspaceRoot: string;
+  localServiceLeases?: RunLocalServiceLeaseRegistry;
   executablePath?: string;
   lookup?: PublicHostLookup;
   createProxy?: () => BrowserNetworkProxy;

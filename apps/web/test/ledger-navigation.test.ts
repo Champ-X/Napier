@@ -19,8 +19,9 @@ describe("Ledger navigation", () => {
     expect(styles).toContain(".app-shell:has(.ledger-nav.is-collapsed)");
     expect(styles).toContain(".ledger-nav.is-collapsed .thread-row");
     expect(styles).toContain(
-      "grid-template-columns: 72px minmax(520px, 1fr) 338px",
+      "grid-template-columns: var(--shell-nav-compact-width) minmax(0, 1fr)",
     );
+    expect(styles).not.toContain("minmax(520px, 1fr) 338px");
     expect(styles).toContain(".ledger-collapse-button");
   });
 });

@@ -13,9 +13,11 @@ import {
 } from "./token-accounting.js";
 
 export type RunBudgetReason = "turns" | "tokens" | "cost" | "timeout";
+export type RunFinalizationReserveReason = "turns" | "tokens" | "timeout";
 
 export interface RunBudgetObserved {
   turns: number;
+  inFlightTurns: number;
   totalTokens: number;
   rawTotalTokens: number;
   costUsd: number;
@@ -31,10 +33,26 @@ export interface RunBudgetExhaustion {
   message: string;
 }
 
+export interface RunFinalizationReserve {
+  reasons: RunFinalizationReserveReason[];
+  observed: RunBudgetObserved;
+  reservedTurns: number;
+  reservedTokens: number;
+  reservedTimeoutMs: number;
+  message: string;
+}
+
 export class RunBudgetExceededError extends Error {
   constructor(readonly exhaustion: RunBudgetExhaustion) {
     super(exhaustion.message);
     this.name = "RunBudgetExceededError";
+  }
+}
+
+export class RunFinalizationReservedError extends Error {
+  constructor(readonly reserve: RunFinalizationReserve) {
+    super(reserve.message);
+    this.name = "RunFinalizationReservedError";
   }
 }
 
@@ -46,6 +64,7 @@ export class RunBudgetTracker {
   private budgetTokens = 0;
   private budgetCostUsd = 0;
   private primaryTurns = 0;
+  private inFlightPrimaryTurns = 0;
   private exhausted?: RunBudgetExhaustion;
 
   constructor(limits: RunLimits, startedAt: string | number = Date.now()) {
@@ -61,12 +80,21 @@ export class RunBudgetTracker {
     return this.exhausted ? structuredClone(this.exhausted) : undefined;
   }
 
+  beginPrimaryTurn(nowMs = Date.now()): void {
+    this.exhaustUnavailableBudget(true, nowMs);
+    this.throwIfExhausted();
+    this.primaryTurns += 1;
+    this.inFlightPrimaryTurns += 1;
+    this.checkOverage(nowMs);
+  }
+
   observePrimaryUsage(
     usage: Usage,
     nowMs = Date.now(),
     accounting?: UsageAccounting,
   ): void {
-    this.primaryTurns += 1;
+    if (this.inFlightPrimaryTurns > 0) this.inFlightPrimaryTurns -= 1;
+    else this.primaryTurns += 1;
     this.usage = addUsage(this.usage, usage);
     this.budgetTokens += usageBudgetTokens(usage, accounting);
     this.budgetCostUsd += usageBudgetCostUsd(usage, accounting);
@@ -122,6 +150,44 @@ export class RunBudgetTracker {
     return this.exhaustion;
   }
 
+  finalizationReserveBeforeNextPrimaryTurn(
+    nowMs = Date.now(),
+  ): RunFinalizationReserve | undefined {
+    if (this.exhausted) return undefined;
+    const observed = this.observed(nowMs);
+    const reservedTurns = this.limits.maxTurns > 6 ? 6 : 0;
+    const reservedTimeoutMs = this.limits.timeoutMs > 180_000 ? 180_000 : 0;
+    const reservedTokens = Math.floor(this.limits.maxTotalTokens * 0.1);
+    const reasons: RunFinalizationReserveReason[] = [];
+    if (
+      reservedTurns > 0 &&
+      this.limits.maxTurns - observed.turns <= reservedTurns
+    ) {
+      reasons.push("turns");
+    }
+    if (
+      reservedTimeoutMs > 0 &&
+      this.limits.timeoutMs - observed.elapsedMs <= reservedTimeoutMs
+    ) {
+      reasons.push("timeout");
+    }
+    if (
+      reservedTokens > 0 &&
+      this.limits.maxTotalTokens - observed.totalTokens <= reservedTokens
+    ) {
+      reasons.push("tokens");
+    }
+    if (reasons.length === 0) return undefined;
+    return {
+      reasons,
+      observed,
+      reservedTurns,
+      reservedTokens,
+      reservedTimeoutMs,
+      message: `Run entered deterministic finalization reserve: ${reasons.join(", ")}`,
+    };
+  }
+
   exhaustTimeout(nowMs = Date.now()): RunBudgetExhaustion {
     return this.exhaust(
       "timeout",
@@ -138,6 +204,7 @@ export class RunBudgetTracker {
   observed(nowMs = Date.now()): RunBudgetObserved {
     return {
       turns: this.primaryTurns,
+      inFlightTurns: this.inFlightPrimaryTurns,
       totalTokens: this.budgetTokens,
       rawTotalTokens: totalRawTokens(this.usage),
       costUsd: this.budgetCostUsd,

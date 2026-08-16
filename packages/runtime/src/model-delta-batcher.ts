@@ -2,6 +2,7 @@ import type { JsonValue, RunEvent } from "@napier/contracts";
 
 import type { EventSink } from "./event-sink.js";
 import { sha256 } from "./ed25519.js";
+import { RunEventAdmissionError } from "./run-event-admission.js";
 import type { AppendEventInput } from "./store.js";
 
 export type ModelDeltaEventType = "model.text.delta" | "model.thinking.delta";
@@ -107,10 +108,12 @@ export class ModelDeltaBatcher {
           category: "model",
           visibility: "hidden",
           payload: deltaPayload(pending, delta),
+          admission: "run_active",
         },
         pending.redacted ? undefined : this.onEvent,
       );
     } catch (error) {
+      if (error instanceof RunEventAdmissionError) return;
       this.pending = pending;
       throw error;
     }

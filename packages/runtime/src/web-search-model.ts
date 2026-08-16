@@ -73,6 +73,7 @@ export interface WebSearchToolDetails {
 }
 
 export interface WebSearchExecutor {
+  available?(): boolean;
   search(
     request: WebSearchRequest,
     signal?: AbortSignal,

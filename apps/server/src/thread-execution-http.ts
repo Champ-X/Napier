@@ -1,6 +1,7 @@
 import type { RunEvent, RunRecord, StreamFrame } from "@napier/contracts";
 import {
   type AgentRuntime,
+  type AgentKernel,
   hashEventStream,
   type LocalStore,
   type ModelRegistry,
@@ -30,6 +31,10 @@ import {
   parseResumeRunRequest,
 } from "./thread-execution-http-validation.js";
 import { inspectThreadPromptReadiness } from "./thread-run-readiness.js";
+import {
+  attachKernelThreadProjections,
+  projectKernelThreadProjections,
+} from "./kernel-thread-projections.js";
 
 const MAX_RESUME_REQUEST_BYTES = 8 * 1024;
 const MAX_PROMPT_REQUEST_BYTES = 64 * 1024;
@@ -42,6 +47,20 @@ type ThreadExecutionRuntime = Pick<
 
 export interface ThreadExecutionHttpServices {
   store: ThreadExecutionStore;
+  kernel: Pick<
+    AgentKernel,
+    | "activePlans"
+    | "conversationActivityCandidates"
+    | "conversationActivityEvents"
+    | "conversationArtifacts"
+    | "conversationCitations"
+    | "conversationMessages"
+    | "conversationPlans"
+    | "conversationRecoveries"
+    | "conversationSubagents"
+    | "operatorDecisions"
+    | "taskNarratives"
+  >;
   models: ModelRegistry;
   runtime: ThreadExecutionRuntime;
   agentCapabilities: Pick<
@@ -231,11 +250,20 @@ function streamAgentRun(
     };
     try {
       const run = await execute(async (event) => {
-        await writeFrame(streamEventFrame(event), String(event.seq));
+        const projections = await projectKernelThreadProjections(
+          threadId,
+          services.kernel,
+        );
+        await writeFrame(
+          streamEventFrame(event, projections),
+          String(event.seq),
+        );
       });
-      const snapshotFrame = streamSnapshotFrame(
-        await services.store.getDetail(threadId),
-      );
+      const detail = await services.store.getDetail(threadId, {
+        kernelProjections: false,
+      });
+      await attachKernelThreadProjections(detail, services.kernel);
+      const snapshotFrame = streamSnapshotFrame(detail);
       const doneFrame = streamRunDoneFrame(
         threadId,
         run.id,

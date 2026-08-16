@@ -58,6 +58,13 @@ import {
   openWebResearchSecuritySeriesArtifactReferences,
   verifyOpenWebResearchSecuritySeries,
 } from "../apps/cli/dist/open-web-research-security-series.js";
+import { verifyDefaultProductBreadthArtifact } from "./verify-default-product-breadth.mjs";
+import { verifyDefaultProductCodingRerunArtifact } from "./verify-default-product-coding-rerun.mjs";
+import { verifyDefaultProductConsolidatedArtifact } from "./verify-default-product-consolidated.mjs";
+import { verifyDefaultProductCriticalCoverageArtifact } from "./verify-default-product-critical-coverage.mjs";
+import { verifyDefaultProductTrialArtifact } from "./verify-default-product-trial.mjs";
+import { verifyDefaultProductSourceBoundSmoke } from "./verify-default-product-source-bound-smoke.mjs";
+import { verifyReleaseProductSourceManifestArtifact } from "./verify-release-product-source-manifest.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
@@ -108,6 +115,20 @@ const defaultCodingExecutorComparisonPath =
   "docs/artifacts/benchmarks/napier-omp-coding-comparison-seed-20260806.json";
 const defaultControlledHarnessEvidencePath =
   "docs/artifacts/controlled-harness-evidence-0.1.2.json";
+const defaultDefaultProductConsolidatedPath =
+  "docs/artifacts/default-product-consolidated-m4-0.1.2.json";
+const defaultDefaultProductBreadthPath =
+  "docs/artifacts/default-product-breadth-m4-0.1.2.json";
+const defaultDefaultProductCodingRerunPath =
+  "docs/artifacts/default-product-coding-rerun-m4-0.1.2.json";
+const defaultDefaultProductCriticalCoveragePath =
+  "docs/artifacts/default-product-critical-coverage-m4-0.1.2.json";
+const defaultDefaultProductTrialPath =
+  "docs/artifacts/default-product-trial-m4-0.1.2.json";
+const defaultReleaseProductSourceManifestPath =
+  "docs/artifacts/default-product-source-manifest-0.1.3.json";
+const defaultProductSourceBoundSmokePath =
+  "docs/artifacts/default-product-source-bound-smoke-m4-0.1.3.json";
 const defaultWorkflowBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-workflow_document_map_reduce_v1-b8bead9bcd08f431.json";
 const defaultDataBenchmarkSeriesPath =
@@ -218,6 +239,24 @@ export async function auditReleaseArtifacts(options = {}) {
   const controlledHarnessEvidencePath =
     options.controlledHarnessEvidencePath ??
     defaultControlledHarnessEvidencePath;
+  const defaultProductConsolidatedPath =
+    options.defaultProductConsolidatedPath ??
+    defaultDefaultProductConsolidatedPath;
+  const defaultProductBreadthPath =
+    options.defaultProductBreadthPath ?? defaultDefaultProductBreadthPath;
+  const defaultProductCodingRerunPath =
+    options.defaultProductCodingRerunPath ??
+    defaultDefaultProductCodingRerunPath;
+  const defaultProductCriticalCoveragePath =
+    options.defaultProductCriticalCoveragePath ??
+    defaultDefaultProductCriticalCoveragePath;
+  const defaultProductTrialPath =
+    options.defaultProductTrialPath ?? defaultDefaultProductTrialPath;
+  const releaseProductSourceManifestPath =
+    options.releaseProductSourceManifestPath ??
+    defaultReleaseProductSourceManifestPath;
+  const productSourceBoundSmokePath =
+    options.productSourceBoundSmokePath ?? defaultProductSourceBoundSmokePath;
   const workflowBenchmarkSeriesPath =
     options.workflowBenchmarkSeriesPath ?? defaultWorkflowBenchmarkSeriesPath;
   const dataBenchmarkSeriesPath =
@@ -786,6 +825,160 @@ export async function auditReleaseArtifacts(options = {}) {
   if (!controlledHarnessEvidence) {
     errors.push("controlled harness evidence: artifact_invalid");
   }
+  const productSourceBoundSmokeArtifact = await readArtifactEvidence(
+    repoRoot,
+    productSourceBoundSmokePath,
+    errors,
+  );
+  let productSourceBoundSmokeValid = false;
+  try {
+    await verifyDefaultProductSourceBoundSmoke(
+      resolveRepoRelativePath(
+        repoRoot,
+        productSourceBoundSmokePath,
+        "productSourceBoundSmokePath",
+      ),
+    );
+    productSourceBoundSmokeValid = true;
+  } catch (error) {
+    errors.push(
+      `default product source-bound smoke: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+  const releaseProductSourceManifestArtifact = await readArtifactEvidence(
+    repoRoot,
+    releaseProductSourceManifestPath,
+    errors,
+  );
+  let releaseProductSourceManifestValid = false;
+  try {
+    await verifyReleaseProductSourceManifestArtifact(
+      resolveRepoRelativePath(
+        repoRoot,
+        releaseProductSourceManifestPath,
+        "releaseProductSourceManifestPath",
+      ),
+    );
+    releaseProductSourceManifestValid = true;
+  } catch (error) {
+    errors.push(
+      `release product source manifest: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+  const defaultProductConsolidatedArtifact = await readArtifactEvidence(
+    repoRoot,
+    defaultProductConsolidatedPath,
+    errors,
+  );
+  let defaultProductConsolidatedValid = false;
+  try {
+    await verifyDefaultProductConsolidatedArtifact(
+      resolveRepoRelativePath(
+        repoRoot,
+        defaultProductConsolidatedPath,
+        "defaultProductConsolidatedPath",
+      ),
+    );
+    defaultProductConsolidatedValid = true;
+  } catch (error) {
+    errors.push(
+      `default product consolidated: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+  const defaultProductBreadthArtifact = await readArtifactEvidence(
+    repoRoot,
+    defaultProductBreadthPath,
+    errors,
+  );
+  let defaultProductBreadthValid = false;
+  try {
+    await verifyDefaultProductBreadthArtifact(
+      resolveRepoRelativePath(
+        repoRoot,
+        defaultProductBreadthPath,
+        "defaultProductBreadthPath",
+      ),
+    );
+    defaultProductBreadthValid = true;
+  } catch (error) {
+    errors.push(
+      `default product breadth: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+  const defaultProductCodingRerunArtifact = await readArtifactEvidence(
+    repoRoot,
+    defaultProductCodingRerunPath,
+    errors,
+  );
+  let defaultProductCodingRerunValid = false;
+  try {
+    await verifyDefaultProductCodingRerunArtifact(
+      resolveRepoRelativePath(
+        repoRoot,
+        defaultProductCodingRerunPath,
+        "defaultProductCodingRerunPath",
+      ),
+    );
+    defaultProductCodingRerunValid = true;
+  } catch (error) {
+    errors.push(
+      `default product coding rerun: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+  const defaultProductCriticalCoverageArtifact = await readArtifactEvidence(
+    repoRoot,
+    defaultProductCriticalCoveragePath,
+    errors,
+  );
+  let defaultProductCriticalCoverageValid = false;
+  try {
+    await verifyDefaultProductCriticalCoverageArtifact(
+      resolveRepoRelativePath(
+        repoRoot,
+        defaultProductCriticalCoveragePath,
+        "defaultProductCriticalCoveragePath",
+      ),
+    );
+    defaultProductCriticalCoverageValid = true;
+  } catch (error) {
+    errors.push(
+      `default product critical coverage: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+  const defaultProductTrialArtifact = await readArtifactEvidence(
+    repoRoot,
+    defaultProductTrialPath,
+    errors,
+  );
+  let defaultProductTrialValid = false;
+  try {
+    await verifyDefaultProductTrialArtifact(
+      resolveRepoRelativePath(
+        repoRoot,
+        defaultProductTrialPath,
+        "defaultProductTrialPath",
+      ),
+    );
+    defaultProductTrialValid = true;
+  } catch (error) {
+    errors.push(
+      `default product trial: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
 
   const artifacts = [
     {
@@ -936,6 +1129,59 @@ export async function auditReleaseArtifacts(options = {}) {
       valid:
         controlledHarnessEvidenceArtifact.readable &&
         Boolean(controlledHarnessEvidence),
+    },
+    {
+      kind: "default-product-source-bound-smoke",
+      path: productSourceBoundSmokeArtifact.path,
+      sha256: productSourceBoundSmokeArtifact.sha256,
+      valid:
+        productSourceBoundSmokeArtifact.readable &&
+        productSourceBoundSmokeValid,
+    },
+    {
+      kind: "default-product-source-manifest",
+      path: releaseProductSourceManifestArtifact.path,
+      sha256: releaseProductSourceManifestArtifact.sha256,
+      valid:
+        releaseProductSourceManifestArtifact.readable &&
+        releaseProductSourceManifestValid,
+    },
+    {
+      kind: "default-product-consolidated-m4",
+      path: defaultProductConsolidatedArtifact.path,
+      sha256: defaultProductConsolidatedArtifact.sha256,
+      valid:
+        defaultProductConsolidatedArtifact.readable &&
+        defaultProductConsolidatedValid,
+    },
+    {
+      kind: "default-product-breadth-m4",
+      path: defaultProductBreadthArtifact.path,
+      sha256: defaultProductBreadthArtifact.sha256,
+      valid:
+        defaultProductBreadthArtifact.readable && defaultProductBreadthValid,
+    },
+    {
+      kind: "default-product-coding-rerun-m4",
+      path: defaultProductCodingRerunArtifact.path,
+      sha256: defaultProductCodingRerunArtifact.sha256,
+      valid:
+        defaultProductCodingRerunArtifact.readable &&
+        defaultProductCodingRerunValid,
+    },
+    {
+      kind: "default-product-critical-coverage-m4",
+      path: defaultProductCriticalCoverageArtifact.path,
+      sha256: defaultProductCriticalCoverageArtifact.sha256,
+      valid:
+        defaultProductCriticalCoverageArtifact.readable &&
+        defaultProductCriticalCoverageValid,
+    },
+    {
+      kind: "default-product-trial-m4",
+      path: defaultProductTrialArtifact.path,
+      sha256: defaultProductTrialArtifact.sha256,
+      valid: defaultProductTrialArtifact.readable && defaultProductTrialValid,
     },
     ...workflowBenchmarkArtifacts,
     ...dataBenchmarkArtifacts,
@@ -1213,6 +1459,45 @@ function parseCliOptions(args) {
     }
     if (arg === "--controlled-harness-evidence-path") {
       options.controlledHarnessEvidencePath = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--default-product-consolidated-path") {
+      options.defaultProductConsolidatedPath = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--default-product-breadth-path") {
+      options.defaultProductBreadthPath = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--default-product-coding-rerun-path") {
+      options.defaultProductCodingRerunPath = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--default-product-critical-coverage-path") {
+      options.defaultProductCriticalCoveragePath = readCliValue(
+        args,
+        index,
+        arg,
+      );
+      index += 1;
+      continue;
+    }
+    if (arg === "--default-product-trial-path") {
+      options.defaultProductTrialPath = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--release-product-source-manifest-path") {
+      options.releaseProductSourceManifestPath = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--product-source-bound-smoke-path") {
+      options.productSourceBoundSmokePath = readCliValue(args, index, arg);
       index += 1;
       continue;
     }

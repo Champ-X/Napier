@@ -10,12 +10,14 @@ export type PlanStepStatus =
   | "pending"
   | "ready"
   | "running"
+  | "partial"
   | "completed"
   | "blocked"
   | "skipped";
 
 export type ArtifactManifestStatus =
   | "expected"
+  | "candidate"
   | "produced"
   | "verified"
   | "missing"

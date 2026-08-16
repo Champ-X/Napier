@@ -1,7 +1,7 @@
 {
   "kind": "napier.s1-shell-sandbox-readiness-stage22",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-15T13:48:09.300Z",
+  "generatedAt": "2026-08-16T17:38:32.008Z",
   "implementation": {
     "modelSha256": "5adf9c20cd914638326e744b7a90ab9d9e956240fa24adb3b34994401d46691d",
     "checkerSha256": "174fb44f4e628224815d34d92e06407f8aa6831d89dd8d7ac8cefd6c65c0d065",
@@ -70,7 +70,7 @@
         {
           "kind": "sandbox-product-acceptance-stage13",
           "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-          "sha256": "a8f61e89c3dd06a99f866729dbb39f4915a31db6cc5de0646573025ec9f17e8c",
+          "sha256": "89c9ec57d0ba5dc6be917fb295cc0fae5bb204a3909b370934c4f44bf609df86",
           "verifierSha256": "0ab91832a93c9a7bbddc676d8d516c9fa5923f1666a5742b59a1da3d29bc892e"
         },
         {
@@ -82,11 +82,11 @@
         {
           "kind": "linux-host-product-acceptance-stage19",
           "path": "docs/artifacts/linux-host-product-acceptance-stage19.json",
-          "sha256": "fae24386a28ebf69ccd0c3dfe9f91e4ecf35807176d6394c860e2462a33bf8d9",
+          "sha256": "921812a96428bd627e128bfde3d4f4f6abe35132f83237e7360e81cb9640b0c1",
           "verifierSha256": "e1272cfa34b7bc00913198faf222007b9403b3ce799d9cfd918b68920bcab386"
         }
       ],
-      "evidenceSetSha256": "f35cb8be67973ade96feb05a5c8524d0a332fa5eb5239aa9851c3d557f7686c6"
+      "evidenceSetSha256": "b2d8035c54b54759d0d2d675f041412321e954931d8f2369059ee1295dd7fda0"
     },
     {
       "id": "daemon_execution_recovery",
@@ -95,7 +95,7 @@
         {
           "kind": "sandbox-product-acceptance-stage13",
           "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-          "sha256": "a8f61e89c3dd06a99f866729dbb39f4915a31db6cc5de0646573025ec9f17e8c",
+          "sha256": "89c9ec57d0ba5dc6be917fb295cc0fae5bb204a3909b370934c4f44bf609df86",
           "verifierSha256": "0ab91832a93c9a7bbddc676d8d516c9fa5923f1666a5742b59a1da3d29bc892e"
         },
         {
@@ -125,11 +125,11 @@
         {
           "kind": "linux-host-product-acceptance-stage19",
           "path": "docs/artifacts/linux-host-product-acceptance-stage19.json",
-          "sha256": "fae24386a28ebf69ccd0c3dfe9f91e4ecf35807176d6394c860e2462a33bf8d9",
+          "sha256": "921812a96428bd627e128bfde3d4f4f6abe35132f83237e7360e81cb9640b0c1",
           "verifierSha256": "e1272cfa34b7bc00913198faf222007b9403b3ce799d9cfd918b68920bcab386"
         }
       ],
-      "evidenceSetSha256": "cc372b2417b41030704b23c9b36fd62a6512e8712b59a2d3c6180e6591979ac4"
+      "evidenceSetSha256": "3284d5f8b3a83e60bf6ee26e337eced36b6679db1d8a9a52c2cfc236a6c03fd4"
     },
     {
       "id": "isolation_and_fail_closed_limits",
@@ -156,7 +156,7 @@
         {
           "kind": "sandbox-product-acceptance-stage13",
           "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-          "sha256": "a8f61e89c3dd06a99f866729dbb39f4915a31db6cc5de0646573025ec9f17e8c",
+          "sha256": "89c9ec57d0ba5dc6be917fb295cc0fae5bb204a3909b370934c4f44bf609df86",
           "verifierSha256": "0ab91832a93c9a7bbddc676d8d516c9fa5923f1666a5742b59a1da3d29bc892e"
         },
         {
@@ -166,7 +166,7 @@
           "verifierSha256": "d733b13f7da23d1397d236cdb55ffcca108b7a696e5b89d94f2f94a1fc503946"
         }
       ],
-      "evidenceSetSha256": "5c3e42452947461da8a3090317b0cefed0f6b5404b01119ba11a1ff153963a58"
+      "evidenceSetSha256": "9dce3f4b35cbb1c5110c9cdd7e9a0b9704c97e083f614de65ce13b2041869583"
     },
     {
       "id": "run_scoped_mode_and_profile_upgrade",
@@ -175,14 +175,14 @@
         {
           "kind": "profile-upgrade-stage21",
           "path": "docs/artifacts/profile-upgrade-stage21.json",
-          "sha256": "5118c2192498a12ab3c58237385785a6c4e6ecbdb5482d8b67ba0051aed53507",
+          "sha256": "2b80516b2d604ebf5117248d9879d9ce7f65d23ae0b9e723007d247c249fb5a0",
           "verifierSha256": "fa2ee85bfb674ee0bc27af7ec1f98395af42bd266d39a2cd4d4de25b0802d9bb"
         }
       ],
-      "evidenceSetSha256": "17e5d5004f2e4547d3dc9bc5810da5e36bd7c146bd47d92d02aae19dd5bacf30"
+      "evidenceSetSha256": "a97eee2593aa2799992f8a1a1110be28153a207ef2711dc809c5a1cf7af15774"
     }
   ],
-  "requirementSetSha256": "5530b27c830ea27988b5e6a539b7ab14e8df467ab9c652033b96ca6668889c00",
+  "requirementSetSha256": "c07ac42edce576e93f1f56cfd73803c275682f5a13dfc95b81ce1a450a6e62d0",
   "externalRequirements": [
     {
       "id": "public_signed_external_release",
@@ -222,5 +222,5 @@
       "windows_host_product_acceptance"
     ]
   },
-  "contentSha256": "c2960b85a07d36e9db5ae01715e4835af5aaf0353f530641bfc8ca007c1c5315"
+  "contentSha256": "3cf5f54bacca6d23e80640ca555c5cfba3f3a981435e6e4c752a20fff84d49d4"
 }

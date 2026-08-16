@@ -51,10 +51,12 @@ describe("Thread execution HTTP guards", () => {
       execution.match(/type:\s*"snapshot"[\s\S]{0,120}detail:/g),
     ).toBeNull();
     expect(
-      execution.match(
-        /const snapshotFrame = streamSnapshotFrame\(\s*await services\.store\.getDetail\(threadId\),\s*\)/g,
-      ),
-    ).toHaveLength(1);
+      execution.indexOf("const detail = await services.store.getDetail(threadId"),
+    ).toBeGreaterThanOrEqual(0);
+    expect(execution).toContain("attachKernelThreadProjections(detail, services.kernel)");
+    expect(execution).toContain(
+      "const snapshotFrame = streamSnapshotFrame(detail);",
+    );
     expect(
       execution.match(
         /const snapshotFrame = streamSnapshotFrame\([\s\S]{0,160}const doneFrame = streamRunDoneFrame\(\s*threadId,\s*run\.id,\s*run\.status,\s*snapshotFrame\.detailSha256,\s*snapshotFrame\.detailBytes,\s*snapshotFrame\.detail\.thread\.eventCount,\s*snapshotFrame\.eventBytes,\s*hashEventStream\(snapshotFrame\.detail\.events\),?\s*\);[\s\S]{0,80}await writeFrame\(snapshotFrame\);[\s\S]{0,80}await writeFrame\(doneFrame\);/g,
@@ -75,10 +77,9 @@ describe("Thread execution HTTP guards", () => {
     ).toBeNull();
     expect(execution.match(/writeFrame\(\s*\{\s*type:\s*"error"/g)).toBeNull();
     expect(
-      execution.match(
-        /writeFrame\(\s*streamEventFrame\(event\),\s*String\(event\.seq\)\s*\)/g,
-      ),
+      execution.match(/streamEventFrame\(\s*event,\s*projections\s*\)/g),
     ).toHaveLength(1);
+    expect(execution).toContain("projectKernelThreadProjections(");
     expect(
       execution.match(
         /writeFrame\(\s*streamRunErrorFrame\(threadId,\s*error\)\s*\)/g,

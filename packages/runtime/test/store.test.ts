@@ -56,7 +56,7 @@ describe("LocalStore", () => {
     );
   });
 
-  it("reports bounded persistence timing and byte metrics without event content", async () => {
+  it("commits ordinary events without serializing state or rewriting compatibility projections", async () => {
     const store = await createStore();
     const agent = store.listAgents()[0]!;
     const thread = await store.createThread({
@@ -106,17 +106,13 @@ describe("LocalStore", () => {
         }),
       }),
     );
-    expect(after.stateBytesWritten).toBeGreaterThan(before.stateBytesWritten);
+    expect(after.stateBytesWritten).toBe(before.stateBytesWritten);
     expect(after.eventBytesWritten).toBeGreaterThan(before.eventBytesWritten);
-    expect(after.projectionBytesWritten).toBeGreaterThan(
-      before.projectionBytesWritten,
-    );
-    expect(after.last!.stateBytes).toBeGreaterThan(0);
+    expect(after.projectionBytesWritten).toBe(before.projectionBytesWritten);
+    expect(after.last!.stateBytes).toBe(0);
     expect(after.last!.eventBytes).toBeGreaterThan(0);
-    expect(after.last!.stateProjectionBytes).toBeGreaterThan(
-      after.last!.stateBytes,
-    );
-    expect(after.last!.eventProjectionBytes).toBeGreaterThan(0);
+    expect(after.last!.stateProjectionBytes).toBe(0);
+    expect(after.last!.eventProjectionBytes).toBe(0);
     expect(after.maxCommitDurationMs).toBeGreaterThanOrEqual(
       after.last!.ledgerCommitDurationMs,
     );

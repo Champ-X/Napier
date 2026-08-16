@@ -28,6 +28,7 @@ export const PROTECTED_EXCLUDED_PATHS = [
   "goal.md",
   "docs/napier-interview-deep-dive.zh-CN.md",
 ];
+export const PROTECTED_EXCLUDED_PREFIXES = ["ai-news-weekly/", "kakeya/"];
 export const EXECUTION_ROOTS = {
   fourStateParity: [
     "scripts/agent-capability-projection-equality.test.mjs",
@@ -77,7 +78,7 @@ export const EXCLUDED_CATEGORIES = [
   {
     category: "protected_user_files",
     reason:
-      ".env, goal.md, and the interview document are outside the repair and evidence boundary.",
+      ".env, goal.md, the interview document, ai-news-weekly/, and kakeya/ are outside the repair and evidence boundary.",
   },
   {
     category: "evidence_self_content_hash",
@@ -204,8 +205,15 @@ export async function currentRepairPaths() {
       ...REPAIR_CONTENT_EXCLUDED_PATHS,
     ]),
   ]
-    .filter((file) => !PROTECTED_EXCLUDED_PATHS.includes(file))
+    .filter((file) => !isProtectedExcludedPath(file))
     .sort();
+}
+
+export function isProtectedExcludedPath(file) {
+  return (
+    PROTECTED_EXCLUDED_PATHS.includes(file) ||
+    PROTECTED_EXCLUDED_PREFIXES.some((prefix) => file.startsWith(prefix))
+  );
 }
 
 export async function deterministicExecutionClosure(overrides = new Map()) {

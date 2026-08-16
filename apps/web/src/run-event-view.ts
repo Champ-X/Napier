@@ -3,6 +3,7 @@ import type { RunEvent } from "@napier/contracts";
 export interface RunEventTraceView {
   action: string;
   status?: string;
+  outcome?: string;
   source?: string;
   mode?: string;
   recoveryMode?: string;
@@ -23,6 +24,7 @@ export interface RunEventTraceView {
   priorAttempts?: number;
   limit?: number;
   observedTurns?: number;
+  observedInFlightTurns?: number;
   observedTotalTokens?: number;
   observedCostUsd?: number;
   observedElapsedMs?: number;
@@ -30,6 +32,10 @@ export interface RunEventTraceView {
   maxTotalTokens?: number;
   maxCostUsd?: number;
   timeoutMs?: number;
+  reserveReasons?: string[];
+  reservedTurns?: number;
+  reservedTokens?: number;
+  reservedTimeoutMs?: number;
   blockReasonCount?: number;
   toolCallCount?: number;
   budgetReason?: string;
@@ -41,7 +47,7 @@ export interface RunEventTraceView {
 }
 
 const RUN_EVENT =
-  /^run\.(started|completed|failed|cancelled|interrupted|waiting_for_operator|budget\.exhausted|settlement\.recorded|recovery\.(started|completed|failed|prompt|auto\.(skipped|claimed|started|completed|interrupted|abandoned|failed)))$/u;
+  /^run\.(started|completed|failed|cancelled|interrupted|waiting_for_operator|budget\.exhausted|finalization\.reserved|settlement\.recorded|recovery\.(started|completed|failed|prompt|auto\.(skipped|claimed|started|completed|interrupted|abandoned|failed)))$/u;
 const SAFE_TOKEN = /^[A-Za-z0-9_.:/@-]{1,180}$/u;
 const SHA256 = /^[a-f0-9]{64}$/u;
 const ISO_TIME = /^\d{4}-\d{2}-\d{2}T/u;
@@ -73,9 +79,14 @@ export function runEventTraceView(
     event.type === "run.budget.exhausted"
       ? safeToken(event.payload["reason"])
       : undefined;
+  const reserveReasons =
+    event.type === "run.finalization.reserved"
+      ? safeTokens(event.payload["reasons"])
+      : undefined;
   return {
     action: event.type.slice("run.".length),
     ...safeTokenField(event.payload, "status"),
+    ...safeTokenField(event.payload, "outcome"),
     ...safeTokenField(event.payload, "source"),
     ...safeTokenField(event.payload, "mode"),
     ...safeTokenField(event.payload, "recoveryMode"),
@@ -96,6 +107,7 @@ export function runEventTraceView(
     ...integerField(event.payload, "priorAttempts"),
     ...numberField(event.payload, "limit"),
     ...numberAliasField(observed, "turns", "observedTurns"),
+    ...numberAliasField(observed, "inFlightTurns", "observedInFlightTurns"),
     ...numberAliasField(observed, "totalTokens", "observedTotalTokens"),
     ...numberAliasField(observed, "costUsd", "observedCostUsd"),
     ...numberAliasField(observed, "elapsedMs", "observedElapsedMs"),
@@ -103,6 +115,10 @@ export function runEventTraceView(
     ...numberAliasField(limits, "maxTotalTokens", "maxTotalTokens"),
     ...numberAliasField(limits, "maxCostUsd", "maxCostUsd"),
     ...numberAliasField(limits, "timeoutMs", "timeoutMs"),
+    ...numberField(event.payload, "reservedTurns"),
+    ...numberField(event.payload, "reservedTokens"),
+    ...numberField(event.payload, "reservedTimeoutMs"),
+    ...(reserveReasons ? { reserveReasons } : {}),
     ...(blockReasons ? { blockReasonCount: blockReasons.length } : {}),
     ...(toolCalls ? { toolCallCount: toolCalls.length } : {}),
     ...(budgetReason ? { budgetReason } : {}),
@@ -122,6 +138,7 @@ export function runEventTraceSummary(event: RunEvent): string | undefined {
   return [
     `run / ${view.action}`,
     ...(view.status ? [`status ${view.status}`] : []),
+    ...(view.outcome ? [`outcome ${view.outcome}`] : []),
     ...(view.source ? [`source ${view.source}`] : []),
     ...(view.mode ? [`mode ${view.mode}`] : []),
     ...(view.recoveryMode ? [`recovery-mode ${view.recoveryMode}`] : []),
@@ -144,9 +161,13 @@ export function runEventTraceSummary(event: RunEvent): string | undefined {
       ? [`prior-attempts ${view.priorAttempts}`]
       : []),
     ...(view.budgetReason ? [`reason ${view.budgetReason}`] : []),
+    ...(view.reserveReasons?.length
+      ? [`reasons ${view.reserveReasons.join(",")}`]
+      : []),
     ...(view.limit !== undefined ? [`limit ${formatNumber(view.limit)}`] : []),
     ...observedSummaries(view),
     ...limitSummaries(view),
+    ...reserveSummaries(view),
     ...(view.blockReasonCount !== undefined
       ? [`block-reasons ${view.blockReasonCount}`]
       : []),
@@ -177,6 +198,9 @@ function observedSummaries(view: RunEventTraceView): string[] {
     ...(view.observedTurns !== undefined
       ? [`observed-turns ${formatNumber(view.observedTurns)}`]
       : []),
+    ...(view.observedInFlightTurns !== undefined
+      ? [`observed-in-flight ${formatNumber(view.observedInFlightTurns)}`]
+      : []),
     ...(view.observedTotalTokens !== undefined
       ? [`observed-tokens ${formatNumber(view.observedTotalTokens)}`]
       : []),
@@ -202,6 +226,20 @@ function limitSummaries(view: RunEventTraceView): string[] {
       : []),
     ...(view.timeoutMs !== undefined
       ? [`timeout-ms ${formatNumber(view.timeoutMs)}`]
+      : []),
+  ];
+}
+
+function reserveSummaries(view: RunEventTraceView): string[] {
+  return [
+    ...(view.reservedTurns !== undefined
+      ? [`reserved-turns ${formatNumber(view.reservedTurns)}`]
+      : []),
+    ...(view.reservedTokens !== undefined
+      ? [`reserved-tokens ${formatNumber(view.reservedTokens)}`]
+      : []),
+    ...(view.reservedTimeoutMs !== undefined
+      ? [`reserved-ms ${formatNumber(view.reservedTimeoutMs)}`]
       : []),
   ];
 }
@@ -285,6 +323,14 @@ function shaField(
 function safeToken(value: unknown): string | undefined {
   return typeof value === "string" && SAFE_TOKEN.test(value)
     ? value
+    : undefined;
+}
+
+function safeTokens(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const values = value.map(safeToken);
+  return values.every((entry) => entry !== undefined)
+    ? (values as string[])
     : undefined;
 }
 

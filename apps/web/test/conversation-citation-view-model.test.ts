@@ -22,6 +22,7 @@ describe("Conversation citations", () => {
         id: "event_4",
         seq: 4,
         createdAt: "2026-08-08T00:00:04.000Z",
+        callId: "call_research",
         citationId: "citation_fixture0001",
         sourceId: "source_fixture0001",
         sourceKind: "web_fetch",
@@ -74,6 +75,7 @@ function citationEvent(
     visibility,
     createdAt: `2026-08-08T00:00:0${String(seq)}.000Z`,
     payload: {
+      callId: "call_research",
       toolName: "research_source",
       status: "completed",
       effect: "read",

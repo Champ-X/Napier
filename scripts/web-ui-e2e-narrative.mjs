@@ -148,6 +148,7 @@ export async function verifyWebUiServerRestart(
 }
 
 async function readRestoredBrowserTaskHistory(page) {
+  await page.locator(".inspector-drawer-trigger").click();
   await page.locator("#inspector-group-inspect").click();
   await page.locator("#inspector-tab-browser").click();
   await page.waitForFunction(

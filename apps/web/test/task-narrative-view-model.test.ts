@@ -48,6 +48,44 @@ describe("Task narrative", () => {
     );
   });
 
+  it("projects paused budget as resumable instead of failed", () => {
+    const detail = fixture();
+    detail.runs.push({
+      ...run("completed"),
+      status: "failed",
+      outcome: "paused_budget",
+      error: "Run budget exhausted.",
+    });
+
+    expect(taskNarrative(detail)).toEqual(
+      expect.objectContaining({
+        phase: "waiting",
+        phaseLabel: "Paused",
+        currentAction: "Run paused at its budget boundary",
+        nextStep: "Continue from the recorded progress.",
+      }),
+    );
+  });
+
+  it("projects preserved partial work with an artifact-first continuation", () => {
+    const detail = fixture();
+    detail.runs.push({
+      ...run("completed"),
+      status: "failed",
+      outcome: "partial",
+      error: "Run budget exhausted.",
+    });
+
+    expect(taskNarrative(detail)).toEqual(
+      expect.objectContaining({
+        phase: "waiting",
+        phaseLabel: "Partial",
+        currentAction: "Partial result preserved at the budget boundary",
+        nextStep: "Continue from preserved artifacts and open work.",
+      }),
+    );
+  });
+
   it("does not let an older completed run hide interrupted recovery", () => {
     const detail = fixture();
     detail.thread.status = "waiting";
@@ -281,6 +319,32 @@ describe("Task narrative", () => {
     );
     expect(narrative).not.toHaveProperty("progress");
     expect(narrative).not.toHaveProperty("percent");
+  });
+
+  it("uses the server projection while formatting live metrics locally", () => {
+    const detail = fixture();
+    const running = run("running");
+    running.startedAt = "2026-08-08T00:00:00.000Z";
+    detail.runs.push(running);
+    detail.taskNarrative = {
+      phase: "working",
+      phaseLabel: "Working",
+      currentAction: "Projected by Kernel",
+      completedItems: ["Read 2 files"],
+      metricRunId: running.id,
+    };
+    detail.events.push(toolStarted(running.id, "web_search"));
+
+    expect(
+      taskNarrative(detail, Date.parse("2026-08-08T00:00:05.000Z")),
+    ).toEqual(
+      expect.objectContaining({
+        phase: "working",
+        currentAction: "Projected by Kernel",
+        completedItems: ["Read 2 files"],
+        metrics: expect.stringContaining("5s"),
+      }),
+    );
   });
 });
 

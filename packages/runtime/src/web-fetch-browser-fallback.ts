@@ -4,7 +4,7 @@ import {
   type BrowserSessionOwner,
 } from "./browser-session-model.js";
 import type { BrowserPageDiagnosisEvidence } from "@napier/contracts/browser-live-view";
-import type { RunBrowserSessionManager } from "./browser-session.js";
+import type { BrowserSessionPort } from "./browser-session-port.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
   MAX_PROXY_REQUESTS,
@@ -25,7 +25,7 @@ const MIN_RENDERED_TEXT_CHARS = 80;
 const MIN_RENDERED_GROWTH_CHARS = 80;
 
 export function createWebFetchBrowserFallbackProvider(
-  manager: Pick<RunBrowserSessionManager, "execute" | "capturePage">,
+  manager: Pick<BrowserSessionPort, "execute" | "capturePage">,
 ): WebFetchBrowserFallbackProvider {
   return {
     captureUrl: (owner, request, signal) =>
@@ -204,7 +204,7 @@ export function validBrowserFallbackEvidence(
 }
 
 async function captureBrowserFallback(
-  manager: Pick<RunBrowserSessionManager, "execute" | "capturePage">,
+  manager: Pick<BrowserSessionPort, "execute" | "capturePage">,
   owner: BrowserSessionOwner,
   request: { url: string; maxChars: number; waitMs: number },
   signal?: AbortSignal,

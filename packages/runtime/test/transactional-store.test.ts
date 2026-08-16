@@ -1,12 +1,5 @@
 import { DatabaseSync } from "node:sqlite";
-import {
-  mkdir,
-  mkdtemp,
-  readFile,
-  readdir,
-  rm,
-  writeFile,
-} from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -30,11 +23,7 @@ const openStores: LocalStore[] = [];
 
 afterEach(async () => {
   for (const store of openStores.splice(0)) store.close();
-  await Promise.all(
-    temporaryRoots
-      .splice(0)
-      .map((root) => rm(root, { recursive: true, force: true })),
-  );
+  await Promise.all(temporaryRoots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 
 async function createOptions() {
@@ -47,20 +36,14 @@ async function createOptions() {
   };
 }
 
-async function openStore(options: {
-  dataRoot: string;
-  workspaceRoot: string;
-}): Promise<LocalStore> {
+async function openStore(options: { dataRoot: string; workspaceRoot: string }): Promise<LocalStore> {
   const store = new LocalStore(options);
   openStores.push(store);
   await store.initialize();
   return store;
 }
 
-async function createGovernedEvaluationInput(
-  store: LocalStore,
-  id: string,
-): Promise<RunEvaluationRecord> {
+async function createGovernedEvaluationInput(store: LocalStore, id: string): Promise<RunEvaluationRecord> {
   const agent = store.listAgents()[0]!;
   const thread = await store.createThread({
     title: "Persisted evaluation governance",
@@ -106,10 +89,7 @@ async function createGovernedEvaluationInput(
     reason: "The candidate is better supported.",
     evidence: "Compared immutable Run snapshots.",
     evaluatorModel: { provider: "faux", id: "judge-1" },
-    comparisonGovernance: createRunEvaluationGovernanceBinding(
-      comparison.contextCoverageDelta,
-      comparison.traceSummaryBoundaryDelta,
-    ),
+    comparisonGovernance: createRunEvaluationGovernanceBinding(comparison.contextCoverageDelta, comparison.traceSummaryBoundaryDelta),
     createdAt: "2026-07-25T08:00:00.000Z",
   };
 }
@@ -124,10 +104,7 @@ function rehashComparisonGovernance(
   };
 }
 
-async function appendEvaluationCompletedEvent(
-  store: LocalStore,
-  evaluation: RunEvaluationRecord,
-) {
+async function appendEvaluationCompletedEvent(store: LocalStore, evaluation: RunEvaluationRecord) {
   const agent = store.listAgents()[0]!;
   const run = await store.createRun({
     threadId: evaluation.threadId,
@@ -145,9 +122,7 @@ async function appendEvaluationCompletedEvent(
   return event;
 }
 
-function evaluationCompletedPayload(
-  evaluation: RunEvaluationRecord,
-): Record<string, unknown> {
+function evaluationCompletedPayload(evaluation: RunEvaluationRecord): Record<string, unknown> {
   const governance = evaluation.comparisonGovernance;
   return {
     evaluationId: evaluation.id,
@@ -163,16 +138,13 @@ function evaluationCompletedPayload(
       ? {
           comparisonGovernanceSha256: governance.contentSha256,
           contextCoverageStatus: governance.contextCoverageStatus,
-          contextCoverageDiagnosticsSha256:
-            governance.contextCoverageDiagnosticsSha256,
+          contextCoverageDiagnosticsSha256: governance.contextCoverageDiagnosticsSha256,
         }
       : {}),
-    ...(governance?.traceSummaryBoundaryStatus &&
-    governance.traceSummaryBoundaryDiagnosticsSha256
+    ...(governance?.traceSummaryBoundaryStatus && governance.traceSummaryBoundaryDiagnosticsSha256
       ? {
           traceSummaryBoundaryStatus: governance.traceSummaryBoundaryStatus,
-          traceSummaryBoundaryDiagnosticsSha256:
-            governance.traceSummaryBoundaryDiagnosticsSha256,
+          traceSummaryBoundaryDiagnosticsSha256: governance.traceSummaryBoundaryDiagnosticsSha256,
         }
       : {}),
   };
@@ -182,17 +154,13 @@ describe("transactional LocalStore", () => {
   it("fails closed on an unsupported SQLite schema version", async () => {
     const options = await createOptions();
     await mkdir(options.dataRoot, { recursive: true });
-    const database = new DatabaseSync(
-      path.join(options.dataRoot, LEDGER_DATABASE_FILENAME),
-    );
+    const database = new DatabaseSync(path.join(options.dataRoot, LEDGER_DATABASE_FILENAME));
     database.exec(`PRAGMA user_version = ${LEDGER_SCHEMA_VERSION + 1}`);
     database.close();
     const store = new LocalStore(options);
     openStores.push(store);
 
-    await expect(store.initialize()).rejects.toThrow(
-      `Unsupported SQLite ledger schema version: ${LEDGER_SCHEMA_VERSION + 1}`,
-    );
+    await expect(store.initialize()).rejects.toThrow(`Unsupported SQLite ledger schema version: ${LEDGER_SCHEMA_VERSION + 1}`);
   });
 
   it("migrates an existing SQLite ledger to the current schema version", async () => {
@@ -208,6 +176,14 @@ describe("transactional LocalStore", () => {
           expect.objectContaining({
             version: 2,
             name: "schema_migration_history",
+          }),
+          expect.objectContaining({
+            version: 3,
+            name: "event_only_state_snapshots",
+          }),
+          expect.objectContaining({
+            version: 4,
+            name: "normalized_run_leases",
           }),
         ],
       }),
@@ -239,6 +215,14 @@ describe("transactional LocalStore", () => {
             version: 2,
             name: "schema_migration_history",
           }),
+          expect.objectContaining({
+            version: 3,
+            name: "event_only_state_snapshots",
+          }),
+          expect.objectContaining({
+            version: 4,
+            name: "normalized_run_leases",
+          }),
         ],
       }),
     );
@@ -269,11 +253,7 @@ describe("transactional LocalStore", () => {
     first.close();
     openStores.splice(openStores.indexOf(first), 1);
 
-    await writeFile(
-      path.join(options.dataRoot, "workspace.json"),
-      '{"corrupt":true}\n',
-      "utf8",
-    );
+    await writeFile(path.join(options.dataRoot, "workspace.json"), '{"corrupt":true}\n', "utf8");
 
     const reopened = await openStore(options);
     expect(reopened.listThreads()).toEqual([
@@ -288,10 +268,7 @@ describe("transactional LocalStore", () => {
   it("rejects persisted evaluation governance source drift during save", async () => {
     const options = await createOptions();
     const store = await openStore(options);
-    const evaluation = await createGovernedEvaluationInput(
-      store,
-      "evaluation_governance_save_drift",
-    );
+    const evaluation = await createGovernedEvaluationInput(store, "evaluation_governance_save_drift");
     const driftedGovernance = rehashComparisonGovernance({
       ...evaluation.comparisonGovernance!,
       contextCoverageDeltaSha256: "1".repeat(64),
@@ -308,10 +285,7 @@ describe("transactional LocalStore", () => {
   it("rejects persisted evaluation snapshot source drift during save", async () => {
     const options = await createOptions();
     const store = await openStore(options);
-    const evaluation = await createGovernedEvaluationInput(
-      store,
-      "evaluation_snapshot_save_drift",
-    );
+    const evaluation = await createGovernedEvaluationInput(store, "evaluation_snapshot_save_drift");
 
     await expect(
       store.saveRunEvaluation({
@@ -324,28 +298,20 @@ describe("transactional LocalStore", () => {
   it("fails closed on persisted evaluation governance source drift during restore", async () => {
     const options = await createOptions();
     const first = await openStore(options);
-    const evaluation = await first.saveRunEvaluation(
-      await createGovernedEvaluationInput(
-        first,
-        "evaluation_governance_restore_drift",
-      ),
-    );
+    const evaluation = await first.saveRunEvaluation(await createGovernedEvaluationInput(first, "evaluation_governance_restore_drift"));
     first.close();
     openStores.splice(openStores.indexOf(first), 1);
 
     const databasePath = path.join(options.dataRoot, LEDGER_DATABASE_FILENAME);
     const database = new DatabaseSync(databasePath);
-    const row = database
-      .prepare(
-        "SELECT revision, state_json FROM workspace_state WHERE singleton = 1",
-      )
-      .get() as { revision: number; state_json: string };
+    const row = database.prepare("SELECT revision, state_json FROM workspace_state WHERE singleton = 1").get() as {
+      revision: number;
+      state_json: string;
+    };
     const state = JSON.parse(row.state_json) as {
       evaluations: RunEvaluationRecord[];
     };
-    const persistedEvaluation = state.evaluations.find(
-      (candidate) => candidate.id === evaluation.id,
-    );
+    const persistedEvaluation = state.evaluations.find((candidate) => candidate.id === evaluation.id);
     if (!persistedEvaluation?.comparisonGovernance) {
       throw new Error("Expected persisted evaluation governance");
     }
@@ -353,98 +319,68 @@ describe("transactional LocalStore", () => {
       ...persistedEvaluation.comparisonGovernance,
       traceSummaryBoundaryDeltaSha256: "2".repeat(64),
     });
-    database
-      .prepare("UPDATE workspace_state SET state_json = ? WHERE singleton = 1")
-      .run(JSON.stringify(state));
+    database.prepare("UPDATE workspace_state SET state_json = ? WHERE singleton = 1").run(JSON.stringify(state));
     database.close();
 
     const reopened = new LocalStore(options);
     openStores.push(reopened);
-    await expect(reopened.initialize()).rejects.toThrow(
-      "comparisonGovernance source binding mismatch",
-    );
+    await expect(reopened.initialize()).rejects.toThrow("comparisonGovernance source binding mismatch");
   });
 
   it("fails closed on persisted evaluation snapshot source drift during restore", async () => {
     const options = await createOptions();
     const first = await openStore(options);
-    const evaluation = await first.saveRunEvaluation(
-      await createGovernedEvaluationInput(
-        first,
-        "evaluation_snapshot_restore_drift",
-      ),
-    );
+    const evaluation = await first.saveRunEvaluation(await createGovernedEvaluationInput(first, "evaluation_snapshot_restore_drift"));
     first.close();
     openStores.splice(openStores.indexOf(first), 1);
 
     const databasePath = path.join(options.dataRoot, LEDGER_DATABASE_FILENAME);
     const database = new DatabaseSync(databasePath);
-    const row = database
-      .prepare(
-        "SELECT revision, state_json FROM workspace_state WHERE singleton = 1",
-      )
-      .get() as { revision: number; state_json: string };
+    const row = database.prepare("SELECT revision, state_json FROM workspace_state WHERE singleton = 1").get() as {
+      revision: number;
+      state_json: string;
+    };
     const state = JSON.parse(row.state_json) as {
       evaluations: RunEvaluationRecord[];
     };
-    const persistedEvaluation = state.evaluations.find(
-      (candidate) => candidate.id === evaluation.id,
-    );
+    const persistedEvaluation = state.evaluations.find((candidate) => candidate.id === evaluation.id);
     if (!persistedEvaluation?.comparisonGovernance) {
       throw new Error("Expected persisted evaluation governance");
     }
     persistedEvaluation.rightSnapshotSha256 = "4".repeat(64);
-    database
-      .prepare("UPDATE workspace_state SET state_json = ? WHERE singleton = 1")
-      .run(JSON.stringify(state));
+    database.prepare("UPDATE workspace_state SET state_json = ? WHERE singleton = 1").run(JSON.stringify(state));
     database.close();
 
     const reopened = new LocalStore(options);
     openStores.push(reopened);
-    await expect(reopened.initialize()).rejects.toThrow(
-      "snapshot source binding mismatch",
-    );
+    await expect(reopened.initialize()).rejects.toThrow("snapshot source binding mismatch");
   });
 
   it("fails closed on persisted evaluation completed event drift during restore", async () => {
     const options = await createOptions();
     const first = await openStore(options);
-    const evaluation = await first.saveRunEvaluation(
-      await createGovernedEvaluationInput(
-        first,
-        "evaluation_event_restore_drift",
-      ),
-    );
-    const completedEvent = await appendEvaluationCompletedEvent(
-      first,
-      evaluation,
-    );
+    const evaluation = await first.saveRunEvaluation(await createGovernedEvaluationInput(first, "evaluation_event_restore_drift"));
+    const completedEvent = await appendEvaluationCompletedEvent(first, evaluation);
     first.close();
     openStores.splice(openStores.indexOf(first), 1);
 
     const databasePath = path.join(options.dataRoot, LEDGER_DATABASE_FILENAME);
     const database = new DatabaseSync(databasePath);
     const row = database
-      .prepare(
-        "SELECT event_json FROM ledger_events WHERE thread_id = ? AND seq = ?",
-      )
+      .prepare("SELECT event_json FROM ledger_events WHERE thread_id = ? AND seq = ?")
       .get(evaluation.threadId, completedEvent.seq) as { event_json: string };
     const event = JSON.parse(row.event_json) as {
       payload: Record<string, unknown>;
     };
     event.payload.verdict = "left_better";
     database
-      .prepare(
-        "UPDATE ledger_events SET event_json = ? WHERE thread_id = ? AND seq = ?",
-      )
+      .prepare("UPDATE ledger_events SET event_json = ? WHERE thread_id = ? AND seq = ?")
       .run(JSON.stringify(event), evaluation.threadId, completedEvent.seq);
     database.close();
 
     const reopened = new LocalStore(options);
     openStores.push(reopened);
-    await expect(reopened.initialize()).rejects.toThrow(
-      "evaluation.completed event binding mismatch",
-    );
+    await expect(reopened.initialize()).rejects.toThrow("evaluation.completed event binding mismatch");
   });
 
   it("fails closed on persisted plan artifact event drift during restore", async () => {
@@ -482,9 +418,7 @@ describe("transactional LocalStore", () => {
       sourceRunId: run.id,
       evidence: "The report was produced.",
     });
-    const artifact = plan.artifacts.find(
-      (candidate) => candidate.id === "report",
-    )!;
+    const artifact = plan.artifacts.find((candidate) => candidate.id === "report")!;
     const event = await first.appendEvent({
       threadId: thread.id,
       runId: run.id,
@@ -498,27 +432,21 @@ describe("transactional LocalStore", () => {
 
     const databasePath = path.join(options.dataRoot, LEDGER_DATABASE_FILENAME);
     const database = new DatabaseSync(databasePath);
-    const row = database
-      .prepare(
-        "SELECT event_json FROM ledger_events WHERE thread_id = ? AND seq = ?",
-      )
-      .get(thread.id, event.seq) as { event_json: string };
+    const row = database.prepare("SELECT event_json FROM ledger_events WHERE thread_id = ? AND seq = ?").get(thread.id, event.seq) as {
+      event_json: string;
+    };
     const persistedEvent = JSON.parse(row.event_json) as {
       payload: Record<string, unknown>;
     };
     persistedEvent.payload.evidence = "Drifted artifact evidence.";
     database
-      .prepare(
-        "UPDATE ledger_events SET event_json = ? WHERE thread_id = ? AND seq = ?",
-      )
+      .prepare("UPDATE ledger_events SET event_json = ? WHERE thread_id = ? AND seq = ?")
       .run(JSON.stringify(persistedEvent), thread.id, event.seq);
     database.close();
 
     const reopened = new LocalStore(options);
     openStores.push(reopened);
-    await expect(reopened.initialize()).rejects.toThrow(
-      "plan.artifact event binding mismatch",
-    );
+    await expect(reopened.initialize()).rejects.toThrow("plan.artifact event binding mismatch");
   });
 
   it("fails closed on raw persisted artifact preview text during restore", async () => {
@@ -563,27 +491,21 @@ describe("transactional LocalStore", () => {
 
     const databasePath = path.join(options.dataRoot, LEDGER_DATABASE_FILENAME);
     const database = new DatabaseSync(databasePath);
-    const row = database
-      .prepare(
-        "SELECT event_json FROM ledger_events WHERE thread_id = ? AND seq = ?",
-      )
-      .get(thread.id, event.seq) as { event_json: string };
+    const row = database.prepare("SELECT event_json FROM ledger_events WHERE thread_id = ? AND seq = ?").get(thread.id, event.seq) as {
+      event_json: string;
+    };
     const persistedEvent = JSON.parse(row.event_json) as {
       payload: Record<string, unknown>;
     };
     persistedEvent.payload.text = previewText;
     database
-      .prepare(
-        "UPDATE ledger_events SET event_json = ? WHERE thread_id = ? AND seq = ?",
-      )
+      .prepare("UPDATE ledger_events SET event_json = ? WHERE thread_id = ? AND seq = ?")
       .run(JSON.stringify(persistedEvent), thread.id, event.seq);
     database.close();
 
     const reopened = new LocalStore(options);
     openStores.push(reopened);
-    await expect(reopened.initialize()).rejects.toThrow(
-      "hash-only artifact receipt is invalid",
-    );
+    await expect(reopened.initialize()).rejects.toThrow("hash-only artifact receipt is invalid");
   });
 
   it("fails closed on invalid persisted imported Thread provenance", async () => {
@@ -610,35 +532,27 @@ describe("transactional LocalStore", () => {
 
     const databasePath = path.join(options.dataRoot, LEDGER_DATABASE_FILENAME);
     const database = new DatabaseSync(databasePath);
-    const row = database
-      .prepare(
-        "SELECT revision, state_json FROM workspace_state WHERE singleton = 1",
-      )
-      .get() as { revision: number; state_json: string };
+    const row = database.prepare("SELECT revision, state_json FROM workspace_state WHERE singleton = 1").get() as {
+      revision: number;
+      state_json: string;
+    };
     const state = JSON.parse(row.state_json) as {
       threads: Array<{
         id: string;
         importProvenance?: Record<string, unknown>;
       }>;
     };
-    const persistedThread = state.threads.find(
-      (candidate) => candidate.id === thread.id,
-    );
+    const persistedThread = state.threads.find((candidate) => candidate.id === thread.id);
     if (!persistedThread?.importProvenance) {
       throw new Error("Expected imported Thread provenance");
     }
-    persistedThread.importProvenance.localImportedThroughSeq =
-      thread.eventCount + 1;
-    database
-      .prepare("UPDATE workspace_state SET state_json = ? WHERE singleton = 1")
-      .run(JSON.stringify(state));
+    persistedThread.importProvenance.localImportedThroughSeq = thread.eventCount + 1;
+    database.prepare("UPDATE workspace_state SET state_json = ? WHERE singleton = 1").run(JSON.stringify(state));
     database.close();
 
     const reopened = new LocalStore(options);
     openStores.push(reopened);
-    await expect(reopened.initialize()).rejects.toThrow(
-      "Persisted Thread import provenance is invalid",
-    );
+    await expect(reopened.initialize()).rejects.toThrow("Persisted Thread import provenance is invalid");
   });
 
   it("fails closed on mismatched imported Thread provenance ledger receipts", async () => {
@@ -646,13 +560,8 @@ describe("transactional LocalStore", () => {
     const first = await openStore(options);
     const sourceThread = first.listThreads()[0]!;
     const bundle = await exportThreadReplayBundle(first, sourceThread.id);
-    const imported = await first.importThreadReplayBundle(
-      bundle,
-      "Imported receipt validation",
-    );
-    const importEvent = imported.events.find(
-      (event) => event.type === "thread.imported",
-    );
+    const imported = await first.importThreadReplayBundle(bundle, "Imported receipt validation");
+    const importEvent = imported.events.find((event) => event.type === "thread.imported");
     if (!importEvent) {
       throw new Error("Expected imported Thread provenance event");
     }
@@ -662,26 +571,20 @@ describe("transactional LocalStore", () => {
     const databasePath = path.join(options.dataRoot, LEDGER_DATABASE_FILENAME);
     const database = new DatabaseSync(databasePath);
     const row = database
-      .prepare(
-        "SELECT event_json FROM ledger_events WHERE thread_id = ? AND seq = ?",
-      )
+      .prepare("SELECT event_json FROM ledger_events WHERE thread_id = ? AND seq = ?")
       .get(imported.thread.id, importEvent.seq) as { event_json: string };
     const event = JSON.parse(row.event_json) as {
       payload: Record<string, unknown>;
     };
     event.payload.sourceContentSha256 = "0".repeat(64);
     database
-      .prepare(
-        "UPDATE ledger_events SET event_json = ? WHERE thread_id = ? AND seq = ?",
-      )
+      .prepare("UPDATE ledger_events SET event_json = ? WHERE thread_id = ? AND seq = ?")
       .run(JSON.stringify(event), imported.thread.id, importEvent.seq);
     database.close();
 
     const reopened = new LocalStore(options);
     openStores.push(reopened);
-    await expect(reopened.initialize()).rejects.toThrow(
-      "Persisted Thread import provenance receipt is invalid",
-    );
+    await expect(reopened.initialize()).rejects.toThrow("Persisted Thread import provenance receipt is invalid");
   });
 
   it("persists Agent and Casebook migrations when upgrading existing SQLite state", async () => {
@@ -697,11 +600,10 @@ describe("transactional LocalStore", () => {
 
     const databasePath = path.join(options.dataRoot, LEDGER_DATABASE_FILENAME);
     const database = new DatabaseSync(databasePath);
-    const row = database
-      .prepare(
-        "SELECT revision, state_json FROM workspace_state WHERE singleton = 1",
-      )
-      .get() as { revision: number; state_json: string };
+    const row = database.prepare("SELECT revision, state_json FROM workspace_state WHERE singleton = 1").get() as {
+      revision: number;
+      state_json: string;
+    };
     const legacyState = JSON.parse(row.state_json) as Record<string, unknown>;
     delete legacyState["agentRevisions"];
     delete legacyState["evaluationAdjudications"];
@@ -710,19 +612,13 @@ describe("transactional LocalStore", () => {
     delete legacyState["evaluationCasebookQualificationExecutions"];
     delete legacyState["receiptTrustAnchors"];
     delete legacyState["evaluationQualificationBaselines"];
-    const legacyCasebook = (
-      legacyState["evaluationCasebooks"] as Array<Record<string, unknown>>
-    )[0]!;
+    const legacyCasebook = (legacyState["evaluationCasebooks"] as Array<Record<string, unknown>>)[0]!;
     delete legacyCasebook["cases"];
-    for (const revision of legacyCasebook["revisions"] as Array<
-      Record<string, unknown>
-    >) {
+    for (const revision of legacyCasebook["revisions"] as Array<Record<string, unknown>>) {
       delete revision["caseIds"];
       revision["cases"] = [];
     }
-    database
-      .prepare("UPDATE workspace_state SET state_json = ? WHERE singleton = 1")
-      .run(JSON.stringify(legacyState));
+    database.prepare("UPDATE workspace_state SET state_json = ? WHERE singleton = 1").run(JSON.stringify(legacyState));
     database.close();
 
     const migrated = await openStore(options);
@@ -737,11 +633,10 @@ describe("transactional LocalStore", () => {
     openStores.splice(openStores.indexOf(migrated), 1);
 
     const persisted = new DatabaseSync(databasePath);
-    const persistedRow = persisted
-      .prepare(
-        "SELECT revision, state_json FROM workspace_state WHERE singleton = 1",
-      )
-      .get() as { revision: number; state_json: string };
+    const persistedRow = persisted.prepare("SELECT revision, state_json FROM workspace_state WHERE singleton = 1").get() as {
+      revision: number;
+      state_json: string;
+    };
     persisted.close();
     expect(persistedRow.revision).toBe(row.revision + 1);
     const persistedState = JSON.parse(persistedRow.state_json) as {
@@ -759,9 +654,7 @@ describe("transactional LocalStore", () => {
     expect(persistedState.evaluationReviewerBallots).toEqual([]);
     expect(persistedState.evaluationConsensusResolutions).toEqual([]);
     expect(persistedState.evaluationCasebooks).toEqual([casebook]);
-    expect(persistedState.evaluationCasebookQualificationExecutions).toEqual(
-      [],
-    );
+    expect(persistedState.evaluationCasebookQualificationExecutions).toEqual([]);
     expect(persistedState.receiptTrustAnchors).toEqual([]);
     expect(persistedState.evaluationQualificationBaselines).toEqual([]);
 
@@ -783,14 +676,10 @@ describe("transactional LocalStore", () => {
       name: "Legacy channel",
       threadId: thread.id,
     });
-    const delivery = await first.acceptInboundDelivery(
-      channel.channel.id,
-      channel.token,
-      {
-        idempotencyKey: "legacy-delivery-policy-0001",
-        message: "Migrate the legacy delivery policy.",
-      },
-    );
+    const delivery = await first.acceptInboundDelivery(channel.channel.id, channel.token, {
+      idempotencyKey: "legacy-delivery-policy-0001",
+      message: "Migrate the legacy delivery policy.",
+    });
     const memoryProposal = await first.proposeMemory(
       {
         content: "Legacy reviewed facts remain durable.",
@@ -812,9 +701,7 @@ describe("transactional LocalStore", () => {
       channels: Array<Record<string, unknown>>;
       inboundDeliveries: Array<Record<string, unknown>>;
     };
-    const legacyThread = state.threads.find(
-      (candidate) => candidate.id === thread.id,
-    )!;
+    const legacyThread = state.threads.find((candidate) => candidate.id === thread.id)!;
     legacyThread.eventCount = 2;
     delete state.agentRevisions;
     delete state.agents[0]?.["runLimits"];
@@ -863,21 +750,15 @@ describe("transactional LocalStore", () => {
         useCount: 0,
       }),
     );
-    expect(
-      (await migrated.listEvents(thread.id)).map((event) => event.seq),
-    ).toEqual([1, 2, 3]);
+    expect((await migrated.listEvents(thread.id)).map((event) => event.seq)).toEqual([1, 2, 3]);
     expect(migrated.getInboundChannel(channel.channel.id).retryPolicy).toEqual({
       maxAttempts: 3,
       baseDelayMs: 5_000,
     });
-    expect(
-      migrated
-        .listInboundDeliveries(channel.channel.id)
-        .find((candidate) => candidate.id === delivery.delivery.id),
-    ).toEqual(expect.objectContaining({ retryBaseMs: 5_000 }));
-    expect(
-      await readFile(path.join(options.dataRoot, LEDGER_DATABASE_FILENAME)),
-    ).not.toHaveLength(0);
+    expect(migrated.listInboundDeliveries(channel.channel.id).find((candidate) => candidate.id === delivery.delivery.id)).toEqual(
+      expect.objectContaining({ retryBaseMs: 5_000 }),
+    );
+    expect(await readFile(path.join(options.dataRoot, LEDGER_DATABASE_FILENAME))).not.toHaveLength(0);
   });
 
   it("rolls back an event when its projection update fails", async () => {
@@ -892,9 +773,7 @@ describe("transactional LocalStore", () => {
       threadId: thread.id,
       agentId: agent.id,
     });
-    const database = new DatabaseSync(
-      path.join(options.dataRoot, LEDGER_DATABASE_FILENAME),
-    );
+    const database = new DatabaseSync(path.join(options.dataRoot, LEDGER_DATABASE_FILENAME));
     database.exec(`
       CREATE TRIGGER abort_workspace_projection
       BEFORE UPDATE ON workspace_state
@@ -915,13 +794,9 @@ describe("transactional LocalStore", () => {
 
     expect(await store.listEvents(thread.id)).toEqual([]);
     expect(store.getThread(thread.id).eventCount).toBe(0);
-    expect(
-      database
-        .prepare(
-          "SELECT COUNT(*) AS count FROM ledger_events WHERE thread_id = ?",
-        )
-        .get(thread.id),
-    ).toEqual(expect.objectContaining({ count: 0 }));
+    expect(database.prepare("SELECT COUNT(*) AS count FROM ledger_events WHERE thread_id = ?").get(thread.id)).toEqual(
+      expect.objectContaining({ count: 0 }),
+    );
 
     database.exec("DROP TRIGGER abort_workspace_projection");
     database.close();
@@ -953,11 +828,7 @@ describe("transactional LocalStore", () => {
     const files = await readdir(options.dataRoot);
     const persisted = await Promise.all(
       files
-        .filter(
-          (file) =>
-            file === "workspace.json" ||
-            file.startsWith(LEDGER_DATABASE_FILENAME),
-        )
+        .filter((file) => file === "workspace.json" || file.startsWith(LEDGER_DATABASE_FILENAME))
         .map((file) => readFile(path.join(options.dataRoot, file))),
     );
     for (const contents of persisted) {
@@ -998,9 +869,7 @@ describe("transactional LocalStore", () => {
         }),
       ),
     );
-    expect(events.map((event) => event.seq).sort((a, b) => a - b)).toEqual(
-      Array.from({ length: 20 }, (_, index) => index + 1),
-    );
+    expect(events.map((event) => event.seq).sort((a, b) => a - b)).toEqual(Array.from({ length: 20 }, (_, index) => index + 1));
 
     await Promise.all(
       Array.from({ length: 6 }, (_, index) =>
@@ -1011,9 +880,7 @@ describe("transactional LocalStore", () => {
       ),
     );
 
-    expect(
-      (await first.listEvents(thread.id)).map((event) => event.seq),
-    ).toEqual(Array.from({ length: 20 }, (_, index) => index + 1));
+    expect((await first.listEvents(thread.id)).map((event) => event.seq)).toEqual(Array.from({ length: 20 }, (_, index) => index + 1));
     expect(first.getThread(thread.id).eventCount).toBe(20);
     expect(second.listThreads()).toHaveLength(8);
   });

@@ -1,21 +1,10 @@
-import type { RunEvent } from "@napier/contracts";
+import type { RunEvent, ThreadDetail } from "@napier/contracts";
 
 import { researchSourceEventEvidence } from "./research-source-event-view";
 
-export interface ConversationCitation {
-  id: string;
-  seq: number;
-  createdAt: string;
-  citationId: string;
-  sourceId: string;
-  sourceKind: "browser" | "web_fetch";
-  startLine: number;
-  endLine: number;
-  sourceContentSha256: string;
-  sourceTitleSha256: string;
-  quoteSha256: string;
-  claimSha256: string;
-}
+export type ConversationCitation = NonNullable<
+  ThreadDetail["citations"]
+>[number];
 
 export interface ConversationCitationLink {
   citationId: string;
@@ -48,7 +37,8 @@ export function conversationCitations(
       !view.researchSourceContentSha256 ||
       !view.researchSourceTitleSha256 ||
       !view.researchCitationQuoteSha256 ||
-      !view.researchCitationClaimSha256
+      !view.researchCitationClaimSha256 ||
+      typeof payload?.["callId"] !== "string"
     ) {
       continue;
     }
@@ -56,6 +46,7 @@ export function conversationCitations(
       id: event.id,
       seq: event.seq,
       createdAt: event.createdAt,
+      callId: payload["callId"],
       citationId: view.researchCitationId,
       sourceId: view.researchSourceId,
       sourceKind: view.researchSourceKind,

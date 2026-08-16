@@ -13,6 +13,7 @@ import {
   transitionPlanStep,
   updateArtifactManifest,
 } from "../src/plans.js";
+import { PARTIAL_PLAN_STEP } from "../src/plan-step-transition.js";
 
 function createDeliveryPlan() {
   return createExecutionPlan("thread-plan", {
@@ -485,6 +486,32 @@ describe("execution plans", () => {
     const plan = createDeliveryPlan();
     expect(() =>
       updateArtifactManifest(plan, "runtime-change", {
+        status: "candidate",
+      }),
+    ).toThrow("candidate artifacts require evidence");
+    const candidate = updateArtifactManifest(plan, "runtime-change", {
+      status: "candidate",
+      sourceRunId: "run-3",
+      evidence: "Finalization found the declared file.",
+    });
+    expect(candidate.artifacts[0]).toEqual(
+      expect.objectContaining({
+        status: "candidate",
+        sourceRunId: "run-3",
+      }),
+    );
+    const candidateProduced = updateArtifactManifest(
+      candidate,
+      "runtime-change",
+      {
+        status: "produced",
+        sourceRunId: "run-3",
+        evidence: "The file is ready for verification.",
+      },
+    );
+    expect(candidateProduced.artifacts[0]?.status).toBe("produced");
+    expect(() =>
+      updateArtifactManifest(plan, "runtime-change", {
         status: "verified",
         evidence: "Reviewed output.",
       }),
@@ -560,6 +587,39 @@ describe("execution plans", () => {
         evidence: "The verified artifact bytes drifted during recheck.",
       }),
     );
+  });
+
+  it("marks only the owning running step partial and reopens it", () => {
+    const running = transitionPlanStep(createDeliveryPlan(), "inspect", {
+      action: "start",
+      runId: "run-partial",
+    });
+    expect(() =>
+      transitionPlanStep(running, "inspect", {
+        action: PARTIAL_PLAN_STEP,
+        runId: "run-other",
+        evidence: "Wrong owner.",
+      }),
+    ).toThrow("owning running Plan step");
+    const partial = transitionPlanStep(running, "inspect", {
+      action: PARTIAL_PLAN_STEP,
+      runId: "run-partial",
+      evidence: "Budget finalization preserved partial work.",
+    });
+    expect(partial.steps[0]).toEqual(
+      expect.objectContaining({
+        status: "partial",
+        runId: "run-partial",
+        evidence: "Budget finalization preserved partial work.",
+      }),
+    );
+    const reopened = transitionPlanStep(partial, "inspect", {
+      action: "reopen",
+    });
+    expect(reopened.steps[0]).toEqual(
+      expect.objectContaining({ status: "ready", evidence: "" }),
+    );
+    expect(reopened.steps[0]).not.toHaveProperty("runId");
   });
 
   it("settles produced non-workspace artifacts without weakening file verification", () => {

@@ -4,6 +4,7 @@ import type { BrowserLiveViewReceipt } from "@napier/contracts/browser-live-view
 import type { ExecuteBrowserTakeoverActionRequest } from "@napier/contracts/browser-takeover";
 
 import { AgentSessionRuntime } from "./agent-sessions.js";
+import type { BrowserSessionPort } from "./browser-session-port.js";
 import type { EventSink } from "./event-sink.js";
 import type { BrowserInteractionConfirmationManager } from "./browser-interaction-confirmations.js";
 import { RunBrowserSessionManager } from "./browser-session.js";
@@ -75,6 +76,8 @@ export class AgentCapabilityRuntime {
       this.sessions.captureBrowserConfirmationPageState(owner, request, signal),
     active: (owner: AgentCapabilityOwner) =>
       this.sessions.hasActiveBrowserSession(owner),
+    localService: (owner: AgentCapabilityOwner, value: string) =>
+      Boolean(this.processes?.localServiceLeases.authorize(owner, value)),
   };
 
   constructor(
@@ -84,14 +87,19 @@ export class AgentCapabilityRuntime {
     private readonly workspaceFileMutations?: WorkspaceFileMutationManager,
     private readonly browserInteractionConfirmations?: BrowserInteractionConfirmationManager,
     private readonly browserSessionPauses?: BrowserSessionPauseManager,
-    browserSessions?: RunBrowserSessionManager,
+    browserSessions?: BrowserSessionPort,
     researchSourceCaptures?: BrowserSourceCaptureProvider,
     network: AgentNetworkCapabilities = {},
   ) {
     this.webSearch = network.webSearch ?? new WebSearchProviderRegistry();
     const resolvedBrowserSessions =
       browserSessions ??
-      new RunBrowserSessionManager({ workspaceRoot: store.workspaceRoot });
+      new RunBrowserSessionManager({
+        workspaceRoot: store.workspaceRoot,
+        ...(processes
+          ? { localServiceLeases: processes.localServiceLeases }
+          : {}),
+      });
     this.webFetch =
       network.webFetch ??
       new RunWebFetchSourceManager({
@@ -174,6 +182,7 @@ export class AgentCapabilityRuntime {
       tools.push(
         createWebFetchTool(this.webFetch, owner, {
           browserFallbackAllowed:
+            this.sessions.browserAvailable() &&
             networkSessionToolsAllowed(options) &&
             options.profile.enabledTools.includes("browser"),
         }),
@@ -231,6 +240,9 @@ export class AgentCapabilityRuntime {
     const settlements = await Promise.allSettled([
       this.sessions.cancelRun(owner),
       this.webFetch.cancelRun(owner),
+      ...(this.processes
+        ? [this.processes.localServiceLeases.revokeRun(owner)]
+        : []),
       ...(this.browserInteractionConfirmations
         ? [this.browserInteractionConfirmations.cancelRun(owner)]
         : []),

@@ -44,8 +44,6 @@ interface GroupDescriptor {
   key: string;
   label: string;
   subject: string;
-  singular: string;
-  plural: string;
 }
 
 interface PendingGroup {
@@ -53,7 +51,28 @@ interface PendingGroup {
   items: ConversationGroupedActivityItem[];
 }
 
-const MINIMUM_GROUP_SIZE = 3;
+const MINIMUM_GROUP_SIZE = 2;
+const BUILD_TOOLS = new Set([
+  "apply_patch",
+  "workspace_file_apply",
+  "lsp_rename_apply",
+  "lsp_code_action_apply",
+  "git_stage_apply",
+  "git_commit_apply",
+  "git_branch_create_apply",
+  "git_branch_switch_apply",
+  "git_review_apply",
+  "javascript_kernel",
+  "python_kernel",
+  "data_frame",
+  "sqlite_query",
+  "workspace_process",
+]);
+const VERIFY_TOOLS = new Set([
+  "verify_workspace",
+  "lsp_diagnostics",
+  "run_command",
+]);
 
 export function groupConversationFeed(
   feed: readonly ConversationFeedItem[],
@@ -80,27 +99,27 @@ function groupActivityBurst(
   burst: ConversationGroupedActivityItem[],
 ): ConversationFeedEntry[] {
   if (burst.length === 0) return [];
-  const groups = new Map<string, PendingGroup>();
-  for (const item of burst) {
-    const descriptor = groupDescriptor(item);
-    if (!descriptor) continue;
-    const pending = groups.get(descriptor.key);
-    if (pending) pending.items.push(item);
-    else groups.set(descriptor.key, { descriptor, items: [item] });
-  }
-  const emitted = new Set<string>();
   const entries: ConversationFeedEntry[] = [];
+  let pending: PendingGroup | undefined;
+  const flush = () => {
+    if (!pending) return;
+    entries.push(
+      ...(pending.items.length >= MINIMUM_GROUP_SIZE
+        ? [activityGroup(pending)]
+        : pending.items),
+    );
+    pending = undefined;
+  };
   for (const item of burst) {
     const descriptor = groupDescriptor(item)!;
-    const pending = groups.get(descriptor.key)!;
-    if (pending.items.length < MINIMUM_GROUP_SIZE) {
-      entries.push(item);
-      continue;
+    if (pending?.descriptor.key === descriptor.key) {
+      pending.items.push(item);
+    } else {
+      flush();
+      pending = { descriptor, items: [item] };
     }
-    if (emitted.has(descriptor.key)) continue;
-    emitted.add(descriptor.key);
-    entries.push(activityGroup(pending));
   }
+  flush();
   return entries;
 }
 
@@ -108,14 +127,12 @@ function activityGroup(pending: PendingGroup): ConversationActivityGroup {
   const first = pending.items[0]!;
   const last = pending.items.at(-1)!;
   const count = pending.items.length;
-  const noun =
-    count === 1 ? pending.descriptor.singular : pending.descriptor.plural;
   return {
     kind: "activity-group",
     id: `${pending.descriptor.key}:${String(first.seq)}`,
     seq: first.seq,
     label: pending.descriptor.label,
-    summary: `${pending.descriptor.subject} · ${String(count)} ${noun}`,
+    summary: `${pending.descriptor.subject} · ${String(count)} steps`,
     createdAt: last.activity.createdAt,
     items: pending.items,
   };
@@ -125,37 +142,27 @@ function groupDescriptor(
   item: ConversationFeedItem,
 ): GroupDescriptor | undefined {
   if (item.kind === "tool" && item.activity.status === "completed") {
-    return {
-      key: `tool:${item.activity.kind}:${item.activity.toolName}`,
-      label: item.activity.kind === "shell" ? "Shell" : "Tool",
-      subject: humanize(item.activity.toolName),
-      singular: "call",
-      plural: "calls",
-    };
+    const stage = toolStage(item.activity.toolName);
+    return stageDescriptor(stage);
   }
   if (item.kind === "network" && item.activity.status === "completed") {
-    return {
-      key: `network:${item.activity.kind}`,
-      label: "Network",
-      subject: item.activity.kind === "search" ? "Web search" : "Web fetch",
-      singular: item.activity.kind === "search" ? "search" : "fetch",
-      plural: item.activity.kind === "search" ? "searches" : "fetches",
-    };
+    return stageDescriptor("research");
   }
   if (item.kind === "browser" && item.activity.status === "completed") {
-    const action = item.activity.action ?? "action";
-    return {
-      key: `browser:${action}`,
-      label: "Browser",
-      subject: humanize(action),
-      singular: "step",
-      plural: "steps",
-    };
+    return stageDescriptor("inspect");
   }
   return undefined;
 }
 
-function humanize(value: string): string {
-  const normalized = value.replaceAll("_", " ");
-  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+function toolStage(
+  toolName: string,
+): "research" | "build" | "verify" | "inspect" {
+  if (toolName === "research_source") return "research";
+  if (BUILD_TOOLS.has(toolName)) return "build";
+  return VERIFY_TOOLS.has(toolName) ? "verify" : "inspect";
+}
+
+function stageDescriptor(stage: ReturnType<typeof toolStage>): GroupDescriptor {
+  const subject = stage.charAt(0).toUpperCase() + stage.slice(1);
+  return { key: `stage:${stage}`, label: subject, subject };
 }

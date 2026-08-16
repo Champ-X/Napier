@@ -34,6 +34,7 @@ import {
 } from "./web-ui-layout-baseline.mjs";
 import { verifyBrowserInspector } from "./web-ui-e2e-browser-task.mjs";
 import { verifyCasebookQualificationTrials } from "./web-ui-e2e-casebook.mjs";
+import { verifyDefaultProductTrialRecorder } from "./web-ui-e2e-default-product-trial.mjs";
 
 const options = parseArguments(process.argv.slice(2));
 const temporaryRoot = await createWebUiE2eRoot();
@@ -62,7 +63,7 @@ try {
       viewport,
       receipt.fixture,
     );
-    assertViewportReceipt(viewportReceipt);
+    assertViewportReceipt(viewportReceipt, receipt.fixture.latestTerminalRunId);
     receipt.viewports.push(viewportReceipt);
   }
   debug("recovery");
@@ -149,7 +150,7 @@ async function inspectViewport(browser, origin, viewport, expectedNarrative) {
     },
   );
   try {
-    await page.locator("#inspector-group-activity").waitFor({
+    await page.locator("#inspector-group-task").waitFor({
       state: "attached",
       timeout: WEB_UI_START_TIMEOUT_MS,
     });
@@ -183,11 +184,13 @@ async function inspectViewport(browser, origin, viewport, expectedNarrative) {
           )
         : false;
     const initial = await page.evaluate(readInitialLayout);
-    const openFocusTarget =
-      viewport.layout === "drawer" ? await openDrawer(page) : "";
+    const openFocusTarget = await openDrawer(page);
     const geometry = await page.evaluate(readGeometry);
     const layoutSnapshot = await page.evaluate(readLayoutSnapshot);
-    const opened = viewport.layout === "drawer";
+    const inspector = await page.evaluate(readInspectorContract);
+    const closed = await closeDrawerWithEscape(page);
+    await openDrawer(page);
+    const opened = true;
     const keyboard = await verifyKeyboardNavigation(page);
     const browserInspector = await verifyBrowserInspector(page);
     const casebookTrials =
@@ -197,15 +200,13 @@ async function inspectViewport(browser, origin, viewport, expectedNarrative) {
             expectedNarrative.casebook,
           )
         : undefined;
+    if (casebookTrials) {
+      await page.goto(
+        `${origin}/?thread=${encodeURIComponent(expectedNarrative.threadId)}`,
+      );
+    }
+    const defaultProductTrial = await verifyDefaultProductTrialRecorder(page);
     const screenshot = await screenshotReceipt(page);
-    const closed =
-      viewport.layout === "drawer"
-        ? await closeDrawerWithEscape(page)
-        : {
-            escapeRestoredTriggerFocus: false,
-            closedAfterEscape: false,
-          };
-    const inspector = await page.evaluate(readInspectorContract);
     return {
       ...viewport,
       inspector: {
@@ -225,6 +226,7 @@ async function inspectViewport(browser, origin, viewport, expectedNarrative) {
       layoutSnapshot,
       keyboard,
       browserInspector,
+      defaultProductTrial,
       ...(casebookTrials ? { casebookTrials } : {}),
       narrative: { ...narrative, refreshPreserved },
       console: { errorCount: consoleErrors.length },
@@ -244,7 +246,20 @@ async function openDrawer(page) {
 
 async function closeDrawerWithEscape(page) {
   await page.keyboard.press("Escape");
-  await page.waitForTimeout(240);
+  await page.waitForFunction(
+    () => {
+      const inspector = document.querySelector(".inspector");
+      const trigger = document.querySelector(".inspector-drawer-trigger");
+      return (
+        inspector instanceof HTMLElement &&
+        trigger instanceof HTMLElement &&
+        getComputedStyle(inspector).display === "none" &&
+        document.activeElement === trigger
+      );
+    },
+    undefined,
+    { timeout: 5_000 },
+  );
   return page.evaluate(() => {
     const inspector = document.querySelector(".inspector");
     const trigger = document.querySelector(".inspector-drawer-trigger");
@@ -257,30 +272,26 @@ async function closeDrawerWithEscape(page) {
     const style = getComputedStyle(inspector);
     return {
       escapeRestoredTriggerFocus: document.activeElement === trigger,
-      closedAfterEscape:
-        style.visibility === "hidden" && style.pointerEvents === "none",
+      closedAfterEscape: style.display === "none",
     };
   });
 }
 
 async function verifyKeyboardNavigation(page) {
-  await page.locator("#inspector-group-activity").click();
-  await page.locator("#inspector-group-activity").focus();
+  await page.locator("#inspector-group-task").click();
+  await page.locator("#inspector-group-task").focus();
   await page.keyboard.press("ArrowRight");
-  await waitForFocus(page, "inspector-group-files");
-  const groupSelectionPreserved = await selected(
-    page,
-    "inspector-group-activity",
-  );
+  await waitForFocus(page, "inspector-group-inspect");
+  const groupSelectionPreserved = await selected(page, "inspector-group-task");
   await page.keyboard.press("Enter");
-  await waitForSelection(page, "inspector-group-files");
-  await page.locator("#inspector-group-activity").click();
+  await waitForSelection(page, "inspector-group-inspect");
+  await page.locator("#inspector-group-task").click();
   await page.locator("#inspector-tab-plan").focus();
   await page.keyboard.press("End");
-  await waitForFocus(page, "inspector-tab-goal");
+  await waitForFocus(page, "inspector-tab-files");
   const toolSelectionPreserved = await selected(page, "inspector-tab-plan");
   await page.keyboard.press("Enter");
-  await waitForSelection(page, "inspector-tab-goal");
+  await waitForSelection(page, "inspector-tab-files");
   await page.locator("#inspector-tab-plan").click();
   return {
     manualActivationPreserved:
@@ -339,13 +350,9 @@ function readInitialLayout() {
         document.documentElement.clientWidth,
     ),
     inspector: {
-      desktopVisible:
-        inspectorStyle.visibility === "visible" &&
-        inspectorStyle.pointerEvents !== "none",
+      desktopVisible: inspectorStyle.display !== "none",
       drawerTriggerHidden: triggerStyle.display === "none",
-      initiallyHidden:
-        inspectorStyle.visibility === "hidden" &&
-        inspectorStyle.pointerEvents === "none",
+      initiallyHidden: inspectorStyle.display === "none",
       drawerTriggerVisible:
         triggerStyle.display !== "none" &&
         trigger.getBoundingClientRect().width > 0,

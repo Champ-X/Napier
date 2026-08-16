@@ -76,8 +76,7 @@ export async function verifyCasebookQualificationTrials(page, expected) {
   await page.goto(
     `${origin}/?thread=${encodeURIComponent(expected.onboardingThreadId)}`,
   );
-  await page.locator("#inspector-group-inspect").click();
-  await page.locator("#inspector-tab-lab").click();
+  await openCasebookInspector(page);
   await page.locator("#evaluation-suite-title").waitFor({
     state: "visible",
     timeout: 30_000,
@@ -116,8 +115,7 @@ export async function verifyCasebookQualificationTrials(page, expected) {
   await page.goto(
     `${origin}/?thread=${encodeURIComponent(expected.case.sourceThreadId)}`,
   );
-  await page.locator("#inspector-group-inspect").click();
-  await page.locator("#inspector-tab-lab").click();
+  await openCasebookInspector(page);
   await page.locator("#evaluation-suite-title").waitFor({
     state: "visible",
     timeout: 30_000,
@@ -250,8 +248,18 @@ export async function verifyCasebookQualificationTrials(page, expected) {
     };
   } finally {
     await page.unroute(pattern);
-    await page.locator("#inspector-group-activity").click();
+    await page.locator("#inspector-group-task").click();
   }
+}
+
+async function openCasebookInspector(page) {
+  const group = page.locator("#inspector-group-studio");
+  await group.waitFor({ state: "attached", timeout: 30_000 });
+  if (!(await group.isVisible())) {
+    await page.locator(".inspector-drawer-trigger").click();
+  }
+  await group.click();
+  await page.locator("#inspector-tab-lab").click();
 }
 
 export function qualificationTrialRequest(request) {

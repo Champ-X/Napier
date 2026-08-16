@@ -1152,7 +1152,7 @@ describe("thread replay bundles", () => {
     };
     expect(() =>
       createThreadReplayBundle(invalidResponseBindingDetail),
-    ).toThrow("Model Context Envelope response binding is invalid");
+    ).toThrow("Model Context Envelope terminal binding is invalid");
 
     const bundle = await exportThreadReplayBundle(store, thread.id);
     const sourceTrigger = bundle.events.find(

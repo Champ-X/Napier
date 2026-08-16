@@ -26,6 +26,7 @@ Usage:
   napier model-experiment --workspace <path> --thread <thread-id> --run <run-id> --turn-index <n> [options]
   napier tool-experiment --workspace <path> --thread <thread-id> --run <run-id> --call-id <id> [options]
   napier rpc --workspace <path> [options]
+  napier plugins --workspace <path> [--scaffold|--enable|--disable] [options]
   napier workflow --workspace <path> --manifest <path> [options]
 
 Commands:
@@ -42,6 +43,7 @@ Commands:
   model-experiment       Re-run one captured provider call without tools
   tool-experiment        Re-run one captured built-in read-only tool call
   rpc                    Serve local JSON-RPC 2.0 over stdio
+  plugins                Inspect, configure, or scaffold Kernel plugins
   workflow               Execute or resume a typed Plan/Blueprint Workflow
 
 Workspace options:
@@ -154,6 +156,17 @@ Tool invocation experiment options:
 RPC options:
   --workspace <path>     Workspace served by the long-lived Runtime
   --data-root <path>     Napier state directory (default: <workspace>/.napier)
+
+Plugin options:
+  --scaffold <plugin.id> Create a strict manifest + projection host example
+  --enable <plugin.id>   Preview or persist optional built-in enablement
+  --disable <plugin.id>  Preview or persist optional built-in disablement
+  --expected-preview     Required preview SHA-256 for state apply
+  --apply                Persist the exact preview (restart required)
+  --output <path>        Workspace-relative target (default: plugins/<name>)
+  --package <name>       Package name (default: @napier/plugin-<name>)
+  --display-name <text>  Human-readable plugin name
+  --jsonl                Emit the hash-bound state or scaffold receipt
 
 Workflow options:
   --manifest <path>      Workspace-relative Workflow manifest JSON

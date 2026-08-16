@@ -39,6 +39,10 @@ import {
 import { parseRunOptions, type CliRunOptions } from "./cli-run-options.js";
 import { parseFirstUseCliAction } from "./cli-first-use.js";
 import type { CliFirstUseAction } from "./cli-first-use-model.js";
+import {
+  parsePluginOptions,
+  type CliPluginScaffoldAction,
+} from "./cli-plugin-options.js";
 
 export type { CliWorkflowOptions };
 export type { CliRunOptions };
@@ -119,6 +123,7 @@ export type CliAction =
       options: CliToolInvocationExperimentOptions;
     }
   | { kind: "rpc"; options: CliRpcOptions }
+  | CliPluginScaffoldAction
   | { kind: "workflow"; options: CliWorkflowOptions };
 
 const RESUME_VALUE_OPTIONS = new Set([
@@ -222,6 +227,7 @@ export function parseCliArgs(argv: string[]): CliAction {
     return parseToolInvocationExperimentOptions(values, flags, jsonl);
   }
   if (command === "rpc") return parseRpcOptions(values, jsonl);
+  if (command === "plugins") return parsePluginOptions(values, flags, jsonl);
   return parseWorkflowOptions(values, flags, jsonl);
 }
 

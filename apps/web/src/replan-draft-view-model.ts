@@ -293,7 +293,8 @@ export function projectReplanRecoveryProgress(
     (artifact) => artifact.status === "missing",
   ).length;
   const pendingArtifactCount = artifacts.filter(
-    (artifact) => artifact.status === "expected",
+    (artifact) =>
+      artifact.status === "expected" || artifact.status === "candidate",
   ).length;
   return {
     addedStepCount: record.addedStepIds.length,

@@ -13,6 +13,9 @@ const EVENT_KEYS = keySet(
 );
 const PAYLOAD_KEYS = keySet("status reason limit observed limits message");
 const OBSERVED_KEYS = keySet(
+  "turns inFlightTurns totalTokens rawTotalTokens costUsd rawCostUsd elapsedMs usage",
+);
+const LEGACY_OBSERVED_KEYS = keySet(
   "turns totalTokens rawTotalTokens costUsd rawCostUsd elapsedMs usage",
 );
 const LIMIT_KEYS = keySet("maxTurns maxTotalTokens maxCostUsd timeoutMs");
@@ -255,10 +258,13 @@ function validBudgetEvent(value: unknown): value is RunEvent {
 
 function validObserved(value: unknown): value is Record<string, unknown> {
   return (
-    exactRecord(value, OBSERVED_KEYS) &&
+    (exactRecord(value, OBSERVED_KEYS) ||
+      exactRecord(value, LEGACY_OBSERVED_KEYS)) &&
     ["turns", "totalTokens", "rawTotalTokens", "elapsedMs"].every((key) =>
       nonNegativeInteger(value[key]),
     ) &&
+    (value["inFlightTurns"] === undefined ||
+      nonNegativeInteger(value["inFlightTurns"])) &&
     nonNegativeNumber(value["costUsd"]) &&
     nonNegativeNumber(value["rawCostUsd"]) &&
     validUsage(value["usage"])

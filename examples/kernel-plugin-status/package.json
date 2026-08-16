@@ -1,0 +1,22 @@
+{
+  "name": "@napier/plugin-status-example",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./host": {
+      "types": "./dist/host.d.ts",
+      "import": "./dist/host.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@napier/contracts": "*",
+    "@napier/runtime": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

@@ -54,7 +54,7 @@ export class RunBoundUrlArtifactRegistrar {
     ) {
       throw new Error("Run-bound URL Artifact identity changed");
     }
-    if (artifact.status === "expected") {
+    if (artifact.status === "expected" || artifact.status === "candidate") {
       current = await this.store.updatePlanArtifact(current.id, artifact.id, {
         status: "produced",
         sourceRunId: runId,

@@ -12,14 +12,33 @@ import {
   streamSnapshotFrame,
   validateExecuteExecutionPlanWorkflowRequest,
   type ExecutionPlanWorkflowRuntime,
+  type AgentKernel,
 } from "@napier/runtime";
 import type { Context } from "hono";
 import { streamSSE } from "hono/streaming";
 
 import type { ThreadWorkflowHttpStore } from "./thread-workflow-http-store.js";
+import {
+  attachKernelThreadProjections,
+  projectKernelThreadProjections,
+} from "./kernel-thread-projections.js";
 
 export interface WorkflowHttpServices {
   store: ThreadWorkflowHttpStore;
+  kernel: Pick<
+    AgentKernel,
+    | "activePlans"
+    | "conversationActivityCandidates"
+    | "conversationActivityEvents"
+    | "conversationArtifacts"
+    | "conversationCitations"
+    | "conversationMessages"
+    | "conversationPlans"
+    | "conversationRecoveries"
+    | "conversationSubagents"
+    | "operatorDecisions"
+    | "taskNarratives"
+  >;
   workflows: ExecutionPlanWorkflowRuntime;
 }
 
@@ -111,7 +130,11 @@ export async function executeWorkflowHttp(
     const eventWriter = new OrderedRunEventWriter(
       threadId,
       services.store.getThread(threadId).eventCount + 1,
-      async (event) => writeFrame(streamEventFrame(event), String(event.seq)),
+      async (event) =>
+        projectKernelThreadProjections(threadId, services.kernel).then(
+          (projections) =>
+            writeFrame(streamEventFrame(event, projections), String(event.seq)),
+        ),
     );
     try {
       const result = await services.workflows.run({
@@ -120,7 +143,10 @@ export async function executeWorkflowHttp(
         signal: context.req.raw.signal,
         onEvent: async (event) => eventWriter.write(event),
       });
-      const detail = await services.store.getDetail(threadId);
+      const detail = await services.store.getDetail(threadId, {
+        kernelProjections: false,
+      });
+      await attachKernelThreadProjections(detail, services.kernel);
       await eventWriter.reconcile(detail.events);
       await eventWriter.finish(detail.thread.eventCount);
       const snapshot = streamSnapshotFrame(detail);

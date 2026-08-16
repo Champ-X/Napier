@@ -5,9 +5,10 @@ import type { KeychainSecretStore } from "./credentials.js";
 import { CredentialReferenceStore } from "./credentials.js";
 import { AgentCapabilityRuntime } from "./agent-capability-runtime.js";
 import { AgentCapabilityService } from "./agent-capability-service.js";
+import type { AgentKernel } from "./agent-kernel.js";
 import { AgentRuntime } from "./agent-runtime.js";
 import { BrowserInteractionConfirmationManager } from "./browser-interaction-confirmations.js";
-import type { RunBrowserSessionManager } from "./browser-session.js";
+import { RunBrowserSessionManager } from "./browser-session.js";
 import { BrowserSessionPauseManager } from "./browser-session-pause.js";
 import { AgentMessageExperimentRuntime } from "./agent-message-experiments.js";
 import { EmbeddedAgentService } from "./embedded-agents.js";
@@ -33,14 +34,18 @@ import { SwitchableSandboxAdapter } from "./sandbox-switchable.js";
 import { LocalStore } from "./store.js";
 import type { WebSearchExecutor } from "./web-search-model.js";
 import { WebSearchProviderRegistry } from "./web-search-providers.js";
+import { DynamicWebSearchExecutor } from "./kernel-search-plugin.js";
+import { DynamicBrowserSessionPort } from "./kernel-browser-plugin.js";
 import type { WebFetchExecutor } from "./web-fetch-model.js";
 import type { RunWebFetchSourceManagerOptions } from "./web-fetch-sources.js";
 import { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import { WorkspaceProcessManager } from "./workspace-processes.js";
 import { ExecutionPlanWorkflowExperimentRuntime } from "./workflow-experiments.js";
 import { ExecutionPlanWorkflowRuntime } from "./workflow-runtime.js";
+import { createPersistedAgentKernel } from "./kernel-plugin-runtime.js";
 
 export interface LocalAgentRuntimeOptions {
+  kernelProfile?: import("./kernel-profile.js").KernelProfileId;
   workspaceRoot?: string;
   dataRoot?: string;
   env?: Readonly<Record<string, string | undefined>>;
@@ -73,6 +78,7 @@ export interface LocalAgentRuntimeServices {
   providerSetup: ProviderSetupService;
   sandboxSetup: SandboxSetupService;
   runtime: AgentRuntime;
+  kernel: AgentKernel;
   agentCapabilities: AgentCapabilityService;
   embeddedAgents: EmbeddedAgentService;
   agentMessageExperiments: AgentMessageExperimentRuntime;
@@ -161,12 +167,21 @@ export async function createLocalAgentRuntime(
         fallback: options.sandboxSetup?.fallback ?? (() => fallbackSandbox),
       },
     );
+    const searchExecutor =
+      options.webSearch ??
+      new WebSearchProviderRegistry({
+        ...(options.env ? { env: options.env } : {}),
+      });
+    const searchSlot = new DynamicWebSearchExecutor();
+    const browserManager =
+      options.browserSessions ??
+      new RunBrowserSessionManager({
+        workspaceRoot,
+        localServiceLeases: initializedProcesses.localServiceLeases,
+      });
+    const browserSlot = new DynamicBrowserSessionPort();
     const network = {
-      webSearch:
-        options.webSearch ??
-        new WebSearchProviderRegistry({
-          ...(options.env ? { env: options.env } : {}),
-        }),
+      webSearch: searchSlot,
       ...(options.webFetch ? { webFetch: options.webFetch } : {}),
       ...(options.webFetchHttp ? { webFetchHttp: options.webFetchHttp } : {}),
     };
@@ -177,7 +192,7 @@ export async function createLocalAgentRuntime(
       workspaceFileMutations,
       browserInteractionConfirmations,
       browserSessionPauses,
-      options.browserSessions,
+      browserSlot,
       options.researchSourceCaptures,
       network,
     );
@@ -193,7 +208,7 @@ export async function createLocalAgentRuntime(
       sandbox,
       initializedProcesses,
       workspaceFileMutations,
-      options.browserSessions,
+      browserSlot,
       options.researchSourceCaptures,
       undefined,
       undefined,
@@ -202,6 +217,13 @@ export async function createLocalAgentRuntime(
       browserInteractionConfirmations,
       browserSessionPauses,
     );
+    const kernel = await createPersistedAgentKernel(dataRoot, {
+      profile: options.kernelProfile ?? "base",
+      runtime,
+      models,
+      search: { slot: searchSlot, executor: searchExecutor },
+      browser: { slot: browserSlot, manager: browserManager },
+    });
     const embeddedAgents = new EmbeddedAgentService(store, runtime);
     const agentMessageExperiments = new AgentMessageExperimentRuntime(
       store,
@@ -239,6 +261,7 @@ export async function createLocalAgentRuntime(
       providerSetup,
       sandboxSetup,
       runtime,
+      kernel,
       agentCapabilities,
       embeddedAgents,
       agentMessageExperiments,
@@ -251,9 +274,10 @@ export async function createLocalAgentRuntime(
         if (closed) return;
         closed = true;
         await settleShutdownSteps([
+          () => kernel.shutdown(),
           () => initializedProcesses.shutdown(),
           () => initializedExtensions.shutdown(),
-          () => store.close(),
+          () => store.shutdown(),
         ]);
       },
     };

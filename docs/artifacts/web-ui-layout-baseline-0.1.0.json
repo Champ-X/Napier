@@ -7,98 +7,98 @@
     {
       "width": 1600,
       "height": 900,
-      "layout": "desktop",
+      "layout": "drawer",
       "regions": {
         "workbench": {
           "x": 252,
           "y": 0,
-          "width": 1010,
+          "width": 1348,
           "height": 900
         },
         "header": {
           "x": 252,
           "y": 0,
-          "width": 1010,
+          "width": 1348,
           "height": 76
         },
         "narrative": {
           "x": 252,
           "y": 76,
-          "width": 1010,
-          "height": 62
+          "width": 1348,
+          "height": 94
         },
         "conversation": {
           "x": 252,
-          "y": 138,
-          "width": 1010,
-          "height": 309
+          "y": 170,
+          "width": 1348,
+          "height": 332
         },
         "composer": {
-          "x": 321,
-          "y": 667,
-          "width": 917,
-          "height": 214
+          "x": 326,
+          "y": 722,
+          "width": 1232,
+          "height": 160
         },
         "inspector": {
-          "x": 1262,
+          "x": 1170,
           "y": 0,
-          "width": 338,
+          "width": 430,
           "height": 900
         },
         "browserInspector": {
-          "x": 1283,
-          "y": 186,
-          "width": 297,
-          "height": 156
+          "x": 1191,
+          "y": 234,
+          "width": 389,
+          "height": 141
         }
       }
     },
     {
       "width": 1200,
       "height": 800,
-      "layout": "desktop",
+      "layout": "drawer",
       "regions": {
         "workbench": {
           "x": 252,
           "y": 0,
-          "width": 610,
+          "width": 948,
           "height": 800
         },
         "header": {
           "x": 252,
           "y": 0,
-          "width": 610,
+          "width": 948,
           "height": 76
         },
         "narrative": {
           "x": 252,
           "y": 76,
-          "width": 610,
-          "height": 62
+          "width": 948,
+          "height": 94
         },
         "conversation": {
           "x": 252,
-          "y": 138,
-          "width": 610,
-          "height": 175
+          "y": 170,
+          "width": 948,
+          "height": 232
         },
         "composer": {
-          "x": 321,
-          "y": 533,
-          "width": 517,
-          "height": 248
+          "x": 324,
+          "y": 622,
+          "width": 840,
+          "height": 160
         },
         "inspector": {
-          "x": 862,
+          "x": 770,
           "y": 0,
-          "width": 338,
+          "width": 430,
           "height": 800
         },
         "browserInspector": {
-          "x": 883,
-          "y": 186,
-          "width": 297,
-          "height": 156
+          "x": 791,
+          "y": 234,
+          "width": 389,
+          "height": 141
         }
       }
     },
@@ -123,19 +123,19 @@
           "x": 232,
           "y": 76,
           "width": 668,
-          "height": 62
+          "height": 94
         },
         "conversation": {
           "x": 232,
-          "y": 138,
+          "y": 170,
           "width": 668,
-          "height": 175
+          "height": 232
         },
         "composer": {
-          "x": 301,
-          "y": 533,
-          "width": 575,
-          "height": 248
+          "x": 286,
+          "y": 622,
+          "width": 587,
+          "height": 160
         },
         "inspector": {
           "x": 470,
@@ -145,7 +145,7 @@
         },
         "browserInspector": {
           "x": 491,
-          "y": 230,
+          "y": 234,
           "width": 389,
           "height": 141
         }
@@ -165,26 +165,26 @@
         "header": {
           "x": 68,
           "y": 0,
-          "width": 387,
+          "width": 322,
           "height": 76
         },
         "narrative": {
           "x": 68,
           "y": 76,
-          "width": 387,
-          "height": 209
+          "width": 322,
+          "height": 241
         },
         "conversation": {
           "x": 68,
-          "y": 285,
-          "width": 387,
-          "height": 184
+          "y": 317,
+          "width": 322,
+          "height": 231
         },
         "composer": {
           "x": 109,
-          "y": 599,
-          "width": 334,
-          "height": 235
+          "y": 678,
+          "width": 269,
+          "height": 156
         },
         "inspector": {
           "x": 84,
@@ -194,7 +194,7 @@
         },
         "browserInspector": {
           "x": 105,
-          "y": 230,
+          "y": 234,
           "width": 265,
           "height": 156
         }

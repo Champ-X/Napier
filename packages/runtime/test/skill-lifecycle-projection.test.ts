@@ -101,6 +101,57 @@ describe("active Skill lifecycle projection", () => {
     });
   });
 
+  it("proves data analysis from complete inspection and bound transform", async () => {
+    const fixture = await setup("data-analysis");
+    const lifecycle = await loadedLifecycle(fixture, "data-analysis");
+    lifecycle.push(
+      event(5, "tool.completed", {
+        callId: "call_inspect",
+        toolName: "inspect_data",
+        status: "completed",
+        details: {
+          sha256: "1".repeat(64),
+          truncated: false,
+        },
+      }),
+      event(6, "tool.completed", {
+        callId: "call_transform",
+        toolName: "data_frame",
+        status: "completed",
+        details: {
+          kind: "napier.data-frame",
+          action: "transform",
+          sourceSha256: "1".repeat(64),
+          operationCount: 3,
+          rowCount: 2,
+          resultSha256: "2".repeat(64),
+        },
+      }),
+    );
+    expect(projectActiveSkillLifecycles(lifecycle, runId)[0]).toMatchObject({
+      state: "applied",
+      applicationMode: "data_analysis_transformed",
+      proofEventSeqs: [5, 6],
+    });
+
+    lifecycle[4] = event(6, "tool.completed", {
+      callId: "call_transform",
+      toolName: "data_frame",
+      status: "completed",
+      details: {
+        kind: "napier.data-frame",
+        action: "transform",
+        sourceSha256: "3".repeat(64),
+        operationCount: 3,
+        rowCount: 2,
+        resultSha256: "2".repeat(64),
+      },
+    });
+    expect(projectActiveSkillLifecycles(lifecycle, runId)[0]).toMatchObject({
+      state: "loaded",
+    });
+  });
+
   it("proves an observed software change from write/read hash continuity", async () => {
     const fixture = await setup("software-delivery");
     const lifecycle = await loadedLifecycle(fixture, "software-delivery");

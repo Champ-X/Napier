@@ -1,7 +1,11 @@
 import type { RunEvent } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
 
-import { conversationActivities } from "../src/conversation-activity-view-model";
+import {
+  conversationActivities,
+  conversationActivitiesFromCandidates,
+  excludeConversationActivityCandidates,
+} from "../src/conversation-activity-view-model";
 
 describe("Conversation activity", () => {
   it("keeps only user-visible high-value ledger events", () => {
@@ -69,7 +73,60 @@ describe("Conversation activity", () => {
       expect.objectContaining({ type: "tool.started", count: 2 }),
     );
   });
+
+  it("filters bounded candidates before applying the same collapse rules", () => {
+    const candidates = [
+      candidate(1, "tool.started", { callId: "call_tool" }),
+      candidate(2, "tool.started", { callId: "call_tool" }),
+      candidate(3, "plan.created", { planId: "plan_fixture0001" }),
+      candidate(4, "run.no_progress"),
+    ];
+    const filtered = excludeConversationActivityCandidates(candidates, {
+      eventIds: new Set(),
+      callIds: new Set(["call_tool"]),
+      planIds: new Set(["plan_fixture0001"]),
+      decisionIds: new Set(),
+      taskIds: new Set(),
+      artifactKeys: new Set(),
+    });
+
+    expect(conversationActivitiesFromCandidates(filtered)).toEqual([
+      expect.objectContaining({
+        seq: 4,
+        type: "run.no_progress",
+        summary: "Run no progress",
+        count: 1,
+      }),
+    ]);
+  });
 });
+
+function candidate(
+  seq: number,
+  type: string,
+  bindings: Partial<{
+    callId: string;
+    planId: string;
+  }> = {},
+) {
+  return {
+    id: `event_${String(seq)}`,
+    seq,
+    type,
+    label: type.startsWith("tool.")
+      ? "Tool"
+      : type.startsWith("plan.")
+        ? "Plan"
+        : "Run",
+    summary:
+      type === "run.no_progress"
+        ? "Run no progress"
+        : type.replaceAll(".", " "),
+    tone: "info" as const,
+    createdAt: `2026-08-08T00:00:0${String(seq)}.000Z`,
+    ...bindings,
+  };
+}
 
 function event(
   seq: number,

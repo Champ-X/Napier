@@ -96,14 +96,12 @@ export function ConversationSubagentCard({
               <li className={`severity-${outcome.severity}`} key={index}>
                 <span>{outcome.kind}</span>
                 <strong>{outcome.title}</strong>
-                <small>
-                  {outcome.evidence.length} evidence · details hidden
-                </small>
+                <small>{outcome.evidenceCount} evidence · details hidden</small>
               </li>
             ))}
           </ul>
         </section>
-      ) : item.task.error ? (
+      ) : item.task.hasError ? (
         <p className="conversation-subagent-error">
           {safeFailureSummary(item.task.status, item.task.stopReason)}
         </p>

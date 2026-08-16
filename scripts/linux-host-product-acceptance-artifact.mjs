@@ -206,7 +206,9 @@ function validProduct(value) {
     validSetup(value.setup) &&
     validDoctor(value.doctor) &&
     validVerification(value.verification) &&
-    validSandboxFirstUseCodingAcceptance(value.firstUse) &&
+    validSandboxFirstUseCodingAcceptance(value.firstUse, {
+      allowLegacyReadOnlyProfile: true,
+    }) &&
     validSandboxInvalidBindingRepairAcceptance(value.invalidBindingRepair) &&
     validSandboxImageRepairAcceptance(value.imageRepair) &&
     isRecord(value.service) &&

@@ -18,6 +18,16 @@ describe("Task completion summary", () => {
       "artifacts/preview.html",
     ]);
   });
+
+  it("accepts projected output paths without rescanning artifacts", () => {
+    const current = plan("active");
+    current.artifacts = [];
+    expect(
+      taskArtifactPaths([current], {
+        outputPaths: ["projected/report.md"],
+      }),
+    ).toEqual(["projected/report.md"]);
+  });
 });
 
 function plan(status: ExecutionPlan["status"]): ExecutionPlan {

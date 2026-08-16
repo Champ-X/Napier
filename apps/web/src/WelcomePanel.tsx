@@ -1,23 +1,8 @@
-import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
-import { lazy, Suspense } from "react";
-import { ChevronRight, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 import { copy } from "./copy";
-import { ProviderSetupCard } from "./ProviderSetupCard";
 
-const LazySandboxSetupCard = lazy(() => import("./SandboxSetupCard"));
-
-export function WelcomePanel({
-  canStart,
-  onBootstrapUpdated,
-  onPrompt,
-  threadId,
-}: {
-  canStart: boolean;
-  onBootstrapUpdated: (bootstrap: LiveReadyBootstrapResponse) => void;
-  onPrompt: (prompt: string) => void;
-  threadId: string | undefined;
-}) {
+export function WelcomePanel() {
   return (
     <div className="welcome-panel">
       <div className="welcome-seal" aria-hidden="true">
@@ -26,28 +11,9 @@ export function WelcomePanel({
       <span className="eyebrow">{copy.welcome.eyebrow}</span>
       <h2>{copy.welcome.title}</h2>
       <p>{copy.welcome.body}</p>
-      <button
-        type="button"
-        className="prompt-card"
-        disabled={!canStart}
-        onClick={() => onPrompt(copy.welcome.firstPrompt)}
-      >
-        <span>01</span>
-        <strong>{copy.welcome.firstPrompt}</strong>
-        <ChevronRight size={16} aria-hidden="true" />
-      </button>
-      <ProviderSetupCard
-        onBootstrapUpdated={onBootstrapUpdated}
-        threadId={threadId}
-      />
-      <Suspense fallback={<div className="sandbox-setup-card" />}>
-        <LazySandboxSetupCard />
-      </Suspense>
-      <div className="principle-row" aria-label="Napier principles">
-        <span>LOCAL FIRST</span>
-        <span>EVENT SOURCED</span>
-        <span>POLICY BOUND</span>
-      </div>
+      <span className="welcome-cue">
+        Write the task below. Evidence stays attached.
+      </span>
     </div>
   );
 }

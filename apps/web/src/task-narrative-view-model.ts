@@ -1,22 +1,11 @@
 import type { ThreadDetail } from "@napier/contracts";
 import { taskRunProgress } from "./task-run-progress";
 
-export type TaskNarrativePhase =
-  | "ready"
-  | "working"
-  | "waiting"
-  | "blocked"
-  | "completed"
-  | "failed";
+type TaskNarrativeProjection = NonNullable<ThreadDetail["taskNarrative"]>;
+type TaskNarrativePhase = TaskNarrativeProjection["phase"];
 
-export interface TaskNarrative {
-  phase: TaskNarrativePhase;
-  phaseLabel: string;
-  currentAction: string;
-  completedItems: string[];
+export interface TaskNarrative extends TaskNarrativeProjection {
   metrics?: string;
-  nextStep?: string;
-  blocker?: string;
 }
 
 export function taskNarrative(
@@ -30,12 +19,30 @@ export function taskNarrative(
         | "operatorDecisions"
         | "automaticRecoveryAssessments"
         | "automaticRecoveryAttempts"
+        | "taskNarrative"
       >
     | undefined,
   now = Date.now(),
 ): TaskNarrative {
   if (!detail)
     return baseNarrative("ready", "Ready", "Choose or create a ledger");
+  const projected = projectedNarrative(detail, now);
+  return projected ?? legacyTaskNarrative(detail, now);
+}
+
+function legacyTaskNarrative(
+  detail: Pick<
+    ThreadDetail,
+    | "thread"
+    | "runs"
+    | "plans"
+    | "events"
+    | "operatorDecisions"
+    | "automaticRecoveryAssessments"
+    | "automaticRecoveryAttempts"
+  >,
+  now: number,
+): TaskNarrative {
   const openDecision = detail.operatorDecisions.findLast(
     (decision) =>
       decision.status === "pending" || decision.status === "answered",
@@ -66,7 +73,7 @@ export function taskNarrative(
       nextStep?.title,
       now,
     );
-  const recovery = recoveryNarrative(
+  const recovery = settlementNarrative(
     detail,
     completedItems,
     planCompletedItems.length > 0,
@@ -137,6 +144,21 @@ export function taskNarrative(
       ? `Ready to start: ${nextStep.title}`
       : "Describe the task to begin",
   );
+}
+
+function projectedNarrative(
+  detail: Pick<ThreadDetail, "runs" | "taskNarrative">,
+  now: number,
+): TaskNarrative | undefined {
+  const narrative = detail.taskNarrative;
+  if (!narrative) return undefined;
+  const metricRun = narrative.metricRunId
+    ? detail.runs.find((run) => run.id === narrative.metricRunId)
+    : undefined;
+  return {
+    ...narrative,
+    ...(metricRun ? { metrics: runMetrics(metricRun, now) } : {}),
+  };
 }
 
 function operatorDecisionNarrative(
@@ -274,6 +296,42 @@ function recoveryNarrative(
     };
   }
   return undefined;
+}
+
+function settlementNarrative(
+  detail: Parameters<typeof recoveryNarrative>[0],
+  completedItems: string[],
+  planItemsAreAuthoritative: boolean,
+  now: number,
+): TaskNarrative | undefined {
+  return (
+    pausedBudgetNarrative(detail.runs, completedItems, now) ??
+    recoveryNarrative(detail, completedItems, planItemsAreAuthoritative, now)
+  );
+}
+
+function pausedBudgetNarrative(
+  runs: ThreadDetail["runs"],
+  completedItems: string[],
+  now: number,
+): TaskNarrative | undefined {
+  const run = runs.at(-1);
+  if (run?.outcome !== "paused_budget" && run?.outcome !== "partial") {
+    return undefined;
+  }
+  const partial = run.outcome === "partial";
+  return {
+    phase: "waiting",
+    phaseLabel: partial ? "Partial" : "Paused",
+    currentAction: partial
+      ? "Partial result preserved at the budget boundary"
+      : "Run paused at its budget boundary",
+    completedItems,
+    metrics: runMetrics(run, now),
+    nextStep: partial
+      ? "Continue from preserved artifacts and open work."
+      : "Continue from the recorded progress.",
+  };
 }
 
 function baseNarrative(

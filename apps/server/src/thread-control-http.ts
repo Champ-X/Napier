@@ -1,4 +1,5 @@
 import {
+  type AgentKernel,
   createThreadBranch,
   type LocalStore,
   MAX_RUN_CONTROL_MESSAGE_BYTES,
@@ -51,6 +52,7 @@ type ThreadControlHttpStore = ThreadBranchStore &
 
 export interface ThreadControlHttpServices {
   store: ThreadControlHttpStore;
+  kernel: Pick<AgentKernel, "operatorDecisions">;
   runtime: {
     browserInteractionConfirmations: Parameters<
       typeof registerBrowserInteractionConfirmationHttp
@@ -77,7 +79,7 @@ export function registerThreadControlHttp(
     app,
     services.runtime.browserSessionControls,
   );
-  registerOperatorDecisionHttp(app, services.store);
+  registerOperatorDecisionHttp(app, services);
   registerAgentMilestoneHttp(app, services.store);
 }
 
@@ -208,11 +210,14 @@ function registerRunControlMessageHttp(
 
 function registerOperatorDecisionHttp(
   app: Hono,
-  store: ThreadControlHttpStore,
+  services: ThreadControlHttpServices,
 ): void {
+  const store = services.store;
   app.get("/api/threads/:threadId/operator-decisions", async (context) => {
     const threadId = context.req.param("threadId");
-    const decisions = await store.listOperatorDecisions(threadId);
+    const decisions = (
+      await services.kernel.operatorDecisions.project(threadId)
+    ).view;
     setOperatorDecisionListHeaders(context, threadId, decisions);
     return context.json(decisions);
   });

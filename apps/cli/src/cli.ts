@@ -28,17 +28,11 @@ import {
   type CliWorkflowOptions,
 } from "./cli-options.js";
 import { cliRunPromptOptions } from "./cli-run-options.js";
-import {
-  assertCliResumeReadiness,
-  prepareCliRunTarget,
-} from "./cli-run-readiness.js";
+import { assertCliResumeReadiness, prepareCliRunTarget } from "./cli-run-readiness.js";
 import { executeCliInvocation } from "./cli-invocation.js";
 import { createCliWorkflowExperimentRequest } from "./cli-workflow-experiment.js";
 import { executeAgentMessageExperimentCli } from "./agent-message-experiment-cli.js";
-import {
-  executeFirstUseCliAction,
-  isFirstUseCliAction,
-} from "./cli-first-use.js";
+import { executeFirstUseCliAction, isFirstUseCliAction } from "./cli-first-use.js";
 import { executeModelInvocationExperimentCli } from "./model-invocation-experiment-cli.js";
 import { executeToolInvocationExperimentCli } from "./tool-invocation-experiment-cli.js";
 import { writeJsonLine, writeLine } from "./cli-output.js";
@@ -49,13 +43,14 @@ import { configureCliModelCredential } from "./cli-model-credential.js";
 import type { CliIo, RunCliDependencies } from "./cli-runtime.js";
 import { executeTui } from "./tui-cli.js";
 import { executeBrowserTask } from "./browser-task-cli.js";
+import { executePluginScaffold } from "./plugin-scaffold-cli.js";
 import { errorMessage, parseJson, signedNumber } from "./cli-text.js";
 import { canonicalWorkspace } from "./workspace-path.js";
 
 export { CLI_HELP, CLI_VERSION, parseCliArgs };
 export type { CliIo, RunCliDependencies } from "./cli-runtime.js";
 const DEFAULT_DEPENDENCIES: RunCliDependencies = {
-  createRuntime: createLocalAgentRuntime,
+  createRuntime: (options) => createLocalAgentRuntime({ ...options, kernelProfile: "cli" }),
 };
 const WORKFLOW_MANIFEST_EXTENSIONS = new Set([".json"]);
 export async function runCli(
@@ -92,9 +87,7 @@ export async function runCli(
   if (action.kind === "run") {
     return executeRun(action.options, io, dependencies, parentSignal);
   }
-  if (action.kind === "browser-task") {
-    return executeBrowserTask(action.options, io, dependencies, parentSignal);
-  }
+  if (action.kind === "browser-task") return executeBrowserTask(action.options, io, dependencies, parentSignal);
   if (action.kind === "chat") {
     return executeInteractive(action.options, io, dependencies, parentSignal);
   }
@@ -108,32 +101,18 @@ export async function runCli(
     return executeBranch(action.options, io, dependencies, parentSignal);
   }
   if (action.kind === "experiment") {
-    return executeAgentMessageExperimentCli(
-      action.options,
-      io,
-      dependencies,
-      parentSignal,
-    );
+    return executeAgentMessageExperimentCli(action.options, io, dependencies, parentSignal);
   }
   if (action.kind === "model-experiment") {
-    return executeModelInvocationExperimentCli(
-      action.options,
-      io,
-      dependencies,
-      parentSignal,
-    );
+    return executeModelInvocationExperimentCli(action.options, io, dependencies, parentSignal);
   }
   if (action.kind === "tool-experiment") {
-    return executeToolInvocationExperimentCli(
-      action.options,
-      io,
-      dependencies,
-      parentSignal,
-    );
+    return executeToolInvocationExperimentCli(action.options, io, dependencies, parentSignal);
   }
   if (action.kind === "rpc") {
     return executeRpc(action.options, io, dependencies, parentSignal);
   }
+  if (action.kind === "plugins") return executePluginScaffold(action.options, io);
   return executeWorkflow(action.options, io, dependencies, parentSignal);
 }
 async function executeRun(
@@ -150,12 +129,7 @@ async function executeRun(
     options.threadId ?? "thread_cli_preflight",
     true,
     async (services, signal) => {
-      const { existing, agent } = await prepareCliRunTarget(
-        services,
-        options,
-        signal,
-        dependencies.runReadiness,
-      );
+      const { existing, agent } = await prepareCliRunTarget(services, options, signal, dependencies.runReadiness);
       await configureCliModelCredential(services, options, io.env);
       const thread =
         existing ??
@@ -165,10 +139,7 @@ async function executeRun(
         }));
       return {
         threadId: thread.id,
-        invoke: (signal, onEvent) =>
-          services.runtime.runPrompt(
-            cliRunPromptOptions(options, thread.id, signal, onEvent),
-          ),
+        invoke: (signal, onEvent) => services.runtime.runPrompt(cliRunPromptOptions(options, thread.id, signal, onEvent)),
       };
     },
   );
@@ -180,35 +151,21 @@ async function executeResume(
   dependencies: RunCliDependencies,
   parentSignal?: AbortSignal,
 ): Promise<number> {
-  return executeCliInvocation(
-    options,
-    io,
-    dependencies,
-    parentSignal,
-    options.threadId,
-    false,
-    async (services, signal) => {
-      services.store.getThread(options.threadId);
-      await assertCliResumeReadiness(
-        services,
-        options.threadId,
-        options.runId,
-        signal,
-        dependencies.runReadiness,
-      );
-      return {
-        threadId: options.threadId,
-        invoke: (signal, onEvent) =>
-          services.runtime.resumeInterruptedRun({
-            threadId: options.threadId,
-            ...(options.runId ? { runId: options.runId } : {}),
-            ...(options.model ? { model: options.model } : {}),
-            signal,
-            ...(onEvent ? { onEvent } : {}),
-          }),
-      };
-    },
-  );
+  return executeCliInvocation(options, io, dependencies, parentSignal, options.threadId, false, async (services, signal) => {
+    services.store.getThread(options.threadId);
+    await assertCliResumeReadiness(services, options.threadId, options.runId, signal, dependencies.runReadiness);
+    return {
+      threadId: options.threadId,
+      invoke: (signal, onEvent) =>
+        services.runtime.resumeInterruptedRun({
+          threadId: options.threadId,
+          ...(options.runId ? { runId: options.runId } : {}),
+          ...(options.model ? { model: options.model } : {}),
+          signal,
+          ...(onEvent ? { onEvent } : {}),
+        }),
+    };
+  });
 }
 
 async function executeBranch(
@@ -221,10 +178,7 @@ async function executeBranch(
   try {
     parentSignal?.throwIfAborted();
     const workspaceRoot = await canonicalWorkspace(options.workspace, io.cwd);
-    const dataRoot = path.resolve(
-      io.cwd,
-      options.dataRoot ?? path.join(workspaceRoot, ".napier"),
-    );
+    const dataRoot = path.resolve(io.cwd, options.dataRoot ?? path.join(workspaceRoot, ".napier"));
     services = await dependencies.createRuntime({
       workspaceRoot,
       dataRoot,
@@ -236,18 +190,11 @@ async function executeBranch(
       ...(options.title ? { title: options.title } : {}),
     });
     if (options.jsonl) {
-      const eventWriter = new OrderedEventFrameWriter(
-        io.stdout,
-        result.detail.thread.id,
-        1,
-      );
+      const eventWriter = new OrderedEventFrameWriter(io.stdout, result.detail.thread.id, 1);
       for (const event of result.detail.events) {
         await eventWriter.write(event);
       }
-      await eventWriter.finish(
-        result.detail.thread.eventCount,
-        result.detail.events,
-      );
+      await eventWriter.finish(result.detail.thread.eventCount, result.detail.events);
       const snapshot = streamSnapshotFrame(result.detail);
       await writeJsonLine(io.stdout, snapshot);
       await writeJsonLine(
@@ -265,10 +212,7 @@ async function executeBranch(
       );
     } else {
       await writeLine(io.stdout, result.detail.thread.id);
-      await writeLine(
-        io.stderr,
-        `Napier branch ${result.detail.thread.id} from ${result.sourceThreadId}#${String(result.sourceSeq)}`,
-      );
+      await writeLine(io.stderr, `Napier branch ${result.detail.thread.id} from ${result.sourceThreadId}#${String(result.sourceSeq)}`);
     }
     return 0;
   } catch (error) {
@@ -276,10 +220,7 @@ async function executeBranch(
     if (options.jsonl) {
       await writeJsonLine(io.stdout, frame);
     } else {
-      await writeLine(
-        io.stderr,
-        `Napier branch failed: ${frame.message} (${frame.diagnosticSha256.slice(0, 12)})`,
-      );
+      await writeLine(io.stderr, `Napier branch failed: ${frame.message} (${frame.diagnosticSha256.slice(0, 12)})`);
     }
     return 1;
   } finally {
@@ -302,20 +243,14 @@ async function executeWorkflow(
   const timeout = setTimeout(() => controller.abort(), options.timeoutMs);
   try {
     const workspaceRoot = await canonicalWorkspace(options.workspace, io.cwd);
-    const manifestFile = await loadWorkspaceSourceFile(
-      workspaceRoot,
-      options.manifestPath,
-      {
-        label: "Workflow manifest",
-        maxBytes: MAX_EXECUTION_PLAN_WORKFLOW_MANIFEST_BYTES,
-        extensions: WORKFLOW_MANIFEST_EXTENSIONS,
-        extensionError: "Workflow manifest must be a JSON file",
-      },
-    );
+    const manifestFile = await loadWorkspaceSourceFile(workspaceRoot, options.manifestPath, {
+      label: "Workflow manifest",
+      maxBytes: MAX_EXECUTION_PLAN_WORKFLOW_MANIFEST_BYTES,
+      extensions: WORKFLOW_MANIFEST_EXTENSIONS,
+      extensionError: "Workflow manifest must be a JSON file",
+    });
     const manifest = parseJson(manifestFile.source, "Workflow manifest");
-    const workflowExperiment =
-      options.fromNodeId !== undefined ||
-      options.replaceWorkflowInputJson !== undefined;
+    const workflowExperiment = options.fromNodeId !== undefined || options.replaceWorkflowInputJson !== undefined;
     const request = workflowExperiment
       ? undefined
       : validateExecuteExecutionPlanWorkflowRequest(
@@ -324,25 +259,16 @@ async function executeWorkflow(
                 manifest,
                 planId: options.planId,
                 ...(options.retryBlocked ? { retryBlocked: true } : {}),
-                ...(options.continueBreakpoint
-                  ? { continueBreakpoint: true }
-                  : {}),
+                ...(options.continueBreakpoint ? { continueBreakpoint: true } : {}),
               }
             : {
                 manifest,
                 input: parseJson(options.inputJson!, "Workflow input"),
-                ...(options.breakBeforeNodeIds
-                  ? { breakBeforeNodeIds: options.breakBeforeNodeIds }
-                  : {}),
+                ...(options.breakBeforeNodeIds ? { breakBeforeNodeIds: options.breakBeforeNodeIds } : {}),
               },
         );
-    const experimentRequest = workflowExperiment
-      ? createCliWorkflowExperimentRequest(manifest, options)
-      : undefined;
-    const dataRoot = path.resolve(
-      io.cwd,
-      options.dataRoot ?? path.join(workspaceRoot, ".napier"),
-    );
+    const experimentRequest = workflowExperiment ? createCliWorkflowExperimentRequest(manifest, options) : undefined;
+    const dataRoot = path.resolve(io.cwd, options.dataRoot ?? path.join(workspaceRoot, ".napier"));
     services = await dependencies.createRuntime({
       workspaceRoot,
       dataRoot,
@@ -350,10 +276,7 @@ async function executeWorkflow(
     });
     if (experimentRequest) {
       if (options.previewExperiment) {
-        const preview = await services.workflowExperiments.preview(
-          options.threadId!,
-          experimentRequest,
-        );
+        const preview = await services.workflowExperiments.preview(options.threadId!, experimentRequest);
         await writeJsonLine(io.stdout, preview);
         if (!options.jsonl) {
           await writeLine(
@@ -371,20 +294,14 @@ async function executeWorkflow(
         onTargetCreated: (thread) => {
           threadId = thread.id;
           if (options.jsonl) {
-            eventWriter = new OrderedEventFrameWriter(
-              io.stdout,
-              thread.id,
-              thread.eventCount + 1,
-            );
+            eventWriter = new OrderedEventFrameWriter(io.stdout, thread.id, thread.eventCount + 1);
           }
         },
         ...(options.jsonl
           ? {
               onEvent: async (event: RunEvent): Promise<void> => {
                 if (!eventWriter) {
-                  throw new Error(
-                    "Workflow experiment target stream is unavailable",
-                  );
+                  throw new Error("Workflow experiment target stream is unavailable");
                 }
                 await eventWriter.write(event);
               },
@@ -393,11 +310,7 @@ async function executeWorkflow(
       });
       const detail = await services.store.getDetail(experiment.targetThreadId);
       const snapshot = streamSnapshotFrame(detail);
-      const resultFrame = createExecutionPlanWorkflowExperimentResultFrame(
-        experiment,
-        snapshot,
-        hashEventStream(detail.events),
-      );
+      const resultFrame = createExecutionPlanWorkflowExperimentResultFrame(experiment, snapshot, hashEventStream(detail.events));
       if (eventWriter) {
         await eventWriter.finish(detail.thread.eventCount, detail.events);
         await writeJsonLine(io.stdout, snapshot);
@@ -425,35 +338,19 @@ async function executeWorkflow(
           );
         }
       }
-      return experiment.result.status === "completed" ||
-        experiment.result.status === "waiting" ||
-        experiment.result.status === "paused"
+      return experiment.result.status === "completed" || experiment.result.status === "waiting" || experiment.result.status === "paused"
         ? 0
         : 1;
     }
-    const thread = options.threadId
-      ? services.store.getThread(options.threadId)
-      : await createWorkflowThread(services, options);
+    const thread = options.threadId ? services.store.getThread(options.threadId) : await createWorkflowThread(services, options);
     threadId = thread.id;
     if (options.agentId && options.agentId !== thread.agentId) {
       throw new Error("Existing Thread Agent does not match --agent");
     }
-    const eventWriter = options.jsonl
-      ? new OrderedEventFrameWriter(io.stdout, thread.id, thread.eventCount + 1)
-      : undefined;
-    const onEvent = eventWriter
-      ? async (event: RunEvent): Promise<void> => eventWriter.write(event)
-      : undefined;
+    const eventWriter = options.jsonl ? new OrderedEventFrameWriter(io.stdout, thread.id, thread.eventCount + 1) : undefined;
+    const onEvent = eventWriter ? async (event: RunEvent): Promise<void> => eventWriter.write(event) : undefined;
     const result = options.approval
-      ? (
-          await answerAndResumeWorkflowApproval(
-            services,
-            request!,
-            options,
-            controller.signal,
-            onEvent,
-          )
-        ).result
+      ? (await answerAndResumeWorkflowApproval(services, request!, options, controller.signal, onEvent)).result
       : await services.workflows.run({
           threadId,
           request: request!,
@@ -462,11 +359,7 @@ async function executeWorkflow(
         });
     const detail = await services.store.getDetail(threadId);
     const snapshot = streamSnapshotFrame(detail);
-    const resultFrame = createExecutionPlanWorkflowResultFrame(
-      result,
-      snapshot,
-      hashEventStream(detail.events),
-    );
+    const resultFrame = createExecutionPlanWorkflowResultFrame(result, snapshot, hashEventStream(detail.events));
     if (eventWriter) {
       await eventWriter.finish(detail.thread.eventCount, detail.events);
       await writeJsonLine(io.stdout, snapshot);
@@ -483,25 +376,15 @@ async function executeWorkflow(
             })
           : canonicalJson(result.output),
       );
-      await writeLine(
-        io.stderr,
-        `Napier workflow ${result.planId} ${result.status} (thread ${threadId})`,
-      );
+      await writeLine(io.stderr, `Napier workflow ${result.planId} ${result.status} (thread ${threadId})`);
     }
-    return result.status === "completed" ||
-      result.status === "waiting" ||
-      result.status === "paused"
-      ? 0
-      : 1;
+    return result.status === "completed" || result.status === "waiting" || result.status === "paused" ? 0 : 1;
   } catch (error) {
     const frame = streamRunErrorFrame(threadId, error);
     if (options.jsonl) {
       await writeJsonLine(io.stdout, frame);
     } else {
-      await writeLine(
-        io.stderr,
-        `Napier workflow failed: ${frame.message} (${frame.diagnosticSha256.slice(0, 12)})`,
-      );
+      await writeLine(io.stderr, `Napier workflow failed: ${frame.message} (${frame.diagnosticSha256.slice(0, 12)})`);
     }
     return 1;
   } finally {
@@ -533,9 +416,7 @@ async function answerAndResumeWorkflowApproval(
     decisionId: pending.id,
     expectedDecisionSha256: pending.contentSha256,
     answer: {
-      selectedOptionIds: [
-        options.approval === "approve" ? "option_1" : "option_2",
-      ],
+      selectedOptionIds: [options.approval === "approve" ? "option_1" : "option_2"],
       ...(options.decisionNote ? { customText: options.decisionNote } : {}),
     },
     signal,
@@ -543,13 +424,8 @@ async function answerAndResumeWorkflowApproval(
   });
 }
 
-async function createWorkflowThread(
-  services: LocalAgentRuntimeServices,
-  options: CliWorkflowOptions,
-) {
-  const agent = options.agentId
-    ? services.store.getAgent(options.agentId)
-    : services.store.listAgents()[0];
+async function createWorkflowThread(services: LocalAgentRuntimeServices, options: CliWorkflowOptions) {
+  const agent = options.agentId ? services.store.getAgent(options.agentId) : services.store.listAgents()[0];
   if (!agent) throw new Error("No Agent profile is available");
   return services.store.createThread({
     title: options.title ?? "CLI Workflow",

@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
 describe("Responsive Inspector", () => {
-  it("keeps the Inspector reachable below desktop width", async () => {
+  it("keeps the Inspector in a default-closed drawer at every width", async () => {
     const [source, styles] = await Promise.all([
       readFile(
         new URL("../src/ResponsiveInspector.tsx", import.meta.url),
@@ -18,11 +18,14 @@ describe("Responsive Inspector", () => {
     );
     expect(source).toContain('event.key === "Escape"');
     expect(source).toContain("aria-expanded={open}");
-    expect(styles).toContain("@media (max-width: 1180px)");
+    expect(styles).toContain(
+      "grid-template-columns: var(--shell-nav-width) minmax(0, 1fr);",
+    );
+    expect(styles).toContain(".inspector {\n  position: fixed;");
     expect(styles).toContain(".inspector.is-drawer-open");
-    expect(styles).toContain("transform: translateX(105%)");
+    expect(styles).toContain("display: none;");
     expect(styles).not.toContain(
-      "@media (max-width: 1180px) {\n  .app-shell {\n    grid-template-columns: 232px minmax(500px, 1fr);\n  }\n\n  .inspector {\n    display: none;",
+      "grid-template-columns: 252px minmax(520px, 1fr) 338px;",
     );
   });
 });

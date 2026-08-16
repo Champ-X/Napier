@@ -142,7 +142,7 @@ export function applyThreadStreamFrameToDetail(
   ) {
     return current;
   }
-  return appendEvent(current, frame.event);
+  return appendEvent(current, frame.event, frame.projections);
 }
 
 export function applyThreadStreamFrameToBootstrap(
@@ -182,7 +182,13 @@ export function applyThreadStreamFrameToBootstrap(
         }
       : {}),
     ...(current.activeThread?.thread.id === sourceThreadId
-      ? { activeThread: appendEvent(current.activeThread, frame.event) }
+      ? {
+          activeThread: appendEvent(
+            current.activeThread,
+            frame.event,
+            frame.projections,
+          ),
+        }
       : {}),
   };
 }
@@ -243,8 +249,12 @@ export function mergeBackgroundBootstrap(
   if (!current) return incoming;
   const merged = mergeNavigationBootstrap(current, incoming);
   const activeThread =
-    current.activeThread?.thread.id === incoming.activeThread?.thread.id && incoming.activeThread
-      ? preserveThreadDetailImportReceipt(incoming.activeThread, current.activeThread)
+    current.activeThread?.thread.id === incoming.activeThread?.thread.id &&
+    incoming.activeThread
+      ? preserveThreadDetailImportReceipt(
+          incoming.activeThread,
+          current.activeThread,
+        )
       : current.activeThread;
   const { activeThread: _incomingActiveThread, ...background } = merged;
   return {
@@ -272,9 +282,33 @@ export function mergeBackgroundThreadDetail(
 function appendEvent(
   detail: WebThreadDetail,
   event: RunEvent,
+  projections?: Extract<StreamFrame, { type: "event" }>["projections"],
 ): WebThreadDetail {
   return {
     ...detail,
+    ...(projections?.taskNarrative
+      ? { taskNarrative: projections.taskNarrative }
+      : {}),
+    ...(projections?.activePlan ? { activePlan: projections.activePlan } : {}),
+    ...(projections?.messages ? { messages: projections.messages } : {}),
+    ...(projections?.conversationPlans
+      ? { conversationPlans: projections.conversationPlans }
+      : {}),
+    ...(projections?.artifacts ? { artifacts: projections.artifacts } : {}),
+    ...(projections?.activityEvents
+      ? { activityEvents: projections.activityEvents }
+      : {}),
+    ...(projections?.activityCandidates
+      ? { activityCandidates: projections.activityCandidates }
+      : {}),
+    ...(projections?.citations ? { citations: projections.citations } : {}),
+    ...(projections?.recoveries ? { recoveries: projections.recoveries } : {}),
+    ...(projections?.subagentCards
+      ? { subagentCards: projections.subagentCards }
+      : {}),
+    ...(projections?.operatorDecisions
+      ? { operatorDecisions: projections.operatorDecisions }
+      : {}),
     thread: {
       ...detail.thread,
       status: "running",

@@ -9,20 +9,16 @@ type WorkspaceViewModel = ReturnType<typeof useWorkspaceViewModel>;
 
 export function ConversationWorkspace({
   vm,
-  canStart,
   endRef,
 }: {
   vm: Pick<
     WorkspaceViewModel,
     | "branchFrom"
-    | "commitConfigurationBootstrap"
     | "detail"
     | "messages"
     | "refreshActiveThread"
     | "streamingText"
-    | "submit"
   >;
-  canStart: boolean;
   endRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const showWelcome = shouldShowConversationWelcome(
@@ -32,12 +28,7 @@ export function ConversationWorkspace({
   return (
     <section className="conversation" aria-label="Conversation">
       {showWelcome ? (
-        <WelcomePanel
-          canStart={canStart}
-          onBootstrapUpdated={vm.commitConfigurationBootstrap}
-          onPrompt={(prompt) => void vm.submit(prompt)}
-          threadId={vm.detail?.thread.id}
-        />
+        <WelcomePanel />
       ) : (
         <Suspense fallback={<div className="message-ledger" />}>
           <LazyConversationLedger

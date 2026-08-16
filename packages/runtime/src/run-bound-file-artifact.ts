@@ -53,7 +53,7 @@ export class RunBoundFileArtifactRegistrar {
     if (artifact.sourceRunId !== undefined && artifact.sourceRunId !== runId) {
       throw new Error("Run-bound file Artifact belongs to another Run");
     }
-    if (artifact.status === "expected") {
+    if (artifact.status === "expected" || artifact.status === "candidate") {
       current = await this.store.updatePlanArtifact(current.id, artifact.id, {
         status: "produced",
         sourceRunId: runId,

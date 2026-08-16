@@ -57,7 +57,7 @@ function fixture() {
       {
         width: 1_600,
         height: 900,
-        layout: "desktop",
+        layout: "drawer",
         layoutSnapshot: {
           workbench: { x: 252, y: 0, width: 1_010, height: 900 },
         },
@@ -68,7 +68,7 @@ function fixture() {
       {
         width: 1_440,
         height: 900,
-        layout: "desktop",
+        layout: "drawer",
         layoutSnapshot: {
           workbench: { x: 252, y: 0, width: 850, height: 900 },
         },

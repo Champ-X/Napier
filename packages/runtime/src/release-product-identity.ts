@@ -1,0 +1,3 @@
+export const NAPIER_PRODUCT_VERSION = "0.1.3";
+export const NAPIER_RELEASE_IDENTITY_SHA256 =
+  "3cfff912d595263ef4cb4facfa3fede955db81fc18dad10afaab77f62e335889";

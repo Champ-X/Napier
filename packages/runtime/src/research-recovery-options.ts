@@ -9,6 +9,7 @@ import {
 } from "./skill-load-replay.js";
 import { isSkillCatalogBinding } from "./skill-load-contracts.js";
 import { loadWorkspaceSkills } from "./skills.js";
+import { runIntentFor } from "./run-intents.js";
 
 export async function prepareManualSkillRecoveryOptions(
   workspaceRoot: string,
@@ -16,6 +17,7 @@ export async function prepareManualSkillRecoveryOptions(
   events: readonly RunEvent[],
   options: RunPromptOptions,
 ): Promise<RunPromptOptions> {
+  options = withRecoveryIntent(options, events, interrupted.id);
   const preset = capabilityPresetForOriginRun(events, interrupted.id);
   const firstClassSkillLoading = events.some(
     (event) =>
@@ -51,6 +53,7 @@ export async function prepareAutomaticSkillRecoveryOptions(
   events: readonly RunEvent[],
   options: RunPromptOptions,
 ): Promise<RunPromptOptions> {
+  options = withRecoveryIntent(options, events, interrupted.id);
   const preset = capabilityPresetForOriginRun(events, interrupted.id);
   const firstClassSkillLoading = events.some(
     (event) =>
@@ -96,4 +99,15 @@ export async function prepareAutomaticSkillRecoveryOptions(
   return preset === "research"
     ? authorizeInternalResearchRecovery(recoveryOptions)
     : recoveryOptions;
+}
+
+function withRecoveryIntent(
+  options: RunPromptOptions,
+  events: readonly RunEvent[],
+  runId: string,
+): RunPromptOptions {
+  const intentId = runIntentFor(events, runId);
+  return intentId && options.recovery
+    ? { ...options, recovery: { ...options.recovery, intentId } }
+    : options;
 }

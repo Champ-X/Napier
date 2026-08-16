@@ -117,6 +117,214 @@ describe("Thread Run stream state", () => {
     );
   });
 
+  it("applies the server Task Narrative with a live event frame", () => {
+    const current = detail("thread_a", []);
+    const runEvent = event("thread_a", "run_a", 1, "A");
+    const updated = applyThreadStreamFrameToDetail(current, "thread_a", {
+      ...frame(runEvent),
+      projections: {
+        taskNarrative: {
+          phase: "working",
+          phaseLabel: "Working",
+          currentAction: "Running web search",
+          completedItems: [],
+          metricRunId: "run_a",
+        },
+        activePlan: {
+          planId: "plan_fixture0001",
+          revision: 1,
+          status: "active",
+          objective: "Project plan",
+          completedStepCount: 0,
+          settledStepCount: 0,
+          stepCount: 1,
+          verifiedArtifactCount: 0,
+          producedArtifactCount: 0,
+          missingArtifactCount: 0,
+          outputPaths: [],
+          activePhaseIndex: 0,
+          phaseCount: 1,
+          eventWatermark: 1,
+        },
+        messages: [
+          {
+            id: "event_message",
+            seq: 1,
+            role: "user",
+            text: "Projected message",
+            model: "",
+            createdAt: "2026-08-07T00:00:01.000Z",
+          },
+        ],
+        conversationPlans: [
+          {
+            id: "event_plan",
+            seq: 1,
+            createdAt: "2026-08-07T00:00:01.000Z",
+            attemptScope: "current",
+            plan: {
+              id: "plan_fixture0001",
+              status: "active",
+              revision: 1,
+              objective: "Project plan",
+              steps: [],
+              activePhaseIndex: 0,
+              phaseCount: 1,
+            },
+            completedStepCount: 0,
+            settledStepCount: 0,
+            verifiedArtifactCount: 0,
+            producedArtifactCount: 0,
+            missingArtifactCount: 0,
+          },
+        ],
+        artifacts: [
+          {
+            id: "event_artifact",
+            seq: 1,
+            createdAt: "2026-08-07T00:00:01.000Z",
+            attemptScope: "current",
+            threadId: "thread_a",
+            runId: "run_a",
+            planId: "plan_fixture0001",
+            planRevision: 1,
+            artifact: {
+              id: "report",
+              path: "report.md",
+              kind: "file",
+              description: "Report",
+              status: "verified",
+              evidence: "Verified.",
+              createdAt: "2026-08-07T00:00:00.000Z",
+              updatedAt: "2026-08-07T00:00:01.000Z",
+            },
+          },
+        ],
+        activityEvents: [
+          {
+            id: "event_tool",
+            threadId: "thread_a",
+            runId: "run_a",
+            seq: 1,
+            type: "tool.started",
+            category: "tool",
+            visibility: "user",
+            createdAt: "2026-08-07T00:00:01.000Z",
+            payload: { callId: "call_read", toolName: "read_file" },
+          },
+        ],
+        activityCandidates: [
+          {
+            id: "event_activity",
+            seq: 1,
+            type: "run.no_progress",
+            label: "Run",
+            summary: "Run no progress",
+            tone: "info",
+            createdAt: "2026-08-07T00:00:01.000Z",
+          },
+        ],
+        citations: [
+          {
+            id: "event_citation",
+            seq: 1,
+            createdAt: "2026-08-07T00:00:01.000Z",
+            callId: "call_research",
+            citationId: "citation_fixture0001",
+            sourceId: "source_fixture0001",
+            sourceKind: "web_fetch",
+            startLine: 2,
+            endLine: 4,
+            sourceContentSha256: "1".repeat(64),
+            sourceTitleSha256: "2".repeat(64),
+            quoteSha256: "3".repeat(64),
+            claimSha256: "4".repeat(64),
+          },
+        ],
+        recoveries: [
+          {
+            id: "run_interrupted0001",
+            seq: 1,
+            createdAt: "2026-08-07T00:00:01.000Z",
+            status: "skipped",
+            assessment: {
+              contentSha256: "5".repeat(64),
+              interruptedRunId: "run_interrupted0001",
+              rootRunId: "run_interrupted0001",
+              eligible: false,
+              blockReasons: ["unsafe_tool_effect"],
+              policy: {
+                mode: "safe_read_only",
+                maxAttempts: 2,
+                backoffMs: 1_000,
+              },
+              toolCalls: {
+                total: 1,
+                readOnly: 0,
+                unsafe: 1,
+                unknownEffect: 0,
+                unresolved: 0,
+              },
+              eventRange: {
+                fromSeq: 1,
+                toSeq: 1,
+                eventCount: 1,
+                eventStreamSha256: "6".repeat(64),
+              },
+              priorAttempts: 0,
+              assessedAt: "2026-08-07T00:00:01.000Z",
+            },
+            eventIds: ["event_recovery"],
+          },
+        ],
+        subagentCards: [
+          {
+            id: "event_subagent",
+            seq: 1,
+            createdAt: "2026-08-07T00:00:01.000Z",
+            task: {
+              id: "task_fixture0001",
+              role: "reviewer",
+              description: "Review projected evidence",
+              status: "completed",
+              model: { provider: "napier", id: "demo" },
+              stepCount: 2,
+              turnCount: 1,
+              usage: { inputTokens: 100, outputTokens: 20 },
+              stopReason: "completed",
+              outcome: {
+                summary: "Projected evidence is complete.",
+                items: [],
+              },
+            },
+            itemCount: 0,
+            evidenceCount: 0,
+            unknownCount: 0,
+            blockerCount: 0,
+            warningCount: 0,
+          },
+        ],
+        operatorDecisions: [],
+      },
+    });
+
+    expect(updated?.taskNarrative).toEqual(
+      expect.objectContaining({
+        phase: "working",
+        currentAction: "Running web search",
+      }),
+    );
+    expect(updated?.activePlan?.planId).toBe("plan_fixture0001");
+    expect(updated?.messages?.[0]?.text).toBe("Projected message");
+    expect(updated?.conversationPlans?.[0]?.plan.id).toBe("plan_fixture0001");
+    expect(updated?.artifacts?.[0]?.artifact.path).toBe("report.md");
+    expect(updated?.activityEvents?.[0]?.type).toBe("tool.started");
+    expect(updated?.activityCandidates?.[0]?.type).toBe("run.no_progress");
+    expect(updated?.citations?.[0]?.callId).toBe("call_research");
+    expect(updated?.recoveries?.[0]?.status).toBe("skipped");
+    expect(updated?.subagentCards?.[0]?.task.status).toBe("completed");
+  });
+
   it("does not roll back another Thread when concurrent final refreshes arrive out of order", () => {
     const current = bootstrap(
       detail("thread_b", []),
@@ -224,7 +432,7 @@ function assistant(threadId: string, runId: string, seq: number): RunEvent {
   };
 }
 
-function frame(runEvent: RunEvent): StreamFrame {
+function frame(runEvent: RunEvent): Extract<StreamFrame, { type: "event" }> {
   return {
     type: "event",
     event: runEvent,

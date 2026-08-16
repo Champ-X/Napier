@@ -22,6 +22,7 @@ import {
   type SkillLoadReceipt,
   type SkillLoadSelection,
 } from "./skill-load-contracts.js";
+import { skillDataAnalysisProof } from "./skill-data-analysis-proof.js";
 import type { LocalStore } from "./store.js";
 
 const SOFTWARE_MUTATION_TOOLS = new Set([
@@ -306,6 +307,15 @@ function applicationProof(
       return proof("research_evidence_cited", [
         capture.event.seq,
         cite.event.seq,
+      ]);
+    }
+  }
+  if (skillName === "data-analysis") {
+    const data = skillDataAnalysisProof(events, terminalSeq);
+    if (data) {
+      return proof("data_analysis_transformed", [
+        data.inspectSeq,
+        data.transformSeq,
       ]);
     }
   }

@@ -16,6 +16,10 @@
       "types": "./dist/release-product-gate.d.ts",
       "import": "./dist/release-product-gate.js"
     },
+    "./release-product-trial-adoption": {
+      "types": "./dist/release-product-trial-adoption.d.ts",
+      "import": "./dist/release-product-trial-adoption.js"
+    },
     "./controlled-harness-evidence": {
       "types": "./dist/controlled-harness-evidence.d.ts",
       "import": "./dist/controlled-harness-evidence.js"
@@ -80,6 +84,26 @@
       "types": "./dist/browser-takeover.d.ts",
       "import": "./dist/browser-takeover.js"
     },
+    "./kernel-artifact-plugin": {
+      "types": "./dist/kernel-artifact-plugin.d.ts",
+      "import": "./dist/kernel-artifact-plugin.js"
+    },
+    "./kernel-browser-plugin": {
+      "types": "./dist/kernel-browser-plugin.d.ts",
+      "import": "./dist/kernel-browser-plugin.js"
+    },
+    "./kernel-search-plugin": {
+      "types": "./dist/kernel-search-plugin.d.ts",
+      "import": "./dist/kernel-search-plugin.js"
+    },
+    "./kernel-plugin-scaffold": {
+      "types": "./dist/kernel-plugin-scaffold.d.ts",
+      "import": "./dist/kernel-plugin-scaffold.js"
+    },
+    "./kernel-plugin-state": {
+      "types": "./dist/kernel-plugin-state.d.ts",
+      "import": "./dist/kernel-plugin-state.js"
+    },
     "./provider-setup": {
       "types": "./dist/provider-setup.d.ts",
       "import": "./dist/provider-setup.js"
@@ -97,7 +121,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json && node ../../scripts/copy-sandbox-image.mjs",
+    "build": "node ../../scripts/release-product-source-manifest.mjs && tsc -p tsconfig.json && node ../../scripts/copy-sandbox-image.mjs",
     "test": "vitest run --maxWorkers=2 --testTimeout=30000",
     "test:live-browser": "NAPIER_LIVE_BROWSER_SMOKE=1 vitest run test/live-browser-smoke.test.ts --testTimeout=60000",
     "test:live-coder": "NAPIER_LIVE_CODER_SUBAGENT_SMOKE=1 vitest run test/live-coder-subagent-smoke.test.ts --testTimeout=120000",

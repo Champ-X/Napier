@@ -12,6 +12,7 @@ import {
   assertPlanArtifactEventBindings,
   refreshPlanProjection,
 } from "./plans.js";
+import { PLAN_STEP_STATUSES } from "./plan-step-transition.js";
 import {
   assertArtifactReceiptEventBoundary,
   isArtifactReceiptEvent,
@@ -28,14 +29,6 @@ const PLAN_STATUSES = new Set<string>([
   "completed",
   "blocked",
   "cancelled",
-]);
-const PLAN_STEP_STATUSES = new Set<string>([
-  "pending",
-  "ready",
-  "running",
-  "completed",
-  "blocked",
-  "skipped",
 ]);
 const ARTIFACT_STATUSES = new Set<string>([
   "expected",
@@ -330,7 +323,7 @@ function assertArchiveStep(value: unknown): string {
     !boundedString(record["description"], 1, 1_500) ||
     !boundedString(record["verification"], 1, 1_000) ||
     typeof status !== "string" ||
-    !PLAN_STEP_STATUSES.has(status)
+    !PLAN_STEP_STATUSES.has(status as PlanStep["status"])
   ) {
     throw new Error("Execution plan archive step is invalid");
   }

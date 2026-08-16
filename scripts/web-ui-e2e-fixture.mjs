@@ -313,6 +313,7 @@ export async function seedWebUiNarrativeFixture(root) {
       blocker: "Operator input is required before the run can continue.",
       nextStep: "Approve final delivery",
       artifactPath: "artifacts/research-brief.md",
+      latestTerminalRunId: run.id,
       browserTask,
       casebook,
       recovery: {

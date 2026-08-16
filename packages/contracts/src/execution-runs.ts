@@ -153,14 +153,25 @@ export type RunConfigurationFingerprint =
   | RunConfigurationFingerprintV7
   | RunConfigurationFingerprintV8;
 
+type RunOutcome =
+  | "completed"
+  | "partial"
+  | "paused_budget"
+  | "blocked_capability"
+  | "blocked_safety"
+  | "cancelled"
+  | "failed_unrecoverable";
+
 export interface RunRecord {
   id: string;
   threadId: string;
   agentId: string;
   status: RunStatus;
+  outcome?: RunOutcome;
   source?: RunInvocationSource;
   workflowPlanId?: string;
   triggerId?: string;
+  releaseIdentitySha256?: string;
   startedAt: string;
   finishedAt?: string;
   parentRunId?: string;

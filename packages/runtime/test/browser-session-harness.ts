@@ -21,6 +21,7 @@ import {
 } from "../src/browser-session.js";
 import { probeBrowserPageDiagnosis } from "../src/browser-page-diagnosis.js";
 import { probeBrowserSensitiveTarget } from "../src/browser-sensitive-target.js";
+import type { RunLocalServiceLeaseRegistry } from "../src/run-local-service-leases.js";
 
 const roots: string[] = [];
 
@@ -34,6 +35,7 @@ interface HarnessOptions {
   sourceTitle?: string;
   sourceUrlDriftDuringCapture?: boolean;
   pageHtml?: string;
+  localServiceLeases?: RunLocalServiceLeaseRegistry;
 }
 
 export async function cleanupBrowserSessionHarnesses(): Promise<void> {
@@ -56,6 +58,9 @@ export async function createBrowserSessionHarness(
   const launchOptions: LaunchOptions[] = [];
   const manager = new RunBrowserSessionManager({
     workspaceRoot: workspace,
+    ...(options.localServiceLeases
+      ? { localServiceLeases: options.localServiceLeases }
+      : {}),
     lookup:
       options.lookup ??
       (async () => [{ address: "1.1.1.1", family: 4 as const }]),

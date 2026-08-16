@@ -108,7 +108,7 @@ export async function verifyBrowserInspector(page) {
   const recovery = await recoveryResponse.json();
   receipt.credentialRecovery = `${recovery.error}. ${recovery.recovery}`;
   receipt.credentialRecoveryCode = recovery.code;
-  await page.locator("#inspector-group-activity").click();
+  await page.locator("#inspector-group-task").click();
   return receipt;
 }
 

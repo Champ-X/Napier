@@ -18,34 +18,9 @@ import type {
   Usage,
 } from "./execution-core.js";
 import type { InboundChannel, InboundChannelAdapterDescriptor } from "./execution-channels.js";
-import type {
-  AgentMessageExperimentResult,
-  ModelInvocationPurpose,
-  ModelInvocationExperimentResult,
-  ModelInvocationExperimentStatus,
-  ToolInvocationExperimentResult,
-  ToolInvocationExperimentStatus,
-} from "./execution-experiments.js";
-import type {
-  AgentProfile,
-  PromptVariableDefinition,
-  RunConfigurationDelta,
-  RunMetricDelta,
-  RunMetrics,
-  RunRecord,
-} from "./execution-runs.js";
-import type {
-  ArtifactManifestEntry,
-  ArtifactManifestStatus,
-  CreateExecutionPlanRequest,
-  ExecutionPlanBlueprint,
-  ExecutionPlanStatus,
-  ExecutionPlanWorkflowManifest,
-  ExecutionPlanWorkflowResult,
-  ExecutionPlanWorkflowStatus,
-  PlanStepStatus,
-  WorkflowObjectSchema,
-} from "./execution-workflows.js";
+import type { AgentMessageExperimentResult, ModelInvocationPurpose, ModelInvocationExperimentResult, ModelInvocationExperimentStatus, ToolInvocationExperimentResult, ToolInvocationExperimentStatus } from "./execution-experiments.js";
+import type { AgentProfile, PromptVariableDefinition, RunConfigurationDelta, RunMetricDelta, RunMetrics, RunRecord } from "./execution-runs.js";
+import type { ArtifactManifestEntry, ArtifactManifestStatus, CreateExecutionPlanRequest, ExecutionPlanBlueprint, ExecutionPlanStatus, ExecutionPlanWorkflowManifest, ExecutionPlanWorkflowResult, ExecutionPlanWorkflowStatus, PlanStepStatus, WorkflowObjectSchema } from "./execution-workflows.js";
 import type { ExecutionPlanWorkflowExperimentResult } from "./workflow-experiments.js";
 import type { ModelContextEnvelopeReceipt } from "./model-context-envelope.js";
 
@@ -55,13 +30,7 @@ export type ThreadStatus = "idle" | "running" | "waiting" | "failed";
 export type GoalStatus = "active" | "completed" | "blocked";
 export type GoalBlocker = "none" | "missing_evidence" | "needs_user_input" | "run_failed" | "external_wait" | "goal_not_met_yet";
 
-export type UsageAccountingStrategy =
-  | "demo_estimate"
-  | "provider_reported"
-  | "openai_cache_discounted"
-  | "deepseek_cache_discounted"
-  | "anthropic_cache_discounted"
-  | "google_cache_discounted";
+export type UsageAccountingStrategy = "demo_estimate" | "provider_reported" | "openai_cache_discounted" | "deepseek_cache_discounted" | "anthropic_cache_discounted" | "google_cache_discounted";
 export type UsageCostAccountingStrategy = "zero_cost" | "provider_reported_cost" | "price_table_estimate";
 
 export interface UsageAccounting extends Record<string, JsonPrimitive> {
@@ -144,10 +113,7 @@ export type ModelAdvisorSeverity = "warning" | "blocker";
 
 export type IndependentModelAdvisorIssueCode = "instruction_following" | "correctness" | "evidence" | "safety" | "scope" | "regression";
 
-export type ModelAdvisorBlockerId =
-  | ModelAdvisorRuleId
-  | `independent_review:${IndependentModelAdvisorIssueCode}`
-  | "independent_review:inconclusive";
+export type ModelAdvisorBlockerId = ModelAdvisorRuleId | `independent_review:${IndependentModelAdvisorIssueCode}` | "independent_review:inconclusive";
 
 export type IndependentModelAdvisorVerdict = "accept" | "revise" | "block" | "inconclusive";
 
@@ -1447,16 +1413,7 @@ export interface CreateExecutionPlanFromBlueprintRecordRequest {
   expectedPreviewSha256?: string;
 }
 
-export type MemoryCategory =
-  | "preference"
-  | "context"
-  | "goal"
-  | "constraint"
-  | "decision"
-  | "identity"
-  | "behavior"
-  | "correction"
-  | "other";
+export type MemoryCategory = "preference" | "context" | "goal" | "constraint" | "decision" | "identity" | "behavior" | "correction" | "other";
 
 export type MemoryScope = "workspace" | "agent";
 export type MemoryStatus = "proposed" | "active" | "stale" | "rejected" | "archived";
@@ -1766,15 +1723,7 @@ export interface DelegationLedgerProjection {
   contentSha256: string;
 }
 
-export type ExtensionCapability =
-  | "network.connect"
-  | "network.listen"
-  | "secrets.env"
-  | "process.spawn"
-  | "workspace.read"
-  | "workspace.write"
-  | "external.read"
-  | "external.write";
+export type ExtensionCapability = "network.connect" | "network.listen" | "secrets.env" | "process.spawn" | "workspace.read" | "workspace.write" | "external.read" | "external.write";
 export type ExtensionTrustStatus = "pending" | "approved" | "rejected";
 export type McpToolReviewStatus = "pending" | "approved" | "rejected";
 export type ExtensionConnectionStatus = "untested" | "connecting" | "ready" | "error" | "disconnected";
@@ -1938,18 +1887,7 @@ export interface ExtensionPackageHistoryEntry {
 
 export type ExtensionPackageVersionDirection = "upgrade" | "same" | "regression" | "unknown";
 
-export type ExtensionPackageChange =
-  | "publisher"
-  | "version"
-  | "metadata"
-  | "transport"
-  | "capabilities"
-  | "tools"
-  | "effects"
-  | "dependencies"
-  | "executable"
-  | "lifecycle"
-  | "signature";
+export type ExtensionPackageChange = "publisher" | "version" | "metadata" | "transport" | "capabilities" | "tools" | "effects" | "dependencies" | "executable" | "lifecycle" | "signature";
 
 export interface ExtensionPackageUpdateIdentity {
   publisher: string;
@@ -2257,14 +2195,7 @@ export interface VerifyExtensionPackageChannelIndexRequest {
   envelope: unknown;
 }
 
-export type ExtensionPackageVerificationStatus =
-  | "trusted"
-  | "revoked"
-  | "unknown_key"
-  | "expired"
-  | "invalid"
-  | "configuration_drift"
-  | "executable_mismatch";
+export type ExtensionPackageVerificationStatus = "trusted" | "revoked" | "unknown_key" | "expired" | "invalid" | "configuration_drift" | "executable_mismatch";
 
 export interface ExtensionPackageVerification {
   status: ExtensionPackageVerificationStatus;
@@ -2393,22 +2324,7 @@ export interface PromptVariableSnapshot {
 export { AGENT_TOOL_NAMES } from "./agent-tool-names.js";
 export type { AgentToolName } from "./agent-tool-names.js";
 
-export type AgentProfileField =
-  | "name"
-  | "description"
-  | "systemPrompt"
-  | "model"
-  | "thinkingLevel"
-  | "toolPolicy"
-  | "enabledTools"
-  | "enabledSkills"
-  | "enabledSubagents"
-  | "subagentLimits"
-  | "runLimits"
-  | "automaticRecovery"
-  | "modelAdvisor"
-  | "promptVariables"
-  | "toolLoopGuard";
+export type AgentProfileField = "name" | "description" | "systemPrompt" | "model" | "thinkingLevel" | "toolPolicy" | "enabledTools" | "enabledSkills" | "enabledSubagents" | "subagentLimits" | "runLimits" | "automaticRecovery" | "modelAdvisor" | "promptVariables" | "toolLoopGuard";
 
 export type AgentProfileRevisionSource = "created" | "updated" | "rollback" | "imported" | "migrated";
 
@@ -2567,12 +2483,7 @@ export interface AutomaticRecoveryClaim {
 
 export type RunControlMessageMode = "steering" | "follow_up";
 export type RunControlMessageStatus = "queued" | "delivered" | "cancelled";
-export type RunControlMessageCancellationReason =
-  | "operator_cancelled"
-  | "run_completed_before_delivery"
-  | "run_failed_before_delivery"
-  | "run_cancelled_before_delivery"
-  | "run_interrupted_before_delivery";
+export type RunControlMessageCancellationReason = "operator_cancelled" | "run_completed_before_delivery" | "run_failed_before_delivery" | "run_cancelled_before_delivery" | "run_interrupted_before_delivery";
 
 export interface QueueRunControlMessageRequest {
   mode: RunControlMessageMode;
@@ -2931,15 +2842,7 @@ export interface LspCodeActionsDetails extends LspSessionEvidenceDetails {
   resultSha256: string;
 }
 
-export type WorkspacePatchDiagnosticsStatus =
-  | "clean"
-  | "introduced"
-  | "improved"
-  | "unchanged"
-  | "regressed"
-  | "truncated"
-  | "unavailable"
-  | "drifted";
+export type WorkspacePatchDiagnosticsStatus = "clean" | "introduced" | "improved" | "unchanged" | "regressed" | "truncated" | "unavailable" | "drifted";
 
 export interface WorkspacePatchDiagnosticsDetails {
   kind: "napier.workspace-patch-diagnostics";
@@ -2969,16 +2872,7 @@ export interface WorkspacePatchDiagnosticsDetails {
   durationMs: number;
   resultSha256: string;
 }
-export type WriteLinkedTestVerificationStatus =
-  | "passed"
-  | "failed"
-  | "timed_out"
-  | "output_capped"
-  | "no_match"
-  | "selection_incomplete"
-  | "drifted"
-  | "cancelled"
-  | "unavailable";
+export type WriteLinkedTestVerificationStatus = "passed" | "failed" | "timed_out" | "output_capped" | "no_match" | "selection_incomplete" | "drifted" | "cancelled" | "unavailable";
 
 export interface WriteLinkedTestVerificationDetails {
   kind: "napier.write-linked-test-verification";
@@ -3522,10 +3416,7 @@ const TRACE_SUMMARY_BOUNDARY_EVENT_PREFIXES = [
 
 export function traceSummaryBoundarySource(event: Pick<RunEvent, "type"> | string): TraceSummaryBoundarySource {
   const type = typeof event === "string" ? event : event.type;
-  return TRACE_SUMMARY_BOUNDARY_EXACT_EVENT_TYPES.has(type) ||
-    TRACE_SUMMARY_BOUNDARY_EVENT_PREFIXES.some((prefix) => type.startsWith(prefix))
-    ? "dedicated"
-    : "generic";
+  return TRACE_SUMMARY_BOUNDARY_EXACT_EVENT_TYPES.has(type) || TRACE_SUMMARY_BOUNDARY_EVENT_PREFIXES.some((prefix) => type.startsWith(prefix)) ? "dedicated" : "generic";
 }
 
 export function traceSummaryBoundaryCoverage(events: readonly Pick<RunEvent, "type">[]): RunTraceSummaryBoundaryCoverage {
@@ -3548,17 +3439,11 @@ export function traceSummaryBoundaryCoverage(events: readonly Pick<RunEvent, "ty
   };
 }
 
-export function traceSummaryBoundaryDelta(
-  leftEvents: readonly Pick<RunEvent, "type">[],
-  rightEvents: readonly Pick<RunEvent, "type">[],
-): RunTraceSummaryBoundaryDelta {
+export function traceSummaryBoundaryDelta(leftEvents: readonly Pick<RunEvent, "type">[], rightEvents: readonly Pick<RunEvent, "type">[]): RunTraceSummaryBoundaryDelta {
   const left = traceSummaryBoundaryCoverage(leftEvents);
   const right = traceSummaryBoundaryCoverage(rightEvents);
   const genericDelta = right.generic - left.generic;
-  const diagnostics = [
-    ...(genericDelta > 0 ? ["candidate_trace_summary_generic_fallback_increased"] : []),
-    ...(right.generic > 0 ? ["candidate_trace_summary_generic_fallback_present"] : []),
-  ];
+  const diagnostics = [...(genericDelta > 0 ? ["candidate_trace_summary_generic_fallback_increased"] : []), ...(right.generic > 0 ? ["candidate_trace_summary_generic_fallback_present"] : [])];
   return {
     status: genericDelta > 0 ? "regressed" : right.generic > 0 ? "generic_present" : "clean",
     left,
@@ -4619,12 +4504,7 @@ export interface ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult 
   previousBaselineSha256?: string;
 }
 
-export type ReceiptTrustAnchorDirectoryQuorumActivationSourceStatus =
-  | "aligned"
-  | "directory_drift"
-  | "anchor_set_drift"
-  | "no_last_good"
-  | "missing_subscription";
+export type ReceiptTrustAnchorDirectoryQuorumActivationSourceStatus = "aligned" | "directory_drift" | "anchor_set_drift" | "no_last_good" | "missing_subscription";
 
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSource {
   sourceOriginSha256: string;
@@ -4857,10 +4737,7 @@ export interface DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTra
   trustDirectoryPolicy?: ReceiptTrustAnchorDirectoryVerificationPolicy;
 }
 
-export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerificationStatus =
-  | "valid"
-  | "divergent"
-  | "invalid";
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerificationStatus = "valid" | "divergent" | "invalid";
 
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification {
   kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-verification";
@@ -4917,16 +4794,9 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparenc
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionStatus = "active" | "paused";
 
-export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshStatus =
-  | "accepted"
-  | "unchanged"
-  | "rollback_rejected"
-  | "rejected"
-  | "failed";
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshStatus = "accepted" | "unchanged" | "rollback_rejected" | "rejected" | "failed";
 
-export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionTransparencyStatus =
-  | "accepted"
-  | "unchanged";
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionTransparencyStatus = "accepted" | "unchanged";
 
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionTransparencyEntry {
   kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-subscription-transparency-entry";
@@ -5016,18 +4886,9 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparenc
   requiredSignerKeyIds?: string[];
 }
 
-export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumStatus =
-  | "agreed"
-  | "insufficient_sources"
-  | "split"
-  | "policy_failed"
-  | "stale";
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumStatus = "agreed" | "insufficient_sources" | "split" | "policy_failed" | "stale";
 
-export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistrySourceStatus =
-  | "eligible"
-  | "paused"
-  | "missing_last_good"
-  | "stale";
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistrySourceStatus = "eligible" | "paused" | "missing_last_good" | "stale";
 
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistrySource {
   subscriptionId: string;
@@ -5162,12 +5023,7 @@ export interface ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTrans
   previousBaselineSha256?: string;
 }
 
-export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftStatus =
-  | "missing_selection"
-  | "aligned"
-  | "directory_drift"
-  | "anchor_set_drift"
-  | "quorum_unavailable";
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftStatus = "missing_selection" | "aligned" | "directory_drift" | "anchor_set_drift" | "quorum_unavailable";
 
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit {
   kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-drift-audit";
@@ -5198,12 +5054,7 @@ export interface ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotat
   checkpointRegistryQuorumPolicy?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy;
 }
 
-export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReviewStatus =
-  | "eligible"
-  | "already_active"
-  | "blocked"
-  | "stale_selection"
-  | "missing_decision";
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReviewStatus = "eligible" | "already_active" | "blocked" | "stale_selection" | "missing_decision";
 
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview {
   kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-review";
@@ -5229,13 +5080,7 @@ export interface ProposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRota
   expectedCheckpointRegistryQuorumBaselineSha256?: string;
 }
 
-export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalStatus =
-  | "proposed"
-  | "blocked"
-  | "stale_selection"
-  | "missing_decision"
-  | "already_active"
-  | "missing_checkpoint_registry_baseline";
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalStatus = "proposed" | "blocked" | "stale_selection" | "missing_decision" | "already_active" | "missing_checkpoint_registry_baseline";
 
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal {
   kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal";
@@ -5347,12 +5192,7 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPro
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionStatus = "active" | "paused";
 
-export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshStatus =
-  | "accepted"
-  | "unchanged"
-  | "rollback_rejected"
-  | "rejected"
-  | "failed";
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshStatus = "accepted" | "unchanged" | "rollback_rejected" | "rejected" | "failed";
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionTransparencyStatus = "accepted" | "unchanged";
 
@@ -5480,9 +5320,7 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPro
   requiredSignerKeyIds?: string[];
 }
 
-export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReviewStatus =
-  | "accepted"
-  | "rejected";
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReviewStatus = "accepted" | "rejected";
 
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview {
   kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval-policy-review";
@@ -5633,10 +5471,7 @@ export interface ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionRotat
   previousBaselineSha256?: string;
 }
 
-export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplayStatus =
-  | "aligned"
-  | "divergent"
-  | "invalid";
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplayStatus = "aligned" | "divergent" | "invalid";
 
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay {
   kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval-apply-replay";
@@ -6010,17 +5845,7 @@ export interface QualifyPromptPackageRequest {
   threadId?: string;
 }
 
-export type InspectorPanelId =
-  | "trace"
-  | "processes"
-  | "files"
-  | "lab"
-  | "plan"
-  | "goal"
-  | "memory"
-  | "extensions"
-  | "automations"
-  | "context";
+export type InspectorPanelId = "trace" | "processes" | "files" | "lab" | "plan" | "goal" | "memory" | "extensions" | "automations" | "context";
 
 export interface InspectorPackageManifestPanel {
   id: InspectorPanelId;
@@ -6137,11 +5962,7 @@ export interface InspectorPackageVerification {
   reason: string;
 }
 
-export type InspectorPackageQualificationStatus =
-  | "qualified"
-  | "inspector_drift"
-  | "missing_inspector"
-  | InspectorPackageVerificationStatus;
+export type InspectorPackageQualificationStatus = "qualified" | "inspector_drift" | "missing_inspector" | InspectorPackageVerificationStatus;
 
 export interface InspectorPackageQualification {
   status: InspectorPackageQualificationStatus;
@@ -6262,6 +6083,7 @@ export interface BootstrapResponse {
   models: ModelSummary[];
   memories: MemoryFact[];
   extensions: ExtensionRecord[];
+  plugins?: import("./kernel-plugins.js").KernelPluginInspection[];
   extensionPublisherTrustAnchors: ExtensionPublisherTrustAnchor[];
   extensionPackageRolloutChannels: ExtensionPackageRolloutChannel[];
   skillPackageInstallations: SkillPackageInstallation[];
@@ -6292,6 +6114,160 @@ export interface ThreadDetail {
   operatorDecisions: OperatorDecision[];
   contextCheckpointCalibration: ContextCheckpointCalibrationReport;
   events: RunEvent[];
+  taskNarrative?: {
+    phase: "ready" | "working" | "waiting" | "blocked" | "completed" | "failed";
+    phaseLabel: string;
+    currentAction: string;
+    completedItems: string[];
+    metricRunId?: string;
+    nextStep?: string;
+    blocker?: string;
+  };
+  activePlan?: {
+    planId: string;
+    revision: number;
+    status: ExecutionPlanStatus;
+    objective: string;
+    completedStepCount: number;
+    settledStepCount: number;
+    stepCount: number;
+    runningStep?: PlanStep;
+    blockedStep?: PlanStep;
+    nextStep?: PlanStep;
+    verifiedArtifactCount: number;
+    producedArtifactCount: number;
+    missingArtifactCount: number;
+    outputPaths: string[];
+    activePhaseIndex: number | null;
+    phaseCount: number;
+    eventWatermark: number;
+  };
+  messages?: Array<{ id: string; seq: number; role: "user" | "assistant" | "system"; text: string; model: string; createdAt: string }>;
+  artifacts?: Array<{
+    id: string;
+    seq: number;
+    createdAt: string;
+    attemptScope: "current" | "previous";
+    threadId: string;
+    runId: string;
+    planId: string;
+    planRevision: number;
+    artifact: ArtifactManifestEntry;
+  }>;
+  activityEvents?: RunEvent[];
+  citations?: Array<{
+    id: string;
+    seq: number;
+    createdAt: string;
+    callId: string;
+    citationId: string;
+    sourceId: string;
+    sourceKind: "browser" | "web_fetch";
+    startLine: number;
+    endLine: number;
+    sourceContentSha256: string;
+    sourceTitleSha256: string;
+    quoteSha256: string;
+    claimSha256: string;
+  }>;
+  recoveries?: Array<{
+    id: string;
+    seq: number;
+    createdAt: string;
+    status: AutomaticRecoveryAttemptStatus | "skipped";
+    assessment: {
+      contentSha256: string;
+      interruptedRunId: string;
+      rootRunId: string;
+      eligible: boolean;
+      blockReasons: AutomaticRecoveryBlockReason[];
+      policy: AutomaticRecoveryPolicy;
+      toolCalls: AutomaticRecoveryAssessment["toolCalls"];
+      eventRange: AutomaticRecoveryAssessment["eventRange"];
+      priorAttempts: number;
+      assessedAt: string;
+    };
+    attempt?: {
+      id: string;
+      status: AutomaticRecoveryAttemptStatus;
+      attempt: number;
+      maxAttempts: number;
+      recoveryRunId?: string;
+      revision: number;
+    };
+    settlement?: {
+      budgetReason: "turns" | "tokens" | "cost" | "timeout";
+      limit?: number;
+      observedTurns?: number;
+      observedTotalTokens?: number;
+      observedCostUsd?: number;
+      observedElapsedMs?: number;
+    };
+    eventIds: string[];
+  }>;
+  subagentCards?: Array<{
+    id: string;
+    seq: number;
+    createdAt: string;
+    task: {
+      id: string;
+      role: SubagentRole;
+      description: string;
+      status: SubagentTaskStatus;
+      model: ModelRef;
+      stepCount: number;
+      turnCount: number;
+      usage: { inputTokens: number; outputTokens: number };
+      stopReason?: SubagentStopReason;
+      hasError?: true;
+      outcome?: {
+        summary: string;
+        items: Array<{ kind: SubagentOutcomeItemKind; severity: SubagentOutcomeSeverity; title: string; evidenceCount: number }>;
+      };
+    };
+    itemCount: number;
+    evidenceCount: number;
+    unknownCount: number;
+    blockerCount: number;
+    warningCount: number;
+  }>;
+  activityCandidates?: Array<{
+    id: string;
+    seq: number;
+    type: string;
+    label: string;
+    summary: string;
+    tone: "working" | "completed" | "waiting" | "blocked" | "info";
+    createdAt: string;
+    callId?: string;
+    planId?: string;
+    decisionId?: string;
+    taskId?: string;
+    artifactKey?: string;
+  }>;
+  conversationPlans?: Array<{
+    id: string;
+    seq: number;
+    createdAt: string;
+    attemptScope: "current" | "previous";
+    plan: {
+      id: string;
+      status: ExecutionPlanStatus;
+      revision: number;
+      objective: string;
+      steps: Array<{ id: string; title: string; status: PlanStepStatus; evidenceRecorded: boolean; blocker?: string }>;
+      activePhaseIndex: number | null;
+      phaseCount: number;
+    };
+    completedStepCount: number;
+    settledStepCount: number;
+    runningStep?: { id: string; title: string; status: PlanStepStatus; evidenceRecorded: boolean; blocker?: string };
+    blockedStep?: { id: string; title: string; status: PlanStepStatus; evidenceRecorded: boolean; blocker?: string };
+    nextStep?: { id: string; title: string; status: PlanStepStatus; evidenceRecorded: boolean; blocker?: string };
+    verifiedArtifactCount: number;
+    producedArtifactCount: number;
+    missingArtifactCount: number;
+  }>;
 }
 
 export interface CreateThreadRequest {
@@ -6320,7 +6296,24 @@ export * from "./workflow-experiments.js";
 export * from "./rpc.js";
 
 export type StreamFrame =
-  | { type: "event"; event: RunEvent; eventSha256: string }
+  | {
+      type: "event";
+      event: RunEvent;
+      eventSha256: string;
+      projections?: {
+        taskNarrative?: NonNullable<ThreadDetail["taskNarrative"]>;
+        activePlan?: NonNullable<ThreadDetail["activePlan"]>;
+        messages?: NonNullable<ThreadDetail["messages"]>;
+        artifacts?: NonNullable<ThreadDetail["artifacts"]>;
+        activityEvents?: NonNullable<ThreadDetail["activityEvents"]>;
+        citations?: NonNullable<ThreadDetail["citations"]>;
+        recoveries?: NonNullable<ThreadDetail["recoveries"]>;
+        subagentCards?: NonNullable<ThreadDetail["subagentCards"]>;
+        activityCandidates?: NonNullable<ThreadDetail["activityCandidates"]>;
+        conversationPlans?: NonNullable<ThreadDetail["conversationPlans"]>;
+        operatorDecisions?: OperatorDecision[];
+      };
+    }
   | {
       type: "snapshot";
       detail: ThreadDetail;

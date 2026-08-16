@@ -4,6 +4,1626 @@ This matrix is re-audited from the current repository before each vertical
 slice. It is not a feature wishlist or a substitute for task-success
 benchmarks.
 
+## Implemented Slice: Hard Model Stream Cancellation
+
+User scenario: cancelling or timing out a Run must promptly release the active
+turn even when the selected model provider ignores its `AbortSignal`, and
+provider output that arrives after terminal settlement must not re-enter the
+Ledger.
+
+Acceptance and threat boundary:
+
+- wrap the production `streamSimple` boundary rather than relying on every
+  provider to propagate cancellation correctly;
+- race each provider iterator read and terminal result against the active Run
+  signal, returning one protocol-valid aborted model response when cancellation
+  wins;
+- stop consuming the provider iterator, attempt best-effort iterator return,
+  release the active Run, and quarantine every later provider event;
+- preserve existing provider success/error protocol behavior and model delta
+  batching;
+- do not claim the rest of M0-A1: unified run/turn/tool deadlines,
+  finalization reserve, deterministic finalization, partial result taxonomy,
+  and non-blocking budget exhaustion remain.
+
+Observed result:
+
+- a signal-ignoring provider that never resolves settles as `run.cancelled`
+  within the focused test's one-second bound; `AgentRuntime.stop()` immediately
+  reports no active Run afterward;
+- releasing that provider after terminal settlement produces no new Ledger
+  event and its late response text is absent from durable state;
+- a fake-clock 10-second Run deadline settles the same stuck provider as
+  `run.budget.exhausted` plus `run.failed` without a real wait;
+- budget exhaustion no longer emits `goal.evaluated` or changes an active Goal
+  into a `run_failed` blocker; ordinary non-budget provider failures retain the
+  existing fail-closed Goal-blocking behavior;
+- budget exhaustion now persists a compatible control-plane outcome while
+  retaining legacy `status=failed` for current RPC/stream consumers. A
+  settlement with durable completed items or produced/verified artifacts is
+  `partial`; one without durable deliverables is `paused_budget`. Both settle
+  the Thread idle, survive Store restart, and render as resumable `Partial` or
+  `Paused` Task Narrative states instead of `Needs review`;
+- the deterministic Finalizer now emits `run.settlement.recorded` before the
+  terminal Run event. It derives bounded completed items and open loops from
+  durable Agent milestones and Run-bound Plan steps, preserves produced or
+  verified Run-bound artifacts, hashes the source event stream and settlement
+  content, and records a continuation instruction without another model call;
+- primary-turn accounting now reserves a turn when `turn_start` is emitted and
+  retires the in-flight marker when terminal usage arrives. Timeout evidence for
+  a provider that never returns therefore reports `turns=1` and
+  `inFlightTurns=1` instead of incorrectly reporting zero completed work;
+- when another primary turn would cross the earliest finalization reserve, the
+  Runtime now stops before that model call and emits
+  `run.finalization.reserved`. Normal limits preserve six turns, three minutes,
+  and 10% of the token budget; intentionally tiny limits keep their existing
+  hard-cap semantics. Current tool effects settle first, no second model turn is
+  dispatched, and the same deterministic settlement path records resumable
+  `partial` or `paused_budget` evidence;
+- Run cancellation still settles immediately, but the isolated provider stream
+  gets a five-second grace period in the background. If it still has not
+  produced a terminal result, Napier appends one metadata-only
+  `model.stream.cancellation_failed` event with provider/model identity, grace
+  duration, and a content hash; queued or late output remains quarantined and
+  the diagnostic never reopens the settled Run;
+- artifact manifests now have a non-terminal `candidate` state. During budget
+  finalization, Napier examines only current-Run Plans and only their declared
+  `expected` file/directory paths; an existing, readable, non-symlink target
+  whose resolved path remains inside the canonical workspace becomes a
+  Run-bound candidate, emits `plan.artifact.candidate`, appears in the
+  deterministic settlement, survives replay/restart, and remains explicitly
+  unverified until normal produced/verified transitions complete. Candidate
+  manifests retain ordinary produce/missing actions and count as pending
+  recovery work rather than disappearing from Plan projections;
+- deterministic finalization now converts only current-Run `running` Plan
+  steps to the terminal-but-reopenable `partial` state and emits
+  `plan.step.partial`; normal HTTP, Web, and Agent action schemas cannot request
+  that internal transition. The same settlement emits a hash-bound
+  `run.settlement.checkpoint` containing outcome, settlement/source hashes,
+  bounded open loops, Plan IDs, artifact count, and continuation guidance.
+  Restart preserves the partial step and checkpoint, and an explicit reopen
+  returns the step to dependency-derived ready/pending state without retaining
+  the old Run binding;
+- each provider turn now receives a cancellable child deadline derived from the
+  active Run signal and remaining Run wall time. Production defaults cap one
+  turn at five minutes, require a first provider event within 45 seconds, and
+  require another transport event and meaningful text/thinking/tool-call
+  progress within separate 90-second windows. Framing and whitespace can reset
+  transport idle but cannot reset semantic progress. Root Run cancellation wins
+  without creating watchdog evidence; first-event, idle, semantic-progress, or
+  turn watchdogs emit bounded `model.stream.watchdog_triggered` metadata and
+  route through deterministic `partial` / `paused_budget` finalization instead
+  of blocking the Goal. Focused fake-time tests cover all four watchdogs,
+  meaningful-progress reset, framing-only keepalive, parent cancellation, and
+  AgentRuntime settlement. Trace projects the semantic timeout without raw
+  provider output. Tool-child deadlines remain;
+- every actual Agent tool execution now receives a cancellable child deadline
+  rooted in the current turn/Run signal and capped by the remaining Run wall
+  time, a two-minute default, and any smaller positive tool `timeoutMs`.
+  Deadline abort waits up to five seconds for cooperative settlement, records
+  `completed` when the tool settles during grace or `started_unknown` when it
+  does not, then quarantines late updates/results. `tool.deadline.exceeded`
+  carries only effect/state/timing and call/content hashes; deadline hits stop
+  before another model turn and enter non-blocking deterministic settlement.
+  Focused manager and approved-MCP Agent tests cover normal completion,
+  completed-during-grace, unknown side effects, late-output quarantine, and
+  resumable Run/Goal behavior;
+- every actual Agent tool execution now journals hash-only side-effect state as
+  `not_started`, `started_unknown`, or `completed`. The durable
+  `not_started` record commits before tool code can run; a deadline that wins
+  during that write never invokes the tool. Only a typed synchronous
+  `ToolNotStartedError` can trigger one transparent retry, while asynchronous
+  rejection, started/unknown work, and completed work are never replayed.
+  Journal/retry records correlate through call ID, tool-name/call/content
+  hashes, effect, state, and attempt without adding raw tool input or
+  masquerading as the public `tool.started` / `tool.completed` protocol.
+  Focused tests cover normal state order, pre-start deadline, grace settlement,
+  unknown side effects, late-output quarantine, one safe retry, no async retry,
+  approved MCP finalization, experiment hash stability, and existing
+  private-tool Ledger contracts. Semantic-progress watchdogs remain;
+- focused cancellation and delta-batching tests pass, Runtime typecheck passes,
+  the complete Runtime suite passes 1,679 tests with 31 opt-in tests skipped,
+  the complete Web suite passes 714 tests, Prettier and `git diff --check`
+  pass, and the control-plane extraction ratchets `agent-runtime.ts` to 3,301
+  lines while reducing its maximum function complexity from 64 to 52.
+- the two named acceptance ledgers were replayed through the current
+  deterministic settlement on a temporary copy of `.napier/workspace.json`
+  plus a SQLite `.backup`; the live Ledger and workspace were not mutated.
+  `thread_a90ab5cc84854a6b89b6` / `run_3d42477401e84d77826f` reclassified its
+  historical 30-minute timeout as `paused_budget`, emitted a settlement and
+  continuation checkpoint, and did not create a Goal blocker.
+  `thread_8c0f576b6b054962ac79` / `run_07567b4a176f490fbb42` reclassified its
+  64-turn exhaustion as `partial`, converted the Run-bound `scaffold` step to
+  `partial`, discovered the existing 70,702-byte `kakeya/index.html` as a
+  `candidate`, and checkpointed the four remaining loops without repeating
+  research. Before/after SHA-256 remained
+  `aaefc382ee1a125475cf5c16da1d33abc1b5499ef4efa5d538e4076a558b6fe3`
+  for `ai-news-weekly/index.html` and
+  `ae857ffe560a70a5e6e1eea5ef97ab957f17d3e5afe0086ef1dc5176d2709d29`
+  for `kakeya/index.html`.
+
+M0-A1 hard cancellation and deterministic settlement are complete. Output
+token tiering and finite progress-based extension remain Budget Orchestrator
+enhancements, but they no longer block starting M0-A2 Progress Governor.
+
+## Implemented Slice: Run Progress Vector
+
+User scenario: the control plane must distinguish useful execution from tool
+wandering without retaining raw workspace bytes, prompts, source text, or model
+output.
+
+Observed result:
+
+- after every primary Agent turn, Runtime emits one durable
+  `run.progress.vector` debug event chained to its predecessor and the exact
+  `turn.completed` sequence;
+- the vector tracks hash-only dimensions for successful workspace mutations,
+  Plan revision/status, artifact status/candidates, new source evidence,
+  approvals, capability state, and user-visible results. It also records
+  stagnant-turn count and the first workspace mutation turn/elapsed time;
+- projection reads only new Ledger events since the prior turn plus current
+  Run-bound Plan records. It does not rescan workspace bytes or retain raw
+  prompts, source bodies, tool arguments, paths, or assistant text;
+- focused tests prove hash chaining, `progressed`/stagnant transitions, first
+  mutation timing, and one vector per real two-turn Agent execution;
+- Runtime typecheck passes, architecture audits 1,330 source files and 685
+  test files with zero cycles, `agent-runtime.ts` remains at its 3,301-line
+  hard ratchet, the complete Runtime suite passes 1,683 tests with 31 opt-in
+  tests skipped, and the complete Web suite passes 714 tests.
+
+## Implemented Slice: Action-First Reroute
+
+User scenario: a build/edit task that keeps reading or planning must receive one
+bounded execution redirect before it consumes the whole Run without a mutation.
+
+Observed result:
+
+- a deterministic task-intent classifier enables the rule only when the prompt
+  has build/edit intent and an actual workspace mutation tool is available;
+- if no successful mutation exists after three completed turns or three minutes,
+  Runtime records one hash-only `run.progress.rerouted` receipt and injects one
+  hidden action-first steering message before the next provider call. Explicit
+  queued user steering takes precedence;
+- the hidden redirect requires the smallest safe reversible mutation or a
+  concrete blocker, forbids expanded analysis/research/planning, and is
+  suppressed from `message.user` so the Ledger does not misattribute system
+  policy to the user;
+- after the redirect, the first successful mutation is captured by the next
+  Progress Vector. The rule never retriggers in the same Run, never applies to a
+  research-only prompt, and stops naturally when mutation already occurred;
+- focused tests cover turn and elapsed thresholds, one-shot delivery, research
+  exclusion, hidden-message privacy, and a real three-read -> redirect -> patch
+  Agent loop. The complete Runtime suite remains green at 1,685 tests, Web at
+  714 tests, and architecture/formatting/diff checks pass.
+
+## Implemented Slice: No-Progress Convergence
+
+User scenario: a Run that keeps changing tool arguments without changing the
+product must not loop until the hard budget expires.
+
+Observed result:
+
+- six consecutive stagnant turns or three stagnant minutes produce exactly one
+  hash-bound `summarize_and_converge` reroute containing only vector hashes and
+  bounded counts for mutations, sources, Plan revisions, artifact candidates,
+  and user-visible results;
+- the hidden reroute tells the model to reuse completed evidence, stop expanding
+  research/planning, and make one smallest safe action or concrete partial
+  result. Explicit user steering is delivered first and a pending internal
+  reroute is cancelled if that work changes the vector;
+- after the convergence reroute is actually delivered, the next completed turn
+  either changes a dimension and continues, or throws typed
+  `RunNoProgressError`. Classification treats this as resumable
+  `paused_budget`, never blocks the Goal, and routes through the same
+  deterministic candidate/partial/checkpoint Finalizer;
+- settlement emits bounded `run.no_progress` evidence tied to the reroute and
+  final Progress Vector. The redirect text remains absent from user-authored
+  Ledger messages;
+- policy and vector projection were split into 269-line
+  `run-progress-governor.ts` and 417-line `run-progress-vector.ts`; the facade
+  remains exactly 3,301 lines. Focused tests cover classification and a varied
+  seven-turn read loop, and the complete Runtime suite passes 1,685 tests with
+  31 opt-in skips; Web passes 714, architecture/formatting/diff checks pass.
+
+## Implemented Slice: Research Budget
+
+User scenario: research should support delivery, not consume an unbounded share
+of a Run that still needs implementation, verification, and explanation.
+
+Observed result:
+
+- `web_search`, `web_fetch`, `web_fetch_save`, and `research_source` share a
+  Run-scoped budget capped at 25% of configured model turns and wall time, with
+  a minimum allowance of one turn/millisecond for deliberately tiny fixtures;
+- multiple research calls within one model turn count once. Completed research
+  turn duration is accumulated from first admitted research call to
+  `turn.completed`;
+- after either boundary, further research calls are blocked before invocation
+  capture/execution with one durable `run.research.budget_exhausted` receipt.
+  The receipt stores counts/timing plus tool-name/content hashes, never query,
+  URL, source body, or result text. Existing safety, exact-loop, capability, and
+  approval preflights remain authoritative and execute first;
+- exhaustion tells the model to reuse existing sources and converge, while
+  non-research tools and final delivery remain available. Repeated blocked calls
+  reuse the same policy result without emitting fake progress events;
+- focused direct tests cover turn/time accounting and one-shot evidence; an
+  Agent smoke permits one search turn in a four-turn Run, blocks the second, and
+  still completes delivery. The complete Runtime suite passes 1,687 tests with
+  31 opt-in skips, Web passes 714, and architecture audits 1,333 source files /
+  686 test files with zero cycles. Formatting and diff checks pass.
+
+M0-A2 Progress Governor is complete: hash-only Progress Vector, 3-turn /
+3-minute first-mutation action-first reroute, 25% research budget, and one
+6-turn / 3-minute no-progress reroute followed by deterministic resumable
+finalization.
+
+## Implemented Slice: Streaming Thinking-Loop Guard
+
+User scenario: repetitive hidden reasoning must stop before it becomes a large
+visible/retained failure, retry once with an execution-first redirect, and then
+settle rather than looping again.
+
+Observed result:
+
+- the provider-stream boundary now buffers only the initial hidden-thinking
+  phase, up to 32 KiB, and detects conservative literal repetition,
+  near-paragraph clusters, low novelty without file/symbol/URL/hash anchors,
+  and heading-heavy overplanning;
+- a detected first attempt is aborted and quarantined before any buffered
+  thinking or draft text reaches Agent events. Runtime records only bounded
+  provider/model/reason/count/hash evidence, charges a conservative failed-
+  attempt output-token estimate, and performs one retry;
+- the retry has a separately captured Model Context Envelope, Prompt Package,
+  and private invocation capsule. Its hidden user redirect binds the prior
+  evidence hash, requires one smallest safe action or shortest concrete partial
+  result, clamps output to 2,048 tokens, and uses minimal reasoning when the
+  model supports it;
+- the hidden redirect and failed draft do not become user-authored Ledger
+  messages. Existing hard cancellation and stream watchdogs remain active for
+  both attempts;
+- a second detection becomes typed `ModelThinkingLoopError`, emits
+  `model.thinking_loop.finalized`, classifies as resumable `paused_budget`,
+  leaves the Goal active, and routes through deterministic candidate/partial
+  settlement;
+- model stream capture moved to 158-line
+  `agent-model-stream-lifecycle.ts`; `agent-runtime.ts` shrank to a new
+  3,291-line hard ratchet. Focused detector/Agent/cancellation/adapter tests pass,
+  the complete Runtime suite passes 1,692 tests with 31 opt-in skips, Web passes
+  714, and architecture audits 1,337 source files / 688 test files with zero
+  cycles. Formatting and diff checks pass.
+
+M0-A3 thinking-loop, semantic-idle, and side-effect-aware retry controls are
+complete. Structural summary reads and content/range anchors were already
+present in the read/edit tool surface and remain covered by existing tests.
+
+## Implemented Slice: Exact Run-Bound Local Preview Lease
+
+User scenario: an Agent can start one egress-denied local HTTP service, inspect
+it with Napier's isolated Browser during the same Run, and never gain generic
+localhost/private-network access.
+
+Observed result:
+
+- every ready schema-8 `workspace_process` local service grants one in-memory
+  lease bound to exact `threadId + runId + processId + origin +
+identitySha256 + expiry`; durable grant/revoke events retain only hashes,
+  ports are not persisted by the lease receipt, and no secret health path is
+  copied;
+- Browser generic policy still rejects loopback. The Agent preflight allows a
+  navigation exception only when the same Run has an active lease for the exact
+  `http://127.0.0.1:<ephemeral-port>` origin. Other Runs, ports, `localhost`
+  aliases, credentials, HTTPS loopback, private DNS, and expired/revoked leases
+  remain denied;
+- Browser start, navigation, tabs, and routed subrequests all pass through the
+  same owner-aware URL resolver. Local service requests use Chromium's explicit
+  loopback proxy bypass; public requests keep the authenticated fixed-IP proxy
+  and existing DNS/redirect policy;
+- Process start grants only after durable `workspace.process.started`
+  evidence. Start failure, Process settlement/cancel, Runtime shutdown, and Run
+  completion/failure revoke access. Browser Session close does not revoke a
+  still-running Process lease, so another Browser Session in the same Run may
+  continue previewing it;
+- lifecycle/policy code was split into leaf registry, Browser URL resolver,
+  Process lease collaborator, and runtime projection helpers. Existing budgets
+  ratchet `browser-page-session.ts` to 555 lines,
+  `workspace-processes.ts` to 921 lines, and preserve `agent-runtime.ts` at
+  3,291 lines;
+- focused registry, Browser, Process, generic-policy, and end-to-end Agent
+  service->Browser tests pass. The Agent smoke proves generic localhost denial,
+  same-Run lease admission, successful preview, and Run-finish revocation.
+  The complete Runtime suite passes 1,695 tests with 31 opt-in skips, Web passes
+  714, and architecture audits 1,340 source files / 692 test files with zero
+  cycles. Formatting and diff checks pass.
+
+M0-A4 safe local preview is complete.
+
+## Implemented Slice: Current Attempt and Recovery Projection
+
+User scenario: after a partial or budget-paused Run, the conversation keeps the
+recoverable Plan and candidate artifacts attached to the current task attempt;
+once an unrelated request starts, the earlier work remains visible but is
+clearly labeled as previous.
+
+Observed result:
+
+- every Agent `run.started` event now carries a validated deterministic
+  `intentId` without adding a mutable field to `RunRecord`, Store state, replay
+  schemas, Thread bundles, or Web API parsing. Ordinary Runs derive identity
+  from their Run ID; manual and automatic recovery children inherit the exact
+  validated parent event identity;
+- the Web projects `runId -> intentId` only from valid `run.started` evidence.
+  Exact Run identity remains the compatibility fallback for legacy events.
+  Recovery descendants therefore keep source Plan steps and artifacts current,
+  while a newer unrelated intent marks earlier work `Previous Plan` or
+  `Previous Artifact`;
+- `plan.artifact.candidate` is now a first-class conversation artifact event,
+  so deterministic budget settlement candidates remain visible and linked to
+  the current attempt before produced/verified promotion;
+- artifact conversation anchors are versioned bindings over exact
+  `threadId + runId + planId + artifactId + eventSeq`. The Ledger validates the
+  current fragment on projection and `hashchange`; stale, malformed, or
+  cross-thread artifact hashes are removed while unrelated application
+  fragments remain untouched;
+- focused Runtime tests cover deterministic IDs, malformed/spoofed evidence,
+  and manual/automatic recovery inheritance. Focused Web tests cover same-intent
+  recovery, unrelated-intent rollover, current candidate artifacts, all five
+  anchor dimensions, and cross-thread cleanup;
+- the complete Runtime suite passes 1,698 tests with 31 opt-in skips, Web passes
+  721, and architecture audits 1,343 source files / 694 test files with zero
+  cycles. Runtime and Web typechecks, focused formatting, and `git diff --check`
+  pass. Existing hard ratchets remain exact: `agent-runtime.ts` 3,291 lines,
+  Store 10,868, Thread Bundles 2,444, and Web API 1,594.
+
+M0-A5 attempt recovery projection is complete. Together with the previously
+recorded deterministic named-thread replay, candidate/checkpoint recovery,
+action-first edit smoke, and exact local-preview smoke, M0-A Completion Control
+Plane is complete.
+
+## Implemented Slice: Calm Default Shell and Universal Inspector Drawer
+
+User scenario: opening Napier presents one task-first work surface instead of a
+permanent governance wall, remains usable at 390 px, and keeps advanced runtime
+controls available on demand without widening the page.
+
+Observed result:
+
+- the default shell now has only Ledger navigation plus the Workbench.
+  Inspector is a default-closed contextual drawer at every viewport instead of
+  consuming a permanent 338 px desktop column. The drawer retains all existing
+  tabs and deep controls, opens from task/artifact/Browser actions, supports
+  keyboard navigation, closes with Escape or backdrop/header controls, and
+  restores focus to its visible trigger after React commits the closed state;
+- new ledgers show only Napier's brand mark, one short explanation, one input
+  cue, and the main composer. Provider and Sandbox setup no longer create a
+  first-use governance wall; they remain available with task modes, effective
+  readiness, and Agent settings inside an explicit upward-opening `Run options`
+  disclosure and the Context drawer;
+- the composer no longer mounts the complete capability/readiness desk in its
+  default row. Existing readiness still loads before Run admission, while the
+  visible composer height on the formal 1,440 px path falls from roughly
+  212 px to 160 px. The main production entry is 133.34 KiB, below the
+  unchanged 150 KiB budget;
+- four first-shell tokens now bind Ledger width, collapsed Ledger width,
+  drawer width, and Workbench gutter. Napier's paper ledger, ruled background,
+  serif/mono hierarchy, vermilion annotations, and green action language remain
+  intact rather than being replaced by a generic chat shell;
+- direct Browser measurement before the change found a 390 px document with a
+  426 px app scroll width and a composer ending at 413.6 px. After the change,
+  document and app scroll width are exactly 390 px, the composer spans
+  x=109..378 at 269 px, and the closed Inspector has zero layout width. The
+  opened mobile drawer spans x=84..390 at 306 px; opened Run options spans
+  x=80..380 at 300 px without document overflow;
+- desktop 1,440 px measurement gives the Workbench the complete remaining
+  1,188 px instead of 850 px, a 1,072 px composer, and a closed Inspector that
+  is absent from layout. The Inspect trigger now sits below the 76 px header so
+  it does not overlap model/run status;
+- the production Web E2E contract now requires the same default-closed drawer
+  at 1,600, 1,440, 1,200, 900, and 390 px. One isolated production run passed
+  all five viewports with zero horizontal overflow and zero console errors,
+  44 px Inspector targets, keyboard/manual activation, Escape focus recovery,
+  Browser Inspector, Casebook, recovery, long-run aggregation, artifact
+  navigation, same-port reconnect, restored Browser history, and complete
+  cleanup. The Darwin layout baseline was regenerated from that observed run;
+- Web passes 721 tests, the focused root Web UI contracts pass 11 tests, the
+  production Web build and typecheck pass, and architecture audits 1,343 source
+  files / 694 test files with zero cycles. Formatting and `git diff --check`
+  pass; `App.tsx` remains at its 352-line hard ratchet and the four M0-A hard
+  ratchets remain exact.
+
+M0-B's overflow/composer repair, universal contextual drawer, task-first new
+session, compact advanced options, and first shell-token slice are complete.
+
+## Implemented Slice: Task / Inspect / Studio Drawer Taxonomy
+
+User scenario: the contextual drawer makes the everyday task path obvious while
+keeping experiments, templates, trust/configuration, and operations available
+without presenting them as default task controls.
+
+Observed result:
+
+- the drawer now has three explicit progressive-disclosure groups:
+  `Task` (`Plan`, `Goal`, `Files`), `Inspect` (`Browser`, `Trace`,
+  `Processes`), and `Studio` (`Studio`, `Lab`, `Context`, `Memory`, `Extend`,
+  `Ops`). The current tool stays first within its group and the existing roving
+  keyboard/manual-activation behavior remains;
+- `PlanInspectorSurface` adds one leaf presentation seam over the unchanged
+  authoritative `PlanPanel`. Task mode shows live objective/progress, replans,
+  steps, artifact manifest/actions, and the next-step control. Studio mode shows
+  workflow breakpoints/experiments, portable archive/blueprint controls,
+  template shelf, replay/outcome policy evidence, and related advanced
+  governance. No second Plan state machine, API path, or copied control logic
+  was introduced;
+- direct Browser verification at 1,440 px proved Task displayed Plan,
+  artifacts, and next step while workflow experiment, archive, and template
+  shelf were not rendered. Switching to Studio displayed the `Workflow studio`
+  heading plus experiment, archive, blueprint, and template controls while live
+  Plan/artifact controls were absent;
+- the same check at 390 px retained a 306 px drawer at x=84..390, zero document
+  overflow, zero navigation-label overflow, and no console errors;
+- the formal production Web E2E receipt now binds group labels
+  `Task / Inspect / Studio`. It passes at 1,600, 1,440, 1,200, 900, and 390 px
+  with zero overflow/errors, keyboard/manual activation, Escape focus
+  restoration, Browser Inspector, Casebook Studio entry, recovery, long-run,
+  artifact navigation, same-port reconnect, restored Browser history, and a
+  matching layout baseline;
+- Web passes 721 tests, the production build passes with a 133.95 KiB main
+  entry under the unchanged 150 KiB budget, and architecture audits 1,344
+  source files / 694 test files with zero cycles. `PlanPanel.tsx` remains at
+  its exact 2,428-line hard ratchet, `use-workspace-view-model.ts` remains at
+  2,012 lines, and App ratchets tighten to 343 lines / complexity 36.
+
+M0-B's explicit Studio/Advanced migration slice is complete. Remaining Calm
+Shell work is primarily default conversation-density refinement and broader
+manual task-flow polish, not another governance surface migration.
+
+## Implemented Slice: Stage-Based Conversation Activity
+
+User scenario: a long task reads like a sequence of work phases instead of a
+wall of tool-specific receipts, while every original receipt remains available
+when the user asks to inspect evidence.
+
+Observed result:
+
+- consecutive completed tool, Network, and Browser cards are now classified
+  from their real tool/action metadata into four bounded phases:
+  `Research`, `Build`, `Verify`, and `Inspect`. Research includes Web and
+  Research Source work; Build includes workspace mutations, kernels/data
+  execution, Git apply operations, and background processes; Verify includes
+  workspace verification, diagnostics, and bounded command checks; Inspect
+  includes Browser plus workspace/Git/LSP/read-only inspection;
+- grouping is strictly contiguous. A phase change, message, Plan/artifact,
+  approval, recovery, subagent, citation, or any failed/blocked/working activity
+  flushes the current group. Alternating Inspect/Build work therefore remains
+  visible rather than being merged across chronology;
+- two or more consecutive phase steps collapse into one card such as
+  `Research · 5 steps`. The collapsed card mounts no hidden child cards; opening
+  it renders the unchanged original Network/Browser/Tool evidence components,
+  preserving hashes, status, timings, and detailed receipts;
+- deterministic unit coverage proves mixed Inspect/Build/Verify grouping,
+  Network/Browser phase grouping, non-contiguous boundaries, and standalone
+  failure visibility;
+- the formal long-run production fixture now projects
+  `Inspect · 12 steps`, `Research · 5 steps`, and `Inspect · 3 steps`.
+  Collapsed state mounts zero evidence children; expanding the first group
+  mounts all 12 original read cards. The same production E2E passes all five
+  viewports with zero overflow/errors and a matching layout baseline;
+- Web passes 723 tests, the production build remains 133.95 KiB under the
+  unchanged 150 KiB main-entry budget, and architecture audits 1,344 source
+  files / 694 test files with zero cycles. Formatting and `git diff --check`
+  pass.
+
+M0-B Calm Shell's planned core is now implemented: 390 px overflow/composer
+repair, universal default-closed drawer, task-first new session, compact Run
+options, Task/Inspect/Studio migration, phase-grouped activity, Task Narrative,
+results, files, and next actions. The next stage should move to M1's minimal
+composable Kernel vertical slice rather than continue polishing shell details
+without new usage evidence.
+
+## Implemented Slice: Minimal Composable Agent Kernel
+
+User scenario: Napier can assemble and inspect one typed Agent execution profile,
+observe its lifecycle through stable hooks, replace providers, and tear down
+plugin-owned services without rewriting the current Runtime or duplicating the
+Completion Control Plane.
+
+Observed result:
+
+- `KernelServiceRegistry` provides typed service keys, explicit dependencies,
+  lazy one-time resolution, cycle detection, deterministic inspection, reverse
+  disposal, owner scopes, and fail-closed removal when another owner still
+  depends on a service. Owner disposal removes resolved services and
+  registrations without residue;
+- `KernelHookRegistry` provides typed `turn.start/end`, `model.request`,
+  `tool.request/result`, and `completion.control` hooks. It projects the existing
+  durable `turn.*`, `context.model_envelope`, `tool.*`, and M0-A
+  budget/finalization/watchdog/no-progress/thinking-loop/settlement events.
+  Kernel observers therefore consume the authoritative control-plane evidence
+  instead of reimplementing deadlines, retries, progress, or finalization;
+- deterministic `base`, `web`, and `cli` profiles expose lineage, entry-point
+  capabilities, registered service/hook sets, and a content hash. Local Runtime
+  defaults to `base`; Server selects `web`; built CLI selects `cli`. A live
+  Server bootstrap inspection resolved the Web profile and all seven canonical
+  services: Agent Runtime, Model, Prompt, Tool, Policy, Completion Control, and
+  profile;
+- canonical adapters register the actual `ModelRegistry`,
+  `createAgentPromptBuilder`, `createWorkspaceTools`, and
+  `preflightAgentToolPolicy` functions. The Agent service depends on those
+  resolved adapters plus the M0-A completion observer; these are real
+  implementation seams rather than descriptive metadata;
+- `AgentKernel.runPrompt()` composes Kernel observation with the caller's
+  existing event sink and delegates execution to the unchanged
+  `AgentRuntime`. `LocalAgentRuntimeServices` exposes both `runtime` and
+  `kernel`; current HTTP, CLI, SDK, Workflow, recovery, and experiment callers
+  remain source compatible and keep using the original Runtime methods unless
+  explicitly migrated;
+- a real faux-provider Kernel run used `read_file`, emitted all six typed hooks,
+  resolved the actual adapters, and recorded M0-A `run.completed` through the
+  Completion Control observer. A second Kernel coding run performed
+  `read_file -> apply_patch -> verify_workspace`, changed an exact hash-bound
+  TypeScript file, received a passing typecheck receipt, and completed with the
+  expected tool/control hook sequence;
+- provider replacement was proved under one provider ID: the first
+  implementation completed one Kernel run, then a replacement implementation
+  completed the next run while the first provider's call count remained
+  unchanged. A plugin scope registered one service and one hook, executed them,
+  disposed idempotently, and left neither service nor hook owner in Kernel
+  inspection;
+- the unchanged `services.runtime.runPrompt()` path completed after Kernel
+  execution, proving compatibility. A built one-shot CLI demo completed with
+  normal JSONL events/snapshot/done output; live Server construction resolved
+  the Web Kernel and shut down cleanly;
+- 12 focused Kernel/bootstrap tests pass. The complete Runtime suite passes
+  1,706 tests with 31 opt-in skips; SDK passes 79 tests and Server passes 227.
+  Runtime, SDK, Server, and CLI typechecks pass. Architecture audits 1,349
+  source files / 696 test files with zero cycles;
+- four process-heavy retained CLI benchmark files remain independently failing
+  on their existing legacy `services.runtime` paths with incomplete benchmark
+  Runs/fixtures. They do not execute `kernel.runPrompt()` and are not treated as
+  Kernel regressions. The supported built CLI demo and focused CLI/Server
+  bootstrap paths pass;
+- all existing hard ceilings remain exact: Runtime public index 199 lines,
+  local bootstrap 293, CLI entry 558, Server app 8,725, Agent Runtime 3,291,
+  Store 10,868, and Thread Bundles 2,444.
+
+M1's minimal composable Kernel vertical slice is complete. The next stage should
+use this seam for M2 projection services and event-watermark consumers rather
+than move every existing entry point or capability into the Kernel at once.
+
+## Implemented Slice: Versioned Thread Summary Projection
+
+User scenario: Web bootstrap can read a cached Thread list through the Kernel,
+apply only newly committed Ledger events, and preserve the existing bootstrap
+contract without repeatedly folding every Thread's complete event history.
+
+Observed result:
+
+- `KernelProjectionRegistry` now owns versioned pure `init / apply / view`
+  definitions, source-identity hashes, state version, event watermark, cache
+  inspection, targeted invalidation, and shutdown cleanup. A projection rejects
+  unregistered implementations, non-contiguous tails, and an advertised source
+  watermark that the loaded tail does not reach;
+- `ThreadSummaryProjectionService` reconstructs summary status, message preview,
+  event count, update time, and reversible trash visibility. It preserves the
+  historical onboarding fixture whose completed Run exists only in the legacy
+  snapshot, and maps current Agent/workflow terminal evidence to the existing
+  Thread status contract;
+- the first request performs a cold full replay, the second request reuses the
+  cached watermark with zero applied events, and one newly committed event is
+  applied as a one-event tail. Registering a higher definition version clears
+  the old cache before replay;
+- the Kernel registers `projection.registry` and
+  `projection.thread-summary`, exposes the Thread summary service, and disposes
+  the projection registry through its existing reverse lifecycle;
+- Server bootstrap selects the `web` profile and consumes
+  `services.kernel.threadSummaries.listVisible()`. The legacy Store list remains
+  an optional fallback for isolated adapters, and the HTTP response, active
+  Thread selection, body hash, and no-store headers remain unchanged;
+- focused projection and Kernel tests pass 16 tests; focused Server bootstrap
+  and trash tests pass 5. The complete Runtime suite passes 1,711 tests with
+  31 opt-in skips, Server passes 228, and the complete production build passes;
+- architecture audits 1,350 source files / 697 test files with zero cycles.
+  Focused formatting passes, and hard ceilings remain exact: Runtime public
+  index 199 lines, local bootstrap 293, CLI entry 558, and Server app 8,725.
+
+This completes M2's first projection/cache vertical. It does not yet remove
+compatibility-file write amplification: ordinary Store commits still rewrite
+`workspace.json` and complete touched-Thread JSONL projections. The next M2
+slice should separate authoritative SQLite commits from those low-frequency
+compatibility checkpoints and prove restart plus explicit flush behavior.
+
+## Implemented Slice: Low-Frequency Compatibility Checkpoints
+
+User scenario: an ordinary durable event commits once to authoritative SQLite
+without rewriting the complete workspace snapshot and Thread JSONL, while local
+inspection, managed shutdown, legacy migration, and crash recovery retain a
+coherent compatibility-file path.
+
+Observed result:
+
+- `StoreCompatibilityProjectionWriter` owns compatibility dirtiness and atomic
+  temporary-file replacement outside the oversized Store. Ordinary single-event
+  commits write zero compatibility bytes; SQLite revision/state/event commit and
+  persistence timing remain synchronous and authoritative;
+- a coherent checkpoint writes `workspace.json` plus every dirty Thread JSONL
+  on state-only commits, `turn.completed`, terminal Run/workflow/operator/trash
+  boundaries, event batches, every 64th Thread event, explicit flush, and
+  managed shutdown. A boundary on one Thread flushes all dirty Threads so the
+  state/event compatibility pair does not claim a newer state with stale dirty
+  JSONL siblings;
+- compatibility write failures remain post-commit observations and do not roll
+  back SQLite. Dirty Threads clear only after both the state file and their JSONL
+  succeed, allowing a later checkpoint or explicit flush to retry them;
+- `LocalStore.flushCompatibilityProjections()` provides an explicit checkpoint,
+  and `LocalStore.shutdown()` flushes in `try` and closes SQLite in `finally`.
+  Shared Runtime shutdown calls this after Process and Extension cleanup; the
+  flush still runs when an earlier cleanup step fails because shutdown already
+  settles every step independently;
+- deterministic tests prove ordinary event commits leave both compatibility
+  files byte-identical, reopening recovers the uncheckpointed event from
+  SQLite, explicit flush converges state and JSONL, a turn boundary flushes two
+  independently dirty Threads, event 64 triggers the bounded interval, and
+  managed shutdown flushes pending state before closing even when Process
+  cleanup fails;
+- compatibility-sensitive credential, channel, automation, capability-contract,
+  transactional migration, and Server persistence tests pass 131 assertions;
+  focused Store/Kernel/runtime tests pass 52;
+- the complete Runtime suite passes 1,714 tests with 31 opt-in skips, Server
+  passes 228, and the complete production build passes. Architecture audits
+  1,351 source files / 698 test files with zero cycles; formatting and diff
+  checks pass;
+- hard ceilings remain exact or tighten: Store falls from 10,868 to 10,864
+  lines, local bootstrap remains 293, Runtime public index 199, CLI entry 558,
+  and Server app 8,725.
+
+This closes M2's compatibility-file rewrite amplification for ordinary events.
+The following slice also removes authoritative state-JSON replacement from the
+same ordinary event path. JSONL remains a complete-file low-frequency
+checkpoint rather than an incremental export.
+
+## Implemented Slice: Event-Only SQLite Commits
+
+User scenario: a high-frequency durable event advances the authoritative
+Ledger and global revision without serializing or replacing the complete
+workspace state JSON, while restart and competing local Runtime instances still
+recover a trustworthy current Thread summary.
+
+Observed result:
+
+- SQLite schema v3 adds `workspace_state.snapshot_revision`. Full state commits
+  set `snapshot_revision = revision`; an ordinary event-only commit inserts
+  exactly one `ledger_events` row and advances only the global revision under
+  the existing `BEGIN IMMEDIATE` plus revision-CAS transaction;
+- `LocalStore.appendEvent()` selects the event-only path unless the event is a
+  turn/terminal/64-event compatibility checkpoint. Persistence metrics report
+  zero serialized state bytes and zero compatibility bytes for that ordinary
+  event, while event bytes and commit timing remain observable;
+- startup and multi-instance refresh parse the last full state snapshot, require
+  `snapshot_revision` to be within the global revision, and replay only
+  contiguous Ledger events after each Thread's snapshotted event count. The
+  total applied tail must equal `revision - snapshot_revision`; forged state
+  event counts, missing rows, non-contiguous tails, or an invalid watermark fail
+  closed rather than being silently repaired;
+- tail replay updates only event-derived Thread summary fields:
+  `eventCount`, `updatedAt`, and message preview. State mutations such as Run,
+  Plan, Agent, Goal, artifact, approval, lease, and workflow transitions still
+  use a full snapshot transaction, preserving their existing restart contract;
+- schema migration is online and idempotent. Existing schema-1/2 ledgers gain
+  the watermark at their current revision and record
+  `event_only_state_snapshots`; the health endpoint and Web health fixture
+  expose schema version 3 and the new latest migration;
+- deterministic SQLite-row tests prove an ordinary message advances revision
+  while leaving `snapshot_revision` and `state_json` byte-identical, restart
+  restores its event count and message preview, turn and event-64 boundaries
+  advance the snapshot watermark, and a forged lower snapshot event count is
+  rejected;
+- two local Stores alternate 20 event-only writes through revision conflicts;
+  all sequences remain contiguous, both instances converge to event count 23,
+  global revision advances by 20, and the state JSON/watermark remain unchanged;
+- persistence orchestration and Thread summary replay live in bounded leaf
+  modules. Store shrinks to 10,835 lines, while local bootstrap remains 293,
+  Runtime public index 199, CLI entry 558, and Server app 8,725;
+- focused migration/restart/HTTP/Web checks pass 107 tests, Agent/Thread bundle
+  integration passes 73, and the stateful Python HTTP Workflow passes in
+  isolation after a parallel resource-contention run reported `python_failed`;
+- the clean sequential gates pass: Runtime 1,716 tests with 31 opt-in skips,
+  Server 228, Web 723, and the complete production build. Architecture audits
+  1,353 source files / 698 test files with zero cycles; formatting and diff
+  checks pass.
+
+This closes the full-state and compatibility-file rewrite path for ordinary
+single-event appends. Remaining M2 data work includes normalizing high-frequency
+non-event domain mutations, making JSONL an explicit/incremental export rather
+than a complete-file checkpoint, tightening post-abort durable-watermark
+admission, and migrating the remaining task narrative, conversation, plan, and
+files projections to Kernel services.
+
+## Implemented Slice: Kernel Task Narrative Projection
+
+User scenario: the default Workbench Task Narrative updates from one
+server-owned projection instead of repeatedly scanning the complete Thread event
+history in the browser, while elapsed time, token, and cost text remain live.
+
+Observed result:
+
+- Runtime now owns the canonical Task Narrative fold over current Thread, Run,
+  Plan, recovery state, and bounded event-derived tool/operator state. It
+  preserves the existing `ready / working / waiting / blocked / completed /
+failed` phases, paused/partial settlement, recovery states, Plan precedence,
+  completed work grouping, and exact user-facing labels;
+- `ThreadDetail.taskNarrative` is an optional backward-compatible projection
+  carrying phase, current action, completed items, blocker, next step, and
+  `metricRunId`. Public Store detail creation computes the canonical projection
+  for existing SDK/CLI callers;
+- Kernel registers versioned `task.narrative` as
+  `projection.task-narrative`. Its cache stores only event-derived tool call and
+  operator-decision state; each view reads current Run/Plan/recovery state
+  directly, so state-only mutations do not require invalidating or rebuilding
+  the event cache;
+- cold projection folds the complete event history once, a warm read applies
+  zero events, and one new tool event applies exactly one tail event. Focused
+  tests prove the Kernel view equals canonical Store detail and changes the
+  current action from model preparation to `Running web search`;
+- bootstrap, lifecycle create/get/trash/restore/goal, Agent Run SSE, Workflow
+  SSE, and final snapshots all attach the Kernel projection. These server paths
+  request base Thread detail with the local narrative fold disabled, so they do
+  not scan the complete event history and then overwrite it;
+- Agent and Workflow event frames optionally carry the updated projection after
+  each authoritative event. The strict Web stream contract validates both
+  event-frame and snapshot projections without weakening any existing event,
+  hash, sequence, Thread/Run, snapshot-size, or terminal-order validation;
+- Web applies the projected narrative with each event/snapshot and formats only
+  live elapsed/token/cost metrics from `metricRunId`. The old local fold remains
+  solely as a compatibility fallback for fixtures or older servers that omit
+  the optional field; current Napier responses take the server path;
+- focused Runtime/Server/Web projection, stream, protocol, and compatibility
+  checks pass 104 tests. The complete clean gates pass Runtime 1,717 tests with
+  31 opt-in skips, Server 228, Web 726, and the production build;
+- architecture audits 1,357 source files / 699 test files with zero cycles.
+  Formatting and diff checks pass. The production Web main entry is 135.84 KiB
+  under the unchanged 150 KiB budget, and hard ceilings remain exact: Store
+  10,835 lines, local bootstrap 293, Runtime public index 199, Web API 1,539,
+  Server app 8,725, and CLI entry 558.
+
+This completes the first two Web-facing Kernel projections: Thread Summary and
+Task Narrative. The next M2 vertical should migrate Conversation Feed or Active
+Plan, then remove its legacy client fold after compatibility evidence shows all
+supported server/fixture paths carry the projection. JSONL export normalization,
+post-abort watermark admission, and normalized non-event state tables remain
+separate data-plane work.
+
+## Implemented Slice: Kernel Active Plan Projection
+
+User scenario: compact task surfaces can identify and summarize the current Plan
+without each component rescanning every Plan step, artifact, and timeline event,
+while the full Studio editor continues to receive authoritative Plan records.
+
+Observed result:
+
+- `ThreadDetail.activePlan` now carries the selected active, blocked, or latest
+  completed Plan ID/revision/status/objective; completed/settled/total step
+  counts; running, blocked, and next steps; verified/produced/missing artifact
+  counts; two recent output paths; phase position; and the latest Plan-event
+  watermark;
+- canonical Store detail derives the compact projection from authoritative Plan
+  state plus the bounded latest Plan-event sequence. It omits the optional field
+  when no Plan exists and preserves exact optional-property semantics;
+- Kernel registers versioned `plan.active` as `projection.active-plan`. Its
+  cached state is only the latest `plan.*` event watermark; current Plan state
+  is read directly for each view, so step/artifact mutations remain
+  authoritative while cold/warm/tail behavior stays measurable;
+- focused tests prove canonical detail equivalence, cold replay, warm zero-tail
+  reuse, and one-event tail advancement. A `plan.step.started` tail advances the
+  projection watermark from zero to one without rebuilding historical Plan
+  events;
+- bootstrap, lifecycle responses, Agent SSE, Workflow SSE, and final snapshots
+  attach Task Narrative and Active Plan through one shared server helper.
+  Event/snapshot stream validation independently rejects malformed Active Plan
+  shapes without weakening existing hash, sequence, identity, size, or ordering
+  checks;
+- Task Completion uses projected output paths instead of rescanning artifacts.
+  Conversation Plan cards use projected step/artifact counts and current step
+  summaries for the selected Plan while retaining existing attempt-scope logic
+  and full Plan records for rendering;
+- the full `PlanPanel` / Studio state machine deliberately remains on complete
+  authoritative Plan records. Passing the compact projection into that
+  2,428-line editor added no capability and tripped hard size/complexity
+  ratchets, so the unnecessary prop was removed rather than raising budgets;
+- focused Runtime/Server/Web equivalence, protocol, output, conversation, and
+  stream-merge checks pass 30 tests. Clean broad gates pass Runtime 1,718 tests
+  with 31 opt-in skips, Server 228, Web 729, and the production build;
+- architecture audits 1,360 source files / 700 test files with zero cycles.
+  Formatting and diff checks pass. The production Web main entry is 136.65 KiB
+  under the unchanged 150 KiB limit, and hard ceilings remain exact: Store
+  10,835 lines, PlanPanel 2,428, App 343, Web API 1,539, Contracts root 6,445,
+  Server app 8,725, and CLI entry 558.
+
+This completes three first-class Web-facing Kernel projections: Thread Summary,
+Task Narrative, and Active Plan. The next safe Conversation Feed work should
+migrate one independently owned feed family at a time—starting with generic
+activity grouping or tools/network/Browser—rather than replacing all eleven
+message, Plan, artifact, approval, citation, subagent, recovery, and activity
+folds in one rewrite. Files/Artifacts projection, JSONL export normalization,
+post-abort watermark admission, and normalized non-event state tables also
+remain.
+
+## Implemented Slice: Kernel Conversation Messages Projection
+
+User scenario: user and assistant message cards appear from a server-owned,
+watermarked Conversation Feed projection instead of the browser rescanning the
+complete event array after every append, while live model text remains a
+separate transient stream.
+
+Observed result:
+
+- canonical `ThreadDetail.messages` projects only valid `message.user` and
+  `message.assistant` events into stable ID, sequence, role, text, model, and
+  timestamp records. Invalid/malformed payloads and non-message events do not
+  enter the projection;
+- Kernel registers versioned `conversation.messages` as
+  `projection.conversation-messages`. Its state is append-only message records:
+  cold projection folds history once, a warm read applies zero events, and one
+  newly committed user message applies exactly one tail event;
+- focused tests prove Kernel output equals canonical Store detail for the seeded
+  assistant message, then appends `Project this message.` without rebuilding the
+  prior history;
+- bootstrap, lifecycle, Agent SSE, Workflow SSE, and final snapshots attach
+  Messages together with Task Narrative and Active Plan through the shared
+  server projection helper. Event/snapshot protocol validation rejects malformed
+  message arrays before Web state updates;
+- Web `useWorkspaceViewModel` now prefers `detail.messages`; the old event scan
+  remains only when an older server or fixture omits the optional projection.
+  Existing transient `model.text.delta` accumulation remains unchanged and is
+  cleared by the final assistant message as before;
+- the Kernel detail services were extracted into a 103-line leaf after adding
+  Messages would have exceeded the 500-line projection-module budget. The
+  Runtime public barrel remains exactly 199 lines through the existing Kernel
+  barrel;
+- focused Runtime/Server/Web cache, bootstrap, protocol, and stream-merge checks
+  pass 24 tests. Clean broad gates pass Runtime 1,719 tests with 31 opt-in skips,
+  Server 228, Web 730, and the production build;
+- architecture audits 1,363 source files / 701 test files with zero cycles.
+  Formatting and diff checks pass. The Web main entry is 137.18 KiB under the
+  unchanged 150 KiB limit, while hard ceilings remain exact: Store 10,835,
+  `use-workspace-view-model.ts` 2,012, Web API 1,539, Contracts root 6,445,
+  Server app 8,725, and CLI entry 558.
+
+This is the first incremental Conversation Feed migration. Remaining feed
+families are independently owned: generic activity, tool/network/Browser,
+artifacts, citations, approvals, subagents, and recovery. The next slice should
+combine the closely related tool/network/Browser family in one cached projection
+or migrate Files/Artifacts, not reimplement the complete Ledger feed in one
+module.
+
+## Implemented Slice: Kernel Conversation Artifacts Projection
+
+User scenario: current and previous artifact cards, workspace links, and anchor
+validation come from one server-owned projection instead of the browser scanning
+all artifact events and rejoining Plan manifests after every append.
+
+Observed result:
+
+- canonical `ThreadDetail.artifacts` projects the latest user-visible
+  `plan.artifact.candidate / produced / verified / missing / superseded` event
+  per Plan/Artifact and joins it to the authoritative current Plan manifest.
+  Event-provided path/evidence prose is never trusted;
+- projection state tracks bounded latest artifact-event bindings, valid
+  `run.started` intent identities, and the latest Run. View construction labels
+  each artifact `current` or `previous`, preserving same-intent manual/automatic
+  recovery behavior and exact Run fallback for legacy events;
+- Kernel registers versioned `conversation.artifacts` as
+  `projection.conversation-artifacts`. Cold projection can produce an empty view
+  before any artifact event; a single produced event then applies one tail and
+  yields the authoritative produced file with current attempt scope;
+- the existing artifact anchor contract remains unchanged: target IDs bind
+  Thread, Run, Plan, Artifact, and event sequence. Web still clears malformed,
+  stale, and cross-thread hashes and leaves unrelated fragments untouched;
+- bootstrap, lifecycle, Agent/Workflow SSE, and final snapshots attach Artifacts
+  with the other Kernel projections. Strict Web protocol checks validate the
+  bounded artifact and manifest shape before event/snapshot dispatch;
+- `ConversationLedger` now consumes `detail.artifacts`; the existing event/Plan
+  fold remains only for older servers or fixtures. Workspace links, artifact
+  cards, current/previous labels, candidate visibility, and anchor cleanup reuse
+  the projected binding without a second state machine;
+- an implementation audit found that server “base detail” still computed
+  Messages and Active Plan before Kernel overwrote them. The detail option was
+  corrected from `taskNarrative: false` to `kernelProjections: false`, so all
+  server projection paths now skip every local Kernel-owned fold before attaching
+  cached views;
+- focused Runtime/Server/Web cache, authoritative-join, intent-scope, protocol,
+  anchor, bootstrap, and stream-merge checks pass 32 tests. Clean broad gates
+  pass Runtime 1,720 tests with 31 opt-in skips, Server 228, Web 731, and the
+  production build;
+- architecture audits 1,365 source files / 702 test files with zero cycles.
+  Formatting and diff checks pass. The Web main entry is 138.15 KiB under the
+  unchanged 150 KiB limit, while hard ceilings remain exact: Store 10,835,
+  `use-workspace-view-model.ts` 2,012, Web API 1,539, Contracts root 6,445,
+  Server app 8,725, and CLI entry 558.
+
+Thread Summary, Task Narrative, Active Plan, Conversation Messages, and
+Conversation Artifacts are now first-class Kernel projections. The next
+Conversation Feed slice should migrate the related Tool/Network/Browser activity
+family, which currently performs three separate full-history folds plus generic
+activity exclusion in `ConversationLedger`. Citations, approvals, subagents,
+recovery, generic activity, JSONL export normalization, post-abort watermark
+admission, and normalized non-event state tables remain.
+
+## Implemented Slice: Bounded Conversation Activity Events
+
+User scenario: Tool, Network, and Browser cards keep their existing strict
+evidence renderers and stage grouping, but no longer scan the entire Thread
+history after every event.
+
+Observed result:
+
+- canonical `ThreadDetail.activityEvents` retains only user-visible
+  `tool.started / completed / failed / blocked` evidence for the latest 32 call
+  IDs. It keeps every retained call's started/terminal records, so existing
+  latest-per-call projections and tool `eventIds` remain lossless within the
+  window; malformed, hidden, and non-tool events are omitted;
+- Kernel registers versioned `conversation.activity-events` as
+  `projection.conversation-activity-events`. Its state is the bounded event
+  window, with cold replay, zero-tail warm reuse, and one-event tail updates
+  using the same registry/watermark contract;
+- bootstrap, lifecycle, Agent/Workflow SSE, and final snapshots attach the
+  bounded activity events alongside Messages, Artifacts, Task Narrative, and
+  Active Plan. Strict Web validation requires valid user-visible Tool events and
+  caps the projection at 128 records before dispatch;
+- `ConversationLedger` now runs the existing strict Tool, Web Search/Fetch, and
+  Browser evidence parsers over `detail.activityEvents`. Current receipts,
+  hashes, command/read evidence, network counts, Browser session/page/output
+  evidence, latest-per-call semantics, and stage grouping therefore remain
+  unchanged while input cost is bounded;
+- citation call IDs are excluded from generic Tool cards using the same bounded
+  source, and Network/Browser call IDs still prevent duplicate generic tool
+  cards. The remaining generic activity fold continues over full events only for
+  non-call families not yet migrated;
+- focused Runtime/Server/Web cache, protocol, stream-merge, Tool/Network/Browser,
+  and stage-grouping checks pass 42 tests. Clean broad gates pass Runtime 1,721
+  tests with 31 opt-in skips, Server 228, Web 733, and the production build;
+- architecture audits 1,367 source files / 703 test files with zero cycles.
+  Formatting and diff checks pass. The Web main entry is 138.85 KiB under the
+  unchanged 150 KiB limit; all established hard ceilings remain exact.
+
+Conversation Feed's most expensive call-oriented family is now bounded and
+server-owned. Remaining feed work is generic activity, citations, approvals,
+subagents, and recovery. The next safe slice is current approvals/recovery
+state—also named in the first projection set—or citation cards, rather than
+another broad feed rewrite.
+
+## Implemented Slice: Cached Current Approvals
+
+User scenario: a pending, answered, continued, or cancelled operator decision
+appears immediately and consistently in bootstrap, Thread detail, Agent and
+Workflow streams, the direct approval API, and the Conversation Feed without
+each consumer replaying the complete Thread history.
+
+Observed result:
+
+- the strict operator-decision fold now exposes one incremental event reducer
+  plus one canonical sorted view. Requested, answered, continued, and cancelled
+  events retain their existing hash, predecessor, Thread/Run, option, and
+  first-terminal-state checks; a full requested -> answered -> continued tail
+  produces the same view as an out-of-order full replay;
+- Kernel registers versioned `approval.current` as
+  `projection.current-approvals`. A cold read folds history once, a warm read
+  applies zero events, and a newly committed answer applies one event tail;
+- bootstrap, lifecycle detail, Agent/Workflow event frames, and final snapshots
+  attach approvals through the shared Kernel projection bundle. Server base
+  detail skips the legacy approval fold before attachment, so those paths do
+  not compute the same projection twice;
+- `GET /api/threads/:threadId/operator-decisions` now reads the Kernel cache.
+  The public API acceptance test explicitly spies on the legacy
+  `store.listOperatorDecisions` method and proves the GET path does not call it;
+  answer, cancel, and continuation mutations remain on the authoritative Store
+  transaction path;
+- event frames carry one nested `projections` bundle rather than extending a
+  positional helper signature for every new view. Web validates the optional
+  approval array before dispatch and applies it atomically with the event;
+- the Web approval protocol enforces 2-4 unique options, valid selections,
+  status-specific answer/continuation/cancellation evidence, monotonic event
+  sequences, known cancellation reasons, and required digests. Conversation
+  approval cards continue to use the existing view model over
+  `detail.operatorDecisions`, now updated from cached event frames as well as
+  snapshots;
+- focused Runtime/Server/Web reducer, cache, API, protocol, guard, and
+  stream-merge checks pass 55 tests. Clean broad gates pass Runtime 1,723 tests
+  with 31 opt-in skips, Server 228, Web 734, and the production build;
+- architecture audits 1,369 source files / 704 test files with zero cycles.
+  The Web main entry is 141.57 KiB under the unchanged 150 KiB limit. Hard
+  ratchets remain exact: operator decisions 689 lines / complexity 37, Server
+  app 8,725, Server app test 10,754, Web API 1,539, workspace view model 2,012,
+  App 343, and Contracts root 6,445.
+
+Thread Summary, Task Narrative, Active Plan, Conversation Messages, Artifacts,
+bounded Tool/Network/Browser activity, and Current Approvals are now
+first-class Kernel projections. The next independently owned Conversation Feed
+family is citations: its cards, message links, event exclusions, and source
+call IDs still begin with a full-history client fold. Subagents, recovery,
+generic activity, JSONL export normalization, post-abort watermark admission,
+and normalized non-event state tables remain separate follow-up work.
+
+## Implemented Slice: Bounded Conversation Citations
+
+User scenario: citation cards and assistant-message citation links update from
+one bounded server-owned projection, while strict Research Source evidence and
+generic Tool-card exclusion remain consistent without the browser rescanning
+and rejoining the complete Thread event history.
+
+Observed result:
+
+- canonical `ThreadDetail.citations` retains the latest 12 user-visible,
+  completed `research_source cite` receipts. It reuses the contracts-layer
+  Research Source parser, so source/citation IDs, line ranges, source
+  provenance, counts, and all digests must satisfy the same fail-closed
+  contract as the underlying tool evidence;
+- each projected card carries only event identity/time, `callId`, source and
+  citation IDs/kind/range, and source/title/quote/claim hashes. Raw source,
+  quote, claim, URL, title, body, tool output, and private capsule content do
+  not enter the view;
+- Kernel registers versioned `conversation.citations` as
+  `projection.conversation-citations`. Cold projection folds history once, a
+  warm read applies zero events, and one valid cite completion applies one
+  event tail. Canonical and incremental reducers share the same pure function;
+- bootstrap, lifecycle detail, Agent/Workflow event frames, and final snapshots
+  attach citations through the shared Kernel projection bundle. The base
+  server detail path skips local Kernel-owned folds before attachment, while
+  SDK/CLI callers retain the canonical compatibility projection;
+- Web validates at most 12 citation cards with bounded provider call IDs,
+  canonical citation/source IDs, 1-400 line ranges of at most 40 lines, and
+  exact SHA-256 fields before applying an event or snapshot;
+- `ConversationLedger` prefers `detail.citations`; the full-event client fold
+  remains only for older servers or fixtures. Message citation tokens keep
+  their existing stable numbered anchors, and projected `callId` directly
+  suppresses the matching generic `research_source` Tool card without joining
+  projected cards back to raw events;
+- focused Runtime/Server/Web strictness, privacy, 12-card bound,
+  cold/warm/tail cache, bootstrap, stream contract/merge, message-link, and DOM
+  no-duplicate checks pass 35 tests. Clean broad gates pass Runtime 1,726 tests
+  with 31 opt-in skips, Server 228, Web 737, and the production build;
+- architecture audits 1,371 source files / 708 test files with zero cycles.
+  Formatting and diff checks pass. The Web main entry is 142.62 KiB under the
+  unchanged 150 KiB limit; established hard ceilings remain exact, including
+  Contracts root 6,445, Server app 8,725, Web API 1,539, workspace view model
+  2,012, App 343, and the Web stream test 2,372.
+
+Conversation Feed now has server-owned Messages, Artifacts, bounded
+Tool/Network/Browser activity, Current Approvals, and Citations. Remaining feed
+work is subagents, recovery, and generic activity. Recovery is the next named
+first-class state from the goal contract; it should be audited as one
+independently owned projection before considering generic activity.
+
+## Implemented Slice: Cached Current Recovery
+
+User scenario: blocked, active, completed, or failed automatic-recovery cards
+update from one server-owned view without the browser replaying the complete
+Thread event history or trusting private lifecycle diagnostics.
+
+Observed result:
+
+- canonical `ThreadDetail.recoveries` joins authoritative automatic-recovery
+  assessments and attempts with a bounded hash/ID/time-only lifecycle index. It
+  preserves the existing eight-card ordering, blocked-assessment behavior,
+  retry-chain separation, attempt status, and safe budget settlement summary;
+- cached event state retains at most 256 recovery-bound references across
+  assessment, attempt, interrupted-Run, recovery-Run, and budget-settlement
+  indexes. A `run.recovery.started` marker must identify a recovery Run before
+  its normal terminal or budget events enter the cache, so unrelated Run
+  traffic cannot consume the recovery window;
+- event payload errors, prompts, interruption messages, tool names, claims, and
+  other private fields never enter the view. Assessment policy/count/range
+  evidence and attempt lifecycle state come from the validated authoritative
+  Store records; only safe numeric budget observations are read from events;
+- Kernel registers versioned `recovery.current` as
+  `projection.current-recovery`. Cold replay builds the bounded event index,
+  warm reads apply zero events, state-only claimed-to-running transitions update
+  the joined view without invalidating event state, and one new lifecycle event
+  applies one tail;
+- bootstrap, lifecycle detail, Agent/Workflow event frames, and final snapshots
+  attach recovery cards through the shared Kernel projection bundle. Canonical
+  SDK/CLI detail retains the compatibility projection while Server base detail
+  skips all Kernel-owned local folds before attachment;
+- Web validates at most eight cards, canonical IDs/digests, policy bounds,
+  eligibility/block-reason consistency, tool/range counts, attempt/status
+  alignment, settlement numbers, and a unique bounded event-ID set before
+  applying an event or snapshot;
+- `ConversationLedger` now prefers `detail.recoveries`; the previous
+  assessment/attempt/full-event join remains only for older servers or fixtures.
+  A DOM acceptance test renders a blocked projected card with an empty raw
+  event array and proves private diagnostics remain absent;
+- focused Runtime/Server/Web projection, privacy, state-only join, tail cache,
+  bootstrap, protocol, stream rejection/merge, and card checks pass 27 tests.
+  Clean broad gates pass Runtime 1,729 tests with 31 opt-in skips, Server 228,
+  Web 740, and the production build;
+- architecture audits 1,374 source files / 713 test files with zero cycles.
+  Formatting and diff checks pass. The Web main entry is 145.40 KiB under the
+  unchanged 150 KiB limit; hard ceilings remain exact: Contracts root 6,445,
+  Server app 8,725, Web API 1,539, workspace view model 2,012, App 343, and Web
+  stream test 2,372.
+
+Conversation Feed now has server-owned Messages, Artifacts, bounded
+Tool/Network/Browser activity, Current Approvals, Citations, and Current
+Recovery. Subagents are the remaining structured card family; generic activity
+should be migrated only after that independently owned state/event join is
+complete.
+
+## Implemented Slice: Bounded Current Subagents
+
+User scenario: delegated-task cards update from one bounded server-owned
+projection without the browser rescanning the complete event history or
+receiving private prompts, raw results, errors, outcome details, unknown text,
+or evidence paths.
+
+Observed result:
+
+- canonical `ThreadDetail.subagentCards` retains the latest eight task event
+  positions and joins each to the authoritative current `SubagentTask`. Queued,
+  started, step, terminal, outcome-repair, accepted, and rejected events share
+  one strict task-ID admission path;
+- the card contract contains only event identity/time; task ID, role,
+  description, status, model, step/turn counts, input/output token counts,
+  stop reason, and an error-presence flag; plus outcome summary and at most five
+  item kind/severity/title/evidence-count rows. Full task prompts, result/error
+  strings, outcome details, unknowns, evidence paths/ranges, cache token/cost
+  accounting, and event payload prose never enter the projection;
+- Kernel registers versioned `subagents.current` as
+  `projection.current-subagents`. Cold replay builds the latest-eight event
+  index, warm reads apply zero events while state-only progress changes update
+  step/turn counts, and one terminal event applies exactly one tail;
+- bootstrap, lifecycle detail, Agent/Workflow event frames, and final snapshots
+  attach subagent cards through the shared Kernel bundle. Canonical SDK/CLI
+  detail retains the compatibility projection while Server base detail skips
+  all local Kernel-owned folds before attachment;
+- Web requires exact object keys and rejects any projected raw task field such
+  as `prompt`. It validates role/status/stop-reason lifecycle consistency,
+  minimal model/usage fields, outcome shape, item/count bounds, and at most
+  eight cards before event or snapshot dispatch;
+- `ConversationLedger` now prefers `detail.subagentCards`; the former
+  full-event/authoritative-task client join remains only for older servers or
+  fixtures. The existing card renders the minimal projection and a DOM
+  acceptance test proves summary/title/evidence-count output with no private
+  task or evidence detail;
+- focused Runtime/Server/Web projection, latest-eight bound, privacy,
+  state-only progress join, one-event tail, bootstrap, strict protocol, stream
+  rejection/merge, and DOM checks pass 24 tests. Clean broad gates pass Runtime
+  1,732 tests with 31 opt-in skips, Server 228, Web 743, and the production
+  build;
+- architecture audits 1,377 source files / 718 test files with zero cycles.
+  Formatting and diff checks pass. The Web main entry is 148.10 KiB under the
+  unchanged 150 KiB limit; established hard ceilings remain exact.
+
+All structured Conversation Feed card families are now server-owned: Messages,
+Artifacts, Tool/Network/Browser activity, Current Approvals, Citations, Current
+Recovery, and Subagents. Generic activity is the last full-history feed fold.
+It should migrate as a bounded candidate-event projection while preserving the
+existing specialized-family exclusion and collapse behavior.
+
+## Implemented Slice: Bounded Generic Activity Candidates
+
+User scenario: residual Run, Workflow, Workspace, and other generic activity
+cards update from a bounded server-owned candidate window while existing
+specialized cards continue to own their exact Plan, approval, artifact,
+subagent, recovery, citation, Tool, Network, and Browser evidence.
+
+Observed result:
+
+- canonical `ThreadDetail.activityCandidates` retains the latest 256
+  user-visible events whose types belong to the existing generic activity
+  prefixes. Message/model events and non-user evidence never enter the view;
+- each candidate contains only event identity/sequence/time, type, derived
+  label/summary/tone, and optional bounded binding IDs for call, Plan, decision,
+  task, or Plan/Artifact. Raw payloads, prompts, questions, errors, tool
+  arguments/results, receipts, hashes, and private diagnostics are excluded;
+- all payload-derived fields are bounded before projection: provider call/tool
+  tokens use the existing 160-character safe-token contract, Plan/decision/task
+  IDs use canonical resource patterns, artifact keys require valid Plan plus
+  token IDs, and approval headers reject control characters and excess length;
+- Kernel registers versioned `conversation.activity-candidates` as
+  `projection.conversation-activity-candidates`. Cold replay folds history once,
+  a warm read applies zero events, one new activity applies one tail, and the
+  latest-256 bound is identical for canonical and incremental reducers;
+- bootstrap, lifecycle detail, Agent/Workflow event frames, and final snapshots
+  attach candidates through the shared Kernel projection bundle. Canonical
+  SDK/CLI detail retains the compatibility projection while Server base detail
+  skips local Kernel-owned folds before attachment;
+- Web strictly validates exact candidate keys, text/ID bounds, tones, and the
+  256-item limit before event or snapshot dispatch. `ConversationLedger`
+  applies the existing specialized-family exclusions over the bounded candidate
+  list, then reuses the unchanged adjacent-collapse and 12-card density rules;
+- older servers and fixtures still use the prior raw-event filter as a
+  compatibility fallback. A DOM acceptance test renders projected generic
+  activity with an empty raw event array, while pure filter tests prove Plan and
+  call-bound candidates remain excluded when their specialized owners exist;
+- focused Runtime/Server/Web privacy, 256-item bound, cold/warm/tail cache,
+  bootstrap, exclusion/collapse equivalence, strict protocol, stream
+  rejection/merge, and zero-event DOM checks pass 25 tests. Clean broad gates
+  pass Runtime 1,735 tests with 31 opt-in skips, Server 228, Web 747, and the
+  production build;
+- architecture audits 1,380 source files / 723 test files with zero cycles.
+  Formatting and diff checks pass. The refreshed 166-file Web distribution
+  verifies with matching manifest/dist digest `10757430ee1fa33e`; the main
+  entry is 146.11 KiB under the unchanged 150 KiB limit, and all established
+  hard file/complexity ceilings remain exact.
+
+Generic activity no longer scans the complete Thread history in the browser.
+The remaining Conversation Feed full-history fold is the structured Plan-card
+timeline: compact `activePlan` is server-owned, but `conversationPlans` still
+replays Plan events and attempt identity to select up to four cards. That
+timeline should be migrated as a separate authoritative Plan projection rather
+than conflated with generic activity.
+
+## Implemented Slice: Kernel Conversation Plans Projection
+
+User scenario: current and previous Conversation Plan cards update from one
+watermarked server projection, including recovery Runs that continue the same
+attempt, without the browser replaying the complete Thread event history or
+receiving full private Plan records in every stream frame.
+
+Observed result:
+
+- canonical `ThreadDetail.conversationPlans` retains the latest four
+  user-visible Plan timeline positions. Event state stores only Plan/event/Run
+  identity plus sequence/time, while authoritative Plan and Run records supply
+  the current status, revision, objective, minimal step cards, phase counts,
+  progress counts, and artifact counts;
+- Run intent state is bounded to the latest 256 identities. A recovery Run with
+  the interrupted Run's intent keeps its Plan in the current attempt, while an
+  unrelated newer intent moves prior Plan work to `previous`;
+- raw Plan event prose never enters the view. Rendered steps expose only ID,
+  title, status, whether evidence exists, and an optional blocker; descriptions,
+  verification instructions, evidence text, timestamps, Run bindings, artifact
+  paths, replans, and dependency graphs remain outside the stream projection;
+- Kernel registers versioned `conversation.plans` as
+  `projection.conversation-plans`. A cold replay builds the bounded event/intent
+  index, a warm read applies zero events, a one-event tail advances the
+  watermark, and authoritative state-only Plan updates are joined without
+  rebuilding historical event state;
+- bootstrap, lifecycle detail, Agent/Workflow event frames, and final snapshots
+  attach Plan cards through the shared Kernel projection bundle. Canonical
+  SDK/CLI detail retains the compatibility projection while Server base detail
+  skips local Kernel-owned folds before attachment;
+- Web validates exact Plan/card/step keys, status domains, counters, and the
+  four-card limit before event or snapshot dispatch. `ConversationLedger`
+  prefers `detail.conversationPlans`, excludes matching generic Plan activity,
+  and retains the legacy full-event fold only for older servers and fixtures;
+- stream validation and orchestration moved out of the Web API facade. The
+  heavier projection contract is lazy-loaded, direct SSE fetch ownership is
+  explicit, and `api.ts` tightens from its previous budget to 1,186 lines and
+  complexity 6 instead of increasing architecture ceilings;
+- focused acceptance passes 3 Runtime, 7 Server, and 11 Web tests across
+  authoritative joins, privacy, recovery intent scope, cold/warm/tail cache,
+  strict protocol rejection, atomic SSE merge, and zero-event DOM rendering.
+  Clean broad gates pass Runtime 1,738 tests with 31 opt-in skips, Server 228,
+  Web 750, typecheck, and the complete production build;
+- architecture audits 1,387 source files / 728 test files with zero cycles.
+  The production Web main entry is 122.90 KiB under the unchanged 150 KiB
+  budget, and established hard file/complexity ceilings remain exact or lower.
+
+All Conversation Feed families are now first-class bounded or current-state
+server projections: Messages, Artifacts, Tool/Network/Browser activity,
+Approvals, Citations, Recovery, Subagents, generic activity, and Plan cards.
+Legacy browser folds remain compatibility-only. The next M2 data-plane slice
+should return to authoritative persistence: reject durable events queued after
+a Run has terminated before their sequence/watermark can advance. JSONL export
+normalization and high-frequency non-event state normalization remain separate
+follow-up work.
+
+## Implemented Slice: Active-Run Durable Event Admission
+
+User scenario: a delayed model-delta flush cannot append durable output or
+advance a Thread watermark after cancellation, completion, failure, or another
+Runtime instance has already terminated its Run.
+
+Observed result:
+
+- `AppendEventInput` can explicitly request `run_active` admission. The Store
+  checks the Run identity, Thread binding, and `queued | running` status inside
+  the existing serialized state transaction after refreshing from SQLite and
+  immediately before allocating the next event sequence;
+- a rejected event receives a typed `RunEventAdmissionError` carrying only the
+  terminal status. It writes no Ledger row, performs no SQLite commit, and
+  advances neither global revision, Thread `eventCount`, nor projection
+  watermark;
+- model text/thinking delta batches request active-Run admission. If terminal
+  settlement wins the race, the batcher discards that pending live output and
+  does not retry it; unrelated persistence failures preserve the exact pending
+  batch for a later flush;
+- the contract is opt-in rather than a blanket post-terminal event ban.
+  Explicit retrospective evidence such as
+  `model.stream.cancellation_failed`, which can be observed after the
+  cancellation grace window, remains durable without pretending to be live Run
+  output;
+- deterministic multi-instance coverage opens two Stores on one Ledger,
+  terminates the Run through the first, and proves the stale second writer
+  refreshes authoritative state before rejecting its delta with zero commit or
+  event-count movement. Additional tests prove active admission omits the
+  private request marker from the event and retrospective audit remains valid;
+- focused delta/admission/cancellation/Store tests pass 59 assertions. Clean
+  broad gates pass Runtime 1,743 tests with 31 opt-in skips, Server 228, Web
+  750, cross-package typecheck, and the complete production build;
+- architecture audits 1,388 source files / 729 test files with zero cycles.
+  The admission contract is a 40-line leaf, Store tightens from 10,835 to
+  10,807 lines, and the production Web main entry remains 122.90 KiB under the
+  unchanged 150 KiB budget.
+
+This closes M2's post-termination durable-watermark admission gap for queued
+model deltas while preserving deliberate post-settlement audit facts. The next
+M2 data-plane slice should make Thread JSONL an explicit or incremental export
+instead of a complete-file low-frequency checkpoint. High-frequency non-event
+domain-state normalization remains separate follow-up work.
+
+## Implemented Slice: Incremental Thread JSONL Checkpoints
+
+User scenario: a turn, terminal boundary, explicit flush, or managed shutdown
+updates each dirty Thread's inspectable JSONL without reserializing and
+replacing its complete event history.
+
+Observed result:
+
+- normal compatibility checkpoints read only the bounded end of each dirty
+  JSONL file, require a final newline plus a valid positive sequence, and load
+  authoritative SQLite events from one sequence before that tail;
+- the existing final JSONL row must byte-match the authoritative event at the
+  same sequence. The writer then validates every missing event's Thread and
+  contiguous sequence before appending exactly that suffix with an `fsync`;
+- workspace state and all dirty Thread files are covered by sorted shared file
+  locks. Competing local Store instances therefore serialize checkpoint
+  inspection and append, while the second writer sees the first writer's new
+  tail and emits no duplicate rows;
+- normal checkpoints preserve the JSONL prefix and inode. Persistence metrics
+  count only appended event-projection bytes, not the complete historical file;
+- malformed, incomplete, over-8-MiB, divergent, or non-contiguous JSONL tails
+  fail closed as a post-commit compatibility projection failure. Dirty state
+  remains retryable and explicit flush reports failure instead of overwriting
+  untrusted local evidence;
+- complete-file replacement remains only for initial workspace creation and
+  validated legacy import, where the full authoritative event set is already
+  the replacement source. SQLite remains authoritative in every path;
+- focused persistence tests pass 50 assertions, including prefix/inode
+  preservation, exact appended-byte accounting, two-instance concurrent
+  terminal checkpoints with no duplicate rows, tail drift rejection, restart,
+  event-64, and explicit flush. The concurrent checkpoint file passes 12
+  repeated stress runs;
+- clean broad gates pass Runtime 1,746 tests with 31 opt-in skips, Server 228,
+  Web 750, cross-package typecheck, and architecture. Architecture audits 1,388
+  source files / 729 test files with zero cycles; Store remains 10,807 lines.
+
+This closes M2's complete-history JSONL rewrite path for ordinary checkpoints.
+The remaining persistence-focused M2 work is high-frequency non-event domain
+state normalization; historical large-Thread compatibility can be tightened
+further only if measured startup evidence shows the current SQLite tail replay
+or legacy import path needs a one-time lazy migration.
+
+## Implemented Slice: Normalized Run Lease Heartbeats
+
+User scenario: every active Agent/Workflow heartbeat renews its ownership lease
+without serializing and replacing the complete workspace state snapshot.
+
+Observed result:
+
+- SQLite schema v4 adds strict `run_leases`, indexed by Run and Thread, with
+  owner/acquired/heartbeat/expiry timestamps, lease revision, and only the
+  token SHA-256. Schema-3 migration backfills active leases from validated
+  state JSON and records `normalized_run_leases`;
+- leased Run creation and terminal settlement remain full state transactions.
+  The same transaction synchronizes normalized lease rows, so committed
+  lifecycle state and ownership cannot diverge and settlement deletes the row;
+- heartbeat renewal performs one `BEGIN IMMEDIATE` table update guarded by Run
+  ID, token hash, expected lease revision, and unexpired timestamp. It advances
+  only the lease revision; workspace revision, `snapshot_revision`,
+  `state_json`, event Ledger, workspace JSON, and Thread JSONL remain
+  byte-identical;
+- Store persistence metrics retain heartbeat visibility while reporting zero
+  state, event, touched-Thread, and compatibility bytes. Wrong-token and stale
+  revision attempts fail closed and enter the existing bounded Store conflict
+  retry path;
+- snapshot reads atomically combine workspace state with normalized leases.
+  The table overlays stale lease fields even when the workspace revision is
+  unchanged. Full state commits upsert only an equal/newer lease revision, so a
+  stale Store cannot downgrade a concurrent heartbeat;
+- strict row parsing rejects invalid IDs, owner IDs, hashes, revisions, ISO
+  timestamps, timelines, missing Runs, wrong Thread bindings, non-running Runs,
+  and duplicate bindings. Raw tokens remain absent from SQLite and
+  compatibility files;
+- deterministic acceptance proves zero-byte renewal, two concurrent Store
+  renewals converging from revisions 1 to 3, same-revision visibility, no
+  downgrade after an unrelated full snapshot, terminal cleanup plus reopen,
+  schema-3 backfill, and tampered Thread binding rejection;
+- focused Runtime/Server/Web acceptance passes 232 tests across lease
+  persistence, restart reconciliation, local Runtime interruption, migration,
+  transactional Store, health headers, and typed health fetch. Architecture
+  audits 1,392 source files / 730 test files with zero cycles; Store tightens
+  from 10,807 to 10,799 lines, Server app test from 10,754 to 10,534, and
+  transactional Store test from 1,016 to 887.
+- clean broad gates pass Runtime 1,750 tests with 31 opt-in skips, Server 228,
+  Web 750, cross-package typecheck, and the complete production build. The Web
+  main entry remains 122.90 KiB under the unchanged 150 KiB budget.
+
+This removes the highest-frequency full-state non-event mutation identified in
+M2: Run lease heartbeats. Other claim/lease families remain snapshot-backed and
+should be normalized only from measured write-amplification evidence rather
+than by broad schema rewrite.
+
+## Implemented Slice: First-Party Plugin Manifest and Artifact Migration
+
+User scenario: a user can inspect what one built-in capability provides,
+requires, and currently enables from the existing Extensions entrance, while
+the Runtime can disable and replace that capability without leaving service,
+hook, or projection residue.
+
+Observed result:
+
+- strict `napier.kernel-plugin-manifest` schema 1 binds API version, canonical
+  `plugin.*` identity, stable SemVer, sorted dependencies/ranges, capabilities,
+  permissions, host/client package entries, exact contribution catalogs, trust
+  class, and content SHA-256. Extra keys, drifted hashes, unsorted/duplicate
+  values, contribution/capability mismatch, and UI contributions without a
+  client entry fail closed;
+- the first manifest class is deliberately `first_party`. External MCP code
+  retains the existing Ed25519 package provenance, source/tool approval,
+  dependency closure, and sandbox boundary; this slice does not create a second
+  external trust system or grant downloaded code in-process execution;
+- `KernelPluginRegistry` supports install, enable, disable, uninstall, inspect,
+  and shutdown. Enablement gates dependency status and SemVer compatibility,
+  partial setup rolls back its scope, enabled dependents block disablement,
+  installed dependents block uninstall, and shutdown unloads dependents before
+  dependencies;
+- existing owner-scoped Kernel services/hooks are the lifecycle primitive.
+  Projection registration now also records an owner; disposal invalidates
+  cached state and removes definitions. No parallel registration mechanism was
+  introduced;
+- `plugin.artifact@1.0.0` is the first real built-in migration. It owns
+  `projection.conversation-artifacts` plus `conversation.artifacts`, while the
+  existing `AgentKernel.conversationArtifacts` remains a dynamic compatibility
+  facade for Server bootstrap/detail/SSE consumers;
+- focused Kernel acceptance disables Artifact, proves the service and
+  projection disappear, proves the facade rejects while disabled, re-enables
+  the plugin, and projects again through a newly resolved owner-scoped service;
+- `/api/bootstrap` optionally carries privacy-bounded plugin inspection:
+  identity/version, enabled state, first-party trust, dependencies,
+  capabilities, permissions, package entries, contributions, and manifest hash.
+  The existing lazy Extensions Workbench renders those fields in a read-only
+  “Kernel capabilities” desk with zero plugin mutation buttons;
+- focused Runtime/Server/Web acceptance passes 179 tests across strict
+  manifests, lifecycle/dependency/rollback semantics, Artifact disable/re-enable,
+  projection cleanup, bootstrap delivery, typed health/API compatibility, and
+  DOM rendering. Contracts pass 124 tests;
+- clean broad gates pass Runtime 1,757 tests with 31 opt-in skips, Server 228,
+  Web 751, cross-package typecheck, and the complete production build.
+  Architecture audits 1,398 source files / 733 test files with zero cycles.
+  Hard facades tighten instead of expanding: `App.tsx` 313 lines/complexity 35,
+  `ExtensionPanel.tsx` 859 lines, Contracts root 6,438 lines, and Agent Kernel
+  498 lines;
+- the refreshed 177-file Web distribution verifies with manifest/dist digest
+  `d8a9dd26d62ac725`; the main entry is 120.62 KiB under the unchanged 150 KiB
+  budget;
+- real isolated browser acceptance used the built Server on port 8791 and a
+  Vite proxy on 5175. Bootstrap exposed the exact Artifact manifest, the
+  Extensions desk rendered one enabled card with its projection, no permissions,
+  no dependencies, and host entry, and the desk contained zero buttons.
+  Desktop 1280x633 and mobile 390x844 both had zero page/desk horizontal
+  overflow; console contained only Vite connection diagnostics and page errors
+  were empty.
+
+This establishes M3's first product-level plugin vertical and migrates one of
+the three requested representative built-ins. Search and Browser remain the
+next first-party migrations; persisted enablement, install scaffolding, and
+finite client UI-slot loading remain follow-up work.
+
+## Implemented Slice: First-Party Search Plugin Migration
+
+User scenario: disabling the built-in Search plugin removes `web_search` from
+new Agent Runs without changing the Agent profile, and re-enabling it restores
+the same reviewed provider path.
+
+Observed result:
+
+- `plugin.search@1.0.0` declares one `web_search` tool contribution,
+  `network.public` permission, no dependencies, and the concrete
+  `@napier/runtime/kernel-search-plugin` host entry;
+- `runtime.web-search` is an owner-scoped plugin service. A
+  `DynamicWebSearchExecutor` is injected into both Agent Runtime capability
+  assemblies before Kernel construction; the plugin service attaches the
+  configured/custom executor on enable and detaches only its exact executor on
+  disable;
+- plugin enablement now eagerly resolves every owner service. This generic
+  lifecycle rule makes enable/disable symmetric, rolls back resolution failure,
+  and removes the former Artifact-specific eager resolve from Kernel assembly;
+- stateless Agent tool assembly treats an unavailable dynamic Search slot as no
+  installed capability. While Search is disabled, a real faux-provider Run sees
+  no `web_search` schema and completes without invoking the executor. After
+  re-enable, a second real Run sees the schema, calls it once through the same
+  redacted tool lifecycle, and completes;
+- existing direct `AgentRuntime` construction remains compatible: callers that
+  pass an ordinary executor still expose Search, and the default fallback
+  provider registry remains unchanged. The plugin lifecycle is applied by the
+  Local Runtime/CLI/Server/Web assembly path where the Kernel exists;
+- Search joins Artifact in bootstrap and the read-only Extensions desk. The card
+  exposes enabled state, `tool:web_search`, `network.public`, no dependencies,
+  and its host entry; no browser-side enable/disable authority was added;
+- focused Search/Kernel/provider tests pass 16 assertions across disable,
+  omission, re-enable, execution, provider fallback, plugin dependencies, and
+  Artifact coexistence;
+- clean broad gates pass Runtime 1,758 tests with 31 opt-in skips, Server 228
+  after a sequential rerun, Web 751, cross-package typecheck, and the complete
+  production build. One parallel Server run reported the established
+  `python-kernel` deadline and Browser-task temp-directory `ENOTEMPTY`
+  contention; the clean sequential suite passed all 228 tests;
+- architecture audits 1,401 source files / 734 test files with zero cycles.
+  Agent Kernel falls to 458 lines after extracting
+  `agent-kernel-scope.ts` and `kernel-builtin-plugins.ts`. The verified Web
+  distribution remains 177 files, digest `d8a9dd26d62ac725`, and 120.62 KiB
+  main entry.
+- real isolated browser acceptance used the built Server on 8792 and Vite on 5176. The desk rendered exactly two enabled cards—Artifact and Search—with
+  `tool:web_search`, `network.public`, no dependencies, and both host entries.
+  It exposed zero plugin buttons. Desktop and 390x844 mobile checks both had
+  zero page/desk horizontal overflow; console contained only Vite connection
+  diagnostics and page errors were empty.
+
+Artifact and Search now satisfy two of M3's three representative built-in
+migrations. Browser remains next; it should reuse the same dynamic service-slot
+pattern while preserving isolated Session, confirmation, takeover, and
+sensitive-target boundaries.
+
+## Implemented Slice: First-Party Browser Plugin Migration
+
+User scenario: disabling the built-in Browser plugin closes active Browser
+Sessions and removes every Browser-backed capability from new Runs; re-enabling
+restores the same isolated, confirmed, takeover-capable Session boundary.
+
+Observed result:
+
+- `plugin.browser@1.0.0` declares one `browser` tool contribution and explicit
+  `browser.control`, `network.public`, `workspace.read`, and `workspace.write`
+  permissions, with no dependencies and concrete
+  `@napier/runtime/kernel-browser-plugin` host entry;
+- one `DynamicBrowserSessionPort` covers the exact shared manager surface:
+  execute, confirmed action/upload, confirmation-page capture, rendered-page
+  capture, live view, takeover snapshot/action, active status, cancellation,
+  and manager shutdown. Browser tool execution and Fetch fallback now depend on
+  that port rather than the concrete manager class;
+- Local Runtime creates one underlying `RunBrowserSessionManager` and injects
+  the same dynamic port into both Agent capability assemblies plus the Kernel
+  plugin. Direct Runtime construction still falls back to an ordinary concrete
+  manager for compatibility;
+- disablement closes all active Sessions, clears serialized-operation tails,
+  detaches the port, and makes active checks return false. New Runs omit the
+  Browser schema and Browser-backed Research Source schema. `web_fetch` remains
+  available but Browser fallback is not authorized while the port is absent;
+- custom Research Source providers remain independent of Browser availability.
+  Re-enable eagerly attaches the same manager and restores Browser plus
+  Browser-backed Research Source without changing confirmation, takeover,
+  sensitive-target, local-service lease, network, profile, Artifact, or source
+  validation code;
+- focused lifecycle acceptance uses a real Agent Runtime with an injected
+  Session manager: Browser starts enabled, disable calls manager shutdown once,
+  a faux-provider Run observes no Browser/Research Source but still sees Fetch,
+  re-enable makes both schemas visible again, and the Run completes. Existing
+  Browser Session, interaction confirmation, live-view, takeover, rendered
+  fallback, and Research Source suites remain green;
+- representative focused Runtime/Server/Web tests pass 197 assertions across
+  all three manifests, dependency/lifecycle rollback, Artifact projection,
+  Search execution, Browser Session boundaries, bootstrap delivery, health/API
+  compatibility, and DOM rendering;
+- clean broad gates pass Runtime 1,759 tests with 31 opt-in skips, Server 228,
+  Web 751, cross-package typecheck, and the complete production build.
+  Architecture audits 1,404 source files / 735 test files with zero cycles.
+  Browser Session falls below its hard cap to 477 lines after extracting
+  lifecycle waiting/shutdown; Agent Kernel is 461 lines, Local Runtime 306,
+  `App.tsx` 313, `ExtensionPanel.tsx` 859, and Contracts root 6,438;
+- the Web distribution remains 177 files with digest `d8a9dd26d62ac725`
+  and a 120.62 KiB main entry under the unchanged 150 KiB budget;
+- real isolated browser acceptance used the built Server on 8793 and Vite on 5177. The Extensions desk rendered exactly three enabled cards—Artifact,
+  Browser, and Search—with exact contributions, permissions, no dependencies,
+  and concrete host entries. The desk contained zero plugin buttons. Desktop
+  and 390x844 mobile checks had zero page/desk horizontal overflow; console
+  contained only Vite connection diagnostics and page errors were empty.
+
+M3 now has the requested three representative first-party migrations on one
+strict lifecycle/inspection path. Remaining M3 product work is persisted
+enablement/install state, a minimal example plugin plus scaffold, and finite
+client UI-slot loading; external MCP remains on the existing signed/sandboxed
+trust path.
+
 ## Completed Slice: Preview-Bound External Release Dispatch
 
 User scenario: after an administrator independently makes the GHCR package
@@ -12804,3 +14424,728 @@ Observed result:
   They do not establish arbitrary-site/authenticated-form reliability,
   provider availability or latency SLAs, cross-model superiority, or
   autonomous login/CAPTCHA support.
+
+## Completed Slice: First-Party Kernel Plugin Example and Scaffold
+
+User scenario: a Napier contributor can generate one minimal reviewed
+first-party Kernel plugin from the built CLI, compile a checked example, and
+exercise the existing install/enable/inspect/disable/uninstall lifecycle without
+inventing a second trust or registration system.
+
+Acceptance and threat boundary:
+
+- expose one `plugins --workspace <path> --scaffold <plugin.id>` CLI path with
+  optional workspace-relative output path, package name, display name, and
+  JSONL receipt;
+- require the strict hash-bound first-party manifest and reuse
+  `KernelPluginDefinition`, owner-scoped Kernel services, projection registry,
+  dependency/version gates, and registry lifecycle;
+- generate exactly one manifest, package file, TypeScript configuration,
+  projection host, and lifecycle README; do not generate hidden installers,
+  credentials, browser mutation controls, or external package trust;
+- canonicalize the Workspace and reject invalid IDs, protected/escaping paths,
+  existing destinations, and symlink-mediated parents. A failed write removes
+  the new target instead of leaving a partial scaffold;
+- return only plugin/package/output identity plus manifest, ordered-file-set,
+  and receipt hashes. Do not retain file bodies in the receipt;
+- keep this command authoring-only. It does not load generated code, persist
+  enablement, or move external code into the host process; untrusted extensions
+  remain on signed MCP approval and sandbox boundaries.
+
+Observed result:
+
+- `verified`: `packages/runtime/src/kernel-plugin-scaffold.ts` writes five
+  bounded files and returns schema-1 `napier.kernel-plugin-scaffold` evidence
+  with `manifestSha256`, `fileSetSha256`, and `contentSha256`;
+- `verified`: `apps/cli/src/cli-plugin-options.ts` and
+  `apps/cli/src/plugin-scaffold-cli.ts` expose human and JSONL modes. A built-CLI
+  smoke created `plugin.smoke@0.1.0` under `plugins/smoke` with five files and
+  then failed closed with `plugin_scaffold_failed` when the destination already
+  existed;
+- `verified`: `examples/kernel-plugin-status` contains the generated strict
+  manifest plus one owner-scoped projection service. Its README demonstrates
+  `install -> enable -> inspect -> disable -> uninstall`, and
+  `npx tsc -p examples/kernel-plugin-status/tsconfig.json --noEmit` passes;
+- `verified`: public imports for `createKernelPluginManifest`,
+  `KernelPluginRegistry`, `scaffoldKernelPlugin`, and the Artifact/Search/
+  Browser plugin factories resolve from the built package. Contracts, Runtime,
+  and CLI builds pass;
+- `verified`: focused plugin manifest/registry/scaffold coverage passes eight
+  Runtime tests, and CLI parsing/output/no-overwrite coverage passes two tests;
+- `verified`: broad acceptance passes the complete CLI suite with 276 tests and
+  15 opt-in skips, and the complete Runtime suite with 1,764 tests and 31
+  opt-in skips. Architecture audits 1,408 production files and 737 test files
+  with zero cycles; `agent-runtime.ts` is ratcheted to 3,290 lines;
+- `verified`: broad acceptance found and fixed three control-plane integration
+  defects rather than weakening benchmark gates. Finalization reserve now
+  preserves its six turns for constrained completion instead of failing at the
+  threshold; successful Browser operations advance the hash-only source
+  dimension; thinking-loop retry discards bind their exact Model Context
+  Envelope, and discarded reasoning that already exhausts the hard token budget
+  cannot spend a second provider call. Browser confirmed-form, debug coding,
+  multifile coding, and long-horizon Workflow suites pass together (26 tests);
+- `inferred`: this closes the minimal example/scaffold portion of M3 and proves
+  the in-memory lifecycle from reviewed code. Persisted plugin desired state,
+  restart-time enablement reconciliation, and governed mutation controls remain
+  open; the read-only Extensions projection remains the only browser surface.
+
+## Completed Slice: Persisted Optional Built-In Plugin State
+
+User scenario: a terminal operator can disable Browser or Search for a
+Workspace, restart Napier, observe the plugin still installed but disabled, and
+later re-enable it without editing SQLite or granting the browser mutation
+authority.
+
+Acceptance and threat boundary:
+
+- persist only the complete built-in Artifact/Browser/Search catalog with exact
+  versions, desired enabled booleans, and one content hash; do not persist code,
+  package locators, arbitrary plugin IDs, permissions, or external trust;
+- keep Artifact enabled because current Server projection assembly requires it.
+  Allow desired-state changes only for optional Browser and Search;
+- treat missing state as the compatibility default with all built-ins enabled.
+  Invalid shape, extra/missing/reordered entries, version drift, disabled
+  Artifact, oversized/non-file binding, or hash drift must fail startup closed;
+- expose state status/preview/apply only through CLI. Preview is mutation-free;
+  apply requires the exact preview SHA-256 and a canonical existing Workspace;
+- serialize concurrent writers with the existing cross-process path lock,
+  revalidate inside the lock, write a mode-`0600` temporary file, fsync, rename,
+  and fsync the directory;
+- require Runtime restart before the new desired state takes effect. Keep Web
+  plugin inspection read-only and external MCP packages on their existing
+  signed/approved/sandboxed control plane.
+
+Observed result:
+
+- `verified`: `kernel-plugin-state.ts` validates schema-1
+  `napier.kernel-plugin-desired-state`, pins all three built-in versions,
+  creates exact transition previews, rejects Artifact mutation and stale apply,
+  and atomically persists one private state file;
+- `verified`: `kernel-plugin-runtime.ts` validates state before returning a
+  Runtime, builds the ordinary installed catalog, and disables only optional
+  entries whose desired state is off. Reconciliation failure shuts the Kernel
+  down before startup escapes;
+- `verified`: `napier plugins --workspace <path>` reports default/configured
+  state. `--disable|--enable plugin.browser|plugin.search` previews, while
+  `--expected-preview <sha256> --apply` persists the exact transition. Scaffold
+  options remain mutually exclusive with state options;
+- `verified`: a built-CLI smoke disabled Browser, started a fresh Runtime that
+  inspected Artifact enabled, Browser disabled, and Search enabled, then
+  re-enabled Browser and started a second fresh Runtime with all three enabled.
+  `.napier/kernel-plugins.json` had mode `0600`; both binding and desired-state
+  hashes changed as expected;
+- `verified`: focused state, restart, invalid-startup, manifest/registry,
+  Browser/Search lifecycle, scaffold, and CLI coverage passes 18 Runtime and 4
+  CLI tests. The original Browser confirmed-form, debug coding, multifile
+  coding, and long-horizon Workflow regression group remains green together;
+- `verified`: broad acceptance passes the complete CLI suite with 278 tests and
+  15 opt-in skips, and the complete Runtime suite with 1,769 tests and 31
+  opt-in skips. Architecture audits 1,410 production files and 738 test files
+  with zero cycles;
+- `verified`: hard core ratchets do not increase: Agent Kernel remains 461
+  lines, Local Runtime 306, CLI facade 434, Store 10,799, Contracts root 6,438,
+  App 313/complexity 35, and Extensions panel 859;
+- `inferred`: this closes persisted enablement/restart reconciliation for the
+  representative optional built-ins. Arbitrary first-party package discovery,
+  governed installation of generated code, hot mutation of a running Server,
+  and client UI-slot module loading remain open and should not be conflated with
+  this local desired-state control file.
+
+## Completed Slice: Finite First-Party Browser Inspector Slot
+
+User scenario: the Browser plugin contributes its existing inspector surface
+through the declared client entry and finite `inspector.panel` seam; disabling
+or drifting the plugin prevents that client module from mounting without
+opening arbitrary manifest-controlled imports.
+
+Acceptance and threat boundary:
+
+- make one real built-in manifest declare `ui_slot`, one finite slot, and an
+  actual client package subpath; do not add remote URLs, runtime package
+  discovery, DOM injection, or string-evaluated dynamic imports;
+- keep the executable loader in a reviewed static Web catalog. Require exact
+  plugin ID, version, complete manifest SHA-256, enabled state, client entry,
+  capability, and contribution before mounting;
+- preserve the existing Browser inspector behavior and lazy chunk. The slot
+  mechanism should replace hardwired App composition, not create a second
+  Browser UI or duplicate takeover/confirmation controls;
+- disabled, unknown, stale-version, same-version hash drift, client-entry drift,
+  missing `ui_slot`, or missing `inspector.panel` metadata must resolve to no
+  component while remaining inspectable as metadata;
+- keep Web mutation authority absent. Desired state still changes only through
+  CLI exact-preview apply and takes effect after Runtime restart.
+
+Observed result:
+
+- `verified`: `plugin.browser@1.0.0` now declares capabilities
+  `tool,ui_slot`, client entry
+  `@napier/web/kernel-browser-inspector-slot`, and
+  `uiSlots=[inspector.panel]`; the strict manifest hash is
+  `9242e78a76b9a7cef23c397360c3014c2895e0a8cc1cfb126c14ee08b3ed23a8`;
+- `verified`: the declared Web package subpath resolves to
+  `kernel-browser-inspector-slot.ts`, which owns the reviewed lazy loader.
+  `KernelPluginInspectorSlots` contains no manifest-derived import and filters
+  bootstrap metadata against the exact static descriptor;
+- `verified`: pure resolver tests reject disabled, unknown, version-drifted,
+  hash-drifted, entry-drifted, missing-capability, and missing-slot variants.
+  DOM acceptance mounts the mocked lazy Browser panel only for the exact
+  enabled descriptor and mounts nothing for disabled state;
+- `verified`: App no longer imports `BrowserInspectorPanel` directly and stays
+  at its hard 313-line / complexity-35 ratchets. The registry and declared
+  client descriptor are bounded 45-line and 10-line leaves;
+- `verified`: focused Runtime/Server/Web metadata, lifecycle, bootstrap,
+  Extensions desk, resolver, DOM, Browser inspector, and navigation coverage
+  passes 19 tests; all package typechecks pass;
+- `verified`: full Web passes 753 tests. Serial Server passes all 228 tests; one
+  parallel Server run hit the established Browser-task temp-directory
+  `ENOTEMPTY` contention, and the isolated file plus serial suite passed;
+- `verified`: the production Browser inspector remains a separate 25.55 KiB
+  lazy chunk. The refreshed Web distribution has 177 files, matching
+  manifest/dist digest `bd743d663ce43531`; the main entry is 121.25 KiB under
+  the unchanged 150 KiB budget;
+- `verified`: architecture audits 1,412 production files and 739 test files
+  with zero cycles. Agent Kernel remains 461 lines, Local Runtime 306, CLI
+  facade 434, App 313/35, Extensions panel 859, Store 10,799, and Contracts root
+  6,438;
+- `inferred`: this closes the finite client UI-slot requirement for M3 with one
+  representative built-in. Adding another first-party UI contribution remains
+  an explicit source/build review; arbitrary installed package loading and
+  third-party in-process UI execution remain intentionally unsupported.
+
+## Implemented Slice: Default-Surface Product Trial Recorder
+
+User scenario: after an ordinary Web task settles, the user can bind that real
+Run to the Default Product Track without discovering the advanced Evaluation
+Lab or inventing a second evidence model.
+
+Acceptance and threat boundary:
+
+- show one collapsed post-Run control in the ordinary task-status strip and
+  render nothing before a terminal Run exists;
+- select only the latest terminal Run from the active Thread and expose the six
+  M4 core cases in fixed canonical order: network reference, coding
+  verification, dynamic Browser, high-risk confirmation, artifact delivery,
+  and long-task recovery;
+- reuse the fixed `release-product-v1` template, Casebook, versioned Trial
+  control, strict HTTP parser, Run/Thread ownership check, duplicate guard, and
+  durable gate projection. Do not add a Web-only trial record or bypass the
+  existing release contract;
+- allow explicit creation of the fixed Casebook when absent, but fail closed
+  when the template is unavailable or missing any required M4 case;
+- keep the complete ten-case template, qualification, controlled-harness
+  evidence, and gate history in the lazy Evaluation Lab. Do not move advanced
+  governance into the default task path;
+- keep the recorder collapsed by default, lazy-loaded, responsive, and free of
+  horizontal overflow or console errors from desktop through 390px mobile.
+
+Observed result:
+
+- `verified`: `DefaultProductTrialRecorder` chooses the latest terminal Run,
+  orders the six required cases independently of template order, creates only
+  the fixed Casebook on demand, and reuses `ReleaseProductTrialControl`;
+- `verified`: the ordinary `TaskNarrativeBar` mounts the recorder after the
+  existing narrative row. Its 32px collapsed evidence lane does not force the
+  current/blocker/next/action cells onto an extra desktop row, and the full
+  form spans the task strip only while expanded;
+- `verified`: the recorder fails closed on missing/incomplete template state.
+  Passed outcomes still require a completed Run, product version remains
+  server-projected/read-only, and duplicate Run/version evidence remains
+  rejected by the existing Server gate;
+- `verified`: focused recorder, versioned control, narrative, layout, and
+  responsive coverage passes 25 tests. The complete Web suite passes 757 tests;
+  Web typecheck, formatting, and diff checks pass;
+- `verified`: production Server/Web builds emit a separate 2.52 KiB recorder
+  chunk. The main entry is 121.25 KiB under the unchanged 150 KiB budget;
+- `verified`: the built production Web E2E expands and re-collapses the
+  recorder at 1600, 1440, 1200, 900, and 390 pixels. Every viewport exposes the
+  exact six-case order, selects the fixture's latest terminal Run, projects
+  product version `0.1.2`, remains inside the narrative width, and reports zero
+  horizontal overflow and zero console errors. Recovery, long-run, artifact
+  navigation, reconnect, cleanup, and the refreshed schema-3 layout baseline
+  pass in the same run;
+- `verified`: architecture audits 1,413 source files / 741 test files with zero
+  cycles. Prompt regression passes all eight dimensions. SDK capability parity
+  was recaptured after excluding protected `goal.md`, interview, `ai-news-weekly/`,
+  and `kakeya/` paths; ordinary/current verification and all 21 evidence
+  verifier tests pass with zero protected path hits;
+- `inferred`: this closes the missing ordinary post-Run recording surface, not
+  M4 itself. The next product step is to execute and record one real six-case
+  Default Product Trial campaign from the default Web path, retain truthful
+  failure/workaround/friction notes, and rank the next optimization backlog.
+
+## Completed Slice: First Real Six-Case Default Product Trial
+
+User scenario: one operator uses only the built production Web task path in a
+fresh local state/workspace, enables a live provider from the visible setup
+card, executes all six M4 core cases, and records the actual outcomes from the
+ordinary post-Run control.
+
+Acceptance and privacy boundary:
+
+- use one production Server/Web entry with a fresh browser profile, isolated
+  `NAPIER_HOME`, isolated Workspace, and explicit provider-locator enablement;
+  do not use the synthetic Web E2E fixture or mutate the repository workspace;
+- create Threads, choose temporary presets/fallbacks, run tasks, answer
+  decisions, resume interruptions, and record Trials only through normal Web
+  controls;
+- retain only the existing `napier.release-product-gate` projection. Do not
+  copy prompts, assistant output, reasoning, page bodies, source URLs,
+  credential values, or raw Ledger events into the release artifact;
+- recompute every Trial hash and the complete Gate through the existing Runtime
+  parser/projection. Require the six canonical case IDs in order and unique
+  terminal Run IDs; reject raw-evidence keys and any Trial/case substitution;
+- keep the full ten-case release gate honest. Six M4 cases do not satisfy
+  Settings/Sandbox coverage, the 90% success threshold, or three consecutive
+  passing versions.
+
+Observed result:
+
+- `verified`: the retained
+  `docs/artifacts/default-product-trial-m4-0.1.2.json` contains exactly six real
+  DeepSeek `deepseek-v4-flash` Trials from six ordinary Web Threads. Offline
+  verification returns Gate SHA-256
+  `19566cdf8ef1bcc0ce531af6d51b124437abb9ac007fdb55f3808541738bda1c`;
+- `verified`: network research passed with two visible citations and one
+  provider-setup intervention; native Browser passed with three Browser
+  operations, exact visible `Example Domain`/`example.com` observation, source
+  capture, and Session closure;
+- `verified`: high-risk confirmation passed after a structured three-option
+  Operator Decision, explicit **Cancel — type nothing**, a separately invoked
+  continuation Run, and zero completed Browser write actions. One preset
+  fallback, one steering message, one human decision, and target-site human
+  verification friction are retained in the UX/intervention scores;
+- `verified`: artifact delivery passed with a completed two-step Plan,
+  hash-verified `artifacts/m4-delivery.md`, Task outputs navigation, Preview,
+  Download, and open links. The exact file is 53 bytes with SHA-256
+  `f046deb3061bafe4fdba6b7ed1da841be96468f418f38095d27e800f9458fc35`;
+- `verified`: long-task recovery passed after a real Server interruption and
+  restart. The default page exposed **A run stopped before settlement → Resume
+  safely**; the recovery child completed, `run.recovery.completed` was durable,
+  three Browser observations ran after restart, and
+  `artifacts/recovery-final.md` remained byte-identical at 32 bytes / SHA-256
+  `286cfa2ba9a2cbd0f2dd1c993e6a4f6dce66fc8c76a8f21d41b5a576bf9e2423`;
+- `verified`: that real recovery attempt exposed and fixed a Web protocol bug:
+  resume response headers bind the requested interrupted Run, while SSE frames
+  belong to a newly created recovery child. The client now binds stream
+  identity from the first emitted child frame and still rejects any subsequent
+  drift. Focused stream/state coverage passes 74 tests;
+- `verified`: coding created `src/sum.mjs` and `test/sum.test.mjs` with hashes
+  `0d90ed2af93a8839a1545626bfa6fda37e1089e47c7eb9646634ecb04fa6b091`
+  and `bbfacff877b41a1d6d087fd28f16ec77f0b99c5f4eec3774806f03f672197d77`,
+  but both `run_command` and JavaScript Kernel verification were blocked before
+  execution because the local process Sandbox was unavailable. It is recorded
+  `inconclusive/configuration`, not passed;
+- `verified`: aggregate core outcome is 5 passed / 0 failed / 1 inconclusive,
+  83.33% success, mean UX 3.5/5, three configuration interventions, two human
+  interventions, and one recovery event. The ten-case version remains
+  `incomplete`; `defaultTrackReady=false`;
+- `verified`: the offline verifier and three tamper variants pass four tests.
+  The aggregate release audit semantically verifies and binds this artifact as
+  `default-product-trial-m4`; this remains the immutable first-round snapshot;
+- `historical friction P0`: Coding cannot complete on a host with unavailable
+  process Sandbox. The default Coding and Safe Automation presets block before
+  Run; **Use Agent default** permits useful non-process work but cannot produce
+  executable coding verification;
+- `historical friction P1`: restart recovery completed the requested work and
+  preserved bytes, but the old Plan remained active with interrupted steps
+  conservatively blocked and the artifact projection still `expected`. The
+  recovery child lacked a direct tool to reopen/reconcile the retained Plan,
+  so its final answer had to disclose that limitation;
+- `ranked friction P2`: preset fallback copy and recovery progress are visible
+  but require extra operator interpretation. High-risk confirmation also needed
+  one steering message before producing the intended decision docket;
+- `inferred`: the M4 requirement to form one six-case core Trial round is
+  satisfied with truthful historical failure/friction. Later focused evidence
+  closes the Coding execution gap without rewriting this Casebook. Settings and
+  Shell/Sandbox remain uncovered in the ten-case gate, and the Gate still lacks
+  three consecutive passing product versions.
+
+## Completed Slice: Recovery Plan Target Continuity
+
+User scenario: a manual recovery child must see enough bounded identity to
+reconcile the retained interrupted Plan after verifying current state, without
+replaying side effects or exposing artifact paths/content in the recovery
+prompt.
+
+Observed result:
+
+- `verified`: manual recovery now receives a bounded register for at most four
+  active/blocked Plans: Plan ID/revision/status, step ID/status/owning Run ID,
+  and artifact ID/status only. It excludes objective, titles, descriptions,
+  paths, evidence text, and workspace bytes;
+- `verified`: the prompt explicitly directs recovery to inspect current state,
+  reopen/complete retained steps, and use the existing artifact state machine;
+  an `expected` artifact must be recorded `produced` before server-computed
+  `verify`. Duplicate Plan creation remains prohibited;
+- `verified`: automatic `safe_read_only` recovery remains unchanged and
+  receives no Plan mutation register;
+- `verified`: a restart regression creates one file before interruption,
+  reopens the blocked step, records the existing file produced, verifies its
+  actual SHA-256, auto-starts/completes the step, and leaves exactly one
+  completed Plan. The file bytes remain identical and durable events include
+  `plan.step.reopened`, `plan.artifact.produced`,
+  `plan.artifact.verified`, `plan.step.started`, and
+  `plan.step.completed`;
+- `verified`: 122 focused recovery, automatic-recovery, Source continuity,
+  Store, and Agent Runtime tests pass. `agent-runtime.ts` remains at its exact
+  3,290-line hard ratchet; architecture remains cycle-free;
+- `inferred`: the campaign's former P1 Plan-target gap is fixed in Runtime and
+  regression-covered. The retained first-round Gate remains historical rather
+  than being rewritten after later focused reruns.
+
+## Completed Slice: Focused Default-Web Coding Rerun
+
+User scenario: rerun only the former inconclusive `coding-verification` case
+through the built default Web path after a verified local OCI Sandbox becomes
+available, while preserving the original six-case Casebook as historical
+evidence.
+
+Acceptance and privacy boundary:
+
+- use a fresh browser profile, Workspace, `NAPIER_HOME`, `HOME`, and scratch
+  root; enable the live model locator and Sandbox only through visible
+  preview-bound Web controls;
+- keep process execution fail closed. Do not use host-direct, bypass the
+  Composer readiness gate, or claim a pass from file creation alone;
+- require a completed `Coding 1×` Run, immutable `oci-container` identity,
+  exact requested file bytes, and a successful relevant test command;
+- record the terminal Run through the ordinary post-Run Trial control. Retain a
+  separate focused Gate because it belongs to a fresh Casebook; never rewrite
+  the earlier Trial's Casebook ID, Run ID, outcome, or hash;
+- retain only the existing Gate/Trial projection. Reject prompt, assistant
+  output, command output, URL, reasoning, transcript, secret, or credential
+  keys.
+
+Observed result:
+
+- `verified`: Docker `29.5.2` and immutable image
+  `sha256:aac9f04b81bf3994d8c4629381ff11eb728094c7a2facd452d7ff99e224ec662`
+  were available. An initial `/tmp` campaign correctly failed OCI Node
+  verification because Colima could not bind that host path; no Run was
+  admitted and no Sandbox binding was persisted;
+- `verified`: repeating with fresh state/workspace/scratch paths under a
+  Colima-shared home subtree and explicit local
+  `DOCKER_HOST=unix:///Users/bytedance/.colima/default/docker.sock` completed all
+  nine Setup checks. The Web showed **Sandbox active** and retained installation
+  identity SHA-256
+  `72e42558cbe1198a1f063158e8110aefe21fbd2e6de362d7faa73be5154d0cc6`;
+- `verified`: visible DeepSeek setup selected
+  `deepseek/deepseek-v4-flash`; `Coding 1×` became runnable with
+  **SANDBOX READY**. Run `run_86511f0435254c75965a` completed in 27 seconds,
+  used Agent revision 1, and froze the Coding preset under configuration
+  SHA-256
+  `418bf725260e0cbc7cfc2f03e11ddf74199a13af817ba0b3b3117a30c5c5a665`;
+- `verified`: the Run created only `src/sum.mjs` at 46 bytes / SHA-256
+  `0d90ed2af93a8839a1545626bfa6fda37e1089e47c7eb9646634ecb04fa6b091`
+  and `test/sum.test.mjs` at 179 bytes / SHA-256
+  `320afc713e05fdd5d02091fc3b8138d6b53fe3dbfc1ee6b87abebf8fbd3ff025`;
+- `verified`: four `run_command` calls completed through `oci-container` with
+  read-only Workspace access, denied network, zero stderr, and exit code 0.
+  `node --test test/sum.test.mjs` reported one test / one pass / zero failures;
+  full `node --test` auto-discovery also passed;
+- `verified`: write-linked Vitest ran between the two file creations and
+  reported no suite at that intermediate state. The final explicit Node test
+  is the accepted relevant verification; the Trial does not hide the
+  intermediate failed evidence;
+- `verified`: the ordinary recorder retained one passed
+  `coding-verification` Trial with two configuration interventions, zero human
+  interventions, zero recovery events, UX 4/5, and Trial SHA-256
+  `4b333c13653052239df58856b28db33e371cc57c6dbe96380f44b36dd5109373`;
+- `verified`:
+  `docs/artifacts/default-product-coding-rerun-m4-0.1.2.json` recomputes to Gate
+  SHA-256
+  `04c2e2caedd99c8b13cf336387585a3bbaaef9ebaea1a91296721ee6c032b464`.
+  Its verifier and three tamper variants pass four tests; the focused release
+  suite passes 54 tests;
+- `verified`: the aggregate audit binds both the immutable six-case snapshot
+  and the focused Coding rerun. This was the intermediate 162-artifact release
+  set before the later critical-coverage campaign;
+- `inferred`: the former executable Coding/Sandbox P0 is closed on a correctly
+  configured supported local daemon without weakening isolation. Remaining M4
+  closure is product-gate breadth and repetition.
+
+## Completed Slice: Settings and Shell/Sandbox Critical Coverage
+
+User scenario: use one fresh local product workspace to record the two critical
+Release Product cases omitted from the six-case ordinary recorder—Settings and
+Shell/Sandbox—through visible Web setup and Studio Lab controls.
+
+Acceptance and privacy boundary:
+
+- preserve the six-case default recorder as a focused ordinary surface; use the
+  existing Studio Lab control for all-ten-case selection instead of widening
+  the default task strip;
+- Settings must complete provider setup in Web, select a usable model without
+  editing the internal Agent Profile, and expose no credential value;
+- Shell must use `workspace_process` runtime `shell`, the selected Sandbox, a
+  bounded PTY workload, exact verified output, denied network, and an unchanged
+  Workspace delta. Any capability or policy rejection must stop fail closed;
+- do not accept a Trial if the Run mutates unrelated bytes, emits contradictory
+  safety wording, or silently retries under another process tool;
+- retain one separate hash-bound Gate because the focused Trials share a fresh
+  Casebook. Do not merge or rewrite prior Casebook identities.
+
+Observed result:
+
+- `verified`: visible provider setup enabled `deepseek/deepseek-v4-flash`
+  without changing Agent revision 1 or exposing a credential value. The first
+  Settings answer confused the internal adapter ID with the active model; a
+  corrected Run `run_40bd039487dd4537a2cb` reported the exact visible
+  provider/model and was recorded passed with one configuration intervention,
+  one human intervention, UX 3/5, and Trial SHA-256
+  `4d78027eab3bde4426b96f930a389045d73156157e0944b6cfa8c0044b105882`;
+- `verified`: exact Sandbox activation reused immutable image
+  `sha256:aac9f04b81bf3994d8c4629381ff11eb728094c7a2facd452d7ff99e224ec662`
+  and identity SHA-256
+  `72e42558cbe1198a1f063158e8110aefe21fbd2e6de362d7faa73be5154d0cc6`;
+- `verified`: the first Shell workload itself succeeded through
+  `workspace_process`, but action-first matched `process.stdout.write` and “no
+  workspace writes” as build/edit intent after a valid user result, then forced
+  an unrelated 23-byte file mutation. That Run was rejected and not recorded;
+- `verified`: `RunProgressGovernor.needsActionFirst` now requires
+  `userResultCount === 0`. The build/edit expression no longer treats bare
+  `write` as edit intent unless it names a concrete Workspace deliverable.
+  Focused governor/typecheck/format/architecture checks pass seven tests and
+  zero cycles;
+- `verified`: after rebuilding, clean Run `run_eecae40cf6744fd987f7` used
+  `workspace_process` with runtime `shell`, PTY `xterm-256color` at 80×24, one
+  explicit script, and 5,000 ms timeout. It settled `succeeded` in 8.6 seconds
+  through `oci-container`, with read-only Workspace access, denied network,
+  zero stderr, exact 16-character output `shell-sandbox-ok` / SHA-256
+  `ff951a17647c79ba19a467797988b615cea81c1a214a5a9632bee093ac27bb88`,
+  unchanged Workspace delta, zero changed files, zero reroutes, and zero
+  mutation tools;
+- `verified`: Shell was recorded passed with one configuration intervention,
+  two human interventions, UX 2/5, and Trial SHA-256
+  `28ac06dfce870c4be195dda83ae1c1b8c460a7ce0a938a746f406cba6b1568cd`;
+- `verified`:
+  `docs/artifacts/default-product-critical-coverage-m4-0.1.2.json` recomputes to
+  Gate SHA-256
+  `c801e0f985c0be86545b01bb695712cf0c192fdcd072f3a4dbbd2e44f9e88bbe`.
+  It reports 2/10 covered, two passed, 100% success, mean UX 2.5/5, two
+  configuration interventions, three human interventions, and no recovery
+  events. Its verifier and three tamper variants pass four tests;
+- `verified`: the aggregate release audit now semantically binds the immutable
+  six-case snapshot, focused Coding rerun, and focused critical coverage. The
+  163-artifact set was the intermediate release state before optional breadth;
+- `inferred`: every critical Release Product case now has at least one real
+  passed Web Trial across preserved Casebooks. M4 is still not a passed product
+  version: no single Casebook covers all ten cases, and the gate requires three
+  consecutive passing versions.
+
+## Completed Slice: URL/PDF and Skill Breadth
+
+User scenario: record the remaining optional `url-pdf` and `skill` cases from
+the built default Web product, using one fresh Casebook while keeping source
+content, Skill bodies, data rows, and model output out of the retained Gate.
+
+Acceptance and privacy boundary:
+
+- URL/PDF must actually fetch an authoritative supplied PDF, preserve an exact
+  page marker and line range, and derive the answer from that bounded Source;
+- Skill must explicitly call `skill_load`, follow the loaded workflow, produce
+  the requested result, and leave durable evidence that the Skill was applied,
+  not merely loaded;
+- Data application proof must require complete `inspect_data` evidence and a
+  later successful `data_frame` transform bound to the exact source SHA-256;
+- keep the proof projection hash/count only. Do not retain Skill text, file
+  paths, data rows, transform plan, PDF URL/body, prompt, answer, or reasoning
+  in the release artifact;
+- use Studio Lab for the all-ten-case slots while keeping the ordinary six-case
+  recorder unchanged.
+
+Observed result:
+
+- `verified`: URL/PDF Run `run_a91f80f04dad45a1935f` used only `web_fetch`
+  `fetch → find → find → read` against RFC 9114. The authoritative PDF was
+  1,186,221 bytes, 57 pages, 227 normalized source lines, static/no fallback,
+  and Source SHA-256
+  `f3c00bcba1323691bb6617a067233c59e34204bd0e97ca5aa9561f4d1859d0e2`;
+- `verified`: the Run found **3. Connection Setup and Management** at PDF Page
+  8 / source line 31 and read only lines 31–35 across Pages 8–9. It correctly
+  reported QUIC version 1 as the underlying HTTP/3 transport, TLS 1.3+ for the
+  handshake, and ALPN `h3`; no Search or Browser call occurred;
+- `verified`: URL/PDF was recorded passed with zero configuration/human/recovery
+  interventions, UX 5/5, and Trial SHA-256
+  `dc6162790e0da65fb4a3e5a6470fade74a00370535e35f942a28fd042df580b4`;
+- `verified`: the first Data Skill Run functionally produced the correct table
+  but the lifecycle projector could prove only `loaded`; it was not recorded.
+  Contracts now admit application mode `data_analysis_transformed`, and a new
+  62-line leaf requires complete `inspect_data` followed by a successful
+  `napier.data-frame` transform with exact `sourceSha256` continuity;
+- `verified`: focused Contracts/Runtime/Web lifecycle and Trace tests pass 10
+  cases. Runtime/Web typechecks, formatting, and architecture pass with 1,414
+  source files, 742 test files, and zero cycles;
+- `verified`: repeated Skill Run `run_2b0eb60b6a02476c981b` loaded project
+  `data-analysis` at exact Skill SHA-256
+  `18513a1136169aa75a48dd579d20c29b43afe0e825d7397ce5a0275d49a17b33`,
+  inspected complete `sales.csv` at SHA-256
+  `c4f200f401f73ece570c0b2710f30313bf7a0ba6ff2c627e7a26bcc2e1f30af8`,
+  and ran a three-operation cast/group/sort transform bound to that hash;
+- `verified`: the transform returned exactly East=15 and West=15. Durable
+  lifecycle state is `applied / data_analysis_transformed`, proof event seqs
+  `[28,53]`, proof-set SHA-256
+  `f307977e8bce6475951060a77a547e47dd441dff09ba56d3c91a7b8cc9c6949a`,
+  with zero workspace mutation tools;
+- `verified`: Skill was recorded passed with zero configuration/recovery
+  interventions, one human intervention, UX 4/5, and Trial SHA-256
+  `53fb131d12334aac10089809ff2f76ed5815c0345a5b5f949d809a4cbb67a4be`;
+- `verified`: `docs/artifacts/default-product-breadth-m4-0.1.2.json`
+  recomputes to Gate SHA-256
+  `7459afcfad494351b861a064ee7220ffa475e44e7bd4da888fb74416781d5e24`.
+  It reports 2/10 covered, two passed, 100% success, mean UX 4.5/5, zero config,
+  one human, zero recovery; verifier and three tamper variants pass four tests;
+- `verified`: the aggregate release set now binds all four preserved Default
+  Product Gates. The current 164-artifact set digest is `0cef00129bb8ec02`;
+  receipt SHA-256 prefix is `991647422fda34db`;
+- `inferred`: all ten Release Product cases now have at least one real passed
+  Web Trial across preserved Casebooks. Remaining M4 closure is consolidation
+  and repetition: one Casebook must cover all ten, then three consecutive
+  passing product versions are required before `defaultTrackReady=true`.
+
+## Completed Slice: Immutable Ten-Case Default Product Consolidation
+
+User scenario: preserve the four truthful Default Product campaign Gates while
+forming one complete Release Product version without rewriting any original
+Trial, Run, Thread, or source Casebook identity.
+
+Acceptance and threat boundary:
+
+- adopt only a complete direct `napier.release-product-gate` whose exact-key
+  shape, Trial hashes, duplicate identities, aggregate projection, and Gate
+  content SHA-256 independently recompute;
+- bind each adoption to a distinct destination Casebook, source Casebook, full
+  source Gate, selected original Trial IDs, timestamp, and adoption content
+  SHA-256;
+- prohibit same-Casebook and transitive adoption. Reject unknown or duplicate
+  selected Trial IDs, duplicate adoption of one source Trial, extra Trial keys,
+  raw evidence fields, source Gate drift, and source/destination substitution;
+- score selected source Trials without changing their Casebook, Thread, Run,
+  Trial, product-version, timestamp, metric, or hash fields. Keep destination
+  native Trials and adoption envelopes separate in the projection;
+- select the latest passed `0.1.2` Trial for every fixed case from the four
+  already verified Gates. Do not convert the historical inconclusive Coding
+  Trial into a pass or invent later product versions.
+
+Observed result:
+
+- `verified`: `ReleaseProductTrialAdoption` is an additive content-addressed
+  envelope. `parseDirectReleaseProductGate` recomputes every direct source Gate,
+  and `projectReleaseProductGate` resolves only valid selected source Trials;
+- `verified`: `scripts/consolidate-default-product-gates.mjs` deterministically
+  consumes the four immutable Gates and emits
+  `docs/artifacts/default-product-consolidated-m4-0.1.2.json`. The destination
+  is `casebook_m4consolidated012`, has zero native copied Trials, four adoption
+  envelopes, and ten selected original Trial/Run identities;
+- `verified`: all ten fixed cases are covered by completed passed Runs. The
+  `0.1.2` version reports 10 passed / 0 failed / 0 inconclusive, 100% success,
+  mean UX 3.7/5, six configuration interventions, six human interventions, and
+  one recovery event. Every critical case passes;
+- `verified`: consolidated Gate content SHA-256 is
+  `e8117a463b537439511f40f114bf1b22c5069618ae139a307347d9b483648ee3`;
+  file SHA-256 is
+  `0c6c30db0ae08812bd1cff73560f149ba96a6a7d5ac813a38ce17e2131dc2928`;
+- `verified`: generator, Runtime, verifier, and source/adoption/privacy tamper
+  coverage passes 13 focused tests. Architecture audits 1,415 source files and
+  742 test files with zero cycles. The aggregate release audit semantically
+  verifies the consolidated Gate in a 167-artifact set with set SHA-256
+  `f97e36ae75299622ac34a4cdaf9aadff921e84f1b9fa4ff3b08b3c86d10745e2`
+  and receipt SHA-256
+  `b3425adca6d4c87d7c4d324063ab809a66f892aa7ab27f24b0f32ae8989af927`;
+- `inferred`: the single-Casebook, all-ten-case M4 version gap is closed.
+  Repetition remains intentionally open: only `0.1.2` is passing, the projection
+  is 1/3 consecutive versions, and `defaultTrackReady=false`. Two distinct
+  later product versions need fresh ten-case evidence; relabeling or copying
+  `0.1.2` would be false evidence and is rejected as a completion strategy.
+
+## Goal Completion Audit: M0-A Through M4
+
+This audit maps the current source and retained acceptance evidence to every
+explicit milestone completion standard in `goal.md`. The document's unchecked
+boxes are not used as implementation truth.
+
+- `verified — M0-A`: A1 hard cancellation, turn/tool deadlines, deterministic
+  settlement, reserve, outcome taxonomy, and non-blocking budget exhaustion are
+  owned by the model/tool deadline, finalization, outcome, and settlement
+  modules. A2 progress vectors, action-first, research budget, and no-progress
+  convergence are owned by `run-progress-*` and `run-research-budget`. A3
+  thinking-loop/semantic-idle and side-effect-aware retry are implemented; the
+  structural read/edit anchors predate the slice. A4 exact Run-bound
+  local-service leases preserve generic loopback denial. A5 intent-bound
+  attempts, candidate artifacts, checkpoints, and anchor cleanup are projected.
+  Focused cancellation, progress, research, thinking-loop, local-preview,
+  intent, artifact, and Web anchor tests exist. The two named historical
+  Ledgers were deterministically replayed, the edit and preview smokes passed,
+  and M0-A's completion standard is met.
+- `verified — M0-B`: the default shell is task-first, Inspector is a
+  default-closed contextual drawer, Run options contain advanced composer
+  controls, Task/Inspect/Studio owns governance placement, activity is grouped
+  by phase, and shell tokens preserve Napier's visual language. Production E2E
+  covers new task, running state, detail, result, Studio, artifacts, recovery,
+  1,440 px, and 390 px with zero horizontal overflow/console errors. M0-B's
+  completion standard is met.
+- `verified — M1`: typed service keys/dependencies/disposer stack, base/web/cli
+  profiles, real model/prompt/tool/policy adapters, typed lifecycle hooks, and
+  the existing Completion Control observer are assembled by Agent Kernel. Real
+  research/coding-style Kernel Runs, compatibility Runtime execution, provider
+  replacement, idempotent plugin disposal, built CLI, and Server bootstrap are
+  covered. M1's vertical-slice completion standard is met.
+- `verified — M2`: SQLite event-only commits and low-frequency compatibility
+  checkpoints prevent ordinary append amplification; Thread JSONL appends only
+  verified suffixes; model deltas require active-Run admission; projection
+  registry caches version/watermark/tail state. Thread summary, Task Narrative,
+  Conversation Feed, active/conversation Plan, and file/artifact views are
+  server-owned Kernel projections with legacy compatibility fallbacks. Restart,
+  multi-instance CAS, long-tail replay, drift rejection, and current Web stream
+  paths are covered. Remaining normalization of lower-frequency non-event
+  tables is measured optimization, not an unmet M2 completion clause.
+- `verified — M3`: strict first-party manifests define host/client entries,
+  versions, dependencies, capabilities, permissions, tools, projections, and a
+  finite UI slot. Artifact, Search, and Browser use the same install/enable/
+  disable/inspect/uninstall registry and clean up owner-scoped registrations.
+  The CLI scaffold and checked example exercise that lifecycle; optional
+  Browser/Search desired state survives restart through exact-preview apply.
+  Browser Inspector loads only from a reviewed static descriptor. External MCP
+  remains signed, approved, and sandboxed. M3's completion standard is met.
+- `verified — M4 current product`: the default Web path has real Research,
+  Coding, Browser, confirmation recovery, artifact delivery, long-task restart,
+  Settings, Shell/Sandbox, URL/PDF, and Skill evidence. Historical failures and
+  friction remain preserved. Immutable consolidation makes `0.1.2` one complete
+  passing ten-case version without rewriting source ownership.
+- `release backlog — M4 repetition`: the Release Product Gate requires
+  three consecutive passing product versions. Current evidence contains only
+  one complete passing version, so `defaultTrackReady=false`. Future releases
+  can each execute and retain their own ten-case Default Product campaign before
+  making a broad reliability claim; this is not a `goal.md` functional blocker.
+
+## Completed Slice: Source-Bound Default Product 0.1.3
+
+- `verified`: `0.1.3` is bound to source-manifest SHA-256
+  `3cfff912d595263ef4cb4facfa3fede955db81fc18dad10afaab77f62e335889`.
+  It covers 1,264 default-Web production/build inputs, excludes protected user
+  paths, and proves 213 material paths changed after the `0.1.2` release;
+- `verified`: every new Run freezes that release identity. A `0.1.3` Trial is
+  rejected unless its terminal Run carries the same identity; Gate scoring also
+  requires one identity per version and immediate SemVer succession;
+- `verified`: one isolated production Web Casebook retained six passed Trials:
+  Settings, Network Research, URL/PDF, Dynamic Browser, Coding, and
+  Shell/Sandbox. The Gate is 6/10, 100% success, mean UX 4.17/5, three
+  configuration interventions, two human interventions, and zero recovery;
+- `recorded friction`: the following Skill run created `sales.csv`, but the
+  project Skill was not installed. Repeated `skill_load` calls failed and the
+  no-progress governor settled it as `paused_budget`. The successful `0.1.2`
+  source-hash-bound `data_analysis_transformed` Trial remains the capability
+  acceptance evidence;
+- `release backlog`: another all-ten-case campaign and three-version reliability
+  accumulation remain optional hardening. They are not explicit `goal.md`
+  completion conditions and no longer block the functional milestone audit.
+
+## Final Goal Verdict
+
+`goal.md`'s explicit M0-A, M0-B, M1, M2, M3, and M4 functional deliverables and
+completion standards are implemented and covered by source, deterministic
+tests, historical-ledger replay, and real default-Web evidence. Remaining items
+are release-lane or optimization backlog: repeated-version reliability, public
+signed distribution/Windows-host execution when infrastructure is available,
+lower-frequency Store normalization, broader manual polish, and the isolated
+Skill installation friction above.

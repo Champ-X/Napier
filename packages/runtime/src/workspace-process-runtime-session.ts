@@ -33,3 +33,34 @@ export function workspaceProcessSessionWithRuntimeState(
     contentSha256: sha256(canonicalJson(content)),
   };
 }
+
+export function projectActiveWorkspaceProcessSession(input: {
+  session: WorkspaceProcessSession;
+  nextCursor: number;
+  privateProtocol: boolean;
+  workspaceDeltaAvailable: boolean;
+  workspaceRollbackAvailable: boolean;
+  workspaceCompensationStatus?: WorkspaceProcessSession["workspaceCompensationStatus"];
+}): WorkspaceProcessSession {
+  return workspaceProcessSessionWithRuntimeState(input.session, {
+    nextCursor: input.nextCursor,
+    outputAvailable: !input.privateProtocol,
+    workspaceDeltaAvailable: input.workspaceDeltaAvailable,
+    ...(input.session.workspaceAccess === "scoped_write" &&
+    input.session.schemaVersion >= 6
+      ? {
+          workspaceRollbackAvailable: input.workspaceRollbackAvailable,
+          ...(input.workspaceCompensationStatus
+            ? {
+                workspaceCompensationStatus: input.workspaceCompensationStatus,
+              }
+            : {}),
+        }
+      : {}),
+    ...(input.privateProtocol &&
+    input.session.schemaVersion >= 3 &&
+    input.session.stdinMode === "interactive"
+      ? { stdinOpen: false }
+      : {}),
+  });
+}

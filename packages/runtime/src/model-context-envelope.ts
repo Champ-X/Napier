@@ -232,10 +232,10 @@ export function assertModelContextEnvelopeEventBindings(
       (envelopeCountsByRun.get(event.runId) ?? 0) + 1,
     );
   }
-  const responseBindingsByRun = new Map<string, number>();
-  const responseBindingKeys = new Set<string>();
+  const terminalBindingsByRun = new Map<string, number>();
+  const terminalBindingKeys = new Set<string>();
   for (const event of events) {
-    if (event.type !== "model.response" || !record(event.payload)) continue;
+    if (!isEnvelopeTerminalEvent(event) || !record(event.payload)) continue;
     const payload = event.payload;
     const hasBinding =
       payload["modelContextEnvelopeSha256"] !== undefined ||
@@ -255,7 +255,7 @@ export function assertModelContextEnvelopeEventBindings(
     const bindingKey = `${event.runId}:${String(turnIndex)}`;
     if (
       !binding ||
-      responseBindingKeys.has(bindingKey) ||
+      terminalBindingKeys.has(bindingKey) ||
       event.seq <= binding.eventSeq ||
       !shaFieldOrUndefined(envelopeSha256) ||
       !shaFieldOrUndefined(messageSetSha256) ||
@@ -264,20 +264,29 @@ export function assertModelContextEnvelopeEventBindings(
       messageSetSha256 !== binding.receipt.messageSetSha256 ||
       toolDefinitionSetSha256 !== binding.receipt.toolDefinitionSetSha256
     ) {
-      throw new Error(`${label} response binding is invalid: ${event.runId}`);
+      throw new Error(`${label} terminal binding is invalid: ${event.runId}`);
     }
-    responseBindingKeys.add(bindingKey);
-    responseBindingsByRun.set(
+    terminalBindingKeys.add(bindingKey);
+    terminalBindingsByRun.set(
       event.runId,
-      (responseBindingsByRun.get(event.runId) ?? 0) + 1,
+      (terminalBindingsByRun.get(event.runId) ?? 0) + 1,
     );
   }
   for (const [runId, envelopeCount] of envelopeCountsByRun) {
-    const bindingCount = responseBindingsByRun.get(runId) ?? 0;
+    const bindingCount = terminalBindingsByRun.get(runId) ?? 0;
     if (bindingCount !== envelopeCount) {
-      throw new Error(`${label} response binding count is invalid: ${runId}`);
+      throw new Error(`${label} terminal binding count is invalid: ${runId}`);
     }
   }
+}
+
+function isEnvelopeTerminalEvent(event: RunEvent): boolean {
+  if (event.type === "model.response") return true;
+  return (
+    event.type === "model.thinking_loop.detected" &&
+    record(event.payload) &&
+    event.payload["action"] === "retry"
+  );
 }
 
 function toolDefinitionProjection(tool: ModelContextEnvelopeTool) {

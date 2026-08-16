@@ -19,6 +19,7 @@ import {
   hashRunReplaySnapshotContent,
   walkEmbeddedModelContextEnvelopes,
 } from "./run-replay.js";
+import { assertOutcome } from "./run-outcomes.js";
 import { assertSubagentOutcomeBinding } from "./subagent-outcomes.js";
 import { createThreadReplayBundle as buildThreadReplayBundle } from "./thread-bundles.js";
 
@@ -30,14 +31,6 @@ export {
   hashEventStream,
 } from "./run-replay.js";
 
-const RUN_STATUSES = new Set([
-  "queued",
-  "running",
-  "completed",
-  "failed",
-  "cancelled",
-  "interrupted",
-]);
 const EVENT_CATEGORIES = new Set([
   "lifecycle",
   "message",
@@ -160,9 +153,8 @@ function validateRunReplaySnapshot(input: unknown): RunReplaySnapshot {
     throw new Error("Run replay snapshot run ownership is invalid");
   }
   const runStatus = (run as unknown as Record<string, unknown>)["status"];
-  if (typeof runStatus !== "string" || !RUN_STATUSES.has(runStatus)) {
-    throw new Error("Run replay snapshot run status is invalid");
-  }
+  const runOutcome = (run as unknown as Record<string, unknown>)["outcome"];
+  assertOutcome(runStatus, runOutcome, "Run replay snapshot run");
   const startedAt = stringField(
     run as unknown as Record<string, unknown>,
     "startedAt",

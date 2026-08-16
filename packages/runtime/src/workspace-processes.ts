@@ -22,6 +22,8 @@ import type {
 import type { NodeDebuggerRuntimeIdentity } from "./node-debugger-runtime.js";
 import type { SandboxedProcess } from "./sandbox.js";
 import type { LocalStore } from "./store.js";
+import { WorkspaceProcessLocalServiceLeases } from "./workspace-process-local-service-lease.js";
+import { projectActiveWorkspaceProcessSession } from "./workspace-process-runtime-session.js";
 import {
   createWorkspaceProcessSession,
   projectWorkspaceProcessRollbackAttempts,
@@ -34,7 +36,6 @@ import {
   WORKSPACE_PROCESS_STARTED_EVENT,
   workspaceProcessInputReceiptPayload,
   workspaceProcessSessionPayload,
-  workspaceProcessSessionWithRuntimeState,
   workspaceProcessStableSessionInput as stableSessionInput,
 } from "./workspace-process-events.js";
 import {
@@ -140,6 +141,7 @@ export interface WorkspaceProcessOutputOptions {
 }
 
 export class WorkspaceProcessManager {
+  readonly localServiceLeases: WorkspaceProcessLocalServiceLeases;
   private readonly entries = new Map<string, ActiveWorkspaceProcess>();
   private readonly projectedSessions = new Map<
     string,
@@ -153,6 +155,9 @@ export class WorkspaceProcessManager {
   private shuttingDown = false;
 
   constructor(private readonly options: WorkspaceProcessManagerOptions) {
+    this.localServiceLeases = new WorkspaceProcessLocalServiceLeases(
+      options.store,
+    );
     this.writePreviews = new WorkspaceProcessWritePreviewManager(options);
     if (options.dataRoot) {
       this.recovery = new WorkspaceProcessRecoveryManager({
@@ -333,8 +338,10 @@ export class WorkspaceProcessManager {
     this.entries.set(processId, entry);
     try {
       await this.appendSession(session, WORKSPACE_PROCESS_STARTED_EVENT);
+      await this.localServiceLeases.started(session);
     } catch (error) {
       this.entries.delete(processId);
+      await this.localServiceLeases.ended(session, "start_failed");
       await child.terminate().catch(() => undefined);
       await this.recovery?.remove(processId);
       await writeLock?.release();
@@ -522,6 +529,7 @@ export class WorkspaceProcessManager {
       );
     }
     await Promise.allSettled(active.map((entry) => entry.completion));
+    await this.localServiceLeases.revokeAll();
   }
 
   private createEntry(
@@ -677,6 +685,7 @@ export class WorkspaceProcessManager {
       nextCursor: entry.nextCursor,
     });
     const { session, workspaceDelta } = settled;
+    await this.localServiceLeases.ended(session, "process_settled");
     entry.workspaceDelta = workspaceDelta;
     const compensationEligible =
       session.schemaVersion === 7 &&
@@ -763,7 +772,7 @@ export class WorkspaceProcessManager {
     session: WorkspaceProcessSession,
     type: string,
   ): Promise<void> {
-    await this.options.store.appendEvent({
+    await this.appendProjection(session, {
       threadId: session.threadId,
       runId: session.runId,
       type,
@@ -771,18 +780,13 @@ export class WorkspaceProcessManager {
       visibility: "user",
       payload: workspaceProcessSessionPayload(session),
     });
-    const projection =
-      this.projectedSessions.get(session.threadId) ??
-      new Map<string, WorkspaceProcessSession>();
-    projection.set(session.id, session);
-    this.projectedSessions.set(session.threadId, projection);
   }
 
   private async appendInputReceipt(
     receipt: WorkspaceProcessInputReceipt,
     session: WorkspaceProcessSession,
   ): Promise<void> {
-    await this.options.store.appendEvent({
+    await this.appendProjection(session, {
       threadId: receipt.threadId,
       runId: receipt.runId,
       type: WORKSPACE_PROCESS_INPUT_EVENT,
@@ -790,18 +794,13 @@ export class WorkspaceProcessManager {
       visibility: "user",
       payload: workspaceProcessInputReceiptPayload(receipt),
     });
-    const projection =
-      this.projectedSessions.get(session.threadId) ??
-      new Map<string, WorkspaceProcessSession>();
-    projection.set(session.id, session);
-    this.projectedSessions.set(session.threadId, projection);
   }
 
   private async appendResizeReceipt(
     receipt: WorkspaceProcessResizeReceipt,
     session: WorkspaceProcessSession,
   ): Promise<void> {
-    await this.options.store.appendEvent({
+    await this.appendProjection(session, {
       threadId: receipt.threadId,
       runId: receipt.runId,
       type: WORKSPACE_PROCESS_RESIZED_EVENT,
@@ -809,6 +808,13 @@ export class WorkspaceProcessManager {
       visibility: "user",
       payload: workspaceProcessResizeReceiptPayload(receipt),
     });
+  }
+
+  private async appendProjection(
+    session: WorkspaceProcessSession,
+    input: Parameters<LocalStore["appendEvent"]>[0],
+  ): Promise<void> {
+    await this.options.store.appendEvent(input);
     const projection =
       this.projectedSessions.get(session.threadId) ??
       new Map<string, WorkspaceProcessSession>();
@@ -832,26 +838,15 @@ export class WorkspaceProcessManager {
     const compensationStatus = entry.compensationPending
       ? "pending"
       : this.recovery?.compensationStatus(entry.session);
-    return workspaceProcessSessionWithRuntimeState(entry.session, {
+    return projectActiveWorkspaceProcessSession({
+      session: entry.session,
       nextCursor: entry.nextCursor,
-      outputAvailable: !entry.privateProtocol,
+      privateProtocol: entry.privateProtocol,
       workspaceDeltaAvailable: Boolean(entry.workspaceDelta),
-      ...(entry.session.workspaceAccess === "scoped_write" &&
-      entry.session.schemaVersion >= 6
-        ? {
-            workspaceRollbackAvailable:
-              this.recovery?.available(entry.session) === true,
-            ...(compensationStatus
-              ? {
-                  workspaceCompensationStatus: compensationStatus,
-                }
-              : {}),
-          }
-        : {}),
-      ...(entry.privateProtocol &&
-      entry.session.schemaVersion >= 3 &&
-      entry.session.stdinMode === "interactive"
-        ? { stdinOpen: false }
+      workspaceRollbackAvailable:
+        this.recovery?.available(entry.session) === true,
+      ...(compensationStatus
+        ? { workspaceCompensationStatus: compensationStatus }
         : {}),
     });
   }

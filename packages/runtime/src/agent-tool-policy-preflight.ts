@@ -42,6 +42,10 @@ export async function preflightAgentToolPolicy(input: {
       signal?: AbortSignal,
     ) => Promise<BrowserConfirmationPageState>;
     active: (owner: { threadId: string; runId: string }) => boolean;
+    localService: (
+      owner: { threadId: string; runId: string },
+      value: string,
+    ) => boolean;
   };
   restrictedReadOnlyExecution: boolean;
   toolCall: { id: string; name: string };
@@ -64,24 +68,38 @@ export async function preflightAgentToolPolicy(input: {
   const mode: ToolPolicyMode = input.restrictedReadOnlyExecution
     ? "observe"
     : input.profile.toolPolicy;
-  const decision = input.restrictedReadOnlyExecution
-    ? assessToolCall(
-        mode,
-        input.toolCall.name,
-        toJsonValue(input.args),
-        input.store.workspaceRoot,
-      )
-    : (input.extensionManager?.assessToolCall(
-        mode,
-        input.toolCall.name,
-        input.profile.id,
-      ) ??
-      assessToolCall(
-        mode,
-        input.toolCall.name,
-        toJsonValue(input.args),
-        input.store.workspaceRoot,
-      ));
+  const localService = browserNavigationUrl(input.toolCall.name, input.args);
+  const localServiceAllowed = Boolean(
+    localService &&
+    input.browserConfirmation.localService(
+      { threadId: input.run.threadId, runId: input.run.id },
+      localService,
+    ),
+  );
+  const decision = localServiceAllowed
+    ? {
+        allowed: true as const,
+        risk: "low" as const,
+        reason: "exact Run-bound local-service Browser lease",
+      }
+    : input.restrictedReadOnlyExecution
+      ? assessToolCall(
+          mode,
+          input.toolCall.name,
+          toJsonValue(input.args),
+          input.store.workspaceRoot,
+        )
+      : (input.extensionManager?.assessToolCall(
+          mode,
+          input.toolCall.name,
+          input.profile.id,
+        ) ??
+        assessToolCall(
+          mode,
+          input.toolCall.name,
+          toJsonValue(input.args),
+          input.store.workspaceRoot,
+        ));
   if (!decision.allowed) {
     return block(input, decision.reason);
   }
@@ -316,6 +334,27 @@ function browserInteractionAction(
   }
   const action = (args as Record<string, unknown>)["action"];
   return isBrowserInteractionAction(action) ? action : undefined;
+}
+
+function browserNavigationUrl(
+  toolName: string,
+  args: unknown,
+): string | undefined {
+  if (
+    toolName !== "browser" ||
+    !args ||
+    typeof args !== "object" ||
+    Array.isArray(args)
+  ) {
+    return undefined;
+  }
+  const value = args as Record<string, unknown>;
+  return (value["action"] === "start" ||
+    value["action"] === "navigate" ||
+    value["action"] === "tab_new") &&
+    typeof value["url"] === "string"
+    ? value["url"]
+    : undefined;
 }
 
 function toJsonValue(value: unknown): JsonValue {

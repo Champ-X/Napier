@@ -1,0 +1,68 @@
+{
+  "kind": "napier.release-product-gate",
+  "schemaVersion": 1,
+  "currentProductVersion": "0.1.2",
+  "casebookId": "casebook_d99d62c04d5840dcb8ab",
+  "templateId": "release-product-v1",
+  "templateVersion": 1,
+  "minimumSuccessRate": 0.9,
+  "requiredConsecutiveVersions": 3,
+  "versions": [
+    {
+      "productVersion": "0.1.2",
+      "caseCount": 10,
+      "coveredCaseCount": 1,
+      "trialCount": 1,
+      "passedCount": 1,
+      "failedCount": 0,
+      "inconclusiveCount": 0,
+      "successRate": 1,
+      "minimumSuccessRate": 0.9,
+      "meanUxScore": 4,
+      "configurationInterventions": 2,
+      "humanInterventions": 0,
+      "recoveryEvents": 0,
+      "criticalCaseIds": [
+        "settings",
+        "high-risk-confirmation",
+        "shell-sandbox",
+        "coding-verification",
+        "long-task-recovery"
+      ],
+      "failedCriticalCaseIds": [
+        "settings",
+        "high-risk-confirmation",
+        "shell-sandbox",
+        "long-task-recovery"
+      ],
+      "status": "incomplete",
+      "firstRecordedAt": "2026-08-16T14:41:14.903Z",
+      "lastRecordedAt": "2026-08-16T14:41:14.903Z"
+    }
+  ],
+  "consecutivePassingVersions": [],
+  "defaultTrackReady": false,
+  "trials": [
+    {
+      "id": "release_trial_0baee07a56594360b78a",
+      "threadId": "thread_1b0b9f1e0f8b4e82ba89",
+      "casebookId": "casebook_d99d62c04d5840dcb8ab",
+      "templateId": "release-product-v1",
+      "templateVersion": 1,
+      "templateCaseId": "coding-verification",
+      "runId": "run_86511f0435254c75965a",
+      "runStatus": "completed",
+      "runStartedAt": "2026-08-16T14:38:55.110Z",
+      "runFinishedAt": "2026-08-16T14:39:22.212Z",
+      "productVersion": "0.1.2",
+      "status": "passed",
+      "configurationInterventions": 2,
+      "humanInterventions": 0,
+      "recoveryEvents": 0,
+      "uxScore": 4,
+      "recordedAt": "2026-08-16T14:41:14.903Z",
+      "contentSha256": "4b333c13653052239df58856b28db33e371cc57c6dbe96380f44b36dd5109373"
+    }
+  ],
+  "contentSha256": "04c2e2caedd99c8b13cf336387585a3bbaaef9ebaea1a91296721ee6c032b464"
+}

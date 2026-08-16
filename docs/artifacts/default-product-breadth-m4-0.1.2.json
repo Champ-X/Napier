@@ -1,0 +1,89 @@
+{
+  "kind": "napier.release-product-gate",
+  "schemaVersion": 1,
+  "currentProductVersion": "0.1.2",
+  "casebookId": "casebook_475f7093427748ee8f5f",
+  "templateId": "release-product-v1",
+  "templateVersion": 1,
+  "minimumSuccessRate": 0.9,
+  "requiredConsecutiveVersions": 3,
+  "versions": [
+    {
+      "productVersion": "0.1.2",
+      "caseCount": 10,
+      "coveredCaseCount": 2,
+      "trialCount": 2,
+      "passedCount": 2,
+      "failedCount": 0,
+      "inconclusiveCount": 0,
+      "successRate": 1,
+      "minimumSuccessRate": 0.9,
+      "meanUxScore": 4.5,
+      "configurationInterventions": 0,
+      "humanInterventions": 1,
+      "recoveryEvents": 0,
+      "criticalCaseIds": [
+        "settings",
+        "high-risk-confirmation",
+        "shell-sandbox",
+        "coding-verification",
+        "long-task-recovery"
+      ],
+      "failedCriticalCaseIds": [
+        "settings",
+        "high-risk-confirmation",
+        "shell-sandbox",
+        "coding-verification",
+        "long-task-recovery"
+      ],
+      "status": "incomplete",
+      "firstRecordedAt": "2026-08-16T15:31:24.724Z",
+      "lastRecordedAt": "2026-08-16T15:44:42.667Z"
+    }
+  ],
+  "consecutivePassingVersions": [],
+  "defaultTrackReady": false,
+  "trials": [
+    {
+      "id": "release_trial_5211d8a61036415da35a",
+      "threadId": "thread_2347f99f8f4e4926bc01",
+      "casebookId": "casebook_475f7093427748ee8f5f",
+      "templateId": "release-product-v1",
+      "templateVersion": 1,
+      "templateCaseId": "url-pdf",
+      "runId": "run_a91f80f04dad45a1935f",
+      "runStatus": "completed",
+      "runStartedAt": "2026-08-16T15:28:17.485Z",
+      "runFinishedAt": "2026-08-16T15:28:47.910Z",
+      "productVersion": "0.1.2",
+      "status": "passed",
+      "configurationInterventions": 0,
+      "humanInterventions": 0,
+      "recoveryEvents": 0,
+      "uxScore": 5,
+      "recordedAt": "2026-08-16T15:31:24.724Z",
+      "contentSha256": "dc6162790e0da65fb4a3e5a6470fade74a00370535e35f942a28fd042df580b4"
+    },
+    {
+      "id": "release_trial_21b4a6a098e043f39f24",
+      "threadId": "thread_f1d8ef4223794234add2",
+      "casebookId": "casebook_475f7093427748ee8f5f",
+      "templateId": "release-product-v1",
+      "templateVersion": 1,
+      "templateCaseId": "skill",
+      "runId": "run_2b0eb60b6a02476c981b",
+      "runStatus": "completed",
+      "runStartedAt": "2026-08-16T15:42:09.880Z",
+      "runFinishedAt": "2026-08-16T15:42:24.961Z",
+      "productVersion": "0.1.2",
+      "status": "passed",
+      "configurationInterventions": 0,
+      "humanInterventions": 1,
+      "recoveryEvents": 0,
+      "uxScore": 4,
+      "recordedAt": "2026-08-16T15:44:42.667Z",
+      "contentSha256": "53fb131d12334aac10089809ff2f76ed5815c0345a5b5f949d809a4cbb67a4be"
+    }
+  ],
+  "contentSha256": "7459afcfad494351b861a064ee7220ffa475e44e7bd4da888fb74416781d5e24"
+}

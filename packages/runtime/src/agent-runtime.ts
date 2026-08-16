@@ -60,7 +60,6 @@ import {
   delay,
   formatPlanToolGuidance,
   OperatorDecisionPendingError,
-  publicModelFailureMessage,
   sha256Text,
   splitForStreaming,
   summarize,
@@ -76,12 +75,15 @@ import {
 } from "./agent-model-projection.js";
 import { preflightAgentToolPolicy } from "./agent-tool-policy-preflight.js";
 import { builtInToolEffect } from "./agent-tool-effects.js";
-import { AgentToolResultLifecycle } from "./agent-tool-result-lifecycle.js";
+import {
+  AgentToolResultLifecycle,
+  toolLife,
+} from "./agent-tool-result-lifecycle.js";
 import { agentToolResultText } from "./agent-tool-result-text.js";
 import { PrivateSourceModelContentBoundary } from "./private-source-model-content.js";
 import { BrowserInteractionConfirmationManager } from "./browser-interaction-confirmations.js";
 import { BrowserLiveViewService } from "./browser-live-view.js";
-import type { RunBrowserSessionManager } from "./browser-session.js";
+import type { BrowserSessionPort } from "./browser-session-port.js";
 import { BrowserSessionControlService } from "./browser-session-control.js";
 import { BrowserSessionPauseManager } from "./browser-session-pause.js";
 import type { BrowserSourceCaptureProvider } from "./research-sources.js";
@@ -120,6 +122,8 @@ import {
 } from "./memory.js";
 import { modelAdapterReceipt } from "./model-adapters.js";
 import { ModelDeltaBatcher } from "./model-delta-batcher.js";
+import { agentModelStreamLife } from "./agent-model-stream-lifecycle.js";
+import { modelFailureError } from "./model-turn-deadline.js";
 import { ModelInvocationCapsuleStore } from "./model-invocation-capsule-store.js";
 import { captureCompiledModelInvocation } from "./model-invocation-capture.js";
 import { McpExtensionManager } from "./mcp.js";
@@ -160,7 +164,11 @@ import {
   resolvePromptVariables,
 } from "./prompt-variables.js";
 import { aggregateRunUsage } from "./run-replay.js";
-import { RunBudgetExceededError, RunBudgetTracker } from "./run-budget.js";
+import { RunBudgetTracker } from "./run-budget.js";
+import { finLife } from "./run-finalization-reserve.js";
+import { classifyFailure } from "./run-failure-classification.js";
+import { settleRunFailure } from "./run-failure-settlement.js";
+import { progLife, progTool } from "./run-progress-vector.js";
 import {
   createPlatformSandboxAdapter,
   type OsSandboxAdapter,
@@ -229,7 +237,7 @@ export class AgentRuntime {
     readonly verificationSandbox: OsSandboxAdapter = createPlatformSandboxAdapter(),
     readonly workspaceProcesses?: WorkspaceProcessManager,
     readonly workspaceFileMutations?: WorkspaceFileMutationManager,
-    readonly browserSessions?: RunBrowserSessionManager,
+    readonly browserSessions?: BrowserSessionPort,
     readonly researchSourceCaptures?: BrowserSourceCaptureProvider,
     readonly modelInvocationCapsules = new ModelInvocationCapsuleStore(
       store.dataRoot,
@@ -806,91 +814,32 @@ export class AgentRuntime {
           waitForOperatorDecisionId: error.decisionId,
         });
       }
-      const budgetExhaustion =
-        budget.exhaustion ??
-        (error instanceof RunBudgetExceededError
-          ? error.exhaustion
-          : undefined);
-      const cancelled =
-        abortController.signal.aborted && budgetExhaustion === undefined;
-      const message =
-        budgetExhaustion?.message ??
-        (error instanceof Error ? error.message : String(error));
-      if (budgetExhaustion) {
-        await this.record(
-          {
-            threadId: thread.id,
-            runId: run.id,
-            type: "run.budget.exhausted",
-            category: "lifecycle",
-            visibility: "user",
-            payload: toJsonValue({
-              status: "exhausted",
-              reason: budgetExhaustion.reason,
-              limit: budgetExhaustion.limit,
-              observed: budgetExhaustion.observed,
-              limits: budget.limits,
-              message,
-            }),
-          },
-          options.onEvent,
-        );
-      }
-      if (!cancelled && !workflowInvocation) {
+      const failure = classifyFailure(
+        abortController.signal.aborted,
+        workflowInvocation,
+        budget.exhaustion,
+        error,
+      );
+      if (failure.blocksGoal) {
         await this.blockGoalForRunFailure(
           thread.id,
           run.id,
-          message,
+          failure.message,
           options.onEvent,
         );
       }
-      await recordActiveSkillLifecycles(
-        this.store,
-        thread.id,
-        run.id,
-        options.onEvent,
-      ).catch(() => undefined);
-      await this.record(
-        {
-          threadId: thread.id,
-          runId: run.id,
-          type: cancelled ? "run.cancelled" : "run.failed",
-          category: "lifecycle",
-          visibility: "user",
-          payload: { status: cancelled ? "cancelled" : "failed", message },
-        },
-        options.onEvent,
-      );
-      if (invocationSource === "recovery" && options.parentRunId) {
-        await this.record(
-          {
-            threadId: thread.id,
-            runId: run.id,
-            type: "run.recovery.failed",
-            category: "lifecycle",
-            visibility: "user",
-            payload: {
-              parentRunId: options.parentRunId,
-              status: cancelled ? "cancelled" : "failed",
-              message,
-              mode: options.recovery?.mode ?? "manual",
-              ...(options.recovery?.attemptId
-                ? { attemptId: options.recovery.attemptId }
-                : {}),
-            },
-          },
-          options.onEvent,
-        );
-      }
-      return await this.store.finishRun(
-        run.id,
-        cancelled ? "cancelled" : "failed",
-        {
-          error: message,
-          usage: await this.collectRunUsage(thread.id, run.id),
-          leaseToken: leasedRun.token,
-        },
-      );
+      return settleRunFailure({
+        store: this.store,
+        run,
+        failure,
+        invocationSource,
+        ...(options.parentRunId ? { parentRunId: options.parentRunId } : {}),
+        ...(options.recovery ? { recovery: options.recovery } : {}),
+        usage: await this.collectRunUsage(thread.id, run.id),
+        limits: budget.limits,
+        leaseToken: leasedRun.token,
+        ...(options.onEvent ? { onEvent: options.onEvent } : {}),
+      });
     } finally {
       clearTimeout(budgetTimeout);
       clearInterval(heartbeat);
@@ -943,7 +892,7 @@ export class AgentRuntime {
       text: buildRunRecoveryPrompt(
         interrupted,
         thread.goal?.status === "active" ? thread.goal.objective : undefined,
-        events,
+        { events, plans: this.store.listPlans(thread.id) },
       ),
       parentRunId: interrupted.id,
       source: "recovery",
@@ -1085,7 +1034,7 @@ export class AgentRuntime {
     budget: RunBudgetTracker,
     onEvent?: EventSink,
   ): Promise<string> {
-    budget.assertCanStartPrimaryTurn();
+    budget.beginPrimaryTurn();
     if (source !== "advisor_correction") {
       const promptEvent = turnPromptEvent(source);
       await this.record(
@@ -1120,7 +1069,6 @@ export class AgentRuntime {
       onEvent,
     );
     await delay(90, signal);
-
     const chinese = /[\u3400-\u9fff]/u.test(prompt);
     const response =
       source === "recovery"
@@ -1361,15 +1309,11 @@ export class AgentRuntime {
     ) {
       tools.push(...subagents.createTools());
     }
-    const toolResultLifecycle = new AgentToolResultLifecycle({
-      store: this.store,
-      run,
-      tools,
-      invocationCapsules: this.toolInvocationCapsules,
-      resultCapsules: this.toolInvocationResultCapsules,
-      ...(toolResultReplay ? { replay: toolResultReplay } : {}),
-      ...(onEvent ? { onEvent } : {}),
-    });
+    const toolResultLifecycle = toolLife(
+      this,
+      [budget, run, tools, deferredExtensionTools],
+      [toolResultReplay, onEvent],
+    );
     const workspaceToolGuidance = formatWorkspaceToolGuidance(tools);
     const planToolGuidance = formatPlanToolGuidance(tools);
     const effectiveCapabilitiesPrompt = formatEffectiveCapabilitiesPrompt({
@@ -1420,36 +1364,23 @@ export class AgentRuntime {
       activeToolLoopGuard,
     ).systemPrompt;
     let currentModelContextEnvelope: ModelContextEnvelopeReceipt | undefined;
-    const streamWithModelContextEnvelope: StreamFn = async (
-      requestModel,
-      requestContext,
-      options,
-    ) => {
-      const compiledPrompt = buildCompiledPrompt(
-        modelAdapterReceipt(requestModel, options),
-        delegationLedgerProjection,
-        milestoneContextProjection,
-        activeToolLoopGuard,
-      );
-      const prepared = await captureCompiledModelInvocation({
-        store: this.store,
-        capsules: this.modelInvocationCapsules,
-        run,
-        model: requestModel,
-        context: requestContext,
-        options,
-        turnIndex: nextModelContextEnvelopeTurnIndex(),
-        purpose: "agent_turn",
-        compiledPrompt,
-        ...(onEvent ? { onEvent } : {}),
-      });
-      currentModelContextEnvelope = prepared.envelope;
-      return this.modelRegistry.models.streamSimple(
-        requestModel,
-        prepared.context,
-        options,
-      );
-    };
+    const streamWithModelContextEnvelope: StreamFn = agentModelStreamLife({
+      host: this,
+      budget,
+      run,
+      buildCompiledPrompt: (requestModel, options) =>
+        buildCompiledPrompt(
+          modelAdapterReceipt(requestModel, options),
+          delegationLedgerProjection,
+          milestoneContextProjection,
+          activeToolLoopGuard,
+        ),
+      nextTurnIndex: nextModelContextEnvelopeTurnIndex,
+      onEnvelope: (envelope) => {
+        currentModelContextEnvelope = envelope;
+      },
+      ...(onEvent ? { onEvent } : {}),
+    });
     const beforeToolCall = async (
       {
         assistantMessage,
@@ -1552,7 +1483,7 @@ export class AgentRuntime {
         ...(onEvent ? { onEvent } : {}),
       });
       if (policyBlock) return policyBlock;
-      return toolResultLifecycle.preflight(toolCall.id, toolCall.name, args);
+      return progTool(progress, toolResultLifecycle, toolCall, args);
     };
     const afterToolCall = async ({
       toolCall,
@@ -1674,6 +1605,8 @@ export class AgentRuntime {
       onEvent,
     );
     let finalText = "";
+    const progress = await progLife(this, budget, run, tools, prompt, onEvent);
+    const finalization = finLife(this, budget, run, preRecordedControlMessages);
     const deltaBatcher = new ModelDeltaBatcher(
       run.threadId,
       run.id,
@@ -1703,11 +1636,14 @@ export class AgentRuntime {
         convertToLlm: (messages) => messages.filter(isProviderMessage),
         beforeToolCall,
         afterToolCall,
-        getSteeringMessages: () => drainControlMessage("steering"),
-        getFollowUpMessages: () => drainControlMessage("follow_up"),
+        getSteeringMessages: () =>
+          finalization.steer(() =>
+            progress.steer(preRecordedControlMessages, drainControlMessage),
+          ),
+        getFollowUpMessages: () => finalization.followUp(drainControlMessage),
         prepareNextTurn: async ({ context, toolResults }) => {
           let nextTools = context.tools;
-          if (deferredExtensionTools.length > 0) {
+          if (!finalization.active && deferredExtensionTools.length > 0) {
             const requestedNames = new Set(
               toolResults.flatMap((result) => result.addedToolNames ?? []),
             );
@@ -1892,9 +1828,10 @@ export class AgentRuntime {
           const requiresNextTurn =
             toolResults.length > 0 ||
             (!advisorCorrection && (await hasQueuedControlMessage()));
-          return requiresNextTurn
-            ? Boolean(budget.exhaustBeforeNextPrimaryTurn())
-            : false;
+          if (!requiresNextTurn) return false;
+          if (budget.exhaustBeforeNextPrimaryTurn()) return true;
+          await finalization.enterIfNeeded(onEvent);
+          return false;
         },
       },
       async (event) => {
@@ -1913,6 +1850,7 @@ export class AgentRuntime {
           deltaBatcher,
           onEvent,
         );
+        if (event.type === "turn_end") await progress.recordTurn();
         if (text !== undefined) finalText = text;
       },
       signal,
@@ -1923,12 +1861,13 @@ export class AgentRuntime {
       throw new Error("Run was cancelled");
     }
     budget.throwIfExhausted();
+    toolResultLifecycle.deadlines.throwIfTriggered();
+    finalization.assertDelivered(finalText);
     if (pendingOperatorDecisionId) {
       throw new OperatorDecisionPendingError(pendingOperatorDecisionId);
     }
     return finalText;
   }
-
   private async handleAgentEvent(
     run: RunRecord,
     event: AgentEvent,
@@ -1962,6 +1901,7 @@ export class AgentRuntime {
     }
     await deltaBatcher.flush();
     if (event.type === "turn_start" || event.type === "turn_end") {
+      if (event.type === "turn_start") budget.beginPrimaryTurn();
       await this.record(
         {
           threadId: run.threadId,
@@ -2067,11 +2007,9 @@ export class AgentRuntime {
         );
         budget.observePrimaryUsage(usage, Date.now(), usageAccounting);
         if (modelFailure)
-          throw new Error(
-            publicModelFailureMessage(
-              event.message.stopReason === "aborted" ? "aborted" : "error",
-              event.message.errorMessage,
-            ),
+          throw modelFailureError(
+            event.message.stopReason === "aborted" ? "aborted" : "error",
+            event.message.errorMessage,
           );
         if (hasToolCalls) return undefined;
         await this.recordModelAdvisorGate(

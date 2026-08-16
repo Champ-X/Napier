@@ -14,22 +14,22 @@ import type {
   PlanStep,
   ReplanExecutionPlanRequest,
   RunEvent,
-  TransitionPlanStepRequest,
   UpdateArtifactManifestRequest,
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId, nowIso } from "./ids.js";
+import { artifactRequiresEvidence } from "./artifact-status.js";
+import {
+  applyPlanStepTransition,
+  type InternalPlanStepRequest,
+} from "./plan-step-transition.js";
+export type { InternalPlanStepRequest } from "./plan-step-transition.js";
 
 const MAX_PLAN_STEPS = 30;
 const MAX_PLAN_ARTIFACTS = 30;
 const MAX_PLAN_REPLANS = 20;
 const PLAN_REPLAN_DRAFT_POLICY_ID = "napier.plan-replan-draft.v1";
-const TERMINAL_STEP_STATUSES = new Set<PlanStep["status"]>([
-  "completed",
-  "blocked",
-  "skipped",
-]);
 type PlanProjectionInput = Omit<
   ExecutionPlan,
   | "replans"
@@ -363,71 +363,12 @@ export function replanExecutionPlan(
 export function transitionPlanStep(
   plan: ExecutionPlan,
   stepId: string,
-  request: TransitionPlanStepRequest,
+  request: InternalPlanStepRequest,
 ): ExecutionPlan {
-  if (plan.status === "cancelled") {
-    throw new Error("Cancelled plans cannot transition");
-  }
-  const next = structuredClone(plan);
-  const step = next.steps.find((candidate) => candidate.id === stepId);
-  if (!step) throw new Error(`Plan step not found: ${stepId}`);
-  if (TERMINAL_STEP_STATUSES.has(step.status) && request.action !== "reopen") {
-    return next;
-  }
+  const next = applyPlanStepTransition(plan, stepId, request);
+  if (next === plan) return plan;
   const timestamp = nowIso();
-  if (request.action === "start") {
-    if (step.status !== "ready") {
-      throw new Error(`Cannot start plan step in ${step.status} state`);
-    }
-    step.status = "running";
-    step.startedAt = timestamp;
-    if (request.runId) step.runId = request.runId;
-  } else if (request.action === "complete") {
-    if (step.status !== "running") {
-      throw new Error(`Cannot complete plan step in ${step.status} state`);
-    }
-    const evidence = normalizeText(request.evidence, 2_000);
-    if (!evidence) {
-      throw new Error("Completed plan steps require evidence");
-    }
-    step.status = "completed";
-    step.evidence = evidence;
-    step.finishedAt = timestamp;
-  } else if (request.action === "block") {
-    if (step.status !== "ready" && step.status !== "running") {
-      throw new Error(`Cannot block plan step in ${step.status} state`);
-    }
-    const blocker = normalizeText(request.blocker, 1_000);
-    if (!blocker) throw new Error("Blocked plan steps require a blocker");
-    step.status = "blocked";
-    step.blocker = blocker;
-    step.evidence = normalizeText(request.evidence, 2_000);
-    step.finishedAt = timestamp;
-  } else if (request.action === "skip") {
-    if (
-      step.status !== "pending" &&
-      step.status !== "ready" &&
-      step.status !== "blocked"
-    ) {
-      throw new Error(`Cannot skip plan step in ${step.status} state`);
-    }
-    const evidence = normalizeText(request.evidence, 2_000);
-    if (!evidence) throw new Error("Skipped plan steps require evidence");
-    step.status = "skipped";
-    step.evidence = evidence;
-    delete step.blocker;
-    step.finishedAt = timestamp;
-  } else {
-    if (!TERMINAL_STEP_STATUSES.has(step.status)) {
-      throw new Error(`Cannot reopen plan step in ${step.status} state`);
-    }
-    step.status = dependenciesSatisfied(next, step) ? "ready" : "pending";
-    step.evidence = "";
-    delete step.blocker;
-    delete step.runId;
-    delete step.startedAt;
-    delete step.finishedAt;
-  }
+  const step = next.steps.find((candidate) => candidate.id === stepId)!;
   step.updatedAt = timestamp;
   settleReadySteps(next);
   next.status = derivePlanStatus(next);
@@ -519,12 +460,7 @@ export function updateArtifactManifest(
   }
   assertArtifactTransition(artifact.status, request.status);
   const evidence = normalizeText(request.evidence, 2_000);
-  if (
-    (request.status === "produced" ||
-      request.status === "verified" ||
-      request.status === "missing") &&
-    !evidence
-  ) {
+  if (artifactRequiresEvidence(request.status) && !evidence) {
     throw new Error(`${request.status} artifacts require evidence`);
   }
   if (
@@ -1345,7 +1281,8 @@ function assertArtifactTransition(
     ArtifactManifestEntry["status"],
     ArtifactManifestEntry["status"][]
   > = {
-    expected: ["produced", "missing", "superseded"],
+    expected: ["candidate", "produced", "missing", "superseded"],
+    candidate: ["produced", "verified", "missing", "superseded"],
     produced: ["verified", "missing", "superseded"],
     verified: ["missing"],
     missing: ["produced", "superseded"],

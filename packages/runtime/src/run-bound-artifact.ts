@@ -135,7 +135,7 @@ export class RunBoundArtifactRegistrar {
     }
     const artifact = artifacts[0]!;
     if (
-      artifact.status !== "expected" ||
+      (artifact.status !== "expected" && artifact.status !== "candidate") ||
       (artifact.sourceRunId !== undefined &&
         artifact.sourceRunId !== owner.runId)
     ) {

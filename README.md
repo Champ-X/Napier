@@ -325,6 +325,34 @@ Version `0.1.0` includes:
   per-line stdio configuration, workspace-scoped cwd, secret-free environment
   source mappings, and review of both requested and transport-derived
   capabilities before approval;
+- a first-party Kernel plugin registry with strict versioned manifests,
+  dependencies, declared capabilities/permissions, host/client entries, and
+  contribution catalogs; Artifact projection, live Web Search, and the complete
+  Browser Session boundary are migrated built-in plugins and can be
+  disabled/re-enabled with owner-scoped cleanup;
+- read-only first-party plugin inspection in the existing Extensions Workbench,
+  showing enabled state, contributions, permissions, dependencies, and package
+  entries without granting browser-side plugin mutation authority;
+- a workspace-confined `napier plugins --workspace <path> --scaffold
+<plugin.id>` authoring path that writes one strict manifest, package,
+  TypeScript configuration, projection host, and lifecycle README only into a
+  missing non-symlink target; JSONL returns a hash-bound five-file receipt, and
+  the checked `examples/kernel-plugin-status` package compiles against the
+  public Runtime/Contracts exports. Scaffolding does not install or persist
+  enablement, and untrusted external code remains on the signed MCP boundary;
+- CLI-only exact-preview desired state for the optional built-in Browser and
+  Search plugins. `plugins --disable|--enable <plugin.id>` previews one
+  hash-bound transition; `--expected-preview <sha256> --apply` atomically writes
+  private `.napier/kernel-plugins.json`, and the next Runtime restart
+  reconciles installed manifests to that state. Artifact remains boot-required,
+  invalid/version-drifted state fails startup closed, and Web inspection stays
+  read-only;
+- a finite first-party client slot registry. Browser declares the real
+  `@napier/web/kernel-browser-inspector-slot` client entry and
+  `inspector.panel`; Web lazy-loads the existing Browser inspector only when
+  ID, version, complete manifest SHA-256, enabled state, client entry,
+  capability, and slot all match the reviewed static descriptor. Unknown or
+  drifted entries remain metadata-only and cannot drive arbitrary imports;
 - Ed25519-signed MCP Extension packages with environment-backed local
   publishers, verify-only SPKI anchors, irreversible revocation, dual
   manifest/envelope hashes, frozen transport/capability/tool-effect catalogs,
@@ -5938,6 +5966,133 @@ receipt, and baseline-list APIs also mirror casebook IDs, revisions, case
 counts, qualification execution counts, status totals, and baseline hashes in
 no-store response headers for CI polling.
 
+### Default Product Trial
+
+After an ordinary Web task has a terminal Run, expand **Record default product
+trial** in the task-status strip. The recorder selects the latest terminal Run
+from that Thread and exposes the six M4 core cases in fixed order: network
+research with citations, coding verification, dynamic Browser, high-risk
+confirmation, artifact delivery, and long-task recovery. If the workspace does
+not yet have the fixed `release-product-v1` Casebook, the same surface can
+create it before recording evidence.
+
+The recorder reuses the versioned Release Product Trial contract rather than a
+second Web-only result model. Product version is server-projected and
+read-only; a passed result requires a completed Run, duplicate Run/version
+records fail closed, and each record retains outcome, failure class when
+applicable, configuration/human/recovery intervention counts, and UX score.
+The complete ten-case template, evaluator qualification, controlled-harness
+evidence, and release-gate history remain available in **Studio → Lab**. This
+default surface is intentionally a lightweight post-Run evidence path, not a
+replacement for the advanced Evaluation Lab.
+
+The retained first real six-case round is
+`docs/artifacts/default-product-trial-m4-0.1.2.json`. It contains only the
+existing hash-bound Gate/Trial projection; prompts, answers, source URLs, page
+bodies, reasoning, and credentials are not retained. Verify every Trial hash,
+the canonical six-case order, aggregate projection, and privacy boundary
+offline:
+
+```bash
+node scripts/verify-default-product-trial.mjs \
+  docs/artifacts/default-product-trial-m4-0.1.2.json
+```
+
+That round reports five passed and one configuration-inconclusive core case,
+83.33% success, mean UX 3.5/5, three configuration interventions, two human
+interventions, and one recovery event. It is a truthful M4 product-use sample,
+not a passing ten-case Release Product version or a broad reliability claim.
+
+A separate focused rerun retains the later successful Coding result without
+rewriting the historical six-case Casebook:
+`docs/artifacts/default-product-coding-rerun-m4-0.1.2.json`. The ordinary Web
+path activated the pinned OCI Sandbox, enabled the visible DeepSeek locator,
+ran `Coding 1×`, created `src/sum.mjs` and `test/sum.test.mjs`, and completed
+multiple read-only/offline `run_command` calls through `oci-container`.
+`node --test test/sum.test.mjs` passed one test with exit code 0. The retained
+Gate contains only the hash-bound Trial projection: passed, two configuration
+interventions, zero human/recovery interventions, and UX 4/5. Verify it
+offline:
+
+```bash
+node scripts/verify-default-product-coding-rerun.mjs \
+  docs/artifacts/default-product-coding-rerun-m4-0.1.2.json
+```
+
+On Colima, the isolated Workspace and `NAPIER_CONTAINER_SCRATCH_DIR` must be
+under a host path shared into the VM, and `DOCKER_HOST` may need to name the
+local Unix socket explicitly. Napier still rejects remote daemon endpoints and
+does not inherit Docker credentials into the Trial artifact.
+
+The later critical-coverage campaign is retained separately at
+`docs/artifacts/default-product-critical-coverage-m4-0.1.2.json`. It records
+passed `settings` and `shell-sandbox` Trials from one fixed Casebook: visible
+DeepSeek setup with no credential value exposed, followed by a real
+`workspace_process` shell session through `oci-container`, PTY 80×24, denied
+network, read-only Workspace access, exact `shell-sandbox-ok` output, and an
+unchanged Workspace delta. Its Gate reports 2/10 covered cases, 100% success,
+mean UX 2.5/5, two configuration interventions, and three human interventions.
+Verify it offline:
+
+```bash
+node scripts/verify-default-product-critical-coverage.mjs \
+  docs/artifacts/default-product-critical-coverage-m4-0.1.2.json
+```
+
+That campaign exposed a false-positive action-first redirect: the phrase
+`process.stdout.write` plus “no workspace writes” was classified as build/edit
+intent after the shell result was already delivered. The governor now requires
+zero user results before action-first and treats `write` as edit intent only
+when it names a concrete Workspace deliverable.
+
+The optional breadth campaign is retained at
+`docs/artifacts/default-product-breadth-m4-0.1.2.json`. Its `url-pdf` Trial
+fetched the authoritative RFC 9114 PDF, preserved 57 PDF page markers, read
+source lines 31–35 across Pages 8–9, and identified QUIC version 1 as HTTP/3's
+underlying transport. Its `skill` Trial loaded the local `data-analysis` Skill,
+inspected a complete CSV snapshot, and ran a source-hash-bound DataFrame cast,
+group, and sort that returned East=15 and West=15 without writes.
+
+Data Skill lifecycle evidence now recognizes a complete `inspect_data` result
+followed by a successful `data_frame` transform with the same source SHA-256.
+The resulting `data_analysis_transformed` proof stores only two event sequence
+numbers and their proof-set hash. Verify the breadth Gate offline:
+
+```bash
+node scripts/verify-default-product-breadth.mjs \
+  docs/artifacts/default-product-breadth-m4-0.1.2.json
+```
+
+The four immutable Gates are consolidated without rewriting Trial ownership at
+`docs/artifacts/default-product-consolidated-m4-0.1.2.json`. Each adoption
+envelope embeds one complete direct source Gate, binds its original content
+SHA-256, and selects original Trial IDs; source Casebook, Thread, Run, Trial,
+and Trial-hash identities remain unchanged. The destination Casebook therefore
+has zero native copied Trials and four independently recomputed source
+adoptions. Generate and verify it with:
+
+```bash
+npm run write:default-product-consolidated
+npm run check:default-product-consolidated
+```
+
+The consolidated `0.1.2` version covers all ten fixed cases with ten passed
+terminal Runs, 100% success, mean UX 3.7/5, six configuration interventions,
+six human interventions, and one recovery event. Gate content SHA-256 is
+`e8117a463b537439511f40f114bf1b22c5069618ae139a307347d9b483648ee3`.
+This closes single-version coverage only: it is one passing version out of the
+required three, so `defaultTrackReady` remains false. Two distinct later
+product versions must execute and pass their own ten-case Trials; copying or
+relabeling `0.1.2` evidence cannot satisfy repetition.
+
+Default Product `0.1.3` adds source-bound release identity. Runtime builds
+verify `docs/artifacts/default-product-source-manifest-0.1.3.json` before
+compilation, every new Run freezes that identity, and new Trial/Gate evidence
+must match it. The retained partial real-Web smoke at
+`docs/artifacts/default-product-source-bound-smoke-m4-0.1.3.json` covers
+Settings, Research, URL/PDF, Browser, Coding, and Shell/Sandbox with six passed
+Runs. It is intentionally a smoke, not a rewritten all-ten-case claim.
+
 ### Trusted Receipt Provenance
 
 Open **Lab → Receipt trust desk** to register an Ed25519 signing identity from
@@ -6451,8 +6606,12 @@ Web dist manifest, and the semantically verified Workflow, Data, DataFrame,
 Security, restart/offline-wait/budget Long-horizon, Research, and UX Benchmark
 Series, the durable Goal no-progress Series, the Process recovery Series, and
 all forty-seven Result/Ledger pairs by SHA-256. It also recursively verifies
-the open-web executor campaign, both sibling reports, and both failed-attempt
-receipts; the current 131-artifact set is bound by `eefedf6f04a03de7...`;
+the open-web executor campaign, both sibling reports, both failed-attempt
+receipts, the privacy-bounded six-case Default Product Trial Gate, and the
+separate focused Coding-rerun, critical-coverage, and breadth Gates; the current
+release set also verifies their immutable ten-case consolidated Gate. The
+167-artifact set is bound by
+`f97e36ae75299622ac34a4cdaf9aadff921e84f1b9fa4ff3b08b3c86d10745e2`;
 `npm run check:release-artifacts` /
 `npm run verify:release-artifacts` verify that aggregate receipt against the
 current component receipts. `npm test` starts with root-level release-gate contract
@@ -6483,7 +6642,34 @@ Runtime data defaults to `<workspace>/.napier` and can be moved with
 `NAPIER_HOME`. Tool access is confined to `NAPIER_WORKSPACE` (the current
 directory by default). `ledger.sqlite` is authoritative; `workspace.json` and
 `events/*.jsonl` are non-authoritative compatibility projections for local
-inspection and legacy migration. `/api/health` returns the shared
+inspection and legacy migration. Ordinary event commits update SQLite without
+rewriting those complete files or the authoritative state JSON: they append one
+Ledger event and advance the global revision while `snapshot_revision` remains
+at the last full state snapshot. Restart and competing local instances verify
+that watermark and replay the contiguous bounded event tail into Thread summary
+fields. Compatibility projections and the state snapshot refresh on
+state-only commits, turn/terminal boundaries, every 64th Thread event, explicit
+flush, and managed shutdown; restart always reads SQLite when it exists.
+Normal checkpoints verify the existing JSONL tail against SQLite and append
+only the missing contiguous suffix under cross-instance locks. They preserve
+the existing file prefix/inode and report only appended bytes; malformed or
+drifted tails fail closed, and tail inspection is capped at 8 MiB. Full JSONL
+replacement is limited to initial workspace creation and validated legacy
+import.
+Asynchronous live events can request `run_active` admission. The Store checks
+that precondition after its multi-instance refresh and inside the serialized
+commit, before assigning a sequence or advancing any durable watermark. Model
+delta batches quietly discard only the typed rejection caused by a Run that
+has already terminated; ordinary persistence failures remain retryable, and
+explicit post-settlement audit events remain supported.
+SQLite schema 4 stores active Run leases in normalized `run_leases` rows.
+Heartbeat renewal checks the token hash, expected lease revision, and expiry in
+one transaction, then updates only that row; it writes zero workspace-state,
+event, or compatibility bytes and does not advance the workspace revision.
+Snapshot reads atomically overlay normalized leases, while later full-state
+commits cannot downgrade a newer heartbeat. Terminal Run settlement removes the
+row in the same full-state transaction.
+`/api/health` returns the shared
 `HealthResponse` contract with the current SQLite schema version, quick-check
 result, migration history, and public Node runtime readiness metadata without
 exposing workspace content. The health response is `no-store` and mirrors a

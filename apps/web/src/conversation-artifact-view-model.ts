@@ -2,13 +2,22 @@ import type {
   ArtifactManifestEntry,
   ExecutionPlan,
   RunEvent,
+  RunRecord,
 } from "@napier/contracts";
+import {
+  currentRunAttempt,
+  projectRunIntentIds,
+  runIdsBelongToCurrentAttempt,
+} from "./run-intent-id";
+import { conversationArtifactAnchorId } from "./conversation-artifact-anchor";
 
 export interface ConversationArtifact {
   id: string;
   seq: number;
   createdAt: string;
+  attemptScope: "current" | "previous";
   threadId: string;
+  runId: string;
   planId: string;
   planRevision: number;
   artifact: ArtifactManifestEntry;
@@ -20,13 +29,16 @@ export interface ConversationArtifactWorkspaceLink {
 }
 
 const ARTIFACT_STATUS_EVENT =
-  /^plan\.artifact\.(produced|verified|missing|superseded)$/u;
+  /^plan\.artifact\.(candidate|produced|verified|missing|superseded)$/u;
 
 export function conversationArtifacts(
   events: RunEvent[],
   plans: ExecutionPlan[],
   limit = 6,
+  runs: RunRecord[] = [],
 ): ConversationArtifact[] {
+  const intentIds = projectRunIntentIds(events);
+  const current = currentRunAttempt(runs, events, intentIds);
   const plansById = new Map(plans.map((plan) => [plan.id, plan]));
   const latestByArtifact = new Map<string, ConversationArtifact>();
   for (const event of events) {
@@ -42,7 +54,15 @@ export function conversationArtifacts(
       id: event.id,
       seq: event.seq,
       createdAt: event.createdAt,
+      attemptScope: runIdsBelongToCurrentAttempt(
+        [event.runId, ...(artifact.sourceRunId ? [artifact.sourceRunId] : [])],
+        current,
+        intentIds,
+      )
+        ? "current"
+        : "previous",
       threadId: plan.threadId,
+      runId: event.runId,
       planId,
       planRevision: plan.revision,
       artifact,
@@ -83,12 +103,13 @@ export function conversationArtifactWorkspaceLinks(
 export function conversationArtifactTargetId(
   item: ConversationArtifact,
 ): string {
-  return [
-    "conversation-artifact",
-    safeIdSegment(item.planId),
-    safeIdSegment(item.artifact.id),
-    String(item.seq),
-  ].join("-");
+  return conversationArtifactAnchorId({
+    threadId: item.threadId,
+    runId: item.runId,
+    planId: item.planId,
+    artifactId: item.artifact.id,
+    eventSeq: item.seq,
+  });
 }
 
 function payloadString(value: unknown, key: string): string | undefined {
@@ -97,8 +118,4 @@ function payloadString(value: unknown, key: string): string | undefined {
   }
   const entry = (value as Record<string, unknown>)[key];
   return typeof entry === "string" ? entry : undefined;
-}
-
-function safeIdSegment(value: string): string {
-  return value.replaceAll(/[^A-Za-z0-9_-]/gu, "_");
 }
