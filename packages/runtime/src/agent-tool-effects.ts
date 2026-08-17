@@ -50,6 +50,7 @@ export function builtInToolEffect(
     return record(args) &&
       [
         "start",
+        "preview_workspace",
         "navigate",
         "back",
         "forward",
@@ -62,6 +63,7 @@ export function builtInToolEffect(
         "scroll",
         "snapshot",
         "screenshot",
+        "console",
         "close",
       ].includes(String(args["action"]))
       ? "read"

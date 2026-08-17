@@ -33,6 +33,10 @@ export class DynamicBrowserSessionPort implements BrowserSessionPort {
     return this.manager?.hasActiveSession(...input) ?? false;
   }
 
+  hasWorkspacePreview(owner: { threadId: string; runId: string }): boolean {
+    return this.manager?.hasWorkspacePreview?.(owner) ?? false;
+  }
+
   capturePage(...input: Parameters<BrowserSessionPort["capturePage"]>) {
     return this.require().capturePage(...input);
   }

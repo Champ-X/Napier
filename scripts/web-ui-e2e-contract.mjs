@@ -13,9 +13,9 @@ export const WEB_UI_E2E_VIEWPORTS = Object.freeze([
   ...WEB_UI_LAYOUT_BASELINE_VIEWPORTS.slice(1),
 ]);
 export const INSPECTOR_GROUP_LABELS = Object.freeze([
-  "Task",
-  "Inspect",
-  "Studio",
+  "ConversationMessages and decisions",
+  "TraceExecution trajectory",
+  "SessionPlan, files, browser and runs",
 ]);
 export const DEFAULT_PRODUCT_TRIAL_CASE_IDS = Object.freeze([
   "network-reference",
@@ -179,9 +179,9 @@ export function assertViewportReceipt(viewport, latestTerminalRunId) {
   assert.ok(expected, "Web UI E2E viewport is not part of the contract");
   assert.equal(viewport.layout, expected.layout);
   assert.deepEqual(viewport.inspector.groupLabels, INSPECTOR_GROUP_LABELS);
-  assert.equal(viewport.inspector.defaultGroup, "task");
-  assert.equal(viewport.inspector.defaultTool, "plan");
-  assert.equal(viewport.inspector.panelLabelledBy, "inspector-tab-plan");
+  assert.equal(viewport.inspector.defaultGroup, "conversation");
+  assert.equal(viewport.inspector.defaultTool, "context");
+  assert.equal(viewport.inspector.panelLabelledBy, "settings-section-context");
   assert.equal(viewport.inspector.minimumGroupHeight >= 44, true);
   assert.equal(viewport.inspector.minimumToolHeight >= 44, true);
   assert.equal(viewport.geometry.horizontalOverflowPx, 0);
@@ -191,7 +191,8 @@ export function assertViewportReceipt(viewport, latestTerminalRunId) {
     "narrative",
     "conversation",
     "composer",
-    "inspector",
+    "views",
+    "primary",
   ]) {
     assertLayoutRect(
       viewport.layoutSnapshot[key],
@@ -210,7 +211,7 @@ export function assertViewportReceipt(viewport, latestTerminalRunId) {
   );
   assert.equal(
     within(
-      viewport.layoutSnapshot.inspector,
+      viewport.layoutSnapshot.primary,
       viewport.browserInspector.layoutRect,
     ),
     true,
@@ -221,7 +222,7 @@ export function assertViewportReceipt(viewport, latestTerminalRunId) {
   assert.equal(viewport.browserInspector.tabSelected, true);
   assert.equal(
     viewport.browserInspector.panelLabelledBy,
-    "inspector-tab-browser",
+    "session-section-browser",
   );
   assert.equal(viewport.browserInspector.title, "Browser");
   assertLayoutRect(viewport.browserInspector.layoutRect, "browserInspector");
@@ -380,7 +381,7 @@ export function assertViewportReceipt(viewport, latestTerminalRunId) {
   assert.equal(viewport.inspector.initiallyHidden, true);
   assert.equal(viewport.inspector.drawerTriggerVisible, true);
   assert.equal(viewport.inspector.drawerOpened, true);
-  assert.equal(viewport.inspector.openFocusTarget, "inspector-group-task");
+  assert.equal(viewport.inspector.openFocusTarget, "settings-section-context");
   assert.equal(viewport.inspector.escapeRestoredTriggerFocus, true);
   assert.equal(viewport.inspector.closedAfterEscape, true);
   assert.equal(viewport.geometry.drawerWithinViewport, true);

@@ -14,7 +14,7 @@ const DETAILS_REQUIRED_KEYS = keySet(
   "kind schemaVersion action sessionMode sessionReused sessionOperation sessionIdSha256 activeTabId tabCount tabSetSha256 browserExecutableSha256 browserVersionSha256 limitsSha256 currentUrlSha256 currentOriginSha256 titleSha256 pageDiagnosis blockedRequestCount network crossOriginAuthorized",
 );
 const DETAILS_OPTIONAL_KEYS = keySet(
-  "snapshotSha256 snapshotChars snapshotTruncated findQuerySha256 findQueryChars findMatchCount findMatchesSha256 findScannedChars findTruncated scrollDeltaY scrollPositionY scrollViewportHeight scrollDocumentHeight scrollAtStart scrollAtEnd viewportTextSha256 viewportTextChars viewportTextTruncated screenshotSha256 screenshotBytes file suggestedFilenameSha256",
+  "snapshotSha256 snapshotChars snapshotTruncated findQuerySha256 findQueryChars findMatchCount findMatchesSha256 findScannedChars findTruncated scrollDeltaY scrollPositionY scrollViewportHeight scrollDocumentHeight scrollAtStart scrollAtEnd viewportTextSha256 viewportTextChars viewportTextTruncated screenshotSha256 screenshotBytes file suggestedFilenameSha256 consoleEntryCount consoleErrorCount consoleWarningCount consoleEntriesSha256 consoleTruncated workspacePreviewEntryPathSha256 workspacePreviewEntrySha256 workspacePreviewEntryBytes",
 );
 const DIAGNOSIS_KEYS = keySet(
   "status signalCount signalsSha256 takeoverRecommended",
@@ -157,6 +157,9 @@ function validDetailsOptionals(value: Record<string, unknown>): boolean {
     "viewportTextSha256",
     "screenshotSha256",
     "suggestedFilenameSha256",
+    "consoleEntriesSha256",
+    "workspacePreviewEntryPathSha256",
+    "workspacePreviewEntrySha256",
   ];
   const integerKeys = [
     "snapshotChars",
@@ -169,6 +172,10 @@ function validDetailsOptionals(value: Record<string, unknown>): boolean {
     "scrollDocumentHeight",
     "viewportTextChars",
     "screenshotBytes",
+    "consoleEntryCount",
+    "consoleErrorCount",
+    "consoleWarningCount",
+    "workspacePreviewEntryBytes",
   ];
   const booleanKeys = [
     "snapshotTruncated",
@@ -176,6 +183,7 @@ function validDetailsOptionals(value: Record<string, unknown>): boolean {
     "scrollAtStart",
     "scrollAtEnd",
     "viewportTextTruncated",
+    "consoleTruncated",
   ];
   return (
     digestKeys.every((key) => optionalDigest(value[key])) &&

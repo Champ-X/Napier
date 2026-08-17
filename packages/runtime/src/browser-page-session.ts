@@ -29,13 +29,11 @@ import {
   BROWSER_ACTION_TIMEOUT_MS,
   BROWSER_LIMITS_SHA256,
   BROWSER_NAVIGATION_TIMEOUT_MS,
-  MAX_BROWSER_WAIT_MS,
   type BrowserNetworkProxy,
   type BrowserPageSourceCapture,
   type BrowserRuntimeBinding,
   type BrowserSessionOperationResult,
   type BrowserSessionRequest,
-  MAX_BROWSER_SCREENSHOT_BYTES,
   MAX_BROWSER_SESSION_OPERATIONS,
   MAX_BROWSER_SNAPSHOT_CHARS,
   type RunBrowserSessionManagerOptions,
@@ -57,18 +55,20 @@ import {
   resolveBrowserRuntime,
 } from "./browser-runtime.js";
 import { createBrowserPageOperationResult } from "./browser-page-output.js";
-import {
-  captureBrowserPageMetadata,
-  captureBrowserPageState,
-} from "./browser-page-state.js";
+import { performBrowserPageCoreOperation } from "./browser-page-core-operation.js";
+import { captureBrowserPageState } from "./browser-page-state.js";
 import { captureBrowserPageConfirmationState } from "./browser-page-confirmation-state.js";
 import type { BrowserConfirmedPageRequest } from "./browser-confirmed-action.js";
 import { browserPageLocator } from "./browser-page-locator.js";
-import { performBrowserPageUpload } from "./browser-page-upload.js";
 import { sha256 } from "./ed25519.js";
 import { FixedIpHttpProxy } from "./fixed-ip-http-proxy.js";
 import type { BrowserSessionOwner } from "./browser-session-model.js";
 import { BrowserAllowedUrls } from "./browser-allowed-url.js";
+import { BrowserConsoleRecorder } from "./browser-console-observation.js";
+import { performBrowserConsoleOperation } from "./browser-console-operation.js";
+import { abortBrowserSessionOperation } from "./browser-session-abort.js";
+import { BrowserWorkspacePreview } from "./browser-workspace-preview.js";
+import { performBrowserWorkspacePreview } from "./browser-workspace-preview-operation.js";
 
 export class PersistentBrowserSession {
   readonly idSha256 = sha256(`browser-session:${randomUUID()}`);
@@ -76,6 +76,8 @@ export class PersistentBrowserSession {
   private readonly tabs: BrowserSessionTabs;
   private readonly navigation = new BrowserSessionNavigation();
   private blockedRequestCount = 0;
+  private readonly consoleRecorder = new BrowserConsoleRecorder();
+  private workspacePreview: BrowserWorkspacePreview | undefined;
   private downloadAuthorized = false;
   private closing = false;
   private closed = false;
@@ -85,6 +87,10 @@ export class PersistentBrowserSession {
     return (
       !this.closing && !this.closed && !this.disconnected && this.tabs.healthy
     );
+  }
+
+  get workspacePreviewActive(): boolean {
+    return Boolean(this.workspacePreview);
   }
 
   private constructor(
@@ -176,7 +182,9 @@ export class PersistentBrowserSession {
       countOperation,
     );
     const operation = this.perform(request, reused, signal, preparedUpload);
-    return abortable(operation, signal, async () => this.close());
+    return abortBrowserSessionOperation(operation, signal, async () =>
+      this.close(),
+    );
   }
   async capturePage(
     maxChars: number,
@@ -193,7 +201,7 @@ export class PersistentBrowserSession {
     if (this.operationCount >= MAX_BROWSER_SESSION_OPERATIONS)
       throw new Error("Browser Session operation limit reached");
     this.operationCount += 1;
-    return abortable(
+    return abortBrowserSessionOperation(
       this.captureCurrentPage(maxChars, signal),
       signal,
       async () => this.close(),
@@ -236,6 +244,44 @@ export class PersistentBrowserSession {
     preparedUpload?: BrowserPreparedUpload,
   ): Promise<BrowserSessionOperationResult> {
     const page = this.tabs.activePage;
+    if (request.action === "preview_workspace") {
+      const operation = await performBrowserWorkspacePreview({
+        page,
+        workspaceRoot: this.workspaceRoot,
+        path: request.path,
+        urls: this.urls,
+        navigation: this.navigation,
+        reused,
+        operation: this.operationCount,
+        sessionIdSha256: this.idSha256,
+        executableSha256: this.runtime.executableSha256,
+        browserVersionSha256: this.browserVersionSha256,
+        tabs: this.tabs,
+        blockedRequestCount: this.blockedRequestCount,
+        network: this.proxy,
+        ...(signal ? { signal } : {}),
+      });
+      this.workspacePreview = operation.preview;
+      return operation.result;
+    }
+    if (request.action === "console") {
+      return performBrowserConsoleOperation({
+        page,
+        recorder: this.consoleRecorder,
+        reused,
+        operation: this.operationCount,
+        sessionIdSha256: this.idSha256,
+        executableSha256: this.runtime.executableSha256,
+        browserVersionSha256: this.browserVersionSha256,
+        tabs: this.tabs,
+        blockedRequestCount: this.blockedRequestCount,
+        network: this.proxy,
+        ...(this.workspacePreview
+          ? { workspacePreview: this.workspacePreview }
+          : {}),
+        ...(signal ? { signal } : {}),
+      });
+    }
     if (isBrowserObservationRequest(request)) {
       return performBrowserPageObservation({
         page,
@@ -297,130 +343,22 @@ export class PersistentBrowserSession {
       listedTabs = tabResult.listedTabs;
       file = tabResult.file;
       suggestedFilenameSha256 = tabResult.suggestedFilenameSha256;
-    } else
-      switch (request.action) {
-        case "start":
-        case "navigate": {
-          const url = await this.preflightNavigation(
-            page,
-            request.url,
-            request.allowCrossOrigin === true,
-          );
-          await this.withNetwork(() =>
-            this.navigation.run(page, request.allowCrossOrigin === true, () =>
-              page.goto(url.href, {
-                waitUntil: "domcontentloaded",
-                timeout: BROWSER_NAVIGATION_TIMEOUT_MS,
-              }),
-            ),
-          );
-          state = await captureBrowserPageState(page, signal);
-          break;
-        }
-        case "back":
-          await this.withNetwork(() =>
-            this.navigation.run(
-              page,
-              request.allowCrossOrigin === true,
-              async () => {
-                const response = await page.goBack({
-                  waitUntil: "domcontentloaded",
-                  timeout: BROWSER_NAVIGATION_TIMEOUT_MS,
-                });
-                if (!response) {
-                  throw new Error("Browser Session has no back entry");
-                }
-              },
-            ),
-          );
-          state = await captureBrowserPageState(page, signal);
-          break;
-        case "forward":
-          await this.withNetwork(() =>
-            this.navigation.run(
-              page,
-              request.allowCrossOrigin === true,
-              async () => {
-                const response = await page.goForward({
-                  waitUntil: "domcontentloaded",
-                  timeout: BROWSER_NAVIGATION_TIMEOUT_MS,
-                });
-                if (!response) {
-                  throw new Error("Browser Session has no forward entry");
-                }
-              },
-            ),
-          );
-          state = await captureBrowserPageState(page, signal);
-          break;
-        case "wait":
-          await this.withNetwork(() =>
-            page.waitForTimeout(
-              Math.min(request.durationMs ?? 1_000, MAX_BROWSER_WAIT_MS),
-            ),
-          );
-          state = await captureBrowserPageState(page, signal);
-          break;
-        case "snapshot":
-          state = await captureBrowserPageState(page, signal);
-          break;
-        case "click":
-          await this.withNetwork(() =>
-            this.navigation.run(page, request.allowCrossOrigin === true, () =>
-              browserPageLocator(page, request.target).click({
-                timeout: BROWSER_ACTION_TIMEOUT_MS,
-              }),
-            ),
-          );
-          state = await captureBrowserPageState(page, signal);
-          break;
-        case "type":
-          await this.withNetwork(() =>
-            browserPageLocator(page, request.target).fill(request.text, {
-              timeout: BROWSER_ACTION_TIMEOUT_MS,
-            }),
-          );
-          state = await captureBrowserPageState(page, signal);
-          break;
-        case "select":
-          await this.withNetwork(() =>
-            browserPageLocator(page, request.target).selectOption(
-              request.values,
-              {
-                timeout: BROWSER_ACTION_TIMEOUT_MS,
-              },
-            ),
-          );
-          state = await captureBrowserPageState(page, signal);
-          break;
-        case "upload":
-          file = await performBrowserPageUpload({
-            page,
-            target: request.target,
-            path: request.path,
-            workspaceRoot: this.workspaceRoot,
-            ...(preparedUpload ? { prepared: preparedUpload } : {}),
-            locator: browserPageLocator,
-            withNetwork: (operation) => this.withNetwork(operation),
-          });
-          state = await captureBrowserPageState(page, signal);
-          break;
-        case "screenshot":
-          screenshot = await page.screenshot({
-            type: "png",
-            fullPage: false,
-            animations: "disabled",
-            timeout: BROWSER_ACTION_TIMEOUT_MS,
-          });
-          if (screenshot.byteLength > MAX_BROWSER_SCREENSHOT_BYTES) {
-            throw new Error("Browser screenshot exceeds the output limit");
-          }
-          state = await captureBrowserPageMetadata(page, signal);
-          break;
-        case "close":
-          state = await captureBrowserPageMetadata(page, signal);
-          break;
-      }
+    } else {
+      const core = await performBrowserPageCoreOperation({
+        page,
+        request,
+        workspaceRoot: this.workspaceRoot,
+        navigation: this.navigation,
+        preflightNavigation: (targetPage, value, allowed) =>
+          this.preflightNavigation(targetPage, value, allowed),
+        withNetwork: (operation) => this.withNetwork(operation),
+        ...(preparedUpload ? { preparedUpload } : {}),
+        ...(signal ? { signal } : {}),
+      });
+      state = core.state;
+      file = core.file;
+      screenshot = core.screenshot;
+    }
 
     const details = createBrowserSessionDetails({
       action: request.action,
@@ -434,6 +372,9 @@ export class PersistentBrowserSession {
       crossOriginAuthorized,
       blockedRequestCount: this.blockedRequestCount,
       network: this.proxy.snapshot(),
+      ...(this.workspacePreview
+        ? { workspacePreview: this.workspacePreview.evidence }
+        : {}),
       ...(file ? { file } : {}),
       ...(suggestedFilenameSha256 ? { suggestedFilenameSha256 } : {}),
       ...(screenshot && request.action === "screenshot" ? { screenshot } : {}),
@@ -460,6 +401,7 @@ export class PersistentBrowserSession {
       await route.abort("blockedbyclient").catch(() => undefined);
       return;
     }
+    if (await this.urls.fulfillWorkspacePreview(route)) return;
     let url: URL;
     try {
       url = await this.urls.resolve(request.url());
@@ -487,6 +429,7 @@ export class PersistentBrowserSession {
   }
 
   private async withNetwork<T>(operation: () => Promise<T>): Promise<T> {
+    if (this.workspacePreview) return operation();
     this.proxy.setOutboundEnabled(true);
     try {
       return await operation();
@@ -514,6 +457,7 @@ export class PersistentBrowserSession {
   }
 
   private configurePage(page: Page): void {
+    this.consoleRecorder.attach(page);
     page.on("dialog", (dialog) => {
       void dialog.dismiss().catch(() => undefined);
     });
@@ -523,33 +467,4 @@ export class PersistentBrowserSession {
       }
     });
   }
-}
-
-async function abortable<T>(
-  operation: Promise<T>,
-  signal: AbortSignal | undefined,
-  onAbort: () => Promise<void>,
-): Promise<T> {
-  if (!signal) return operation;
-  assertNotAborted(signal);
-  let abort!: () => void;
-  const cancelled = new Promise<never>((_, reject) => {
-    abort = () => {
-      void onAbort().finally(() =>
-        reject(new Error("Browser Session operation was cancelled")),
-      );
-    };
-    signal.addEventListener("abort", abort, { once: true });
-  });
-  try {
-    return await Promise.race([operation, cancelled]);
-  } finally {
-    signal.removeEventListener("abort", abort);
-    void operation.catch(() => undefined);
-  }
-}
-
-function assertNotAborted(signal: AbortSignal | undefined): void {
-  if (signal?.aborted)
-    throw new Error("Browser Session operation was cancelled");
 }

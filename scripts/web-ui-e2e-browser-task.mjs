@@ -31,11 +31,11 @@ export async function verifyBrowserInspector(page) {
       return {
         tabSelected:
           document
-            .getElementById("inspector-tab-browser")
+            .getElementById("session-section-browser")
             ?.getAttribute("aria-selected") === "true",
         panelLabelledBy:
           document
-            .getElementById("inspector-active-panel")
+            .getElementById("session-content-panel")
             ?.getAttribute("aria-labelledby") ?? "",
         title:
           document
@@ -108,7 +108,7 @@ export async function verifyBrowserInspector(page) {
   const recovery = await recoveryResponse.json();
   receipt.credentialRecovery = `${recovery.error}. ${recovery.recovery}`;
   receipt.credentialRecoveryCode = recovery.code;
-  await page.locator("#inspector-group-task").click();
+  await page.locator("#workspace-view-conversation").click();
   return receipt;
 }
 
@@ -135,13 +135,8 @@ async function readRestoredHistory(page) {
 }
 
 async function openBrowserInspector(page) {
-  const group = page.locator("#inspector-group-inspect");
-  await group.waitFor({ state: "attached", timeout: 10_000 });
-  if (!(await group.isVisible())) {
-    await page.locator(".inspector-drawer-trigger").click();
-  }
-  await group.click();
-  await page.locator("#inspector-tab-browser").click();
+  await page.locator("#workspace-view-session").click();
+  await page.locator("#session-section-browser").click();
   await page
     .locator("#browser-inspector-title")
     .waitFor({ state: "visible", timeout: 10_000 });

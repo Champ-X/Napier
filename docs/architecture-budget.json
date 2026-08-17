@@ -49,7 +49,7 @@
     "packages/runtime/src/agents.ts": 803,
     "packages/runtime/src/automatic-recovery.ts": 807,
     "packages/runtime/src/blueprint-outcome-review.ts": 512,
-    "packages/runtime/src/browser-page-session.ts": 555,
+    "packages/runtime/src/browser-page-session.ts": 470,
     "packages/runtime/src/evaluation-casebook-qualification.ts": 541,
     "packages/runtime/src/evaluation-casebooks.ts": 727,
     "packages/runtime/src/evaluation-consensus.ts": 611,

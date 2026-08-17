@@ -53,6 +53,48 @@ describe("browser Agent tool", () => {
       assessToolCall(
         "observe",
         "browser",
+        {
+          action: "preview_workspace",
+          path: "kakeya-conjecture/index.html",
+        },
+        workspace,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "low",
+      }),
+    );
+    expect(
+      assessToolCall(
+        "observe",
+        "browser",
+        { action: "preview_workspace", path: "../escape.html" },
+        workspace,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: false,
+        reason: expect.stringContaining("workspace-relative HTML"),
+      }),
+    );
+    expect(
+      assessToolCall(
+        "observe",
+        "browser",
+        { action: "preview_workspace", path: ".napier/private.html" },
+        workspace,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: false,
+        reason: expect.stringContaining("protected"),
+      }),
+    );
+    expect(
+      assessToolCall(
+        "observe",
+        "browser",
         { action: "find", query: "private query" },
         workspace,
       ),
@@ -69,6 +111,14 @@ describe("browser Agent tool", () => {
         { action: "scroll", direction: "down", pixels: 720 },
         workspace,
       ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "low",
+      }),
+    );
+    expect(
+      assessToolCall("observe", "browser", { action: "console" }, workspace),
     ).toEqual(
       expect.objectContaining({
         allowed: true,

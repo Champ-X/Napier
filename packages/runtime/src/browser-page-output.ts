@@ -76,6 +76,9 @@ export function formatBrowserOperationOutput(input: {
     );
   }
   if (input.action === "close") return "Browser Session closed.";
+  if (input.action === "console") {
+    return "Browser CONSOLE checked.";
+  }
   if (input.action === "tab_list") {
     return [
       `Browser TAB_LIST complete. Tabs: ${String(input.tabs!.length)}.`,

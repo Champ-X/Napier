@@ -47,6 +47,10 @@ export class RunBrowserSessionManager {
     return this.sessions.get(ownerKey(owner))?.healthy === true;
   }
 
+  hasWorkspacePreview(owner: BrowserSessionOwner): boolean {
+    return this.sessions.get(ownerKey(owner))?.workspacePreviewActive === true;
+  }
+
   async capturePage(
     owner: BrowserSessionOwner,
     maxChars: number,
@@ -302,7 +306,10 @@ export class RunBrowserSessionManager {
       key,
       async () => {
         assertBrowserSessionNotAborted(signal);
-        if (request.action === "start") {
+        if (
+          request.action === "start" ||
+          request.action === "preview_workspace"
+        ) {
           if (this.sessions.has(key)) {
             throw new Error("Browser Session is already active for this Run");
           }
@@ -316,7 +323,9 @@ export class RunBrowserSessionManager {
           this.startingSessions += 1;
           let session: PersistentBrowserSession;
           try {
-            await preflightStartUrl(owner, request.url, this.options);
+            if (request.action === "start") {
+              await preflightStartUrl(owner, request.url, this.options);
+            }
             assertBrowserSessionNotAborted(signal);
             session = await PersistentBrowserSession.start(this.options, owner);
           } finally {

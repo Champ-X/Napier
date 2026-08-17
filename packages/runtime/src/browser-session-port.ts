@@ -14,4 +14,7 @@ export type BrowserSessionPort = Pick<
   | "cancelRun"
 > & {
   available?(): boolean;
+  hasWorkspacePreview?(
+    owner: Parameters<RunBrowserSessionManager["hasWorkspacePreview"]>[0],
+  ): boolean;
 };

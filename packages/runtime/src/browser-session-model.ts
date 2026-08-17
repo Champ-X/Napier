@@ -30,6 +30,8 @@ export const MAX_BROWSER_FIND_MATCHES = 20;
 export const MAX_BROWSER_FIND_SCAN_CHARS = 2_000_000;
 export const MAX_BROWSER_SCROLL_PIXELS = 5_000;
 export const MAX_BROWSER_VIEWPORT_TEXT_CHARS = 12_000;
+export const MAX_BROWSER_CONSOLE_ENTRIES = 50;
+export const MAX_BROWSER_WORKSPACE_PREVIEW_FILE_BYTES = 16 * 1024 * 1024;
 
 export const BROWSER_LIMITS_SHA256 = sha256(
   canonicalJson({
@@ -49,6 +51,9 @@ export const BROWSER_LIMITS_SHA256 = sha256(
     maxFindScanChars: MAX_BROWSER_FIND_SCAN_CHARS,
     maxScrollPixels: MAX_BROWSER_SCROLL_PIXELS,
     maxViewportTextChars: MAX_BROWSER_VIEWPORT_TEXT_CHARS,
+    maxConsoleEntries: MAX_BROWSER_CONSOLE_ENTRIES,
+    maxWorkspacePreviewFileBytes: MAX_BROWSER_WORKSPACE_PREVIEW_FILE_BYTES,
+    workspacePreview: "same_directory_offline_read_only",
     proxy: "authenticated_fixed_ip_public_http",
     proxyOutbound: "action_scoped_default_deny",
     executableFreshness: "device_inode_size_mtime_before_after_launch",
@@ -85,6 +90,10 @@ export type BrowserSessionRequest =
       action: "start";
       url: string;
       allowCrossOrigin?: boolean;
+    }
+  | {
+      action: "preview_workspace";
+      path: string;
     }
   | {
       action: "navigate";
@@ -158,7 +167,17 @@ export type BrowserSessionRequest =
       allowCrossOrigin?: boolean;
     }
   | { action: "screenshot" }
+  | { action: "console" }
   | { action: "close" };
+
+export interface BrowserConsoleObservation {
+  entryCount: number;
+  errorCount: number;
+  warningCount: number;
+  entriesSha256: string;
+  truncated: boolean;
+  output: string;
+}
 
 export interface BrowserSessionFileEvidence {
   pathSha256: string;
@@ -225,6 +244,14 @@ export interface BrowserSessionDetails {
   viewportTextSha256?: string;
   viewportTextChars?: number;
   viewportTextTruncated?: boolean;
+  consoleEntryCount?: number;
+  consoleErrorCount?: number;
+  consoleWarningCount?: number;
+  consoleEntriesSha256?: string;
+  consoleTruncated?: boolean;
+  workspacePreviewEntryPathSha256?: string;
+  workspacePreviewEntrySha256?: string;
+  workspacePreviewEntryBytes?: number;
   screenshotSha256?: string;
   screenshotBytes?: number;
   file?: BrowserSessionFileEvidence;

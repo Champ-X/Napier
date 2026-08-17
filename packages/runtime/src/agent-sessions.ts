@@ -214,6 +214,13 @@ export class AgentSessionRuntime {
     return this.browsers.hasActiveSession(owner);
   }
 
+  hasWorkspaceBrowserPreview(owner: {
+    threadId: string;
+    runId: string;
+  }): boolean {
+    return this.browsers.hasWorkspacePreview?.(owner) === true;
+  }
+
   browserAvailable(): boolean {
     return this.browsers.available?.() !== false;
   }

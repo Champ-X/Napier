@@ -27,8 +27,12 @@ export async function executeBrowserTool(input: {
   outputArtifacts?: Pick<BrowserOutputArtifactRegistrar, "register">;
 }) {
   const confirmed = confirmedRequest(input.request);
+  const offlinePreviewInteraction =
+    confirmed &&
+    ["click", "type", "select"].includes(confirmed.action) &&
+    input.manager.hasWorkspacePreview?.(input.owner) === true;
   const pageState =
-    confirmed && input.actionConfirmations
+    confirmed && input.actionConfirmations && !offlinePreviewInteraction
       ? input.actionConfirmations.consume({
           owner: input.owner,
           callId: input.callId,

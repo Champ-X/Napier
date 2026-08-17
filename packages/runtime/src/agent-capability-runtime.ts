@@ -76,6 +76,8 @@ export class AgentCapabilityRuntime {
       this.sessions.captureBrowserConfirmationPageState(owner, request, signal),
     active: (owner: AgentCapabilityOwner) =>
       this.sessions.hasActiveBrowserSession(owner),
+    workspacePreview: (owner: AgentCapabilityOwner) =>
+      this.sessions.hasWorkspaceBrowserPreview(owner),
     localService: (owner: AgentCapabilityOwner, value: string) =>
       Boolean(this.processes?.localServiceLeases.authorize(owner, value)),
   };

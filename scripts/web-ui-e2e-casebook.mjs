@@ -248,18 +248,13 @@ export async function verifyCasebookQualificationTrials(page, expected) {
     };
   } finally {
     await page.unroute(pattern);
-    await page.locator("#inspector-group-task").click();
+    await page.locator("#workspace-view-conversation").click();
   }
 }
 
 async function openCasebookInspector(page) {
-  const group = page.locator("#inspector-group-studio");
-  await group.waitFor({ state: "attached", timeout: 30_000 });
-  if (!(await group.isVisible())) {
-    await page.locator(".inspector-drawer-trigger").click();
-  }
-  await group.click();
-  await page.locator("#inspector-tab-lab").click();
+  await page.locator("#workspace-view-session").click();
+  await page.locator("#session-section-lab").click();
 }
 
 export function qualificationTrialRequest(request) {

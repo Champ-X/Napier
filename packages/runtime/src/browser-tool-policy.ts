@@ -9,6 +9,7 @@ import { isProtectedWorkspacePathSegment } from "./workspace-file-scope.js";
 const BROWSER_TOOLS = new Set(["browser", "research_source"]);
 const READ_ONLY_BROWSER_ACTIONS = new Set([
   "start",
+  "preview_workspace",
   "navigate",
   "back",
   "forward",
@@ -21,6 +22,7 @@ const READ_ONLY_BROWSER_ACTIONS = new Set([
   "scroll",
   "snapshot",
   "screenshot",
+  "console",
   "close",
 ]);
 
@@ -32,6 +34,13 @@ export function assessBrowserToolCall(
 ): PolicyDecision | undefined {
   if (!BROWSER_TOOLS.has(toolName)) return undefined;
   const action = getStringField(input, "action");
+  if (action === "preview_workspace") {
+    const denial = workspacePreviewPathDenial(
+      getStringField(input, "path"),
+      workspaceRoot,
+    );
+    if (denial) return denial;
+  }
   if (action === "start" || action === "navigate" || action === "tab_new") {
     try {
       validatePublicHttpUrl(getStringField(input, "url") ?? "");
@@ -89,6 +98,40 @@ export function assessBrowserToolCall(
     reason:
       "interactive isolated public-network Browser Session requires action-bound confirmation",
   };
+}
+
+function workspacePreviewPathDenial(
+  candidate: string | undefined,
+  workspaceRoot: string,
+): PolicyDecision | undefined {
+  if (
+    !candidate ||
+    candidate.length > 500 ||
+    path.isAbsolute(candidate) ||
+    /[\u0000-\u001f\u007f]/u.test(candidate) ||
+    !pathInsideWorkspace(candidate, workspaceRoot) ||
+    ![".html", ".htm"].includes(path.extname(candidate).toLowerCase())
+  ) {
+    return {
+      allowed: false,
+      risk: "high",
+      reason: "workspace preview requires a workspace-relative HTML file path",
+    };
+  }
+  const protectedSegment = path
+    .normalize(candidate)
+    .split(path.sep)
+    .find(
+      (segment) =>
+        segment.startsWith(".") || isProtectedWorkspacePathSegment(segment),
+    );
+  return protectedSegment
+    ? {
+        allowed: false,
+        risk: "high",
+        reason: `workspace preview cannot read protected path segment: ${protectedSegment}`,
+      }
+    : undefined;
 }
 
 function assessResearchSource(

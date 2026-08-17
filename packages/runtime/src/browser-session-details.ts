@@ -1,11 +1,13 @@
 import {
   BROWSER_LIMITS_SHA256,
+  type BrowserConsoleObservation,
   type BrowserFindObservation,
   type BrowserSessionDetails,
   type BrowserSessionFileEvidence,
   type BrowserSessionRequest,
   type BrowserScrollObservation,
 } from "./browser-session-model.js";
+import type { BrowserWorkspacePreviewEvidence } from "./browser-workspace-preview.js";
 import type { BrowserPageDiagnosisEvidence } from "@napier/contracts/browser-live-view";
 import type { BrowserWorkspaceFile } from "./browser-workspace-files.js";
 import { sha256 } from "./ed25519.js";
@@ -38,6 +40,8 @@ export function createBrowserSessionDetails(input: {
   screenshot?: Buffer;
   find?: BrowserFindObservation;
   scroll?: BrowserScrollObservation;
+  console?: BrowserConsoleObservation;
+  workspacePreview?: BrowserWorkspacePreviewEvidence;
 }): BrowserSessionDetails {
   return {
     kind: "napier.browser-session-operation",
@@ -85,6 +89,23 @@ export function createBrowserSessionDetails(input: {
           viewportTextSha256: input.scroll.viewportTextSha256,
           viewportTextChars: input.scroll.viewportTextChars,
           viewportTextTruncated: input.scroll.viewportTextTruncated,
+        }
+      : {}),
+    ...(input.console
+      ? {
+          consoleEntryCount: input.console.entryCount,
+          consoleErrorCount: input.console.errorCount,
+          consoleWarningCount: input.console.warningCount,
+          consoleEntriesSha256: input.console.entriesSha256,
+          consoleTruncated: input.console.truncated,
+        }
+      : {}),
+    ...(input.workspacePreview
+      ? {
+          workspacePreviewEntryPathSha256:
+            input.workspacePreview.entryPathSha256,
+          workspacePreviewEntrySha256: input.workspacePreview.entrySha256,
+          workspacePreviewEntryBytes: input.workspacePreview.entryBytes,
         }
       : {}),
     ...(input.screenshot

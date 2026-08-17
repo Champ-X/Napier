@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Browser Preview Fixture</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 32px;
+        color: #e8efe9;
+        background: #17201c;
+        font-family: Georgia, serif;
+      }
+      main {
+        max-width: 760px;
+        margin: auto;
+      }
+      .modes,
+      .controls {
+        display: flex;
+        gap: 12px;
+        margin: 18px 0;
+      }
+      button,
+      input {
+        accent-color: #c9654d;
+      }
+      button[aria-pressed="true"] {
+        color: white;
+        background: #356454;
+      }
+      canvas {
+        width: 100%;
+        border: 1px solid #71847a;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Workspace browser preview</h1>
+      <div class="modes" aria-label="Preview modes">
+        <button data-mode="circle" aria-pressed="true">Circle</button>
+        <button data-mode="triangle" aria-pressed="false">Triangle</button>
+        <button data-mode="fold" aria-pressed="false">Fold</button>
+      </div>
+      <div class="controls">
+        <label
+          >Density <input id="density" type="range" min="1" max="9"
+        /></label>
+        <label>Delta <input id="delta" type="range" min="1" max="9" /></label>
+        <label
+          >Dimension <input id="dimension" type="range" min="1" max="9"
+        /></label>
+      </div>
+      <output id="state">circle:5:5:5</output>
+      <canvas id="plot" width="720" height="240"></canvas>
+    </main>
+    <script src="./app.js"></script>
+  </body>
+</html>

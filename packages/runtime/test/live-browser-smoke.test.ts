@@ -22,6 +22,79 @@ afterEach(async () => {
 });
 
 describeLive("live controlled Browser Session smoke", () => {
+  it("previews an interactive workspace artifact without a local service", async ({
+    skip,
+  }) => {
+    const workspaceRoot = path.resolve(
+      import.meta.dirname,
+      "fixtures/browser-preview",
+    );
+    const manager = new RunBrowserSessionManager({ workspaceRoot });
+    const owner = {
+      threadId: "thread_live_workspace_preview",
+      runId: "run_live_workspace_preview",
+    };
+    try {
+      const preview = await manager.execute(owner, {
+        action: "preview_workspace",
+        path: "index.html",
+      });
+      await manager.execute(owner, {
+        action: "click",
+        target: { selector: '[data-mode="triangle"]' },
+      });
+      await manager.execute(owner, {
+        action: "type",
+        target: { selector: "#density" },
+        text: "8",
+      });
+      const snapshot = await manager.execute(owner, { action: "snapshot" });
+      const screenshot = await manager.execute(owner, {
+        action: "screenshot",
+      });
+      const consoleResult = await manager.execute(owner, {
+        action: "console",
+      });
+
+      expect(preview.details).toEqual(
+        expect.objectContaining({
+          action: "preview_workspace",
+          sessionReused: false,
+          workspacePreviewEntryPathSha256:
+            expect.stringMatching(/^[a-f0-9]{64}$/u),
+          workspacePreviewEntrySha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+          workspacePreviewEntryBytes: expect.any(Number),
+          blockedRequestCount: 0,
+          network: expect.objectContaining({
+            destinationCount: 0,
+            connectCount: 0,
+            transferredBytes: 0,
+          }),
+        }),
+      );
+      expect(snapshot.output).toContain("triangle:8:5:5");
+      expect(screenshot.details.screenshotBytes).toBeGreaterThan(0);
+      expect(screenshot.screenshot?.mimeType).toBe("image/png");
+      expect(consoleResult.output).toContain("No warnings or errors");
+      expect(consoleResult.details).toEqual(
+        expect.objectContaining({
+          consoleEntryCount: 0,
+          consoleErrorCount: 0,
+          consoleWarningCount: 0,
+        }),
+      );
+    } catch (error) {
+      if (nestedSandboxDenied(error)) {
+        skip(
+          "inconclusive: the current host denies Chrome's nested production sandbox",
+        );
+      }
+      throw error;
+    } finally {
+      await manager.cancelRun(owner);
+    }
+  }, 60_000);
+
   it("captures a citation-backed Markdown brief through real Chrome", async ({
     skip,
   }) => {

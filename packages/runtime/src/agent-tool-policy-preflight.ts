@@ -42,6 +42,7 @@ export async function preflightAgentToolPolicy(input: {
       signal?: AbortSignal,
     ) => Promise<BrowserConfirmationPageState>;
     active: (owner: { threadId: string; runId: string }) => boolean;
+    workspacePreview: (owner: { threadId: string; runId: string }) => boolean;
     localService: (
       owner: { threadId: string; runId: string },
       value: string,
@@ -105,6 +106,15 @@ export async function preflightAgentToolPolicy(input: {
   }
   const action = browserInteractionAction(input.toolCall.name, input.args);
   if (!action) return undefined;
+  if (
+    (action === "click" || action === "type" || action === "select") &&
+    input.browserConfirmation.workspacePreview({
+      threadId: input.run.threadId,
+      runId: input.run.id,
+    })
+  ) {
+    return undefined;
+  }
   if (input.run.source !== "user") {
     return block(
       input,

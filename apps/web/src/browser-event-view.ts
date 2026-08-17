@@ -1,12 +1,20 @@
 import {
+  browserLocalPreviewEvidence,
+  browserLocalPreviewSummaryParts,
+  type BrowserLocalPreviewTraceView,
+  validBrowserActionEvidence,
+} from "./browser-local-preview-event-view";
+import {
   browserObservationEvidence,
   browserObservationSummaryParts,
   type BrowserObservationTraceView,
 } from "./browser-observation-event-view";
 
-export interface BrowserToolEventTraceView extends BrowserObservationTraceView {
+export interface BrowserToolEventTraceView
+  extends BrowserObservationTraceView, BrowserLocalPreviewTraceView {
   browserAction?:
     | "start"
+    | "preview_workspace"
     | "navigate"
     | "back"
     | "forward"
@@ -24,6 +32,7 @@ export interface BrowserToolEventTraceView extends BrowserObservationTraceView {
     | "upload"
     | "download"
     | "screenshot"
+    | "console"
     | "close";
   browserSessionMode?: "run_persistent";
   browserSessionReused?: boolean;
@@ -63,6 +72,7 @@ export interface BrowserToolEventTraceView extends BrowserObservationTraceView {
 
 const ACTIONS = new Set<BrowserToolEventTraceView["browserAction"]>([
   "start",
+  "preview_workspace",
   "navigate",
   "back",
   "forward",
@@ -80,6 +90,7 @@ const ACTIONS = new Set<BrowserToolEventTraceView["browserAction"]>([
   "upload",
   "download",
   "screenshot",
+  "console",
   "close",
 ]);
 
@@ -98,12 +109,14 @@ export function browserEventEvidence(
   const screenshot = optionalScreenshot(value);
   const file = optionalFile(value["file"]);
   const diagnosis = pageDiagnosis(value["pageDiagnosis"]);
+  const localPreview = browserLocalPreviewEvidence(value);
   const optionalEvidence = {
     snapshot,
     observation,
     screenshot,
     file,
     diagnosis,
+    localPreview,
   };
   if (!validBrowserOptionalEvidence(optionalEvidence)) {
     return undefined;
@@ -114,19 +127,15 @@ export function browserEventEvidence(
       : sha256(value["suggestedFilenameSha256"])
         ? value["suggestedFilenameSha256"]
         : null;
-  const snapshotExpected =
-    action !== "screenshot" &&
-    action !== "close" &&
-    action !== "find" &&
-    action !== "scroll";
-  const screenshotExpected = action === "screenshot";
-  const fileExpected = action === "upload" || action === "download";
   if (
     suggestedFilenameSha256 === null ||
-    Boolean(snapshot) !== snapshotExpected ||
-    Boolean(screenshot) !== screenshotExpected ||
-    Boolean(file) !== fileExpected ||
-    Boolean(suggestedFilenameSha256) !== (action === "download") ||
+    !validBrowserActionEvidence({
+      action,
+      snapshot,
+      screenshot,
+      file,
+      suggestedFilenameSha256,
+    }) ||
     network.connectCount > network.requestCount ||
     network.rejectedCount > network.requestCount ||
     network.destinationCount > network.requestCount
@@ -159,6 +168,7 @@ export function browserEventEvidence(
     ...(suggestedFilenameSha256
       ? { browserSuggestedFilenameSha256: suggestedFilenameSha256 }
       : {}),
+    ...(optionalEvidence.localPreview ?? {}),
     browserBlockedRequestCount: blockedRequestCount,
     browserNetworkRequestCount: network.requestCount,
     browserNetworkConnectCount: network.connectCount,
@@ -302,6 +312,7 @@ export function browserSummaryParts(view: BrowserToolEventTraceView): string[] {
     ...(view.browserFileBytes !== undefined
       ? [`file-bytes ${view.browserFileBytes}`]
       : []),
+    ...browserLocalPreviewSummaryParts(view),
     ...hash("browser-session", view.browserSessionIdSha256),
     ...hash("browser-tabs", view.browserTabSetSha256),
     ...hash("browser-origin", view.browserCurrentOriginSha256),
@@ -322,6 +333,7 @@ function validBrowserOptionalEvidence(input: {
   screenshot: ReturnType<typeof optionalScreenshot>;
   file: ReturnType<typeof optionalFile>;
   diagnosis: ReturnType<typeof pageDiagnosis>;
+  localPreview: ReturnType<typeof browserLocalPreviewEvidence>;
 }): input is typeof input & {
   diagnosis: NonNullable<typeof input.diagnosis>;
 } {
@@ -330,6 +342,7 @@ function validBrowserOptionalEvidence(input: {
     input.observation !== null &&
     input.screenshot !== null &&
     input.file !== null &&
+    input.localPreview !== null &&
     input.diagnosis !== undefined
   );
 }

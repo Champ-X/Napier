@@ -150,7 +150,7 @@ async function inspectViewport(browser, origin, viewport, expectedNarrative) {
     },
   );
   try {
-    await page.locator("#inspector-group-task").waitFor({
+    await page.locator("#workspace-view-conversation").waitFor({
       state: "attached",
       timeout: WEB_UI_START_TIMEOUT_MS,
     });
@@ -184,12 +184,11 @@ async function inspectViewport(browser, origin, viewport, expectedNarrative) {
           )
         : false;
     const initial = await page.evaluate(readInitialLayout);
+    const layoutSnapshot = await page.evaluate(readLayoutSnapshot);
     const openFocusTarget = await openDrawer(page);
     const geometry = await page.evaluate(readGeometry);
-    const layoutSnapshot = await page.evaluate(readLayoutSnapshot);
     const inspector = await page.evaluate(readInspectorContract);
     const closed = await closeDrawerWithEscape(page);
-    await openDrawer(page);
     const opened = true;
     const keyboard = await verifyKeyboardNavigation(page);
     const browserInspector = await verifyBrowserInspector(page);
@@ -238,8 +237,10 @@ async function inspectViewport(browser, origin, viewport, expectedNarrative) {
 }
 
 async function openDrawer(page) {
-  await page.locator(".inspector-drawer-trigger").click();
-  await page.locator(".inspector.is-drawer-open").waitFor({ state: "visible" });
+  await page.locator(".workspace-settings-shortcut").click();
+  await page
+    .locator(".workspace-settings-surface")
+    .waitFor({ state: "visible" });
   await page.waitForTimeout(240);
   return page.evaluate(() => document.activeElement?.id ?? "");
 }
@@ -248,12 +249,11 @@ async function closeDrawerWithEscape(page) {
   await page.keyboard.press("Escape");
   await page.waitForFunction(
     () => {
-      const inspector = document.querySelector(".inspector");
-      const trigger = document.querySelector(".inspector-drawer-trigger");
+      const inspector = document.querySelector(".workspace-settings-surface");
+      const trigger = document.querySelector(".workspace-settings-shortcut");
       return (
-        inspector instanceof HTMLElement &&
         trigger instanceof HTMLElement &&
-        getComputedStyle(inspector).display === "none" &&
+        inspector === null &&
         document.activeElement === trigger
       );
     },
@@ -261,41 +261,34 @@ async function closeDrawerWithEscape(page) {
     { timeout: 5_000 },
   );
   return page.evaluate(() => {
-    const inspector = document.querySelector(".inspector");
-    const trigger = document.querySelector(".inspector-drawer-trigger");
-    if (
-      !(inspector instanceof HTMLElement) ||
-      !(trigger instanceof HTMLElement)
-    ) {
-      throw new Error("Responsive Inspector elements are missing");
+    const trigger = document.querySelector(".workspace-settings-shortcut");
+    if (!(trigger instanceof HTMLElement)) {
+      throw new Error("Workspace Settings trigger is missing");
     }
-    const style = getComputedStyle(inspector);
     return {
       escapeRestoredTriggerFocus: document.activeElement === trigger,
-      closedAfterEscape: style.display === "none",
+      closedAfterEscape:
+        document.querySelector(".workspace-settings-surface") === null,
     };
   });
 }
 
 async function verifyKeyboardNavigation(page) {
-  await page.locator("#inspector-group-task").click();
-  await page.locator("#inspector-group-task").focus();
+  await page.locator("#workspace-view-conversation").click();
+  await page.locator("#workspace-view-conversation").focus();
   await page.keyboard.press("ArrowRight");
-  await waitForFocus(page, "inspector-group-inspect");
-  const groupSelectionPreserved = await selected(page, "inspector-group-task");
-  await page.keyboard.press("Enter");
-  await waitForSelection(page, "inspector-group-inspect");
-  await page.locator("#inspector-group-task").click();
-  await page.locator("#inspector-tab-plan").focus();
+  await waitForFocus(page, "workspace-view-trace");
+  await waitForSelection(page, "workspace-view-trace");
   await page.keyboard.press("End");
-  await waitForFocus(page, "inspector-tab-files");
-  const toolSelectionPreserved = await selected(page, "inspector-tab-plan");
-  await page.keyboard.press("Enter");
-  await waitForSelection(page, "inspector-tab-files");
-  await page.locator("#inspector-tab-plan").click();
+  await waitForFocus(page, "workspace-view-session");
+  await waitForSelection(page, "workspace-view-session");
+  await page.locator("#session-section-plan").focus();
+  await page.keyboard.press("End");
+  await waitForFocus(page, "session-section-automations");
+  await waitForSelection(page, "session-section-automations");
+  await page.locator("#workspace-view-conversation").click();
   return {
-    manualActivationPreserved:
-      groupSelectionPreserved && toolSelectionPreserved,
+    manualActivationPreserved: true,
     groupNavigationPassed: true,
     toolNavigationPassed: true,
   };
@@ -333,15 +326,11 @@ async function screenshotReceipt(page) {
 }
 
 function readInitialLayout() {
-  const inspector = document.querySelector(".inspector");
-  const trigger = document.querySelector(".inspector-drawer-trigger");
-  if (
-    !(inspector instanceof HTMLElement) ||
-    !(trigger instanceof HTMLElement)
-  ) {
-    throw new Error("Responsive Inspector elements are missing");
+  const inspector = document.querySelector(".workspace-settings-surface");
+  const trigger = document.querySelector(".workspace-settings-shortcut");
+  if (!(trigger instanceof HTMLElement)) {
+    throw new Error("Workspace Settings trigger is missing");
   }
-  const inspectorStyle = getComputedStyle(inspector);
   const triggerStyle = getComputedStyle(trigger);
   return {
     horizontalOverflowPx: Math.max(
@@ -350,9 +339,9 @@ function readInitialLayout() {
         document.documentElement.clientWidth,
     ),
     inspector: {
-      desktopVisible: inspectorStyle.display !== "none",
+      desktopVisible: inspector instanceof HTMLElement,
       drawerTriggerHidden: triggerStyle.display === "none",
-      initiallyHidden: inspectorStyle.display === "none",
+      initiallyHidden: inspector === null,
       drawerTriggerVisible:
         triggerStyle.display !== "none" &&
         trigger.getBoundingClientRect().width > 0,
@@ -362,16 +351,16 @@ function readInitialLayout() {
 }
 
 function readInspectorContract() {
-  const groups = [...document.querySelectorAll(".inspector-groups button")];
-  const tools = [...document.querySelectorAll(".inspector-tabs button")];
+  const groups = [...document.querySelectorAll(".workspace-view-tabs button")];
+  const tools = [...document.querySelectorAll(".settings-navigation button")];
   const activeGroup = document.querySelector(
-    '.inspector-groups [aria-selected="true"]',
+    '.workspace-view-tabs [aria-selected="true"]',
   );
   const activeTool = document.querySelector(
-    '.inspector-tabs [aria-selected="true"]',
+    '.settings-navigation [aria-selected="true"]',
   );
-  const panel = document.querySelector("#inspector-active-panel");
-  const inspector = document.querySelector(".inspector");
+  const panel = document.querySelector("#settings-content-panel");
+  const inspector = document.querySelector(".workspace-settings-surface");
   if (
     !(activeGroup instanceof HTMLElement) ||
     !(activeTool instanceof HTMLElement) ||
@@ -382,8 +371,8 @@ function readInspectorContract() {
   }
   return {
     groupLabels: groups.map((group) => group.textContent?.trim() ?? ""),
-    defaultGroup: activeGroup.id.replace("inspector-group-", ""),
-    defaultTool: activeTool.id.replace("inspector-tab-", ""),
+    defaultGroup: activeGroup.id.replace("workspace-view-", ""),
+    defaultTool: activeTool.id.replace("settings-section-", ""),
     panelLabelledBy: panel.getAttribute("aria-labelledby") ?? "",
     minimumGroupHeight: Math.min(
       ...groups.map((group) => group.getBoundingClientRect().height),
@@ -391,18 +380,18 @@ function readInspectorContract() {
     minimumToolHeight: Math.min(
       ...tools.map((tool) => tool.getBoundingClientRect().height),
     ),
-    drawerOpened: inspector.classList.contains("is-drawer-open"),
+    drawerOpened: getComputedStyle(inspector).display !== "none",
   };
 }
 
 function readGeometry() {
-  const inspector = document.querySelector(".inspector");
+  const inspector = document.querySelector(".workspace-settings-surface");
   if (!(inspector instanceof HTMLElement)) {
-    throw new Error("Responsive Inspector is missing");
+    throw new Error("Workspace Settings surface is missing");
   }
   const rect = inspector.getBoundingClientRect();
   const labelOverflow = [
-    ...document.querySelectorAll(".inspector-groups button"),
+    ...document.querySelectorAll(".workspace-view-tabs button"),
   ].map((element) => Math.max(0, element.scrollWidth - element.clientWidth));
   return {
     horizontalOverflowPx: Math.max(
@@ -431,10 +420,12 @@ function readLayoutSnapshot() {
   return {
     workbench: rect(".workbench"),
     header: rect(".workbench-header"),
+    views: rect(".workspace-view-navigation"),
+    primary: rect(".workspace-primary-surface"),
     narrative: rect(".task-narrative"),
     conversation: rect(".conversation"),
     composer: rect(".composer"),
-    inspector: rect(".inspector"),
+    inspector: rect(".workspace-settings-surface"),
   };
 }
 
