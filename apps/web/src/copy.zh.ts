@@ -117,4 +117,9 @@ export const zh: LocaleOverride<typeof en> = {
     browserControls: "浏览器控制",
     stop: "停止",
   },
+  projects: {
+    heading: "项目",
+    switching: "正在切换工作区……",
+    current: "当前",
+  },
 };

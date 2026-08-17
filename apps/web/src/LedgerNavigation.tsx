@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Plus, Settings2 } from "lucide-react";
 
 import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
 import { copy } from "./copy";
+import { WorkspaceProjects } from "./WorkspaceProjects";
 import type { TrashedThreadReceipt } from "./use-thread-trash";
 
 const LazyThreadList = lazy(() => import("./ThreadList"));
@@ -82,6 +83,8 @@ export function LedgerNavigation({
           onRestore={onRestore}
         />
       </Suspense>
+
+      <WorkspaceProjects currentRoot={bootstrap.workspace.root} />
 
       <button
         className="workspace-settings-button"

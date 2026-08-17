@@ -882,6 +882,16 @@ export function rebindWorkspaceRoot(root: string): Promise<WorkspaceSummary> {
   });
 }
 
+export interface RecentWorkspaceEntry {
+  root: string;
+  name: string;
+  lastOpenedAt: string;
+}
+
+export function listRecentWorkspaces(): Promise<RecentWorkspaceEntry[]> {
+  return requestJson("/api/workspace/recent");
+}
+
 export function queueRunControlMessage(
   threadId: string,
   runId: string,

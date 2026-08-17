@@ -266,6 +266,7 @@ import {
   registerWorkspaceRootHttp,
   type RebindWorkspace,
 } from "./workspace-root-http.js";
+import { registerRecentWorkspacesHttp } from "./recent-workspaces.js";
 import { registerEvaluationCasebookAdminHttp } from "./evaluation-casebook-admin-http.js";
 import { registerReleaseEvidenceHttp } from "./controlled-harness-evidence-http.js";
 import { registerEvaluationCatalogHttp } from "./evaluation-catalog-http.js";
@@ -2698,6 +2699,7 @@ export function createApp(
   registerThreadLifecycleHttp(app, services);
   registerThreadOperationsHttp(app, services);
   registerWorkspaceRootHttp(app, services, options?.rebindWorkspace);
+  registerRecentWorkspacesHttp(app);
 
   registerWorkspaceProcessHttp(app, services.workspaceProcesses, {
     jsonError,

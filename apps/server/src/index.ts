@@ -7,6 +7,7 @@ import { serveStatic } from "@hono/node-server/serve-static";
 import type { Hono } from "hono";
 
 import { createApp, createServices, type NapierServices } from "./app.js";
+import { recordRecentWorkspace } from "./recent-workspaces.js";
 import { WorkspaceRebindBusyError, workspaceRebindBusyReasons } from "./workspace-rebind.js";
 
 const webRoot = path.resolve(import.meta.dirname, "../../web/dist");
@@ -62,13 +63,19 @@ async function rebindWorkspace(absoluteRoot: string): Promise<WorkspaceSummary> 
       dataRoot: path.join(absoluteRoot, ".napier"),
     });
     app = attachStatic(createApp(services, { rebindWorkspace }));
-    return services.store.getWorkspaceSummary();
+    const summary = services.store.getWorkspaceSummary();
+    await recordRecentWorkspace(summary.root);
+    return summary;
   } finally {
     rebinding = false;
   }
 }
 
 let app = attachStatic(createApp(services, { rebindWorkspace }));
+
+// Record the launch workspace so it appears in the recent list before any
+// switch. Best-effort and outside createServices, so it survives rebuilds.
+void recordRecentWorkspace(services.store.getWorkspaceSummary().root);
 
 const configuredPort = Number.parseInt(
   process.env["NAPIER_PORT"] ?? "8787",

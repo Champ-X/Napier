@@ -481,6 +481,82 @@
   text-transform: uppercase;
 }
 
+.workspace-projects {
+  flex: 0 0 auto;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgb(255 255 255 / 8%);
+}
+
+.workspace-projects-list {
+  display: flex;
+  max-height: 160px;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: #4b5650 transparent;
+}
+
+.workspace-projects-list button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 9px;
+  color: #c7cfc9;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 3px;
+}
+
+.workspace-projects-list button:hover:not(:disabled) {
+  color: #fff;
+  background: rgb(255 255 255 / 6%);
+}
+
+.workspace-projects-list button.is-current {
+  color: #eef0ea;
+  cursor: default;
+}
+
+.workspace-projects-list button > span {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-projects-list button > i {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 7px;
+  font-style: normal;
+  color: #7f8b83;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.workspace-projects-list .spin {
+  animation: workspace-projects-spin 0.8s linear infinite;
+}
+
+@keyframes workspace-projects-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ledger-nav.is-collapsed .workspace-projects {
+  display: none;
+}
+
 .workspace-settings-button:hover {
   color: #fff;
   background: rgb(255 255 255 / 8%);

@@ -916,6 +916,11 @@ export const en = {
     browserControls: "Browser controls",
     stop: "Stop",
   },
+  projects: {
+    heading: "Projects",
+    switching: "Switching workspace...",
+    current: "Current",
+  },
 } as const;
 
 export type Copy = typeof en;
