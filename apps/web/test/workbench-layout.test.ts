@@ -2,26 +2,23 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
 describe("Workbench layout", () => {
-  it("pins optional sections to named rows so the composer cannot replace conversation", async () => {
+  it("pins conversation sections inside the active workspace view", async () => {
     const styles = await readFile(
-      new URL("../src/styles.css", import.meta.url),
+      new URL("../src/workspace-shell.css", import.meta.url),
       "utf8",
     );
 
-    expect(styles).toContain('grid-template-areas:\n    "header"');
+    expect(styles).toContain('grid-template-areas:\n    "header"\n    "views"');
     expect(styles).toContain(
       '"narrative"\n    "notices"\n    "conversation"\n    "decisions"',
     );
     expect(styles).toContain(
-      "grid-template-rows: 76px auto auto minmax(0, 1fr) auto auto;",
+      "grid-template-rows: auto auto minmax(0, 1fr) auto auto;",
     );
-    expect(styles).toContain(".task-narrative {\n  grid-area: narrative;");
-    expect(styles).toContain(".workbench-notices {\n  grid-area: notices;");
-    expect(styles).toContain(".conversation {\n  grid-area: conversation;");
-    expect(styles).toContain(
-      ".run-decision-dockets {\n  grid-area: decisions;",
-    );
-    expect(styles).toContain("grid-area: composer;");
+    expect(styles).toContain(".workspace-primary-surface");
+    expect(styles).toContain(".conversation-workspace-view");
+    expect(styles).toContain(".trace-workspace-view");
+    expect(styles).toContain(".session-workspace-view");
   });
 
   it("keeps blockers and next actions independently visible", async () => {
@@ -38,8 +35,8 @@ describe("Workbench layout", () => {
     expect(source).toContain("onClick={onStop}");
   });
 
-  it("opens produced outputs through the responsive Files inspector", async () => {
-    const [app, navigation, summary, inspector] = await Promise.all([
+  it("opens produced outputs through the Session Plan surface", async () => {
+    const [app, navigation, summary, session, shell] = await Promise.all([
       readFile(new URL("../src/App.tsx", import.meta.url), "utf8"),
       readFile(
         new URL("../src/use-task-control-navigation.ts", import.meta.url),
@@ -49,8 +46,9 @@ describe("Workbench layout", () => {
         new URL("../src/TaskCompletionSummary.tsx", import.meta.url),
         "utf8",
       ),
+      readFile(new URL("../src/SessionWorkspace.tsx", import.meta.url), "utf8"),
       readFile(
-        new URL("../src/ResponsiveInspector.tsx", import.meta.url),
+        new URL("../src/use-workspace-shell.ts", import.meta.url),
         "utf8",
       ),
     ]);
@@ -59,7 +57,8 @@ describe("Workbench layout", () => {
     expect(navigation).toContain('candidate.dataset["artifactPath"] === path');
     expect(navigation).toContain('openInspector("plan")');
     expect(app).toContain("onOpenArtifact={taskControls.openArtifact}");
-    expect(app).toContain("openRequest={taskControls.inspectorOpenRequest}");
-    expect(inspector).toContain("if (openRequest > 0) setOpen(true)");
+    expect(shell).toContain('plan: "plan"');
+    expect(shell).toContain('setWorkspaceView("session")');
+    expect(session).toContain("<PlanInspectorSurface");
   });
 });

@@ -1,17 +1,11 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import {
   Activity,
-  BookOpen,
-  Box,
-  Cable,
-  Clock,
-  Command,
   Download,
   Layers,
   RotateCcw,
   ShieldCheck,
   Sparkles,
-  Target,
   Upload,
 } from "lucide-react";
 
@@ -44,7 +38,6 @@ import {
   type ToolLoopGuardTriggerView,
 } from "./tool-loop-guard-view";
 import {
-  traceEventSummaryView,
   traceSummaryCoverageReceipt,
   traceSummaryCoverageView,
   verifyTraceSummaryCoverageReceipt,
@@ -52,6 +45,7 @@ import {
   type TraceSummaryCoverageReceiptVerification,
   type TraceSummaryCoverageView,
 } from "./trace-event-summary-view";
+import { TraceTrajectory } from "./TraceTrajectory";
 import type {
   OpenTelemetryTraceReceipt,
   OpenTelemetryTraceVerificationReceipt,
@@ -168,6 +162,7 @@ export default function TracePanel({
           {running ? "LIVE" : "REC"}
         </span>
       </div>
+      <TraceTrajectory events={events} runs={runs} running={running} />
       <section className="otel-export-card" aria-labelledby="otel-export-title">
         <header>
           <div>
@@ -310,14 +305,6 @@ export default function TracePanel({
         reviewerModel={reviewerModel}
         reviewerModelConfigured={reviewerModelConfigured}
       />
-      {events.length === 0 ? (
-        <p className="empty-panel">{copy.trace.empty}</p>
-      ) : null}
-      <ol className="trace-list">
-        {events.map((event) => (
-          <TraceEventListItem event={event} key={event.id} />
-        ))}
-      </ol>
     </section>
   );
 }
@@ -391,30 +378,6 @@ function TraceSummaryCoverageCard({
         </output>
       ) : null}
     </section>
-  );
-}
-
-function TraceEventListItem({ event }: { event: RunEvent }) {
-  const summary = traceEventSummaryView(event);
-  return (
-    <li data-summary-source={summary.source}>
-      <div className={`trace-icon category-${event.category}`}>
-        {eventIcon(event.category)}
-      </div>
-      <div className="trace-copy">
-        <div>
-          <strong>{eventLabel(event.type)}</strong>
-          <span>#{String(event.seq).padStart(3, "0")}</span>
-        </div>
-        <p>{summary.text}</p>
-        <footer>
-          <time dateTime={event.createdAt}>{formatTime(event.createdAt)}</time>
-          <span className={`trace-summary-source source-${summary.source}`}>
-            {copy.trace.summary.sources[summary.source]}
-          </span>
-        </footer>
-      </div>
-    </li>
   );
 }
 
@@ -925,25 +888,6 @@ function DelegationCard({
       </footer>
     </article>
   );
-}
-
-function eventIcon(category: RunEvent["category"]): ReactNode {
-  if (category === "message") return <BookOpen size={13} />;
-  if (category === "tool") return <Command size={13} />;
-  if (category === "subagent") return <Layers size={13} />;
-  if (category === "extension") return <Cable size={13} />;
-  if (category === "goal") return <Target size={13} />;
-  if (category === "model") return <Sparkles size={13} />;
-  if (category === "artifact") return <Box size={13} />;
-  if (category === "lifecycle") return <Clock size={13} />;
-  return <Activity size={13} />;
-}
-
-function eventLabel(type: string): string {
-  return type
-    .split(/[._]/u)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
 }
 
 function delegationStatusLabel(status: SubagentTask["status"]): string {

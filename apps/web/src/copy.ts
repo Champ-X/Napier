@@ -872,6 +872,19 @@ export const copy = {
     liveProvider: "Live provider",
     demoProvider: "Demo provider",
   },
+  workspaceSurface: {
+    section: "Workspace",
+    sectionDescription: "Local folder this runtime operates on",
+    currentRoot: "Active folder",
+    dataRoot: "Ledger data root",
+    inputLabel: "Switch to another folder",
+    placeholder: "/absolute/path/to/project",
+    submit: "Switch folder",
+    switching: "Switching workspace...",
+    warning:
+      "Switching rebuilds the runtime on the new folder and shows that folder's own ledgers. This folder's ledgers stay intact and return if you switch back. Not allowed while a run is active.",
+    chipLabel: "Workspace",
+  },
   welcome: {
     eyebrow: "A glass-box agent runtime",
     title: "Work that leaves evidence.",

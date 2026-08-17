@@ -1,19 +1,11 @@
 import { WEB_UI_START_TIMEOUT_MS } from "./web-ui-e2e-runtime.mjs";
 
 export async function verifyDefaultProductTrialRecorder(page) {
-  const openInspector = page.locator(".inspector.is-drawer-open");
+  const openInspector = page.locator(".workspace-settings-surface");
   if (await openInspector.isVisible()) {
-    await openInspector
-      .locator('.inspector-drawer-header button[aria-label="Close Inspect"]')
-      .click();
+    await openInspector.locator('button[aria-label="Close Settings"]').click();
     await page.waitForFunction(
-      () => {
-        const inspector = document.querySelector(".inspector");
-        return (
-          inspector instanceof HTMLElement &&
-          getComputedStyle(inspector).display === "none"
-        );
-      },
+      () => document.querySelector(".workspace-settings-surface") === null,
       undefined,
       { timeout: WEB_UI_START_TIMEOUT_MS },
     );

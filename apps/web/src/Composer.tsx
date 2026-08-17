@@ -1,6 +1,6 @@
 import type { KeyboardEvent } from "react";
 import { lazy, Suspense, useCallback, useState } from "react";
-import { Command, Send, SlidersHorizontal, Square } from "lucide-react";
+import { Command, FolderTree, Send, SlidersHorizontal, Square } from "lucide-react";
 
 import type { AgentProfile } from "@napier/contracts";
 import type { InspectorTab } from "./use-workspace-view-model";
@@ -27,7 +27,9 @@ export function Composer({
   activeAgent,
   activeModel,
   canStartRun,
+  workspaceRoot,
   onOpenInspector,
+  onOpenWorkspace,
 }: {
   vm: Pick<
     WorkspaceViewModel,
@@ -49,7 +51,9 @@ export function Composer({
   activeAgent: AgentProfile | undefined;
   activeModel: SelectedModelAvailability;
   canStartRun: boolean;
+  workspaceRoot: string;
   onOpenInspector: (tab: InspectorTab) => void;
+  onOpenWorkspace: () => void;
 }) {
   const [runReadiness, setRunReadiness] = useState<ComposerRunReadiness>(
     initialComposerRunReadiness,
@@ -124,6 +128,15 @@ export function Composer({
             <Command size={12} aria-hidden="true" />
             {copy.shortcut}
           </span>
+          <button
+            type="button"
+            className="composer-workspace-chip"
+            onClick={onOpenWorkspace}
+            title={workspaceRoot}
+          >
+            <FolderTree size={12} aria-hidden="true" />
+            <span>{shortWorkspacePath(workspaceRoot)}</span>
+          </button>
           {vm.isRunning ? (
             <label className="control-mode">
               <span>{copy.controlMode}</span>
@@ -240,6 +253,11 @@ function handleComposerKeys(
 
 function composerReadinessPending(readiness: ComposerRunReadiness): boolean {
   return readiness.items.every((item) => item.value === "Checking");
+}
+
+function shortWorkspacePath(value: string): string {
+  const parts = value.split("/").filter(Boolean);
+  return parts.length > 2 ? `…/${parts.slice(-2).join("/")}` : value;
 }
 
 function runButtonDescription(

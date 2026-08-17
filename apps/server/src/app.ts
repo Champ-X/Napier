@@ -262,6 +262,10 @@ import { registerInboundChannelDeliveryHttp } from "./inbound-channel-delivery-h
 import { registerInboundChannelIngressHttp } from "./inbound-channel-ingress-http.js";
 import { registerCredentialHttp } from "./credential-http.js";
 import { registerBootstrapHttp } from "./bootstrap-http.js";
+import {
+  registerWorkspaceRootHttp,
+  type RebindWorkspace,
+} from "./workspace-root-http.js";
 import { registerEvaluationCasebookAdminHttp } from "./evaluation-casebook-admin-http.js";
 import { registerReleaseEvidenceHttp } from "./controlled-harness-evidence-http.js";
 import { registerEvaluationCatalogHttp } from "./evaluation-catalog-http.js";
@@ -420,7 +424,10 @@ export async function createServices(options?: ServerServiceOptions): Promise<Na
   };
 }
 
-export function createApp(services: NapierServices): Hono {
+export function createApp(
+  services: NapierServices,
+  options?: { rebindWorkspace?: RebindWorkspace },
+): Hono {
   const app = new Hono();
   app.use(
     "/api/*",
@@ -2690,6 +2697,7 @@ export function createApp(services: NapierServices): Hono {
 
   registerThreadLifecycleHttp(app, services);
   registerThreadOperationsHttp(app, services);
+  registerWorkspaceRootHttp(app, services, options?.rebindWorkspace);
 
   registerWorkspaceProcessHttp(app, services.workspaceProcesses, {
     jsonError,

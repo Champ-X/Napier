@@ -13218,6 +13218,46 @@
         },
         "x-napier-source-route": "POST /api/usage-price-tables/verify"
       }
+    },
+    "/api/workspace/root": {
+      "post": {
+        "operationId": "post-workspace-root",
+        "tags": [
+          "workspace"
+        ],
+        "summary": "POST /api/workspace/root",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/workspace/root"
+      }
     }
   },
   "components": {
@@ -16142,9 +16182,10 @@
     "apps/server/src/thread-lifecycle-http.ts",
     "apps/server/src/thread-operations-http.ts",
     "apps/server/src/thread-workflow-http.ts",
-    "apps/server/src/workspace-process-http.ts"
+    "apps/server/src/workspace-process-http.ts",
+    "apps/server/src/workspace-root-http.ts"
   ],
-  "x-napier-source-sha256": "5189a8574eb5d0d6706a124f97a53e787fe7ed72e77ea9f8b3e926e45b189f7a",
-  "x-napier-route-count": 287,
-  "x-napier-route-set-sha256": "28c11c7b6b457d707ea88ddf7b983c0a8e5dd3627110006a055c7c6173f188f1"
+  "x-napier-source-sha256": "4413c674c04b49c5ad599c60ed9f2d6656eab4eaad070476f8e04505554b0853",
+  "x-napier-route-count": 288,
+  "x-napier-route-set-sha256": "cd4560d7764bf864cacae6a08ca510b77c6fd3bcebe19f66bf16a1f345617570"
 }

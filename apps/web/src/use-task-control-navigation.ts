@@ -1,5 +1,5 @@
 import type { RunEvent } from "@napier/contracts";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 
 import { browserLiveViewExpected } from "./browser-live-view-state";
 import type { InspectorTab } from "./use-workspace-view-model";
@@ -13,14 +13,12 @@ export function useTaskControlNavigation({
   events: readonly RunEvent[];
   onSelectInspector(tab: InspectorTab): void;
 }) {
-  const [inspectorOpenRequest, setInspectorOpenRequest] = useState(0);
   const browserControlsAvailable = Boolean(
     activeRunId && browserLiveViewExpected(events, activeRunId),
   );
   const openInspector = useCallback(
     (tab: InspectorTab) => {
       onSelectInspector(tab);
-      setInspectorOpenRequest((request) => request + 1);
     },
     [onSelectInspector],
   );
@@ -52,7 +50,6 @@ export function useTaskControlNavigation({
 
   return {
     browserControlsAvailable,
-    inspectorOpenRequest,
     openInspector,
     openArtifact,
     openBrowserControls,

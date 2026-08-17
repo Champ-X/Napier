@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from "react";
-import { ChevronLeft, ChevronRight, Database, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Settings2 } from "lucide-react";
 
 import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
 import { copy } from "./copy";
@@ -16,6 +16,7 @@ export function LedgerNavigation({
   onSelect,
   onTrash,
   onRestore,
+  onOpenSettings,
 }: {
   bootstrap: LiveReadyBootstrapResponse;
   selectedThreadId: string | undefined;
@@ -25,6 +26,7 @@ export function LedgerNavigation({
   onSelect(threadId: string): void;
   onTrash(threadId: string): void;
   onRestore(): void;
+  onOpenSettings(): void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   return (
@@ -81,19 +83,14 @@ export function LedgerNavigation({
         />
       </Suspense>
 
-      <div className="workspace-stamp">
-        <Database size={14} aria-hidden="true" />
-        <div>
-          <span>{copy.workspace}</span>
-          <strong>{shortPath(bootstrap.workspace.root)}</strong>
-        </div>
-        <span className="local-pill">{copy.localFirst}</span>
-      </div>
+      <button
+        className="workspace-settings-button"
+        type="button"
+        onClick={onOpenSettings}
+      >
+        <Settings2 size={14} aria-hidden="true" />
+        <span>Settings</span>
+      </button>
     </nav>
   );
-}
-
-function shortPath(value: string): string {
-  const parts = value.split("/").filter(Boolean);
-  return parts.length > 2 ? `…/${parts.slice(-2).join("/")}` : value;
 }
