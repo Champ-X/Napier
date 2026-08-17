@@ -1,4 +1,5 @@
 import type { ThreadDetail } from "@napier/contracts";
+import { getLocale } from "./locale";
 import { taskRunProgress } from "./task-run-progress";
 
 type TaskNarrativeProjection = NonNullable<ThreadDetail["taskNarrative"]>;
@@ -25,9 +26,35 @@ export function taskNarrative(
   now = Date.now(),
 ): TaskNarrative {
   if (!detail)
-    return baseNarrative("ready", "Ready", "Choose or create a ledger");
+    return localizePhaseLabel(
+      baseNarrative("ready", "Ready", "Choose or create a ledger"),
+    );
   const projected = projectedNarrative(detail, now);
-  return projected ?? legacyTaskNarrative(detail, now);
+  return localizePhaseLabel(projected ?? legacyTaskNarrative(detail, now));
+}
+
+// Server- and legacy-projected phase labels are English. Localize the label
+// string itself (not the phase enum) so distinct labels like "Paused" vs
+// "Partial" stay distinct; English locale passes through unchanged.
+const PHASE_LABEL_ZH: Record<string, string> = {
+  Ready: "就绪",
+  Working: "运行中",
+  Waiting: "等待中",
+  Paused: "已暂停",
+  Partial: "部分完成",
+  Blocked: "受阻",
+  "Needs review": "待复核",
+  Settled: "已结算",
+  Recovering: "恢复中",
+  Recovered: "已恢复",
+  "Recovery blocked": "恢复受阻",
+  "Recovery failed": "恢复失败",
+};
+
+function localizePhaseLabel(narrative: TaskNarrative): TaskNarrative {
+  if (getLocale() !== "zh") return narrative;
+  const label = PHASE_LABEL_ZH[narrative.phaseLabel];
+  return label ? { ...narrative, phaseLabel: label } : narrative;
 }
 
 function legacyTaskNarrative(

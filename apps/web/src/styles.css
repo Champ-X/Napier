@@ -703,15 +703,17 @@ button:disabled {
   display: flex;
   min-width: 0;
   align-items: center;
-  justify-content: space-between;
-  padding: 11px 24px 10px 72px;
-  background: rgb(250 247 240 / 88%);
-  border-bottom: 1px solid var(--rule);
-  backdrop-filter: blur(10px);
+  gap: 16px;
+  padding: 0 20px 0 60px;
+  background: rgb(250 247 240 / 92%);
+  border-bottom: 1px solid var(--rule-strong);
+  box-shadow: 0 8px 24px rgb(51 45 36 / 4%);
+  backdrop-filter: blur(12px);
 }
 
 .thread-heading {
   min-width: 0;
+  flex: 0 1 auto;
 }
 
 .folio-number {
@@ -728,7 +730,7 @@ button:disabled {
   margin: 0;
   overflow: hidden;
   font-family: var(--serif);
-  font-size: 21px;
+  font-size: 15px;
   font-weight: 600;
   line-height: 1.1;
   text-overflow: ellipsis;
@@ -740,7 +742,36 @@ button:disabled {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.workbench-settings {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+}
+
+.workbench-settings:hover {
+  color: var(--ledger);
+  background: var(--ledger-soft);
+  border-color: #b8c9be;
+}
+
+.workbench-settings kbd {
+  font-family: var(--mono);
+  font-size: 6px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  padding: 2px 4px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
 }
 
 .model-chip {

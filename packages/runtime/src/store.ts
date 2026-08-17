@@ -5889,6 +5889,25 @@ export class LocalStore {
     });
   }
 
+  async setThreadTitleIfDefault(
+    threadId: string,
+    title: string,
+  ): Promise<ThreadRecord | undefined> {
+    this.assertInitialized();
+    const normalized = title.replace(/\s+/gu, " ").trim().slice(0, 100);
+    if (!normalized) return undefined;
+    return this.stateQueue.run(async () => {
+      const thread = this.mutableThread(threadId);
+      if (thread.title !== "Untitled ledger") {
+        return structuredClone(thread);
+      }
+      thread.title = normalized;
+      thread.updatedAt = nowIso();
+      await this.persistState();
+      return structuredClone(thread);
+    });
+  }
+
   async importThreadReplayBundle(input: ThreadReplayBundle, title?: string): Promise<ThreadDetail> {
     this.assertInitialized();
     const bundle = validateThreadReplayBundle(input);

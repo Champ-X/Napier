@@ -121,6 +121,12 @@ import {
   memoryReplacementTargetIds,
   parseMemoryProposalResponse,
 } from "./memory.js";
+import {
+  buildThreadTitleMessages,
+  deriveThreadTitleFromPrompt,
+  isDefaultThreadTitle,
+  parseThreadTitleResponse,
+} from "./thread-title.js";
 import { modelAdapterReceipt } from "./model-adapters.js";
 import { ModelDeltaBatcher } from "./model-delta-batcher.js";
 import { agentModelStreamLife } from "./agent-model-stream-lifecycle.js";
@@ -735,6 +741,14 @@ export class AgentRuntime {
           options.onEvent,
         );
       }
+      await this.maybeGenerateThreadTitle({
+        threadId: thread.id,
+        runId: run.id,
+        model,
+        source: invocationSource,
+        workflowInvocation,
+        signal: abortController.signal,
+      });
       budget.throwIfExhausted();
       await recordActiveSkillLifecycles(
         this.store,
@@ -2763,6 +2777,61 @@ export class AgentRuntime {
       );
       throw error;
     }
+  }
+
+  private async maybeGenerateThreadTitle(options: {
+    threadId: string;
+    runId: string;
+    model: Model<Api> | undefined;
+    source: TurnSource;
+    workflowInvocation: boolean;
+    signal: AbortSignal;
+  }): Promise<void> {
+    const { threadId, runId, model, signal } = options;
+    if (options.workflowInvocation || options.source !== "user") return;
+    if (signal.aborted) return;
+    if (!isDefaultThreadTitle(this.store.getThread(threadId).title)) return;
+    const firstUserText = await this.firstUserMessageText(threadId, runId);
+    if (!firstUserText) return;
+    const isDemo = !model || (model.provider === "napier" && model.id === "demo");
+    let title: string | undefined;
+    if (!isDemo) {
+      try {
+        const prompt = buildThreadTitleMessages(firstUserText);
+        const response = await this.modelRegistry.models.completeSimple(
+          model,
+          {
+            systemPrompt: prompt.system,
+            messages: [
+              { role: "user", content: prompt.user, timestamp: Date.now() },
+            ],
+            tools: [],
+          },
+          { signal, maxTokens: 40, temperature: 0.2 },
+        );
+        title = parseThreadTitleResponse(contentText(response.content));
+      } catch {
+        // Titling is best-effort; fall back to prompt derivation below.
+      }
+    }
+    const resolved = title ?? deriveThreadTitleFromPrompt(firstUserText);
+    if (resolved) await this.store.setThreadTitleIfDefault(threadId, resolved);
+  }
+
+  private async firstUserMessageText(
+    threadId: string,
+    runId: string,
+  ): Promise<string | undefined> {
+    const event = (await this.store.listEvents(threadId)).find(
+      (candidate) =>
+        candidate.runId === runId && candidate.type === "message.user",
+    );
+    const payload = event?.payload;
+    if (!payload || Array.isArray(payload) || typeof payload !== "object") {
+      return undefined;
+    }
+    const text = payload["text"];
+    return typeof text === "string" && text.trim() ? text : undefined;
   }
 
   private async proposeMemoriesFromRun(

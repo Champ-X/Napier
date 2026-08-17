@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import type { ThreadDetail } from "@napier/contracts";
+import { copy } from "./copy";
 import { taskNarrative } from "./task-narrative-view-model";
 
 const LazyTaskCompletionSummary = lazy(() => import("./TaskCompletionSummary"));
@@ -84,13 +85,13 @@ export function TaskNarrativeBar({
       </Suspense>
       {narrative.blocker ? (
         <div className="task-narrative-blocker">
-          <span>Blocked by</span>
+          <span>{copy.narrative.blockedBy}</span>
           <p>{narrative.blocker}</p>
         </div>
       ) : null}
       {narrative.nextStep ? (
         <div className="task-narrative-next">
-          <span>Next</span>
+          <span>{copy.narrative.next}</span>
           <p>{narrative.nextStep}</p>
         </div>
       ) : null}
@@ -99,13 +100,13 @@ export function TaskNarrativeBar({
           {browserControlsAvailable ? (
             <button type="button" onClick={onOpenBrowserControls}>
               <Globe2 size={12} aria-hidden="true" />
-              Browser controls
+              {copy.narrative.browserControls}
             </button>
           ) : null}
           {running ? (
             <button className="is-stop" type="button" onClick={onStop}>
               <Square size={10} fill="currentColor" aria-hidden="true" />
-              Stop
+              {copy.narrative.stop}
             </button>
           ) : null}
         </div>

@@ -8,7 +8,9 @@ describe("Workbench layout", () => {
       "utf8",
     );
 
-    expect(styles).toContain('grid-template-areas:\n    "header"\n    "views"');
+    expect(styles).toContain(
+      'grid-template-areas:\n    "header"\n    "content"',
+    );
     expect(styles).toContain(
       '"narrative"\n    "notices"\n    "conversation"\n    "decisions"',
     );
@@ -31,7 +33,7 @@ describe("Workbench layout", () => {
     expect(source).toContain("{narrative.nextStep ? (");
     expect(source).not.toContain(") : narrative.nextStep ? (");
     expect(source).toContain('aria-label="Task controls"');
-    expect(source).toContain("Browser controls");
+    expect(source).toContain("copy.narrative.browserControls");
     expect(source).toContain("onClick={onStop}");
   });
 

@@ -21,6 +21,18 @@ const SETTINGS_TAB: Partial<Record<InspectorTab, SettingsSection>> = {
   extensions: "extensions",
 };
 
+// Sections that map onto a legacy InspectorTab (deep-link / roving focus).
+// "workspace" and "language" are settings-only surfaces with no InspectorTab.
+function inspectorTabForSection(
+  section: SettingsSection,
+): InspectorTab | undefined {
+  return section === "context" ||
+    section === "memory" ||
+    section === "extensions"
+    ? section
+    : undefined;
+}
+
 export function useWorkspaceShell(
   setInspectorTab: (tab: InspectorTab) => void,
 ) {
@@ -56,7 +68,8 @@ export function useWorkspaceShell(
     [setInspectorTab],
   );
   const openSettings = useCallback(() => {
-    if (settingsSection !== "workspace") setInspectorTab(settingsSection);
+    const tab = inspectorTabForSection(settingsSection);
+    if (tab) setInspectorTab(tab);
     setSettingsOpen(true);
   }, [setInspectorTab, settingsSection]);
   const setSessionSection = useCallback(
@@ -69,7 +82,8 @@ export function useWorkspaceShell(
   const setSettingsSection = useCallback(
     (section: SettingsSection) => {
       setSettingsSectionState(section);
-      if (section !== "workspace") setInspectorTab(section);
+      const tab = inspectorTabForSection(section);
+      if (tab) setInspectorTab(tab);
     },
     [setInspectorTab],
   );

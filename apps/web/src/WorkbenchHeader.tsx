@@ -1,4 +1,6 @@
 import type { ThreadStatus } from "@napier/contracts";
+import type { ReactNode } from "react";
+import { Settings2 } from "lucide-react";
 
 import { copy } from "./copy";
 
@@ -10,26 +12,26 @@ type HeaderModel = {
 };
 
 export function WorkbenchHeader({
-  eventCount,
   isRunning,
   model,
   status,
   title,
+  children,
+  onOpenSettings,
 }: {
-  eventCount: number;
   isRunning: boolean;
   model: HeaderModel;
   status: ThreadStatus | undefined;
   title: string;
+  children?: ReactNode;
+  onOpenSettings(): void;
 }) {
   return (
     <header className="workbench-header">
       <div className="thread-heading">
-        <span className="folio-number">
-          Folio {String(eventCount).padStart(3, "0")}
-        </span>
         <h1>{title}</h1>
       </div>
+      {children}
       <div className="run-meta">
         <div
           className={`model-chip ${model.configured ? "" : "is-unavailable"}`}
@@ -61,6 +63,15 @@ export function WorkbenchHeader({
           <span />
           {isRunning ? copy.running : statusLabel(status)}
         </div>
+        <button
+          className="workbench-settings"
+          type="button"
+          onClick={onOpenSettings}
+          aria-label={copy.settings}
+        >
+          <Settings2 size={15} aria-hidden="true" />
+          <kbd>⌘,</kbd>
+        </button>
       </div>
     </header>
   );

@@ -66,19 +66,19 @@ export function App() {
       />
       <main className="workbench">
         <WorkbenchHeader
-          eventCount={vm.detail?.thread.eventCount ?? 0}
           isRunning={vm.isRunning}
           model={activeModel}
           status={vm.detail?.thread.status}
           title={vm.detail?.thread.title ?? copy.welcome.title}
-        />
-        <WorkspaceViewNavigation
-          activeView={shell.workspaceView}
-          eventCount={vm.detail?.events.length ?? 0}
-          runCount={vm.detail?.runs.length ?? 0}
-          onChange={shell.setWorkspaceView}
           onOpenSettings={shell.openSettings}
-        />
+        >
+          <WorkspaceViewNavigation
+            activeView={shell.workspaceView}
+            eventCount={vm.detail?.events.length ?? 0}
+            runCount={vm.detail?.runs.length ?? 0}
+            onChange={shell.setWorkspaceView}
+          />
+        </WorkbenchHeader>
         <div className="workspace-primary-surface">
           {shell.workspaceView === "conversation" ? (
             <section

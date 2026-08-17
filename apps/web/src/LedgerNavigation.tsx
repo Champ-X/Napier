@@ -89,7 +89,7 @@ export function LedgerNavigation({
         onClick={onOpenSettings}
       >
         <Settings2 size={14} aria-hidden="true" />
-        <span>Settings</span>
+        <span>{copy.settings}</span>
       </button>
     </nav>
   );

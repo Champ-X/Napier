@@ -340,6 +340,7 @@
 .trace-overview-lane {
   display: grid;
   grid-template-columns: 51px minmax(0, 1fr);
+  align-items: stretch;
   min-height: 29px;
 }
 
@@ -364,6 +365,7 @@
 .trace-lane-track {
   position: relative;
   min-width: 0;
+  min-height: 29px;
   overflow: hidden;
   background:
     repeating-linear-gradient(

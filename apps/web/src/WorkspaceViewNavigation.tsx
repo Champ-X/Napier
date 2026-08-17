@@ -1,30 +1,28 @@
-import { Activity, Layers3, MessageSquareText, Settings2 } from "lucide-react";
+import { Activity, Layers3, MessageSquareText } from "lucide-react";
 import type { KeyboardEvent } from "react";
+
+import { copy } from "./copy";
 
 export type WorkspaceView = "conversation" | "trace" | "session";
 
 const VIEWS: ReadonlyArray<{
   id: WorkspaceView;
   label: string;
-  description: string;
   icon: typeof Activity;
 }> = [
   {
     id: "conversation",
-    label: "Conversation",
-    description: "Messages and decisions",
+    label: copy.tabs.conversation,
     icon: MessageSquareText,
   },
   {
     id: "trace",
-    label: "Trace",
-    description: "Execution trajectory",
+    label: copy.tabs.trace,
     icon: Activity,
   },
   {
     id: "session",
-    label: "Session",
-    description: "Plan, files, browser and runs",
+    label: copy.tabs.session,
     icon: Layers3,
   },
 ];
@@ -34,13 +32,11 @@ export function WorkspaceViewNavigation({
   eventCount,
   runCount,
   onChange,
-  onOpenSettings,
 }: {
   activeView: WorkspaceView;
   eventCount: number;
   runCount: number;
   onChange(view: WorkspaceView): void;
-  onOpenSettings(): void;
 }) {
   return (
     <nav className="workspace-view-navigation" aria-label="Workspace views">
@@ -66,25 +62,13 @@ export function WorkspaceViewNavigation({
               onClick={() => onChange(view.id)}
               onKeyDown={(event) => moveWorkspaceView(event, view.id, onChange)}
             >
-              <Icon size={15} aria-hidden="true" />
-              <span>
-                <strong>{view.label}</strong>
-                <small>{view.description}</small>
-              </span>
+              <Icon size={14} aria-hidden="true" />
+              <strong>{view.label}</strong>
               {count !== undefined ? <i>{compactCount(count)}</i> : null}
             </button>
           );
         })}
       </div>
-      <button
-        className="workspace-settings-shortcut"
-        type="button"
-        onClick={onOpenSettings}
-      >
-        <Settings2 size={15} aria-hidden="true" />
-        <span>Settings</span>
-        <kbd>⌘,</kbd>
-      </button>
     </nav>
   );
 }

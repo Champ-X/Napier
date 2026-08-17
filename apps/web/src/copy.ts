@@ -1,6 +1,10 @@
-export const copy = {
+import { deepMergeCopy, getLocale } from "./locale";
+import { zh } from "./copy.zh";
+
+export const en = {
   appName: "Napier",
   appDescriptor: "Agent work ledger",
+  settings: "Settings",
   newThread: "New ledger",
   recentThreads: "Ledgers",
   noThreads: "No ledgers yet",
@@ -28,6 +32,8 @@ export const copy = {
   followUp: "Follow-up",
   shortcut: "⌘ ↵",
   tabs: {
+    conversation: "Conversation",
+    session: "Session",
     trace: "Trace",
     processes: "Processes",
     files: "Files",
@@ -897,4 +903,21 @@ export const copy = {
     demoDetail: "Add a provider key on the server to run a live model.",
     disconnected: "The workspace could not be loaded.",
   },
+  language: {
+    section: "Language",
+    sectionDescription: "Interface display language",
+    chinese: "中文",
+    english: "English",
+    current: "Current language",
+  },
+  narrative: {
+    blockedBy: "Blocked by",
+    next: "Next",
+    browserControls: "Browser controls",
+    stop: "Stop",
+  },
 } as const;
+
+export type Copy = typeof en;
+
+export const copy: Copy = deepMergeCopy(en, getLocale() === "zh" ? zh : {});

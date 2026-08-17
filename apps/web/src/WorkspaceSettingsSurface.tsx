@@ -1,8 +1,9 @@
 import { lazy, Suspense, useEffect, useRef } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-import { Bot, Brain, Cable, FolderTree, Settings2, X } from "lucide-react";
+import { Bot, Brain, Cable, FolderTree, Languages, Settings2, X } from "lucide-react";
 
 import { copy } from "./copy";
+import { getLocale, setLocale } from "./locale";
 import { ExtensionInspectorSurface } from "./ExtensionInspectorSurface";
 import { WorkspaceRootPanel } from "./WorkspaceRootPanel";
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
@@ -11,7 +12,12 @@ const LazyContextPanel = lazy(() => import("./ContextPanel"));
 const LazyMemoryPanel = lazy(() => import("./MemoryPanel"));
 
 type WorkspaceViewModel = ReturnType<typeof useWorkspaceViewModel>;
-export type SettingsSection = "context" | "memory" | "extensions" | "workspace";
+export type SettingsSection =
+  | "context"
+  | "memory"
+  | "extensions"
+  | "workspace"
+  | "language";
 
 const SETTINGS_SECTIONS: ReadonlyArray<{
   id: SettingsSection;
@@ -42,6 +48,12 @@ const SETTINGS_SECTIONS: ReadonlyArray<{
     label: copy.workspaceSurface.section,
     description: copy.workspaceSurface.sectionDescription,
     icon: FolderTree,
+  },
+  {
+    id: "language",
+    label: copy.language.section,
+    description: copy.language.sectionDescription,
+    icon: Languages,
   },
 ];
 
@@ -205,6 +217,7 @@ export function WorkspaceSettingsSurface({
               dataRoot={vm.bootstrap.workspace.dataRoot}
             />
           ) : null}
+          {section === "language" ? <LanguagePanel /> : null}
         </section>
       </aside>
     </>
@@ -215,6 +228,37 @@ function Loading({ label }: { label: string }) {
   return (
     <div className="context-loading" role="status">
       {label}
+    </div>
+  );
+}
+
+function LanguagePanel() {
+  const current = getLocale();
+  const options: Array<{ id: "zh" | "en"; label: string }> = [
+    { id: "zh", label: copy.language.chinese },
+    { id: "en", label: copy.language.english },
+  ];
+  return (
+    <div className="language-panel">
+      <p className="language-panel-current">
+        {copy.language.current}: <strong>{options.find((o) => o.id === current)?.label}</strong>
+      </p>
+      <div className="language-panel-options">
+        {options.map((option) => (
+          <button
+            type="button"
+            key={option.id}
+            className={option.id === current ? "is-active" : ""}
+            aria-pressed={option.id === current}
+            onClick={() => {
+              if (option.id !== current) setLocale(option.id);
+            }}
+          >
+            <Languages size={14} aria-hidden="true" />
+            {option.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
