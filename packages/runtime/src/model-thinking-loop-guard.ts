@@ -14,6 +14,7 @@ import {
   ModelThinkingLoopError,
   type ModelThinkingLoopEvidence,
 } from "./model-thinking-loop-policy.js";
+import { ModelSemanticStallObserver } from "./model-semantic-stall-observer.js";
 
 const MAX_BUFFERED_THINKING_BYTES = 32 * 1024;
 
@@ -86,6 +87,7 @@ export function guardModelThinkingLoop(
         let bufferedBytes = 0;
         let buffering = true;
         let detected: ModelThinkingLoopEvidence | undefined;
+        const semanticStall = new ModelSemanticStallObserver();
 
         try {
           while (true) {
@@ -100,6 +102,8 @@ export function guardModelThinkingLoop(
             }
             const event = step.value;
             if (event.type === "done" || event.type === "error") {
+              detected = semanticStall.terminalEvidence(event, attempt);
+              if (detected) break;
               const message =
                 event.type === "done" ? event.message : event.error;
               settle(message);
@@ -111,6 +115,7 @@ export function guardModelThinkingLoop(
               }
               return;
             }
+            semanticStall.observe(event);
             if (buffering) {
               buffered.push(event);
               if (event.type === "thinking_delta") {

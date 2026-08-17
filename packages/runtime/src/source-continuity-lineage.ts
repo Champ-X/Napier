@@ -1,4 +1,5 @@
 import type { RunRecord, ThreadImportProvenance } from "@napier/contracts";
+import { isManualRunRecoveryParent } from "@napier/contracts/manual-run-recovery";
 
 export const SOURCE_CONTINUITY_RETENTION_MS = 24 * 60 * 60 * 1_000;
 
@@ -35,7 +36,7 @@ export function sourceContinuityPredecessor(
     if (
       !parent ||
       parent.agentId !== current.agentId ||
-      parent.status !== "interrupted"
+      !isManualRunRecoveryParent(parent)
     ) {
       throw new Error("Source continuity recovery parent is invalid");
     }

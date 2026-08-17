@@ -29,6 +29,7 @@ import {
   type Usage,
   type UsageAccounting,
 } from "@napier/contracts";
+import { manualRunRecoveryBlockReason, manualRunRecoverySettlementMatches } from "@napier/contracts/manual-run-recovery";
 
 import {
   buildContextCompactionMessages,
@@ -853,33 +854,30 @@ export class AgentRuntime {
     options: ResumeInterruptedRunOptions,
   ): Promise<RunRecord> {
     const thread = this.store.getThread(options.threadId);
-    if (thread.status !== "waiting") {
-      throw new Error("Thread is not waiting on an interrupted run");
-    }
     const interrupted = this.store
       .listRuns(thread.id)
-      .filter((run) => run.status === "interrupted")
+      .filter((run) =>
+        manualRunRecoverySettlementMatches(thread.status, run),
+      )
       .findLast((run) => !options.runId || run.id === options.runId);
-    if (!interrupted) throw new Error("Interrupted run not found");
-    if (isWorkflowRunSource(interrupted.source)) {
+    if (!interrupted) throw new Error("Manually resumable run not found");
+    const blockReason = manualRunRecoveryBlockReason(interrupted);
+    if (blockReason === "workflow_managed") {
       throw new Error(
         "Workflow node Runs must be resumed through their Workflow Plan",
       );
     }
-    if (interrupted.source === "model_experiment") {
+    if (blockReason === "model_experiment") {
       throw new Error(
         "Model invocation experiment Runs must be retried from their source checkpoint",
       );
     }
-    if (interrupted.source === "tool_experiment") {
+    if (blockReason === "tool_experiment") {
       throw new Error(
         "Tool invocation experiment Runs must be retried from their source checkpoint",
       );
     }
-    if (
-      modernRunConfiguration(interrupted.configuration) &&
-      interrupted.configuration.executionMode === "agent_experiment_read_only"
-    ) {
+    if (blockReason === "agent_experiment") {
       throw new Error(
         "Agent message experiment Runs must be retried from their source checkpoint",
       );

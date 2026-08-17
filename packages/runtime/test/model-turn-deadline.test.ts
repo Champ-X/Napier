@@ -149,6 +149,34 @@ describe("Model turn deadline", () => {
     );
   });
 
+  it("does not treat hidden reasoning deltas as executable semantic progress", async () => {
+    vi.useFakeTimers();
+    const deadline = createModelTurnDeadline({
+      remainingRunMs: 1_000,
+      policy: {
+        turnTimeoutMs: 1_000,
+        firstEventTimeoutMs: 100,
+        idleTimeoutMs: 300,
+        semanticProgressTimeoutMs: 200,
+      },
+    });
+    deadline.observe(startEvent());
+    for (let elapsed = 50; elapsed < 200; elapsed += 50) {
+      await vi.advanceTimersByTimeAsync(50);
+      deadline.observe(thinkingEvent());
+    }
+    expect(deadline.signal.aborted).toBe(false);
+    await vi.advanceTimersByTimeAsync(50);
+    expect(deadline.signal.reason).toEqual(
+      expect.objectContaining({
+        evidence: expect.objectContaining({
+          reason: "semantic_progress_timeout",
+          limitMs: 200,
+        }),
+      }),
+    );
+  });
+
   it("lets root cancellation win without watchdog evidence", () => {
     const root = new AbortController();
     const deadline = createModelTurnDeadline({
@@ -199,6 +227,16 @@ function whitespaceTextEvent() {
     type: "text_delta" as const,
     contentIndex: 0,
     delta: " ",
+    partial: message,
+  };
+}
+
+function thinkingEvent() {
+  const message = fauxAssistantMessage("");
+  return {
+    type: "thinking_delta" as const,
+    contentIndex: 0,
+    delta: "still reasoning",
     partial: message,
   };
 }

@@ -89,6 +89,7 @@ import type {
 } from "./extension-package-types";
 import { signedExtensionPackageFilename } from "./extension-package-artifact-view-model";
 import { formatApiErrorMessage } from "./api-error";
+import { latestManuallyResumableRun } from "./manual-run-recovery";
 import { selectedModelAvailability } from "./model-selection-view-model";
 import { openTelemetryTraceArtifactFilename } from "./otel-trace-export-view";
 import { runReplaySnapshotFilename, threadReplayBundleFilename } from "./run-replay-view-model";
@@ -361,11 +362,8 @@ export function useWorkspaceViewModel() {
   );
   const resumableRun = useMemo(
     () =>
-      detail?.thread.status === "waiting"
-        ? detail.runs
-            .slice()
-            .reverse()
-            .find((run) => run.status === "interrupted")
+      detail
+        ? latestManuallyResumableRun(detail.thread.status, detail.runs)
         : undefined,
     [detail],
   );

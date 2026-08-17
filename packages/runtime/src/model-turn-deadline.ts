@@ -150,7 +150,7 @@ export function modelFailureError(
   stopReason: "error" | "aborted",
   diagnostic: string | undefined,
 ): Error {
-  const watchdog = parseWatchdogError(diagnostic);
+  const watchdog = parseModelTurnWatchdogError(diagnostic);
   return (
     watchdog ??
     parseModelThinkingLoopError(diagnostic) ??
@@ -200,7 +200,7 @@ function resolvePolicy(
   };
 }
 
-function parseWatchdogError(
+export function parseModelTurnWatchdogError(
   diagnostic: string | undefined,
 ): ModelTurnWatchdogError | undefined {
   const match = diagnostic ? WATCHDOG_MESSAGE.exec(diagnostic) : undefined;
@@ -237,14 +237,10 @@ function watchdogMessage(evidence: ModelTurnWatchdogEvidence): string {
 }
 
 function hasSemanticProgress(event: AssistantMessageEvent): boolean {
-  if (
-    event.type === "text_delta" ||
-    event.type === "thinking_delta" ||
-    event.type === "toolcall_delta"
-  ) {
+  if (event.type === "text_delta" || event.type === "toolcall_delta") {
     return event.delta.trim().length > 0;
   }
-  if (event.type === "text_end" || event.type === "thinking_end") {
+  if (event.type === "text_end") {
     return event.content.trim().length > 0;
   }
   return event.type === "toolcall_end";

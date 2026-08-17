@@ -2,7 +2,8 @@ export type ModelThinkingLoopReason =
   | "literal_repetition"
   | "near_paragraph_cluster"
   | "low_novelty_without_anchor"
-  | "overplanning_headings";
+  | "overplanning_headings"
+  | "semantic_stall";
 
 export interface ModelThinkingLoopEvidence {
   reason: ModelThinkingLoopReason;
@@ -14,7 +15,7 @@ export interface ModelThinkingLoopEvidence {
 }
 
 const MESSAGE =
-  /^Model thinking-loop guard triggered: (literal_repetition|near_paragraph_cluster|low_novelty_without_anchor|overplanning_headings) attempt=(1|2) bytes=(\d+) chunks=(\d+) unit_bytes=(\d+) unit_sha256=([a-f0-9]{64})\.$/u;
+  /^Model thinking-loop guard triggered: (literal_repetition|near_paragraph_cluster|low_novelty_without_anchor|overplanning_headings|semantic_stall) attempt=(1|2) bytes=(\d+) chunks=(\d+) unit_bytes=(\d+) unit_sha256=([a-f0-9]{64})\.$/u;
 
 export class ModelThinkingLoopError extends Error {
   constructor(readonly evidence: ModelThinkingLoopEvidence) {

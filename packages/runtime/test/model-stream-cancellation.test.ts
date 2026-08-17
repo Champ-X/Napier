@@ -480,6 +480,48 @@ describe("Agent model stream cancellation", () => {
     fixture.store.close();
   });
 
+  it("retries one reasoning-only semantic stall with minimal reasoning", async () => {
+    vi.useFakeTimers();
+    const fixture = await createFixture("semantic-stall-retry");
+    const started = deferred<void>();
+    fixture.models.registerProvider(semanticStallRetryProvider(started));
+    const runtime = new AgentRuntime(fixture.store, fixture.models);
+    fixture.models.modelTurnDeadlinePolicy = {
+      turnTimeoutMs: 1_000,
+      firstEventTimeoutMs: 100,
+      idleTimeoutMs: 300,
+      semanticProgressTimeoutMs: 200,
+    };
+
+    const pendingRun = runtime.runPrompt({
+      threadId: fixture.threadId,
+      text: "Recover from a reasoning-only stall.",
+      model: { provider: "semantic-stall-retry", id: "stuck" },
+    });
+    await started.promise;
+    await vi.advanceTimersByTimeAsync(200);
+    const run = await pendingRun;
+
+    expect(run.status, run.error).toBe("completed");
+    const events = await fixture.store.listEvents(fixture.threadId);
+    expect(
+      events.find((event) => event.type === "model.thinking_loop.detected")
+        ?.payload,
+    ).toEqual(
+      expect.objectContaining({
+        action: "retry",
+        reason: "semantic_stall",
+        attempt: 1,
+      }),
+    );
+    expect(
+      events.findLast((event) => event.type === "message.assistant")?.payload,
+    ).toEqual(
+      expect.objectContaining({ text: "RECOVERED_FROM_SEMANTIC_STALL" }),
+    );
+    fixture.store.close();
+  });
+
   it("keeps an empty budget settlement paused and resumable", async () => {
     vi.useFakeTimers();
     const fixture = await createFixture("empty-deadline");
@@ -754,6 +796,76 @@ function keepaliveProvider(
     getModels: () => [{ ...model, provider: "keepalive" }],
     stream,
     streamSimple: stream,
+  };
+}
+
+function semanticStallRetryProvider(
+  started: ReturnType<typeof deferred<void>>,
+): Provider<Api> {
+  const provider = hangingProvider(async () => new Promise(() => undefined));
+  const model = provider.getModels()[0]!;
+  let attempt = 0;
+  const stream = (
+    _model: unknown,
+    _context: unknown,
+    options?: { reasoning?: string },
+  ) => {
+    attempt += 1;
+    if (attempt >= 2) {
+      if (attempt === 2) expect(options?.reasoning).toBe("minimal");
+      const output = createAssistantMessageEventStream();
+      const text =
+        attempt === 2 ? "RECOVERED_FROM_SEMANTIC_STALL" : '{"facts":[]}';
+      const message = {
+        ...fauxAssistantMessage(text),
+        api: model.api,
+        provider: "semantic-stall-retry",
+        model: model.id,
+      };
+      queueMicrotask(() => {
+        output.push({ type: "start", partial: message });
+        output.push({
+          type: "text_delta",
+          contentIndex: 0,
+          delta: text,
+          partial: message,
+        });
+        output.push({ type: "done", reason: "stop", message });
+      });
+      return output;
+    }
+    const output = createAssistantMessageEventStream();
+    const message = {
+      ...fauxAssistantMessage(""),
+      api: model.api,
+      provider: "semantic-stall-retry",
+      model: model.id,
+    };
+    queueMicrotask(() => {
+      output.push({ type: "start", partial: message });
+      started.resolve();
+      for (const delayMs of [50, 100, 150]) {
+        const timer = setTimeout(() => {
+          output.push({
+            type: "thinking_delta",
+            contentIndex: 0,
+            delta: "still reasoning",
+            partial: message,
+          });
+        }, delayMs);
+        timer.unref?.();
+      }
+    });
+    return output;
+  };
+  return {
+    ...provider,
+    id: "semantic-stall-retry",
+    getModels: () => [
+      { ...model, provider: "semantic-stall-retry", reasoning: true },
+    ],
+    stream: stream as Provider<Api>["stream"],
+    streamSimple: stream as Provider<Api>["streamSimple"],
   };
 }
 

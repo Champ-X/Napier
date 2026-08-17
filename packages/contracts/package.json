@@ -20,6 +20,10 @@
       "types": "./dist/management-http.d.ts",
       "import": "./dist/management-http.js"
     },
+    "./manual-run-recovery": {
+      "types": "./dist/manual-run-recovery.d.ts",
+      "import": "./dist/manual-run-recovery.js"
+    },
     "./kernel-plugins": {
       "types": "./dist/kernel-plugins.d.ts",
       "import": "./dist/kernel-plugins.js"

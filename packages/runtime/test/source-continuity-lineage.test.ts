@@ -19,6 +19,17 @@ describe("Source continuity lineage", () => {
     expect(predecessor([parent, current], current.id)).toEqual(parent);
   });
 
+  it("selects a paused-budget recovery parent", () => {
+    const parent = run("run_parent0003", "failed", "user", 0, {
+      outcome: "paused_budget",
+    });
+    const current = run("run_current011", "running", "recovery", 2, {
+      parentRunId: parent.id,
+    });
+
+    expect(predecessor([parent, current], current.id)).toEqual(parent);
+  });
+
   it("rejects a cross-Agent recovery parent without blocking explicit imported recovery", () => {
     const parent = run("run_parent0002", "interrupted", "user", 0);
     const current = run("run_current008", "running", "recovery", 2, {
