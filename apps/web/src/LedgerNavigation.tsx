@@ -1,12 +1,10 @@
-import { lazy, Suspense, useState } from "react";
+import { useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Settings2 } from "lucide-react";
 
 import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
 import { copy } from "./copy";
-import { WorkspaceProjects } from "./WorkspaceProjects";
+import { WorkspaceTree } from "./WorkspaceTree";
 import type { TrashedThreadReceipt } from "./use-thread-trash";
-
-const LazyThreadList = lazy(() => import("./ThreadList"));
 
 export function LedgerNavigation({
   bootstrap,
@@ -68,23 +66,16 @@ export function LedgerNavigation({
         <kbd>N</kbd>
       </button>
 
-      <div className="nav-section-heading">
-        <span>{copy.recentThreads}</span>
-        <span>{String(bootstrap.threads.length).padStart(2, "0")}</span>
-      </div>
-      <Suspense fallback={<div className="thread-list" />}>
-        <LazyThreadList
-          threads={bootstrap.threads}
-          selectedThreadId={selectedThreadId}
-          busyThreadId={busyThreadId}
-          trashedThread={trashedThread}
-          onSelect={onSelect}
-          onTrash={onTrash}
-          onRestore={onRestore}
-        />
-      </Suspense>
-
-      <WorkspaceProjects currentRoot={bootstrap.workspace.root} />
+      <WorkspaceTree
+        currentRoot={bootstrap.workspace.root}
+        threads={bootstrap.threads}
+        selectedThreadId={selectedThreadId}
+        busyThreadId={busyThreadId}
+        trashedThread={trashedThread}
+        onSelect={onSelect}
+        onTrash={onTrash}
+        onRestore={onRestore}
+      />
 
       <button
         className="workspace-settings-button"

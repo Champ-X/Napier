@@ -16,7 +16,7 @@
       transparent 0 27px,
       rgb(67 78 70 / 3.5%) 28px
     ),
-    #f8f4eb;
+    #edf2fa;
   border: 1px solid var(--rule-strong);
   border-radius: 3px;
   box-shadow: 4px 5px 0 rgb(60 52 40 / 6%);
@@ -148,7 +148,7 @@
 .trace-trajectory-stats div {
   min-width: 0;
   padding: 7px 8px 6px;
-  background: rgb(250 247 240 / 92%);
+  background: rgb(240 245 253 / 92%);
 }
 
 .trace-trajectory-stats dt {
@@ -275,7 +275,7 @@
   position: relative;
   padding: 10px 10px 8px;
   overflow: hidden;
-  color: #e7e7df;
+  color: #dfe4ec;
   background:
     radial-gradient(circle at 77% 0, rgb(94 138 126 / 25%), transparent 42%),
     repeating-linear-gradient(
@@ -431,7 +431,7 @@
 .trace-segment.is-selected {
   z-index: 2;
   filter: brightness(1.2);
-  outline: 1px solid #f5ede0;
+  outline: 1px solid #e7ecf4;
   outline-offset: 1px;
   transform: translateY(-1px);
 }
@@ -519,7 +519,7 @@
 }
 
 .trace-run-heading:hover {
-  background: rgb(236 229 217 / 65%);
+  background: rgb(223 228 236 / 65%);
 }
 
 .trace-run-ordinal {
@@ -645,7 +645,7 @@
   width: 7px;
   height: 7px;
   background: var(--trajectory-input);
-  border: 2px solid #f8f4eb;
+  border: 2px solid #edf2fa;
   border-radius: 50%;
   box-shadow: 0 0 0 1px var(--trajectory-input);
 }

@@ -1,4 +1,5 @@
 import type { ThreadDetail } from "@napier/contracts";
+import { copy } from "./copy";
 import { getLocale } from "./locale";
 import { taskRunProgress } from "./task-run-progress";
 
@@ -27,7 +28,7 @@ export function taskNarrative(
 ): TaskNarrative {
   if (!detail)
     return localizePhaseLabel(
-      baseNarrative("ready", "Ready", "Choose or create a ledger"),
+      baseNarrative("ready", "Ready", copy.narrative.emptyAction),
     );
   const projected = projectedNarrative(detail, now);
   return localizePhaseLabel(projected ?? legacyTaskNarrative(detail, now));

@@ -6,12 +6,12 @@
   margin-bottom: 18px;
   overflow: hidden;
   background:
-    linear-gradient(rgb(250 247 239 / 94%), rgb(250 247 239 / 94%)),
+    linear-gradient(rgb(240 245 253 / 94%), rgb(240 245 253 / 94%)),
     repeating-linear-gradient(0deg, transparent 0 22px, rgb(70 91 78 / 9%) 23px);
   border: 1px solid var(--rule-strong);
   border-top: 3px double var(--ledger);
   box-shadow:
-    3px 4px 0 rgb(59 51 38 / 7%),
+    3px 4px 0 rgb(51 54 60 / 7%),
     inset 5px 0 0 rgb(168 71 50 / 78%);
   animation: entry-rise 240ms ease-out both;
 }
@@ -124,7 +124,7 @@
   font-family: var(--mono);
   font-size: 8px;
   color: var(--ink);
-  background: rgb(255 253 247 / 88%);
+  background: rgb(246 251 255 / 88%);
   border: 1px solid var(--rule-strong);
   border-radius: 0;
 }
@@ -142,7 +142,7 @@
   gap: 8px !important;
   align-items: center;
   padding: 7px 8px;
-  background: rgb(255 253 247 / 72%);
+  background: rgb(246 251 255 / 72%);
   border: 1px solid var(--rule);
 }
 
@@ -226,7 +226,7 @@
   display: grid;
   gap: 9px;
   padding: 10px;
-  background: rgb(255 253 247 / 80%);
+  background: rgb(246 251 255 / 80%);
   border: 1px solid var(--rule-strong);
   box-shadow: inset 0 0 0 2px rgb(255 255 255 / 42%);
 }
@@ -286,7 +286,7 @@
   gap: 4px;
   min-width: 0;
   padding: 9px 11px;
-  background: rgb(250 247 239 / 96%);
+  background: rgb(240 245 253 / 96%);
 }
 
 .agent-experiment-sides > div:last-child {
@@ -324,7 +324,7 @@
   gap: 2px;
   min-width: 0;
   padding: 7px 8px;
-  background: rgb(250 247 239 / 96%);
+  background: rgb(240 245 253 / 96%);
 }
 
 .agent-experiment-register dd {
@@ -397,7 +397,7 @@
       transparent 0 7px,
       rgb(91 104 95 / 5%) 7px 8px
     ),
-    rgb(250 247 239 / 92%);
+    rgb(240 245 253 / 92%);
   border: 1px solid var(--rule);
 }
 

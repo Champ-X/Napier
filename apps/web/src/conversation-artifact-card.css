@@ -2,7 +2,7 @@
   margin: -11px 0 25px 37px;
   padding: 12px;
   color: var(--ink-soft);
-  background: rgb(244 240 231 / 88%);
+  background: rgb(233 238 246 / 88%);
   border: 1px solid var(--rule);
   border-left: 3px solid var(--ochre);
   border-radius: 2px;
@@ -290,7 +290,7 @@
 .conversation-network-activity {
   margin: -11px 0 25px 37px;
   color: var(--ink-soft);
-  background: rgb(244 240 231 / 82%);
+  background: rgb(233 238 246 / 82%);
   border: 1px solid var(--rule);
   border-left: 3px solid var(--ochre);
   border-radius: 2px;
@@ -402,7 +402,7 @@
 .conversation-browser-activity {
   margin: -11px 0 25px 37px;
   color: var(--ink-soft);
-  background: rgb(239 235 229 / 86%);
+  background: rgb(229 234 242 / 86%);
   border: 1px solid var(--rule);
   border-left: 3px solid var(--ochre);
   border-radius: 2px;
@@ -515,7 +515,7 @@
 .conversation-plan {
   margin: -11px 0 25px 37px;
   color: var(--ink-soft);
-  background: rgb(244 240 231 / 86%);
+  background: rgb(233 238 246 / 86%);
   border: 1px solid var(--rule);
   border-left: 3px solid var(--ochre);
   border-radius: 2px;
@@ -675,7 +675,7 @@
 .conversation-approval {
   margin: -11px 0 25px 37px;
   color: var(--ink-soft);
-  background: rgb(244 240 231 / 86%);
+  background: rgb(233 238 246 / 86%);
   border: 1px solid var(--rule);
   border-left: 3px solid var(--ochre);
   border-radius: 2px;
@@ -993,7 +993,7 @@
   color: var(--ink-soft);
   background:
     linear-gradient(90deg, rgb(188 137 41 / 7%), transparent 42%),
-    rgb(244 240 231 / 88%);
+    rgb(233 238 246 / 88%);
   border: 1px solid var(--rule);
   border-left: 3px solid var(--ochre);
   border-radius: 2px;

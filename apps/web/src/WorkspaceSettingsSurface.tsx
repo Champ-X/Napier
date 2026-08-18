@@ -27,20 +27,20 @@ const SETTINGS_SECTIONS: ReadonlyArray<{
 }> = [
   {
     id: "context",
-    label: "Agent & Model",
-    description: "Providers, policies, skills and credentials",
+    label: copy.settingsSurface.contextSection,
+    description: copy.settingsSurface.contextSectionDescription,
     icon: Bot,
   },
   {
     id: "memory",
-    label: "Memory",
-    description: "Workspace knowledge and review cadence",
+    label: copy.settingsSurface.memorySection,
+    description: copy.settingsSurface.memorySectionDescription,
     icon: Brain,
   },
   {
     id: "extensions",
-    label: "Extensions",
-    description: "MCP, packages and trust",
+    label: copy.settingsSurface.extensionsSection,
+    description: copy.settingsSurface.extensionsSectionDescription,
     icon: Cable,
   },
   {
@@ -97,19 +97,17 @@ export function WorkspaceSettingsSurface({
       <button
         type="button"
         className="workspace-settings-backdrop"
-        aria-label="Close Settings"
+        aria-label={copy.settingsSurface.close}
         onClick={onClose}
       />
-      <aside className="workspace-settings-surface" aria-label="Settings">
+      <aside className="workspace-settings-surface" aria-label={copy.settingsSurface.title}>
         <header className="settings-surface-heading">
           <div>
-            <span>Workspace configuration</span>
-            <h2>Settings</h2>
-            <p>
-              Configuration that survives beyond a single conversation or Run.
-            </p>
+            <span>{copy.settingsSurface.eyebrow}</span>
+            <h2>{copy.settingsSurface.title}</h2>
+            <p>{copy.settingsSurface.body}</p>
           </div>
-          <button type="button" aria-label="Close Settings" onClick={onClose}>
+          <button type="button" aria-label={copy.settingsSurface.close} onClick={onClose}>
             <X size={16} aria-hidden="true" />
           </button>
         </header>

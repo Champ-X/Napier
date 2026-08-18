@@ -1,7 +1,7 @@
 .conversation-activity-group {
   margin: -4px 0 14px 37px;
   color: var(--ink-soft);
-  background: rgb(241 237 227 / 82%);
+  background: rgb(230 235 243 / 82%);
   border: 1px solid var(--rule);
   border-left: 3px solid var(--ledger);
   border-radius: 2px;

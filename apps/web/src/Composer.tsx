@@ -16,6 +16,7 @@ const LazyComposerCapabilityControl = lazy(
   () => import("./ComposerCapabilityControl"),
 );
 const LazyProviderSetupCard = lazy(() => import("./ProviderSetupCard"));
+const LazyWorkspaceFolderPicker = lazy(() => import("./WorkspaceFolderPicker"));
 
 type WorkspaceViewModel = ReturnType<typeof useWorkspaceViewModel>;
 
@@ -58,6 +59,7 @@ export function Composer({
   const [runReadiness, setRunReadiness] = useState<ComposerRunReadiness>(
     initialComposerRunReadiness,
   );
+  const [pickerOpen, setPickerOpen] = useState(false);
   const readinessPending = composerReadinessPending(runReadiness);
   const canSubmit = canStartRun && runReadiness.canRun;
   const submit = useCallback(() => {
@@ -105,10 +107,12 @@ export function Composer({
           <details className="composer-options">
             <summary>
               <SlidersHorizontal size={12} aria-hidden="true" />
-              Run options
+              {copy.composer.runOptions}
             </summary>
             <div className="composer-options-popover">
-              <Suspense fallback={<span>Checking run options...</span>}>
+              <Suspense
+                fallback={<span>{copy.composer.checkingRunOptions}</span>}
+              >
                 <LazyComposerCapabilityControl
                   agent={activeAgent}
                   disabled={vm.isRunning || !vm.detail}
@@ -131,7 +135,7 @@ export function Composer({
           <button
             type="button"
             className="composer-workspace-chip"
-            onClick={onOpenWorkspace}
+            onClick={() => setPickerOpen(true)}
             title={workspaceRoot}
           >
             <FolderTree size={12} aria-hidden="true" />
@@ -200,6 +204,15 @@ export function Composer({
         readiness={runReadiness}
         pending={readinessPending}
       />
+      {pickerOpen ? (
+        <Suspense fallback={null}>
+          <LazyWorkspaceFolderPicker
+            currentRoot={workspaceRoot}
+            onClose={() => setPickerOpen(false)}
+            onManualEntry={onOpenWorkspace}
+          />
+        </Suspense>
+      ) : null}
     </form>
   );
 }

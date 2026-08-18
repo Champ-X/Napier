@@ -6,17 +6,17 @@
   margin-bottom: 10px;
   overflow: hidden;
   background:
-    linear-gradient(rgb(250 246 236 / 94%), rgb(250 246 236 / 94%)),
+    linear-gradient(rgb(239 244 252 / 94%), rgb(239 244 252 / 94%)),
     repeating-linear-gradient(
       0deg,
       transparent 0,
       transparent 22px,
-      rgb(83 75 60 / 8%) 23px
+      rgb(75 78 84 / 8%) 23px
     );
   border: 1px solid var(--rule-strong);
   border-top: 3px double var(--vermilion);
   box-shadow:
-    3px 4px 0 rgb(71 63 48 / 6%),
+    3px 4px 0 rgb(63 66 72 / 6%),
     inset 4px 0 0 rgb(164 75 56 / 78%);
   animation: entry-rise 220ms ease-out both;
 }
@@ -204,7 +204,7 @@
   font-family: var(--mono);
   font-size: 7px;
   font-weight: 600;
-  color: #f7f3e8;
+  color: #ecf1f9;
   text-transform: uppercase;
   letter-spacing: 0.07em;
   background: var(--ledger);

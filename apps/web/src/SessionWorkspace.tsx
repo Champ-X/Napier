@@ -39,14 +39,14 @@ const SESSION_SECTIONS: ReadonlyArray<{
   label: string;
   icon: typeof Archive;
 }> = [
-  { id: "plan", label: "Plan", icon: ListChecks },
-  { id: "studio", label: "Studio", icon: Wrench },
-  { id: "goal", label: "Goal", icon: Target },
-  { id: "files", label: "Files", icon: FolderArchive },
-  { id: "browser", label: "Browser", icon: Globe2 },
-  { id: "processes", label: "Processes", icon: TerminalSquare },
-  { id: "lab", label: "Run Lab", icon: FlaskConical },
-  { id: "automations", label: "Automations", icon: CalendarClock },
+  { id: "plan", label: copy.sections.plan, icon: ListChecks },
+  { id: "studio", label: copy.sections.studio, icon: Wrench },
+  { id: "goal", label: copy.sections.goal, icon: Target },
+  { id: "files", label: copy.sections.files, icon: FolderArchive },
+  { id: "browser", label: copy.sections.browser, icon: Globe2 },
+  { id: "processes", label: copy.sections.processes, icon: TerminalSquare },
+  { id: "lab", label: copy.sections.lab, icon: FlaskConical },
+  { id: "automations", label: copy.sections.automations, icon: CalendarClock },
 ];
 
 export function SessionWorkspace({
@@ -66,22 +66,28 @@ export function SessionWorkspace({
     <div className="session-workspace">
       <header className="session-workspace-heading">
         <div>
-          <span>Thread-bound control plane</span>
-          <h2>Session</h2>
-          <p>
-            Durable intent, workspace artifacts, active processes, browser
-            state, and replay evidence for this ledger.
-          </p>
+          <span>{copy.sessionView.eyebrow}</span>
+          <h2>{copy.sessionView.title}</h2>
+          <p>{copy.sessionView.body}</p>
         </div>
         <dl className="session-stats">
-          <Stat label="Runs" value={vm.detail?.runs.length ?? 0} />
-          <Stat label="Plans" value={vm.detail?.plans.length ?? 0} />
-          <Stat label="Events" value={vm.detail?.events.length ?? 0} />
+          <Stat
+            label={copy.sessionView.runs}
+            value={vm.detail?.runs.length ?? 0}
+          />
+          <Stat
+            label={copy.sessionView.plans}
+            value={vm.detail?.plans.length ?? 0}
+          />
+          <Stat
+            label={copy.sessionView.events}
+            value={vm.detail?.events.length ?? 0}
+          />
         </dl>
       </header>
       <nav
         className="session-tool-navigation"
-        aria-label="Session tools"
+        aria-label={copy.sessionView.tools}
         role="tablist"
       >
         {SESSION_SECTIONS.map((entry) => {

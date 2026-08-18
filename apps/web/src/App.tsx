@@ -69,7 +69,7 @@ export function App() {
           isRunning={vm.isRunning}
           model={activeModel}
           status={vm.detail?.thread.status}
-          title={vm.detail?.thread.title ?? copy.welcome.title}
+          title={vm.detail?.thread.title ?? ""}
           onOpenSettings={shell.openSettings}
         >
           <WorkspaceViewNavigation

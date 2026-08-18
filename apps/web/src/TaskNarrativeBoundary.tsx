@@ -17,6 +17,9 @@ export function TaskNarrativeBoundary({
   onOpenBrowserControls(): void;
   onStop(): void;
 }) {
+  // No active thread: skip the status strip entirely so the empty workspace
+  // stays a calm, centered welcome instead of a stray "Ready" bar.
+  if (!detail) return null;
   return (
     <Suspense
       fallback={<section className="task-narrative" aria-label="Task status" />}

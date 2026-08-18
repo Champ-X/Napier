@@ -11,9 +11,7 @@ export function WelcomePanel() {
       <span className="eyebrow">{copy.welcome.eyebrow}</span>
       <h2>{copy.welcome.title}</h2>
       <p>{copy.welcome.body}</p>
-      <span className="welcome-cue">
-        Write the task below. Evidence stays attached.
-      </span>
+      <span className="welcome-cue">{copy.welcome.cue}</span>
     </div>
   );
 }

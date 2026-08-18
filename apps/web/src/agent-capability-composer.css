@@ -4,7 +4,7 @@
   flex-direction: column;
   gap: 6px;
   padding: 6px 8px;
-  background: rgb(238 231 217 / 62%);
+  background: rgb(224 229 237 / 62%);
   border: 1px solid var(--rule);
   border-left: 3px solid var(--ledger);
 }
@@ -19,7 +19,7 @@
   color: var(--ledger);
   letter-spacing: 0.08em;
   content: "NEXT RUN ONLY";
-  background: rgb(238 231 217 / 92%);
+  background: rgb(224 229 237 / 92%);
 }
 
 .agent-capability-composer.state-stale,

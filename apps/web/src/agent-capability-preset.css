@@ -2,7 +2,7 @@
   display: grid;
   gap: 8px;
   padding: 10px;
-  background: rgb(238 231 217 / 48%);
+  background: rgb(224 229 237 / 48%);
   border: 1px solid var(--rule);
   border-left: 3px solid var(--ledger);
 }

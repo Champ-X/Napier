@@ -5,17 +5,7 @@ import type { ThreadSummary } from "@napier/contracts";
 import { copy } from "./copy";
 import type { TrashedThreadReceipt } from "./use-thread-trash";
 
-const trashCopy = {
-  action: "Move ledger to trash",
-  activeRun: "Stop the active run before deleting this ledger",
-  confirm: "Move this ledger to trash?",
-  confirmAction: "Trash",
-  cancel: "Cancel deletion",
-  trashing: "Trashing...",
-  trashed: "Moved to trash",
-  undo: "Undo",
-  restoring: "Restoring...",
-} as const;
+const trashCopy = copy.trash;
 
 export function ThreadList({
   threads,

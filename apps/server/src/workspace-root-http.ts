@@ -11,6 +11,7 @@ import {
   jsonError,
   setBodyContentSha256Header,
 } from "./http-response-evidence.js";
+import { registerWorkspaceDirectoriesHttp } from "./workspace-directories-http.js";
 import { parseRebindWorkspaceRootRequest } from "./workspace-root-http-validation.js";
 import {
   resolveRebindWorkspaceRoot,
@@ -37,6 +38,9 @@ export function registerWorkspaceRootHttp(
   services: WorkspaceRootHttpServices,
   rebindWorkspace?: RebindWorkspace,
 ): void {
+  // The folder picker's directory browser shares this "change the workspace
+  // root" surface, so it is mounted here rather than in app.ts.
+  registerWorkspaceDirectoriesHttp(app);
   app.post("/api/workspace/root", async (context) => {
     let input: unknown;
     try {

@@ -6,7 +6,7 @@
   margin-bottom: 18px;
   overflow: hidden;
   background:
-    linear-gradient(rgb(249 245 236 / 92%), rgb(249 245 236 / 92%)),
+    linear-gradient(rgb(238 243 251 / 92%), rgb(238 243 251 / 92%)),
     repeating-linear-gradient(
       0deg,
       transparent 0,
@@ -16,7 +16,7 @@
   border: 1px solid var(--rule-strong);
   border-top: 3px double var(--ledger);
   box-shadow:
-    3px 4px 0 rgb(71 63 48 / 6%),
+    3px 4px 0 rgb(63 66 72 / 6%),
     inset 4px 0 0 rgb(164 75 56 / 72%);
   animation: entry-rise 240ms ease-out both;
 }
@@ -31,7 +31,7 @@
   content: "";
   background: repeating-linear-gradient(
     0deg,
-    rgb(126 113 87 / 20%) 0 3px,
+    rgb(108 115 125 / 20%) 0 3px,
     transparent 3px 7px
   );
 }
@@ -357,7 +357,7 @@
   gap: 3px;
   min-width: 0;
   padding: 5px 6px;
-  background: rgb(235 229 217 / 60%);
+  background: rgb(222 227 235 / 60%);
 }
 
 .workflow-preview-bindings code {
@@ -382,7 +382,7 @@
   gap: 5px;
   align-items: center;
   padding: 6px;
-  background: rgb(244 240 231 / 78%);
+  background: rgb(233 238 246 / 78%);
   border-left: 2px solid var(--ledger);
 }
 
@@ -488,7 +488,7 @@
   display: grid;
   gap: 3px;
   padding: 6px;
-  background: rgb(235 229 217 / 58%);
+  background: rgb(222 227 235 / 58%);
 }
 
 .workflow-comparison-metrics dd {
@@ -511,7 +511,7 @@
   display: grid;
   gap: 6px;
   padding: 8px;
-  background: rgb(250 247 240 / 84%);
+  background: rgb(240 245 253 / 84%);
   border: 1px solid var(--rule);
 }
 
@@ -555,7 +555,7 @@
   font-family: var(--mono);
   font-size: 6px;
   color: var(--ink-faint);
-  background: rgb(235 229 217 / 45%);
+  background: rgb(222 227 235 / 45%);
 }
 
 .workflow-node-status span:last-child {

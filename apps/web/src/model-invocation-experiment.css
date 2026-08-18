@@ -3,7 +3,7 @@
   --call-ink-soft: rgb(48 79 99 / 10%);
 
   box-shadow:
-    3px 4px 0 rgb(59 51 38 / 7%),
+    3px 4px 0 rgb(51 54 60 / 7%),
     inset 5px 0 0 rgb(48 79 99 / 76%);
 }
 
@@ -42,7 +42,7 @@
       transparent 0 31px,
       rgb(48 79 99 / 5%) 31px 32px
     ),
-    rgb(250 247 239 / 94%);
+    rgb(240 245 253 / 94%);
   border: 1px solid var(--rule);
 }
 

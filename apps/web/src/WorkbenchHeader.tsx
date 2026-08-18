@@ -29,7 +29,14 @@ export function WorkbenchHeader({
   return (
     <header className="workbench-header">
       <div className="thread-heading">
-        <h1>{title}</h1>
+        {title ? (
+          <h1>{title}</h1>
+        ) : (
+          <span className="thread-heading-idle">
+            <strong>{copy.appName}</strong>
+            <small>{copy.appDescriptor}</small>
+          </span>
+        )}
       </div>
       {children}
       <div className="run-meta">
