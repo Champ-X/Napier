@@ -342,7 +342,8 @@ Napier 当前实现更接近：
 
 SQLite 中有两类核心数据：
 
-- `workspace_state`：整个领域状态的 JSON snapshot，带 revision；
+- `workspace_state`：整个领域状态的 JSON snapshot，带全局 `revision` 和
+  `snapshot_revision` 水位；
 - `ledger_events`：按 `(thread_id, seq)` 存储的事件。
 
 Operator Decision、Run Control Message、Agent Milestone 等会从 Events 投影；Thread、Run、Agent、Plan 等也保留在 `workspace_state` 中。因此不能在面试里说“所有状态都只靠事件从零重建”。
@@ -375,7 +376,8 @@ Ledger 初始化使用：
 2. 读取当前 workspace revision；
 3. 与调用方的 `expectedRevision` 做 CAS；
 4. 插入本批事件；
-5. 将 `workspace_state.revision + 1` 并更新 state JSON；
+5. 普通单事件只将 `workspace_state.revision + 1`；state/turn/terminal/每
+   64 事件边界同时更新 state JSON 和 `snapshot_revision`；
 6. `COMMIT`；
 7. 任一步失败执行 rollback。
 
@@ -400,7 +402,7 @@ Ledger 初始化使用：
 
 ### 5.5 JSON/JSONL 文件是什么角色
 
-`workspace.json` 和每 Thread 的 JSONL 是兼容性投影，不是权威存储。SQLite commit 成功后才异步/后置重写这些投影；投影写失败会被计量，但不会推翻已经成功的 SQLite 事务。
+`workspace.json` 和每 Thread 的 JSONL 是兼容性投影，不是权威存储。普通事件只同步提交 SQLite，不再每次重写完整文件；state-only commit、turn/terminal 边界、每 64 个 Thread 事件、显式 flush 和受管 shutdown 才刷新一致的 state + dirty Thread 投影。投影写失败会被计量，但不会推翻已经成功的 SQLite 事务；重启只要 SQLite 存在就以它为准。
 
 这解释了测试“compatibility projections drift 时仍以 SQLite 为准”。
 
@@ -425,8 +427,10 @@ Run 状态创建和 `run.started` 事件不是同一笔超大事务；外部工�
 
 要主动承认：
 
-- 每次 mutation 会序列化完整 `workspace_state`，状态越大写放大越明显；
-- compatibility event projection 需要读取/重写 Thread 事件；
+- state mutation 和 checkpoint 仍会序列化完整 `workspace_state`，状态越大
+  写放大仍然存在；普通单事件已改为 event-only CAS；
+- compatibility event projection 在 checkpoint 仍需读取/重写 dirty Thread
+  的完整事件；
 - Thread seq 是单点有序，超高吞吐下天然限制并发；
 - 当前性能门槛只覆盖 1,000 事件，不代表百万事件能力；
 - `store.ts` 和 Server composition root 仍然很大，是明确的架构债务。
@@ -1040,7 +1044,7 @@ Napier 实际复用 Pi 的模型与 Agent Loop 能力，不重复造 provider ad
 
 ### Q37：如果重做一次，你最先改什么？
 
-先缩小核心：将 Thread、Run、Agent Revision、Event 和 Artifact 拆成规范化 Store port，避免 `workspace_state` 整体序列化；同时保留同事务事件提交。第二是给核心事件批次引入签名 checkpoint。第三是从真实任务成功率反推能力优先级，减少治理面过宽。
+继续缩小核心：目前普通单事件已经不再整体序列化 `workspace_state`，下一步应将 Run、Agent Revision、Plan 和 Artifact 等高频 state mutation 拆成规范化表/Store port，同时保留同事务事件提交。第二是给核心事件批次引入签名 checkpoint。第三是从真实任务成功率反推能力优先级，减少治理面过宽。
 
 ### Q38：项目最大的失败或不足是什么？
 
@@ -1100,12 +1104,15 @@ Run A running
 ```text
 BEGIN IMMEDIATE
   check workspace revision == expected
-  insert ledger_events batch
-  update workspace_state + revision
+  insert one ledger_event
+  update workspace_state.revision only
+  at state/turn/terminal/64-event boundary:
+    replace state_json and set snapshot_revision = revision
 COMMIT
 
 after commit:
-  refresh workspace.json / thread.jsonl compatibility projections
+  at state/turn/terminal/64-event/shutdown boundary:
+    refresh workspace.json + dirty thread.jsonl compatibility projections
 ```
 
 ---
