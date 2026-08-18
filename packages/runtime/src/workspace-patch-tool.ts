@@ -115,7 +115,7 @@ export function createWorkspacePatchTool(
     name: "apply_patch",
     label: "Apply patch",
     description:
-      "Atomically create/edit one workspace-relative UTF-8 file. create requires expectedSha256=null, full content, and optional parent directories. Existing-file operations require complete expectedSha256 from read_file/read_symbol: replace uses oldText that occurs once; hashline_replace uses optional 1-based line + anchorSha256; hashrange_replace uses inclusive lines + rangeSha256. newText may expand content; empty newText deletes the match/range. Enabled LSP diagnostics run before/after supported writes; verification selects bounded reverse-dependent tests.",
+      "Atomically create/edit one workspace-relative UTF-8 file. create requires expectedSha256=null, root content, and optional parent directories. Existing-file operations require expectedSha256 and edits[] entries: replace {oldText,newText}; hashline_replace {line?,anchorSha256,newText}; hashrange_replace {startLine,endLine,rangeSha256,newText}. Never put edit content or anchors at the root. An empty newText deletes the match/range. Enabled LSP diagnostics run before/after supported writes; verification selects bounded reverse-dependent tests.",
     parameters: applyPatchSchema,
     async execute(_toolCallId, rawInput, signal) {
       const input = parseWorkspacePatchInput(rawInput);

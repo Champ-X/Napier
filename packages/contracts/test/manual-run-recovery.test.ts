@@ -1,5 +1,6 @@
 import type { RunRecord } from "../src/index.js";
 import {
+  isManualRunRecoveryParent,
   isManuallyResumableRun,
   manualRunRecoveryBlockReason,
   manualRunRecoverySettlementMatches,
@@ -7,28 +8,24 @@ import {
 import { describe, expect, it } from "vitest";
 
 describe("manual Run recovery", () => {
-  it("accepts interrupted and paused-budget settlements only in their matching Thread states", () => {
+  it("accepts interrupted and resumable failed settlements only in their matching Thread states", () => {
     const interrupted = run("interrupted");
     const pausedBudget = run("failed", { outcome: "paused_budget" });
+    const partial = run("failed", { outcome: "partial" });
 
     expect(manualRunRecoverySettlementMatches("waiting", interrupted)).toBe(
       true,
     );
-    expect(manualRunRecoverySettlementMatches("idle", pausedBudget)).toBe(
-      true,
-    );
-    expect(manualRunRecoverySettlementMatches("idle", interrupted)).toBe(
-      false,
-    );
+    expect(manualRunRecoverySettlementMatches("idle", pausedBudget)).toBe(true);
+    expect(manualRunRecoverySettlementMatches("idle", partial)).toBe(true);
+    expect(manualRunRecoverySettlementMatches("idle", interrupted)).toBe(false);
     expect(manualRunRecoverySettlementMatches("waiting", pausedBudget)).toBe(
       false,
     );
-    expect(
-      manualRunRecoverySettlementMatches(
-        "idle",
-        run("failed", { outcome: "partial" }),
-      ),
-    ).toBe(false);
+    expect(manualRunRecoverySettlementMatches("waiting", partial)).toBe(false);
+    expect(isManualRunRecoveryParent(interrupted)).toBe(true);
+    expect(isManualRunRecoveryParent(pausedBudget)).toBe(true);
+    expect(isManualRunRecoveryParent(partial)).toBe(true);
   });
 
   it("keeps Workflow and experiment settlements out of manual recovery", () => {
@@ -44,8 +41,17 @@ describe("manual Run recovery", () => {
       "model_experiment",
     );
     expect(isManuallyResumableRun("idle", pausedBudget)).toBe(true);
+    expect(
+      isManuallyResumableRun("idle", run("failed", { outcome: "partial" })),
+    ).toBe(true);
     expect(isManuallyResumableRun("idle", workflow)).toBe(false);
     expect(isManuallyResumableRun("idle", modelExperiment)).toBe(false);
+    expect(
+      isManuallyResumableRun("idle", {
+        ...workflow,
+        outcome: "partial",
+      }),
+    ).toBe(false);
   });
 });
 

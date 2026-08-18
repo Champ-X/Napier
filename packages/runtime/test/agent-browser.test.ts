@@ -665,6 +665,7 @@ describe("Agent Browser Session integration", () => {
     expect(browserSessions.execute).not.toHaveBeenCalled();
     expect(browserActions).toEqual([
       "start",
+      "preview_workspace",
       "navigate",
       "back",
       "forward",
@@ -677,6 +678,7 @@ describe("Agent Browser Session integration", () => {
       "scroll",
       "snapshot",
       "screenshot",
+      "console",
       "close",
     ]);
     for (const action of ["click", "type", "select", "upload", "download"]) {
@@ -735,6 +737,7 @@ describe("Agent Browser Session integration", () => {
     expect(run.status, run.error).toBe("completed");
     expect(browserActions).toEqual([
       "start",
+      "preview_workspace",
       "navigate",
       "back",
       "forward",
@@ -747,6 +750,7 @@ describe("Agent Browser Session integration", () => {
       "scroll",
       "snapshot",
       "screenshot",
+      "console",
       "close",
     ]);
     expect(browserSessions.execute).not.toHaveBeenCalled();
@@ -811,6 +815,7 @@ describe("Agent Browser Session integration", () => {
     expect(run.status, run.error).toBe("completed");
     expect(browserActions).toEqual([
       "start",
+      "preview_workspace",
       "navigate",
       "back",
       "forward",
@@ -823,6 +828,7 @@ describe("Agent Browser Session integration", () => {
       "scroll",
       "snapshot",
       "screenshot",
+      "console",
       "close",
     ]);
     expect(browserSessions.execute).not.toHaveBeenCalled();

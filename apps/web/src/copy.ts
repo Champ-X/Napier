@@ -1,5 +1,6 @@
 import { deepMergeCopy, getLocale } from "./locale";
 import { zh } from "./copy.zh";
+import { recoveryCopy } from "./recovery-copy";
 
 export const en = {
   appName: "Napier",
@@ -899,13 +900,7 @@ export const en = {
       consolidationLimit: "Memory consolidation accepts at most 8 sources.",
     },
   },
-  recovery: {
-    eyebrow: "RECOVERY CHECKPOINT",
-    title: "A run stopped before settlement.",
-    body: "Resume from durable evidence. Napier will verify current state before repeating any operation with possible side effects.",
-    action: "Resume safely",
-    run: "Interrupted run",
-  },
+  recovery: recoveryCopy,
   context: {
     loading: "Opening Agent configuration...",
     observe: "Observe only",

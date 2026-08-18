@@ -107,6 +107,13 @@ export const zh: LocaleOverride<typeof en> = {
     body: "从持久证据恢复。Napier 会在重复任何可能有副作用的操作前先核实当前状态。",
     action: "安全恢复",
     run: "中断的运行",
+    partial: {
+      eyebrow: "部分完成检查点",
+      title: "此任务已保留部分进展。",
+      body: "从持久计划、证据和产物继续此任务。普通发送会改为开始新一轮运行。",
+      action: "继续此任务",
+      run: "部分完成的运行",
+    },
   },
   context: {
     loading: "正在打开智能体配置……",
