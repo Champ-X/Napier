@@ -12,6 +12,7 @@ const en = {
   // Sidebar tree
   currentBadge: "Current",
   switching: "Switching workspace...",
+  addWorkspace: "Add workspace",
   // Folder picker dialog
   pickerEyebrow: "Local folder",
   pickerTitle: "Choose a workspace",
@@ -31,6 +32,7 @@ const en = {
 const zh: LocaleOverride<typeof en> = {
   currentBadge: "当前",
   switching: "正在切换工作区……",
+  addWorkspace: "添加工作区",
   pickerEyebrow: "本地文件夹",
   pickerTitle: "选择工作区",
   pickerBody:

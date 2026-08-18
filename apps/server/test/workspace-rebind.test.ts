@@ -42,26 +42,26 @@ describe("resolveRebindWorkspaceRoot", () => {
     await mkdir(target);
     await symlink(target, link);
 
-    const resolved = await resolveRebindWorkspaceRoot(link, "/some/other/root");
+    const resolved = await resolveRebindWorkspaceRoot(link);
     expect(resolved).toBe(await realpath(target));
   });
 
-  it("rejects relative, missing, and current-root inputs", async () => {
+  it("rejects relative and missing inputs but accepts an existing root", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-rebind-"));
     temporaryRoots.push(root);
 
     await expect(
-      resolveRebindWorkspaceRoot("relative/path", "/x"),
+      resolveRebindWorkspaceRoot("relative/path"),
     ).rejects.toMatchObject({ status: 400 });
     await expect(
-      resolveRebindWorkspaceRoot(12, "/x"),
+      resolveRebindWorkspaceRoot(12),
     ).rejects.toBeInstanceOf(WorkspaceRebindRequestError);
     await expect(
-      resolveRebindWorkspaceRoot(path.join(root, "nope"), "/x"),
+      resolveRebindWorkspaceRoot(path.join(root, "nope")),
     ).rejects.toMatchObject({ status: 404 });
-    await expect(
-      resolveRebindWorkspaceRoot(root, root),
-    ).rejects.toMatchObject({ status: 409 });
+    await expect(resolveRebindWorkspaceRoot(root)).resolves.toBe(
+      await realpath(root),
+    );
   });
 });
 

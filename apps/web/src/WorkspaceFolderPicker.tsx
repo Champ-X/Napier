@@ -9,7 +9,6 @@ import {
   X,
 } from "lucide-react";
 
-import { rebindWorkspaceRoot } from "./api";
 import { formatApiErrorMessage } from "./api-error";
 import {
   listWorkspaceDirectories,
@@ -20,18 +19,20 @@ import { workspaceTreeCopy as t } from "./workspace-tree-copy";
 /**
  * Folder picker dialog opened from the composer's workspace chip. Browses the
  * host filesystem via GET /api/workspace/directories, lets the operator walk
- * up/into folders, and rebinds the runtime onto the chosen folder (a full
- * reload, matching the recent-workspaces switcher). Modal mechanics mirror
- * WorkspaceSettingsSurface (Escape-to-close + focus restore + backdrop).
+ * up/into folders, and asks the application shell to atomically switch onto
+ * the chosen folder. Modal mechanics mirror WorkspaceSettingsSurface
+ * (Escape-to-close + focus restore + backdrop).
  */
 export function WorkspaceFolderPicker({
   currentRoot,
   onClose,
   onManualEntry,
+  onWorkspaceSwitch,
 }: {
   currentRoot: string;
   onClose(): void;
   onManualEntry(): void;
+  onWorkspaceSwitch(root: string): Promise<void>;
 }) {
   const [current, setCurrent] = useState(currentRoot);
   const [listing, setListing] = useState<WorkspaceDirectoryListing | undefined>(
@@ -81,10 +82,8 @@ export function WorkspaceFolderPicker({
     setSwitching(true);
     setError(undefined);
     try {
-      await rebindWorkspaceRoot(current);
-      // The rebind swaps to a different ledger, so navigate to the bare path to
-      // load the new workspace's own default session (matching WorkspaceRootPanel).
-      window.location.assign(window.location.pathname);
+      await onWorkspaceSwitch(current);
+      onClose();
     } catch (cause) {
       setError(formatApiErrorMessage(cause));
       setSwitching(false);

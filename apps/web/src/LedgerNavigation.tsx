@@ -15,6 +15,8 @@ export function LedgerNavigation({
   onSelect,
   onTrash,
   onRestore,
+  onWorkspaceSwitch,
+  onOpenWorkspaceSettings,
   onOpenSettings,
 }: {
   bootstrap: LiveReadyBootstrapResponse;
@@ -25,6 +27,8 @@ export function LedgerNavigation({
   onSelect(threadId: string): void;
   onTrash(threadId: string): void;
   onRestore(): void;
+  onWorkspaceSwitch(root: string, threadId?: string): Promise<void>;
+  onOpenWorkspaceSettings(): void;
   onOpenSettings(): void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -75,6 +79,8 @@ export function LedgerNavigation({
         onSelect={onSelect}
         onTrash={onTrash}
         onRestore={onRestore}
+        onWorkspaceSwitch={onWorkspaceSwitch}
+        onOpenWorkspaceSettings={onOpenWorkspaceSettings}
       />
 
       <button

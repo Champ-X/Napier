@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { FolderTree } from "lucide-react";
 
-import { rebindWorkspaceRoot } from "./api";
 import { formatApiErrorMessage } from "./api-error";
 import { copy } from "./copy";
 
 export function WorkspaceRootPanel({
   root,
   dataRoot,
+  onWorkspaceSwitch,
 }: {
   root: string;
   dataRoot: string;
+  onWorkspaceSwitch(root: string): Promise<void>;
 }) {
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
@@ -23,11 +24,9 @@ export function WorkspaceRootPanel({
     setBusy(true);
     setError(undefined);
     try {
-      await rebindWorkspaceRoot(next);
-      // The rebind swaps to a different ledger, so the current ?thread no longer
-      // exists there. Navigate to the bare path to load the new workspace's own
-      // default thread instead of reloading onto a stale thread id.
-      window.location.assign(window.location.pathname);
+      await onWorkspaceSwitch(next);
+      setValue("");
+      setBusy(false);
     } catch (rebindError) {
       setError(formatApiErrorMessage(rebindError));
       setBusy(false);

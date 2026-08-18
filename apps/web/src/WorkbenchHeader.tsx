@@ -1,8 +1,9 @@
-import type { ThreadStatus } from "@napier/contracts";
+import type { ModelSummary, ThreadStatus } from "@napier/contracts";
 import type { ReactNode } from "react";
-import { Settings2 } from "lucide-react";
+import { ChevronDown, Settings2 } from "lucide-react";
 
 import { copy } from "./copy";
+import { configuredModelProviderGroups } from "./model-selection-view-model";
 
 type HeaderModel = {
   configured: boolean;
@@ -14,18 +15,23 @@ type HeaderModel = {
 export function WorkbenchHeader({
   isRunning,
   model,
+  models,
   status,
   title,
   children,
+  onModel,
   onOpenSettings,
 }: {
   isRunning: boolean;
   model: HeaderModel;
+  models: readonly ModelSummary[];
   status: ThreadStatus | undefined;
   title: string;
   children?: ReactNode;
+  onModel(value: string): void;
   onOpenSettings(): void;
 }) {
+  const modelGroups = configuredModelProviderGroups(models);
   return (
     <header className="workbench-header">
       <div className="thread-heading">
@@ -40,7 +46,7 @@ export function WorkbenchHeader({
       </div>
       {children}
       <div className="run-meta">
-        <div
+        <label
           className={`model-chip ${model.configured ? "" : "is-unavailable"}`}
           title={
             model.configured
@@ -49,9 +55,11 @@ export function WorkbenchHeader({
           }
         >
           <span className="model-glyph" aria-hidden="true">
-            {model.provider === "napier" ? "D" : "L"}
+            {model.provider === "napier"
+              ? "D"
+              : model.provider.slice(0, 1).toUpperCase()}
           </span>
-          <span>
+          <span className="model-chip-copy">
             <small>
               {!model.configured
                 ? copy.modelUnavailable
@@ -61,7 +69,28 @@ export function WorkbenchHeader({
             </small>
             <strong>{model.id}</strong>
           </span>
-        </div>
+          <ChevronDown
+            className="model-chip-chevron"
+            size={12}
+            aria-hidden="true"
+          />
+          <select
+            aria-label={copy.settingsSurface.contextSection}
+            value={model.key}
+            disabled={isRunning}
+            onChange={(event) => onModel(event.target.value)}
+          >
+            {modelGroups.map((group) => (
+              <optgroup key={group.provider} label={group.label}>
+                {group.options.map((option) => (
+                  <option key={option.key} value={option.key}>
+                    {option.label}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </label>
         <div
           className={`run-status ${isRunning ? "is-running" : ""}`}
           role="status"

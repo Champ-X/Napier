@@ -67,21 +67,27 @@ export function registerWorkspaceRootHttp(
         409,
       );
     }
-    const busy = workspaceRebindBusyReasons(services.store);
-    if (busy.length > 0) {
-      return jsonError(context, `Workspace is busy: ${busy.join("; ")}`, 409);
-    }
     let resolvedRoot: string;
+    let currentRoot: string;
     try {
-      resolvedRoot = await resolveRebindWorkspaceRoot(
-        body.root,
-        services.store.getWorkspaceSummary().root,
-      );
+      [resolvedRoot, currentRoot] = await Promise.all([
+        resolveRebindWorkspaceRoot(body.root),
+        resolveRebindWorkspaceRoot(services.store.getWorkspaceSummary().root),
+      ]);
     } catch (error) {
       if (error instanceof WorkspaceRebindRequestError) {
         return jsonError(context, error.message, error.status);
       }
       throw error;
+    }
+    if (resolvedRoot === currentRoot) {
+      const summary = services.store.getWorkspaceSummary();
+      setBodyContentSha256Header(context, summary);
+      return context.json(summary, 200);
+    }
+    const busy = workspaceRebindBusyReasons(services.store);
+    if (busy.length > 0) {
+      return jsonError(context, `Workspace is busy: ${busy.join("; ")}`, 409);
     }
     let summary: WorkspaceSummary;
     try {

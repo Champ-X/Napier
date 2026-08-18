@@ -29,5 +29,11 @@ describe("Ledger navigation", () => {
     expect(styles).toContain(".ledger-collapse-button");
     expect(source).toContain('className="workspace-settings-button"');
     expect(source).toContain("onClick={onOpenSettings}");
+    expect(source).toContain(
+      "onOpenWorkspaceSettings={onOpenWorkspaceSettings}",
+    );
+    expect(tree).toContain("aria-label={t.addWorkspace}");
+    expect(tree).toContain("<LazyWorkspaceFolderPicker");
+    expect(tree).toContain("onWorkspaceSwitch={onWorkspaceSwitch}");
   });
 });

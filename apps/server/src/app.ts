@@ -266,7 +266,7 @@ import {
   registerWorkspaceRootHttp,
   type RebindWorkspace,
 } from "./workspace-root-http.js";
-import { registerRecentWorkspacesHttp } from "./recent-workspaces.js";
+import { registerRecentWorkspacesHttp, type ListWorkspaceThreads } from "./recent-workspaces.js";
 import { registerEvaluationCasebookAdminHttp } from "./evaluation-casebook-admin-http.js";
 import { registerReleaseEvidenceHttp } from "./controlled-harness-evidence-http.js";
 import { registerEvaluationCatalogHttp } from "./evaluation-catalog-http.js";
@@ -425,10 +425,8 @@ export async function createServices(options?: ServerServiceOptions): Promise<Na
   };
 }
 
-export function createApp(
-  services: NapierServices,
-  options?: { rebindWorkspace?: RebindWorkspace },
-): Hono {
+interface CreateAppOptions { rebindWorkspace?: RebindWorkspace; listWorkspaceThreads?: ListWorkspaceThreads }
+export function createApp(services: NapierServices, options?: CreateAppOptions): Hono {
   const app = new Hono();
   app.use(
     "/api/*",
@@ -2699,7 +2697,7 @@ export function createApp(
   registerThreadLifecycleHttp(app, services);
   registerThreadOperationsHttp(app, services);
   registerWorkspaceRootHttp(app, services, options?.rebindWorkspace);
-  registerRecentWorkspacesHttp(app);
+  registerRecentWorkspacesHttp(app, options?.listWorkspaceThreads);
 
   registerWorkspaceProcessHttp(app, services.workspaceProcesses, {
     jsonError,

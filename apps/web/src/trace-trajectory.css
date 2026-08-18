@@ -1,45 +1,39 @@
 .trace-trajectory {
-  --trajectory-input: #b86548;
-  --trajectory-model: #517b70;
-  --trajectory-tools: #b08b43;
-  --trajectory-night: #24302b;
+  --trajectory-input: #2ba268;
+  --trajectory-model: #9573b8;
+  --trajectory-tools: #df8828;
   position: relative;
   container-type: inline-size;
-  padding: 16px;
-  margin-bottom: 21px;
-  overflow: hidden;
-  background:
-    linear-gradient(90deg, rgb(191 82 57 / 12%) 0 1px, transparent 1px) 25px 0 /
-      100% 100% no-repeat,
-    repeating-linear-gradient(
-      0deg,
-      transparent 0 27px,
-      rgb(67 78 70 / 3.5%) 28px
-    ),
-    #edf2fa;
+  padding: 24px;
+  margin-bottom: 24px;
+  overflow: visible;
+  background: #f4f7fc;
   border: 1px solid var(--rule-strong);
-  border-radius: 3px;
-  box-shadow: 4px 5px 0 rgb(60 52 40 / 6%);
+  border-radius: 8px;
+  box-shadow: 0 14px 40px rgb(43 51 47 / 7%);
 }
 
 .trace-trajectory::before {
   position: absolute;
-  top: 0;
-  right: 22px;
-  left: 22px;
-  height: 2px;
+  top: -1px;
+  right: 24px;
+  left: 24px;
+  height: 3px;
   content: "";
   background: var(--vermilion);
+  border-radius: 0 0 2px 2px;
 }
 
 .trace-trajectory-header,
 .trace-trajectory-header > div,
 .trace-trajectory-state,
-.trace-trajectory-stats,
-.trace-trajectory-controls,
-.trace-metric-tabs,
+.trace-command-bar,
+.trace-lane-tabs,
+.trace-view-tabs,
 .trace-trajectory-search,
+.trace-overview-disclosure > summary,
 .trace-overview header,
+.trace-overview header > div,
 .trace-overview-axis,
 .trace-overview-lane,
 .trace-lane-label,
@@ -52,8 +46,8 @@
 .trace-turn > header,
 .trace-event-sequence,
 .trace-event-copy,
-.trace-event-copy > span,
-.trace-event-badges {
+.trace-event-title,
+.trace-event-meta {
   display: flex;
   align-items: center;
 }
@@ -61,8 +55,8 @@
 .trace-trajectory-header {
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  padding: 3px 0 13px;
+  gap: 20px;
+  padding: 7px 2px 20px;
 }
 
 .trace-trajectory-header > div {
@@ -71,16 +65,16 @@
   flex-direction: column;
 }
 
-.trace-trajectory-header span,
+.trace-trajectory-header > div > span,
 .trace-trajectory-stats dt,
 .trace-overview header span,
 .trace-overview-axis small,
 .trace-run-index > header span {
   font-family: var(--mono);
-  font-size: 6px;
+  font-size: 10px;
   color: var(--ink-faint);
   text-transform: uppercase;
-  letter-spacing: 0.11em;
+  letter-spacing: 0.1em;
 }
 
 .trace-trajectory-header > div > span {
@@ -88,50 +82,52 @@
 }
 
 .trace-trajectory-header h3 {
-  margin: 3px 0 1px;
+  margin: 7px 0 3px;
   font-family: var(--serif);
-  font-size: 23px;
-  font-weight: 500;
+  font-size: 34px;
+  font-weight: 520;
   line-height: 1;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
 }
 
 .trace-trajectory-header p {
-  max-width: 280px;
-  margin: 4px 0 0;
+  max-width: 560px;
+  margin: 8px 0 0;
   font-family: var(--serif);
-  font-size: 9px;
-  line-height: 1.35;
+  font-size: 13px;
+  line-height: 1.5;
   color: var(--ink-soft);
 }
 
 .trace-trajectory-state {
   flex: 0 0 auto;
-  gap: 5px;
-  padding: 4px 6px;
+  gap: 7px;
+  padding: 7px 10px;
   font-family: var(--mono);
-  font-size: 6px;
+  font-size: 9px;
   color: var(--ink-faint);
   text-transform: uppercase;
+  background: rgb(255 255 255 / 72%);
   border: 1px solid var(--rule);
+  border-radius: 999px;
 }
 
 .trace-trajectory-state i {
-  width: 5px;
-  height: 5px;
+  width: 7px;
+  height: 7px;
   background: var(--rule-strong);
   border-radius: 50%;
 }
 
 .trace-trajectory-state.is-live {
   color: var(--ledger);
-  background: #e4ece7;
+  background: #e6efea;
   border-color: #b8ccc2;
 }
 
 .trace-trajectory-state.is-live i {
   background: var(--ledger);
-  box-shadow: 0 0 0 3px rgb(45 85 71 / 12%);
+  box-shadow: 0 0 0 4px rgb(45 85 71 / 12%);
   animation: trace-pulse 1.6s ease-in-out infinite;
 }
 
@@ -140,108 +136,182 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1px;
   padding: 1px;
-  margin: 0 0 11px;
+  margin: 0 0 16px;
+  overflow: hidden;
   background: var(--rule);
   border: 1px solid var(--rule);
+  border-radius: 6px;
 }
 
 .trace-trajectory-stats div {
   min-width: 0;
-  padding: 7px 8px 6px;
-  background: rgb(240 245 253 / 92%);
+  padding: 12px 14px 11px;
+  background: rgb(255 255 255 / 83%);
 }
 
-.trace-trajectory-stats dt {
+.trace-trajectory-stats dt,
+.trace-trajectory-stats dd {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .trace-trajectory-stats dd {
-  margin: 2px 0 0;
-  overflow: hidden;
+  margin: 4px 0 0;
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 16px;
   color: var(--ink);
-  text-overflow: ellipsis;
 }
 
-.trace-trajectory-controls {
-  align-items: stretch;
-  gap: 7px;
-  margin-bottom: 9px;
+.trace-command-bar {
+  position: sticky;
+  z-index: 8;
+  top: 12px;
+  gap: 10px;
+  min-height: 52px;
+  padding: 7px;
+  margin: 0 -7px 14px;
+  background: rgb(239 243 250 / 94%);
+  border: 1px solid var(--rule-strong);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgb(36 48 43 / 10%);
+  backdrop-filter: blur(16px);
 }
 
-.trace-metric-tabs {
-  min-width: 0;
+.trace-lane-tabs {
+  min-width: 330px;
   flex: 1 1 auto;
-  align-items: stretch;
-  padding: 2px;
+  align-self: stretch;
+  gap: 4px;
+}
+
+.trace-lane-tabs button {
+  display: flex;
+  align-items: center;
+  min-width: 96px;
+  height: 38px;
+  flex: 1 1 0;
+  gap: 8px;
+  padding: 0 10px;
+  font-family: var(--mono);
+  color: var(--ink-faint);
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+}
+
+.trace-lane-tabs button:hover {
+  color: var(--ink);
+  background: rgb(255 255 255 / 65%);
+}
+
+.trace-lane-tabs button.is-active {
+  color: var(--ink);
+  background: var(--paper-bright);
+  border-color: var(--rule);
+  box-shadow: 0 2px 6px rgb(42 49 46 / 8%);
+}
+
+.trace-lane-tabs button > i {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  font-size: 10px;
+  font-style: normal;
+  color: var(--paper-bright);
+  background: var(--trajectory-input);
+  border-radius: 4px;
+  opacity: 0.42;
+  place-items: center;
+}
+
+.trace-lane-tabs button.lane-model > i {
+  background: var(--trajectory-model);
+}
+.trace-lane-tabs button.lane-tools > i {
+  background: var(--trajectory-tools);
+}
+.trace-lane-tabs button.is-active > i {
+  opacity: 1;
+}
+
+.trace-lane-tabs button > span {
+  overflow: hidden;
+  flex: 1 1 auto;
+  font-size: 11px;
+  font-weight: 650;
+  text-align: left;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+
+.trace-lane-tabs button > small {
+  min-width: 22px;
+  font-size: 10px;
+  color: var(--ink-faint);
+  text-align: right;
+}
+
+.trace-view-tabs {
+  align-self: stretch;
+  padding: 3px;
   background: var(--paper-deep);
   border: 1px solid var(--rule);
+  border-radius: 6px;
 }
 
-.trace-metric-tabs button {
-  min-width: 0;
-  flex: 1 1 0;
-  padding: 5px 4px 4px;
+.trace-view-tabs button {
+  height: 32px;
+  padding: 0 10px;
+  font-family: var(--mono);
+  font-size: 10px;
   color: var(--ink-faint);
   cursor: pointer;
   background: transparent;
   border: 0;
-  border-right: 1px solid var(--rule);
+  border-radius: 4px;
 }
 
-.trace-metric-tabs button:last-child {
-  border-right: 0;
-}
-
-.trace-metric-tabs button:hover,
-.trace-metric-tabs button.is-active {
+.trace-view-tabs button:hover,
+.trace-view-tabs button.is-active {
   color: var(--ink);
   background: var(--paper-bright);
 }
 
-.trace-metric-tabs button.is-active {
-  box-shadow: inset 0 -2px var(--vermilion);
+.trace-view-tabs button.is-active {
+  box-shadow: 0 1px 4px rgb(42 49 46 / 10%);
 }
-
-.trace-metric-tabs span,
-.trace-metric-tabs small {
-  display: block;
-  overflow: hidden;
-  font-family: var(--mono);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.trace-metric-tabs span {
-  font-size: 7px;
-  text-transform: uppercase;
-}
-
-.trace-metric-tabs small {
-  margin-top: 1px;
-  font-size: 5px;
+.trace-view-tabs span {
+  margin-left: 4px;
   color: var(--ink-faint);
 }
 
 .trace-trajectory-search {
-  width: 124px;
-  flex: 0 0 124px;
-  gap: 5px;
-  padding: 0 7px;
+  width: 190px;
+  min-height: 38px;
+  flex: 0 1 190px;
+  gap: 7px;
+  padding: 0 10px;
   color: var(--ink-faint);
   background: var(--paper-bright);
   border: 1px solid var(--rule);
+  border-radius: 6px;
+}
+
+.trace-trajectory-search:focus-within {
+  color: var(--ledger);
+  border-color: var(--ledger);
+  box-shadow: 0 0 0 3px rgb(45 85 71 / 10%);
 }
 
 .trace-trajectory-search input {
   width: 100%;
   min-width: 0;
-  padding: 6px 0;
+  padding: 9px 0;
   font-family: var(--mono);
-  font-size: 6px;
+  font-size: 11px;
   color: var(--ink);
   background: transparent;
   border: 0;
@@ -254,53 +324,96 @@
 
 .trace-trajectory-search button {
   display: grid;
-  width: 16px;
-  height: 16px;
-  flex: 0 0 16px;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
   padding: 0;
   color: var(--ink-faint);
   cursor: pointer;
   background: transparent;
   border: 0;
+  border-radius: 4px;
   place-items: center;
 }
 
+.trace-trajectory-search button:hover {
+  color: var(--ink);
+  background: var(--paper-deep);
+}
+
 .trace-trajectory-search kbd {
+  padding: 2px 5px;
   font-family: var(--mono);
-  font-size: 6px;
+  font-size: 9px;
   color: var(--ink-faint);
+  background: var(--paper-deep);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
+
+.trace-overview-disclosure {
+  margin-bottom: 15px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #dfe2e7;
+  border-radius: 4px;
+}
+
+.trace-overview-disclosure > summary {
+  min-height: 34px;
+  gap: 9px;
+  padding: 0 11px;
+  font-family: var(--mono);
+  color: var(--ink-soft);
+  cursor: pointer;
+  background: #fbfbfc;
+  list-style: none;
+}
+
+.trace-overview-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.trace-overview-disclosure > summary:hover {
+  color: var(--ink);
+  background: var(--paper-bright);
+}
+
+.trace-overview-disclosure > summary > span {
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.trace-overview-disclosure > summary > small {
+  flex: 1 1 auto;
+  font-size: 10px;
+  color: var(--ink-faint);
+}
+
+.trace-overview-disclosure > summary > svg {
+  transition: transform 160ms ease;
+}
+.trace-overview-disclosure[open] > summary > svg {
+  transform: rotate(180deg);
 }
 
 .trace-overview {
   position: relative;
-  padding: 10px 10px 8px;
+  padding: 7px 10px 8px;
   overflow: hidden;
-  color: #dfe4ec;
-  background:
-    radial-gradient(circle at 77% 0, rgb(94 138 126 / 25%), transparent 42%),
-    repeating-linear-gradient(
-      0deg,
-      transparent 0 23px,
-      rgb(255 255 255 / 3.5%) 24px
-    ),
-    var(--trajectory-night);
-  border: 1px solid #17201c;
-}
-
-.trace-overview::after {
-  position: absolute;
-  top: 0;
-  right: 8px;
-  width: 1px;
-  height: 100%;
-  content: "";
-  background: rgb(199 96 70 / 45%);
+  color: var(--ink-soft);
+  background: #fff;
+  border-top: 1px solid #e3e5e9;
 }
 
 .trace-overview header {
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 8px;
+  justify-content: flex-end;
+  min-height: 24px;
+  margin-bottom: 4px;
+}
+
+.trace-overview header > div:first-child {
+  display: none;
 }
 
 .trace-overview header span {
@@ -309,16 +422,41 @@
 
 .trace-overview header strong {
   font-family: var(--mono);
-  font-size: 6px;
+  font-size: 9px;
   font-weight: 500;
   color: #71837a;
   text-transform: uppercase;
 }
 
+.trace-metric-tabs {
+  gap: 1px;
+  padding: 2px;
+  background: #f1f2f4;
+  border: 1px solid #e1e3e7;
+  border-radius: 4px;
+}
+
+.trace-metric-tabs button {
+  height: 24px;
+  padding: 0 8px;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: #8b9099;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 3px;
+}
+
+.trace-metric-tabs button:hover,
+.trace-metric-tabs button.is-active {
+  color: #31343a;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(32 36 44 / 10%);
+}
+
 .trace-overview-axis {
-  display: grid;
-  grid-template-columns: 51px repeat(5, minmax(0, 1fr));
-  margin-bottom: 3px;
+  display: none;
 }
 
 .trace-overview-axis small {
@@ -331,63 +469,58 @@
 .trace-overview-axis small:last-child {
   transform: translateX(-100%);
 }
-
 .trace-overview-lanes {
   display: grid;
-  gap: 4px;
+  gap: 1px;
 }
 
 .trace-overview-lane {
   display: grid;
-  grid-template-columns: 51px minmax(0, 1fr);
+  grid-template-columns: 54px minmax(0, 1fr);
   align-items: stretch;
-  min-height: 29px;
+  min-height: 27px;
 }
 
 .trace-lane-label {
-  gap: 5px;
+  gap: 0;
   font-family: var(--mono);
-  font-size: 6px;
-  color: #adb9b3;
+  font-size: 9px;
+  color: #a2a7b0;
   text-transform: uppercase;
 }
 
+.trace-lane-label small {
+  margin-left: 4px;
+  font-size: 8px;
+  color: #747b86;
+}
+
 .trace-lane-label i {
-  display: grid;
-  width: 14px;
-  height: 14px;
-  font-style: normal;
-  color: #dce4df;
-  border: 1px solid #53645c;
-  place-items: center;
+  display: none;
 }
 
 .trace-lane-track {
   position: relative;
   min-width: 0;
-  min-height: 29px;
+  min-height: 27px;
   overflow: hidden;
-  background:
-    repeating-linear-gradient(
-      90deg,
-      rgb(255 255 255 / 5%) 0 1px,
-      transparent 1px 25%
-    ),
-    rgb(9 15 12 / 26%);
-  border-top: 1px solid rgb(255 255 255 / 6%);
-  border-bottom: 1px solid rgb(0 0 0 / 20%);
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 calc(25% - 1px),
+    #f1f2f4 calc(25% - 1px) 25%
+  );
+  border-bottom: 1px solid #f0f1f3;
 }
 
 .trace-segment {
   position: absolute;
-  top: 5px;
-  bottom: 5px;
-  min-width: 3px;
-  padding: 0 4px;
+  height: 6px;
+  min-width: 0;
+  padding: 0;
   overflow: hidden;
   font-family: var(--mono);
-  font-size: 5px;
-  color: #fff;
+  font-size: 8px;
+  color: transparent;
   text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -395,7 +528,7 @@
   background: var(--trajectory-model);
   border: 0;
   border-radius: 1px;
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 12%);
+  box-shadow: none;
   transition:
     opacity 120ms ease,
     filter 120ms ease,
@@ -405,7 +538,6 @@
 .lane-input .trace-segment {
   background: var(--trajectory-input);
 }
-
 .lane-tools .trace-segment {
   background: var(--trajectory-tools);
 }
@@ -413,27 +545,25 @@
 .trace-segment.status-active {
   background-image: repeating-linear-gradient(
     135deg,
-    transparent 0 4px,
-    rgb(255 255 255 / 17%) 4px 6px
+    transparent 0 3px,
+    rgb(255 255 255 / 35%) 3px 5px
   );
 }
 
 .trace-segment.status-failed {
-  background-color: #9c493b;
+  background-color: #a64e42;
 }
-
 .trace-segment.is-muted {
-  opacity: 0.16;
-  filter: saturate(0);
+  opacity: 0.22;
 }
 
 .trace-segment:hover,
 .trace-segment.is-selected {
   z-index: 2;
-  filter: brightness(1.2);
-  outline: 1px solid #e7ecf4;
+  filter: saturate(1.15) brightness(0.95);
+  outline: 1px solid currentcolor;
   outline-offset: 1px;
-  transform: translateY(-1px);
+  transform: scaleY(1.25);
 }
 
 .trace-segment span {
@@ -441,29 +571,22 @@
 }
 
 .trace-overview footer {
-  gap: 10px;
-  margin-top: 8px;
-  padding-left: 51px;
-  font-family: var(--mono);
-  font-size: 5px;
-  color: #87958e;
-  text-transform: uppercase;
+  display: none;
 }
 
 .trace-overview footer span {
-  gap: 3px;
+  gap: 4px;
 }
 
 .trace-overview footer i {
-  width: 5px;
-  height: 5px;
+  width: 7px;
+  height: 7px;
   background: var(--trajectory-model);
 }
 
 .trace-overview footer .legend-input {
   background: var(--trajectory-input);
 }
-
 .trace-overview footer .legend-tools {
   background: var(--trajectory-tools);
 }
@@ -475,43 +598,46 @@
 }
 
 .trace-run-index {
-  margin-top: 11px;
+  margin-top: 4px;
   border-top: 1px solid var(--rule-strong);
 }
 
 .trace-run-index > header {
   justify-content: space-between;
-  gap: 9px;
-  padding: 10px 1px 7px;
+  gap: 12px;
+  padding: 18px 2px 11px;
 }
 
 .trace-run-index > header > div {
   display: grid;
-  gap: 1px;
+  gap: 3px;
 }
 
 .trace-run-index > header strong {
   font-family: var(--serif);
-  font-size: 12px;
+  font-size: 17px;
   font-weight: 600;
 }
 
 .trace-run-index > header output {
   font-family: var(--mono);
-  font-size: 6px;
+  font-size: 10px;
   color: var(--ledger);
 }
 
 .trace-run {
-  margin-bottom: 7px;
-  background: rgb(255 255 255 / 35%);
+  margin-bottom: 9px;
+  overflow: hidden;
+  background: rgb(255 255 255 / 48%);
   border: 1px solid var(--rule);
+  border-radius: 7px;
 }
 
 .trace-run-heading {
   width: 100%;
-  gap: 8px;
-  padding: 7px 8px;
+  gap: 11px;
+  padding: 10px 12px;
+  color: inherit;
   text-align: left;
   cursor: pointer;
   background: transparent;
@@ -524,13 +650,14 @@
 
 .trace-run-ordinal {
   display: grid !important;
-  width: 24px;
-  height: 24px;
-  flex: 0 0 24px;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
   font-family: var(--serif);
-  font-size: 11px;
+  font-size: 13px;
   color: var(--paper-bright);
   background: var(--ledger);
+  border-radius: 4px;
   place-items: center;
 }
 
@@ -556,14 +683,14 @@
 
 .trace-run-heading strong {
   font-family: var(--serif);
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .trace-run-heading small,
 .trace-run-heading i {
-  max-width: 115px;
+  max-width: 180px;
   font-family: var(--mono);
-  font-size: 5px;
+  font-size: 9px;
   color: var(--ink-faint);
 }
 
@@ -573,24 +700,27 @@
   text-transform: uppercase;
 }
 
+.trace-run-heading > svg {
+  transition: transform 160ms ease;
+}
 .trace-run-heading[aria-expanded="true"] > svg {
   transform: rotate(180deg);
 }
 
 .trace-run-turns {
-  padding: 0 8px 8px;
+  padding: 0 12px 12px;
   border-top: 1px solid var(--rule);
 }
 
 .trace-turn {
-  padding-top: 8px;
+  padding-top: 12px;
 }
 
 .trace-turn > header {
   justify-content: space-between;
-  padding: 0 2px 5px 34px;
+  padding: 0 4px 7px 48px;
   font-family: var(--mono);
-  font-size: 6px;
+  font-size: 9px;
   color: var(--ink-soft);
   text-transform: uppercase;
 }
@@ -598,7 +728,6 @@
 .trace-turn > header small {
   color: var(--ink-faint);
 }
-
 .trace-turn ol {
   padding: 0;
   margin: 0;
@@ -608,16 +737,17 @@
 .trace-turn li {
   position: relative;
   margin: 0;
-  border-top: 1px dotted var(--rule);
+  border-top: 1px solid var(--rule);
 }
 
 .trace-turn li > button {
   display: grid;
   width: 100%;
-  grid-template-columns: 42px minmax(0, 1fr) auto;
-  gap: 7px;
+  min-height: 62px;
+  grid-template-columns: 54px minmax(0, 1fr) auto;
+  gap: 12px;
   align-items: center;
-  padding: 7px 3px 7px 0;
+  padding: 10px 8px 10px 3px;
   color: inherit;
   text-align: left;
   cursor: pointer;
@@ -627,25 +757,25 @@
 
 .trace-turn li > button:hover,
 .trace-turn li.is-selected > button {
-  background: linear-gradient(90deg, rgb(45 85 71 / 8%), transparent);
+  background: linear-gradient(90deg, rgb(45 85 71 / 9%), transparent 78%);
 }
 
 .trace-turn li.is-selected > button {
-  box-shadow: inset 2px 0 var(--ledger);
+  box-shadow: inset 3px 0 var(--ledger);
 }
 
 .trace-event-sequence {
-  gap: 5px;
+  gap: 7px;
   font-family: var(--mono);
-  font-size: 5px;
+  font-size: 9px;
   color: var(--ink-faint);
 }
 
 .trace-event-sequence i {
-  width: 7px;
-  height: 7px;
+  width: 9px;
+  height: 9px;
   background: var(--trajectory-input);
-  border: 2px solid #edf2fa;
+  border: 2px solid #f4f7fc;
   border-radius: 50%;
   box-shadow: 0 0 0 1px var(--trajectory-input);
 }
@@ -666,93 +796,152 @@
   flex-direction: column;
 }
 
-.trace-event-copy > span {
-  justify-content: space-between;
-  gap: 7px;
+.trace-event-title {
+  justify-content: flex-start;
+  gap: 9px;
   min-width: 0;
 }
 
 .trace-event-copy strong {
   overflow: hidden;
   font-family: var(--mono);
-  font-size: 6px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 650;
   text-overflow: ellipsis;
-  text-transform: uppercase;
   white-space: nowrap;
 }
 
-.trace-event-copy time {
+.trace-event-title > i {
   flex: 0 0 auto;
+  padding: 3px 5px;
   font-family: var(--mono);
-  font-size: 5px;
-  color: var(--ink-faint);
-}
-
-.trace-event-copy small {
-  display: -webkit-box;
-  margin-top: 2px;
-  overflow: hidden;
-  font-family: var(--serif);
   font-size: 8px;
-  line-height: 1.3;
-  color: var(--ink-soft);
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
-}
-
-.trace-event-badges {
-  justify-content: flex-end;
-  gap: 3px;
-}
-
-.trace-event-badges i {
-  padding: 2px 3px;
-  font-family: var(--mono);
-  font-size: 4px;
   font-style: normal;
   color: var(--ink-faint);
   text-transform: uppercase;
   background: var(--paper-deep);
-  border: 1px solid var(--rule);
+  border-radius: 3px;
 }
 
-.trace-event-badges .source-bounded {
+.trace-event-title > i.status-completed {
   color: var(--ledger);
   background: #e1ebe5;
-  border-color: #bed0c6;
+}
+.trace-event-title > i.status-active {
+  color: #78601f;
+  background: #eee7cd;
+}
+.trace-event-title > i.status-failed {
+  color: var(--vermilion);
+  background: #f2dfda;
 }
 
-.trace-event-badges .source-generic {
-  color: var(--vermilion);
+.trace-event-copy > small {
+  display: -webkit-box;
+  margin-top: 5px;
+  overflow: hidden;
+  font-family: var(--serif);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.trace-event-meta {
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 126px;
+  font-family: var(--mono);
+}
+
+.trace-event-meta strong {
+  font-size: 10px;
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.trace-event-meta time {
+  font-size: 9px;
+  color: var(--ink-faint);
+}
+
+.trace-event-meta svg {
+  color: var(--ink-faint);
+  transition: transform 160ms ease;
+}
+
+.trace-turn li.is-selected .trace-event-meta svg {
+  transform: rotate(180deg);
+}
+
+.trace-event-audit {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  padding: 1px;
+  margin: 0 8px 12px 57px;
+  overflow: hidden;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+}
+
+.trace-event-audit > span {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  padding: 8px 9px;
+  background: rgb(255 255 255 / 68%);
+}
+
+.trace-event-audit small,
+.trace-event-audit strong {
+  overflow: hidden;
+  font-family: var(--mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trace-event-audit small {
+  font-size: 8px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+}
+
+.trace-event-audit strong {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ink-soft);
 }
 
 .trace-search-empty {
-  padding: 13px;
+  padding: 22px;
   margin: 0;
   font-family: var(--serif);
-  font-size: 9px;
+  font-size: 13px;
   color: var(--ink-soft);
   text-align: center;
   border: 1px dashed var(--rule-strong);
+  border-radius: 6px;
 }
 
 .trace-trajectory-empty {
   display: flex;
-  gap: 11px;
+  gap: 14px;
   align-items: center;
-  min-height: 95px;
+  min-height: 130px;
   color: var(--ink-faint);
 }
 
 .trace-trajectory-empty div {
   display: grid;
-  gap: 2px;
+  gap: 3px;
 }
 
 .trace-trajectory-empty span {
   font-family: var(--mono);
-  font-size: 6px;
+  font-size: 9px;
   color: var(--vermilion);
   text-transform: uppercase;
 }
@@ -764,55 +953,108 @@
 
 .trace-trajectory-empty h3 {
   font-family: var(--serif);
-  font-size: 14px;
+  font-size: 18px;
   color: var(--ink);
 }
 
 .trace-trajectory-empty p {
   font-family: var(--serif);
-  font-size: 9px;
+  font-size: 13px;
 }
 
-@container (max-width: 365px) {
-  .trace-trajectory {
-    padding: 13px 11px;
-  }
-
-  .trace-trajectory-controls {
+@container (max-width: 820px) {
+  .trace-command-bar {
     align-items: stretch;
-    flex-direction: column;
+    flex-wrap: wrap;
+  }
+  .trace-lane-tabs {
+    min-width: 100%;
+  }
+  .trace-view-tabs {
+    flex: 0 0 auto;
   }
 
   .trace-trajectory-search {
-    width: 100%;
-    min-height: 30px;
-    flex-basis: auto;
+    flex: 1 1 220px;
+    width: auto;
+  }
+}
+
+@container (max-width: 520px) {
+  .trace-trajectory {
+    padding: 16px 13px;
+  }
+  .trace-trajectory-header {
+    padding-inline: 2px;
+  }
+  .trace-trajectory-header h3 {
+    font-size: 27px;
+  }
+  .trace-trajectory-state {
+    padding: 6px 8px;
+  }
+  .trace-trajectory-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .trace-metric-tabs small,
-  .trace-event-badges i:not(:last-child) {
+  .trace-command-bar {
+    top: 6px;
+    margin-inline: -5px;
+  }
+
+  .trace-lane-tabs button {
+    min-width: 0;
+    padding-inline: 6px;
+  }
+  .trace-lane-tabs button > span {
+    font-size: 9px;
+  }
+  .trace-lane-tabs button > small {
     display: none;
+  }
+  .trace-view-tabs {
+    flex: 1 1 auto;
+  }
+  .trace-view-tabs button {
+    width: 50%;
+  }
+  .trace-trajectory-search {
+    flex-basis: 100%;
   }
 
   .trace-overview-axis,
   .trace-overview-lane {
-    grid-template-columns: 40px repeat(5, minmax(0, 1fr));
+    grid-template-columns: 48px repeat(5, minmax(0, 1fr));
   }
 
   .trace-overview-lane {
-    grid-template-columns: 40px minmax(0, 1fr);
+    grid-template-columns: 48px minmax(0, 1fr);
   }
-
   .trace-overview footer {
-    padding-left: 40px;
+    padding-left: 48px;
   }
-
   .trace-overview footer strong {
     display: none;
   }
 
   .trace-turn li > button {
-    grid-template-columns: 38px minmax(0, 1fr) auto;
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .trace-event-meta {
+    grid-column: 2;
+    justify-content: flex-start;
+    min-width: 0;
+  }
+
+  .trace-event-meta svg {
+    margin-left: auto;
+  }
+
+  .trace-event-audit {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-left: 42px;
   }
 }
 
@@ -828,7 +1070,10 @@
     animation: none;
   }
 
-  .trace-segment {
+  .trace-segment,
+  .trace-overview-disclosure > summary > svg,
+  .trace-run-heading > svg,
+  .trace-event-meta svg {
     transition: none;
   }
 }

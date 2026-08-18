@@ -3,17 +3,20 @@ import {
   ChevronDown,
   ChevronRight,
   Folder,
+  FolderPlus,
   FolderOpen,
   Loader2,
 } from "lucide-react";
 
 import type { ThreadSummary } from "@napier/contracts";
-import { listRecentWorkspaces, rebindWorkspaceRoot } from "./api";
+import { listRecentWorkspaces } from "./api";
 import { copy } from "./copy";
 import { workspaceTreeCopy as t } from "./workspace-tree-copy";
 import type { TrashedThreadReceipt } from "./use-thread-trash";
+import { listWorkspaceThreads } from "./workspace-tree-api";
 
 const LazyThreadList = lazy(() => import("./ThreadList"));
+const LazyWorkspaceFolderPicker = lazy(() => import("./WorkspaceFolderPicker"));
 
 interface RecentWorkspace {
   root: string;
@@ -22,11 +25,10 @@ interface RecentWorkspace {
 
 /**
  * Merged workspace + sessions sidebar tree (DeepSeek-Harness style). The active
- * workspace root renders as an expanded folder whose sessions nest directly
- * beneath it; every other recently opened folder is a collapsed leaf that
- * switches the runtime onto that folder when clicked (a full rebind + reload,
- * since each workspace keeps its own ledger). This replaces the previously
- * separate "sessions" list and "projects" switcher.
+ * workspace keeps a stable position and can expand independently. Inactive
+ * folders use a read-only summary endpoint, so browsing them never rebinds the
+ * runtime. Selecting one of their sessions performs one atomic workspace +
+ * thread switch while the app shell remains mounted.
  */
 export function WorkspaceTree({
   currentRoot,
@@ -37,6 +39,8 @@ export function WorkspaceTree({
   onSelect,
   onTrash,
   onRestore,
+  onWorkspaceSwitch,
+  onOpenWorkspaceSettings,
 }: {
   currentRoot: string;
   threads: ThreadSummary[];
@@ -46,10 +50,20 @@ export function WorkspaceTree({
   onSelect(threadId: string): void;
   onTrash(threadId: string): void;
   onRestore(): void;
+  onWorkspaceSwitch(root: string, threadId?: string): Promise<void>;
+  onOpenWorkspaceSettings(): void;
 }) {
   const [projects, setProjects] = useState<RecentWorkspace[]>([]);
   const [switching, setSwitching] = useState<string | undefined>(undefined);
-  const [expanded, setExpanded] = useState(true);
+  const [expandedRoots, setExpandedRoots] = useState<Set<string>>(
+    () => new Set([currentRoot]),
+  );
+  const [threadCache, setThreadCache] = useState<
+    Record<string, ThreadSummary[]>
+  >({});
+  const [loadingRoots, setLoadingRoots] = useState<Set<string>>(new Set());
+  const [failedRoots, setFailedRoots] = useState<Set<string>>(new Set());
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -65,16 +79,50 @@ export function WorkspaceTree({
     };
   }, [currentRoot]);
 
-  const others = dedupeOthers(currentRoot, projects);
+  useEffect(() => {
+    setExpandedRoots((current) => new Set(current).add(currentRoot));
+    setThreadCache((current) => ({ ...current, [currentRoot]: threads }));
+  }, [currentRoot, threads]);
 
-  const switchTo = async (root: string) => {
+  const orderedProjects = stableWorkspaceProjects(currentRoot, projects);
+
+  const switchTo = async (root: string, threadId?: string) => {
     if (root === currentRoot || switching) return;
     setSwitching(root);
     try {
-      await rebindWorkspaceRoot(root);
-      window.location.assign(window.location.pathname);
+      await onWorkspaceSwitch(root, threadId);
+      setSwitching(undefined);
     } catch {
       setSwitching(undefined);
+    }
+  };
+
+  const toggleRoot = async (root: string) => {
+    const open = expandedRoots.has(root);
+    setExpandedRoots((current) => {
+      const next = new Set(current);
+      if (open) next.delete(root);
+      else next.add(root);
+      return next;
+    });
+    if (open || root === currentRoot || threadCache[root]) return;
+    setLoadingRoots((current) => new Set(current).add(root));
+    setFailedRoots((current) => {
+      const next = new Set(current);
+      next.delete(root);
+      return next;
+    });
+    try {
+      const summaries = await listWorkspaceThreads(root);
+      setThreadCache((current) => ({ ...current, [root]: summaries }));
+    } catch {
+      setFailedRoots((current) => new Set(current).add(root));
+    } finally {
+      setLoadingRoots((current) => {
+        const next = new Set(current);
+        next.delete(root);
+        return next;
+      });
     }
   };
 
@@ -82,85 +130,175 @@ export function WorkspaceTree({
     <div className="workspace-tree">
       <div className="nav-section-heading">
         <span>{copy.workspaceSurface.chipLabel}</span>
-        <span>{String(others.length + 1).padStart(2, "0")}</span>
-      </div>
-      <ul className="workspace-tree-list">
-        <li className="workspace-tree-node is-current">
+        <span className="workspace-tree-heading-actions">
+          <span className="workspace-tree-heading-count">
+            {String(orderedProjects.length).padStart(2, "0")}
+          </span>
           <button
             type="button"
-            className="workspace-tree-folder is-active"
-            aria-expanded={expanded}
-            title={currentRoot}
-            onClick={() => setExpanded((value) => !value)}
+            className="workspace-tree-add"
+            aria-label={t.addWorkspace}
+            onClick={() => setPickerOpen(true)}
           >
-            {expanded ? (
-              <ChevronDown size={13} aria-hidden="true" className="tree-caret" />
-            ) : (
-              <ChevronRight
-                size={13}
-                aria-hidden="true"
-                className="tree-caret"
-              />
-            )}
-            <FolderOpen size={14} aria-hidden="true" />
-            <span>{basename(currentRoot)}</span>
-            <i>{t.currentBadge}</i>
+            <FolderPlus size={15} aria-hidden="true" />
+            <span role="tooltip">{t.addWorkspace}</span>
           </button>
-          {expanded ? (
-            <div className="workspace-tree-threads">
-              <Suspense fallback={<div className="thread-list" />}>
-                <LazyThreadList
-                  threads={threads}
-                  selectedThreadId={selectedThreadId}
-                  busyThreadId={busyThreadId}
-                  trashedThread={trashedThread}
-                  onSelect={onSelect}
-                  onTrash={onTrash}
-                  onRestore={onRestore}
-                />
-              </Suspense>
-            </div>
-          ) : null}
-        </li>
-        {others.map((project) => {
+        </span>
+      </div>
+      <ul className="workspace-tree-list">
+        {orderedProjects.map((project) => {
+          const current = project.root === currentRoot;
+          const open = expandedRoots.has(project.root);
           const isSwitching = switching === project.root;
+          const isLoading = loadingRoots.has(project.root);
+          const projectThreads = current
+            ? threads
+            : (threadCache[project.root] ?? []);
           return (
-            <li className="workspace-tree-node" key={project.root}>
-              <button
-                type="button"
-                className="workspace-tree-folder"
-                title={project.root}
-                disabled={Boolean(switching)}
-                onClick={() => void switchTo(project.root)}
+            <li
+              className={`workspace-tree-node ${current ? "is-current" : ""}`}
+              key={project.root}
+            >
+              <div
+                className={`workspace-tree-folder ${current ? "is-active" : ""}`}
               >
-                <span className="tree-caret" aria-hidden="true" />
-                {isSwitching ? (
-                  <Loader2 size={14} aria-hidden="true" className="spin" />
-                ) : (
-                  <Folder size={14} aria-hidden="true" />
-                )}
-                <span>{project.name}</span>
-              </button>
+                <button
+                  type="button"
+                  className="workspace-tree-toggle"
+                  aria-expanded={open}
+                  aria-label={`${open ? "Collapse" : "Expand"} ${project.name}`}
+                  onClick={() => void toggleRoot(project.root)}
+                >
+                  {open ? (
+                    <ChevronDown size={14} />
+                  ) : (
+                    <ChevronRight size={14} />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className="workspace-tree-project"
+                  title={project.root}
+                  disabled={Boolean(switching)}
+                  onClick={() =>
+                    current
+                      ? void toggleRoot(project.root)
+                      : void switchTo(project.root)
+                  }
+                >
+                  {isSwitching || isLoading ? (
+                    <Loader2 size={15} aria-hidden="true" className="spin" />
+                  ) : open ? (
+                    <FolderOpen size={15} aria-hidden="true" />
+                  ) : (
+                    <Folder size={15} aria-hidden="true" />
+                  )}
+                  <span>{project.name}</span>
+                  {current ? <i>{t.currentBadge}</i> : null}
+                </button>
+              </div>
+              {open ? (
+                <div
+                  className={`workspace-tree-threads ${current ? "is-current" : "is-preview"}`}
+                >
+                  {failedRoots.has(project.root) ? (
+                    <p className="workspace-tree-message">
+                      Unable to load sessions
+                    </p>
+                  ) : isLoading && projectThreads.length === 0 ? (
+                    <p className="workspace-tree-message">Loading sessions…</p>
+                  ) : current ? (
+                    <Suspense fallback={<div className="thread-list" />}>
+                      <LazyThreadList
+                        threads={projectThreads}
+                        selectedThreadId={selectedThreadId}
+                        busyThreadId={busyThreadId}
+                        trashedThread={trashedThread}
+                        onSelect={onSelect}
+                        onTrash={onTrash}
+                        onRestore={onRestore}
+                      />
+                    </Suspense>
+                  ) : (
+                    <WorkspaceThreadPreviews
+                      threads={projectThreads}
+                      onSelect={(threadId) =>
+                        void switchTo(project.root, threadId)
+                      }
+                    />
+                  )}
+                </div>
+              ) : null}
             </li>
           );
         })}
       </ul>
+      {pickerOpen ? (
+        <Suspense fallback={null}>
+          <LazyWorkspaceFolderPicker
+            currentRoot={currentRoot}
+            onClose={() => setPickerOpen(false)}
+            onManualEntry={onOpenWorkspaceSettings}
+            onWorkspaceSwitch={onWorkspaceSwitch}
+          />
+        </Suspense>
+      ) : null}
     </div>
   );
 }
 
-function dedupeOthers(
+export function stableWorkspaceProjects(
   currentRoot: string,
   projects: RecentWorkspace[],
 ): RecentWorkspace[] {
-  const seen = new Set<string>([currentRoot]);
-  const others: RecentWorkspace[] = [];
+  const seen = new Set<string>();
+  const ordered: RecentWorkspace[] = [];
   for (const project of projects) {
     if (seen.has(project.root)) continue;
     seen.add(project.root);
-    others.push(project);
+    ordered.push(project);
   }
-  return others;
+  if (!seen.has(currentRoot)) {
+    ordered.push({ root: currentRoot, name: basename(currentRoot) });
+  }
+  return ordered;
+}
+
+function WorkspaceThreadPreviews({
+  threads,
+  onSelect,
+}: {
+  threads: ThreadSummary[];
+  onSelect(threadId: string): void;
+}) {
+  if (threads.length === 0) {
+    return <p className="workspace-tree-message">No sessions yet</p>;
+  }
+  return (
+    <div className="workspace-thread-previews">
+      {threads.map((thread) => (
+        <button
+          type="button"
+          key={thread.id}
+          onClick={() => onSelect(thread.id)}
+        >
+          <span>{thread.title}</span>
+          <time dateTime={thread.updatedAt}>
+            {relativeDate(thread.updatedAt)}
+          </time>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function relativeDate(value: string): string {
+  const days = Math.max(
+    0,
+    Math.floor((Date.now() - Date.parse(value)) / 86_400_000),
+  );
+  if (days === 0) return "Today";
+  return `${String(days)}d`;
 }
 
 function basename(root: string): string {

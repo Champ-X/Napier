@@ -4,6 +4,14 @@ import {
   traceEventSummaryView,
   type TraceEventSummarySource,
 } from "./trace-event-summary-view";
+import {
+  attachTraceTrajectoryEventDurations,
+  traceTrajectoryCallKey,
+  traceTrajectoryStartEvent,
+  traceTrajectoryTerminalEvent,
+} from "./trace-trajectory-events";
+
+export { traceTrajectoryIsKeyEvent } from "./trace-trajectory-events";
 
 export type TraceTrajectoryMetric = "duration" | "turns" | "calls";
 export type TraceTrajectoryLane = "input" | "model" | "tools";
@@ -23,6 +31,8 @@ export interface TraceTrajectoryEvent {
   turnIndex: number;
   callOrdinal?: number;
   timestampMs: number;
+  status: TraceTrajectoryStatus;
+  durationMs?: number;
 }
 
 export interface TraceTrajectorySegment {
@@ -82,11 +92,14 @@ export function createTraceTrajectoryModel(
   const runIds = orderedRunIds(events, runsInput);
   const turnIndexByEvent = indexTurns(events);
   const callOrdinalByKey = indexCalls(events);
-  const projectedEvents = events.map((event) =>
-    projectEvent(
-      event,
-      turnIndexByEvent.get(event.id) ?? 0,
-      callOrdinalByKey.get(callKey(event) ?? ""),
+  const projectedEvents = attachTraceTrajectoryEventDurations(
+    events,
+    events.map((event) =>
+      projectEvent(
+        event,
+        turnIndexByEvent.get(event.id) ?? 0,
+        callOrdinalByKey.get(traceTrajectoryCallKey(event) ?? ""),
+      ),
     ),
   );
   const startedAtMs = timelineStart(events, runsInput);
@@ -145,7 +158,7 @@ export function traceTrajectoryPosition(
     );
   }
   const denominator = Math.max(1, model.eventCount);
-  return boundedPosition(((segment.seq - 1) / denominator) * 100, 1.4);
+  return boundedPosition(((segment.seq - 1) / denominator) * 100, 0);
 }
 
 export function traceTrajectoryMatches(
@@ -181,6 +194,7 @@ function projectEvent(
     turnIndex,
     ...(callOrdinal !== undefined ? { callOrdinal } : {}),
     timestampMs: timestamp(event.createdAt),
+    status: segmentStatus(event),
   };
 }
 
@@ -192,16 +206,22 @@ function createSegments(
 ): TraceTrajectorySegment[] {
   const terminalByCall = new Map<string, RunEvent>();
   for (const event of events) {
-    const key = callKey(event);
-    if (key && terminalEvent(event)) terminalByCall.set(key, event);
+    const key = traceTrajectoryCallKey(event);
+    if (key && traceTrajectoryTerminalEvent(event)) {
+      terminalByCall.set(key, event);
+    }
   }
   const segments: TraceTrajectorySegment[] = [];
   for (const event of events) {
     if (!overviewEvent(event)) continue;
     const projected = projectedById.get(event.id);
     if (!projected) continue;
-    const key = callKey(event);
-    if (key && terminalEvent(event) && pairedStart(events, event, key)) {
+    const key = traceTrajectoryCallKey(event);
+    if (
+      key &&
+      traceTrajectoryTerminalEvent(event) &&
+      pairedStart(events, event, key)
+    ) {
       continue;
     }
     const terminal = key ? terminalByCall.get(key) : undefined;
@@ -297,24 +317,10 @@ function indexTurns(events: RunEvent[]): Map<string, number> {
 function indexCalls(events: RunEvent[]): Map<string, number> {
   const output = new Map<string, number>();
   for (const event of events) {
-    const key = callKey(event);
+    const key = traceTrajectoryCallKey(event);
     if (key && !output.has(key)) output.set(key, output.size + 1);
   }
   return output;
-}
-
-function callKey(event: RunEvent): string | undefined {
-  const payload = record(event.payload);
-  if (typeof payload?.["callId"] === "string") {
-    return `tool:${event.runId}:${payload["callId"]}`;
-  }
-  const turnIndex =
-    number(payload?.["turnIndex"]) ??
-    number(payload?.["modelContextEnvelopeTurnIndex"]);
-  return turnIndex !== undefined &&
-    (event.type.startsWith("context.model_") || event.type === "model.response")
-    ? `model:${event.runId}:${String(turnIndex)}`
-    : undefined;
 }
 
 function pairedStart(
@@ -325,23 +331,8 @@ function pairedStart(
   return events.some(
     (candidate) =>
       candidate.seq < event.seq &&
-      callKey(candidate) === key &&
-      startEvent(candidate),
-  );
-}
-
-function startEvent(event: RunEvent): boolean {
-  return (
-    event.type === "tool.started" || event.type === "context.model_envelope"
-  );
-}
-
-function terminalEvent(event: RunEvent): boolean {
-  return (
-    event.type === "tool.completed" ||
-    event.type === "tool.failed" ||
-    event.type === "tool.blocked" ||
-    event.type === "model.response"
+      traceTrajectoryCallKey(candidate) === key &&
+      traceTrajectoryStartEvent(candidate),
   );
 }
 
@@ -360,7 +351,7 @@ function overviewEvent(event: RunEvent): boolean {
     event.type === "context.model_envelope" ||
     event.type === "model.response" ||
     event.type === "tool.started" ||
-    terminalEvent(event)
+    traceTrajectoryTerminalEvent(event)
   );
 }
 
@@ -426,6 +417,12 @@ function segmentStatus(event: RunEvent): TraceTrajectoryStatus {
   if (event.type.endsWith("started")) return "active";
   if (
     event.type.endsWith("completed") ||
+    event.type.endsWith("created") ||
+    event.type.endsWith("produced") ||
+    event.type.endsWith("verified") ||
+    event.type.endsWith("recorded") ||
+    event.type.endsWith("updated") ||
+    event.type.endsWith("applied") ||
     event.type === "model.response" ||
     event.type === "message.assistant"
   ) {
@@ -457,8 +454,8 @@ function timelineEnd(
 }
 
 function boundedPosition(leftInput: number, widthInput: number) {
-  const left = Math.min(99.2, Math.max(0, leftInput));
-  const width = Math.min(100 - left, Math.max(0.8, widthInput));
+  const left = Math.min(100, Math.max(0, leftInput));
+  const width = Math.min(100 - left, Math.max(0, widthInput));
   return { left, width };
 }
 
@@ -475,11 +472,5 @@ function timestamp(value: string): number {
 function record(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
-    : undefined;
-}
-
-function number(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isSafeInteger(value)
-    ? value
     : undefined;
 }

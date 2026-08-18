@@ -59,6 +59,7 @@ import {
   previewExtensionPackageUpdate as previewExtensionPackageUpdateApi,
   publishExtensionPackageRolloutChannel as publishExtensionPackageRolloutChannelApi,
   queueRunControlMessage,
+  rebindWorkspaceRoot,
   reviewMemory,
   reviewExtension,
   reviewMcpTool,
@@ -78,6 +79,7 @@ import {
   type WebThreadDetail,
 } from "./api";
 import { getBootstrap } from "./bootstrap-api";
+import { contextCheckpointPayload } from "./context-checkpoint-payload";
 import { copy } from "./copy";
 import { extensionCopy } from "./extension-copy";
 import type {
@@ -413,6 +415,32 @@ export function useWorkspaceViewModel() {
     [setLabFixtureReceipt, setRunReplayVerificationReceipt, setTraceExportReceipt, setTraceVerificationReceipt].forEach(
       (reset) => reset(undefined),
     );
+  const switchWorkspaceRoot = useCallback(async (root: string, threadId?: string): Promise<void> => {
+    setError(undefined);
+    try {
+      await rebindWorkspaceRoot(root);
+      const result = await getBootstrap(threadId);
+      threadDetailCacheRef.current.clear();
+      if (result.activeThread) threadDetailCacheRef.current.set(result.activeThread.thread.id, result.activeThread);
+      setThreadRunSessions({});
+      setBootstrap(result);
+      setDetail(result.activeThread);
+      commitThreadLocation(setSelectedThreadId, result.activeThread?.thread.id);
+      setSelectedModelKey(modelKey(result.recommendedRunModel));
+      [setComposer, setGoalDraft, setMemoryDraft, setLabLeftRunId, setLabRightRunId].forEach((reset) => reset(""));
+      [setMemorySupersedesId, setRunComparison, setRunReplayVerificationReceipt, setLabFixtureReceipt, setTraceExportReceipt, setTraceVerificationReceipt, setExtensionBusyId, setExtensionPackageReceipt, setExtensionPackageUpdatePreview, setExtensionPackageUpdateEnvelope, setExtensionPackageDeploymentPreview, setExtensionPackageDeploymentEnvelopes, setExtensionPackageRolloutPreview, setLabBusyAction].forEach((reset) => reset(undefined));
+      [setTraceExportBusy, setTraceVerifyBusy, setOperatorDecisionBusy].forEach((reset) => reset(false));
+      setMemoryConsolidatesIds([]);
+      setMemoryCategory("context");
+      setMemoryScope("workspace");
+      setMemoryReviewIntervalDays(90);
+      setControlMessageMode("steering");
+      setInspectorTab("plan");
+    } catch (cause) {
+      setError(toErrorMessage(cause));
+      throw cause;
+    }
+  }, []);
   const resolveThreadDetail = useCallback(
     (candidate: WebThreadDetail | undefined) => resolveCachedThreadDetail(threadDetailCacheRef.current, candidate),
     [],
@@ -1873,6 +1901,7 @@ export function useWorkspaceViewModel() {
     verifyThreadFixture,
     importThreadFixture,
     refreshActiveThread,
+    switchWorkspaceRoot,
     commitAgentConfiguration,
     commitConfigurationBootstrap,
   };
@@ -1949,51 +1978,6 @@ function isSignedExtensionPackageChannelIndexEnvelope(
   );
 }
 
-function contextCheckpointPayload(value: unknown): ContextCheckpointSnapshot | undefined {
-  if (!value || Array.isArray(value) || typeof value !== "object") {
-    return undefined;
-  }
-  const payload = value as Record<string, unknown>;
-  const decisions = payload["decisions"];
-  const openLoops = payload["openLoops"];
-  const artifacts = payload["artifacts"];
-  if (
-    payload["schemaVersion"] !== 1 ||
-    typeof payload["checkpointId"] !== "string" ||
-    typeof payload["fromSeq"] !== "number" ||
-    typeof payload["toSeq"] !== "number" ||
-    typeof payload["retainedFromSeq"] !== "number" ||
-    typeof payload["sourceEventCount"] !== "number" ||
-    typeof payload["sourceSha256"] !== "string" ||
-    typeof payload["summarySha256"] !== "string" ||
-    typeof payload["summary"] !== "string" ||
-    !isStringArray(decisions) ||
-    !isStringArray(openLoops) ||
-    !isStringArray(artifacts)
-  ) {
-    return undefined;
-  }
-  return {
-    schemaVersion: 1,
-    checkpointId: payload["checkpointId"],
-    ...(typeof payload["parentCheckpointId"] === "string" ? { parentCheckpointId: payload["parentCheckpointId"] } : {}),
-    fromSeq: payload["fromSeq"],
-    toSeq: payload["toSeq"],
-    retainedFromSeq: payload["retainedFromSeq"],
-    sourceEventCount: payload["sourceEventCount"],
-    sourceSha256: payload["sourceSha256"],
-    summarySha256: payload["summarySha256"],
-    summary: payload["summary"],
-    decisions,
-    openLoops,
-    artifacts,
-  };
-}
-
-function isStringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every((item) => typeof item === "string");
-}
-
 function upsertMemory(
   memories: BootstrapResponse["memories"],
   fact: BootstrapResponse["memories"][number],
@@ -2004,7 +1988,6 @@ function upsertMemory(
 function upsertExtension(extensions: ExtensionRecord[], extension: ExtensionRecord): ExtensionRecord[] {
   return [extension, ...extensions.filter((candidate) => candidate.id !== extension.id)];
 }
-
 function toErrorMessage(error: unknown): string {
   return formatApiErrorMessage(error);
 }

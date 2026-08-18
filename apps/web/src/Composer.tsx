@@ -1,6 +1,12 @@
 import type { KeyboardEvent } from "react";
 import { lazy, Suspense, useCallback, useState } from "react";
-import { Command, FolderTree, Send, SlidersHorizontal, Square } from "lucide-react";
+import {
+  Command,
+  FolderTree,
+  Send,
+  SlidersHorizontal,
+  Square,
+} from "lucide-react";
 
 import type { AgentProfile } from "@napier/contracts";
 import type { InspectorTab } from "./use-workspace-view-model";
@@ -31,6 +37,7 @@ export function Composer({
   workspaceRoot,
   onOpenInspector,
   onOpenWorkspace,
+  onWorkspaceSwitch,
 }: {
   vm: Pick<
     WorkspaceViewModel,
@@ -55,6 +62,7 @@ export function Composer({
   workspaceRoot: string;
   onOpenInspector: (tab: InspectorTab) => void;
   onOpenWorkspace: () => void;
+  onWorkspaceSwitch(root: string): Promise<void>;
 }) {
   const [runReadiness, setRunReadiness] = useState<ComposerRunReadiness>(
     initialComposerRunReadiness,
@@ -210,6 +218,7 @@ export function Composer({
             currentRoot={workspaceRoot}
             onClose={() => setPickerOpen(false)}
             onManualEntry={onOpenWorkspace}
+            onWorkspaceSwitch={onWorkspaceSwitch}
           />
         </Suspense>
       ) : null}

@@ -4,8 +4,10 @@ import { describe, expect, it } from "vitest";
 import {
   createTraceTrajectoryModel,
   traceTrajectoryMatches,
+  traceTrajectoryIsKeyEvent,
   traceTrajectoryPosition,
 } from "../src/trace-trajectory-model";
+import { layoutTraceTrajectoryLane } from "../src/trace-trajectory-layout";
 
 describe("Trace trajectory model", () => {
   it("projects chronological lanes, turns, calls, and paired spans", () => {
@@ -76,6 +78,45 @@ describe("Trace trajectory model", () => {
     });
   });
 
+  it("places visually colliding events on concurrent subtracks", () => {
+    const model = createTraceTrajectoryModel(events(), [run()]);
+    const source = model.segments.find(
+      (segment) => segment.label === "Run Started",
+    )!;
+    const sameMoment = [
+      source,
+      {
+        ...source,
+        id: "trajectory_event_colliding",
+        eventId: "event_colliding",
+        seq: source.seq + 1,
+      },
+    ];
+    const layout = layoutTraceTrajectoryLane(
+      sameMoment,
+      model,
+      "duration",
+      800,
+    );
+
+    expect(layout.rowCount).toBe(2);
+    expect(layout.items.map((item) => item.row)).toEqual([0, 1]);
+    expect(layout.items.every((item) => item.width >= 0.375)).toBe(true);
+  });
+
+  it("reuses a subtrack after the previous visible interval ends", () => {
+    const model = createTraceTrajectoryModel(events(), [run()]);
+    const layout = layoutTraceTrajectoryLane(
+      model.segments.filter((segment) => segment.lane === "tools"),
+      model,
+      "duration",
+      800,
+    );
+
+    expect(layout.rowCount).toBe(1);
+    expect(layout.items.map((item) => item.row)).toEqual([0]);
+  });
+
   it("searches only privacy-bounded labels and summaries", () => {
     const model = createTraceTrajectoryModel(events(), [run()]);
     const tool = model.events.find(
@@ -88,6 +129,22 @@ describe("Trace trajectory model", () => {
     expect(traceTrajectoryMatches(tool, "read_file")).toBe(true);
     expect(traceTrajectoryMatches(user, "message.user")).toBe(true);
     expect(traceTrajectoryMatches(user, "PRIVATE_PROMPT")).toBe(false);
+  });
+
+  it("separates readable key actions from the complete audit stream", () => {
+    const model = createTraceTrajectoryModel(events(), [run()]);
+    const keyEvents = model.events.filter(traceTrajectoryIsKeyEvent);
+
+    expect(keyEvents.map((event) => event.event.type)).toEqual([
+      "message.user",
+      "tool.completed",
+      "model.response",
+      "message.assistant",
+      "run.completed",
+    ]);
+    expect(
+      keyEvents.find((event) => event.event.type === "tool.completed"),
+    ).toMatchObject({ status: "completed", durationMs: 2_000 });
   });
 });
 

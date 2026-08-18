@@ -41,7 +41,9 @@ afterEach(async () => {
     await stopServices(services).catch(() => undefined);
   }
   await Promise.all(
-    temporaryRoots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
+    temporaryRoots
+      .splice(0)
+      .map((root) => rm(root, { recursive: true, force: true })),
   );
 });
 
@@ -65,17 +67,20 @@ async function scaffold(): Promise<RebindFixture> {
     workspaceRoot,
   });
   let app = createApp(services, { rebindWorkspace });
-  // Mirror index.ts: teardown current graph, rebuild on the new root.
-  async function rebindWorkspace(absoluteRoot: string): Promise<WorkspaceSummary> {
+  // Mirror index.ts: prepare the candidate before retiring the current graph.
+  async function rebindWorkspace(
+    absoluteRoot: string,
+  ): Promise<WorkspaceSummary> {
     const previous = services;
-    const index = openServices.indexOf(previous);
-    if (index >= 0) openServices.splice(index, 1);
-    await stopServices(previous);
-    services = await createServices({
+    const candidate = await createServices({
       dataRoot: path.join(absoluteRoot, ".napier"),
       workspaceRoot: absoluteRoot,
     });
+    services = candidate;
     app = createApp(services, { rebindWorkspace });
+    const index = openServices.indexOf(previous);
+    if (index >= 0) openServices.splice(index, 1);
+    await stopServices(previous);
     return services.store.getWorkspaceSummary();
   }
   return {
@@ -125,7 +130,7 @@ describe("workspace root rebind endpoint", () => {
     expect(relative.status).toBe(400);
   });
 
-  it("rejects rebinding to the current root with 409", async () => {
+  it("treats rebinding to the current root as an idempotent success", async () => {
     const fixture = await scaffold();
     const current = fixture.currentRoot();
     const response = await fixture.app().request("/api/workspace/root", {
@@ -133,7 +138,10 @@ describe("workspace root rebind endpoint", () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ root: current }),
     });
-    expect(response.status).toBe(409);
+    expect(response.status).toBe(200);
+    expect((await response.json()) as WorkspaceSummary).toMatchObject({
+      root: current,
+    });
   });
 
   it("returns 409 when the runtime provides no rebind capability", async () => {

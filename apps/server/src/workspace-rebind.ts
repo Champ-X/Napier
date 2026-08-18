@@ -23,10 +23,10 @@ export class WorkspaceRebindBusyError extends Error {
 type WorkspaceRebindBusyStore = Pick<LocalStore, "listThreads" | "listRuns">;
 
 /**
- * A rebind tears down and rebuilds the entire runtime, so it must refuse while
- * any Run is still in flight. Run-scoped sessions (workspace processes, browser,
- * LSP leases) are all released when their owning Run settles, so a persisted
- * queued/running scan is the single authoritative busy signal.
+ * A rebind pauses the current runtime before activating another workspace, so
+ * it must refuse while any Run is still in flight. Run-scoped sessions
+ * (workspace processes, browser, LSP leases) are released when their owning Run
+ * settles, so a persisted queued/running scan is the authoritative busy signal.
  */
 export function workspaceRebindBusyReasons(
   store: WorkspaceRebindBusyStore,
@@ -52,7 +52,6 @@ export function workspaceRebindBusyReasons(
  */
 export async function resolveRebindWorkspaceRoot(
   rawRoot: unknown,
-  currentRoot: string,
 ): Promise<string> {
   if (typeof rawRoot !== "string") {
     throw new WorkspaceRebindRequestError(
@@ -94,19 +93,5 @@ export async function resolveRebindWorkspaceRoot(
       400,
     );
   }
-  if (resolved === (await canonicalOrResolved(currentRoot))) {
-    throw new WorkspaceRebindRequestError(
-      "Workspace is already rooted here",
-      409,
-    );
-  }
   return resolved;
-}
-
-async function canonicalOrResolved(candidate: string): Promise<string> {
-  try {
-    return await realpath(path.resolve(candidate));
-  } catch {
-    return path.resolve(candidate);
-  }
 }

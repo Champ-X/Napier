@@ -39,7 +39,8 @@
   display: inline-flex;
   gap: 4px;
   align-items: center;
-  padding: 3px 9px;
+  min-height: 28px;
+  padding: 4px 9px;
   font-family: var(--mono);
   font-size: 10px;
   color: var(--ink);
@@ -110,7 +111,8 @@
   display: grid;
   min-width: 0;
   gap: 1px;
-  padding: 5px 7px;
+  min-height: 28px;
+  padding: 6px 7px;
   overflow: hidden;
   font-family: var(--mono);
   font-size: 9px;
@@ -123,7 +125,7 @@
 }
 
 .composer-readiness-item strong {
-  font-size: 7px;
+  font-size: 8px;
   color: var(--ink-faint);
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -134,7 +136,7 @@
   width: 100%;
   align-items: center;
   gap: 5px;
-  font-size: 7px;
+  font-size: 8px;
   letter-spacing: 0.05em;
   text-align: left;
   text-transform: uppercase;
@@ -183,7 +185,8 @@
   display: inline-flex;
   gap: 4px;
   align-items: center;
-  padding: 3px 6px;
+  min-height: 28px;
+  padding: 5px 7px;
   font-family: var(--mono);
   font-size: 10px;
   color: var(--ledger);

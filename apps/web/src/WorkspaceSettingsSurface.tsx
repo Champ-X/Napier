@@ -1,6 +1,14 @@
 import { lazy, Suspense, useEffect, useRef } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-import { Bot, Brain, Cable, FolderTree, Languages, Settings2, X } from "lucide-react";
+import {
+  Bot,
+  Brain,
+  Cable,
+  FolderTree,
+  Languages,
+  Settings2,
+  X,
+} from "lucide-react";
 
 import { copy } from "./copy";
 import { getLocale, setLocale } from "./locale";
@@ -63,12 +71,14 @@ export function WorkspaceSettingsSurface({
   section,
   onSection,
   onClose,
+  onWorkspaceSwitch,
 }: {
   vm: WorkspaceViewModel;
   activeAgent: NonNullable<WorkspaceViewModel["detail"]>["agent"] | undefined;
   section: SettingsSection;
   onSection(section: SettingsSection): void;
   onClose(): void;
+  onWorkspaceSwitch(root: string): Promise<void>;
 }) {
   const restoreFocusRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
@@ -100,14 +110,21 @@ export function WorkspaceSettingsSurface({
         aria-label={copy.settingsSurface.close}
         onClick={onClose}
       />
-      <aside className="workspace-settings-surface" aria-label={copy.settingsSurface.title}>
+      <aside
+        className="workspace-settings-surface"
+        aria-label={copy.settingsSurface.title}
+      >
         <header className="settings-surface-heading">
           <div>
             <span>{copy.settingsSurface.eyebrow}</span>
             <h2>{copy.settingsSurface.title}</h2>
             <p>{copy.settingsSurface.body}</p>
           </div>
-          <button type="button" aria-label={copy.settingsSurface.close} onClick={onClose}>
+          <button
+            type="button"
+            aria-label={copy.settingsSurface.close}
+            onClick={onClose}
+          >
             <X size={16} aria-hidden="true" />
           </button>
         </header>
@@ -213,6 +230,7 @@ export function WorkspaceSettingsSurface({
             <WorkspaceRootPanel
               root={vm.bootstrap.workspace.root}
               dataRoot={vm.bootstrap.workspace.dataRoot}
+              onWorkspaceSwitch={onWorkspaceSwitch}
             />
           ) : null}
           {section === "language" ? <LanguagePanel /> : null}
@@ -239,7 +257,8 @@ function LanguagePanel() {
   return (
     <div className="language-panel">
       <p className="language-panel-current">
-        {copy.language.current}: <strong>{options.find((o) => o.id === current)?.label}</strong>
+        {copy.language.current}:{" "}
+        <strong>{options.find((o) => o.id === current)?.label}</strong>
       </p>
       <div className="language-panel-options">
         {options.map((option) => (

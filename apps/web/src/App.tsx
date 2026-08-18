@@ -1,10 +1,12 @@
 import { useRef } from "react";
 
 import { FatalState, LoadingShell } from "./AppInitialStates";
+import { AppLedgerNavigation } from "./AppLedgerNavigation";
+import { AppWorkbenchHeader } from "./AppWorkbenchHeader";
+import { composerCanStartRun } from "./composer-run-availability";
 import { Composer } from "./Composer";
 import { ConversationWorkspace } from "./ConversationWorkspace";
 import { copy } from "./copy";
-import { LedgerNavigation } from "./LedgerNavigation";
 import { SessionWorkspace } from "./SessionWorkspace";
 import { TaskNarrativeBoundary } from "./TaskNarrativeBoundary";
 import { TraceWorkspace } from "./TraceWorkspace";
@@ -16,13 +18,11 @@ import {
   WorkbenchDeferredDecisions,
   WorkbenchDeferredNotices,
 } from "./WorkbenchDeferredPanels";
-import { WorkbenchHeader } from "./WorkbenchHeader";
 import { WorkspaceSettingsSurface } from "./WorkspaceSettingsSurface";
-import { WorkspaceViewNavigation } from "./WorkspaceViewNavigation";
 
 export function App() {
-  const vm = useWorkspaceViewModel();
-  const conversationEnd = useRef<HTMLDivElement>(null);
+  const vm = useWorkspaceViewModel(),
+    conversationEnd = useRef<HTMLDivElement>(null);
   const shell = useWorkspaceShell(vm.setInspectorTab);
   useConversationAutoScroll({
     endRef: conversationEnd,
@@ -43,42 +43,19 @@ export function App() {
     return <FatalState message={vm.error ?? copy.notices.disconnected} />;
   }
 
-  const activeAgent = vm.detail?.agent ?? vm.bootstrap.agents[0];
-  const activeModel = vm.selectedModel;
-  const canStartRun = Boolean(
-    vm.composer.trim() &&
-    vm.detail &&
-    !vm.openOperatorDecision &&
-    activeModel.configured,
-  );
+  const activeAgent = vm.detail?.agent ?? vm.bootstrap.agents[0],
+    activeModel = vm.selectedModel;
+  const canStartRun = composerCanStartRun({
+    text: vm.composer,
+    hasThread: Boolean(vm.detail),
+    hasOpenDecision: Boolean(vm.openOperatorDecision),
+    model: activeModel,
+  });
   return (
     <div className="app-shell" data-workspace-view={shell.workspaceView}>
-      <LedgerNavigation
-        bootstrap={vm.bootstrap}
-        selectedThreadId={vm.selectedThreadId}
-        busyThreadId={vm.threadLifecycleBusyId}
-        trashedThread={vm.trashedThreadReceipt}
-        onNewThread={() => void vm.newThread()}
-        onSelect={(threadId) => void vm.selectThread(threadId)}
-        onTrash={(threadId) => void vm.trashThread(threadId)}
-        onRestore={() => void vm.restoreTrashedThread()}
-        onOpenSettings={shell.openSettings}
-      />
+      <AppLedgerNavigation vm={vm} shell={shell} />
       <main className="workbench">
-        <WorkbenchHeader
-          isRunning={vm.isRunning}
-          model={activeModel}
-          status={vm.detail?.thread.status}
-          title={vm.detail?.thread.title ?? ""}
-          onOpenSettings={shell.openSettings}
-        >
-          <WorkspaceViewNavigation
-            activeView={shell.workspaceView}
-            eventCount={vm.detail?.events.length ?? 0}
-            runCount={vm.detail?.runs.length ?? 0}
-            onChange={shell.setWorkspaceView}
-          />
-        </WorkbenchHeader>
+        <AppWorkbenchHeader vm={vm} shell={shell} />
         <div className="workspace-primary-surface">
           {shell.workspaceView === "conversation" ? (
             <section
@@ -108,6 +85,7 @@ export function App() {
                 workspaceRoot={vm.bootstrap.workspace.root}
                 onOpenInspector={shell.routeInspector}
                 onOpenWorkspace={shell.openWorkspaceSettings}
+                onWorkspaceSwitch={vm.switchWorkspaceRoot}
               />
             </section>
           ) : null}
@@ -139,6 +117,7 @@ export function App() {
           section={shell.settingsSection}
           onSection={shell.setSettingsSection}
           onClose={shell.closeSettings}
+          onWorkspaceSwitch={vm.switchWorkspaceRoot}
         />
       ) : null}
     </div>
