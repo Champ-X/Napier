@@ -70,9 +70,9 @@ import { resolveAgentRunModel } from "./agent-run-model.js";
 import {
   contextHistoryCharacterBudget,
   extractAssistantReasoning,
-  isProviderMessage,
   mapModelUsage,
   modelRefFromModel,
+  providerMessages,
 } from "./agent-model-projection.js";
 import { preflightAgentToolPolicy } from "./agent-tool-policy-preflight.js";
 import { builtInToolEffect } from "./agent-tool-effects.js";
@@ -1645,7 +1645,7 @@ export class AgentRuntime {
           : {}),
         sessionId: run.threadId,
         toolExecution: "parallel",
-        convertToLlm: (messages) => messages.filter(isProviderMessage),
+        convertToLlm: providerMessages,
         beforeToolCall,
         afterToolCall,
         getSteeringMessages: () =>

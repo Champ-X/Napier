@@ -15,14 +15,14 @@ describe("manual Run recovery view model", () => {
     ).toEqual(pausedBudget);
   });
 
-  it("preserves interrupted recovery and does not expose partial settlements", () => {
+  it("preserves interrupted recovery and exposes partial settlements", () => {
     const interrupted = run("interrupted", "run_interrupted");
     const partial = run("failed", "run_partial", { outcome: "partial" });
 
     expect(latestManuallyResumableRun("waiting", [interrupted])).toEqual(
       interrupted,
     );
-    expect(latestManuallyResumableRun("idle", [partial])).toBeUndefined();
+    expect(latestManuallyResumableRun("idle", [partial])).toEqual(partial);
   });
 
   it("does not fall back past a latest Workflow-owned settlement", () => {
@@ -31,6 +31,20 @@ describe("manual Run recovery view model", () => {
     });
     const workflow = run("failed", "run_workflow", {
       outcome: "paused_budget",
+      source: "workflow",
+    });
+
+    expect(
+      latestManuallyResumableRun("idle", [ordinary, workflow]),
+    ).toBeUndefined();
+  });
+
+  it("does not fall back past a latest Workflow-owned partial settlement", () => {
+    const ordinary = run("failed", "run_ordinary", {
+      outcome: "paused_budget",
+    });
+    const workflow = run("failed", "run_workflow", {
+      outcome: "partial",
       source: "workflow",
     });
 

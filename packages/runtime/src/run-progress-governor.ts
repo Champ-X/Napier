@@ -21,6 +21,7 @@ export interface RunProgressSnapshot {
   planRevisionTotal: number;
   artifactCandidateCount: number;
   userResultCount: number;
+  failureFingerprintCount: number;
   contentSha256: string;
 }
 
@@ -47,6 +48,9 @@ export class RunProgressGovernor {
   private actionFirstTriggered = false;
   private noProgressRerouted = false;
   private awaitingNoProgressOutcome = false;
+  private awaitingFailureRepairOutcome = false;
+  private latestFailureFingerprintCount = 0;
+  private noProgressFailureFingerprintCount = 0;
   private noProgressRerouteContentSha256 = "";
 
   constructor(
@@ -60,6 +64,7 @@ export class RunProgressGovernor {
   ) {}
 
   async afterVector(vector: RunProgressSnapshot): Promise<void> {
+    this.latestFailureFingerprintCount = vector.failureFingerprintCount;
     if (vector.progressed && this.pendingRerouteKind === "no_progress") {
       this.pendingReroute = undefined;
       this.pendingRerouteKind = undefined;
@@ -73,9 +78,23 @@ export class RunProgressGovernor {
       this.pendingReroute = undefined;
       this.pendingRerouteKind = undefined;
     }
+    if (this.awaitingFailureRepairOutcome) {
+      this.awaitingFailureRepairOutcome = false;
+      if (!vector.progressed) {
+        throw new RunNoProgressError(this.noProgressEvidence(vector));
+      }
+      return;
+    }
     if (this.awaitingNoProgressOutcome) {
       this.awaitingNoProgressOutcome = false;
       if (!vector.progressed) {
+        if (
+          vector.failureFingerprintCount >
+          this.noProgressFailureFingerprintCount
+        ) {
+          this.awaitingFailureRepairOutcome = true;
+          return;
+        }
         throw new RunNoProgressError(this.noProgressEvidence(vector));
       }
       return;
@@ -105,7 +124,11 @@ export class RunProgressGovernor {
     const kind = this.pendingRerouteKind;
     this.pendingReroute = undefined;
     this.pendingRerouteKind = undefined;
-    if (kind === "no_progress") this.awaitingNoProgressOutcome = true;
+    if (kind === "no_progress") {
+      this.noProgressFailureFingerprintCount =
+        this.latestFailureFingerprintCount;
+      this.awaitingNoProgressOutcome = true;
+    }
     const text =
       typeof message.content === "string"
         ? message.content
@@ -251,7 +274,7 @@ function noProgressMessage(vector: RunProgressSnapshot): string {
   return [
     "Internal convergence redirect: the Run has made no measurable product progress.",
     `Bound vector ${vector.contentSha256}; turn ${String(vector.turnIndex)}; stagnant turns ${String(vector.stagnantTurnCount)}; stagnant ms ${String(vector.stagnantElapsedMs)}.`,
-    `Current counts: workspace mutations ${String(vector.workspaceMutationCount)}, sources ${String(vector.sourceCount)}, plan revisions ${String(vector.planRevisionTotal)}, artifact candidates ${String(vector.artifactCandidateCount)}, user results ${String(vector.userResultCount)}.`,
+    `Current counts: workspace mutations ${String(vector.workspaceMutationCount)}, sources ${String(vector.sourceCount)}, plan revisions ${String(vector.planRevisionTotal)}, artifact candidates ${String(vector.artifactCandidateCount)}, user results ${String(vector.userResultCount)}, distinct failures ${String(vector.failureFingerprintCount)}.`,
     "Do not expand research or planning. Reuse completed evidence, perform one smallest safe action that changes the Progress Vector, or produce the best concrete partial result now.",
     "If this turn still makes no measurable progress, deterministic finalization will stop the Run.",
   ].join("\n");

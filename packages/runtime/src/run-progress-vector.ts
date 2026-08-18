@@ -19,6 +19,10 @@ import {
 import { RunResearchBudget } from "./run-research-budget.js";
 import type { RunBudgetTracker } from "./run-budget.js";
 import type { AgentToolResultLifecycle } from "./agent-tool-result-lifecycle.js";
+import {
+  runProgressFailureFingerprint,
+  runProgressToolInputFingerprint,
+} from "./run-progress-failures.js";
 
 export type RunProgressDimension =
   | "workspace"
@@ -70,6 +74,8 @@ export class RunProgressTracker {
   private readonly approvalEvidence = new Set<string>();
   private readonly capabilityEvidence = new Set<string>();
   private readonly resultEvidence = new Set<string>();
+  private readonly failureFingerprints = new Set<string>();
+  private readonly toolInputFingerprints = new Map<string, string>();
 
   private constructor(
     private readonly context: {
@@ -180,6 +186,8 @@ export class RunProgressTracker {
       artifactCount: artifactState.artifactCount,
       artifactCandidateCount: artifactState.candidateCount,
       artifactStatusCounts: artifactState.statusCounts,
+      failureFingerprintCount: this.failureFingerprints.size,
+      failureFingerprintSetSha256: hashSet(this.failureFingerprints),
       dimensions,
       predecessorContentSha256: this.previousContentSha256,
       ...(this.firstWorkspaceMutationTurn !== undefined
@@ -228,6 +236,24 @@ export class RunProgressTracker {
       const payload = record(event.payload);
       const planId = stringValue(payload?.["planId"]);
       if (planId) this.planIds.add(planId);
+      if (event.type === "tool.started") {
+        const callId = stringValue(payload?.["callId"]);
+        if (callId && payload) {
+          this.toolInputFingerprints.set(
+            callId,
+            runProgressToolInputFingerprint(payload),
+          );
+        }
+      }
+      if (event.type === "tool.failed" || event.type === "tool.blocked") {
+        this.failureFingerprints.add(
+          runProgressFailureFingerprint(
+            event,
+            payload,
+            this.toolInputFingerprints,
+          ),
+        );
+      }
       if (event.type === "tool.completed") {
         const toolName = stringValue(payload?.["toolName"]);
         if (toolName && SOURCE_TOOLS.has(toolName)) {
@@ -361,7 +387,6 @@ function isCapabilityEvent(event: RunEvent): boolean {
   return (
     event.category === "extension" ||
     event.category === "credential" ||
-    event.type === "tool.blocked" ||
     event.type === "tool.deadline.exceeded" ||
     event.type.startsWith("model.stream.") ||
     event.type.startsWith("sandbox.")

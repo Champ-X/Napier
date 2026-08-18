@@ -36,6 +36,8 @@ describe("Provider Patch tool definition budget", () => {
     expect(tool.description).toContain("oldText");
     expect(tool.description).toContain("anchorSha256");
     expect(tool.description).toContain("rangeSha256");
+    expect(tool.description).toContain("edits[]");
+    expect(tool.description).toContain("Never put edit content");
     expect(tool.description).toContain("empty newText");
     expect(tool.description).toContain("parent directories");
     expect(tool.description).toContain("diagnostics");

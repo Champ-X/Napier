@@ -15,17 +15,21 @@ export function RecoveryBanner({
   onResume: () => void;
 }) {
   const resumeWarningId = "recovery-model-unavailable";
+  const recoveryCopy =
+    run.status === "failed" && run.outcome === "partial"
+      ? copy.recovery.partial
+      : copy.recovery;
   return (
     <section className="recovery-banner" aria-labelledby="recovery-title">
       <div className="recovery-mark" aria-hidden="true">
         <RotateCcw size={16} />
       </div>
       <div>
-        <span>{copy.recovery.eyebrow}</span>
-        <h2 id="recovery-title">{copy.recovery.title}</h2>
-        <p>{copy.recovery.body}</p>
+        <span>{recoveryCopy.eyebrow}</span>
+        <h2 id="recovery-title">{recoveryCopy.title}</h2>
+        <p>{recoveryCopy.body}</p>
         <code>
-          {copy.recovery.run}: {run.id}
+          {recoveryCopy.run}: {run.id}
         </code>
       </div>
       <div className="recovery-actions">
@@ -39,7 +43,7 @@ export function RecoveryBanner({
           onClick={onResume}
         >
           <RotateCcw size={12} aria-hidden="true" />
-          {copy.recovery.action}
+          {recoveryCopy.action}
         </button>
       </div>
     </section>

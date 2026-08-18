@@ -12,10 +12,17 @@ export type ManualRunRecoveryBlockReason =
   | "tool_experiment"
   | "agent_experiment";
 
+function hasResumableFailedOutcome(run: RunRecord): boolean {
+  return (
+    run.status === "failed" &&
+    (run.outcome === "paused_budget" || run.outcome === "partial")
+  );
+}
+
 export function isManualRunRecoveryParent(run: RunRecord): boolean {
   return (
-    run.status === "interrupted" ||
-    (run.status === "failed" && run.outcome === "paused_budget")
+    (run.status === "interrupted" || hasResumableFailedOutcome(run)) &&
+    manualRunRecoveryBlockReason(run) === undefined
   );
 }
 
@@ -25,9 +32,7 @@ export function manualRunRecoverySettlementMatches(
 ): boolean {
   return (
     (threadStatus === "waiting" && run.status === "interrupted") ||
-    (threadStatus === "idle" &&
-      run.status === "failed" &&
-      run.outcome === "paused_budget")
+    (threadStatus === "idle" && hasResumableFailedOutcome(run))
   );
 }
 

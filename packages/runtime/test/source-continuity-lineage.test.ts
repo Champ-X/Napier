@@ -30,6 +30,47 @@ describe("Source continuity lineage", () => {
     expect(predecessor([parent, current], current.id)).toEqual(parent);
   });
 
+  it("selects a partial recovery parent", () => {
+    const parent = run("run_parent0004", "failed", "user", 0, {
+      outcome: "partial",
+    });
+    const current = run("run_current012", "running", "recovery", 2, {
+      parentRunId: parent.id,
+    });
+
+    expect(predecessor([parent, current], current.id)).toEqual(parent);
+  });
+
+  it("rejects Workflow and experiment recovery parents", () => {
+    const current = run("run_current013", "running", "recovery", 2);
+    const blockedParents = [
+      run("run_workflow04", "failed", "workflow", 0, {
+        outcome: "partial",
+      }),
+      run("run_model_exp4", "failed", "model_experiment", 0, {
+        outcome: "partial",
+      }),
+      run("run_tool_exp04", "failed", "tool_experiment", 0, {
+        outcome: "paused_budget",
+      }),
+      run("run_agent_exp4", "failed", "user", 0, {
+        outcome: "partial",
+        configuration: {
+          executionMode: "agent_experiment_read_only",
+        } as RunRecord["configuration"],
+      }),
+    ];
+
+    for (const parent of blockedParents) {
+      expect(() =>
+        predecessor(
+          [parent, { ...current, parentRunId: parent.id }],
+          current.id,
+        ),
+      ).toThrow("Source continuity recovery parent is invalid");
+    }
+  });
+
   it("rejects a cross-Agent recovery parent without blocking explicit imported recovery", () => {
     const parent = run("run_parent0002", "interrupted", "user", 0);
     const current = run("run_current008", "running", "recovery", 2, {

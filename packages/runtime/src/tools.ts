@@ -33,6 +33,7 @@ import type {
   WorkspacePatchInput,
   WorkspacePatchResult,
 } from "./workspace-patch-model.js";
+import { assertWorkspacePatchRangeSha256 } from "./workspace-patch-range.js";
 import { withWorkspacePathLock } from "./workspace-write-lock.js";
 export type { WorkspaceDataFormat } from "./structured-data.js";
 export type {
@@ -928,9 +929,8 @@ function applyHashRangeEdits(
       throw new Error(`${label} line range exceeds ${lines.length} lines`);
     }
     const selected = lines.slice(startIndex, endIndex + 1).join("\n");
-    if (sha256(selected) !== edit.rangeSha256) {
-      throw new Error(`${label} rangeSha256 precondition failed`);
-    }
+    // Preserve CAS while returning the digest needed for a bounded correction.
+    assertWorkspacePatchRangeSha256(selected, edit, label);
     return {
       startIndex,
       endIndex,

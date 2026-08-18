@@ -21,7 +21,7 @@
     "apps/web/src/App.tsx": 146,
     "apps/web/src/AutomationPanel.tsx": 2293,
     "apps/web/src/ContextPanel.tsx": 3483,
-    "apps/web/src/copy.ts": 928,
+    "apps/web/src/copy.ts": 923,
     "apps/web/src/EvaluationCasebookPanel.tsx": 988,
     "apps/web/src/EvaluationSuitePanel.tsx": 1227,
     "apps/web/src/ExtensionPackageDesk.tsx": 764,

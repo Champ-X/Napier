@@ -91,6 +91,67 @@ describe("Run progress vector", () => {
     fixture.store.close();
   });
 
+  it("deduplicates blocked failure fingerprints without counting progress", async () => {
+    const fixture = await createFixture("blocked-fingerprint");
+    const run = await fixture.store.createRun({
+      threadId: fixture.threadId,
+      agentId: fixture.agentId,
+    });
+    const tracker = await RunProgressTracker.create(fixture.store, run);
+
+    for (const callId of ["call_blocked_1", "call_blocked_2"]) {
+      await event(fixture.store, run, "tool.blocked", {
+        callId,
+        toolName: "read_file",
+        status: "blocked",
+        inputSha256: "b".repeat(64),
+        policyReason: "fixture policy",
+      });
+      await event(fixture.store, run, "turn.completed", {});
+      const vector = await tracker.recordTurn();
+      expect(vector.payload).toEqual(
+        expect.objectContaining({
+          progressed: false,
+          changedDimensions: [],
+          failureFingerprintCount: 1,
+        }),
+      );
+    }
+
+    fixture.store.close();
+  });
+
+  it("ignores dynamic failure text for the same stable tool input", async () => {
+    const fixture = await createFixture("dynamic-failure-fingerprint");
+    const run = await fixture.store.createRun({
+      threadId: fixture.threadId,
+      agentId: fixture.agentId,
+    });
+    const tracker = await RunProgressTracker.create(fixture.store, run);
+
+    for (const [index, outputTextSha256] of ["c", "d"].entries()) {
+      const callId = `call_dynamic_${String(index)}`;
+      await event(fixture.store, run, "tool.started", {
+        callId,
+        toolName: "run_command",
+        status: "started",
+        inputSha256: "a".repeat(64),
+      });
+      await event(fixture.store, run, "tool.failed", {
+        callId,
+        toolName: "run_command",
+        status: "failed",
+        outputTextSha256: outputTextSha256.repeat(64),
+      });
+      await event(fixture.store, run, "turn.completed", {});
+      expect((await tracker.recordTurn()).payload).toEqual(
+        expect.objectContaining({ failureFingerprintCount: 1 }),
+      );
+    }
+
+    fixture.store.close();
+  });
+
   it("records one vector after every real Agent turn", async () => {
     const fixture = await createFixture("agent");
     const agent = await fixture.store.updateAgent(fixture.agentId, {
@@ -396,7 +457,7 @@ describe("Run progress vector", () => {
           "Internal convergence redirect",
         );
         return fauxAssistantMessage(
-          fauxToolCall("list_files", { path: "missing-after-reroute" }),
+          fauxToolCall("list_files", { path: "missing-6" }),
           { stopReason: "toolUse" },
         );
       },
@@ -468,6 +529,154 @@ describe("Run progress vector", () => {
     expect(fixture.store.getThread(fixture.threadId).goal).toEqual(
       expect.objectContaining({ status: "active" }),
     );
+    fixture.store.close();
+  });
+
+  it("allows one repair turn to consume a novel post-reroute failure", async () => {
+    const fixture = await createFixture("no-progress-failure-repair");
+    await fixture.store.updateAgent(fixture.agentId, {
+      enabledTools: ["list_files"],
+    });
+    const provider = fauxProvider({ provider: "failure-repair-provider" });
+    provider.setResponses([
+      ...Array.from({ length: 6 }, (_, index) =>
+        fauxAssistantMessage(
+          fauxToolCall("list_files", { path: `missing-${String(index + 1)}` }),
+          { stopReason: "toolUse" },
+        ),
+      ),
+      (context) => {
+        expect(JSON.stringify(context.messages)).toContain(
+          "Internal convergence redirect",
+        );
+        return fauxAssistantMessage(
+          fauxToolCall("list_files", { path: "missing-after-reroute" }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const messages = context.messages as Array<{
+          role?: string;
+          toolName?: string;
+          isError?: boolean;
+          content?: unknown;
+        }>;
+        const failure = messages.findLast(
+          (message) =>
+            message.role === "toolResult" && message.isError === true,
+        );
+        expect(failure).toEqual(
+          expect.objectContaining({
+            role: "toolResult",
+            toolName: "list_files",
+            isError: true,
+          }),
+        );
+        expect(JSON.stringify(failure)).toContain("missing-after-reroute");
+        return fauxAssistantMessage(
+          fauxToolCall("list_files", { path: "missing-after-repair" }),
+          { stopReason: "toolUse" },
+        );
+      },
+    ]);
+    const models = new ModelRegistry();
+    models.registerProvider(provider.provider);
+    const runtime = new AgentRuntime(fixture.store, models);
+
+    const run = await runtime.runPrompt({
+      threadId: fixture.threadId,
+      text: "Research the workspace layout and report only verified facts.",
+      model: { provider: "failure-repair-provider", id: "faux-1" },
+    });
+
+    expect(run).toEqual(
+      expect.objectContaining({
+        status: "failed",
+        outcome: "paused_budget",
+        error: expect.stringContaining("no measurable progress"),
+      }),
+    );
+    expect(provider.state.callCount).toBe(8);
+    const events = await fixture.store.listEvents(fixture.threadId);
+    const vectors = events.filter(
+      (event) => event.type === "run.progress.vector",
+    );
+    expect(vectors.at(-2)?.payload).toEqual(
+      expect.objectContaining({
+        turnIndex: 7,
+        progressed: false,
+        failureFingerprintCount: 7,
+      }),
+    );
+    expect(vectors.at(-1)?.payload).toEqual(
+      expect.objectContaining({
+        turnIndex: 8,
+        progressed: false,
+        failureFingerprintCount: 8,
+      }),
+    );
+    expect(
+      events.find((event) => event.type === "run.no_progress")?.payload,
+    ).toEqual(expect.objectContaining({ turnIndex: 8 }));
+    expect(
+      events.filter((event) => event.type === "run.progress.rerouted"),
+    ).toHaveLength(1);
+    fixture.store.close();
+  });
+
+  it("lets the bounded failure-repair turn complete with a result", async () => {
+    const fixture = await createFixture("no-progress-failure-complete");
+    await fixture.store.updateAgent(fixture.agentId, {
+      enabledTools: ["list_files"],
+    });
+    const provider = fauxProvider({ provider: "failure-complete-provider" });
+    provider.setResponses([
+      ...Array.from({ length: 6 }, (_, index) =>
+        fauxAssistantMessage(
+          fauxToolCall("list_files", { path: `missing-${String(index + 1)}` }),
+          { stopReason: "toolUse" },
+        ),
+      ),
+      fauxAssistantMessage(
+        fauxToolCall("list_files", { path: "missing-after-reroute" }),
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain("missing-after-reroute");
+        expect(messages).toContain('\"isError\":true');
+        return fauxAssistantMessage(
+          "Reported the concrete missing-path blocker.",
+        );
+      },
+    ]);
+    const models = new ModelRegistry();
+    models.registerProvider(provider.provider);
+    const runtime = new AgentRuntime(fixture.store, models);
+
+    const run = await runtime.runPrompt({
+      threadId: fixture.threadId,
+      text: "Research the workspace layout and report only verified facts.",
+      model: { provider: "failure-complete-provider", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    const events = await fixture.store.listEvents(fixture.threadId);
+    const vectors = events.filter(
+      (event) => event.type === "run.progress.vector",
+    );
+    expect(vectors).toHaveLength(8);
+    expect(vectors.at(-1)?.payload).toEqual(
+      expect.objectContaining({
+        turnIndex: 8,
+        progressed: true,
+        changedDimensions: ["result"],
+        failureFingerprintCount: 7,
+      }),
+    );
+    expect(
+      events.filter((event) => event.type === "run.progress.rerouted"),
+    ).toHaveLength(1);
     fixture.store.close();
   });
 });

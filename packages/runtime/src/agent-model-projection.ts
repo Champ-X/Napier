@@ -7,6 +7,7 @@ import type {
   Usage as PiUsage,
 } from "@earendil-works/pi-ai";
 import type { ModelRef, Usage } from "@napier/contracts";
+import { boundToolFailureContext } from "./agent-tool-failure-context.js";
 
 export function modelRefFromModel(model: Model<Api>): ModelRef {
   return {
@@ -31,6 +32,10 @@ export function isProviderMessage(message: AgentMessage): message is Message {
     message.role === "assistant" ||
     message.role === "toolResult"
   );
+}
+
+export function providerMessages(messages: AgentMessage[]): Message[] {
+  return boundToolFailureContext(messages).filter(isProviderMessage);
 }
 
 export function contextHistoryCharacterBudget(model: Model<Api>): number {
