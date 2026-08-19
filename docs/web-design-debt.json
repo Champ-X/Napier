@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "2cd9a3c",
+  "policy": "Monotonic ceiling for pre-existing Web design debt. New files start at zero; touched files may only reduce their count until the maps reach zero.",
+  "literalColors": {
+    "apps/web/src/agent-capability-composer.css": 5,
+    "apps/web/src/agent-capability-contract.css": 5,
+    "apps/web/src/agent-capability-preset.css": 1,
+    "apps/web/src/agent-message-experiment.css": 23,
+    "apps/web/src/conversation-artifact-card.css": 19,
+    "apps/web/src/message-markdown.css": 19,
+    "apps/web/src/model-invocation-experiment.css": 11,
+    "apps/web/src/styles/automation.css": 43,
+    "apps/web/src/styles/conversation.css": 39,
+    "apps/web/src/styles/evaluation.css": 133,
+    "apps/web/src/styles/extensions.css": 116,
+    "apps/web/src/styles/goals-memory.css": 20,
+    "apps/web/src/styles/inspector.css": 72,
+    "apps/web/src/styles/lab.css": 58,
+    "apps/web/src/styles/planning.css": 66,
+    "apps/web/src/styles/shell-navigation.css": 15,
+    "apps/web/src/styles/task-workbench.css": 25,
+    "apps/web/src/styles/trajectory.css": 78,
+    "apps/web/src/tool-invocation-experiment.css": 13,
+    "apps/web/src/trace-trajectory.css": 38,
+    "apps/web/src/workflow-breakpoint.css": 24,
+    "apps/web/src/workflow-experiment.css": 25,
+    "apps/web/src/workflow-workbench.css": 3,
+    "apps/web/src/workspace-shell.css": 9
+  },
+  "subTwelveText": {}
+}

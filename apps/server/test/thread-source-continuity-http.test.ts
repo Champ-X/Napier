@@ -23,12 +23,12 @@ describe("Thread Source continuity HTTP", () => {
       agentCapabilities: {
         blockedRunReadinessProjection: vi.fn(async () => undefined),
       } as never,
-      runtime: {
+      kernel: {
         runPrompt,
         resumeInterruptedRun: vi.fn(),
         continueOperatorDecision: vi.fn(),
         stop: vi.fn(),
-      },
+      } as never,
     });
 
     const response = await app.request(`/api/threads/${threadId}/messages`, {

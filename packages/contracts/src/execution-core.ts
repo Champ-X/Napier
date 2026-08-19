@@ -128,6 +128,7 @@ export interface AutomaticRecoveryPolicy {
 
 export type RunExecutionMode =
   | "standard"
+  | "environment_degraded_read_only"
   | "safe_read_only_recovery"
   | "workflow_map_read_only"
   | "workflow_loop_read_only"

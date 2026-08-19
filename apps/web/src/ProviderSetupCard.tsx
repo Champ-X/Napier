@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { formatApiErrorMessage } from "./api-error";
 import { getBootstrap } from "./bootstrap-api";
+import { environmentSetupCopy } from "./environment-setup-copy";
 import {
   applyProviderSetup,
   getProviderSetupPreview,
@@ -17,14 +18,18 @@ import {
   providerSetupReadyCandidate,
   providerSetupStatusCopy,
 } from "./provider-setup-view-model";
+import "./provider-setup.css";
+
+export interface ProviderSetupCardProps {
+  onBootstrapUpdated(bootstrap: LiveReadyBootstrapResponse): void;
+  threadId: string | undefined;
+}
 
 export function ProviderSetupCard({
   onBootstrapUpdated,
   threadId,
-}: {
-  onBootstrapUpdated: (bootstrap: LiveReadyBootstrapResponse) => void;
-  threadId: string | undefined;
-}) {
+}: ProviderSetupCardProps) {
+  const providerCopy = environmentSetupCopy.provider;
   const [preview, setPreview] = useState<ProviderSetupPreview>();
   const [busy, setBusy] = useState<"loading" | "applying" | undefined>(
     "loading",
@@ -89,26 +94,25 @@ export function ProviderSetupCard({
           {readyCandidate ? <ShieldCheck size={18} /> : <KeyRound size={18} />}
         </div>
         <div>
-          <span>LIVE PROVIDER · EXPLICIT LOCATOR</span>
+          <span>{providerCopy.eyebrow}</span>
           <h3 id="provider-setup-title">
-            {readyCandidate ? "Provider ready" : "Enable live reasoning"}
+            {readyCandidate
+              ? providerCopy.title.ready
+              : providerCopy.title.pending}
           </h3>
         </div>
         {busy === "loading" ? (
           <RefreshCw
             className="provider-setup-spinner"
             size={14}
-            aria-label="Checking provider locators"
+            aria-label={providerCopy.checkingAria}
           />
         ) : null}
       </header>
 
       {preview ? (
         <>
-          <p className="provider-setup-intro">
-            Napier only registers the locator you approve. Secret values stay in
-            the server environment and never appear here.
-          </p>
+          <p className="provider-setup-intro">{providerCopy.intro}</p>
           <div className="provider-setup-candidates">
             {preview.candidates.map((candidate) => (
               <ProviderCandidate
@@ -119,24 +123,25 @@ export function ProviderSetupCard({
           </div>
           <footer>
             <span className="provider-setup-proof">
-              PREVIEW {preview.contentSha256.slice(0, 12)}
+              {providerCopy.preview} {preview.contentSha256.slice(0, 12)}
             </span>
             {readyCandidate ? (
               <span className="provider-setup-ready" role="status">
                 <Check size={13} aria-hidden="true" />
-                {readyCandidate.providerName} is available
+                {readyCandidate.providerName} {providerCopy.readySuffix}
               </span>
             ) : (
               <button
                 type="button"
+                aria-busy={busy === "applying"}
                 disabled={!enableCandidate || busy === "applying"}
                 onClick={() => void enable()}
               >
                 {busy === "applying"
-                  ? "Verifying locator…"
+                  ? providerCopy.applying
                   : enableCandidate
-                    ? `Enable ${enableCandidate.providerName}`
-                    : "No locator available"}
+                    ? `${providerCopy.enable} ${enableCandidate.providerName}`
+                    : providerCopy.noLocator}
               </button>
             )}
           </footer>
@@ -147,11 +152,11 @@ export function ProviderSetupCard({
           type="button"
           onClick={() => void loadPreview()}
         >
-          Retry provider check
+          {providerCopy.retry}
         </button>
       ) : (
         <p className="provider-setup-intro" role="status">
-          Checking standard environment locators…
+          {providerCopy.checking}
         </p>
       )}
 

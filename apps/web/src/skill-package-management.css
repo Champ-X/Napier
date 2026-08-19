@@ -1,0 +1,161 @@
+.skill-package-active {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, auto) minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--inset-xs) var(--inset-sm);
+  margin: 0 0 var(--stack-sm);
+  background: var(--color-accent-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.skill-package-active span,
+.skill-package-active small {
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skill-package-active code {
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-accent);
+  text-overflow: ellipsis;
+}
+
+.package-confirmation {
+  display: flex;
+  min-width: 0;
+  min-height: calc(var(--control-target-primary) + var(--space-1));
+  align-items: center;
+  gap: var(--inline-sm);
+  padding: var(--inset-xs) var(--inset-sm);
+  margin-block-start: var(--stack-sm);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-compact);
+  color: var(--color-warning);
+  cursor: pointer;
+  user-select: none;
+  background: var(--color-warning-surface);
+  border: 1px solid var(--color-warning-border);
+  border-radius: var(--radius-sm);
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.package-confirmation:hover:not(:has(input:disabled)) {
+  border-color: var(--color-warning);
+}
+
+.package-confirmation:active:not(:has(input:disabled)) {
+  transform: scale(0.99);
+}
+
+.package-confirmation:has(input:focus-visible) {
+  outline: var(--control-focus-width) solid var(--color-focus-ring);
+  outline-offset: var(--control-focus-offset);
+  box-shadow: 0 0 0 var(--control-focus-offset) var(--color-surface);
+}
+
+.package-confirmation:has(input:disabled) {
+  color: var(--color-fg-disabled);
+  cursor: not-allowed;
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
+}
+
+.package-confirmation input {
+  width: var(--space-4);
+  height: var(--space-4);
+  flex: 0 0 auto;
+  margin: 0;
+  accent-color: var(--color-warning);
+}
+
+.skill-package-risk-confirmations {
+  display: grid;
+  gap: var(--space-2);
+  margin-block-start: var(--stack-sm);
+}
+
+.skill-package-risk-confirmations .package-confirmation {
+  margin-block-start: 0;
+}
+
+.skill-content-editor textarea {
+  min-height: calc(var(--space-20) + var(--space-20));
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--leading-body);
+}
+
+.skill-content-diff-strip {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(calc(var(--space-20) + var(--space-20)), 100%), 1fr)
+  );
+  gap: var(--space-2);
+}
+
+.skill-content-diff-strip span {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-1);
+  padding: var(--inset-xs) var(--inset-sm);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.skill-content-diff-strip strong {
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-accent);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skill-content-receipt.status-replace {
+  background: var(--color-warning-surface);
+  border-color: var(--color-warning-border);
+  border-inline-start-color: var(--color-warning);
+}
+
+.skill-content-receipt.status-noop {
+  background: var(--color-bg-subtle);
+  border-color: var(--color-border);
+  border-style: dashed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .package-confirmation {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .package-confirmation,
+  .skill-package-active,
+  .skill-content-diff-strip span {
+    border-color: CanvasText;
+  }
+}

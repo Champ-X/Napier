@@ -5,6 +5,7 @@ import {
   ModelAdapterLedger,
   ModelContextEnvelopeLedger,
 } from "../src/ModelContextTraceLedgers";
+import { ToolResultContextPruningLedger } from "../src/ToolResultContextPruningLedger";
 
 describe("Model Adapter ledger", () => {
   it("renders policy evidence without raw provider context", () => {
@@ -31,8 +32,40 @@ describe("Model Adapter ledger", () => {
     expect(text).toContain("long");
     expect(text).toContain("napier.anthropic-messages.v1");
     expect(text).toContain("a".repeat(12));
-    expect(text).toContain("legacy unavailable");
+    expect(text).toContain("Legacy unavailable");
     expect(text).not.toContain("TOP_SECRET");
+  });
+
+  it("renders context savings and pruning reasons without raw tool output", () => {
+    const tree = ToolResultContextPruningLedger({
+      pruning: [{
+        eventSeq: 24,
+        runId: "run_pruning",
+        attempt: 1,
+        messageCount: 20,
+        toolResultCount: 8,
+        replacementCount: 4,
+        supersededResultCount: 1,
+        repeatedErrorCount: 1,
+        largeResultCount: 1,
+        emptyResultCount: 1,
+        originalToolResultTextBytes: 60_000,
+        activeToolResultTextBytes: 24_000,
+        savedToolResultTextBytes: 36_000,
+        originalToolResultSetSha256: "a".repeat(64),
+        activeToolResultSetSha256: "b".repeat(64),
+        replacementSetSha256: "c".repeat(64),
+        contentSha256: "d".repeat(64),
+      }],
+    });
+    const text = visibleText(tree);
+
+    expect(text).toContain("Tool-result context budget");
+    expect(text).toContain("35.2 KiB");
+    expect(text).toContain("Superseded1");
+    expect(text).toContain("Repeated errors1");
+    expect(text).toContain("60000 B → 24000 B");
+    expect(text).not.toContain("TOP_SECRET_TOOL_OUTPUT");
   });
 
   it("renders v2 output-token policy", () => {

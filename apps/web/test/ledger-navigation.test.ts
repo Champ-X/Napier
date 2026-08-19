@@ -6,7 +6,10 @@ describe("Ledger navigation", () => {
     const [source, tree, styles] = await Promise.all([
       readFile(new URL("../src/LedgerNavigation.tsx", import.meta.url), "utf8"),
       readFile(new URL("../src/WorkspaceTree.tsx", import.meta.url), "utf8"),
-      readFile(new URL("../src/styles.css", import.meta.url), "utf8"),
+      readFile(
+        new URL("../src/styles/shell-navigation.css", import.meta.url),
+        "utf8",
+      ),
     ]);
 
     expect(source).toContain("useState(false)");

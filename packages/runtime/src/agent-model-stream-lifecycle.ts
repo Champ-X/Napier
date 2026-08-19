@@ -1,6 +1,7 @@
 import type { StreamFn } from "@earendil-works/pi-agent-core";
 import type {
   Api,
+  AssistantMessageEventStream,
   Context,
   Model,
   SimpleStreamOptions,
@@ -24,7 +25,26 @@ import type { RunBudgetTracker } from "./run-budget.js";
 import type { LocalStore } from "./store.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 
-export function agentModelStreamLife(input: {
+export interface AgentModelCallPreparation {
+  run: RunRecord;
+  attempt: number;
+  model: Model<Api>;
+  context: Context;
+  options: SimpleStreamOptions;
+  onEvent?: EventSink;
+}
+
+export interface PreparedAgentModelCall {
+  context: Context;
+  options: SimpleStreamOptions;
+}
+
+export interface AgentModelInvocation extends AgentModelCallPreparation {
+  compiledPrompt: CompiledPromptArtifact;
+  envelope: ModelContextEnvelopeReceipt;
+}
+
+export interface AgentModelStreamLifecycleInput {
   host: {
     store: LocalStore;
     modelRegistry: ModelRegistry;
@@ -35,11 +55,23 @@ export function agentModelStreamLife(input: {
   buildCompiledPrompt(
     model: Model<Api>,
     options: SimpleStreamOptions | undefined,
+    context: Context,
   ): CompiledPromptArtifact;
   nextTurnIndex(): number;
   onEnvelope(envelope: ModelContextEnvelopeReceipt): void;
+  prepareCall?(
+    call: AgentModelCallPreparation,
+  ): PreparedAgentModelCall | Promise<PreparedAgentModelCall>;
+  invokeCall?(
+    call: AgentModelInvocation,
+    next: () => AssistantMessageEventStream,
+  ): AssistantMessageEventStream;
   onEvent?: EventSink;
-}): StreamFn {
+}
+
+export function agentModelStreamLife(
+  input: AgentModelStreamLifecycleInput,
+): StreamFn {
   const cancellation = streamCtx(
     input.host,
     input.budget,
@@ -72,30 +104,63 @@ export function agentModelStreamLife(input: {
                 ...shortThinkingLoopRetryOptions(model, attemptOptions),
                 signal,
               };
-        const compiledPrompt = input.buildCompiledPrompt(model, nextOptions);
-        const prepared = await captureCompiledModelInvocation({
+        const preparedCall = input.prepareCall
+          ? await input.prepareCall({
+              run: input.run,
+              attempt,
+              model,
+              context: nextContext,
+              options: nextOptions,
+              ...(input.onEvent ? { onEvent: input.onEvent } : {}),
+            })
+          : { context: nextContext, options: nextOptions };
+        const compiledPrompt = input.buildCompiledPrompt(
+          model,
+          preparedCall.options,
+          preparedCall.context,
+        );
+        const captured = await captureCompiledModelInvocation({
           store: input.host.store,
           capsules: input.host.modelInvocationCapsules,
           run: input.run,
           model,
-          context: nextContext,
-          options: nextOptions,
+          context: preparedCall.context,
+          options: preparedCall.options,
           turnIndex: input.nextTurnIndex(),
           purpose: "agent_turn",
           compiledPrompt,
           ...(input.onEvent ? { onEvent: input.onEvent } : {}),
         });
-        currentEnvelope = prepared.envelope;
-        input.onEnvelope(prepared.envelope);
+        currentEnvelope = captured.envelope;
+        input.onEnvelope(captured.envelope);
         return {
-          context: prepared.context,
-          options: nextOptions,
-          source: modelStream(
-            cancellation,
-            model,
-            prepared.context,
-            nextOptions,
-          ),
+          context: captured.context,
+          options: preparedCall.options,
+          source: input.invokeCall
+            ? input.invokeCall(
+                {
+                  run: input.run,
+                  attempt,
+                  model,
+                  context: captured.context,
+                  options: preparedCall.options,
+                  compiledPrompt,
+                  envelope: captured.envelope,
+                },
+                () =>
+                  modelStream(
+                    cancellation,
+                    model,
+                    captured.context,
+                    preparedCall.options,
+                  ),
+              )
+            : modelStream(
+                cancellation,
+                model,
+                captured.context,
+                preparedCall.options,
+              ),
         };
       },
       onDetected: (evidence, action) =>
@@ -120,7 +185,7 @@ function redirectedContext(
 }
 
 async function recordDetection(
-  input: Parameters<typeof agentModelStreamLife>[0],
+  input: AgentModelStreamLifecycleInput,
   model: Model<Api>,
   evidence: ModelThinkingLoopEvidence,
   action: "retry" | "finalize",

@@ -1,4 +1,7 @@
-export const modelInvocationExperimentCopy = {
+import { deepMergeCopy, getLocale } from "./locale";
+import { modelInvocationExperimentCopyZh } from "./model-invocation-experiment-copy.zh";
+
+export const modelInvocationExperimentCopyEn = {
   eyebrow: "Call-level re-execution",
   title: "Model call experiment desk",
   body: "Select one captured provider call, bind its local-only Context capsule, and execute exactly one isolated candidate call.",
@@ -55,3 +58,8 @@ export const modelInvocationExperimentCopy = {
     candidateUnavailable: "Select a configured provider-backed model.",
   },
 } as const;
+
+export const modelInvocationExperimentCopy = deepMergeCopy(
+  modelInvocationExperimentCopyEn,
+  getLocale() === "zh" ? modelInvocationExperimentCopyZh : {},
+);

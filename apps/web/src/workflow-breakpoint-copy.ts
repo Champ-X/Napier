@@ -1,4 +1,7 @@
-export const workflowBreakpointCopy = {
+import { deepMergeCopy, getLocale } from "./locale";
+import { workflowBreakpointCopyZh } from "./workflow-breakpoint-copy.zh";
+
+export const workflowBreakpointCopyEn = {
   eyebrow: "Execution hold",
   title: "Workflow breakpoint",
   body: "The Ledger stopped before this node. Load the exact Manifest, inspect the bound evidence, then continue deliberately.",
@@ -18,6 +21,14 @@ export const workflowBreakpointCopy = {
   settled: "Continuation settled",
   nextPause: "The Workflow reached its next breakpoint.",
   refreshHint: "The authoritative Thread was refreshed after settlement.",
+  frames: "frames",
+  statuses: {
+    completed: "Completed",
+    waiting: "Waiting",
+    paused: "Paused",
+    blocked: "Blocked",
+    cancelled: "Cancelled",
+  },
   errors: {
     manifestTooLarge: "Workflow Manifest exceeds the 1 MiB browser limit.",
     manifestInvalid: "Workflow Manifest is invalid.",
@@ -28,3 +39,8 @@ export const workflowBreakpointCopy = {
     running: "Wait for the active Thread operation to settle.",
   },
 } as const;
+
+export const workflowBreakpointCopy = deepMergeCopy(
+  workflowBreakpointCopyEn,
+  getLocale() === "zh" ? workflowBreakpointCopyZh : {},
+);

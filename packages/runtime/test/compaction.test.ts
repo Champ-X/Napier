@@ -117,6 +117,96 @@ describe("context compaction", () => {
     ).toBeUndefined();
   });
 
+  it("binds privacy-bounded execution continuity into new checkpoints", () => {
+    const messages = messageEvents(30).map((event, index) => ({
+      ...event,
+      id: `message-gap-${String(index + 1)}`,
+      seq: (index + 1) * 2,
+    }));
+    const continuity: RunEvent[] = [
+      continuityEvent(15, "tool.completed", {
+        toolName: "apply_patch",
+        status: "completed",
+        output: "TOP_SECRET_RAW_PATCH",
+        afterSha256: "a".repeat(64),
+      }),
+      continuityEvent(25, "run.environment.negotiated", {
+        status: "degraded_read_only",
+        reason: "sandbox_unavailable",
+        sandboxId: "unsupported",
+        executionMode: "environment_degraded_read_only",
+        activeToolCount: 14,
+        configuredToolCount: 42,
+        repairComponent: "sandbox",
+        omittedToolNames: ["apply_patch", "run_command"],
+      }),
+      continuityEvent(35, "plan.step.completed", {
+        planId: "plan_1",
+        stepId: "implement",
+        title: "Implement continuity binding",
+        status: "completed",
+        evidence: "Focused tests passed.",
+      }),
+      continuityEvent(55, "verification.completed", {
+        status: "passed",
+      }),
+    ];
+    const events = [...messages, ...continuity].sort((left, right) => left.seq - right.seq);
+    const plan = planContextProjection(events, undefined, {
+      maxHistoryCharacters: 100_000,
+    });
+
+    expect(plan.compactContinuityEvents.map((event) => event.seq)).toEqual([15, 25, 35]);
+    expect(plan.deltaContinuityEvents).toEqual(plan.compactContinuityEvents);
+    const prompt = buildContextCompactionMessages(
+      undefined,
+      plan.deltaEvents,
+      plan.deltaContinuityEvents,
+    );
+    expect(prompt.user).toContain("Ledger tool.completed");
+    expect(prompt.user).toContain("apply_patch");
+    expect(prompt.user).toContain("Implement continuity binding");
+    expect(prompt.user).toContain("environment_degraded_read_only");
+    expect(prompt.user).toContain("sandbox_unavailable");
+    expect(prompt.user).not.toContain("omittedToolNames");
+    expect(prompt.user).not.toContain("TOP_SECRET_RAW_PATCH");
+
+    const checkpoint = createContextCheckpoint({
+      checkpointId: "checkpoint-continuity",
+      compactEvents: plan.compactEvents,
+      continuityEvents: plan.compactContinuityEvents,
+      retainedFromSeq: plan.recentEvents[0]!.seq,
+      result: {
+        summary: "Implementation and verification evidence remain continuous.",
+        decisions: ["Keep deterministic continuity bindings."],
+        openLoops: ["Complete the remaining goal."],
+        artifacts: ["packages/runtime/src/compaction.ts"],
+      },
+    });
+    expect(checkpoint).toEqual(expect.objectContaining({
+      continuityProjectionVersion: 1,
+      continuityEventCount: 3,
+      continuitySha256: hashContextEvents(plan.compactContinuityEvents),
+    }));
+    const checkpointEvent = continuityEvent(61, "context.compaction.completed", checkpoint as unknown as JsonValue);
+    checkpointEvent.category = "model";
+    expect(latestValidContextCheckpoint([...events, checkpointEvent])).toEqual(checkpoint);
+
+    const tampered = structuredClone(events);
+    const toolEvent = tampered.find((event) => event.seq === 15)!;
+    toolEvent.payload = { ...toolEvent.payload as Record<string, JsonValue>, status: "failed" };
+    expect(latestValidContextCheckpoint([...tampered, checkpointEvent])).toBeUndefined();
+    const report = createContextCheckpointCalibrationReport(
+      "thread-context",
+      [...tampered, checkpointEvent],
+      new Date("2026-08-19T00:00:00.000Z"),
+    );
+    expect(report.samples.at(-1)).toEqual(expect.objectContaining({
+      state: "drifted",
+      reason: "continuity_hash_mismatch",
+    }));
+  });
+
   it("parses strict structured summaries and neutralizes evidence delimiters", () => {
     const result = parseContextCompactionResponse(
       JSON.stringify({
@@ -306,3 +396,21 @@ describe("context compaction", () => {
     );
   });
 });
+
+function continuityEvent(
+  seq: number,
+  type: string,
+  payload: JsonValue,
+): RunEvent {
+  return {
+    id: `continuity-${String(seq)}`,
+    threadId: "thread-context",
+    runId: "run-context",
+    seq,
+    type,
+    category: "artifact",
+    visibility: "user",
+    createdAt: new Date(1_700_000_000_000 + seq * 1_000).toISOString(),
+    payload,
+  };
+}

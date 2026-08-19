@@ -1,0 +1,114 @@
+/* Global aliases, reset, and shared interaction defaults. */
+:root {
+  color-scheme: light;
+  font-family: var(--font-sans);
+  font-synthesis: none;
+  --paper: var(--color-surface);
+  --paper-deep: var(--color-bg-subtle);
+  --paper-bright: var(--color-surface);
+  --ink: var(--color-fg);
+  --ink-soft: var(--color-fg-muted);
+  --ink-faint: var(--color-fg-subtle);
+  --ink-muted: var(--color-fg-muted);
+  --rule: var(--color-border-subtle);
+  --rule-soft: var(--color-border-subtle);
+  --rule-strong: var(--color-border);
+  --ledger: var(--color-accent);
+  --ledger-soft: var(--color-accent-subtle);
+  --vermilion: var(--color-danger);
+  --vermilion-soft: var(--color-danger-surface);
+  --danger: var(--color-danger);
+  --ochre: var(--color-warning);
+  --ochre-soft: var(--color-warning-surface);
+  --forest: var(--color-success);
+  --rust: var(--color-danger-fg);
+  --nav: var(--color-bg);
+  --nav-soft: var(--color-surface-muted);
+  --shadow: var(--shadow-raised);
+  --shadow-lift: var(--shadow-raised);
+  --shadow-float: var(--shadow-modal);
+  --radius-xs: var(--radius-sm);
+  --shell-nav-width: var(--layout-sidebar-expanded);
+  --shell-nav-compact-width: var(--layout-sidebar-compact);
+  --shell-drawer-width: var(--layout-evidence-rail);
+  --shell-gutter: clamp(18px, 3vw, 42px);
+  --sans: var(--font-sans);
+  --serif: var(--font-sans);
+  --mono: var(--font-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  min-width: 320px;
+  overflow: hidden;
+  color: var(--ink);
+  background: var(--paper);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  min-width: var(--control-target);
+  min-height: var(--control-target);
+  color: inherit;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+input:not([type="checkbox"]):not([type="radio"]),
+select {
+  min-height: var(--control-target);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 var(--control-focus-offset) var(--color-surface),
+    0 0 0 calc(var(--control-focus-offset) + var(--control-focus-width))
+      var(--color-focus-ring);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+button[aria-busy="true"] {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+input[aria-invalid="true"],
+select[aria-invalid="true"],
+textarea[aria-invalid="true"] {
+  border-color: var(--color-danger-border);
+}
+
+input:read-only,
+textarea:read-only {
+  color: var(--color-fg-muted);
+  background: var(--color-surface-muted);
+}

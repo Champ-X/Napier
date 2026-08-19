@@ -4,7 +4,6 @@ import type {
   JsonValue,
 } from "@napier/contracts";
 
-import type { AgentRuntime } from "./agent-runtime.js";
 import type { LocalStore } from "./store.js";
 import { ExecutionPlanWorkflowAgentNodeExecutor } from "./workflow-agent-node.js";
 import { ExecutionPlanWorkflowApprovalNodeExecutor } from "./workflow-approval-node.js";
@@ -20,6 +19,10 @@ import { ExecutionPlanWorkflowMapNodeExecutor } from "./workflow-map-node.js";
 import { ExecutionPlanWorkflowPythonNodeExecutor } from "./workflow-python-node.js";
 import { ExecutionPlanWorkflowReduceNodeExecutor } from "./workflow-reduce-node.js";
 import { ExecutionPlanWorkflowToolNodeExecutor } from "./workflow-tool-node.js";
+import type {
+  WorkflowAgentExecutionPort,
+  WorkflowRuntimeEnvironment,
+} from "./workflow-runtime-ports.js";
 
 export interface WorkflowNodeExecutionOutcome {
   result: ExecutionPlanWorkflowNodeResult;
@@ -53,13 +56,14 @@ export class ExecutionPlanWorkflowNodeDispatcher {
 
   constructor(
     store: LocalStore,
-    agentRuntime: AgentRuntime,
+    agentExecution: WorkflowAgentExecutionPort,
+    environment: WorkflowRuntimeEnvironment,
     ledger: ExecutionPlanWorkflowLedger,
     operations: WorkflowNodeDispatcherOperations,
   ) {
     this.agent = new ExecutionPlanWorkflowAgentNodeExecutor(
       store,
-      agentRuntime,
+      agentExecution,
       ledger,
       operations,
     );
@@ -75,25 +79,25 @@ export class ExecutionPlanWorkflowNodeDispatcher {
     );
     this.javascript = new ExecutionPlanWorkflowJavascriptNodeExecutor(
       store,
-      agentRuntime,
+      environment,
       ledger,
       operations,
     );
     this.loop = new ExecutionPlanWorkflowLoopNodeExecutor(
       store,
-      agentRuntime,
+      agentExecution,
       ledger,
       operations,
     );
     this.map = new ExecutionPlanWorkflowMapNodeExecutor(
       store,
-      agentRuntime,
+      agentExecution,
       ledger,
       operations,
     );
     this.python = new ExecutionPlanWorkflowPythonNodeExecutor(
       store,
-      agentRuntime,
+      environment,
       ledger,
       operations,
     );
@@ -104,7 +108,7 @@ export class ExecutionPlanWorkflowNodeDispatcher {
     );
     this.tool = new ExecutionPlanWorkflowToolNodeExecutor(
       store,
-      agentRuntime,
+      environment,
       ledger,
       operations,
     );

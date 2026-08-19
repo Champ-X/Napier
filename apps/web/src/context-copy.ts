@@ -1,4 +1,7 @@
-export const contextCopy = {
+import { deepMergeCopy, getLocale } from "./locale";
+import { contextZh } from "./context-copy.zh";
+
+export const contextCopyEn = {
   eyebrow: "RUNTIME ASSEMBLY",
   title: "Agent context",
   revision: "REV",
@@ -490,3 +493,8 @@ export const contextCopy = {
   calibrationSafety:
     "The calibration report is regenerated from ledger events and bound to a content hash.",
 } as const;
+
+export const contextCopy = deepMergeCopy(
+  contextCopyEn,
+  getLocale() === "zh" ? contextZh : {},
+);

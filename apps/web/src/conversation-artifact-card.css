@@ -42,7 +42,7 @@
 .conversation-artifact-preview header,
 .conversation-artifact-error {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--text-xs);
 }
 
 .conversation-artifact > header span {
@@ -68,7 +68,7 @@
 .conversation-artifact > p {
   margin: 8px 0;
   font-family: var(--serif);
-  font-size: 11px;
+  font-size: var(--text-xs);
   line-height: 1.5;
 }
 
@@ -156,7 +156,7 @@
   padding: 12px;
   overflow: auto;
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--text-xs);
   line-height: 1.6;
   white-space: pre;
 }
@@ -169,7 +169,7 @@
   justify-content: center;
   margin: 0 2px;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--text-xs);
   font-weight: 700;
   line-height: 1;
   color: var(--paper-bright);
@@ -218,7 +218,7 @@
 .conversation-citation dt,
 .conversation-citation dd {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--text-xs);
 }
 
 .conversation-citation > summary span,
@@ -267,7 +267,7 @@
   display: none;
   margin: 0;
   font-family: var(--serif);
-  font-size: 9px;
+  font-size: var(--text-xs);
   line-height: 1.45;
   color: var(--ink-faint);
 }
@@ -334,7 +334,7 @@
 .conversation-network-activity dt,
 .conversation-network-activity dd {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--text-xs);
 }
 
 .conversation-network-activity > summary span,
@@ -351,7 +351,7 @@
 .conversation-network-activity > summary strong {
   overflow: hidden;
   font-family: var(--serif);
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--ink);
   text-overflow: ellipsis;
@@ -389,7 +389,7 @@
   margin: 0;
   padding: 0 12px 10px;
   font-family: var(--serif);
-  font-size: 9px;
+  font-size: var(--text-xs);
   color: var(--ink-faint);
 }
 
@@ -443,7 +443,7 @@
 .conversation-browser-activity dt,
 .conversation-browser-activity dd {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--text-xs);
 }
 
 .conversation-browser-activity > summary span,
@@ -460,7 +460,7 @@
 .conversation-browser-activity > summary strong {
   overflow: hidden;
   font-family: var(--serif);
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--ink);
   text-overflow: ellipsis;
@@ -498,7 +498,7 @@
   margin: 0;
   padding: 0 12px 10px;
   font-family: var(--serif);
-  font-size: 9px;
+  font-size: var(--text-xs);
   color: var(--ink-faint);
 }
 
@@ -557,7 +557,7 @@
 .conversation-plan dd,
 .conversation-plan li small {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--text-xs);
 }
 
 .conversation-plan > summary span,
@@ -576,7 +576,7 @@
 .conversation-plan > summary strong {
   overflow: hidden;
   font-family: var(--serif);
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--ink);
   text-overflow: ellipsis;
@@ -587,7 +587,7 @@
   margin: 0;
   padding: 10px 12px;
   font-family: var(--serif);
-  font-size: 11px;
+  font-size: var(--text-xs);
   line-height: 1.5;
   color: var(--ink);
   border-top: 1px solid var(--rule);
@@ -639,7 +639,7 @@
 .conversation-plan > ol li strong {
   overflow: hidden;
   font-family: var(--serif);
-  font-size: 10px;
+  font-size: var(--text-xs);
   color: var(--ink);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -716,7 +716,7 @@
 .conversation-approval dd,
 .conversation-approval li span {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--text-xs);
 }
 
 .conversation-approval > summary span,
@@ -734,7 +734,7 @@
 .conversation-approval > summary strong {
   overflow: hidden;
   font-family: var(--serif);
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--ink);
   text-overflow: ellipsis;
@@ -774,7 +774,7 @@
 
 .conversation-approval > ul strong {
   font-family: var(--serif);
-  font-size: 10px;
+  font-size: var(--text-xs);
   color: var(--ink);
 }
 
@@ -805,7 +805,7 @@
   margin: 0;
   padding: 0 12px 10px;
   font-family: var(--serif);
-  font-size: 9px;
+  font-size: var(--text-xs);
   color: var(--ink-faint);
 }
 
@@ -861,7 +861,7 @@
 .conversation-subagent li span,
 .conversation-subagent li small {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--text-xs);
 }
 
 .conversation-subagent > summary span,
@@ -880,7 +880,7 @@
 .conversation-subagent > summary strong {
   overflow: hidden;
   font-family: var(--serif);
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--ink);
   text-overflow: ellipsis;
@@ -920,7 +920,7 @@
 
 .conversation-subagent-outcome > strong {
   font-family: var(--serif);
-  font-size: 10px;
+  font-size: var(--text-xs);
   color: var(--ink);
 }
 
@@ -929,7 +929,7 @@
 .conversation-subagent-error {
   margin: 5px 0 0;
   font-family: var(--serif);
-  font-size: 9px;
+  font-size: var(--text-xs);
   line-height: 1.45;
   color: var(--ink-faint);
 }
@@ -972,7 +972,7 @@
 .conversation-subagent-outcome li strong {
   overflow: hidden;
   font-family: var(--serif);
-  font-size: 9px;
+  font-size: var(--text-xs);
   color: var(--ink);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1041,7 +1041,7 @@
 .conversation-recovery dd,
 .conversation-recovery-blockers {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--text-xs);
 }
 
 .conversation-recovery > summary span,
@@ -1058,7 +1058,7 @@
 .conversation-recovery > summary strong {
   overflow: hidden;
   font-family: var(--serif);
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--ink);
   text-overflow: ellipsis;
@@ -1082,7 +1082,7 @@
   margin: 0;
   padding: 10px 12px;
   font-family: var(--serif);
-  font-size: 9px;
+  font-size: var(--text-xs);
   line-height: 1.45;
   color: var(--ink-faint);
   border-top: 1px solid var(--rule);

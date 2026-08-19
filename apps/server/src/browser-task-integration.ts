@@ -31,7 +31,7 @@ export class BrowserTasks extends BrowserTaskService {
   }
 
   async shutdownWith(shutdown: () => Promise<void>): Promise<void> {
-    this.shutdown();
+    await this.shutdown();
     await shutdown();
   }
 }

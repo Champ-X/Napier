@@ -1,5 +1,7 @@
 import type { RunEvent, ThreadDetail } from "@napier/contracts";
 
+import { conversationActivityCopy } from "./conversation-activity-copy";
+
 export type ConversationActivityTone =
   | "working"
   | "completed"
@@ -72,7 +74,10 @@ export function conversationActivitiesFromCandidates(
   limit = 12,
 ): ConversationActivity[] {
   return collapseActivities(
-    candidates.map((candidate) => ({ ...candidate, count: 1 })),
+    candidates.map((candidate) => ({
+      ...localizedCandidate(candidate),
+      count: 1,
+    })),
   ).slice(-limit);
 }
 
@@ -125,28 +130,76 @@ function collapseActivities(
 }
 
 function activityLabel(type: string): string {
-  if (type.startsWith("tool.")) return "Tool";
-  if (type.startsWith("plan.")) return "Plan";
-  if (type.startsWith("operator.")) return "Approval";
-  if (type.startsWith("artifact.")) return "Artifact";
-  if (type.startsWith("subagent.")) return "Delegate";
-  if (type.startsWith("workflow.")) return "Workflow";
-  if (type.startsWith("workspace.")) return "Workspace";
-  if (type.startsWith("browser.")) return "Browser";
-  if (type.startsWith("research.")) return "Research";
-  return "Run";
+  const labels = conversationActivityCopy.generic.labels;
+  if (type.startsWith("tool.")) return labels.tool;
+  if (type.startsWith("plan.")) return labels.plan;
+  if (type.startsWith("operator.")) return labels.approval;
+  if (type.startsWith("artifact.")) return labels.artifact;
+  if (type.startsWith("subagent.")) return labels.delegate;
+  if (type.startsWith("workflow.")) return labels.workflow;
+  if (type.startsWith("workspace.")) return labels.workspace;
+  if (type.startsWith("browser.")) return labels.browser;
+  if (type.startsWith("research.")) return labels.research;
+  return labels.run;
 }
 
 function activitySummary(event: RunEvent): string {
   if (event.type.startsWith("tool.")) {
     const tool = payloadString(event.payload, "toolName");
-    const action = event.type.slice("tool.".length).replaceAll(".", " ");
-    return tool ? `${humanize(action)} · ${humanize(tool)}` : humanize(action);
+    const action = localizedAction(event.type.slice("tool.".length));
+    const toolLabel = isChineseActivityCopy() ? tool : tool && humanize(tool);
+    return toolLabel ? `${action} · ${toolLabel}` : action;
   }
   if (event.type === "operator.decision.requested") {
-    return payloadString(event.payload, "header") ?? "Operator input requested";
+    return (
+      payloadString(event.payload, "header") ??
+      conversationActivityCopy.generic.operatorInputRequested
+    );
   }
-  return humanize(event.type);
+  return localizedEventSummary(event.type);
+}
+
+function localizedCandidate(
+  candidate: ConversationActivityCandidate,
+): ConversationActivityCandidate {
+  if (!isChineseActivityCopy()) return candidate;
+  const summary = localizedCandidateSummary(candidate);
+  return { ...candidate, label: activityLabel(candidate.type), summary };
+}
+
+function localizedCandidateSummary(
+  candidate: ConversationActivityCandidate,
+): string {
+  if (candidate.type === "operator.decision.requested") {
+    return candidate.summary === "Operator input requested"
+      ? conversationActivityCopy.generic.operatorInputRequested
+      : candidate.summary;
+  }
+  if (candidate.type.startsWith("tool.")) {
+    const detail = candidate.summary.split(" · ").slice(1).join(" · ");
+    const action = localizedAction(candidate.type.slice("tool.".length));
+    return detail ? `${action} · ${detail}` : action;
+  }
+  return candidate.summary === humanize(candidate.type)
+    ? localizedEventSummary(candidate.type)
+    : candidate.summary;
+}
+
+function localizedEventSummary(type: string): string {
+  if (!isChineseActivityCopy()) return humanize(type);
+  const action = localizedAction(type.slice(type.indexOf(".") + 1));
+  return action === type ? type : `${activityLabel(type)} · ${action}`;
+}
+
+function localizedAction(action: string): string {
+  if (!isChineseActivityCopy()) return humanize(action);
+  const actions: Readonly<Record<string, string>> =
+    conversationActivityCopy.generic.actions;
+  return actions[action] ?? action;
+}
+
+function isChineseActivityCopy(): boolean {
+  return String(conversationActivityCopy.generic.labels.run) === "运行";
 }
 
 function activityTone(type: string): ConversationActivityTone {

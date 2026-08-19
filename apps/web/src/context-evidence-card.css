@@ -1,0 +1,166 @@
+.context-evidence-card {
+  --context-evidence-accent: var(--color-accent);
+  --context-evidence-accent-surface: var(--color-accent-subtle);
+  --context-evidence-column-min: calc(var(--space-20) + var(--space-6));
+  --context-evidence-columns:
+    repeat(auto-fit, minmax(min(var(--context-evidence-column-min), 100%), 1fr));
+  --context-evidence-heading-size:
+    clamp(var(--text-sm), calc(var(--text-sm) + 0.15vw), var(--text-base));
+  position: relative;
+  padding: var(--space-3);
+  margin-block-start: var(--space-6);
+  color: var(--color-fg);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-raised);
+}
+
+.context-evidence-card::before {
+  position: absolute;
+  inset-block: calc(var(--space-0) - 1px);
+  inset-inline-start: calc(var(--space-0) - 1px);
+  width: var(--space-1);
+  content: "";
+  background: var(--context-evidence-accent);
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.usage-price-table-card {
+  --context-evidence-accent: var(--color-warning);
+  --context-evidence-accent-surface: var(--color-warning-surface);
+}
+
+.context-evidence-card > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-block-end: var(--space-2);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.context-evidence-card > header > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.context-evidence-card > header > div > span,
+.context-evidence-card > header > span,
+.context-evidence-card .checkpoint-group > span,
+.context-evidence-card dt {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.context-evidence-card > header > div > span {
+  color: var(--context-evidence-accent);
+}
+
+.context-evidence-card h3 {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--context-evidence-heading-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--leading-heading);
+}
+
+.context-evidence-card > header > span {
+  flex: 0 0 auto;
+  padding: var(--space-1) var(--space-2);
+  color: var(--context-evidence-accent);
+  background: var(--context-evidence-accent-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.context-evidence-card > p {
+  margin: var(--space-3) 0;
+  font-size: var(--text-base);
+  line-height: var(--leading-body);
+}
+
+.context-evidence-card .checkpoint-group {
+  padding-block-start: var(--space-2);
+  border-block-start: 1px solid var(--color-border-subtle);
+}
+
+.context-evidence-card .checkpoint-group ul {
+  padding-inline-start: var(--space-4);
+  margin: var(--space-2) 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-body);
+  color: var(--color-fg-muted);
+}
+
+.context-evidence-card dl {
+  display: grid;
+  grid-template-columns: var(--context-evidence-columns);
+  gap: var(--space-2) var(--space-3);
+  padding-block-start: var(--space-2);
+  margin: 0;
+  border-block-start: 1px solid var(--color-border-subtle);
+}
+
+.context-evidence-card dl.checkpoint-calibration-metrics {
+  padding: var(--space-2);
+  margin-block-start: var(--space-2);
+  background: var(--context-evidence-accent-surface);
+  border-radius: var(--radius-sm);
+}
+
+.context-evidence-card dl div {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-1);
+}
+
+.context-evidence-card dd {
+  min-width: 0;
+  margin: 0;
+}
+
+.context-evidence-card code {
+  display: block;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+  text-overflow: ellipsis;
+}
+
+.context-evidence-card small {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding-block-start: var(--space-2);
+  margin-block-start: var(--space-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-compact);
+  color: var(--color-fg-muted);
+  border-block-start: 1px solid var(--color-border-subtle);
+}
+
+.context-evidence-card small svg {
+  flex: 0 0 auto;
+  margin-block-start: var(--space-1);
+  color: var(--context-evidence-accent);
+}
+
+.context-guardrail {
+  margin-block-start: var(--space-4);
+}
+
+@media (forced-colors: active) {
+  .context-evidence-card::before {
+    background: CanvasText;
+  }
+
+  .context-evidence-card > header > span,
+  .context-evidence-card dl.checkpoint-calibration-metrics {
+    border: 1px solid CanvasText;
+  }
+}

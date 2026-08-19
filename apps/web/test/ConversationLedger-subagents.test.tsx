@@ -34,7 +34,7 @@ describe("Conversation Ledger subagents", () => {
       );
     });
 
-    expect(container.textContent).toContain("Subagent · reviewer · completed");
+    expect(container.textContent).toContain("Subagent · Reviewer · Completed");
     expect(container.textContent).toContain("Review release evidence");
     expect(container.textContent).toContain("One blocker remains.");
     expect(container.textContent).toContain("Missing release proof");

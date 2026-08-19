@@ -1,10 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  FlaskConical,
-  GitCompareArrows,
-  RotateCcw,
-  ShieldCheck,
-} from "lucide-react";
 
 import type {
   AgentMessageExperimentPreview,
@@ -17,10 +11,7 @@ import {
   type AgentMessageExperimentWebRequest,
 } from "./agent-message-experiment-api";
 import { agentMessageExperimentCopy as copy } from "./agent-message-experiment-copy";
-import {
-  AgentMessageExperimentComparisonDocket,
-  AgentMessageExperimentPreviewDocket,
-} from "./AgentMessageExperimentDockets";
+import { AgentMessageExperimentView } from "./AgentMessageExperimentView";
 import {
   agentMessageCheckpoints,
   agentMessageExperimentResultFilename,
@@ -29,6 +20,7 @@ import {
 } from "./agent-message-experiment-view-model";
 import { formatApiErrorMessage } from "./api-error";
 import type { WebThreadDetail } from "./api";
+import { downloadJsonArtifact } from "./download-json-artifact";
 import "./agent-message-experiment.css";
 
 interface PreviewState {
@@ -258,169 +250,37 @@ export default function AgentMessageExperimentDesk({
 
   const download = (): void => {
     if (!result) return;
-    downloadJson(result, agentMessageExperimentResultFilename(result));
+    downloadJsonArtifact(result, agentMessageExperimentResultFilename(result));
   };
 
   return (
-    <article
-      className="agent-experiment-desk"
-      aria-labelledby="agent-experiment-title"
-      aria-busy={Boolean(busy)}
-    >
-      <header className="agent-experiment-heading">
-        <div className="agent-experiment-seal" aria-hidden="true">
-          <FlaskConical size={17} />
-        </div>
-        <div>
-          <span>{copy.eyebrow}</span>
-          <h3 id="agent-experiment-title">{copy.title}</h3>
-          <p>{copy.body}</p>
-        </div>
-        <span className="agent-experiment-folio">
-          {checkpoint ? String(checkpoint.messageSeq).padStart(3, "0") : "---"}
-        </span>
-      </header>
-
-      <div className="agent-experiment-controls">
-        <label className="agent-experiment-checkpoint">
-          <span>{copy.checkpoint}</span>
-          <select
-            value={checkpointKey}
-            disabled={Boolean(busy) || checkpoints.length === 0}
-            onChange={(event) => {
-              setCheckpointKey(event.target.value);
-              invalidatePreview();
-            }}
-          >
-            <option value="">{copy.selectCheckpoint}</option>
-            {checkpoints.map((candidate) => (
-              <option key={candidate.key} value={candidate.key}>
-                {String(candidate.runIndex).padStart(2, "0")} / #
-                {candidate.messageSeq} / {candidate.model.provider}/
-                {candidate.model.id} / {candidate.status}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="agent-experiment-model">
-          <input
-            type="checkbox"
-            checked={replaceModel}
-            disabled={!checkpoint || !selectedModelConfigured || Boolean(busy)}
-            onChange={(event) => {
-              setReplaceModel(event.target.checked);
-              invalidatePreview();
-            }}
-          />
-          <span>
-            <small>{copy.modelOverride}</small>
-            <strong>
-              {replaceModel ? selectedModelKey : copy.modelOriginal}
-            </strong>
-          </span>
-        </label>
-
-        <label className="agent-experiment-model">
-          <input
-            type="checkbox"
-            checked={reuseToolResults}
-            disabled={!checkpoint || Boolean(busy)}
-            onChange={(event) => {
-              setReuseToolResults(event.target.checked);
-              invalidatePreview();
-            }}
-          />
-          <span>
-            <small>{copy.toolResults}</small>
-            <strong>
-              {reuseToolResults ? copy.toolResultsFrozen : copy.toolResultsLive}
-            </strong>
-          </span>
-        </label>
-
-        <label className="agent-experiment-title-field">
-          <span>{copy.titleLabel}</span>
-          <input
-            type="text"
-            value={title}
-            maxLength={100}
-            placeholder={copy.titlePlaceholder}
-            disabled={Boolean(busy)}
-            onChange={(event) => {
-              setTitle(event.target.value);
-              invalidatePreview();
-            }}
-          />
-        </label>
-
-        <div className="agent-experiment-actions">
-          <button
-            type="button"
-            disabled={!checkpoint || running || Boolean(busy)}
-            onClick={() => void preview()}
-          >
-            <GitCompareArrows size={12} aria-hidden="true" />
-            {busy === "preview" ? copy.previewing : copy.preview}
-          </button>
-          <button
-            type="button"
-            className="is-secondary"
-            disabled={Boolean(busy) || (!previewState && !result)}
-            onClick={reset}
-          >
-            <RotateCcw size={12} aria-hidden="true" />
-            {copy.reset}
-          </button>
-        </div>
-      </div>
-
-      {!checkpoint && !previewState && !result ? (
-        <p className="agent-experiment-empty">{copy.empty}</p>
-      ) : null}
-
-      {previewState ? (
-        <AgentMessageExperimentPreviewDocket
-          preview={previewState.preview}
-          busy={Boolean(busy)}
-          running={running}
-          streamedFrameCount={streamedFrameCount}
-          onCancel={cancel}
-          onExecute={() => void execute()}
-        />
-      ) : null}
-
-      {comparison && result ? (
-        <AgentMessageExperimentComparisonDocket
-          result={result}
-          comparison={comparison}
-          onOpenThread={() => void onOpenThread(result.targetThreadId)}
-          onDownload={download}
-        />
-      ) : null}
-
-      {error ? (
-        <p className="agent-experiment-error" role="alert">
-          {error}
-        </p>
-      ) : null}
-
-      <p className="agent-experiment-safety">
-        <ShieldCheck size={12} aria-hidden="true" />
-        {copy.safety}
-      </p>
-    </article>
+    <AgentMessageExperimentView
+      checkpoints={checkpoints}
+      checkpoint={checkpoint}
+      checkpointKey={checkpointKey}
+      replaceModel={replaceModel}
+      reuseToolResults={reuseToolResults}
+      title={title}
+      selectedModelKey={selectedModelKey}
+      selectedModelConfigured={selectedModelConfigured}
+      preview={previewState?.preview}
+      result={result}
+      comparison={comparison}
+      busy={busy}
+      running={running}
+      streamedFrameCount={streamedFrameCount}
+      error={error}
+      onCheckpointKey={setCheckpointKey}
+      onReplaceModel={setReplaceModel}
+      onReuseToolResults={setReuseToolResults}
+      onTitle={setTitle}
+      onInvalidate={invalidatePreview}
+      onPreview={() => void preview()}
+      onReset={reset}
+      onCancel={cancel}
+      onExecute={() => void execute()}
+      onOpenThread={() => result && void onOpenThread(result.targetThreadId)}
+      onDownload={download}
+    />
   );
-}
-
-function downloadJson(value: unknown, filename: string): void {
-  const blob = new Blob([JSON.stringify(value, null, 2)], {
-    type: "application/json",
-  });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  anchor.click();
-  URL.revokeObjectURL(url);
 }

@@ -1,0 +1,277 @@
+/* Shared motion, forced-colors, reduced-motion, and viewport adaptations. */
+@keyframes entry-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes seal-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(2deg);
+  }
+}
+
+@keyframes drawer-enter {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 1180px) {
+  .app-shell {
+    grid-template-columns: 232px minmax(0, 1fr);
+  }
+
+  .app-shell:has(.ledger-nav.is-collapsed) {
+    grid-template-columns: var(--shell-nav-compact-width) minmax(0, 1fr);
+  }
+
+  .inspector {
+    width: min(430px, calc(100vw - 84px));
+  }
+}
+
+@media (max-width: 780px) {
+  .app-shell {
+    grid-template-columns: 68px minmax(0, 1fr);
+  }
+
+  .app-shell:has(.ledger-nav.is-collapsed) {
+    grid-template-columns: 68px minmax(0, 1fr);
+  }
+
+  .ledger-nav {
+    padding: 18px 8px 12px;
+  }
+
+  .ledger-nav::before,
+  .brand-lockup > div:last-child,
+  .new-ledger-button kbd,
+  .new-ledger-button {
+    font-size: 0;
+  }
+
+  .brand-lockup {
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  .ledger-collapse-button {
+    display: none;
+  }
+
+  .new-ledger-button {
+    justify-content: center;
+    min-width: 38px;
+    margin-inline: 7px;
+    padding: 0;
+  }
+
+  .new-ledger-button svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .nav-section-heading,
+  .thread-copy,
+  .thread-row .status-dot {
+    display: none;
+  }
+
+  .thread-row {
+    display: grid;
+    width: 42px;
+    height: 38px;
+    grid-template-columns: 1fr;
+    place-items: center;
+    margin: 3px auto;
+    padding: 0;
+  }
+
+  .thread-index {
+    padding: 0;
+    font-size: var(--text-xs);
+  }
+
+  .workbench {
+    background: var(--paper-bright);
+  }
+
+  .workbench-header {
+    padding-left: 42px;
+  }
+
+  .error-banner,
+  .recovery-banner {
+    padding-left: 42px;
+  }
+
+  .recovery-banner {
+    grid-template-columns: 30px minmax(0, 1fr);
+  }
+
+  .recovery-banner button {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .model-chip {
+    display: none;
+  }
+
+  .message-ledger {
+    padding-right: 18px;
+    padding-left: 42px;
+  }
+
+  .activity-card {
+    margin-left: 0;
+  }
+
+  .activity-card summary {
+    grid-template-columns: 16px auto minmax(0, 1fr);
+  }
+
+  .activity-card summary > small,
+  .activity-card summary > time {
+    display: none;
+  }
+
+  .welcome-panel {
+    width: calc(100% - 36px);
+    margin: 0 auto;
+    padding: 36px 0 24px;
+  }
+
+  .welcome-panel h2 {
+    font-size: 40px;
+  }
+
+  .operator-decision {
+    margin-right: 12px;
+    margin-left: 41px;
+  }
+
+  .run-decision-dockets {
+    max-height: 130px;
+    padding-right: 12px;
+    padding-left: 41px;
+  }
+
+  .run-decision-dockets > .operator-decision {
+    margin-right: 0;
+    margin-left: 0;
+  }
+
+  .operator-decision-options {
+    grid-template-columns: 1fr;
+  }
+
+  .operator-decision footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .operator-decision footer > div {
+    align-self: stretch;
+    justify-content: flex-end;
+  }
+
+  .composer {
+    margin-right: 12px;
+    margin-bottom: 10px;
+    margin-left: 41px;
+    padding-bottom: 7px;
+  }
+
+  .composer textarea {
+    min-height: 52px;
+  }
+
+  .composer-footer,
+  .composer-hints {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .composer-hints {
+    flex: 1 1 auto;
+  }
+
+  .composer-options-popover {
+    position: fixed;
+    right: 10px;
+    bottom: 112px;
+    left: 80px;
+    width: auto;
+    max-height: min(62vh, 520px);
+  }
+
+  .composer-run-actions {
+    margin-left: auto;
+  }
+
+  .principle-row {
+    flex-wrap: wrap;
+    gap: 10px 16px;
+  }
+}
+
+@media (forced-colors: active) {
+  .message-actions > summary {
+    outline: var(--control-focus-offset) solid ButtonText;
+  }
+
+  .message-actions > summary:focus-visible {
+    outline: var(--control-focus-width) solid Highlight;
+    outline-offset: var(--control-focus-offset);
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes setup-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

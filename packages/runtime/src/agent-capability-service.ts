@@ -2,7 +2,7 @@ import { access } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
 
-import { AGENT_TOOL_NAMES, type AgentProfile } from "@napier/contracts";
+import type { AgentProfile } from "@napier/contracts";
 import {
   agentCapabilityPresetUpdate,
   type AgentCapabilityPresetId,
@@ -18,6 +18,7 @@ import type {
 } from "@napier/contracts/agent-capability-contract";
 
 import type { AgentCapabilityRuntime } from "./agent-capability-runtime.js";
+import { projectAgentToolReadiness } from "./agent-tool-readiness.js";
 import {
   bindingMatchesProfile,
   type CapabilityBindingLookup,
@@ -42,8 +43,7 @@ import {
 } from "./process-run-readiness.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
 import type { LocalStore } from "./store.js";
-
-const KNOWN_TOOL_NAMES = new Set<string>(AGENT_TOOL_NAMES);
+import { projectEnvironmentToolSurface } from "./environment-capability-projection.js";
 
 export class AgentCapabilityService {
   constructor(
@@ -118,7 +118,7 @@ export class AgentCapabilityService {
       profile.enabledSkills,
       profile.enabledTools.includes("skill_load"),
     );
-    const runtimeExposedTools = this.capabilityRuntime
+    const constructedTools = this.capabilityRuntime
       .createTools({
         profile,
         threadId: `capability_projection_${profile.id}`,
@@ -129,16 +129,27 @@ export class AgentCapabilityService {
         skillLoadAllowed: Boolean(skillInspection.snapshot),
         browserInteractionConfirmationAllowed: false,
       })
-      .map((tool) => tool.name)
-      .sort(compareCanonicalText);
+      .map((tool) => tool.name);
+    const sandboxReadiness = await sharedProcessRunReadinessGate(
+      this.sandbox,
+      this.store.workspaceRoot,
+    ).record();
+    const { environmentDegraded, runtimeExposedTools } =
+      projectEnvironmentToolSurface({
+        profile,
+        constructedTools,
+        sandboxReadiness,
+      });
+    runtimeExposedTools.sort(compareCanonicalText);
     const readiness = [
-      ...toolReadiness(profile.enabledTools, runtimeExposedTools),
+      ...projectAgentToolReadiness(
+        profile.enabledTools,
+        runtimeExposedTools,
+        environmentDegraded,
+      ),
       ...derivedSkillToolReadiness(profile.enabledTools, runtimeExposedTools),
       ...skillInspection.readiness,
-      await sharedProcessRunReadinessGate(
-        this.sandbox,
-        this.store.workspaceRoot,
-      ).record(),
+      sandboxReadiness,
     ].sort((left, right) => compareCanonicalText(left.id, right.id));
     const driftState = capabilityDriftState(bindingLookup, persistedProfile);
     const upgradePreview = binding
@@ -248,64 +259,6 @@ function capabilityDriftState(
       DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256
     ? "stale"
     : "current";
-}
-
-function toolReadiness(
-  configuredTools: readonly string[],
-  runtimeExposedTools: readonly string[],
-): CapabilityReadinessRecord[] {
-  const exposed = new Set(runtimeExposedTools);
-  return sortedUnique(configuredTools).map((name) => {
-    if (!KNOWN_TOOL_NAMES.has(name)) {
-      return {
-        id: `tool:${name}`,
-        status: "unknown_configured" as const,
-        configured: true,
-        allowedByPolicy: false,
-        exposed: false,
-        detail: "Unknown configured tool is preserved but never exposed",
-      };
-    }
-    if (!exposed.has(name)) {
-      if (name === "skill_load") {
-        return {
-          id: `tool:${name}`,
-          status: "unavailable" as const,
-          configured: true,
-          allowedByPolicy: true,
-          exposed: false,
-          detail:
-            "Skill loader is policy-allowed but no safe Project Skill snapshot is available",
-        };
-      }
-      return {
-        id: `tool:${name}`,
-        status: "blocked_by_policy" as const,
-        configured: true,
-        allowedByPolicy: false,
-        exposed: false,
-        detail: "Configured tool is blocked by the effective policy",
-      };
-    }
-    const externallyVerified = ![
-      "web_search",
-      "web_fetch",
-      "browser",
-      "research_source",
-    ].includes(name);
-    return {
-      id: `tool:${name}`,
-      status: externallyVerified
-        ? ("ready" as const)
-        : ("available_unverified" as const),
-      configured: true,
-      allowedByPolicy: true,
-      exposed: true,
-      detail: externallyVerified
-        ? "Tool is constructed and exposed by the current Runtime"
-        : "Tool is exposed; external dependency health is not claimed",
-    };
-  });
 }
 
 interface SkillReadinessInspection {

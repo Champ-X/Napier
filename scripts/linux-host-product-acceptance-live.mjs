@@ -122,7 +122,7 @@ export async function runLinuxHostProductAcceptance(input) {
   };
 }
 
-async function sourceSnapshotPaths(repoRoot) {
+export async function sourceSnapshotPaths(repoRoot) {
   const output = await runBounded(
     "git",
     ["ls-files", "--cached", "--others", "--exclude-standard", "-z"],
@@ -152,24 +152,42 @@ async function sourceSnapshotPaths(repoRoot) {
   ) {
     throw new Error("Linux host source snapshot path is invalid");
   }
+  const requiredPaths = new Set(STAGE19_SOURCE_FILES);
+  const presentPaths = [];
   for (const candidate of paths) {
-    const metadata = await lstat(path.join(repoRoot, candidate));
+    let metadata;
+    try {
+      metadata = await lstat(path.join(repoRoot, candidate));
+    } catch (error) {
+      if (
+        error?.code === "ENOENT" &&
+        !requiredPaths.has(candidate)
+      ) {
+        continue;
+      }
+      throw error;
+    }
     if (!metadata.isFile() || metadata.isSymbolicLink()) {
       throw new Error("Linux host source snapshot must contain regular files");
     }
+    presentPaths.push(candidate);
   }
-  return paths;
+  if (presentPaths.length === 0) {
+    throw new Error("Linux host source snapshot is empty");
+  }
+  return presentPaths;
 }
 
 export function includeLinuxHostSourceSnapshotPath(candidate) {
   return !["goal.md", STAGE19_ARTIFACT, RELEASE_ARTIFACT].includes(candidate);
 }
 
-async function writeSourceArchive(repoRoot, paths, archivePath) {
+export async function writeSourceArchive(repoRoot, paths, archivePath) {
   const child = spawn(
     "tar",
     ["-cf", archivePath, "-C", repoRoot, "--null", "-T", "-"],
     {
+      env: { ...process.env, COPYFILE_DISABLE: "1" },
       stdio: ["pipe", "pipe", "pipe"],
       windowsHide: true,
     },
@@ -290,14 +308,21 @@ async function runBounded(command, args, options = {}) {
 }
 
 function linuxFailureStage(stderr) {
-  try {
-    const value = JSON.parse(stderr.toString("utf8").trim().split("\n").at(-1));
-    return value?.status === "failed" && /^[a-z_]{1,40}$/u.test(value.stage)
-      ? value.stage
-      : undefined;
-  } catch {
-    return undefined;
+  const lines = stderr.toString("utf8").trim().split("\n").slice(-20);
+  for (const line of lines.reverse()) {
+    try {
+      const value = JSON.parse(line);
+      if (
+        value?.status === "failed" &&
+        /^[a-z_]{1,40}$/u.test(value.stage)
+      ) {
+        return value.stage;
+      }
+    } catch {
+      // Host transport diagnostics may follow the guest's structured failure.
+    }
   }
+  return undefined;
 }
 
 function waitForChild(child, timeoutMs) {

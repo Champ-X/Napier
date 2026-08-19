@@ -1,0 +1,55 @@
+.plan-inspector-surface {
+  container-name: plan-inspector;
+  container-type: inline-size;
+  min-width: 0;
+}
+
+.plan-inspector-surface .plan-studio-heading {
+  display: grid;
+  gap: var(--stack-xs);
+  padding: var(--inset-md);
+  color: var(--color-fg);
+  background: var(--color-surface);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.plan-inspector-surface .plan-studio-heading span {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-accent);
+  letter-spacing: 0.08em;
+}
+
+.plan-inspector-surface .plan-studio-heading h2 {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: clamp(
+    var(--text-lg),
+    calc(var(--text-lg) + 0.15vw),
+    var(--text-xl)
+  );
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--leading-heading);
+}
+
+.plan-inspector-surface .plan-studio-heading p {
+  max-width: var(--layout-reading-max);
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-body);
+  color: var(--color-fg-muted);
+}
+
+@container plan-inspector (min-width: 768px) {
+  .plan-inspector-surface .plan-studio-heading {
+    padding-inline: var(--inset-lg);
+  }
+}
+
+@media (forced-colors: active) {
+  .plan-inspector-surface .plan-studio-heading {
+    border-color: CanvasText;
+  }
+}

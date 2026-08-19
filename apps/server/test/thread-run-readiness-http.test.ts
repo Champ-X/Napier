@@ -8,11 +8,7 @@ import type {
   SandboxedProcess,
   SandboxLaunchRequest,
 } from "@napier/runtime";
-import {
-  canonicalJson,
-  sha256,
-  UnsupportedSandboxAdapter,
-} from "@napier/runtime";
+import { UnsupportedSandboxAdapter } from "@napier/runtime";
 import type { ContainerImageIdentity } from "@napier/runtime/sandbox-container-runtime";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -31,7 +27,7 @@ afterEach(async () => {
 });
 
 describe("Thread Run readiness HTTP", () => {
-  it("blocks process modes before Run creation and recovers after exact Setup", async () => {
+  it("starts process modes read-only and restores full execution after exact Setup", async () => {
     const fixture = await createFixture();
     const services = await createServices({
       workspaceRoot: fixture.workspaceRoot,
@@ -48,36 +44,28 @@ describe("Thread Run readiness HTTP", () => {
     });
 
     for (const capabilityPreset of ["coding", "safe_automation"] as const) {
-      const blocked = await prompt(app, thread.id, capabilityPreset);
-      expect(blocked.status).toBe(409);
-      expect(blocked.headers.get("cache-control")).toBe("no-store");
-      expect(blocked.headers.get("x-napier-run-readiness")).toBe(
-        "sandbox_unavailable",
+      const degraded = await prompt(app, thread.id, capabilityPreset);
+      expect(degraded.status).toBe(200);
+      expect(degraded.headers.get("x-napier-run-readiness")).toBe(
+        "degraded_read_only",
       );
-      expect(blocked.headers.get("content-type")).toContain("application/json");
-      expect(blocked.headers.get("x-napier-error-code")).toBe("conflict");
       expect(
-        blocked.headers.get("x-napier-agent-capability-projection-sha256"),
+        degraded.headers.get("x-napier-agent-capability-projection-sha256"),
       ).toMatch(/^[a-f0-9]{64}$/u);
-      const errorBody = await blocked.json();
-      expect(errorBody).toEqual({
-        error: expect.stringContaining(
-          "napier setup --workspace 'WORKSPACE_PATH' --component sandbox",
-        ),
-      });
-      expect(blocked.headers.get("x-napier-content-sha256")).toBe(
-        sha256(JSON.stringify(errorBody)),
+      await degraded.text();
+      expect(services.store.listRuns(thread.id).at(-1)?.configuration).toEqual(
+        expect.objectContaining({
+          executionMode: "environment_degraded_read_only",
+          toolPolicy: "observe",
+        }),
       );
-      expect(blocked.headers.get("x-napier-error-message-sha256")).toBe(
-        sha256(errorBody.error),
-      );
-      expect(services.store.listRuns(thread.id)).toHaveLength(0);
     }
+    expect(services.store.listRuns(thread.id)).toHaveLength(2);
 
     const research = await prompt(app, thread.id, "research");
     expect(research.status).toBe(200);
     await research.text();
-    expect(services.store.listRuns(thread.id)).toHaveLength(1);
+    expect(services.store.listRuns(thread.id)).toHaveLength(3);
 
     const preview = await (await app.request("/api/setup/sandbox")).json();
     const applied = await app.request("/api/setup/sandbox", {
@@ -92,7 +80,10 @@ describe("Thread Run readiness HTTP", () => {
     const recovered = await prompt(app, thread.id, "coding");
     expect(recovered.status).toBe(200);
     await recovered.text();
-    expect(services.store.listRuns(thread.id)).toHaveLength(2);
+    expect(services.store.listRuns(thread.id)).toHaveLength(4);
+    expect(services.store.listRuns(thread.id).at(-1)?.configuration).toEqual(
+      expect.objectContaining({ executionMode: "standard" }),
+    );
   });
 
   it("requires exact invalid-binding removal before ordinary Setup and Run recovery", async () => {
@@ -115,12 +106,24 @@ describe("Thread Run readiness HTTP", () => {
       agentId: services.store.listAgents()[0]!.id,
     });
 
-    const blocked = await prompt(app, thread.id, "coding");
-    expect(blocked.status).toBe(409);
-    expect(await blocked.json()).toEqual({
-      error: expect.stringContaining("--component sandbox --uninstall"),
-    });
-    expect(services.store.listRuns(thread.id)).toHaveLength(0);
+    const degraded = await prompt(app, thread.id, "coding");
+    expect(degraded.status).toBe(200);
+    expect(degraded.headers.get("x-napier-run-readiness")).toBe(
+      "degraded_read_only",
+    );
+    await degraded.text();
+    expect(services.store.listRuns(thread.id)).toHaveLength(1);
+    const receipt = (await services.store.listEvents(thread.id)).find(
+      (event) => event.type === "run.environment.negotiated",
+    );
+    expect(receipt?.payload).toEqual(
+      expect.objectContaining({
+        readinessId: "sandbox:configured-sandbox-invalid",
+        repairCommand: expect.stringContaining(
+          "--component sandbox --uninstall",
+        ),
+      }),
+    );
 
     const setupPreview = await (await app.request("/api/setup/sandbox")).json();
     const unsafeReplace = await app.request("/api/setup/sandbox", {
@@ -166,7 +169,7 @@ describe("Thread Run readiness HTTP", () => {
     const recovered = await prompt(app, thread.id, "coding");
     expect(recovered.status).toBe(200);
     await recovered.text();
-    expect(services.store.listRuns(thread.id)).toHaveLength(1);
+    expect(services.store.listRuns(thread.id)).toHaveLength(2);
   });
 });
 

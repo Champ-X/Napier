@@ -1,7 +1,7 @@
 import type { ModelRef, RunEvent, RunRecord } from "@napier/contracts";
 import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
 
-import type { AgentRuntime } from "./agent-runtime.js";
+import type { AgentExecutionPort } from "./agent-execution.js";
 import type { EventSink } from "./event-sink.js";
 import type { LocalStore } from "./store.js";
 
@@ -39,7 +39,10 @@ export interface EmbeddedAgentExecution {
 export class EmbeddedAgentService {
   constructor(
     private readonly store: LocalStore,
-    private readonly runtime: AgentRuntime,
+    private readonly runtime: Pick<
+      AgentExecutionPort,
+      "runPrompt" | "resumeInterruptedRun"
+    >,
   ) {}
 
   async run(options: RunEmbeddedAgentOptions): Promise<EmbeddedAgentExecution> {

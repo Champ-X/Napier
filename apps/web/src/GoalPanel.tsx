@@ -20,7 +20,7 @@ export function GoalPanel({
     <section className="panel-section" aria-labelledby="goal-title">
       <div className="panel-heading">
         <div>
-          <span>OBJECTIVE</span>
+          <span>{copy.goal.eyebrow}</span>
           <h2 id="goal-title">{copy.goal.title}</h2>
         </div>
         {goal ? (
@@ -37,11 +37,11 @@ export function GoalPanel({
           <p>{goal.objective}</p>
           <dl>
             <div>
-              <dt>Status</dt>
-              <dd>{goal.blocker.replaceAll("_", " ")}</dd>
+              <dt>{copy.goal.status}</dt>
+              <dd>{copy.goal.blockers[goal.blocker]}</dd>
             </div>
             <div>
-              <dt>Continuations</dt>
+              <dt>{copy.goal.continuations}</dt>
               <dd>
                 {goal.continuationCount} / {goal.maxContinuations}
               </dd>

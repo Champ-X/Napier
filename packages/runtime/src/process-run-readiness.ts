@@ -1,4 +1,4 @@
-import type { AgentProfile } from "@napier/contracts";
+import type { AgentProfile, RunExecutionMode } from "@napier/contracts";
 import { agentCapabilityStatus } from "@napier/contracts/agent-capabilities";
 import type { CapabilityReadinessRecord } from "@napier/contracts/agent-capability-contract";
 
@@ -78,6 +78,41 @@ export class ProcessRunReadinessGate {
       throw new ProcessRunReadinessError(readiness);
     }
   }
+}
+
+export interface EnvironmentExecutionNegotiation {
+  executionMode: RunExecutionMode;
+  readiness?: CapabilityReadinessRecord;
+}
+
+export async function negotiateEnvironmentExecution(
+  profile: Pick<
+    AgentProfile,
+    "toolPolicy" | "enabledTools" | "enabledSkills" | "enabledSubagents"
+  >,
+  sandbox: OsSandboxAdapter,
+  workspaceRoot: string,
+  requestedMode: RunExecutionMode = "standard",
+  _signal?: AbortSignal,
+): Promise<EnvironmentExecutionNegotiation> {
+  if (
+    requestedMode !== "standard" ||
+    !agentCapabilityStatus(profile).processExecution
+  ) {
+    return { executionMode: requestedMode };
+  }
+  // AgentRuntime settles cancellation after the negotiated configuration is
+  // durably bound to a Run, so negotiation must not short-circuit that ledger.
+  const readiness = await sharedProcessRunReadinessGate(
+    sandbox,
+    workspaceRoot,
+  ).record(true);
+  return readiness.status === "ready"
+    ? { executionMode: "standard", readiness }
+    : {
+        executionMode: "environment_degraded_read_only",
+        readiness,
+      };
 }
 
 export function sharedProcessRunReadinessGate(

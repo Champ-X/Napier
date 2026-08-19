@@ -5,7 +5,6 @@ import type {
   RunRecord,
 } from "@napier/contracts";
 
-import type { AgentRuntime } from "./agent-runtime.js";
 import type { EventSink } from "./event-sink.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
@@ -29,6 +28,7 @@ import {
   parseExecutionPlanWorkflowNodeOutput,
   workflowSchemaSha256,
 } from "./workflow-schemas.js";
+import type { WorkflowAgentExecutionPort } from "./workflow-runtime-ports.js";
 
 export interface WorkflowMapItemExecutionOptions {
   threadId: string;
@@ -51,7 +51,7 @@ export interface WorkflowMapItemOutcome {
 
 export class ExecutionPlanWorkflowMapItemRuntime {
   constructor(
-    private readonly agentRuntime: AgentRuntime,
+    private readonly agentExecution: WorkflowAgentExecutionPort,
     private readonly ledger: ExecutionPlanWorkflowLedger,
   ) {}
 
@@ -135,7 +135,7 @@ export class ExecutionPlanWorkflowMapItemRuntime {
       controller.abort();
     }, options.node.itemTimeoutMs);
     try {
-      const run = await this.agentRuntime.runPrompt({
+      const run = await this.agentExecution.runPrompt({
         threadId: options.threadId,
         text: workflowMapItemPrompt(
           options.manifest,

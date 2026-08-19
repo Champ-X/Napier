@@ -1,0 +1,236 @@
+.sandbox-setup-card {
+  container-type: inline-size;
+  width: 100%;
+  margin-block-start: var(--stack-sm);
+  overflow: hidden;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-inline-start: var(--control-focus-width) solid var(--color-danger);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-raised);
+}
+
+.sandbox-setup-card.state-buildable,
+.sandbox-setup-card.state-pullable {
+  border-inline-start-color: var(--color-warning);
+}
+
+.sandbox-setup-card.is-ready {
+  border-inline-start-color: var(--color-success);
+}
+
+.sandbox-setup-card > header {
+  display: grid;
+  grid-template-columns: var(--space-10) minmax(0, 1fr) auto;
+  gap: var(--inline-sm);
+  align-items: center;
+  padding: var(--inset-sm) var(--inset-md);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.sandbox-setup-mark {
+  display: grid;
+  width: var(--control-target);
+  height: var(--control-target);
+  place-items: center;
+  color: var(--color-danger);
+  background: var(--color-danger-surface);
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-sm);
+}
+
+.state-buildable .sandbox-setup-mark,
+.state-pullable .sandbox-setup-mark {
+  color: var(--color-warning);
+  background: var(--color-warning-surface);
+  border-color: var(--color-warning-border);
+}
+
+.sandbox-setup-card.is-ready .sandbox-setup-mark {
+  color: var(--color-success);
+  background: var(--color-success-surface);
+  border-color: var(--color-success-border);
+}
+
+.sandbox-setup-card > header span,
+.sandbox-setup-ledger span,
+.sandbox-setup-boundary {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-fg-subtle);
+}
+
+.sandbox-setup-card h3 {
+  margin: var(--stack-xs) 0 0;
+  font-family: var(--font-sans);
+  font-size: clamp(var(--text-base), 2cqi, var(--text-lg));
+  font-weight: var(--font-weight-semibold);
+}
+
+.sandbox-setup-spinner {
+  color: var(--color-warning);
+  animation: setup-spin calc(var(--duration-slow) * 4) linear infinite;
+}
+
+.sandbox-setup-ledger {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--stack-sm);
+  padding: var(--inset-md);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.sandbox-setup-ledger > div {
+  min-width: 0;
+  padding: var(--inset-sm);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.sandbox-setup-ledger strong,
+.sandbox-setup-ledger code {
+  display: block;
+  overflow: hidden;
+  margin-block-start: var(--stack-xs);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-fg);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sandbox-setup-detail {
+  margin: 0;
+  padding: var(--inset-md);
+  font-size: var(--text-sm);
+  line-height: var(--leading-compact);
+  color: var(--color-fg-muted);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.sandbox-setup-card > footer {
+  display: flex;
+  min-height: var(--layout-status-bar);
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--inline-md);
+  padding: var(--inset-xs) var(--inset-md);
+}
+
+.sandbox-setup-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--inline-sm);
+}
+
+.sandbox-setup-card > footer button {
+  min-height: var(--control-target-primary);
+  padding: 0 var(--inset-sm);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-fg-on-accent);
+  cursor: pointer;
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+}
+
+.sandbox-setup-card > footer button:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+.sandbox-setup-card > footer button:active:not(:disabled) {
+  background: var(--color-accent-active);
+  border-color: var(--color-accent-active);
+}
+
+.sandbox-setup-card > footer button:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 var(--control-focus-offset) var(--color-surface),
+    0 0 0 calc(var(--control-focus-offset) + var(--control-focus-width))
+      var(--color-focus-ring);
+}
+
+.sandbox-setup-card > footer button:disabled,
+.sandbox-setup-card > footer button[aria-busy="true"] {
+  color: var(--color-fg-disabled);
+  cursor: not-allowed;
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
+}
+
+.sandbox-setup-card > footer button.secondary {
+  color: var(--color-accent);
+  background: var(--color-surface);
+  border-color: var(--color-border-strong);
+}
+
+.sandbox-setup-card > footer button.danger {
+  color: var(--color-fg-on-accent);
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.sandbox-setup-card > footer button.danger:hover:not(:disabled) {
+  background: var(--color-danger-fg);
+  border-color: var(--color-danger-fg);
+}
+
+.sandbox-uninstall-preview {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--inline-sm);
+  align-items: center;
+  padding: var(--inset-sm) var(--inset-md);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-danger);
+  background: var(--color-danger-surface);
+  border-block: 1px dashed var(--color-danger-border);
+}
+
+.sandbox-uninstall-preview span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-fg-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sandbox-uninstall-preview code {
+  color: var(--color-fg-subtle);
+}
+
+.sandbox-setup-boundary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--inline-xs);
+}
+
+.composer-sandbox-setup {
+  margin: var(--stack-sm) 0 var(--stack-xs);
+}
+
+.composer-sandbox-setup .sandbox-setup-card {
+  margin-block-start: 0;
+}
+
+@media (forced-colors: active) {
+  .sandbox-setup-card,
+  .sandbox-setup-ledger > div,
+  .sandbox-setup-card > footer button {
+    border-color: ButtonText;
+  }
+
+  .sandbox-setup-card > footer button:focus-visible {
+    outline: var(--control-focus-width) solid Highlight;
+    outline-offset: var(--control-focus-offset);
+    box-shadow: none;
+  }
+}

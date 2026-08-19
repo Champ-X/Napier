@@ -16,6 +16,7 @@ import {
 import type { KeyboardEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 
+import { advancedSurfaceCopy } from "./advanced-surface-copy";
 import { copy } from "./copy";
 import { InspectorTabButton } from "./InspectorTabButton";
 import type { InspectorTab } from "./use-workspace-view-model";
@@ -31,21 +32,21 @@ export const INSPECTOR_GROUPS: ReadonlyArray<{
 }> = [
   {
     id: "task",
-    label: "Task",
+    label: advancedSurfaceCopy.navigation.task,
     icon: ClipboardList,
     defaultTab: "plan",
     tabs: ["plan", "goal", "files"],
   },
   {
     id: "inspect",
-    label: "Inspect",
+    label: advancedSurfaceCopy.navigation.inspect,
     icon: Search,
     defaultTab: "browser",
     tabs: ["browser", "trace", "processes"],
   },
   {
     id: "studio",
-    label: "Studio",
+    label: advancedSurfaceCopy.navigation.studio,
     icon: Wrench,
     defaultTab: "studio",
     tabs: ["studio", "lab", "context", "memory", "extensions", "automations"],
@@ -68,17 +69,19 @@ const TAB_ICONS: Record<InspectorTab, typeof Activity> = {
 };
 const TAB_LABELS: Record<InspectorTab, string> = {
   ...copy.tabs,
-  browser: "Browser",
-  studio: "Studio",
+  browser: advancedSurfaceCopy.navigation.browser,
+  studio: advancedSurfaceCopy.navigation.studio,
 };
+
+export interface InspectorNavigationProps {
+  activeTab: InspectorTab;
+  onChange(tab: InspectorTab): void;
+}
 
 export function InspectorNavigation({
   activeTab,
   onChange,
-}: {
-  activeTab: InspectorTab;
-  onChange: (tab: InspectorTab) => void;
-}) {
+}: InspectorNavigationProps) {
   const activeGroup = inspectorGroup(activeTab);
   const visibleTabs = inspectorTabs(activeTab);
   const [focusedGroup, setFocusedGroup] = useState(activeGroup.id);
@@ -89,11 +92,14 @@ export function InspectorNavigation({
   }, [activeGroup.id, activeTab]);
 
   return (
-    <nav className="inspector-navigation" aria-label="Inspector navigation">
+    <nav
+      className="inspector-navigation"
+      aria-label={advancedSurfaceCopy.accessibility.inspectorNavigation}
+    >
       <div
         className="inspector-groups"
         role="tablist"
-        aria-label="Inspector sections"
+        aria-label={advancedSurfaceCopy.accessibility.inspectorSections}
       >
         {INSPECTOR_GROUPS.map((group) => {
           const Icon = group.icon;
@@ -122,7 +128,7 @@ export function InspectorNavigation({
       <div
         className="inspector-tabs"
         role="tablist"
-        aria-label={`${activeGroup.label} tools`}
+        aria-label={`${activeGroup.label} ${advancedSurfaceCopy.accessibility.inspectorTools}`}
       >
         {visibleTabs.map((tab) => {
           const Icon = TAB_ICONS[tab];
@@ -161,13 +167,12 @@ export function inspectorTabs(
   return [activeTab, ...group.tabs.filter((tab) => tab !== activeTab)];
 }
 
-export function InspectorPanel({
-  activeTab,
-  children,
-}: {
+export interface InspectorPanelProps {
   activeTab: InspectorTab;
   children: ReactNode;
-}) {
+}
+
+export function InspectorPanel({ activeTab, children }: InspectorPanelProps) {
   return (
     <div
       id="inspector-active-panel"

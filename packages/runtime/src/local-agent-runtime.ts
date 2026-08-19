@@ -224,10 +224,10 @@ export async function createLocalAgentRuntime(
       search: { slot: searchSlot, executor: searchExecutor },
       browser: { slot: browserSlot, manager: browserManager },
     });
-    const embeddedAgents = new EmbeddedAgentService(store, runtime);
+    const embeddedAgents = new EmbeddedAgentService(store, kernel);
     const agentMessageExperiments = new AgentMessageExperimentRuntime(
       store,
-      runtime,
+      kernel,
     );
     const modelInvocationExperiments = new ModelInvocationExperimentRuntime(
       store,
@@ -239,7 +239,7 @@ export async function createLocalAgentRuntime(
       runtime,
       runtime.toolInvocationCapsules,
     );
-    const workflows = new ExecutionPlanWorkflowRuntime(store, runtime);
+    const workflows = new ExecutionPlanWorkflowRuntime(store, kernel, runtime);
     const embeddedWorkflows = new EmbeddedWorkflowService(store, workflows);
     const workflowExperiments = new ExecutionPlanWorkflowExperimentRuntime(
       store,

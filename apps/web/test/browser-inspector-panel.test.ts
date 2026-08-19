@@ -11,6 +11,10 @@ describe("Browser Inspector", () => {
           "BrowserInspectorPanel.tsx",
           "BrowserUseLocalTaskPanel.tsx",
           "BrowserTaskForm.tsx",
+          "BrowserTaskDisclosure.tsx",
+          "BrowserTaskActiveControls.tsx",
+          "browser-task-copy.ts",
+          "browser-live-copy.ts",
           "use-browser-task-runner.ts",
         ].map((file) =>
           readFile(new URL(`../src/${file}`, import.meta.url), "utf8"),

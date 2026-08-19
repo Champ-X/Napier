@@ -4,41 +4,17 @@ import type {
   ProviderSetupPreview,
 } from "@napier/contracts/provider-setup";
 
+import { environmentSetupCopy } from "./environment-setup-copy";
+
 export interface ProviderSetupStatusCopy {
   label: string;
   detail: string;
 }
 
-const STATUS_COPY: Record<
-  ProviderSetupCandidateStatus,
-  ProviderSetupStatusCopy
-> = {
-  ready: {
-    label: "Ready",
-    detail: "This locator is enabled and the model is available.",
-  },
-  available: {
-    label: "Found",
-    detail: "The environment locator exists. Enable it explicitly for Napier.",
-  },
-  missing: {
-    label: "Not found",
-    detail: "Set this environment variable before enabling the provider.",
-  },
-  conflict: {
-    label: "Review",
-    detail: "Another active locator already controls this provider.",
-  },
-  unavailable: {
-    label: "Unavailable",
-    detail: "This provider or model is not available in this build.",
-  },
-};
-
 export function providerSetupStatusCopy(
   status: ProviderSetupCandidateStatus,
 ): ProviderSetupStatusCopy {
-  return STATUS_COPY[status];
+  return environmentSetupCopy.provider.statuses[status];
 }
 
 export function providerSetupEnableCandidate(

@@ -9,32 +9,26 @@ import type {
   ReleaseProductTrialStatus,
 } from "@napier/contracts/release-product-trial";
 
+import { advancedSurfaceCopy } from "./advanced-surface-copy";
 import {
   getReleaseProductGate,
   recordReleaseProductTrial,
 } from "./release-product-trial-api";
+import {
+  ReleaseProductMetricInput,
+  ReleaseProductVersionSummary,
+} from "./ReleaseProductTrialEvidence";
 
-const FAILURE_REASONS: Array<{
-  value: ReleaseProductTrialFailureReason;
-  label: string;
-}> = [
-  { value: "task_result", label: "Task result" },
-  { value: "tool_failure", label: "Tool failure" },
-  { value: "configuration", label: "Configuration" },
-  { value: "manual_intervention", label: "Manual intervention" },
-  { value: "recovery_failure", label: "Recovery failure" },
-  { value: "ux_blocker", label: "UX blocker" },
+const FAILURE_REASONS: ReleaseProductTrialFailureReason[] = [
+  "task_result",
+  "tool_failure",
+  "configuration",
+  "manual_intervention",
+  "recovery_failure",
+  "ux_blocker",
 ];
 
-export function ReleaseProductTrialControl({
-  threadId,
-  casebook,
-  template,
-  selectedCaseId,
-  runs,
-  loadGate = getReleaseProductGate,
-  submitTrial = recordReleaseProductTrial,
-}: {
+export interface ReleaseProductTrialControlProps {
   threadId: string;
   casebook: EvaluationCasebook;
   template: EvaluationCasebookTemplate | undefined;
@@ -45,7 +39,18 @@ export function ReleaseProductTrialControl({
     casebookId: string,
   ): Promise<ReleaseProductGateProjection>;
   submitTrial?: typeof recordReleaseProductTrial;
-}) {
+}
+
+export function ReleaseProductTrialControl({
+  threadId,
+  casebook,
+  template,
+  selectedCaseId,
+  runs,
+  loadGate = getReleaseProductGate,
+  submitTrial = recordReleaseProductTrial,
+}: ReleaseProductTrialControlProps) {
+  const copy = advancedSurfaceCopy.releaseTrial;
   const terminalRuns = useMemo(
     () =>
       runs
@@ -148,40 +153,35 @@ export function ReleaseProductTrialControl({
     >
       <header>
         <div>
-          <span>DEFAULT PRODUCT TRACK</span>
-          <h6 id={`release-product-trial-${casebook.id}`}>
-            Versioned Run evidence
-          </h6>
+          <span>{copy.track}</span>
+          <h6 id={`release-product-trial-${casebook.id}`}>{copy.title}</h6>
         </div>
         <strong
           className={projection?.defaultTrackReady ? "is-ready" : "is-blocked"}
         >
           {projection?.consecutivePassingVersions.length ?? 0}/
-          {projection?.requiredConsecutiveVersions ?? 3} versions
+          {projection?.requiredConsecutiveVersions ?? 3} {copy.versions}
         </strong>
       </header>
-      <p>
-        Record a real terminal Run. The gate requires every fixed Case, at least
-        90% success, and every critical Case passing.
-      </p>
+      <p>{copy.body}</p>
       <div className="release-product-trial-grid">
         <label>
-          <span>Product version</span>
+          <span>{copy.productVersion}</span>
           <input
-            aria-label="Release product version"
+            aria-label={copy.productVersionLabel}
             value={productVersion}
             maxLength={32}
             readOnly
           />
         </label>
         <label>
-          <span>Terminal Run</span>
+          <span>{copy.terminalRun}</span>
           <select
-            aria-label="Release product Run"
+            aria-label={copy.terminalRunLabel}
             value={runId}
             onChange={(event) => setRunId(event.currentTarget.value)}
           >
-            <option value="">No terminal Run</option>
+            <option value="">{copy.noTerminalRun}</option>
             {terminalRuns.map((run) => (
               <option key={run.id} value={run.id}>
                 {run.status} · {shortId(run.id)}
@@ -190,24 +190,24 @@ export function ReleaseProductTrialControl({
           </select>
         </label>
         <label>
-          <span>Outcome</span>
+          <span>{copy.outcome}</span>
           <select
-            aria-label="Release product outcome"
+            aria-label={copy.outcomeLabel}
             value={status}
             onChange={(event) =>
               setStatus(event.currentTarget.value as ReleaseProductTrialStatus)
             }
           >
-            <option value="passed">Passed</option>
-            <option value="failed">Failed</option>
-            <option value="inconclusive">Inconclusive</option>
+            <option value="passed">{copy.passed}</option>
+            <option value="failed">{copy.failed}</option>
+            <option value="inconclusive">{copy.inconclusive}</option>
           </select>
         </label>
         {status === "passed" ? null : (
           <label>
-            <span>Failure class</span>
+            <span>{copy.failureClass}</span>
             <select
-              aria-label="Release product failure reason"
+              aria-label={copy.failureReasonLabel}
               value={failureReason}
               onChange={(event) =>
                 setFailureReason(
@@ -216,32 +216,32 @@ export function ReleaseProductTrialControl({
               }
             >
               {FAILURE_REASONS.map((reason) => (
-                <option key={reason.value} value={reason.value}>
-                  {reason.label}
+                <option key={reason} value={reason}>
+                  {copy.failureReasons[reason]}
                 </option>
               ))}
             </select>
           </label>
         )}
-        <MetricInput
-          label="Configuration interventions"
+        <ReleaseProductMetricInput
+          label={copy.configurationInterventions}
           value={configurationInterventions}
           onChange={setConfigurationInterventions}
         />
-        <MetricInput
-          label="Human interventions"
+        <ReleaseProductMetricInput
+          label={copy.humanInterventions}
           value={humanInterventions}
           onChange={setHumanInterventions}
         />
-        <MetricInput
-          label="Recovery events"
+        <ReleaseProductMetricInput
+          label={copy.recoveryEvents}
           value={recoveryEvents}
           onChange={setRecoveryEvents}
         />
         <label>
-          <span>UX score</span>
+          <span>{copy.uxScore}</span>
           <select
-            aria-label="Release product UX score"
+            aria-label={copy.uxScoreLabel}
             value={uxScore}
             onChange={(event) => setUxScore(Number(event.currentTarget.value))}
           >
@@ -255,75 +255,27 @@ export function ReleaseProductTrialControl({
       </div>
       <button type="button" disabled={!canRecord} onClick={() => void record()}>
         <ClipboardCheck size={12} aria-hidden="true" />
-        {busy ? "Recording Run…" : "Record product trial"}
+        {busy ? copy.recording : copy.record}
       </button>
       {duplicate ? (
-        <p role="status">This Run is already recorded for {productVersion}.</p>
+        <p role="status">
+          {copy.duplicatePrefix} {productVersion}.
+        </p>
       ) : null}
       {selectedRun &&
       status === "passed" &&
       selectedRun.status !== "completed" ? (
-        <p role="status">Only a completed Run can be recorded as passed.</p>
+        <p role="status">{copy.completedOnly}</p>
       ) : null}
       {error ? <p role="alert">{error}</p> : null}
       {currentVersion ? (
-        <div
-          className={`release-product-version release-product-version-${currentVersion.status}`}
-        >
-          <strong>
-            {currentVersion.productVersion} · {currentVersion.status}
-          </strong>
-          <span>
-            {currentVersion.coveredCaseCount}/{currentVersion.caseCount} Cases ·{" "}
-            {Math.round(currentVersion.successRate * 100)}% success · UX{" "}
-            {currentVersion.meanUxScore}/5
-          </span>
-          <small>
-            {currentVersion.trialCount} Trials ·{" "}
-            {currentVersion.humanInterventions} human ·{" "}
-            {currentVersion.configurationInterventions} config ·{" "}
-            {currentVersion.recoveryEvents} recovery
-          </small>
-          {currentVersion.failedCriticalCaseIds.length ? (
-            <small>
-              Critical pending:{" "}
-              {currentVersion.failedCriticalCaseIds.join(", ")}
-            </small>
-          ) : null}
-        </div>
+        <ReleaseProductVersionSummary version={currentVersion} />
       ) : null}
       <footer>
         <ShieldAlert size={12} aria-hidden="true" />
-        <small>
-          This gate covers the Default Product Track only; cross-platform,
-          supply-chain, safety, and competitor gates remain independent.
-        </small>
+        <small>{copy.footer}</small>
       </footer>
     </section>
-  );
-}
-
-function MetricInput({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  onChange(value: number): void;
-}) {
-  return (
-    <label>
-      <span>{label}</span>
-      <input
-        aria-label={label}
-        type="number"
-        min={0}
-        max={100}
-        value={value}
-        onChange={(event) => onChange(Number(event.currentTarget.value))}
-      />
-    </label>
   );
 }
 

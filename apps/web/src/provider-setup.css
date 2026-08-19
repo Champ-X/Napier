@@ -1,0 +1,237 @@
+.provider-setup-card {
+  container-type: inline-size;
+  position: relative;
+  width: 100%;
+  margin-block-start: var(--stack-md);
+  overflow: hidden;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-inline-start: var(--control-focus-width) solid var(--color-warning);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-raised);
+}
+
+.provider-setup-card.is-ready {
+  border-inline-start-color: var(--color-success);
+}
+
+.provider-setup-card > header {
+  display: grid;
+  grid-template-columns: var(--space-10) minmax(0, 1fr) auto;
+  gap: var(--inline-sm);
+  align-items: center;
+  padding: var(--inset-sm) var(--inset-md);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.provider-setup-mark {
+  display: grid;
+  width: var(--control-target);
+  height: var(--control-target);
+  place-items: center;
+  color: var(--color-warning);
+  background: var(--color-warning-surface);
+  border: 1px solid var(--color-warning-border);
+  border-radius: var(--radius-full);
+}
+
+.is-ready .provider-setup-mark {
+  color: var(--color-success);
+  background: var(--color-success-surface);
+  border-color: var(--color-success-border);
+}
+
+.provider-setup-card > header span,
+.provider-setup-proof {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-fg-subtle);
+}
+
+.provider-setup-card h3 {
+  margin: var(--stack-xs) 0 0;
+  font-family: var(--font-sans);
+  font-size: clamp(var(--text-base), 2cqi, var(--text-lg));
+  font-weight: var(--font-weight-semibold);
+}
+
+.provider-setup-spinner {
+  color: var(--color-warning);
+  animation: setup-spin calc(var(--duration-slow) * 4) linear infinite;
+}
+
+.provider-setup-intro {
+  margin: 0;
+  padding: var(--inset-md);
+  font-size: var(--text-sm);
+  line-height: var(--leading-compact);
+  color: var(--color-fg-muted);
+}
+
+.provider-setup-candidates {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(224px, 1fr));
+  gap: var(--stack-sm);
+  padding: 0 var(--inset-md) var(--inset-md);
+}
+
+.provider-setup-candidate {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--inline-sm);
+  padding: var(--inset-sm);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.provider-setup-provider {
+  min-width: 0;
+}
+
+.provider-setup-provider strong {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.provider-setup-provider code {
+  display: block;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-fg-subtle);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.provider-setup-candidate > span:last-child {
+  flex: none;
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.provider-setup-candidate.status-available > span:last-child {
+  color: var(--color-warning);
+  background: var(--color-warning-surface);
+  border-color: var(--color-warning-border);
+}
+
+.provider-setup-candidate.status-ready > span:last-child {
+  color: var(--color-success);
+  background: var(--color-success-surface);
+  border-color: var(--color-success-border);
+}
+
+.provider-setup-candidate.status-conflict > span:last-child {
+  color: var(--color-danger);
+  background: var(--color-danger-surface);
+  border-color: var(--color-danger-border);
+}
+
+.provider-setup-card > footer {
+  display: flex;
+  min-height: var(--layout-status-bar);
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--inline-md);
+  padding: var(--inset-xs) var(--inset-md);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.provider-setup-card > footer button,
+.provider-setup-retry {
+  min-height: var(--control-target-primary);
+  padding: 0 var(--inset-sm);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-fg-on-accent);
+  cursor: pointer;
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+}
+
+.provider-setup-card > footer button:hover:not(:disabled),
+.provider-setup-retry:hover {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+.provider-setup-card > footer button:active:not(:disabled),
+.provider-setup-retry:active {
+  background: var(--color-accent-active);
+  border-color: var(--color-accent-active);
+}
+
+.provider-setup-card > footer button:focus-visible,
+.provider-setup-retry:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 var(--control-focus-offset) var(--color-surface),
+    0 0 0 calc(var(--control-focus-offset) + var(--control-focus-width))
+      var(--color-focus-ring);
+}
+
+.provider-setup-card > footer button:disabled,
+.provider-setup-card > footer button[aria-busy="true"] {
+  color: var(--color-fg-disabled);
+  cursor: not-allowed;
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
+}
+
+.provider-setup-ready {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--inline-xs);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-success);
+}
+
+.provider-setup-error {
+  margin: 0;
+  padding: var(--inset-sm) var(--inset-md);
+  font-size: var(--text-sm);
+  line-height: var(--leading-compact);
+  color: var(--color-danger-fg);
+  background: var(--color-danger-surface);
+  border-top: 1px solid var(--color-danger-border);
+}
+
+.provider-setup-retry {
+  margin: var(--inset-md);
+}
+
+.composer-options-popover .provider-setup-card {
+  margin-block-start: var(--stack-sm);
+}
+
+@media (forced-colors: active) {
+  .provider-setup-card,
+  .provider-setup-candidate,
+  .provider-setup-card > footer button,
+  .provider-setup-retry {
+    border-color: ButtonText;
+  }
+
+  .provider-setup-card > footer button:focus-visible,
+  .provider-setup-retry:focus-visible {
+    outline: var(--control-focus-width) solid Highlight;
+    outline-offset: var(--control-focus-offset);
+    box-shadow: none;
+  }
+}

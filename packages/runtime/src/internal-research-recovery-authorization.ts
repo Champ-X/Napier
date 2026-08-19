@@ -14,7 +14,6 @@ import {
   resolveAgentCapabilityProfileFromStore,
 } from "./agent-capability-override.js";
 import type { RunPromptOptions } from "./agent-runtime-options.js";
-import { sharedProcessRunReadinessGate } from "./process-run-readiness.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
 
 const INTERNAL_RESEARCH_RECOVERY_AUTHORIZATION = Symbol(
@@ -58,7 +57,7 @@ export async function resolvePromptCapabilityProfile(
     getAgent(agentId: string): AgentProfile;
     getAgentRevision(agentId: string, revision: number): AgentProfileRevision;
   },
-  sandbox: OsSandboxAdapter,
+  _sandbox: OsSandboxAdapter,
   agentId: string,
   options: RunPromptOptions,
   source: RunInvocationSource,
@@ -84,20 +83,6 @@ export async function resolvePromptCapabilityProfile(
   const profile = internalResearchRecovery
     ? applyAgentCapabilityPresetOverride(base, "research", "user")
     : base;
-  const requiresProcessReadiness =
-    sandbox.readinessVersion !== undefined &&
-    (options.capabilityPreset !== undefined ||
-      source === "schedule" ||
-      source === "channel");
-  if (
-    requiresProcessReadiness &&
-    (!options.executionMode || options.executionMode === "standard")
-  ) {
-    await sharedProcessRunReadinessGate(
-      sandbox,
-      store.workspaceRoot,
-    ).assertProfile(profile, options.signal);
-  }
   return {
     internalResearchRecovery,
     profile,

@@ -1,24 +1,24 @@
 import { useCallback, useEffect, useState } from "react";
 
-import type { SessionSection } from "./SessionWorkspace";
+import type { TaskSection } from "./TaskWorkspace";
 import type { InspectorTab } from "./use-workspace-view-model";
 import type { SettingsSection } from "./WorkspaceSettingsSurface";
 import type { WorkspaceView } from "./WorkspaceViewNavigation";
 
-const SESSION_TAB: Partial<Record<InspectorTab, SessionSection>> = {
-  plan: "plan",
-  studio: "studio",
-  goal: "goal",
-  files: "files",
-  browser: "browser",
-  processes: "processes",
-  lab: "lab",
-  automations: "automations",
+const TASK_TAB: Partial<Record<InspectorTab, TaskSection>> = {
+  plan: "overview",
+  goal: "overview",
+  files: "changes",
+  browser: "environment",
+  processes: "environment",
 };
 const SETTINGS_TAB: Partial<Record<InspectorTab, SettingsSection>> = {
   context: "context",
   memory: "memory",
   extensions: "extensions",
+  automations: "automations",
+  studio: "developer",
+  lab: "developer",
 };
 
 // Sections that map onto a legacy InspectorTab (deep-link / roving focus).
@@ -30,7 +30,11 @@ function inspectorTabForSection(
     section === "memory" ||
     section === "extensions"
     ? section
-    : undefined;
+    : section === "automations"
+      ? "automations"
+      : section === "developer"
+        ? "lab"
+        : undefined;
 }
 
 export function useWorkspaceShell(
@@ -38,8 +42,8 @@ export function useWorkspaceShell(
 ) {
   const [workspaceView, setWorkspaceView] =
     useState<WorkspaceView>("conversation");
-  const [sessionSection, setSessionSectionState] =
-    useState<SessionSection>("plan");
+  const [taskSection, setTaskSectionState] =
+    useState<TaskSection>("overview");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSection, setSettingsSectionState] =
     useState<SettingsSection>("context");
@@ -48,14 +52,14 @@ export function useWorkspaceShell(
     (tab: InspectorTab) => {
       setInspectorTab(tab);
       if (tab === "trace") {
-        setWorkspaceView("trace");
+        setWorkspaceView("trajectory");
         setSettingsOpen(false);
         return;
       }
-      const session = SESSION_TAB[tab];
-      if (session) {
-        setSessionSectionState(session);
-        setWorkspaceView("session");
+      const task = TASK_TAB[tab];
+      if (task) {
+        setTaskSectionState(task);
+        setWorkspaceView("task");
         setSettingsOpen(false);
         return;
       }
@@ -72,10 +76,18 @@ export function useWorkspaceShell(
     if (tab) setInspectorTab(tab);
     setSettingsOpen(true);
   }, [setInspectorTab, settingsSection]);
-  const setSessionSection = useCallback(
-    (section: SessionSection) => {
-      setSessionSectionState(section);
-      setInspectorTab(section);
+  const setTaskSection = useCallback(
+    (section: TaskSection) => {
+      setTaskSectionState(section);
+      const inspectorTab: InspectorTab =
+        section === "overview"
+          ? "plan"
+          : section === "changes"
+            ? "files"
+            : section === "environment"
+              ? "browser"
+              : "plan";
+      setInspectorTab(inspectorTab);
     },
     [setInspectorTab],
   );
@@ -111,8 +123,8 @@ export function useWorkspaceShell(
   return {
     workspaceView,
     setWorkspaceView,
-    sessionSection,
-    setSessionSection,
+    taskSection,
+    setTaskSection,
     settingsOpen,
     settingsSection,
     setSettingsSection,

@@ -1,20 +1,20 @@
 {
   "kind": "napier.profile-upgrade-stage21",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-15T14:56:52.150Z",
+  "generatedAt": "2026-08-19T13:33:17.604Z",
   "implementation": {
     "contractSha256": "95363e197ead8f44323d2cce05f92f2d6ea27993f8b9687a82a9c5e03554ec8a",
     "upgradeModelSha256": "c66af0ea1f3001844d59693f3d61bbe3faecb7b3defa22484c648ef06991bbb9",
     "bindingsSha256": "400efa38aa732cbc5c7a24f31e12901f0aac2588048aaf5d4c6e87f10fe3d80d",
-    "serviceSha256": "fd93df031de52946ff5ed247816151a9fa177551e5ff5c7d4ab44fe131596d05",
+    "serviceSha256": "6e7f511634055e025938e9abc6c14e04c8e12516bd2034845f8d8752cd78f00f",
     "storeMutationSha256": "32983eacd1ddb3ff7a7e087c9084e3b7c75ec55043c795f56cae27904b38a532",
-    "storeSha256": "a37b5da9181e068c591511ef60c00c2bb297c02b3a57f88e110f3c461d072d19",
+    "storeSha256": "b627f3b1d2f41064609fb525f9f3d718f9d18ec232b39e33011b18c9a751b232",
     "cliSha256": "b4605006c742e029d51308e8696b18b0d4aa55f40567ec375ebd97ed2e966737",
     "cliOptionsSha256": "32c879015e350b6eb95f471c68defe0346d280ffa8cd904c3ce0a4a643f61d9b",
     "httpSha256": "774414d1257736f2b40d2dfad479f1eb60f51edf2dbbffa389f988c60f40ff5a",
     "webApiSha256": "6ac293dc8e514d25d03503145379a34641e867a343e4640ad0a53214d53927f3",
     "webCardSha256": "6beafcfb62e96c94b383faa54091b3f9cae8bf349c0a49b1d7ec5dda8a00b61f",
-    "harnessSha256": "7761c6c3b906cb71cff0b06afbd87c65f90f9a4c3e10e557eea92ac744453143",
+    "harnessSha256": "04d7864eeec5383abb5d564e4ed0a06332a5bd4ab7caaa2d4608992183655782",
     "verifierSha256": "d5a757db9de7d2b0cc9504a1904ef545a5f3673fcc32bffc6659bf4541a1cca5",
     "checkSha256": "fa2ee85bfb674ee0bc27af7ec1f98395af42bd266d39a2cd4d4de25b0802d9bb"
   },
@@ -37,7 +37,7 @@
     "nonManagedStateUnchanged": true,
     "bindingSource": "contract_upgrade",
     "bindingOwnership": "explicit_overrides",
-    "projectionSha256": "55dd628c6e6c2392fe098453c6ea666c60cec2a1acaa6e752d943fa89caf96b5"
+    "projectionSha256": "766a06f0dd8bd6ffdd79e84d95907f789980372701a2391d27357f5a5f6edcb6"
   },
   "web": {
     "entry": "production_web",
@@ -60,7 +60,7 @@
     "nonManagedStateUnchanged": true,
     "bindingSource": "contract_upgrade",
     "bindingOwnership": "explicit_overrides",
-    "projectionSha256": "55dd628c6e6c2392fe098453c6ea666c60cec2a1acaa6e752d943fa89caf96b5"
+    "projectionSha256": "766a06f0dd8bd6ffdd79e84d95907f789980372701a2391d27357f5a5f6edcb6"
   },
   "unmanaged": {
     "entry": "built_cli",
@@ -95,5 +95,5 @@
       "Windows host product acceptance"
     ]
   },
-  "contentSha256": "b4e1fee6deecac01f53abcd320f9046375fb41121e0a8068b5969d4837b111cb"
+  "contentSha256": "531c770b396acda0bfae482ab4622f799a5dc3982dd04c58111f97b2ac2febfa"
 }

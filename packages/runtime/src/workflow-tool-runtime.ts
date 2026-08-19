@@ -5,7 +5,6 @@ import type {
 } from "@napier/contracts";
 import { Check } from "typebox/value";
 
-import type { AgentRuntime } from "./agent-runtime.js";
 import type { EventSink } from "./event-sink.js";
 import {
   agentToolInputLedgerProjection,
@@ -21,6 +20,7 @@ import type { LocalStore } from "./store.js";
 import { assertWorkflowValue } from "./workflow-schemas.js";
 import { ExecutionPlanWorkflowLedger } from "./workflow-ledger.js";
 import { WORKFLOW_NODE_EXECUTION } from "./workflow-node-execution.js";
+import type { WorkflowRuntimeEnvironment } from "./workflow-runtime-ports.js";
 
 const RUN_LEASE_TTL_MS = 60_000;
 const RUN_LEASE_HEARTBEAT_MS = 20_000;
@@ -61,7 +61,7 @@ export class ExecutionPlanWorkflowToolRuntime {
 
   constructor(
     private readonly store: LocalStore,
-    private readonly agentRuntime: AgentRuntime,
+    private readonly environment: WorkflowRuntimeEnvironment,
     private readonly ledger: ExecutionPlanWorkflowLedger,
   ) {}
 
@@ -131,15 +131,15 @@ export class ExecutionPlanWorkflowToolRuntime {
         profile,
         threadId: options.threadId,
         runId: leased.run.id,
-        sandbox: this.agentRuntime.verificationSandbox,
-        ...(this.agentRuntime.workspaceFileMutations
+        sandbox: this.environment.verificationSandbox,
+        ...(this.environment.workspaceFileMutations
           ? {
-              workspaceFileMutations: this.agentRuntime.workspaceFileMutations,
+              workspaceFileMutations: this.environment.workspaceFileMutations,
             }
           : {}),
         gitStageMutations: gitStageMutationManagerFor(
           this.store,
-          this.agentRuntime.verificationSandbox,
+          this.environment.verificationSandbox,
         ),
         gitStageScopeId: options.planId,
         gitCommitScopeId: options.planId,

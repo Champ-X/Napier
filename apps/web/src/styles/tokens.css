@@ -1,0 +1,153 @@
+/* Generated from DESIGN.md. Do not edit by hand. */
+/* source-sha256: 1e1c21dab03f7eeb5d3a750f5b738532a18f4572bf81f6765fea1d14ae631106 */
+:root {
+  color-scheme: light;
+  --color-accent: #3A58EC;
+  --color-accent-active: #3048C8;
+  --color-accent-hover: #3A54E0;
+  --color-accent-subtle: #EEF1FF;
+  --color-bg: #F7F8FA;
+  --color-bg-subtle: #F4F6F9;
+  --color-border: #D5DAE1;
+  --color-border-strong: #7A838D;
+  --color-border-subtle: #E8EBF0;
+  --color-danger: #B43F3E;
+  --color-danger-accent: #E5484D;
+  --color-danger-border: #B85A4B;
+  --color-danger-fg: #843C2D;
+  --color-danger-surface: #FDECEC;
+  --color-fg: #1A1D1F;
+  --color-fg-disabled: #596069;
+  --color-fg-muted: #596069;
+  --color-fg-on-accent: #FFFFFF;
+  --color-fg-subtle: #69717B;
+  --color-focus-ring: #4D6BFE;
+  --color-success: #315B48;
+  --color-success-border: #456B5B;
+  --color-success-surface: #DFE9E0;
+  --color-surface: #FFFFFF;
+  --color-surface-muted: #EEF0F5;
+  --color-surface-raised: #F7F8FA;
+  --color-surface-selected: #EEF1FF;
+  --color-trajectory-input-fg: #1F7A4D;
+  --color-trajectory-input-surface: #E7F4EC;
+  --color-trajectory-model-fg: #775A9C;
+  --color-trajectory-model-surface: #F1EBF7;
+  --color-trajectory-tool-fg: #A15900;
+  --color-trajectory-tool-surface: #FFF0DE;
+  --color-warning: #765814;
+  --color-warning-border: #97731D;
+  --color-warning-solid: #C2891A;
+  --color-warning-surface: #F3E8C8;
+  --control-focus-offset: 2px;
+  --control-focus-width: 3px;
+  --control-target: 32px;
+  --control-target-primary: 40px;
+  --duration-base: 160ms;
+  --duration-fast: 120ms;
+  --duration-slow: 220ms;
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --font-mono: SFMono-Regular, "Cascadia Mono", "Roboto Mono", "Noto Sans Mono CJK SC", Consolas, monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", Arial, sans-serif;
+  --font-weight-bold: 700;
+  --font-weight-medium: 500;
+  --font-weight-regular: 400;
+  --font-weight-semibold: 600;
+  --inline-lg: 16px;
+  --inline-md: 12px;
+  --inline-sm: 8px;
+  --inline-xl: 24px;
+  --inline-xs: 4px;
+  --inset-lg: 24px;
+  --inset-md: 16px;
+  --inset-sm: 12px;
+  --inset-xl: 32px;
+  --inset-xs: 8px;
+  --layout-composer-max: 240px;
+  --layout-composer-min: 48px;
+  --layout-evidence-rail: 320px;
+  --layout-reading-max: 840px;
+  --layout-reading-min: 760px;
+  --layout-reading-target: 800px;
+  --layout-settings-form: 800px;
+  --layout-sidebar-compact: 68px;
+  --layout-sidebar-expanded: 248px;
+  --layout-status-bar: 44px;
+  --leading-body: 1.7;
+  --leading-compact: 1.45;
+  --leading-heading: 1.3;
+  --radius-full: 18px;
+  --radius-lg: 14px;
+  --radius-md: 10px;
+  --radius-sm: 6px;
+  --radius-xl: 18px;
+  --shadow-modal: 0 2px 6px rgb(23 33 60 / 10%), 0 24px 60px rgb(23 33 60 / 18%);
+  --shadow-none: none;
+  --shadow-raised: 0 1px 2px rgb(23 33 60 / 6%), 0 8px 24px rgb(23 33 60 / 8%);
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-2: 8px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --stack-lg: 24px;
+  --stack-md: 16px;
+  --stack-sm: 8px;
+  --stack-xl: 40px;
+  --stack-xs: 4px;
+  --text-2xl: 30px;
+  --text-3xl: 32px;
+  --text-4xl: 40px;
+  --text-annotation: 11px;
+  --text-base: 15px;
+  --text-lg: 16px;
+  --text-sm: 13px;
+  --text-xl: 22px;
+  --text-xs: 12px;
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --color-border: var(--color-border-strong);
+    --color-fg-muted: var(--color-fg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (forced-colors: active) {
+  :root {
+    --color-border-strong: ButtonText;
+    --color-focus-ring: Highlight;
+  }
+  button,
+  input,
+  select,
+  textarea {
+    border-color: ButtonText;
+  }
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: var(--control-focus-width) solid Highlight;
+    outline-offset: var(--control-focus-offset);
+    box-shadow: none;
+  }
+}

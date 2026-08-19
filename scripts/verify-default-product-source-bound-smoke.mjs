@@ -14,7 +14,7 @@ const EXPECTED_CASES = [
   "shell-sandbox",
 ];
 const RELEASE_IDENTITY =
-  "3cfff912d595263ef4cb4facfa3fede955db81fc18dad10afaab77f62e335889";
+  "4207d192b9c1cfadb2e8ef7faa61688acbe8d77d423e880fffb7651675ac59ed";
 const FORBIDDEN_KEYS = new Set([
   "answer",
   "credential",

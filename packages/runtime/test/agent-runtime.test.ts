@@ -16,7 +16,7 @@ import { exportThreadReplayBundle } from "../src/replay.js";
 import type { OsSandboxAdapter, SandboxLaunchRequest } from "../src/sandbox.js";
 import { LocalStore } from "../src/store.js";
 import { verifyThreadReplayBundle } from "../src/thread-bundles.js";
-import { processReadySandbox } from "./process-run-readiness-test-fixture.js";
+import { processReadyAgentRuntime as processReadyRuntime, processReadySandbox } from "./process-run-readiness-test-fixture.js";
 const temporaryRoots: string[] = [];
 
 function fauxMessageWithUsage(content: string, input: number, output: number, cacheRead = 0, cacheWrite = 0) {
@@ -86,7 +86,7 @@ describe("AgentRuntime demo path", () => {
       title: "Demo",
       agentId: agent.id,
     });
-    const runtime = new AgentRuntime(store, new ModelRegistry());
+    const runtime = processReadyRuntime(store, new ModelRegistry());
     const streamedTypes: string[] = [];
 
     const run = await runtime.runPrompt({
@@ -136,7 +136,7 @@ describe("AgentRuntime demo path", () => {
       title: "Skill fingerprint",
       agentId: agent.id,
     });
-    const runtime = new AgentRuntime(store, new ModelRegistry());
+    const runtime = processReadyRuntime(store, new ModelRegistry());
     const run = await runtime.runPrompt({
       threadId: thread.id,
       text: "Use the configured skills.",
@@ -226,7 +226,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -306,7 +306,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -455,7 +455,7 @@ describe("AgentRuntime demo path", () => {
       agentId: agent.id,
     });
     await store.setGoal(thread.id, createGoal("Produce independently verified evidence"));
-    const runtime = new AgentRuntime(store, new ModelRegistry());
+    const runtime = processReadyRuntime(store, new ModelRegistry());
 
     await runtime.runPrompt({
       threadId: thread.id,
@@ -507,7 +507,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -631,7 +631,7 @@ describe("AgentRuntime demo path", () => {
     faux.setResponses([fauxMessageWithUsage("Accounted response.", 10, 5, 80)]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     await runtime.runPrompt({
       threadId: thread.id,
@@ -672,7 +672,7 @@ describe("AgentRuntime demo path", () => {
     faux.setResponses([fauxAssistantMessage("The build and tests passed."), fauxAssistantMessage('{"facts":[]}')]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -730,7 +730,7 @@ describe("AgentRuntime demo path", () => {
     faux.setResponses([fauxAssistantMessage("The build and tests passed."), fauxAssistantMessage('{"facts":[]}')]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -773,7 +773,7 @@ describe("AgentRuntime demo path", () => {
     faux.setResponses([fauxAssistantMessage("Never run git reset --hard here.")]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -834,7 +834,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
     const streamedTypes: string[] = [];
 
     const run = await runtime.runPrompt({
@@ -970,7 +970,7 @@ describe("AgentRuntime demo path", () => {
     const registry = new ModelRegistry();
     registry.registerProvider(worker.provider);
     registry.registerProvider(reviewer.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -1073,7 +1073,7 @@ describe("AgentRuntime demo path", () => {
     worker.setResponses([fauxAssistantMessage(candidate)]);
     const registry = new ModelRegistry();
     registry.registerProvider(worker.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -1121,7 +1121,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -1153,7 +1153,7 @@ describe("AgentRuntime demo path", () => {
       agentId: agent.id,
     });
     await store.setGoal(thread.id, createGoal("Complete a live model task"));
-    const runtime = new AgentRuntime(store, new ModelRegistry());
+    const runtime = processReadyRuntime(store, new ModelRegistry());
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -1195,7 +1195,7 @@ describe("AgentRuntime demo path", () => {
         },
       },
     });
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -1246,7 +1246,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(provider.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -1315,7 +1315,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const completedRun = await runtime.runPrompt({
       threadId: thread.id,
@@ -1385,7 +1385,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     await runtime.runPrompt({
       threadId: thread.id,
@@ -1489,7 +1489,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     await runtime.runPrompt({
       threadId: thread.id,
@@ -1569,7 +1569,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     await runtime.runPrompt({
       threadId: thread.id,
@@ -1625,7 +1625,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     await runtime.runPrompt({
       threadId: thread.id,
@@ -1771,7 +1771,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: imported.thread.id,
@@ -1811,7 +1811,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
     let queued = false;
 
     const run = await runtime.runPrompt({
@@ -1877,7 +1877,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
     let queued = false;
 
     const run = await runtime.runPrompt({
@@ -1943,7 +1943,7 @@ describe("AgentRuntime demo path", () => {
     faux.setResponses([fauxAssistantMessage("The only permitted turn completed.")]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
     let queued = false;
 
     const run = await runtime.runPrompt({
@@ -2023,7 +2023,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -2095,7 +2095,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const originRun = await runtime.runPrompt({
       threadId: thread.id,
@@ -2217,7 +2217,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -2353,7 +2353,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -2508,7 +2508,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -2650,7 +2650,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -2734,7 +2734,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -2869,7 +2869,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -3138,7 +3138,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -3243,7 +3243,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -3348,7 +3348,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -3455,7 +3455,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -3783,7 +3783,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -3928,7 +3928,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry, extensionManager);
+    const runtime = processReadyRuntime(store, registry, extensionManager);
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -4042,7 +4042,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, registry);
+    const runtime = processReadyRuntime(store, registry);
 
     const firstRun = await runtime.runPrompt({
       threadId: thread.id,
@@ -4263,7 +4263,7 @@ describe("AgentRuntime demo path", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(recoveredStore, registry);
+    const runtime = processReadyRuntime(recoveredStore, registry);
 
     const resumed = await runtime.resumeInterruptedRun({
       threadId: thread.id,

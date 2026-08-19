@@ -1,0 +1,107 @@
+.browser-task-credential {
+  display: grid;
+  min-width: 0;
+  gap: var(--stack-xs);
+  padding: var(--inset-xs);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.browser-task-credential > strong,
+.browser-task-credential > p {
+  margin: 0;
+}
+
+.browser-task-credential > p {
+  font-size: var(--text-xs);
+  line-height: var(--leading-compact);
+  color: var(--color-fg-muted);
+}
+
+.browser-task-credential details {
+  display: grid;
+  gap: var(--stack-sm);
+}
+
+.browser-task-credential summary {
+  min-height: var(--control-target);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.browser-task-credential summary:hover {
+  color: var(--color-accent-hover);
+}
+
+.browser-task-credential summary:active {
+  transform: scale(0.98);
+}
+
+.browser-task-credential summary:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 var(--control-focus-offset) var(--color-surface),
+    0 0 0 calc(var(--control-focus-offset) + var(--control-focus-width))
+      var(--color-focus-ring);
+}
+
+.browser-task-credential details[open] summary {
+  color: var(--color-accent);
+}
+
+.browser-task-cloud-disclosure,
+.browser-task-local-disclosure {
+  display: grid;
+  gap: var(--stack-sm);
+  padding: var(--inset-sm);
+  font-size: var(--text-xs);
+  line-height: var(--leading-compact);
+  color: var(--color-fg-muted);
+  background: var(--color-warning-surface);
+  border: 1px solid var(--color-warning-border);
+  border-radius: var(--radius-sm);
+}
+
+.browser-task-cloud-disclosure strong,
+.browser-task-cloud-disclosure p,
+.browser-task-local-disclosure strong,
+.browser-task-local-disclosure p {
+  margin: 0;
+}
+
+.browser-task-cloud-disclosure strong,
+.browser-task-local-disclosure strong {
+  color: var(--color-warning);
+}
+
+.browser-task-form .browser-task-cloud-consent {
+  display: flex;
+  align-items: center;
+  gap: var(--inline-sm);
+}
+
+.browser-task-form .browser-task-cloud-consent input {
+  flex: none;
+  width: var(--control-target);
+  min-height: var(--control-target);
+}
+
+.browser-task-form .browser-task-cloud-consent span {
+  color: var(--color-fg);
+}
+
+@container browser-task (max-width: 375px) {
+  .browser-task-form .browser-task-cloud-consent {
+    align-items: flex-start;
+  }
+}
+
+@media (forced-colors: active) {
+  .browser-task-credential,
+  .browser-task-cloud-disclosure,
+  .browser-task-local-disclosure {
+    border-color: ButtonText;
+  }
+}

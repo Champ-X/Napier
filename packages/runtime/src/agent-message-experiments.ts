@@ -7,7 +7,7 @@ import type {
   ThreadRecord,
 } from "@napier/contracts";
 
-import type { AgentRuntime } from "./agent-runtime.js";
+import type { AgentExecutionPort } from "./agent-execution.js";
 import type { EventSink } from "./event-sink.js";
 import {
   AGENT_MESSAGE_TOOL_RESULT_REPLAY,
@@ -52,7 +52,10 @@ export interface RunAgentMessageExperimentOptions {
 export class AgentMessageExperimentRuntime {
   constructor(
     private readonly store: LocalStore,
-    private readonly agents: AgentRuntime,
+    private readonly agents: Pick<
+      AgentExecutionPort,
+      "modelRegistry" | "runPrompt" | "toolInvocationResultCapsules"
+    >,
   ) {}
 
   async preview(

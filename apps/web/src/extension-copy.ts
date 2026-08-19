@@ -1,4 +1,7 @@
-export const extensionCopy = {
+import { extensionCopyZh } from "./extension-copy.zh";
+import { deepMergeCopy, getLocale } from "./locale";
+
+export const extensionCopyEn = {
   eyebrow: "CAPABILITY REGISTRY",
   title: "Reviewed extensions",
   loading: "Opening capability registry...",
@@ -185,6 +188,19 @@ export const extensionCopy = {
     previewRollout: "Preview rollout",
     previewingRollout: "Previewing...",
     rolloutEmpty: "No rollout channels have been published.",
+    rolloutPackageCount: "packages",
+    rolloutRevision: "revision",
+    rolloutLockfile: "lockfile",
+    planHash: "plan",
+    keyHash: "key",
+    manifestHash: "manifest",
+    indexEnvelopeHash: "index envelope",
+    lockfileHash: "lockfile",
+    envelopeHash: "envelope",
+    indexHash: "index",
+    channelCount: "channels",
+    bindingHash: "binding",
+    previewHash: "preview",
     rolloutPublished:
       "Rollout channel published with a policy-bound lockfile. Applying it still uses deployment CAS and local review reset.",
     rolloutApplied:
@@ -297,3 +313,8 @@ export const extensionCopy = {
       "Child variable and source environment variable must be provided together.",
   },
 } as const;
+
+export const extensionCopy = deepMergeCopy(
+  extensionCopyEn,
+  getLocale() === "zh" ? extensionCopyZh : {},
+);

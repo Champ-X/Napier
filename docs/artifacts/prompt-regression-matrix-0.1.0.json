@@ -44,12 +44,12 @@
       "dimension": "browser",
       "testFile": "packages/runtime/test/agent-browser.test.ts",
       "testNameSha256": "37a520b7b608f2e4baa689352e4084b83aaa87965ffc50294de0cb9486804a95",
-      "testFileSha256": "46c3bfa00d3565bc77dfeefdc52179e2b0e0dd077b3fdb6a37696f341304eaa9",
+      "testFileSha256": "49501de6a60e5e389cdd7881c79b1ab198c7ab86758c9b207ca79e06e09c879d",
       "argvSha256": "00d29920b6a6f898c0c259c9b3f3e51d6dac26e8991a8ea5ab4578133a46d6ca",
       "status": "passed",
       "testFileCount": 1,
       "testCount": 1,
-      "contentSha256": "37e0940d95aaadfaa03c5e6613580ad8bd30f34fd469de3d534796f2912b9bc3"
+      "contentSha256": "87cf6f197222aae25235ffb94c68df803ac134ca551f72930a3ac79dfc6b47f5"
     },
     {
       "id": "prompt_long_task_v1",
@@ -112,5 +112,5 @@
       "contentSha256": "7bc01e2ca4ff9ebd503224107ae7bb38e409bf6a06e05a0b4e530ba06df9ff4e"
     }
   ],
-  "contentSha256": "7495a67c73e6eb4e7d8c1c10132244f751470122c12dc4dbb6ed22141d758368"
+  "contentSha256": "d295b4812d1b692cfbf9eb9be6ce9148cc847ea1d1d8f1985e20007c5ff29296"
 }

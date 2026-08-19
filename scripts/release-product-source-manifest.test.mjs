@@ -55,4 +55,13 @@ describe("Release Product source manifest", () => {
     await writeFile(target, `${JSON.stringify(observed, null, 2)}\n`, "utf8");
     await expect(verifyReleaseProductSourceManifest(target)).rejects.toThrow();
   });
+
+  it("verifies a release source archive without Git metadata", async () => {
+    await expect(
+      verifyReleaseProductSourceManifest(MANIFEST, { sourceArchive: true }),
+    ).resolves.toMatchObject({
+      kind: "napier.release-product-source-manifest",
+      productVersion: "0.1.3",
+    });
+  });
 });

@@ -1,11 +1,12 @@
 import { Activity, Layers3, MessageSquareText } from "lucide-react";
 import type { KeyboardEvent } from "react";
 
+import { advancedSurfaceCopy } from "./advanced-surface-copy";
 import { copy } from "./copy";
 
-export type WorkspaceView = "conversation" | "trace" | "session";
+export type WorkspaceView = "conversation" | "task" | "trajectory";
 
-const VIEWS: ReadonlyArray<{
+export const workspaceViews: ReadonlyArray<{
   id: WorkspaceView;
   label: string;
   icon: typeof Activity;
@@ -16,37 +17,42 @@ const VIEWS: ReadonlyArray<{
     icon: MessageSquareText,
   },
   {
-    id: "trace",
-    label: copy.tabs.trace,
-    icon: Activity,
-  },
-  {
-    id: "session",
+    id: "task",
     label: copy.tabs.session,
     icon: Layers3,
   },
+  {
+    id: "trajectory",
+    label: copy.tabs.trace,
+    icon: Activity,
+  },
 ];
+
+export interface WorkspaceViewNavigationProps {
+  activeView: WorkspaceView;
+  eventCount: number;
+  runCount: number;
+  onChange(view: WorkspaceView): void;
+}
 
 export function WorkspaceViewNavigation({
   activeView,
   eventCount,
   runCount,
   onChange,
-}: {
-  activeView: WorkspaceView;
-  eventCount: number;
-  runCount: number;
-  onChange(view: WorkspaceView): void;
-}) {
+}: WorkspaceViewNavigationProps) {
   return (
-    <nav className="workspace-view-navigation" aria-label="Workspace views">
+    <nav
+      className="workspace-view-navigation"
+      aria-label={advancedSurfaceCopy.accessibility.workspaceViews}
+    >
       <div className="workspace-view-tabs" role="tablist">
-        {VIEWS.map((view) => {
+        {workspaceViews.map((view) => {
           const Icon = view.icon;
           const count =
-            view.id === "trace"
+            view.id === "trajectory"
               ? eventCount
-              : view.id === "session"
+              : view.id === "task"
                 ? runCount
                 : undefined;
           return (
@@ -82,20 +88,20 @@ function moveWorkspaceView(
   current: WorkspaceView,
   onChange: (view: WorkspaceView) => void,
 ): void {
-  const index = VIEWS.findIndex((view) => view.id === current);
+  const index = workspaceViews.findIndex((view) => view.id === current);
   const next =
     event.key === "ArrowRight"
-      ? (index + 1) % VIEWS.length
+      ? (index + 1) % workspaceViews.length
       : event.key === "ArrowLeft"
-        ? (index - 1 + VIEWS.length) % VIEWS.length
+        ? (index - 1 + workspaceViews.length) % workspaceViews.length
         : event.key === "Home"
           ? 0
           : event.key === "End"
-            ? VIEWS.length - 1
+            ? workspaceViews.length - 1
             : undefined;
   if (next === undefined) return;
   event.preventDefault();
-  const view = VIEWS[next]!;
+  const view = workspaceViews[next]!;
   onChange(view.id);
   requestAnimationFrame(() =>
     document.getElementById(`workspace-view-${view.id}`)?.focus(),

@@ -1,20 +1,23 @@
 .conversation-activity-group {
-  margin: -4px 0 14px 37px;
-  color: var(--ink-soft);
-  background: rgb(230 235 243 / 82%);
-  border: 1px solid var(--rule);
-  border-left: 3px solid var(--ledger);
-  border-radius: 2px;
+  margin-block-end: var(--stack-md);
+  margin-inline-start: var(--space-10);
+  color: var(--color-fg-muted);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-subtle);
+  border-inline-start: var(--control-focus-width) solid var(--color-accent);
+  border-radius: var(--radius-sm);
 }
 
 .conversation-activity-group > summary {
   display: grid;
-  min-height: 45px;
-  grid-template-columns: 18px minmax(0, 1fr) auto auto;
-  gap: 9px;
+  min-height: var(--layout-status-bar);
+  grid-template-columns: var(--space-4) minmax(0, 1fr) auto auto;
+  gap: var(--inline-sm);
   align-items: center;
-  padding: 8px 10px;
+  padding: var(--inset-xs) var(--inset-sm);
   cursor: pointer;
+  list-style: none;
+  border-radius: var(--radius-sm);
 }
 
 .conversation-activity-group > summary::-webkit-details-marker {
@@ -24,55 +27,80 @@
 .conversation-activity-group > summary div {
   display: grid;
   min-width: 0;
-  gap: 2px;
+  gap: var(--stack-xs);
 }
 
 .conversation-activity-group > summary span,
 .conversation-activity-group > summary small,
 .conversation-activity-group > summary time {
-  font-family: var(--mono);
-  font-size: 7px;
-  color: var(--ink-faint);
-}
-
-.conversation-activity-group > summary span {
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-fg-subtle);
 }
 
 .conversation-activity-group > summary strong {
   overflow: hidden;
-  font-family: var(--serif);
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-fg);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.conversation-activity-group > summary:hover,
+.conversation-activity-group[open] > summary {
+  background: var(--color-accent-subtle);
+}
+
+.conversation-activity-group > summary:active {
+  color: var(--color-accent-active);
+}
+
+.conversation-activity-group > summary:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 var(--control-focus-offset) var(--color-surface),
+    0 0 0 calc(var(--control-focus-offset) + var(--control-focus-width))
+      var(--color-focus-ring);
+}
+
 .conversation-activity-group-items {
-  padding: 10px;
-  border-top: 1px solid var(--rule);
+  padding: var(--inset-xs);
+  border-top: 1px solid var(--color-border-subtle);
 }
 
 .conversation-activity-group-items > details {
-  margin: 0 0 7px;
+  margin-block-end: var(--stack-sm);
 }
 
 .conversation-activity-group-items > details:last-child {
   margin-bottom: 0;
 }
 
-@media (max-width: 620px) {
+@media (max-width: 768px) {
   .conversation-activity-group {
-    margin-left: 0;
+    margin-inline-start: 0;
   }
 
   .conversation-activity-group > summary {
-    grid-template-columns: 18px minmax(0, 1fr) auto;
+    grid-template-columns: var(--space-4) minmax(0, 1fr) auto;
   }
 
   .conversation-activity-group > summary time {
     display: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .conversation-activity-group,
+  .conversation-activity-group > summary {
+    border-color: ButtonText;
+  }
+
+  .conversation-activity-group > summary:focus-visible {
+    outline: var(--control-focus-width) solid Highlight;
+    outline-offset: var(--control-focus-offset);
+    box-shadow: none;
   }
 }

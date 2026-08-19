@@ -3,13 +3,18 @@ import { describe, expect, it } from "vitest";
 
 describe("Responsive Inspector", () => {
   it("keeps the Inspector in a default-closed drawer at every width", async () => {
-    const [source, styles] = await Promise.all([
+    const [source, shellStyles, inspectorStyles] = await Promise.all([
       readFile(
         new URL("../src/ResponsiveInspector.tsx", import.meta.url),
         "utf8",
       ),
-      readFile(new URL("../src/styles.css", import.meta.url), "utf8"),
+      readFile(
+        new URL("../src/styles/shell-navigation.css", import.meta.url),
+        "utf8",
+      ),
+      readFile(new URL("../src/styles/inspector.css", import.meta.url), "utf8"),
     ]);
+    const styles = `${shellStyles}\n${inspectorStyles}`;
 
     expect(source).toContain('className="inspector-drawer-trigger"');
     expect(source).toContain('className="inspector-drawer-backdrop"');

@@ -1,0 +1,97 @@
+.agent-rollback-ticket {
+  padding: var(--space-3);
+  margin-block-end: var(--space-3);
+  background: var(--color-warning-surface);
+  border: 1px solid var(--color-warning-border);
+  border-inline-start: var(--space-1) solid var(--color-warning);
+  border-radius: var(--radius-sm);
+}
+
+.agent-rollback-ticket > header button {
+  display: grid;
+  width: calc(var(--control-target-primary) + var(--space-1));
+  min-width: calc(var(--control-target-primary) + var(--space-1));
+  place-items: center;
+  padding: 0;
+}
+
+.agent-rollback-ticket > p {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-body);
+  color: var(--color-fg-muted);
+}
+
+.agent-rollback-fields {
+  margin-block-start: var(--space-3);
+}
+
+.agent-rollback-fields ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: 0;
+  margin: var(--space-2) 0 0;
+  list-style: none;
+}
+
+.agent-rollback-fields li {
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.agent-rollback-fields > span,
+.agent-rollback-fields small {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+}
+
+.agent-rollback-fields > span {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.agent-rollback-fields small,
+.agent-rollback-ticket > code {
+  display: block;
+  margin-block-start: var(--space-2);
+}
+
+.agent-rollback-ticket > code {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-rollback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding-block-start: var(--space-2);
+  margin-block-start: var(--space-2);
+  border-block-start: 1px solid var(--color-warning-border);
+}
+
+.agent-rollback-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+}
+
+.agent-rollback-actions .agent-rollback-confirm {
+  color: var(--color-fg-on-accent);
+  background: var(--color-warning);
+  border-color: var(--color-warning);
+}

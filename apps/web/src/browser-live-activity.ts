@@ -3,6 +3,8 @@ import type { BrowserInteractionAction } from "@napier/contracts/browser-interac
 import type { BrowserSessionPauseState } from "@napier/contracts/browser-session-control";
 import type { BrowserTakeoverAction } from "@napier/contracts/browser-takeover";
 
+import { conversationActivityCopy } from "./conversation-activity-copy";
+
 export type BrowserLiveControlTransition = "pausing" | "resuming";
 
 export interface BrowserLiveActivity {
@@ -43,28 +45,32 @@ export function browserLiveActivity(
     operatorAction?: BrowserTakeoverAction;
   },
 ): BrowserLiveActivity {
+  const live = conversationActivityCopy.browser.live;
   if (options.controlTransition) {
     return {
       state: "control",
       label:
         options.controlTransition === "pausing"
-          ? "Control · pausing after current action"
-          : "Control · returning to Agent",
+          ? `${live.control} · ${live.pausingAfterCurrentAction}`
+          : `${live.control} · ${live.returningToAgent}`,
     };
   }
   if (options.operatorAction) {
     return {
       state: "operator",
-      label: `Operator · ${actionLabel(options.operatorAction)}`,
+      label: `${live.operator} · ${actionLabel(options.operatorAction)}`,
     };
   }
   if (options.takeoverOpen) {
-    return { state: "operator", label: "Operator · takeover active" };
+    return {
+      state: "operator",
+      label: `${live.operator} · ${live.takeoverActive}`,
+    };
   }
   if (options.confirmationAction) {
     return {
       state: "confirmation",
-      label: `Waiting · approve ${actionLabel(options.confirmationAction)}`,
+      label: `${live.waiting} · ${live.approveActionPrefix}${actionLabel(options.confirmationAction)}`,
     };
   }
   const active = activeBrowserAction(events, runId);
@@ -73,20 +79,26 @@ export function browserLiveActivity(
     return pauseRequestedSeq !== undefined && active.seq < pauseRequestedSeq
       ? {
           state: "active",
-          label: `Agent · ${actionLabel(active.action)} · pause queued`,
+          label: `${live.agent} · ${actionLabel(active.action)} · ${live.pauseQueued}`,
         }
       : {
           state: "paused",
-          label: `Agent · ${actionLabel(active.action)} · waiting for resume`,
+          label: `${live.agent} · ${actionLabel(active.action)} · ${live.waitingForResume}`,
         };
   }
   if (options.pauseStatus === "paused") {
-    return { state: "paused", label: "Waiting · operator paused automation" };
+    return {
+      state: "paused",
+      label: `${live.waiting} · ${live.operatorPausedAutomation}`,
+    };
   }
   if (active) {
-    return { state: "active", label: `Agent · ${actionLabel(active.action)}` };
+    return {
+      state: "active",
+      label: `${live.agent} · ${actionLabel(active.action)}`,
+    };
   }
-  return { state: "idle", label: "Ready · waiting for Agent" };
+  return { state: "idle", label: `${live.ready} · ${live.waitingForAgent}` };
 }
 
 function activeBrowserAction(
@@ -136,6 +148,9 @@ function latestPauseRequestedSeq(
 }
 
 function actionLabel(action: string): string {
+  if (String(conversationActivityCopy.browser.live.agent) === "智能体") {
+    return chineseActionLabel(action);
+  }
   switch (action) {
     case "start":
       return "opening page";
@@ -181,6 +196,20 @@ function actionLabel(action: string): string {
       return "closing Browser";
     default:
       return "working";
+  }
+}
+
+function chineseActionLabel(action: string): string {
+  const actions = conversationActivityCopy.browser.actions;
+  switch (action) {
+    case "visual_click":
+      return actions.click;
+    case "save_screenshot":
+      return actions.screenshot;
+    case "keypress":
+      return actions.keypress;
+    default:
+      return actions[action as keyof typeof actions] ?? actions.wait;
   }
 }
 

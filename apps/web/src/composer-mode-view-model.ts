@@ -77,10 +77,10 @@ export function composerModeDependency(
   if (sandbox && sandbox.status === "unavailable") {
     const invalid = sandbox.id === "sandbox:configured-sandbox-invalid";
     return {
-      level: "blocked",
+      level: "warn",
       message: invalid
-        ? "The saved Sandbox binding is invalid. Remove that exact binding in the Sandbox card, then verify and activate the pinned runtime before running this mode."
-        : "Sandbox is unavailable, so workspace writes and process execution will fail closed. Fix the sandbox in Doctor before running this mode.",
+        ? "The saved Sandbox binding is invalid. This task can start with safe reads only; remove that exact binding, then activate Sandbox before editing or running commands."
+        : "Sandbox is unavailable. This task can start with safe reads and static network access; editing, commands, Browser sessions, Extensions, and Subagents stay unavailable until Sandbox is ready.",
     };
   }
   return { level: "ready", message: "" };
@@ -90,7 +90,7 @@ export function composerModeNeedsSandboxSetup(
   modeId: AgentCapabilityPresetId,
   dependency: ComposerModeDependency,
 ): boolean {
-  return SANDBOX_PRESETS.has(modeId) && dependency.level === "blocked";
+  return SANDBOX_PRESETS.has(modeId) && dependency.level !== "ready";
 }
 
 export function composerModePolicyLabel(

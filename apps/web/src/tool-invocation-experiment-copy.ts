@@ -1,4 +1,7 @@
-export const toolInvocationExperimentCopy = {
+import { deepMergeCopy, getLocale } from "./locale";
+import { toolInvocationExperimentCopyZh } from "./tool-invocation-experiment-copy.zh";
+
+export const toolInvocationExperimentCopyEn = {
   eyebrow: "Controlled re-execution / tool checkpoint",
   title: "Read-only tool call",
   body: "Run one captured built-in read-only tool against a freshly bound workspace scope. Exact arguments and output bodies stay folded.",
@@ -42,3 +45,8 @@ export const toolInvocationExperimentCopy = {
     previewRequired: "Create a fresh preview before execution.",
   },
 } as const;
+
+export const toolInvocationExperimentCopy = deepMergeCopy(
+  toolInvocationExperimentCopyEn,
+  getLocale() === "zh" ? toolInvocationExperimentCopyZh : {},
+);

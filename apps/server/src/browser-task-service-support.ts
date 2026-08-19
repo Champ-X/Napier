@@ -1,9 +1,13 @@
 import {
   BrowserUseCloudError,
   BrowserUseLocalError,
+  browserUseCloudRuntimeRoot,
+  browserUseLocalRuntimeRoot,
   sha256,
 } from "@napier/runtime";
+import path from "node:path";
 
+import type { BrowserTaskJournalRecord } from "./browser-task-journal.js";
 import type {
   BrowserTaskBackend,
   BrowserTaskCreated,
@@ -136,6 +140,34 @@ export function boundedBrowserTaskEvents(
     ...(started ? [started] : []),
     ...events.slice(started ? -127 : -128),
   ]);
+}
+
+export function restoredBrowserTaskRecord(
+  persisted: BrowserTaskJournalRecord,
+  dataRoot: string,
+) {
+  return {
+    id: persisted.taskId,
+    backend: persisted.backend,
+    screenshotRoot: path.join(
+      persisted.backend === "browser_use_local"
+        ? browserUseLocalRuntimeRoot(dataRoot)
+        : browserUseCloudRuntimeRoot(dataRoot),
+      "runs",
+    ),
+    createdAt: persisted.createdAt,
+    status: "terminal" as const,
+    controller: new AbortController(),
+    events: structuredClone(persisted.events),
+    listeners: new Set<() => void>(),
+    timedOut: false,
+    input: structuredClone(persisted.input),
+    runner: {
+      run: async () => {
+        throw new Error("Restored Browser tasks cannot execute");
+      },
+    },
+  };
 }
 
 function waitForTaskEvent(

@@ -123,7 +123,7 @@ describe("default Agent Capability Contract history", () => {
       expect(
         (await services.agentCapabilities.project(agent.id)).projectionSha256,
       ).toBe(
-        "79b954dd03fb39c6de459cf25896bde1ff41751948a51f7401682121c262b265",
+        "8db611bb62782efa405f1d213956a30d43b268bf92ee367e18e194359dcaca02",
       );
     } finally {
       await services.shutdown();

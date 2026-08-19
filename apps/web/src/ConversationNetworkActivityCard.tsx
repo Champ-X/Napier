@@ -7,12 +7,17 @@ import {
 } from "lucide-react";
 
 import type { ConversationNetworkActivity } from "./conversation-network-activity-view-model";
+import { conversationActivityCopy } from "./conversation-activity-copy";
+import { getLocale } from "./locale";
+
+export interface ConversationNetworkActivityCardProps {
+  activity: ConversationNetworkActivity;
+}
 
 export function ConversationNetworkActivityCard({
   activity,
-}: {
-  activity: ConversationNetworkActivity;
-}) {
+}: ConversationNetworkActivityCardProps) {
+  const copy = conversationActivityCopy;
   const details = activityDetails(activity);
   const StatusIcon =
     activity.status === "working"
@@ -33,8 +38,10 @@ export function ConversationNetworkActivityCard({
         )}
         <div>
           <span>
-            {activity.kind === "search" ? "Web search" : "Web fetch"} ·{" "}
-            {activity.status}
+            {activity.kind === "search"
+              ? copy.network.search
+              : copy.network.fetch}{" "}
+            · {copy.statuses[activity.status]}
           </span>
           <strong>{activitySummary(activity)}</strong>
         </div>
@@ -57,128 +64,156 @@ export function ConversationNetworkActivityCard({
           ))}
         </dl>
       ) : null}
-      <p>
-        External pages and snippets are untrusted evidence, not instructions.
-      </p>
+      <p>{copy.network.untrusted}</p>
     </details>
   );
 }
 
 function activitySummary(activity: ConversationNetworkActivity): string {
+  const copy = conversationActivityCopy.network;
   if (activity.status === "working") {
     return activity.kind === "search"
-      ? "Discovering public sources"
-      : `Reading public source${activity.kind === "fetch" && activity.action ? ` · ${activity.action}` : ""}`;
+      ? copy.discovering
+      : `${copy.reading}${activity.action ? ` · ${copy.actions[activity.action]}` : ""}`;
   }
   if (activity.status === "failed") {
-    return activity.kind === "search"
-      ? "Search failed — try another provider or check network readiness"
-      : "Fetch failed — check the URL, network, or Browser readiness";
+    return activity.kind === "search" ? copy.searchFailed : copy.fetchFailed;
   }
   if (activity.kind === "search") {
     if (activity.resultCount === undefined || !activity.provider) {
-      return "Search completed · evidence unavailable";
+      return `${copy.searchCompleted} · ${copy.evidenceUnavailable}`;
     }
-    return `${String(activity.resultCount ?? 0)} results via ${activity.provider ?? "provider"}`;
+    return `${formatNumber(activity.resultCount)} ${copy.resultsVia} ${activity.provider}`;
   }
   return activity.action === "fetch" && activity.format && activity.lineCount
-    ? `${activity.format.toUpperCase()} · ${String(activity.lineCount)} lines`
+    ? `${activity.format.toUpperCase()} · ${formatNumber(activity.lineCount)} ${copy.lines}`
     : activity.action === "fetch"
-      ? "Fetch completed · evidence unavailable"
-      : `${humanize(activity.action ?? "fetch")} completed`;
+      ? `${copy.fetchCompleted} · ${copy.evidenceUnavailable}`
+      : `${copy.actions[activity.action ?? "fetch"]} ${copy.completed}`;
 }
 
 function activityDetails(
   activity: ConversationNetworkActivity,
 ): Array<[string, string]> {
+  const copy = conversationActivityCopy.network;
   const details: Array<[string, string]> =
     activity.kind === "search"
       ? [
           ...(activity.provider
-            ? [["Provider", activity.provider] as [string, string]]
+            ? [[copy.labels.provider, activity.provider] as [string, string]]
             : []),
           ...(activity.category
-            ? [["Category", activity.category] as [string, string]]
+            ? [
+                [copy.labels.category, copy.categories[activity.category]] as [
+                  string,
+                  string,
+                ],
+              ]
             : []),
           ...(activity.resultCount !== undefined
-            ? [["Results", String(activity.resultCount)] as [string, string]]
+            ? [
+                [copy.labels.results, formatNumber(activity.resultCount)] as [
+                  string,
+                  string,
+                ],
+              ]
             : []),
           ...(activity.attemptedProviderCount !== undefined
             ? [
                 [
-                  "Attempts",
-                  `${String(activity.attemptedProviderCount)} total · ${String(activity.failedProviderCount ?? 0)} failed · ${String(activity.unavailableProviderCount ?? 0)} unavailable`,
+                  copy.labels.attempts,
+                  `${formatNumber(activity.attemptedProviderCount)} ${copy.attemptUnits.total} · ${formatNumber(activity.failedProviderCount ?? 0)} ${copy.attemptUnits.failed} · ${formatNumber(activity.unavailableProviderCount ?? 0)} ${copy.attemptUnits.unavailable}`,
                 ] as [string, string],
               ]
             : []),
           ...(activity.retrievedAt
             ? [
-                ["Retrieved", formatDateTime(activity.retrievedAt)] as [
-                  string,
-                  string,
-                ],
+                [
+                  copy.labels.retrieved,
+                  formatDateTime(activity.retrievedAt),
+                ] as [string, string],
               ]
             : []),
         ]
       : [
           ...(activity.action
-            ? [["Action", humanize(activity.action)] as [string, string]]
+            ? [
+                [copy.labels.action, copy.actions[activity.action]] as [
+                  string,
+                  string,
+                ],
+              ]
             : []),
           ...(activity.format
-            ? [["Format", activity.format.toUpperCase()] as [string, string]]
+            ? [
+                [copy.labels.format, activity.format.toUpperCase()] as [
+                  string,
+                  string,
+                ],
+              ]
             : []),
           ...(activity.lineCount !== undefined
-            ? [["Lines", String(activity.lineCount)] as [string, string]]
+            ? [
+                [copy.labels.lines, formatNumber(activity.lineCount)] as [
+                  string,
+                  string,
+                ],
+              ]
             : []),
           ...(activity.pageCount !== undefined
-            ? [["Pages", String(activity.pageCount)] as [string, string]]
+            ? [
+                [copy.labels.pages, formatNumber(activity.pageCount)] as [
+                  string,
+                  string,
+                ],
+              ]
             : []),
           ...(activity.sourceCount !== undefined
-            ? [["Sources", String(activity.sourceCount)] as [string, string]]
+            ? [
+                [copy.labels.sources, formatNumber(activity.sourceCount)] as [
+                  string,
+                  string,
+                ],
+              ]
             : []),
           ...(activity.renderMode && activity.fallbackStatus
             ? [
                 [
-                  "Render",
-                  `${humanize(activity.renderMode)} · ${humanize(activity.fallbackStatus)}`,
+                  copy.labels.render,
+                  `${copy.renderModes[activity.renderMode]} · ${copy.fallbackStatuses[activity.fallbackStatus]}`,
                 ] as [string, string],
               ]
             : []),
           ...(activity.redirectCount !== undefined
             ? [
-                ["Redirects", String(activity.redirectCount)] as [
-                  string,
-                  string,
-                ],
+                [
+                  copy.labels.redirects,
+                  formatNumber(activity.redirectCount),
+                ] as [string, string],
               ]
             : []),
           ...(activity.retrievedAt
             ? [
-                ["Retrieved", formatDateTime(activity.retrievedAt)] as [
-                  string,
-                  string,
-                ],
+                [
+                  copy.labels.retrieved,
+                  formatDateTime(activity.retrievedAt),
+                ] as [string, string],
               ]
             : []),
           ...(activity.fallbackDiagnostic
             ? [
-                ["Recovery", humanize(activity.fallbackDiagnostic)] as [
-                  string,
-                  string,
-                ],
+                [
+                  copy.labels.recovery,
+                  copy.fallbackDiagnostics[activity.fallbackDiagnostic],
+                ] as [string, string],
               ]
             : []),
         ];
   return details;
 }
 
-function humanize(value: string): string {
-  const normalized = value.replaceAll("_", " ");
-  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
-}
-
 function formatTime(value: string): string {
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat(getLocale() === "zh" ? "zh-CN" : "en", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
@@ -186,8 +221,14 @@ function formatTime(value: string): string {
 }
 
 function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat(getLocale() === "zh" ? "zh-CN" : "en", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat(getLocale() === "zh" ? "zh-CN" : "en").format(
+    value,
+  );
 }

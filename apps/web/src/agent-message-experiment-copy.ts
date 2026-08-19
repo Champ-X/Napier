@@ -1,4 +1,7 @@
-export const agentMessageExperimentCopy = {
+import { agentMessageExperimentCopyZh } from "./agent-message-experiment-copy.zh";
+import { deepMergeCopy, getLocale } from "./locale";
+
+export const agentMessageExperimentCopyEn = {
   eyebrow: "Controlled re-execution",
   title: "Message experiment desk",
   body: "Freeze one historical user message, rerun it in an isolated read-only branch, and compare the actual Run evidence.",
@@ -71,3 +74,8 @@ export const agentMessageExperimentCopy = {
     candidateUnavailable: "Select a configured candidate model.",
   },
 } as const;
+
+export const agentMessageExperimentCopy = deepMergeCopy(
+  agentMessageExperimentCopyEn,
+  getLocale() === "zh" ? agentMessageExperimentCopyZh : {},
+);

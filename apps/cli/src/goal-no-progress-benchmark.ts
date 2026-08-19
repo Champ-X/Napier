@@ -97,7 +97,7 @@ export async function runGoalNoProgressBenchmark(
     const signal = options.signal
       ? AbortSignal.any([options.signal, timeoutSignal])
       : timeoutSignal;
-    const run = await runtime.runtime.runPrompt({
+    const run = await runtime.kernel.runPrompt({
       threadId: thread.id,
       text: benchmarkCase.prompt,
       model: options.model,

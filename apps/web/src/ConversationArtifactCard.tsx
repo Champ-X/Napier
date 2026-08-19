@@ -13,6 +13,16 @@ import {
   conversationArtifactTargetId,
   type ConversationArtifact,
 } from "./conversation-artifact-view-model";
+import { conversationDetailCopy } from "./conversation-detail-copy";
+import { getLocale } from "./locale";
+
+export interface ConversationArtifactCardProps {
+  item: ConversationArtifact;
+  threadId: string;
+  onLedgerChanged: () => Promise<void>;
+  previewArtifact?: typeof previewPlanArtifactText;
+  downloadArtifact?: typeof downloadPlanArtifactFile;
+}
 
 export function ConversationArtifactCard({
   item,
@@ -20,13 +30,8 @@ export function ConversationArtifactCard({
   onLedgerChanged,
   previewArtifact = previewPlanArtifactText,
   downloadArtifact = downloadPlanArtifactFile,
-}: {
-  item: ConversationArtifact;
-  threadId: string;
-  onLedgerChanged: () => Promise<void>;
-  previewArtifact?: typeof previewPlanArtifactText;
-  downloadArtifact?: typeof downloadPlanArtifactFile;
-}) {
+}: ConversationArtifactCardProps) {
+  const copy = conversationDetailCopy.artifact;
   const [busy, setBusy] = useState<"preview" | "download">();
   const [preview, setPreview] = useState<PlanArtifactTextPreviewReceipt>();
   const [error, setError] = useState<string>();
@@ -82,8 +87,8 @@ export function ConversationArtifactCard({
         <Icon size={16} aria-hidden="true" />
         <div>
           <span>
-            {item.attemptScope === "current" ? "Current" : "Previous"} Artifact
-            · {item.artifact.status}
+            {item.attemptScope === "current" ? copy.current : copy.previous}{" "}
+            {copy.label} · {copy.statuses[item.artifact.status]}
           </span>
           <strong>{item.artifact.path}</strong>
         </div>
@@ -92,18 +97,18 @@ export function ConversationArtifactCard({
       <p>{item.artifact.description}</p>
       <dl>
         <div>
-          <dt>Type</dt>
-          <dd>{item.artifact.kind}</dd>
+          <dt>{copy.type}</dt>
+          <dd>{copy.kinds[item.artifact.kind]}</dd>
         </div>
         {item.artifact.sizeBytes !== undefined ? (
           <div>
-            <dt>Size</dt>
+            <dt>{copy.size}</dt>
             <dd>{formatArtifactSizeBytes(item.artifact.sizeBytes)}</dd>
           </div>
         ) : null}
         {item.artifact.sha256 ? (
           <div>
-            <dt>Digest</dt>
+            <dt>{copy.digest}</dt>
             <dd title={item.artifact.sha256}>
               {item.artifact.sha256.slice(0, 12)}
             </dd>
@@ -113,11 +118,11 @@ export function ConversationArtifactCard({
       {available ? (
         <div className="conversation-artifact-actions">
           <button type="button" disabled={Boolean(busy)} onClick={openPreview}>
-            {busy === "preview" ? "Opening…" : "Preview"}
+            {busy === "preview" ? copy.opening : copy.preview}
           </button>
           <button type="button" disabled={Boolean(busy)} onClick={download}>
             <Download size={12} aria-hidden="true" />
-            {busy === "download" ? "Downloading…" : "Download"}
+            {busy === "download" ? copy.downloading : copy.download}
           </button>
         </div>
       ) : null}
@@ -129,16 +134,16 @@ export function ConversationArtifactCard({
       {preview ? (
         <section
           className="conversation-artifact-preview"
-          aria-label={`Preview ${item.artifact.path}`}
+          aria-label={`${copy.previewLabel} ${item.artifact.path}`}
         >
           <header>
             <span>
-              {preview.lineCount} lines ·{" "}
+              {formatNumber(preview.lineCount)} {copy.lines} ·{" "}
               {formatArtifactSizeBytes(preview.sizeBytes)}
             </span>
             <button
               type="button"
-              aria-label={`Close preview ${item.artifact.path}`}
+              aria-label={`${copy.closePreview} ${item.artifact.path}`}
               onClick={() => setPreview(undefined)}
             >
               <X size={12} aria-hidden="true" />
@@ -161,9 +166,15 @@ function downloadBlob(blob: Blob, filename: string): void {
 }
 
 function formatTime(value: string): string {
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat(getLocale() === "zh" ? "zh-CN" : "en", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
   }).format(new Date(value));
+}
+
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat(getLocale() === "zh" ? "zh-CN" : "en").format(
+    value,
+  );
 }

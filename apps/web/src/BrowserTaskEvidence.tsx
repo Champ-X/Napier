@@ -1,4 +1,5 @@
 import type { BrowserTaskApiEvent } from "./browser-task-api";
+import { browserTaskCopy } from "./browser-task-copy";
 
 type BrowserTaskStep = Extract<BrowserTaskApiEvent, { type: "step" }>;
 
@@ -19,28 +20,39 @@ export function BrowserTaskEvidence({ events }: BrowserTaskEvidenceProps) {
     <>
       {started?.backend === "browser_use_cloud" ? (
         <p className="browser-task-cloud-runtime" role="status">
-          Cloud active · credential configured · workspace access none ·
-          recording disabled · retention provider-plan · ${started.maxCostUsd}{" "}
-          poll-stop ceiling
+          {browserTaskCopy.evidence.cloudActive} ·{" "}
+          {browserTaskCopy.evidence.credentialConfigured} ·{" "}
+          {browserTaskCopy.evidence.workspaceAccessNone} ·{" "}
+          {browserTaskCopy.evidence.recordingDisabled} ·{" "}
+          {browserTaskCopy.evidence.retentionProviderPlan} · $
+          {started.maxCostUsd} {browserTaskCopy.evidence.pollStopCeiling}
         </p>
       ) : null}
       {started?.backend === "browser_use_local" ? (
         <p className="browser-task-local-runtime" role="status">
-          Local visible {started.browserProduct?.replace("system_", "")}{" "}
-          {started.browserVersion} · agent {agentState} ·
-          Pause/Take over {started.pauseAvailable ? "ready" : "unavailable"} ·
-          CAPTCHA{" "}
+          {browserTaskCopy.evidence.localVisible}{" "}
+          {started.browserProduct?.replace("system_", "")}{" "}
+          {started.browserVersion} · {browserTaskCopy.evidence.agent}{" "}
+          {agentState} · {browserTaskCopy.evidence.controls}{" "}
+          {started.pauseAvailable
+            ? browserTaskCopy.evidence.ready
+            : browserTaskCopy.evidence.unavailable}{" "}
+          · {browserTaskCopy.evidence.captcha}{" "}
           {started.challengeMode === "automatic_takeover_pause"
-            ? "auto-takeover"
-            : "handoff"}
+            ? browserTaskCopy.evidence.automaticTakeover
+            : browserTaskCopy.evidence.handoff}
           {control ? ` · ${control.message}` : ""}
         </p>
       ) : null}
       {screenshot?.screenshotUrl ? (
         <figure className="browser-task-screenshot">
-          <img alt="Latest browser task step" src={screenshot.screenshotUrl} />
+          <img
+            alt={browserTaskCopy.evidence.latestStepAlt}
+            src={screenshot.screenshotUrl}
+          />
           <figcaption>
-            Step {screenshot.step} · {screenshot.title || screenshot.url}
+            {browserTaskCopy.evidence.step} {screenshot.step} ·{" "}
+            {screenshot.title || screenshot.url}
           </figcaption>
         </figure>
       ) : null}
@@ -49,13 +61,24 @@ export function BrowserTaskEvidence({ events }: BrowserTaskEvidenceProps) {
   );
 }
 
-function BrowserTaskStepList({ steps }: { steps: BrowserTaskStep[] }) {
+export interface BrowserTaskStepListProps {
+  steps: BrowserTaskStep[];
+}
+
+function BrowserTaskStepList({ steps }: BrowserTaskStepListProps) {
   return (
-    <ol className="browser-task-steps" aria-label="Browser task steps">
+    <ol
+      className="browser-task-steps"
+      aria-label={browserTaskCopy.evidence.steps}
+    >
       {steps.map((step, index) => (
         <li key={`${String(step.step)}-${String(index)}`}>
-          <strong>Step {step.step}</strong>
-          <span>{step.actionNames.join(", ") || "observe"}</span>
+          <strong>
+            {browserTaskCopy.evidence.step} {step.step}
+          </strong>
+          <span>
+            {step.actionNames.join(", ") || browserTaskCopy.evidence.observe}
+          </span>
           <small>{step.url}</small>
           {step.errorMessage ? <em>{step.errorMessage}</em> : null}
         </li>
@@ -75,17 +98,19 @@ function browserTaskAgentState(
   const terminal = events.findLast(
     (
       event,
-    ): event is Extract<
-      BrowserTaskApiEvent,
-      { type: "completed" | "error" }
-    > => event.type === "completed" || event.type === "error",
+    ): event is Extract<BrowserTaskApiEvent, { type: "completed" | "error" }> =>
+      event.type === "completed" || event.type === "error",
   );
-  if (!terminal) return controlState ?? "running";
+  if (!terminal) {
+    return browserTaskCopy.evidence.agentStates[controlState ?? "running"];
+  }
   if (terminal.type === "error") {
     return ["cancelled", "server_restarted"].includes(terminal.code)
-      ? "stopped"
-      : "failed";
+      ? browserTaskCopy.evidence.agentStates.stopped
+      : browserTaskCopy.evidence.agentStates.failed;
   }
-  if (terminal.status === "cancelled") return "stopped";
-  return terminal.status.replaceAll("_", " ");
+  if (terminal.status === "cancelled") {
+    return browserTaskCopy.evidence.agentStates.stopped;
+  }
+  return browserTaskCopy.evidence.agentStates[terminal.status];
 }

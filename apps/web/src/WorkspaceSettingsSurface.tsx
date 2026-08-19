@@ -1,69 +1,35 @@
 import { lazy, Suspense, useEffect, useRef } from "react";
-import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-import {
-  Bot,
-  Brain,
-  Cable,
-  FolderTree,
-  Languages,
-  Settings2,
-  X,
-} from "lucide-react";
+import { X } from "lucide-react";
 
 import { copy } from "./copy";
-import { getLocale, setLocale } from "./locale";
+import { DeveloperToolsPanel } from "./DeveloperToolsPanel";
+import { DesignSystemShowcase } from "./DesignSystemShowcase";
 import { ExtensionInspectorSurface } from "./ExtensionInspectorSurface";
+import {
+  moveSettingsSection,
+  SETTINGS_SECTIONS,
+} from "./settings-section-registry";
+import type { SettingsSection } from "./settings-section-registry";
+import { SettingsLanguagePanel } from "./SettingsLanguagePanel";
 import { WorkspaceRootPanel } from "./WorkspaceRootPanel";
+import { WorkspaceAutomationSettings } from "./WorkspaceAutomationSettings";
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
 
 const LazyContextPanel = lazy(() => import("./ContextPanel"));
 const LazyMemoryPanel = lazy(() => import("./MemoryPanel"));
 
 type WorkspaceViewModel = ReturnType<typeof useWorkspaceViewModel>;
-export type SettingsSection =
-  | "context"
-  | "memory"
-  | "extensions"
-  | "workspace"
-  | "language";
+export type { SettingsSection } from "./settings-section-registry";
 
-const SETTINGS_SECTIONS: ReadonlyArray<{
-  id: SettingsSection;
-  label: string;
-  description: string;
-  icon: typeof Settings2;
-}> = [
-  {
-    id: "context",
-    label: copy.settingsSurface.contextSection,
-    description: copy.settingsSurface.contextSectionDescription,
-    icon: Bot,
-  },
-  {
-    id: "memory",
-    label: copy.settingsSurface.memorySection,
-    description: copy.settingsSurface.memorySectionDescription,
-    icon: Brain,
-  },
-  {
-    id: "extensions",
-    label: copy.settingsSurface.extensionsSection,
-    description: copy.settingsSurface.extensionsSectionDescription,
-    icon: Cable,
-  },
-  {
-    id: "workspace",
-    label: copy.workspaceSurface.section,
-    description: copy.workspaceSurface.sectionDescription,
-    icon: FolderTree,
-  },
-  {
-    id: "language",
-    label: copy.language.section,
-    description: copy.language.sectionDescription,
-    icon: Languages,
-  },
-];
+export interface WorkspaceSettingsSurfaceProps {
+  vm: WorkspaceViewModel;
+  activeAgent: NonNullable<WorkspaceViewModel["detail"]>["agent"] | undefined;
+  section: SettingsSection;
+  onSection(section: SettingsSection): void;
+  onClose(): void;
+  onWorkspaceSwitch(root: string): Promise<void>;
+  onConversation(): void;
+}
 
 export function WorkspaceSettingsSurface({
   vm,
@@ -72,26 +38,37 @@ export function WorkspaceSettingsSurface({
   onSection,
   onClose,
   onWorkspaceSwitch,
-}: {
-  vm: WorkspaceViewModel;
-  activeAgent: NonNullable<WorkspaceViewModel["detail"]>["agent"] | undefined;
-  section: SettingsSection;
-  onSection(section: SettingsSection): void;
-  onClose(): void;
-  onWorkspaceSwitch(root: string): Promise<void>;
-}) {
+  onConversation,
+}: WorkspaceSettingsSurfaceProps) {
   const restoreFocusRef = useRef<HTMLElement | null>(null);
+  const surfaceRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
     restoreFocusRef.current =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
-    const close = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab" || !surfaceRef.current) return;
+      const focusable = focusableElements(surfaceRef.current);
+      if (focusable.length === 0) return;
+      const first = focusable[0]!;
+      const last = focusable.at(-1)!;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
-    window.addEventListener("keydown", close);
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
-      window.removeEventListener("keydown", close);
+      window.removeEventListener("keydown", handleKeyDown);
       restoreFocusRef.current?.focus();
     };
   }, [onClose]);
@@ -111,13 +88,16 @@ export function WorkspaceSettingsSurface({
         onClick={onClose}
       />
       <aside
+        ref={surfaceRef}
         className="workspace-settings-surface"
-        aria-label={copy.settingsSurface.title}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settings-surface-title"
       >
         <header className="settings-surface-heading">
           <div>
             <span>{copy.settingsSurface.eyebrow}</span>
-            <h2>{copy.settingsSurface.title}</h2>
+            <h2 id="settings-surface-title">{copy.settingsSurface.title}</h2>
             <p>{copy.settingsSurface.body}</p>
           </div>
           <button
@@ -130,7 +110,7 @@ export function WorkspaceSettingsSurface({
         </header>
         <nav
           className="settings-navigation"
-          aria-label="Settings sections"
+          aria-label={copy.settingsSurface.sectionsLabel}
           role="tablist"
         >
           {SETTINGS_SECTIONS.map((entry) => {
@@ -233,11 +213,30 @@ export function WorkspaceSettingsSurface({
               onWorkspaceSwitch={onWorkspaceSwitch}
             />
           ) : null}
-          {section === "language" ? <LanguagePanel /> : null}
+          {section === "automations" ? (
+            <WorkspaceAutomationSettings vm={vm} />
+          ) : null}
+          {section === "developer" ? (
+            <DeveloperToolsPanel
+              vm={vm}
+              activeModel={vm.selectedModel}
+              onConversation={onConversation}
+            />
+          ) : null}
+          {section === "design" ? <DesignSystemShowcase /> : null}
+          {section === "language" ? <SettingsLanguagePanel /> : null}
         </section>
       </aside>
     </>
   );
+}
+
+function focusableElements(container: HTMLElement): HTMLElement[] {
+  return [
+    ...container.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), details > summary, [tabindex]:not([tabindex="-1"])',
+    ),
+  ].filter((element) => element.getClientRects().length > 0);
 }
 
 function Loading({ label }: { label: string }) {
@@ -245,62 +244,5 @@ function Loading({ label }: { label: string }) {
     <div className="context-loading" role="status">
       {label}
     </div>
-  );
-}
-
-function LanguagePanel() {
-  const current = getLocale();
-  const options: Array<{ id: "zh" | "en"; label: string }> = [
-    { id: "zh", label: copy.language.chinese },
-    { id: "en", label: copy.language.english },
-  ];
-  return (
-    <div className="language-panel">
-      <p className="language-panel-current">
-        {copy.language.current}:{" "}
-        <strong>{options.find((o) => o.id === current)?.label}</strong>
-      </p>
-      <div className="language-panel-options">
-        {options.map((option) => (
-          <button
-            type="button"
-            key={option.id}
-            className={option.id === current ? "is-active" : ""}
-            aria-pressed={option.id === current}
-            onClick={() => {
-              if (option.id !== current) setLocale(option.id);
-            }}
-          >
-            <Languages size={14} aria-hidden="true" />
-            {option.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function moveSettingsSection(
-  event: ReactKeyboardEvent<HTMLButtonElement>,
-  current: SettingsSection,
-  onSection: (section: SettingsSection) => void,
-): void {
-  const index = SETTINGS_SECTIONS.findIndex((entry) => entry.id === current);
-  const next =
-    event.key === "ArrowDown" || event.key === "ArrowRight"
-      ? (index + 1) % SETTINGS_SECTIONS.length
-      : event.key === "ArrowUp" || event.key === "ArrowLeft"
-        ? (index - 1 + SETTINGS_SECTIONS.length) % SETTINGS_SECTIONS.length
-        : event.key === "Home"
-          ? 0
-          : event.key === "End"
-            ? SETTINGS_SECTIONS.length - 1
-            : undefined;
-  if (next === undefined) return;
-  event.preventDefault();
-  const section = SETTINGS_SECTIONS[next]!;
-  onSection(section.id);
-  requestAnimationFrame(() =>
-    document.getElementById(`settings-section-${section.id}`)?.focus(),
   );
 }

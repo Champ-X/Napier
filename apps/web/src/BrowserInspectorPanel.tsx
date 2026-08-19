@@ -7,6 +7,7 @@ import type {
 } from "@napier/contracts";
 import type { SelectedModelAvailability } from "./model-selection-view-model";
 import { browserLiveViewExpected } from "./browser-live-view-state";
+import { browserLiveCopy } from "./browser-live-copy";
 import { BrowserUseLocalTaskPanel } from "./BrowserUseLocalTaskPanel";
 
 export interface BrowserInspectorPanelProps {
@@ -29,6 +30,7 @@ export function BrowserInspectorPanel({
   if (activeTab !== "browser") return null;
   const live =
     activeRunId !== undefined && browserLiveViewExpected(events, activeRunId);
+  const inspector = browserLiveCopy.inspector;
   return (
     <section
       className="panel-section browser-inspector-panel"
@@ -36,25 +38,21 @@ export function BrowserInspectorPanel({
     >
       <div className="panel-heading">
         <div>
-          <span>LIVE SESSION</span>
-          <h2 id="browser-inspector-title">Browser</h2>
+          <span>{inspector.eyebrow}</span>
+          <h2 id="browser-inspector-title">{inspector.title}</h2>
         </div>
       </div>
       <div className="browser-inspector-card">
         <Eye size={18} aria-hidden="true" />
         <div>
-          <strong>
-            {live ? "Browser Live is active" : "No active Browser view"}
-          </strong>
+          <strong>{live ? inspector.active : inspector.inactive}</strong>
           <p>
-            {live
-              ? "Pause, Resume, Take control, and visual evidence stay with the task in the main workspace."
-              : "Browser Live appears in the main workspace when the active Run has an open Browser Session."}
+            {live ? inspector.activeDescription : inspector.inactiveDescription}
           </p>
         </div>
         <button type="button" disabled={!live} onClick={focusBrowserLive}>
           <MousePointerClick size={14} aria-hidden="true" />
-          Open in task
+          {inspector.open}
         </button>
       </div>
       <BrowserUseLocalTaskPanel

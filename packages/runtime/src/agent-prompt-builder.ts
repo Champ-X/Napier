@@ -24,18 +24,33 @@ type StableAgentPromptSources = Omit<
   "delegation" | "milestones" | "toolLoopGuard"
 >;
 
-export function createAgentPromptBuilder(sources: StableAgentPromptSources) {
+export function createAgentPromptBuilder(
+  sources: StableAgentPromptSources,
+  effectiveCapabilitiesForTools?: (
+    activeTools: readonly string[],
+    adapter: ModelAdapterReceiptV2,
+  ) => string,
+) {
   return (
     adapter: ModelAdapterReceiptV2,
     delegation: DelegationLedgerProjection,
     milestones: AgentMilestoneContextProjection,
     toolLoopGuard: ActiveToolLoopGuard | undefined,
+    activeTools?: readonly string[],
   ): CompiledPromptArtifact =>
     compilePrompt({
       purpose: "agent_turn",
       adapter,
       layers: createAgentPromptCompilerLayers({
         ...sources,
+        ...(effectiveCapabilitiesForTools && activeTools
+          ? {
+              effectiveCapabilities: effectiveCapabilitiesForTools(
+                activeTools,
+                adapter,
+              ),
+            }
+          : {}),
         delegation: formatDelegationLedgerProjection(delegation),
         milestones: formatAgentMilestoneContextProjection(milestones),
         toolLoopGuard: formatToolLoopGuardContext(toolLoopGuard),

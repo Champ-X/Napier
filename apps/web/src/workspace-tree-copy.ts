@@ -8,11 +8,16 @@ import { deepMergeCopy, getLocale, type LocaleOverride } from "./locale";
  * copy object (e.g. copy.workspaceSurface.chipLabel, copy.newThread) are reused
  * at the call site instead of being duplicated here.
  */
-const en = {
+export const workspaceTreeCopyEn = {
   // Sidebar tree
   currentBadge: "Current",
   switching: "Switching workspace...",
   addWorkspace: "Add workspace",
+  expandWorkspace: "Expand",
+  collapseWorkspace: "Collapse",
+  loadSessionsError: "Unable to load sessions",
+  loadingSessions: "Loading sessions…",
+  noSessions: "No sessions yet",
   // Folder picker dialog
   pickerEyebrow: "Local folder",
   pickerTitle: "Choose a workspace",
@@ -29,10 +34,15 @@ const en = {
   manualEntry: "Enter a path manually",
 } as const;
 
-const zh: LocaleOverride<typeof en> = {
+export const workspaceTreeZh: LocaleOverride<typeof workspaceTreeCopyEn> = {
   currentBadge: "当前",
   switching: "正在切换工作区……",
   addWorkspace: "添加工作区",
+  expandWorkspace: "展开",
+  collapseWorkspace: "收起",
+  loadSessionsError: "无法加载会话",
+  loadingSessions: "正在加载会话……",
+  noSessions: "暂无会话",
   pickerEyebrow: "本地文件夹",
   pickerTitle: "选择工作区",
   pickerBody:
@@ -49,6 +59,6 @@ const zh: LocaleOverride<typeof en> = {
 };
 
 export const workspaceTreeCopy = deepMergeCopy(
-  en,
-  getLocale() === "zh" ? zh : {},
+  workspaceTreeCopyEn,
+  getLocale() === "zh" ? workspaceTreeZh : {},
 );

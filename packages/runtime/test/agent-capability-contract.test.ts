@@ -164,7 +164,7 @@ describe("default Agent Capability Contract", () => {
     },
   );
 
-  it("seeds a recommendation binding and projects actual policy exposure", async () => {
+  it("seeds a recommendation binding and projects the negotiated environment exposure", async () => {
     const services = await createRuntime();
     try {
       const agent = services.store.listAgents()[0]!;
@@ -197,14 +197,11 @@ describe("default Agent Capability Contract", () => {
       expect(projection.runtimeExposedTools).toContain("web_search");
       expect(projection.runtimeExposedTools).toContain("skill_load");
       expect(projection.runtimeExposedTools).toContain("skill_resource");
-      expect(projection.runtimeExposedTools).toContain("apply_patch");
-      expect(projection.runtimeExposedTools).toContain("workspace_process");
+      expect(projection.runtimeExposedTools).not.toContain("apply_patch");
+      expect(projection.runtimeExposedTools).not.toContain("workspace_process");
       expect(projection.readiness).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({
-            id: "tool:apply_patch",
-            status: "ready",
-          }),
+          expect.objectContaining({ id: "tool:apply_patch", status: "unavailable", allowedByPolicy: true, exposed: false }),
           expect.objectContaining({
             id: "sandbox:unsupported",
             status: "unavailable",
@@ -995,6 +992,7 @@ describe("default Agent Capability Contract", () => {
 async function removeLedger(dataRoot: string): Promise<void> {
   await Promise.all(
     ["ledger.sqlite", "ledger.sqlite-shm", "ledger.sqlite-wal"].map((name) =>
-      rm(path.join(dataRoot, name), { force: true })),
+      rm(path.join(dataRoot, name), { force: true }),
+    ),
   );
 }

@@ -54,7 +54,7 @@ describe("Browser task recovery", () => {
     await act(async () => root.render(<BrowserUseLocalTaskPanel />));
     await waitFor(() =>
       container.textContent?.includes(
-        "browser_use_local · reconnected · running",
+        "Browser Use local · reconnected · running",
       ),
     );
     expect(container.textContent).toContain("Pause");
@@ -182,7 +182,7 @@ describe("Browser task recovery", () => {
     await act(async () => root.render(<BrowserUseLocalTaskPanel />));
     await waitFor(() =>
       container.textContent?.includes(
-        "browser_use_local · restored history · terminal",
+        "Browser Use local · restored history · finished",
       ),
     );
 

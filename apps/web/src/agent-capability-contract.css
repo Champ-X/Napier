@@ -35,7 +35,7 @@
 .agent-capability-contract dt,
 .agent-capability-contract dd {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--text-xs);
 }
 
 .agent-capability-contract > header span,
@@ -118,7 +118,7 @@
   align-items: baseline;
   min-width: 0;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--text-xs);
 }
 
 .agent-capability-contract-diff strong,
@@ -149,7 +149,7 @@
   gap: 5px;
   align-items: center;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--text-xs);
 }
 
 .agent-capability-readiness li > span {
@@ -191,7 +191,7 @@
   padding: 8px;
   margin: 0;
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--text-xs);
   color: var(--ink-muted);
   border: 1px solid var(--rule);
 }

@@ -8,8 +8,14 @@ import {
 } from "lucide-react";
 
 import type { ConversationPlan } from "./conversation-plan-view-model";
+import { getLocale } from "./locale";
+import { taskSurfaceCopy } from "./task-surface-copy";
 
-export function ConversationPlanCard({ item }: { item: ConversationPlan }) {
+export interface ConversationPlanCardProps {
+  item: ConversationPlan;
+}
+
+export function ConversationPlanCard({ item }: ConversationPlanCardProps) {
   const tone = planTone(item);
   return (
     <details
@@ -20,13 +26,18 @@ export function ConversationPlanCard({ item }: { item: ConversationPlan }) {
         <ClipboardList size={15} aria-hidden="true" />
         <div>
           <span>
-            {item.attemptScope === "current" ? "Current" : "Previous"} Plan ·{" "}
-            {item.plan.status} · r{item.plan.revision}
+            {item.attemptScope === "current"
+              ? taskSurfaceCopy.plan.current
+              : taskSurfaceCopy.plan.previous}{" "}
+            {taskSurfaceCopy.plan.label} ·{" "}
+            {taskSurfaceCopy.plan.statuses[item.plan.status]} · r
+            {item.plan.revision}
           </span>
           <strong>{planSummary(item)}</strong>
         </div>
         <small>
-          {item.settledStepCount}/{item.plan.steps.length} settled
+          {item.settledStepCount}/{item.plan.steps.length}{" "}
+          {taskSurfaceCopy.plan.settled}
         </small>
         <time dateTime={item.createdAt}>{formatTime(item.createdAt)}</time>
       </summary>
@@ -45,28 +56,29 @@ export function ConversationPlanCard({ item }: { item: ConversationPlan }) {
       <dl>
         {item.nextStep ? (
           <div>
-            <dt>Next</dt>
+            <dt>{taskSurfaceCopy.plan.next}</dt>
             <dd>{item.nextStep.title}</dd>
           </div>
         ) : null}
         {item.blockedStep?.blocker ? (
           <div>
-            <dt>Blocker</dt>
+            <dt>{taskSurfaceCopy.plan.blocker}</dt>
             <dd>{item.blockedStep.blocker}</dd>
           </div>
         ) : null}
         <div>
-          <dt>Artifacts</dt>
+          <dt>{taskSurfaceCopy.plan.artifacts}</dt>
           <dd>
-            {item.verifiedArtifactCount} verified · {item.producedArtifactCount}{" "}
-            produced · {item.missingArtifactCount} missing
+            {item.verifiedArtifactCount} {taskSurfaceCopy.plan.verified} ·{" "}
+            {item.producedArtifactCount} {taskSurfaceCopy.plan.produced} ·{" "}
+            {item.missingArtifactCount} {taskSurfaceCopy.plan.missing}
           </dd>
         </div>
         <div>
-          <dt>Phase</dt>
+          <dt>{taskSurfaceCopy.plan.phase}</dt>
           <dd>
             {item.plan.activePhaseIndex === null
-              ? "Settled"
+              ? taskSurfaceCopy.plan.settledPhase
               : `${item.plan.activePhaseIndex + 1}/${Math.max(
                   item.plan.phaseCount,
                   item.plan.activePhaseIndex + 1,
@@ -85,11 +97,14 @@ function planTone(item: ConversationPlan): "working" | "blocked" | "completed" {
 }
 
 function planSummary(item: ConversationPlan): string {
-  if (item.blockedStep) return `Blocked · ${item.blockedStep.title}`;
-  if (item.runningStep) return `Current · ${item.runningStep.title}`;
-  if (item.plan.status === "completed") return "All planned steps settled";
-  if (item.nextStep) return `Next · ${item.nextStep.title}`;
-  return "Plan is waiting for the next transition";
+  if (item.blockedStep)
+    return `${taskSurfaceCopy.plan.statuses.blocked} · ${item.blockedStep.title}`;
+  if (item.runningStep)
+    return `${taskSurfaceCopy.plan.current} · ${item.runningStep.title}`;
+  if (item.plan.status === "completed") return taskSurfaceCopy.plan.allSettled;
+  if (item.nextStep)
+    return `${taskSurfaceCopy.plan.next} · ${item.nextStep.title}`;
+  return taskSurfaceCopy.plan.waiting;
 }
 
 function stepIcon(step: ConversationPlan["plan"]["steps"][number]) {
@@ -115,13 +130,13 @@ function stepStatusText(
 ): string {
   if (step.status === "blocked" && step.blocker) return step.blocker;
   if (step.status === "completed" && step.evidenceRecorded) {
-    return "Evidence recorded";
+    return taskSurfaceCopy.plan.evidenceRecorded;
   }
-  return step.status;
+  return taskSurfaceCopy.plan.statuses[step.status];
 }
 
 function formatTime(value: string): string {
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat(getLocale() === "zh" ? "zh-CN" : "en", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,

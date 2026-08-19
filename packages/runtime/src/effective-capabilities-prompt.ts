@@ -1,4 +1,4 @@
-import type { ToolPolicyMode } from "@napier/contracts";
+import type { RunExecutionMode, ToolPolicyMode } from "@napier/contracts";
 
 export function formatEffectiveCapabilitiesPrompt(input: {
   requestedTools: readonly string[];
@@ -6,6 +6,7 @@ export function formatEffectiveCapabilitiesPrompt(input: {
   toolPolicy: ToolPolicyMode;
   sandboxId: string;
   restrictedReadOnlyExecution: boolean;
+  executionMode?: RunExecutionMode;
   advisorCorrection: boolean;
   browserInteractionConfirmationAvailable: boolean;
 }): string {
@@ -20,11 +21,14 @@ export function formatEffectiveCapabilitiesPrompt(input: {
     input.restrictedReadOnlyExecution ||
     input.advisorCorrection ||
     !input.browserInteractionConfirmationAvailable;
-  const executionMode = input.restrictedReadOnlyExecution
-    ? "restricted_read_only"
-    : input.advisorCorrection
-      ? "advisor_correction_read_only"
-      : "standard";
+  const executionMode =
+    input.executionMode === "environment_degraded_read_only"
+      ? "environment_degraded_read_only"
+      : input.restrictedReadOnlyExecution
+        ? "restricted_read_only"
+        : input.advisorCorrection
+          ? "advisor_correction_read_only"
+          : "standard";
   return [
     "<effective_capabilities>",
     `Tool policy: ${input.toolPolicy}. Execution mode: ${executionMode}. Sandbox: ${input.sandboxId}.`,
@@ -35,6 +39,11 @@ export function formatEffectiveCapabilitiesPrompt(input: {
         ? "Browser backend: native_playwright. Browser interaction: read_only."
         : "Browser backend: native_playwright. Browser interaction: confirmation_governed. Call the Browser action directly; Napier will request exact one-use action-bound confirmation, so do not pre-confirm it with request_operator_decision."
       : "Browser backend: unavailable for this request. Browser interaction: unavailable.",
+    ...(executionMode === "environment_degraded_read_only"
+      ? [
+          "Environment negotiation: the process Sandbox is unavailable, so this Run continues with independent local reads, configured static network reads, read-only Browser and research sessions when healthy, and internal plan controls. Workspace writes, commands, verification processes, Extensions, and Subagents are unavailable. Inspect first; when mutation or execution is required, explain the boundary once and direct the operator to Sandbox Setup.",
+        ]
+      : []),
     "These capabilities are authoritative for this request. Do not claim or silently substitute unavailable tools, isolation, Browser backends, permissions, or fallbacks.",
     "</effective_capabilities>",
   ].join("\n");

@@ -8,7 +8,9 @@ import { BrowserTaskTerminal } from "./BrowserTaskTerminal";
 import { useBrowserTaskRunner } from "./use-browser-task-runner";
 import type { SelectedModelAvailability } from "./model-selection-view-model";
 import type { BrowserTaskModelProvider } from "./browser-task-api";
+import { browserTaskCopy } from "./browser-task-copy";
 import "./browser-task.css";
+import "./browser-task-boundaries.css";
 
 export interface BrowserUseLocalTaskPanelProps {
   defaultModelId?: string;
@@ -37,12 +39,8 @@ export function BrowserUseLocalTaskPanel({
       <div className="browser-task-heading">
         <Globe2 size={16} aria-hidden="true" />
         <div>
-          <strong>Autonomous browser task</strong>
-          <p>
-            Opt in to Browser Use local or Cloud. Navigation is domain-bound and
-            page interaction is public read-only; Native Playwright remains the
-            default Agent backend.
-          </p>
+          <strong>{browserTaskCopy.panel.title}</strong>
+          <p>{browserTaskCopy.panel.description}</p>
         </div>
       </div>
       <BrowserTaskForm

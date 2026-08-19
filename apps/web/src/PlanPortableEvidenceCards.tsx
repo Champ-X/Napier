@@ -6,6 +6,7 @@ import type {
   ExecutionPlanBlueprintVerification,
 } from "@napier/contracts";
 
+import { shortPlanId } from "./plan-panel-helpers";
 import { planCopy } from "./plan-copy";
 
 export type PlanArchiveReceipt =
@@ -284,7 +285,7 @@ export function projectPlanBlueprintReceiptView(receipt: PlanBlueprintReceipt) {
             ? planCopy.blueprint.verified
             : planCopy.blueprint.invalid,
     contentSha256: receipt.contentSha256?.slice(0, 16),
-    summary: `${"sourcePlanRevision" in receipt && receipt.sourcePlanRevision !== undefined ? `r${receipt.sourcePlanRevision} / ` : ""}${receipt.stepCount.toLocaleString()} ${planCopy.blueprint.steps} / ${receipt.artifactCount.toLocaleString()} ${planCopy.blueprint.artifacts}${"planId" in receipt ? ` / ${shortId(receipt.planId)}` : ""}`,
+    summary: `${"sourcePlanRevision" in receipt && receipt.sourcePlanRevision !== undefined ? `r${receipt.sourcePlanRevision} / ` : ""}${receipt.stepCount.toLocaleString()} ${planCopy.blueprint.steps} / ${receipt.artifactCount.toLocaleString()} ${planCopy.blueprint.artifacts}${"planId" in receipt ? ` / ${shortPlanId(receipt.planId)}` : ""}`,
     diagnostics:
       receipt.action === "verified"
         ? receipt.diagnostics.length > 0
@@ -292,10 +293,4 @@ export function projectPlanBlueprintReceiptView(receipt: PlanBlueprintReceipt) {
           : planCopy.blueprint.noDiagnostics
         : undefined,
   };
-}
-
-function shortId(value: string): string {
-  return value.length > 15
-    ? `${value.slice(0, 7)}...${value.slice(-5)}`
-    : value;
 }

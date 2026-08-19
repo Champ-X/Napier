@@ -1,19 +1,15 @@
 .message-text {
   position: relative;
-  font-family: var(--serif);
-  font-size: 16px;
-  line-height: 1.76;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-body);
   letter-spacing: 0.002em;
 }
 
 .role-user .message-text {
-  padding: 11px 15px;
-  font-family: "Avenir Next", Avenir, sans-serif;
-  font-size: 13px;
-  line-height: 1.6;
-  background: #e0e5ed;
-  border-left: 2px solid var(--rule-strong);
-  border-radius: 0 3px 3px 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-body);
 }
 
 .message-text p {
@@ -129,7 +125,7 @@
   top: 7px;
   left: 14px;
   font-family: var(--mono);
-  font-size: 7px;
+  font-size: var(--text-xs);
   color: #94a49b;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -138,7 +134,7 @@
 .message-code-block code {
   display: block;
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--text-xs);
   line-height: 1.6;
   white-space: pre;
 }
@@ -212,7 +208,7 @@
   min-width: 360px;
   border-collapse: collapse;
   font-family: "Avenir Next", Avenir, sans-serif;
-  font-size: 11px;
+  font-size: var(--text-xs);
 }
 
 .message-table-wrap th,
@@ -226,7 +222,7 @@
 
 .message-table-wrap th {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--text-xs);
   color: var(--ink-soft);
   background: var(--paper-deep);
   letter-spacing: 0.04em;

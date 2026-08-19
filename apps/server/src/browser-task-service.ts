@@ -21,13 +21,11 @@ import {
   browserTaskRestartFailure,
   boundedBrowserTaskEvents,
   createdBrowserTask,
+  restoredBrowserTaskRecord,
   streamTaskEvents,
   wakeTaskListeners,
 } from "./browser-task-service-support.js";
-import {
-  BrowserTaskJournal,
-  type BrowserTaskJournalRecord,
-} from "./browser-task-journal.js";
+import { BrowserTaskJournal } from "./browser-task-journal.js";
 import { BrowserTaskServiceError } from "./browser-task-error.js";
 import { readBrowserTaskScreenshot } from "./browser-task-screenshot.js";
 import type {
@@ -338,10 +336,15 @@ export class BrowserTaskService {
     return readBrowserTaskScreenshot(this.#task(taskId), step);
   }
 
-  shutdown(): void {
+  async shutdown(): Promise<void> {
+    const initialization = this.#initialization;
+    if (initialization) await initialization.catch(() => undefined);
+    const executions: Promise<void>[] = [];
     for (const record of this.#tasks.values()) {
       if (record.status !== "terminal") record.controller.abort();
+      if (record.execution) executions.push(record.execution);
     }
+    await Promise.allSettled(executions);
   }
 
   async #execute(
@@ -382,14 +385,20 @@ export class BrowserTaskService {
         ]);
         await this.#journal.save(persisted);
       }
-      const record = restoredRecord(persisted, this.#dataRoot);
+      const record: BrowserTaskRecord = restoredBrowserTaskRecord(
+        persisted,
+        this.#dataRoot,
+      );
       this.#tasks.set(record.id, record);
     } catch {
       this.#historyError = true;
     }
   }
 
-  async #persist(record: BrowserTaskRecord, status = record.status): Promise<void> {
+  async #persist(
+    record: BrowserTaskRecord,
+    status = record.status,
+  ): Promise<void> {
     await this.#journal.save({
       taskId: record.id,
       backend: record.backend,
@@ -467,32 +476,4 @@ export class BrowserTaskService {
       if (oldest) this.#tasks.delete(oldest.id);
     }
   }
-}
-
-function restoredRecord(
-  persisted: BrowserTaskJournalRecord,
-  dataRoot: string,
-): BrowserTaskRecord {
-  return {
-    id: persisted.taskId,
-    backend: persisted.backend,
-    screenshotRoot: path.join(
-      persisted.backend === "browser_use_local"
-        ? browserUseLocalRuntimeRoot(dataRoot)
-        : browserUseCloudRuntimeRoot(dataRoot),
-      "runs",
-    ),
-    createdAt: persisted.createdAt,
-    status: "terminal",
-    controller: new AbortController(),
-    events: structuredClone(persisted.events),
-    listeners: new Set(),
-    timedOut: false,
-    input: structuredClone(persisted.input),
-    runner: {
-      run: async () => {
-        throw new Error("Restored Browser tasks cannot execute");
-      },
-    },
-  };
 }

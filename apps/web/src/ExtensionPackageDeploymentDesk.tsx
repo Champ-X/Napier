@@ -91,7 +91,7 @@ export default function ExtensionPackageDeploymentDesk({
               <strong>{preview.updateCount}</strong>
             </div>
             <code title={preview.contentSha256}>
-              plan {preview.contentSha256.slice(0, 10)}
+              {packageCopy.planHash} {preview.contentSha256.slice(0, 10)}
             </code>
           </header>
 

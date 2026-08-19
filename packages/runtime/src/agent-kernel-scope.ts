@@ -7,6 +7,10 @@ import {
   type KernelServiceRegistration,
   KernelServiceRegistry,
 } from "./kernel-service-registry.js";
+import {
+  type AgentModelCallExtension,
+  ComposableAgentModelCallPipeline,
+} from "./kernel-model-call-pipeline.js";
 
 export class AgentKernelScope {
   readonly services;
@@ -16,6 +20,7 @@ export class AgentKernelScope {
   constructor(
     registry: KernelServiceRegistry,
     hookRegistry: KernelHookRegistry,
+    private readonly modelCalls: ComposableAgentModelCallPipeline,
     readonly owner: string,
   ) {
     this.services = registry.scope(owner);
@@ -35,6 +40,11 @@ export class AgentKernelScope {
     return this.hooks.on(name, handler);
   }
 
+  interceptModelCall(extension: AgentModelCallExtension): () => void {
+    this.assertActive();
+    return this.modelCalls.use(extension, this.owner);
+  }
+
   resolve(): Promise<void> {
     this.assertActive();
     return this.services.resolve();
@@ -43,6 +53,7 @@ export class AgentKernelScope {
   async dispose(): Promise<void> {
     if (this.disposed) return;
     this.hooks.dispose();
+    this.modelCalls.disposeOwner(this.owner);
     await this.services.dispose();
     this.disposed = true;
   }

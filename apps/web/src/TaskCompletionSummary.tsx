@@ -1,35 +1,55 @@
-import { FolderOpen } from "lucide-react";
+import { CheckCircle2, FolderOpen } from "lucide-react";
 
 import type { ExecutionPlan } from "@napier/contracts";
+import { taskSurfaceCopy } from "./task-surface-copy";
+
+export interface TaskCompletionSummaryProps {
+  completedItems: string[];
+  plans: ExecutionPlan[];
+  activePlan?:
+    | Pick<
+        NonNullable<import("@napier/contracts").ThreadDetail["activePlan"]>,
+        "outputPaths"
+      >
+    | undefined;
+  onOpenArtifact(path: string): void;
+}
 
 export default function TaskCompletionSummary({
   completedItems,
   plans,
   activePlan,
   onOpenArtifact,
-}: {
-  completedItems: string[];
-  plans: ExecutionPlan[];
-  activePlan?: import("@napier/contracts").ThreadDetail["activePlan"];
-  onOpenArtifact(path: string): void;
-}) {
+}: TaskCompletionSummaryProps) {
   const paths = taskArtifactPaths(plans, activePlan);
   if (completedItems.length === 0 && paths.length === 0) return null;
   return (
     <div className="task-narrative-completed">
-      <span>Completed</span>
-      {completedItems.length > 0 ? <p>{completedItems.join(" · ")}</p> : null}
+      <header>
+        <CheckCircle2 size={18} aria-hidden="true" />
+        <div>
+          <span>{taskSurfaceCopy.completion.eyebrow}</span>
+          <strong>{taskSurfaceCopy.completion.title}</strong>
+        </div>
+      </header>
+      {completedItems.length > 0 ? (
+        <ul>
+          {completedItems.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      ) : null}
       {paths.length > 0 ? (
-        <nav aria-label="Task outputs">
+        <nav aria-label={taskSurfaceCopy.completion.outputs}>
           {paths.map((path) => (
             <button
               key={path}
               type="button"
-              title={`Open ${path}`}
+              title={`${taskSurfaceCopy.completion.open} ${path}`}
               onClick={() => onOpenArtifact(path)}
             >
-              <FolderOpen size={9} aria-hidden="true" />
-              Outputs · {path}
+              <FolderOpen size={14} aria-hidden="true" />
+              {taskSurfaceCopy.completion.output} · {path}
             </button>
           ))}
         </nav>

@@ -1,0 +1,257 @@
+.plan-blueprint-library-card {
+  container-name: blueprint-library;
+  container-type: inline-size;
+  min-width: 0;
+  padding: var(--inset-md);
+  margin-block-end: var(--stack-lg);
+  overflow: hidden;
+  color: var(--color-fg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-raised);
+}
+
+.plan-blueprint-library-card::before {
+  display: none;
+}
+
+.plan-blueprint-library-card > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--inline-md);
+}
+
+.plan-blueprint-library-card > header > div {
+  display: grid;
+  gap: var(--stack-xs);
+  min-width: 0;
+}
+
+.plan-blueprint-library-card > header span {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-accent);
+  letter-spacing: 0.08em;
+}
+
+.plan-blueprint-library-card > header h3 {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: clamp(
+    var(--text-lg),
+    calc(var(--text-lg) + 0.15vw),
+    var(--text-xl)
+  );
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--leading-heading);
+}
+
+.plan-blueprint-library-card > header > svg {
+  flex: 0 0 auto;
+  width: var(--control-target-primary);
+  height: var(--control-target-primary);
+  padding: var(--inset-xs);
+  color: var(--color-accent);
+  background: var(--color-accent-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  box-sizing: border-box;
+  transform: none;
+}
+
+.plan-blueprint-library-card > p {
+  max-width: var(--layout-reading-max);
+  margin: var(--stack-sm) 0 var(--stack-md);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-body);
+  color: var(--color-fg-muted);
+}
+
+.plan-blueprint-library-card .fixture-actions {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(calc(var(--space-20) + var(--space-20)), 100%), 1fr)
+  );
+  gap: var(--space-2);
+  margin-block-start: var(--stack-md);
+}
+
+.plan-blueprint-library-card .fixture-actions button {
+  display: inline-flex;
+  min-width: calc(var(--control-target-primary) + var(--space-1));
+  min-height: calc(var(--control-target-primary) + var(--space-1));
+  align-items: center;
+  justify-content: center;
+  gap: var(--inline-sm);
+  padding: var(--inset-xs) var(--inset-sm);
+  overflow: hidden;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-fg);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.plan-blueprint-library-card .fixture-actions button:hover:not(:disabled) {
+  color: var(--color-accent);
+  background: var(--color-accent-subtle);
+  border-color: var(--color-accent-hover);
+}
+
+.plan-blueprint-library-card .fixture-actions button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.plan-blueprint-library-card .fixture-actions button:focus-visible {
+  outline: var(--control-focus-width) solid var(--color-focus-ring);
+  outline-offset: var(--control-focus-offset);
+  box-shadow: 0 0 0 var(--control-focus-offset) var(--color-surface);
+}
+
+.plan-blueprint-library-card .fixture-actions button:disabled {
+  color: var(--color-fg-disabled);
+  cursor: not-allowed;
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
+  opacity: 1;
+}
+
+.plan-blueprint-library-card .fixture-actions button[aria-busy="true"] {
+  cursor: wait;
+}
+
+.plan-blueprint-library-card .fixture-actions .fixture-import {
+  color: var(--color-fg-on-accent);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.plan-blueprint-library-card
+  .fixture-actions
+  .fixture-import:hover:not(:disabled) {
+  color: var(--color-fg-on-accent);
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+.plan-blueprint-library-card .blueprint-library-hint,
+.plan-blueprint-library-card .blueprint-library-empty {
+  display: block;
+  margin-block-start: var(--stack-sm);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  line-height: var(--leading-compact);
+  color: var(--color-fg-muted);
+}
+
+.plan-blueprint-library-card .blueprint-library-summary {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(calc(var(--space-20) + var(--space-20)), 1fr)
+  );
+  gap: var(--space-1);
+  margin-block-start: var(--stack-sm);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.plan-blueprint-library-card .blueprint-library-summary span {
+  min-width: 0;
+  padding: var(--inset-sm);
+  color: var(--color-fg-muted);
+  background: var(--color-bg-subtle);
+}
+
+.plan-blueprint-library-card .blueprint-library-summary span {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.04em;
+}
+
+.plan-blueprint-library-card .fixture-receipt {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(calc(var(--space-20) + var(--space-20)), 1fr)
+  );
+  gap: var(--space-2);
+  align-items: start;
+  padding: var(--inset-sm);
+  margin-block-start: var(--stack-sm);
+  font-size: var(--text-xs);
+  color: var(--color-success);
+  background: var(--color-success-surface);
+  border: 1px solid var(--color-success-border);
+  border-radius: var(--radius-sm);
+}
+
+.plan-blueprint-library-card .fixture-receipt.status-invalid {
+  color: var(--color-danger-fg);
+  background: var(--color-danger-surface);
+  border-color: var(--color-danger-border);
+}
+
+.plan-blueprint-library-card .fixture-receipt :is(span, small, code) {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: inherit;
+}
+
+.plan-blueprint-library-card .fixture-diagnostics {
+  grid-column: 1 / -1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.plan-blueprint-library-card > .fixture-safety {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--inline-sm);
+  margin-block-start: var(--stack-md);
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+}
+
+@container blueprint-library (max-width: 768px) {
+  .plan-blueprint-library-card .fixture-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plan-blueprint-library-card .fixture-actions button {
+    transition-duration: 0.01ms;
+  }
+}
+
+@media (forced-colors: active) {
+  .plan-blueprint-library-card,
+  .plan-blueprint-library-card .fixture-actions button,
+  .plan-blueprint-library-card .fixture-receipt {
+    border-color: CanvasText;
+  }
+
+  .plan-blueprint-library-card .fixture-actions button:focus-visible {
+    outline: var(--control-focus-width) solid Highlight;
+    outline-offset: var(--control-focus-offset);
+    box-shadow: none;
+  }
+}

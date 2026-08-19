@@ -6,7 +6,10 @@ describe("Thread list", () => {
     const [source, copySource, styles] = await Promise.all([
       readFile(new URL("../src/ThreadList.tsx", import.meta.url), "utf8"),
       readFile(new URL("../src/copy.ts", import.meta.url), "utf8"),
-      readFile(new URL("../src/styles.css", import.meta.url), "utf8"),
+      readFile(
+        new URL("../src/styles/shell-navigation.css", import.meta.url),
+        "utf8",
+      ),
     ]);
 
     // The user-facing trash copy is externalized into copy.ts (default locale)

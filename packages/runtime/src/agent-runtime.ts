@@ -4,7 +4,6 @@ import {
   type AgentMessage,
   type Skill,
   type AgentTool,
-  type StreamFn,
 } from "@earendil-works/pi-agent-core";
 import {
   type Api,
@@ -29,7 +28,10 @@ import {
   type Usage,
   type UsageAccounting,
 } from "@napier/contracts";
-import { manualRunRecoveryBlockReason, manualRunRecoverySettlementMatches } from "@napier/contracts/manual-run-recovery";
+import {
+  manualRunRecoveryBlockReason,
+  manualRunRecoverySettlementMatches,
+} from "@napier/contracts/manual-run-recovery";
 
 import {
   buildContextCompactionMessages,
@@ -43,7 +45,13 @@ import {
 } from "./compaction.js";
 import { createDelegationLedgerProjection } from "./delegation-ledger.js";
 import type { EventSink } from "./event-sink.js";
-import { formatEffectiveCapabilitiesPrompt } from "./effective-capabilities-prompt.js";
+import { createEffectiveCapabilitiesPromptBuilder } from "./effective-capabilities-prompt-builder.js";
+import {
+  effectiveRunProfile,
+  modernRunConfiguration,
+  runExecutionBoundary,
+} from "./effective-run-profile.js";
+import { createEnvironmentCapabilityNegotiationEvents } from "./environment-capability-negotiation.js";
 import {
   agentToolGenericDetailsLedgerProjection,
   agentToolCallArgumentsLedgerProjection as toolCallArgumentsLedgerProjection,
@@ -93,7 +101,10 @@ import { buildRunRecoveryPrompt } from "./run-recovery-prompt.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
 import { formatWorkspaceToolGuidance } from "./workspace-tool-guidance.js";
-import { WORKFLOW_NODE_EXECUTION } from "./workflow-node-execution.js";
+import {
+  isWorkflowRunSource,
+  WORKFLOW_NODE_EXECUTION,
+} from "./workflow-node-execution.js";
 import { AGENT_MESSAGE_EXPERIMENT_EXECUTION } from "./agent-message-experiment-execution.js";
 import {
   AGENT_MESSAGE_TOOL_RESULT_REPLAY,
@@ -129,7 +140,7 @@ import {
 } from "./thread-title.js";
 import { modelAdapterReceipt } from "./model-adapters.js";
 import { ModelDeltaBatcher } from "./model-delta-batcher.js";
-import { agentModelStreamLife } from "./agent-model-stream-lifecycle.js";
+import { AgentModelCallPipelineHost } from "./agent-model-call-pipeline-host.js";
 import { modelFailureError } from "./model-turn-deadline.js";
 import { ModelInvocationCapsuleStore } from "./model-invocation-capsule-store.js";
 import { captureCompiledModelInvocation } from "./model-invocation-capture.js";
@@ -180,6 +191,7 @@ import {
   createPlatformSandboxAdapter,
   type OsSandboxAdapter,
 } from "./sandbox.js";
+import { negotiateEnvironmentExecution } from "./process-run-readiness.js";
 import { formatSkillCatalog } from "./skills.js";
 import { SKILL_CONTINUATION_SNAPSHOT } from "./skill-load-replay.js";
 import {
@@ -229,11 +241,12 @@ type TurnSource =
   | "advisor_correction";
 const RUN_LEASE_TTL_MS = 60_000;
 const RUN_LEASE_HEARTBEAT_MS = 20_000;
-
 export class AgentRuntime {
   private readonly activeRuns = new Map<string, Map<string, ActiveRun>>();
   private readonly workerId = createId("worker");
   private readonly runLeaseOwnerId = createProcessLeaseOwnerId("worker");
+  private readonly modelCalls = new AgentModelCallPipelineHost();
+  readonly attachKernelModelCallPipeline = this.modelCalls.attach;
   private readonly capabilities: AgentCapabilityRuntime;
   readonly browserLiveViews: BrowserLiveViewService;
   readonly browserSessionControls: BrowserSessionControlService;
@@ -317,6 +330,13 @@ export class AgentRuntime {
         options,
         invocationSource,
       );
+    const environmentExecution = await negotiateEnvironmentExecution(
+      effectiveAgentSnapshot,
+      this.verificationSandbox,
+      this.store.workspaceRoot,
+      options.executionMode ?? "standard",
+      options.signal,
+    );
     const modelRef = await resolveAgentRunModel(
       this.store,
       this.modelRegistry,
@@ -377,9 +397,7 @@ export class AgentRuntime {
       ...(options.agentRevision !== undefined
         ? { agentRevision: options.agentRevision }
         : {}),
-      ...(options.executionMode
-        ? { executionMode: options.executionMode }
-        : {}),
+      executionMode: environmentExecution.executionMode,
       ...(options.triggerId ? { triggerId: options.triggerId } : {}),
       ...(options[WORKFLOW_NODE_EXECUTION]
         ? {
@@ -412,9 +430,7 @@ export class AgentRuntime {
       assertRunConfigurationSkillContext(run.configuration, skillRunContext);
     }
     const agentProfile = effectiveRunProfile(effectiveAgentSnapshot, run);
-    const restrictedReadOnlyExecution =
-      modernRunConfiguration(run.configuration) &&
-      run.configuration.executionMode !== "standard";
+    const access = runExecutionBoundary(run.configuration);
     const abortController = new AbortController();
     const budget = new RunBudgetTracker(
       run.limits ??
@@ -470,6 +486,17 @@ export class AgentRuntime {
           }),
         },
         options.onEvent,
+      );
+      await Promise.all(
+        createEnvironmentCapabilityNegotiationEvents({
+          executionMode: environmentExecution.executionMode,
+          readiness: environmentExecution.readiness,
+          threadId: thread.id,
+          runId: run.id,
+          configuredProfile: effectiveAgentSnapshot,
+          activeProfile: agentProfile,
+          sandboxId: this.verificationSandbox.id,
+        }).map((event) => this.record(event, options.onEvent)),
       );
       await this.record(
         {
@@ -536,13 +563,13 @@ export class AgentRuntime {
           automaticRecovery: options.recovery?.mode === "automatic",
           sourceContinuityRequired: options.sourceContinuityRunId !== undefined,
           sourceContinuityRunId: options.sourceContinuityRunId,
-          enabledTools: effectiveAgentSnapshot.enabledTools,
+          enabledTools: agentProfile.enabledTools,
           onEvent: options.onEvent,
         });
       abortController.signal.throwIfAborted();
       const model = await this.modelRegistry.resolveConfigured(modelRef);
       const subagents =
-        model && !restrictedReadOnlyExecution
+        model && !access.restricted && !access.degraded
           ? new SubagentCoordinator({
               store: this.store,
               models: this.modelRegistry.models,
@@ -572,7 +599,8 @@ export class AgentRuntime {
               text,
               source,
               subagents,
-              restrictedReadOnlyExecution,
+              access.restricted,
+              access.degraded,
               firstClassSkillLoading &&
                 (invocationSource === "user" ||
                   invocationSource === "recovery"),
@@ -726,7 +754,7 @@ export class AgentRuntime {
       }
       if (
         model &&
-        !restrictedReadOnlyExecution &&
+        !access.restricted &&
         !workflowInvocation &&
         !abortController.signal.aborted
       ) {
@@ -870,9 +898,7 @@ export class AgentRuntime {
     const thread = this.store.getThread(options.threadId);
     const interrupted = this.store
       .listRuns(thread.id)
-      .filter((run) =>
-        manualRunRecoverySettlementMatches(thread.status, run),
-      )
+      .filter((run) => manualRunRecoverySettlementMatches(thread.status, run))
       .findLast((run) => !options.runId || run.id === options.runId);
     if (!interrupted) throw new Error("Manually resumable run not found");
     const blockReason = manualRunRecoveryBlockReason(interrupted);
@@ -1169,6 +1195,7 @@ export class AgentRuntime {
     source: TurnSource,
     subagents: SubagentCoordinator | undefined,
     restrictedReadOnlyExecution: boolean,
+    environmentDegradedExecution: boolean,
     skillLoadAllowed: boolean,
     projectSkillSnapshot: SkillSnapshot | undefined,
     catalogSkills: readonly Skill[],
@@ -1265,7 +1292,8 @@ export class AgentRuntime {
       skillLoadAllowed,
       restrictedReadOnlyExecution,
       advisorCorrection,
-      browserInteractionConfirmationAllowed: run.source === "user",
+      browserInteractionConfirmationAllowed:
+        run.source === "user" && !environmentDegradedExecution,
     });
     let pendingOperatorDecisionId: string | undefined;
     if (
@@ -1306,6 +1334,7 @@ export class AgentRuntime {
     if (
       this.extensionManager &&
       !restrictedReadOnlyExecution &&
+      !environmentDegradedExecution &&
       !advisorCorrection
     ) {
       const extensionTools = this.extensionManager.createDeferredAgentTools(
@@ -1328,15 +1357,18 @@ export class AgentRuntime {
     );
     const workspaceToolGuidance = formatWorkspaceToolGuidance(tools);
     const planToolGuidance = formatPlanToolGuidance(tools);
-    const effectiveCapabilitiesPrompt = formatEffectiveCapabilitiesPrompt({
+    const capabilitiesPrompt = createEffectiveCapabilitiesPromptBuilder({
       requestedTools: profile.enabledTools,
-      activeTools: tools.map((tool) => tool.name),
       toolPolicy: profile.toolPolicy,
       sandboxId: this.verificationSandbox.id,
       restrictedReadOnlyExecution,
+      executionMode: modernRunConfiguration(run.configuration)
+        ? run.configuration.executionMode
+        : "standard",
       advisorCorrection,
       browserInteractionConfirmationAvailable:
-        this.browserInteractionConfirmations.available,
+        this.browserInteractionConfirmations.available &&
+        !environmentDegradedExecution,
     });
     const checkpointContext = history.checkpoint
       ? formatContextCheckpoint(history.checkpoint)
@@ -1358,17 +1390,23 @@ export class AgentRuntime {
         workflowInvocation ? run.id : undefined,
       ),
     );
-    const buildCompiledPrompt = createAgentPromptBuilder({
-      resolvedSystemPrompt,
-      skillCatalog: skillCatalogOverlay,
-      effectiveCapabilities: effectiveCapabilitiesPrompt,
-      workspaceToolGuidance,
-      planToolGuidance,
-      sourceContinuityGuidance,
-      importedLedgerBoundary,
-      checkpoint: checkpointContext,
-      memory: memoryContext.text,
-    });
+    const buildCompiledPrompt = createAgentPromptBuilder(
+      {
+        resolvedSystemPrompt,
+        skillCatalog: skillCatalogOverlay,
+        effectiveCapabilities: capabilitiesPrompt(
+          tools.map((tool) => tool.name),
+          modelAdapterReceipt(model),
+        ),
+        workspaceToolGuidance,
+        planToolGuidance,
+        sourceContinuityGuidance,
+        importedLedgerBoundary,
+        checkpoint: checkpointContext,
+        memory: memoryContext.text,
+      },
+      capabilitiesPrompt,
+    );
     const systemPrompt = buildCompiledPrompt(
       modelAdapterReceipt(model),
       delegationLedgerProjection,
@@ -1376,23 +1414,26 @@ export class AgentRuntime {
       activeToolLoopGuard,
     ).systemPrompt;
     let currentModelContextEnvelope: ModelContextEnvelopeReceipt | undefined;
-    const streamWithModelContextEnvelope: StreamFn = agentModelStreamLife({
-      host: this,
-      budget,
-      run,
-      buildCompiledPrompt: (requestModel, options) =>
-        buildCompiledPrompt(
-          modelAdapterReceipt(requestModel, options),
-          delegationLedgerProjection,
-          milestoneContextProjection,
-          activeToolLoopGuard,
-        ),
-      nextTurnIndex: nextModelContextEnvelopeTurnIndex,
-      onEnvelope: (envelope) => {
-        currentModelContextEnvelope = envelope;
-      },
-      ...(onEvent ? { onEvent } : {}),
-    });
+    const streamWithModelContextEnvelope = this.modelCalls
+      .current()
+      .createAgentTurnStream({
+        host: this,
+        budget,
+        run,
+        buildCompiledPrompt: (requestModel, options, requestContext) =>
+          buildCompiledPrompt(
+            modelAdapterReceipt(requestModel, options),
+            delegationLedgerProjection,
+            milestoneContextProjection,
+            activeToolLoopGuard,
+            (requestContext.tools ?? []).map((tool) => tool.name),
+          ),
+        nextTurnIndex: nextModelContextEnvelopeTurnIndex,
+        onEnvelope: (envelope) => {
+          currentModelContextEnvelope = envelope;
+        },
+        ...(onEvent ? { onEvent } : {}),
+      });
     const beforeToolCall = async (
       {
         assistantMessage,
@@ -2322,6 +2363,7 @@ export class AgentRuntime {
         const prompt = buildContextCompactionMessages(
           priorCheckpoint,
           plan.deltaEvents,
+          plan.deltaContinuityEvents,
         );
         const modelOptions = {
           signal,
@@ -2432,6 +2474,7 @@ export class AgentRuntime {
           checkpointId: createId("checkpoint"),
           ...(priorCheckpoint ? { parent: priorCheckpoint } : {}),
           compactEvents: plan.compactEvents,
+          continuityEvents: plan.compactContinuityEvents,
           retainedFromSeq,
           result: parseContextCompactionResponse(responseText),
         });
@@ -2793,7 +2836,8 @@ export class AgentRuntime {
     if (!isDefaultThreadTitle(this.store.getThread(threadId).title)) return;
     const firstUserText = await this.firstUserMessageText(threadId, runId);
     if (!firstUserText) return;
-    const isDemo = !model || (model.provider === "napier" && model.id === "demo");
+    const isDemo =
+      !model || (model.provider === "napier" && model.id === "demo");
     let title: string | undefined;
     if (!isDemo) {
       try {
@@ -3287,71 +3331,4 @@ function turnPromptEvent(source: TurnSource) {
     category: "lifecycle",
     visibility: "hidden",
   } as const;
-}
-
-function isWorkflowRunSource(source: TurnSource | undefined): boolean {
-  return (
-    source === "workflow" ||
-    source === "workflow_reuse" ||
-    source === "workflow_simulation"
-  );
-}
-
-function effectiveRunProfile(
-  snapshot: AgentProfile,
-  run: RunRecord,
-): AgentProfile {
-  const configuration = run.configuration;
-  if (!configuration) return structuredClone(snapshot);
-  if (configuration.agentRevision !== snapshot.revision) {
-    throw new Error("Run configuration does not match the Agent revision");
-  }
-  return {
-    ...structuredClone(snapshot),
-    model: structuredClone(configuration.model),
-    thinkingLevel: configuration.thinkingLevel,
-    toolPolicy: configuration.toolPolicy,
-    enabledTools: [...configuration.enabledTools],
-    enabledSkills: [...configuration.enabledSkills],
-    enabledSubagents: [...configuration.enabledSubagents],
-    subagentLimits: structuredClone(configuration.subagentLimits),
-    runLimits: structuredClone(configuration.runLimits),
-    ...(modernRunConfiguration(configuration)
-      ? {
-          automaticRecovery: structuredClone(configuration.automaticRecovery),
-        }
-      : {}),
-    ...(configuration.schemaVersion === 4 ||
-    configuration.schemaVersion === 5 ||
-    configuration.schemaVersion === 6 ||
-    configuration.schemaVersion === 7 ||
-    configuration.schemaVersion === 8
-      ? {
-          modelAdvisor: structuredClone(configuration.modelAdvisor),
-        }
-      : {}),
-    ...(configuration.schemaVersion === 8
-      ? {
-          toolLoopGuard: structuredClone(configuration.toolLoopGuard),
-        }
-      : {}),
-  };
-}
-
-function modernRunConfiguration(
-  configuration: RunRecord["configuration"],
-): configuration is Extract<
-  NonNullable<RunRecord["configuration"]>,
-  { schemaVersion: 2 | 3 | 4 | 5 | 6 | 7 | 8 }
-> {
-  return (
-    configuration !== undefined &&
-    (configuration.schemaVersion === 2 ||
-      configuration.schemaVersion === 3 ||
-      configuration.schemaVersion === 4 ||
-      configuration.schemaVersion === 5 ||
-      configuration.schemaVersion === 6 ||
-      configuration.schemaVersion === 7 ||
-      configuration.schemaVersion === 8)
-  );
 }

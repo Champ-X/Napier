@@ -2,29 +2,33 @@ import { Camera, Download } from "lucide-react";
 import { useCallback, useState } from "react";
 
 import type {
-  BrowserTakeoverActionReceipt,
   BrowserTakeoverSnapshot,
   ExecuteBrowserTakeoverActionRequest,
 } from "@napier/contracts/browser-takeover";
 import type { BrowserLiveViewReceipt } from "@napier/contracts/browser-live-view";
 
 import { browserTakeoverLiveMatchesSnapshot } from "./browser-takeover-visual";
-
-interface TakeoverBinding {
-  expectedPauseStateSha256: string;
-  expectedSessionIdSha256: string;
-  expectedSessionOperation: number;
-  expectedSnapshotSha256: string;
-  expectedActiveTabId: string;
-  expectedTabCount: number;
-  expectedTabSetSha256: string;
-}
+import { browserLiveCopy } from "./browser-live-copy";
+import type {
+  BrowserTakeoverBinding,
+  BrowserTakeoverExecute,
+} from "./browser-takeover-view";
 
 interface SavedBrowserOutput {
   action: "download" | "save_screenshot";
   path: string;
   fileSha256: string;
   fileBytes: number;
+}
+
+export interface BrowserTakeoverOutputProps {
+  binding: BrowserTakeoverBinding | undefined;
+  snapshot: BrowserTakeoverSnapshot | undefined;
+  liveReceipt: BrowserLiveViewReceipt;
+  targetRef: string;
+  allowCrossOrigin: boolean;
+  busy: boolean;
+  execute: BrowserTakeoverExecute;
 }
 
 export function BrowserTakeoverOutput({
@@ -35,19 +39,10 @@ export function BrowserTakeoverOutput({
   allowCrossOrigin,
   busy,
   execute,
-}: {
-  binding: TakeoverBinding | undefined;
-  snapshot: BrowserTakeoverSnapshot | undefined;
-  liveReceipt: BrowserLiveViewReceipt;
-  targetRef: string;
-  allowCrossOrigin: boolean;
-  busy: boolean;
-  execute: (
-    request: ExecuteBrowserTakeoverActionRequest,
-  ) => Promise<BrowserTakeoverActionReceipt | undefined>;
-}) {
+}: BrowserTakeoverOutputProps) {
   const [outputPath, setOutputPath] = useState("");
   const [savedOutput, setSavedOutput] = useState<SavedBrowserOutput>();
+  const copy = browserLiveCopy.takeover.output;
 
   const runOutput = useCallback(
     async (request: ExecuteBrowserTakeoverActionRequest) => {
@@ -101,7 +96,7 @@ export function BrowserTakeoverOutput({
   return (
     <div className="browser-takeover-output">
       <label>
-        New workspace output
+        {copy.path}
         <input
           value={outputPath}
           onChange={(event) => setOutputPath(event.target.value)}
@@ -123,7 +118,7 @@ export function BrowserTakeoverOutput({
           onClick={saveScreenshot}
         >
           <Camera size={12} aria-hidden="true" />
-          Save screenshot
+          {copy.saveScreenshot}
         </button>
         <button
           type="button"
@@ -131,18 +126,18 @@ export function BrowserTakeoverOutput({
           onClick={downloadRef}
         >
           <Download size={12} aria-hidden="true" />
-          Download ref
+          {copy.downloadRef}
         </button>
       </div>
-      <span>New file only · existing parent · PNG 8 MiB / download 32 MiB</span>
+      <span>{copy.constraints}</span>
       {savedOutput ? (
         <p role="status">
           {savedOutput.action === "save_screenshot"
-            ? "Screenshot saved"
-            : "Download saved"}{" "}
+            ? copy.screenshotSaved
+            : copy.downloadSaved}{" "}
           <code>{savedOutput.path}</code> ·{" "}
           {savedOutput.fileSha256.slice(0, 12)} ·{" "}
-          {savedOutput.fileBytes.toLocaleString()} bytes
+          {savedOutput.fileBytes.toLocaleString()} {copy.bytes}
         </p>
       ) : null}
     </div>

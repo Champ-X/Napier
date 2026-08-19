@@ -34,7 +34,7 @@ describe("Conversation Ledger plans", () => {
       );
     });
 
-    expect(container.textContent).toContain("Current Plan · active · r2");
+    expect(container.textContent).toContain("Current Plan · Active · r2");
     expect(container.textContent).toContain("Current · Run verification");
     expect(container.textContent).toContain("Deliver a verified handoff");
     expect(container.textContent).not.toContain("Plan created");

@@ -27,7 +27,7 @@ describe("ConversationToolActivityCard", () => {
       );
     });
 
-    expect(container.textContent).toContain("Shell · completed");
+    expect(container.textContent).toContain("Shell · Completed");
     expect(container.textContent).toContain("Command Succeeded");
     expect(container.textContent).toContain("Read only");
     expect(container.textContent).toContain("Denied");

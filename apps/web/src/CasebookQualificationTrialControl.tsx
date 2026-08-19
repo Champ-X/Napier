@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Play } from "lucide-react";
 
 import type { EvaluationCasebookQualificationExecution } from "@napier/contracts";
+import { advancedSurfaceCopy } from "./advanced-surface-copy";
 
 export interface CasebookQualificationTrialControlProps {
   disabled: boolean;
@@ -22,6 +23,7 @@ export function CasebookQualificationTrialControl({
   onSettled,
   onError,
 }: CasebookQualificationTrialControlProps) {
+  const copy = advancedSurfaceCopy.qualification;
   const [trialCount, setTrialCount] = useState(1);
   const [progress, setProgress] = useState<number>();
   const [latest, setLatest] = useState<
@@ -67,9 +69,9 @@ export function CasebookQualificationTrialControl({
   return (
     <>
       <label className="casebook-qualification-trials">
-        <span>Independent trials</span>
+        <span>{copy.trials}</span>
         <select
-          aria-label="Qualification trial count"
+          aria-label={copy.trialCount}
           value={trialCount}
           disabled={disabled || progress !== undefined}
           onChange={(event) => setTrialCount(Number(event.currentTarget.value))}
@@ -80,9 +82,7 @@ export function CasebookQualificationTrialControl({
             </option>
           ))}
         </select>
-        <small>
-          Sequential runs; each trial creates and bills a fresh evaluator Run.
-        </small>
+        <small>{copy.trialHelp}</small>
       </label>
       <button
         className="casebook-qualification-run"
@@ -93,14 +93,14 @@ export function CasebookQualificationTrialControl({
         <Play size={11} aria-hidden="true" />
         {progress === undefined
           ? trialCount === 1
-            ? "Qualify evaluator"
-            : `Run ${String(trialCount)} trials`
-          : `Trial ${String(progress)} of ${String(trialCount)}…`}
+            ? copy.qualify
+            : `${copy.runTrialsPrefix} ${String(trialCount)} ${copy.runTrialsSuffix}`
+          : `${copy.trialProgress} ${String(progress)} ${copy.of} ${String(trialCount)}…`}
       </button>
       {latest.length ? (
         <p className="casebook-qualification-trial-summary" role="status">
-          Latest batch · {latest.length}/{trialCount} completed · {passed}{" "}
-          passed · {meanAgreement}% mean agreement
+          {copy.latestBatch} · {latest.length}/{trialCount} {copy.completed} ·{" "}
+          {passed} {copy.passed} · {meanAgreement}% {copy.meanAgreement}
         </p>
       ) : null}
     </>

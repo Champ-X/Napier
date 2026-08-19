@@ -6,7 +6,15 @@ import type {
 } from "@napier/contracts";
 
 import { workflowExperimentCopy as copy } from "./workflow-experiment-copy";
+import {
+  formatSignedWorkflowMetric as formatSigned,
+  shortWorkflowResultId as shortId,
+  workflowExperimentChangeLabel as changeLabel,
+  workflowExperimentStatusLabel as statusLabel,
+  workflowMetricDeltaClass as deltaClass,
+} from "./workflow-experiment-docket-format";
 import type { WorkflowExperimentComparisonView } from "./workflow-experiment-view-model";
+import { WorkflowExperimentNodeComparison } from "./WorkflowExperimentNodeComparison";
 
 export function WorkflowExperimentPreviewDocket({
   preview,
@@ -248,60 +256,7 @@ export function WorkflowExperimentComparisonDocket({
         ))}
       </dl>
 
-      <ol className="workflow-node-comparison">
-        {view.nodes.map((node, index) => (
-          <li key={node.nodeId}>
-            <header>
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              <strong>{node.nodeId}</strong>
-              <em>{node.execution}</em>
-            </header>
-            <div className="workflow-node-status">
-              <span>
-                {copy.source} <strong>{statusLabel(node.sourceStatus)}</strong>
-              </span>
-              <span aria-hidden="true">{"->"}</span>
-              <span>
-                {copy.target} <strong>{statusLabel(node.targetStatus)}</strong>
-              </span>
-            </div>
-            <dl>
-              <div>
-                <dt>{copy.output}</dt>
-                <dd>{changeLabel(node.outputChange)}</dd>
-              </div>
-              <div>
-                <dt>{copy.model}</dt>
-                <dd>
-                  {node.targetModels.join(", ") ||
-                    node.sourceModels.join(", ") ||
-                    copy.changes.unavailable}
-                </dd>
-              </div>
-              <div>
-                <dt>{copy.duration}</dt>
-                <dd>{formatSigned(node.durationMsDelta, "ms")}</dd>
-              </div>
-              <div>
-                <dt>{copy.tokens}</dt>
-                <dd>{formatSigned(node.tokenDelta)}</dd>
-              </div>
-            </dl>
-            <p className="workflow-node-tools">
-              {[
-                ...(node.addedToolNames.length > 0
-                  ? [`${copy.addedTools}: ${node.addedToolNames.join(", ")}`]
-                  : []),
-                ...(node.removedToolNames.length > 0
-                  ? [
-                      `${copy.removedTools}: ${node.removedToolNames.join(", ")}`,
-                    ]
-                  : []),
-              ].join(" / ") || copy.noToolChanges}
-            </p>
-          </li>
-        ))}
-      </ol>
+      <WorkflowExperimentNodeComparison nodes={view.nodes} />
 
       <footer>
         <span>
@@ -321,38 +276,4 @@ export function WorkflowExperimentComparisonDocket({
       </footer>
     </section>
   );
-}
-
-function statusLabel(status: string): string {
-  return copy.statuses[status as keyof typeof copy.statuses] ?? status;
-}
-
-function changeLabel(change: string): string {
-  return copy.changes[change as keyof typeof copy.changes] ?? change;
-}
-
-function formatSigned(
-  value: number,
-  suffix = "",
-  fractionDigits?: number,
-): string {
-  const text =
-    fractionDigits === undefined
-      ? value.toLocaleString()
-      : value.toFixed(fractionDigits);
-  return `${value > 0 ? "+" : ""}${text}${suffix}`;
-}
-
-function deltaClass(value: string): string {
-  return value.startsWith("+")
-    ? "is-higher"
-    : value.startsWith("-")
-      ? "is-lower"
-      : "is-even";
-}
-
-function shortId(value: string): string {
-  return value.length > 18
-    ? `${value.slice(0, 10)}...${value.slice(-6)}`
-    : value;
 }

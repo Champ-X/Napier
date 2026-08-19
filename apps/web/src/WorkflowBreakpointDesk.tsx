@@ -18,17 +18,19 @@ import "./workflow-breakpoint.css";
 
 const MAX_MANIFEST_BYTES = 1024 * 1024;
 
+export interface WorkflowBreakpointDeskProps {
+  threadId: string;
+  breakpoint: OpenWorkflowBreakpoint;
+  running: boolean;
+  onSettled(): void | Promise<void>;
+}
+
 export default function WorkflowBreakpointDesk({
   threadId,
   breakpoint,
   running,
   onSettled,
-}: {
-  threadId: string;
-  breakpoint: OpenWorkflowBreakpoint;
-  running: boolean;
-  onSettled: () => void | Promise<void>;
-}) {
+}: WorkflowBreakpointDeskProps) {
   const [manifest, setManifest] = useState<ExecutionPlanWorkflowManifest>();
   const [manifestFilename, setManifestFilename] = useState("");
   const [result, setResult] = useState<ExecutionPlanWorkflowResultFrame>();
@@ -250,14 +252,14 @@ export default function WorkflowBreakpointDesk({
 
       {busy === "continue" && streamedFrameCount > 0 ? (
         <span className="workflow-breakpoint-stream">
-          {String(streamedFrameCount).padStart(2, "0")} frames
+          {String(streamedFrameCount).padStart(2, "0")} {copy.frames}
         </span>
       ) : null}
 
       {result ? (
         <div className={`workflow-breakpoint-result state-${result.status}`}>
           <span>{copy.settled}</span>
-          <strong>{result.status}</strong>
+          <strong>{copy.statuses[result.status]}</strong>
           <small>
             {result.status === "paused" ? copy.nextPause : copy.refreshHint}
           </small>

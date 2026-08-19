@@ -60,7 +60,7 @@
 .model-experiment-change-grid span,
 .model-experiment-model-delta small {
   font-family: var(--mono);
-  font-size: 6px;
+  font-size: var(--text-xs);
   color: var(--ink-faint);
   text-transform: uppercase;
   letter-spacing: 0.09em;
@@ -69,13 +69,13 @@
 .model-experiment-call-strip strong {
   overflow-wrap: anywhere;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--text-xs);
   color: var(--ink);
 }
 
 .model-experiment-call-strip small {
   font-family: var(--mono);
-  font-size: 6px;
+  font-size: var(--text-xs);
   color: var(--call-ink);
 }
 
@@ -124,7 +124,7 @@
   padding: 2px 4px;
   overflow-wrap: anywhere;
   font-family: var(--mono);
-  font-size: 6px;
+  font-size: var(--text-xs);
   color: var(--ink-soft);
   background: var(--paper-deep);
 }
@@ -132,7 +132,7 @@
 .model-experiment-change-grid p {
   margin: 5px 0 0;
   font-family: var(--serif);
-  font-size: 7px;
+  font-size: var(--text-xs);
   color: var(--ink-faint);
 }
 
@@ -140,7 +140,7 @@
   display: block;
   margin-top: 5px;
   font-family: var(--mono);
-  font-size: 7px;
+  font-size: var(--text-xs);
   color: var(--call-ink);
 }
 

@@ -7,6 +7,7 @@ import {
   assertWebUiE2eReceipt,
   WEB_UI_E2E_KIND,
   WEB_UI_E2E_VIEWPORTS,
+  WEB_UI_UX_SCENARIOS,
 } from "./web-ui-e2e-contract.mjs";
 import { seedWebUiNarrativeFixture } from "./web-ui-e2e-fixture.mjs";
 import {
@@ -32,9 +33,6 @@ import {
   verifyWebUiLayoutBaseline,
   writeWebUiLayoutBaseline,
 } from "./web-ui-layout-baseline.mjs";
-import { verifyBrowserInspector } from "./web-ui-e2e-browser-task.mjs";
-import { verifyCasebookQualificationTrials } from "./web-ui-e2e-casebook.mjs";
-import { verifyDefaultProductTrialRecorder } from "./web-ui-e2e-default-product-trial.mjs";
 
 const options = parseArguments(process.argv.slice(2));
 const temporaryRoot = await createWebUiE2eRoot();
@@ -54,6 +52,16 @@ try {
   debug("browser");
   browserRuntime = await startWebUiBrowser(temporaryRoot);
   receipt.browser = browserRuntime.receipt;
+  await configureBrowserLocale(browserRuntime.browser, "en");
+
+  debug("active-runtime");
+  receipt.runtime = await verifyRuntimeScenario(
+    browserRuntime.browser,
+    serverRuntime.origin,
+    receipt.fixture.running,
+  );
+
+  debug("desktop-viewports");
   receipt.viewports = [];
   for (const viewport of WEB_UI_E2E_VIEWPORTS) {
     debug(`viewport:${String(viewport.width)}`);
@@ -63,17 +71,30 @@ try {
       viewport,
       receipt.fixture,
     );
-    assertViewportReceipt(viewportReceipt, receipt.fixture.latestTerminalRunId);
+    assertViewportReceipt(viewportReceipt);
     receipt.viewports.push(viewportReceipt);
   }
+
+  debug("empty-conversation");
+  receipt.empty = await verifyEmptyScenario(
+    browserRuntime.browser,
+    serverRuntime.origin,
+    receipt.fixture.empty,
+  );
   debug("recovery");
   receipt.recovery = await verifyWebUiRecoveryNarrative(
     browserRuntime.browser,
     serverRuntime.origin,
     receipt.fixture.recovery,
   );
-  debug("long-run");
+  debug("long-conversation");
   receipt.longRun = await verifyWebUiLongRunNarrative(
+    browserRuntime.browser,
+    serverRuntime.origin,
+    receipt.fixture.longRun,
+  );
+  debug("dense-trajectory");
+  receipt.trajectory = await verifyTrajectoryScenario(
     browserRuntime.browser,
     serverRuntime.origin,
     receipt.fixture.longRun,
@@ -84,6 +105,18 @@ try {
     serverRuntime.origin,
     receipt.fixture.artifactNavigation,
   );
+  debug("settings-administration");
+  receipt.settings = await verifySettingsScenario(
+    browserRuntime.browser,
+    serverRuntime.origin,
+    receipt.fixture,
+  );
+  debug("chinese-core-locale");
+  receipt.locale = await verifyChineseCoreLocale(
+    browserRuntime.browser,
+    serverRuntime.origin,
+    receipt.fixture,
+  );
   debug("reconnect");
   receipt.reconnect = await verifyWebUiServerRestart(
     browserRuntime.browser,
@@ -93,8 +126,10 @@ try {
   );
   serverRuntime = receipt.reconnect.runtime;
   delete receipt.reconnect.runtime;
-  debug("passed");
+
+  receipt.scenarios = createScenarioReceipts(receipt);
   receipt.status = "passed";
+  debug("passed");
 } catch (error) {
   operationError = error;
 } finally {
@@ -134,13 +169,12 @@ if (options.receiptPath) {
 }
 process.stdout.write(serialized);
 
-async function inspectViewport(browser, origin, viewport, expectedNarrative) {
-  const context = browser.contexts()[0];
-  assert.ok(context, "Web UI E2E Browser context is unavailable");
+async function inspectViewport(browser, origin, viewport, expected) {
+  const context = browserContext(browser);
   const consoleErrors = [];
   const page = await openWebUiPage(
     context,
-    `${origin}/?thread=${encodeURIComponent(expectedNarrative.threadId)}`,
+    threadUrl(origin, expected.threadId),
     { width: viewport.width, height: viewport.height },
     (candidate) => {
       candidate.on("console", (message) => {
@@ -150,83 +184,45 @@ async function inspectViewport(browser, origin, viewport, expectedNarrative) {
     },
   );
   try {
-    await page.locator("#workspace-view-conversation").waitFor({
-      state: "attached",
-      timeout: WEB_UI_START_TIMEOUT_MS,
-    });
-    await page.waitForFunction(
-      () => {
-        const composer = document.querySelector(".agent-capability-composer");
-        return (
-          composer &&
-          !composer.classList.contains("state-loading") &&
-          document
-            .querySelector(".composer")
-            ?.getAttribute("data-run-readiness") !== "checking" &&
-          ![...document.querySelectorAll(".composer-readiness-item")].some(
-            (item) => item.textContent?.includes("Checking"),
-          )
-        );
-      },
-      undefined,
-      { timeout: WEB_UI_START_TIMEOUT_MS },
-    );
-    await page.evaluate(() => document.fonts.ready);
-    await page.waitForTimeout(250);
-    const narrative = await readWebUiNarrative(page, expectedNarrative);
+    await waitForWorkbench(page);
+    const narrative = await readWebUiNarrative(page, expected);
     const refreshPreserved =
-      viewport.width === 1_600
+      viewport.width === 1_440
         ? await refreshPreservesWebUiNarrative(
             page,
             origin,
-            expectedNarrative,
+            expected,
             narrative,
           )
         : false;
-    const initial = await page.evaluate(readInitialLayout);
+    await settleVisuals(page);
+
+    const initial = await page.evaluate(readInitialContract);
     const layoutSnapshot = await page.evaluate(readLayoutSnapshot);
-    const openFocusTarget = await openDrawer(page);
-    const geometry = await page.evaluate(readGeometry);
-    const inspector = await page.evaluate(readInspectorContract);
-    const closed = await closeDrawerWithEscape(page);
-    const opened = true;
+    const readingAxis = await page.evaluate(readReadingAxis);
     const keyboard = await verifyKeyboardNavigation(page);
-    const browserInspector = await verifyBrowserInspector(page);
-    const casebookTrials =
-      viewport.width === 1_600
-        ? await verifyCasebookQualificationTrials(
-            page,
-            expectedNarrative.casebook,
-          )
-        : undefined;
-    if (casebookTrials) {
-      await page.goto(
-        `${origin}/?thread=${encodeURIComponent(expectedNarrative.threadId)}`,
-      );
-    }
-    const defaultProductTrial = await verifyDefaultProductTrialRecorder(page);
+    const task = await readTaskContract(page);
+    const settings = await readSettingsContract(page, initial.settingsHidden);
+    const geometry = await page.evaluate(readPageGeometry);
     const screenshot = await screenshotReceipt(page);
+
     return {
       ...viewport,
-      inspector: {
-        ...inspector,
-        ...initial.inspector,
-        drawerOpened: opened,
-        openFocusTarget,
-        ...closed,
-      },
+      workspaceNavigation: initial.workspaceNavigation,
+      conversation: initial.conversation,
+      task,
+      settings,
       geometry: {
         ...geometry,
+        drawerWithinViewport: settings.drawerWithinViewport,
         horizontalOverflowPx: Math.max(
           initial.horizontalOverflowPx,
           geometry.horizontalOverflowPx,
         ),
       },
+      readingAxis,
       layoutSnapshot,
       keyboard,
-      browserInspector,
-      defaultProductTrial,
-      ...(casebookTrials ? { casebookTrials } : {}),
       narrative: { ...narrative, refreshPreserved },
       console: { errorCount: consoleErrors.length },
       screenshot,
@@ -236,179 +232,778 @@ async function inspectViewport(browser, origin, viewport, expectedNarrative) {
   }
 }
 
-async function openDrawer(page) {
-  await page.locator(".workspace-settings-shortcut").click();
-  await page
-    .locator(".workspace-settings-surface")
-    .waitFor({ state: "visible" });
-  await page.waitForTimeout(240);
-  return page.evaluate(() => document.activeElement?.id ?? "");
+async function verifyEmptyScenario(browser, origin, expected) {
+  const page = await openWebUiPage(
+    browserContext(browser),
+    threadUrl(origin, expected.threadId),
+    { width: 1_440, height: 900 },
+  );
+  try {
+    await waitForWorkbench(page);
+    await page.locator(".welcome-panel").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    return page.evaluate((title) => {
+      const isVisible = (selector) => {
+        const element = document.querySelector(selector);
+        return (
+          element instanceof HTMLElement && element.getClientRects().length > 0
+        );
+      };
+      return {
+        title: document
+          .querySelector(".thread-heading h1")
+          ?.textContent?.trim(),
+        welcomeVisible:
+          document.querySelector(".welcome-panel") instanceof HTMLElement,
+        composerVisible: isVisible(".composer"),
+        internalTrialControlsVisible: Boolean(
+          document.querySelector(
+            ".default-product-trial, .release-product-trial",
+          ),
+        ),
+        titleMatched:
+          document.querySelector(".thread-heading h1")?.textContent?.trim() ===
+          title,
+      };
+    }, expected.title);
+  } finally {
+    await page.close();
+  }
 }
 
-async function closeDrawerWithEscape(page) {
-  await page.keyboard.press("Escape");
-  await page.waitForFunction(
-    () => {
-      const inspector = document.querySelector(".workspace-settings-surface");
-      const trigger = document.querySelector(".workspace-settings-shortcut");
-      return (
-        trigger instanceof HTMLElement &&
-        inspector === null &&
-        document.activeElement === trigger
-      );
-    },
-    undefined,
-    { timeout: 5_000 },
+async function verifyRuntimeScenario(browser, origin, expected) {
+  const page = await openWebUiPage(
+    browserContext(browser),
+    threadUrl(origin, expected.threadId),
+    { width: 1_440, height: 900 },
   );
-  return page.evaluate(() => {
-    const trigger = document.querySelector(".workspace-settings-shortcut");
-    if (!(trigger instanceof HTMLElement)) {
-      throw new Error("Workspace Settings trigger is missing");
-    }
+  try {
+    await waitForWorkbench(page);
+    await page.locator(".run-status.is-running").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    const runningComposer = await page.evaluate(() => {
+      const composer = document.querySelector(".composer");
+      return {
+        composerHeight:
+          composer instanceof HTMLElement
+            ? composer.getBoundingClientRect().height
+            : 0,
+        fallbackWarningVisible:
+          document.querySelector(".composer-readiness-warning") instanceof
+          HTMLElement,
+      };
+    });
+    await page.locator("#workspace-view-task").click();
+    await page.locator("#task-section-environment").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    const sectionCount = await page
+      .locator(".task-section-navigation button")
+      .count();
+    await page.locator("#task-section-environment").click();
+    await page.locator(".task-runtime").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    await page.waitForFunction(
+      () =>
+        [...document.querySelectorAll(".task-runtime-card h3")].some(
+          (heading) => heading.textContent?.trim() === "Browser",
+        ),
+      undefined,
+      { timeout: WEB_UI_START_TIMEOUT_MS },
+    );
+    return page.evaluate(
+      ({ count, runningComposer }) => {
+        const isVisible = (selector) => {
+          const element = document.querySelector(selector);
+          return (
+            element instanceof HTMLElement &&
+            element.getClientRects().length > 0
+          );
+        };
+        return {
+          ...runningComposer,
+          runningIndicatorVisible: isVisible(".run-status.is-running"),
+          runtimeSectionVisible: isVisible("#task-section-environment"),
+          sectionCount: count,
+          browserSurfaceVisible: [
+            ...document.querySelectorAll(".task-runtime-card h3"),
+          ].some((heading) => heading.textContent?.trim() === "Browser"),
+        };
+      },
+      { count: sectionCount, runningComposer },
+    );
+  } finally {
+    await page.close();
+  }
+}
+
+async function verifyTrajectoryScenario(browser, origin, expected) {
+  const page = await openWebUiPage(
+    browserContext(browser),
+    threadUrl(origin, expected.threadId),
+    { width: 1_440, height: 900 },
+  );
+  try {
+    await waitForWorkbench(page);
+    await page.locator("#workspace-view-trajectory").click();
+    await page.locator("#trace-title").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    await page.locator("#model-harness-title").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    await page.locator("#tool-result-context-pruning-title").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    await page
+      .locator(".trace-view-tabs button")
+      .filter({ hasText: /^All/u })
+      .click();
+    await page.waitForFunction(
+      () =>
+        document.querySelectorAll(".trace-turn li").length > 0 &&
+        document.querySelectorAll(".trace-run").length >= 2,
+      undefined,
+      { timeout: WEB_UI_START_TIMEOUT_MS },
+    );
+    return page.evaluate(() => {
+      const allCount = document.querySelector(
+        ".trace-view-tabs button:nth-child(2) span",
+      )?.textContent;
+      return {
+        title:
+          document.querySelector("#trace-title")?.textContent?.trim() ?? "",
+        eventCount: Number(allCount ?? 0),
+        mountedEventRows: document.querySelectorAll(".trace-turn li").length,
+        runCount: document.querySelectorAll(".trace-run").length,
+        keyVisible: [
+          ...document.querySelectorAll(".trace-view-tabs button"),
+        ].some((button) => button.textContent?.trim().startsWith("Key")),
+        incrementalControlVisible:
+          document.querySelector(".trace-show-earlier") instanceof HTMLElement,
+        harnessVisible:
+          document.querySelector("#model-harness-title") instanceof HTMLElement,
+        harnessFocused: [
+          ...document.querySelectorAll(
+            ".model-context-envelope-card header span",
+          ),
+        ].some((element) => element.textContent?.includes("generic · focused")),
+        contextPruningVisible:
+          document.querySelector(
+            "#tool-result-context-pruning-title",
+          ) instanceof HTMLElement,
+        contextPruningSaved: [
+          ...document.querySelectorAll(".model-context-envelope-card dl div"),
+        ].some((element) =>
+          element.textContent?.includes("Text saved35.2 KiB"),
+        ),
+        contextContinuityVisible:
+          document.querySelector(
+            "#context-checkpoint-continuity-title",
+          ) instanceof HTMLElement,
+        contextContinuityBound: [
+          ...document.querySelectorAll(
+            ".model-context-envelope-card header span",
+          ),
+        ].some((element) =>
+          element.textContent?.includes("Execution state bound"),
+        ),
+      };
+    });
+  } finally {
+    await page.close();
+  }
+}
+
+async function verifySettingsScenario(browser, origin, expected) {
+  const page = await openWebUiPage(
+    browserContext(browser),
+    threadUrl(origin, expected.threadId),
+    { width: 1_440, height: 900 },
+  );
+  try {
+    await waitForWorkbench(page);
+    const defaultProductTrialHidden = await page.evaluate(
+      () =>
+        document.querySelector(
+          ".default-product-trial, .release-product-trial",
+        ) === null,
+    );
+    await page.locator(".workbench-settings").click();
+    await page.locator(".workspace-settings-surface").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    await page.waitForTimeout(160);
+
+    await page.locator(".agent-history-register").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    const revisionHistory = await page.evaluate(() => {
+      const register = document.querySelector(".agent-history-register");
+      if (!(register instanceof HTMLElement)) {
+        throw new Error("Agent revision history is missing");
+      }
+      const visibleTextElements = [...register.querySelectorAll("*")].filter(
+        (element) =>
+          element instanceof HTMLElement &&
+          element.offsetParent !== null &&
+          (element.childNodes.length === 0 ||
+            [...element.childNodes].some(
+              (node) =>
+                node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
+            )),
+      );
+      const buttons = [...register.querySelectorAll("button")].filter(
+        (button) => button.offsetParent !== null,
+      );
+      return {
+        visible: true,
+        minimumFontPx: Math.min(
+          ...visibleTextElements.map((element) =>
+            Number.parseFloat(getComputedStyle(element).fontSize),
+          ),
+        ),
+        minimumButtonHeight: Math.min(
+          ...buttons.map((button) => button.getBoundingClientRect().height),
+        ),
+      };
+    });
+    const packageManagement = await page.evaluate(() => {
+      const desks = [...document.querySelectorAll(".package-desk")].filter(
+        (desk) => desk instanceof HTMLElement && desk.offsetParent !== null,
+      );
+      const visibleTextElements = desks.flatMap((desk) =>
+        [...desk.querySelectorAll("*")].filter(
+          (element) =>
+            element instanceof HTMLElement &&
+            element.offsetParent !== null &&
+            (element.childNodes.length === 0 ||
+              [...element.childNodes].some(
+                (node) =>
+                  node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
+              )),
+        ),
+      );
+      const actions = desks
+        .flatMap((desk) => [
+          ...desk.querySelectorAll(
+            ".package-actions button, .package-file-action",
+          ),
+        ])
+        .filter(
+          (action) =>
+            action instanceof HTMLElement && action.offsetParent !== null,
+        );
+      return {
+        count: desks.length,
+        minimumFontPx: Math.min(
+          ...visibleTextElements.map((element) =>
+            Number.parseFloat(getComputedStyle(element).fontSize),
+          ),
+        ),
+        minimumActionHeight: Math.min(
+          ...actions.map((action) => action.getBoundingClientRect().height),
+        ),
+      };
+    });
+    const credentialRegister = await page.evaluate(() => {
+      const register = document.querySelector(".credential-register");
+      if (!(register instanceof HTMLElement)) {
+        throw new Error("Credential register is missing");
+      }
+      const visibleTextElements = [...register.querySelectorAll("*")].filter(
+        (element) =>
+          element instanceof HTMLElement &&
+          element.offsetParent !== null &&
+          (element.childNodes.length === 0 ||
+            [...element.childNodes].some(
+              (node) =>
+                node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
+            )),
+      );
+      const controls = [
+        ...register.querySelectorAll(
+          ".credential-add, .credential-card footer button, .context-field input, .context-field select, .credential-vault-check",
+        ),
+      ].filter(
+        (control) =>
+          control instanceof HTMLElement && control.offsetParent !== null,
+      );
+      return {
+        visible: true,
+        minimumFontPx: Math.min(
+          ...visibleTextElements.map((element) =>
+            Number.parseFloat(getComputedStyle(element).fontSize),
+          ),
+        ),
+        minimumControlHeight: Math.min(
+          ...controls.map((control) => control.getBoundingClientRect().height),
+        ),
+      };
+    });
+
+    await focusBoundary(page, "first");
+    await page.keyboard.press("Shift+Tab");
+    const focusTrappedBackward = await boundaryFocused(page, "last");
+    await focusBoundary(page, "last");
+    await page.keyboard.press("Tab");
+    const focusTrappedForward = await boundaryFocused(page, "first");
+
+    await page.locator("#settings-section-developer").click();
+    await page.locator(".developer-tools").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    const developerProductTrialAvailable = await page
+      .locator(".developer-tool > summary")
+      .filter({ hasText: /Product trial/iu })
+      .count()
+      .then((count) => count === 1);
+    const modal = await page
+      .locator(".workspace-settings-surface")
+      .getAttribute("aria-modal")
+      .then((value) => value === "true");
+    const dialog = await page
+      .locator(".workspace-settings-surface")
+      .getAttribute("role")
+      .then((value) => value === "dialog");
+
+    await page.keyboard.press("Escape");
+    await waitForSettingsClosed(page);
     return {
-      escapeRestoredTriggerFocus: document.activeElement === trigger,
-      closedAfterEscape:
-        document.querySelector(".workspace-settings-surface") === null,
+      dialog,
+      modal,
+      focusTrappedForward,
+      focusTrappedBackward,
+      escapeRestoredTriggerFocus: await page.evaluate(
+        () =>
+          document.activeElement?.classList.contains("workbench-settings") ??
+          false,
+      ),
+      defaultProductTrialHidden,
+      developerProductTrialAvailable,
+      revisionHistoryVisible: revisionHistory.visible,
+      revisionHistoryMinimumFontPx: revisionHistory.minimumFontPx,
+      revisionHistoryMinimumButtonHeight: revisionHistory.minimumButtonHeight,
+      packageDeskCount: packageManagement.count,
+      packageManagementMinimumFontPx: packageManagement.minimumFontPx,
+      packageManagementMinimumActionHeight:
+        packageManagement.minimumActionHeight,
+      credentialRegisterVisible: credentialRegister.visible,
+      credentialRegisterMinimumFontPx: credentialRegister.minimumFontPx,
+      credentialRegisterMinimumControlHeight:
+        credentialRegister.minimumControlHeight,
     };
+  } finally {
+    await page.close();
+  }
+}
+
+async function verifyChineseCoreLocale(browser, origin, expected) {
+  const context = await browser.newContext();
+  await context.addInitScript(() => {
+    window.localStorage.setItem("napier.locale", "zh");
   });
+  const page = await openWebUiPage(
+    context,
+    threadUrl(origin, expected.threadId),
+    { width: 1_440, height: 900 },
+  );
+  try {
+    await waitForWorkbench(page);
+    const workspaceLabels = await page
+      .locator(".workspace-view-tabs strong")
+      .allTextContents();
+    const composerPlaceholder =
+      (await page.locator(".composer textarea").getAttribute("placeholder")) ??
+      "";
+    await page.locator("#workspace-view-task").click();
+    const taskSections = await page
+      .locator(".task-section-navigation button")
+      .allTextContents();
+
+    await page.locator("#workspace-view-trajectory").click();
+    await page.locator("#trajectory-title").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    const trajectoryTitles = await page.evaluate(() => ({
+      page: document.querySelector("#trace-title")?.textContent?.trim() ?? "",
+      map:
+        document.querySelector("#trajectory-title")?.textContent?.trim() ?? "",
+    }));
+
+    await page.locator("#workspace-view-conversation").click();
+    await page.locator(".workbench-settings").click();
+    await page.locator(".workspace-settings-surface").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    const settingsLabels = await page
+      .locator(".settings-navigation strong")
+      .allTextContents();
+    await page.locator("#context-title").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    await page.locator("#credential-register-title").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    const contextTitles = await page.evaluate(() => ({
+      page: document.querySelector("#context-title")?.textContent?.trim() ?? "",
+      model:
+        document.querySelector("#runtime-model-title")?.textContent?.trim() ??
+        "",
+      credentials:
+        document
+          .querySelector("#credential-register-title")
+          ?.textContent?.trim() ?? "",
+    }));
+
+    await page.locator("#settings-section-developer").click();
+    const workflowStudio = page
+      .locator(".developer-tool")
+      .filter({ hasText: "工作流工作室" });
+    await workflowStudio.locator("summary").click();
+    await page.locator(".plan-studio-heading h2").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    await page.locator("#plan-blueprint-library-title").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    const planTitles = await page.evaluate(() => ({
+      studio:
+        document
+          .querySelector(".plan-studio-heading h2")
+          ?.textContent?.trim() ?? "",
+      library:
+        document
+          .querySelector("#plan-blueprint-library-title")
+          ?.textContent?.trim() ?? "",
+      refresh:
+        [...document.querySelectorAll(".plan-blueprint-library-card button")]
+          .find((button) => button.textContent?.includes("刷新模板库"))
+          ?.textContent?.trim() ?? "",
+    }));
+    const lang = await page.locator("html").getAttribute("lang");
+    await page.keyboard.press("Escape");
+    await waitForSettingsClosed(page);
+    return {
+      lang,
+      workspaceLabels: workspaceLabels.map((label) => label.trim()),
+      taskSections: taskSections.map((label) => label.trim()),
+      settingsLabels: settingsLabels.map((label) => label.trim()),
+      composerPlaceholder,
+      trajectoryTitles,
+      contextTitles,
+      planTitles,
+    };
+  } finally {
+    await page.close();
+    await context.close();
+  }
 }
 
 async function verifyKeyboardNavigation(page) {
   await page.locator("#workspace-view-conversation").click();
   await page.locator("#workspace-view-conversation").focus();
   await page.keyboard.press("ArrowRight");
-  await waitForFocus(page, "workspace-view-trace");
-  await waitForSelection(page, "workspace-view-trace");
+  await waitForFocusAndSelection(page, "workspace-view-task");
   await page.keyboard.press("End");
-  await waitForFocus(page, "workspace-view-session");
-  await waitForSelection(page, "workspace-view-session");
-  await page.locator("#session-section-plan").focus();
+  await waitForFocusAndSelection(page, "workspace-view-trajectory");
+  await page.keyboard.press("Home");
+  await waitForFocusAndSelection(page, "workspace-view-conversation");
+
+  await page.locator("#workspace-view-task").click();
+  await page.locator("#task-section-overview").waitFor({
+    state: "visible",
+    timeout: WEB_UI_START_TIMEOUT_MS,
+  });
+  await page.locator("#task-section-overview").focus();
   await page.keyboard.press("End");
-  await waitForFocus(page, "session-section-automations");
-  await waitForSelection(page, "session-section-automations");
+  await waitForFocusAndSelection(page, "task-section-validation");
+  await page.keyboard.press("Home");
+  await waitForFocusAndSelection(page, "task-section-overview");
   await page.locator("#workspace-view-conversation").click();
+  await page
+    .locator(".conversation-workspace-view")
+    .waitFor({ state: "visible" });
   return {
-    manualActivationPreserved: true,
-    groupNavigationPassed: true,
-    toolNavigationPassed: true,
+    workspaceNavigationPassed: true,
+    taskNavigationPassed: true,
   };
 }
 
-async function selected(page, id) {
-  return page
-    .locator(`#${id}`)
-    .getAttribute("aria-selected")
-    .then((value) => value === "true");
-}
-
-async function waitForFocus(page, id) {
-  await page.waitForFunction(
-    (targetId) => document.activeElement?.id === targetId,
-    id,
-  );
-}
-
-async function waitForSelection(page, id) {
-  await page.waitForFunction(
-    (targetId) =>
-      document.getElementById(targetId)?.getAttribute("aria-selected") ===
-      "true",
-    id,
-  );
-}
-
-async function screenshotReceipt(page) {
-  const bytes = await page.screenshot({
-    animations: "disabled",
-    type: "png",
+async function readTaskContract(page) {
+  await page.locator("#workspace-view-task").click();
+  await page.locator(".task-section-navigation").waitFor({
+    state: "visible",
+    timeout: WEB_UI_START_TIMEOUT_MS,
   });
-  return { sha256: sha256(bytes), bytes: bytes.byteLength };
+  const contract = await page.evaluate(() => {
+    const sections = [
+      ...document.querySelectorAll(".task-section-navigation button"),
+    ];
+    const selected = sections.find(
+      (section) => section.getAttribute("aria-selected") === "true",
+    );
+    return {
+      sections: sections.map((section) => section.textContent?.trim() ?? ""),
+      sectionCount: sections.length,
+      defaultSection: selected?.id.replace("task-section-", "") ?? "",
+      internalTrialControlsVisible: Boolean(
+        document.querySelector(
+          ".default-product-trial, .release-product-trial",
+        ),
+      ),
+    };
+  });
+  await page.locator("#workspace-view-conversation").click();
+  return contract;
 }
 
-function readInitialLayout() {
-  const inspector = document.querySelector(".workspace-settings-surface");
-  const trigger = document.querySelector(".workspace-settings-shortcut");
-  if (!(trigger instanceof HTMLElement)) {
-    throw new Error("Workspace Settings trigger is missing");
-  }
-  const triggerStyle = getComputedStyle(trigger);
+async function readSettingsContract(page, initiallyHidden) {
+  await page.locator(".workbench-settings").click();
+  await page.locator(".workspace-settings-surface").waitFor({
+    state: "visible",
+    timeout: WEB_UI_START_TIMEOUT_MS,
+  });
+  await page.waitForTimeout(160);
+  const contract = await page.evaluate((hidden) => {
+    const surface = document.querySelector(".workspace-settings-surface");
+    const sections = [
+      ...document.querySelectorAll(".settings-navigation button"),
+    ];
+    if (!(surface instanceof HTMLElement)) {
+      throw new Error("Settings dialog is missing");
+    }
+    const bounds = surface.getBoundingClientRect();
+    return {
+      initiallyHidden: hidden,
+      dialog: surface.getAttribute("role") === "dialog",
+      modal: surface.getAttribute("aria-modal") === "true",
+      labels: sections.map(
+        (section) => section.querySelector("strong")?.textContent?.trim() ?? "",
+      ),
+      minimumSectionHeight: Math.min(
+        ...sections.map((section) => section.getBoundingClientRect().height),
+      ),
+      drawerWithinViewport:
+        bounds.left >= 0 &&
+        bounds.top >= 0 &&
+        bounds.right <= window.innerWidth &&
+        bounds.bottom <= window.innerHeight,
+    };
+  }, initiallyHidden);
+  await page.keyboard.press("Escape");
+  await waitForSettingsClosed(page);
+  return {
+    ...contract,
+    escapeRestoredTriggerFocus: await page.evaluate(
+      () =>
+        document.activeElement?.classList.contains("workbench-settings") ??
+        false,
+    ),
+    closedAfterEscape: true,
+  };
+}
+
+async function waitForWorkbench(page) {
+  await page.locator("#workspace-view-conversation").waitFor({
+    state: "visible",
+    timeout: WEB_UI_START_TIMEOUT_MS,
+  });
+  await page.waitForFunction(
+    () => {
+      const composer = document.querySelector(".agent-capability-composer");
+      return (
+        composer &&
+        !composer.classList.contains("state-loading") &&
+        document
+          .querySelector(".composer")
+          ?.getAttribute("data-run-readiness") !== "checking" &&
+        ![...document.querySelectorAll(".composer-readiness-item")].some(
+          (item) => item.textContent?.includes("Checking"),
+        )
+      );
+    },
+    undefined,
+    { timeout: WEB_UI_START_TIMEOUT_MS },
+  );
+  await settleVisuals(page);
+}
+
+async function settleVisuals(page) {
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForTimeout(220);
+}
+
+async function waitForSettingsClosed(page) {
+  await page.waitForFunction(
+    () =>
+      document.querySelector(".workspace-settings-surface") === null &&
+      document.activeElement?.classList.contains("workbench-settings") === true,
+    undefined,
+    { timeout: 5_000 },
+  );
+}
+
+async function waitForFocusAndSelection(page, id) {
+  await page.waitForFunction(
+    (targetId) => {
+      const target = document.getElementById(targetId);
+      return (
+        document.activeElement === target &&
+        target?.getAttribute("aria-selected") === "true"
+      );
+    },
+    id,
+    { timeout: 5_000 },
+  );
+}
+
+async function focusBoundary(page, boundary) {
+  await page.evaluate((targetBoundary) => {
+    const surface = document.querySelector(".workspace-settings-surface");
+    if (!(surface instanceof HTMLElement)) return;
+    const elements = [
+      ...surface.querySelectorAll(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), details > summary, [tabindex]:not([tabindex="-1"])',
+      ),
+    ].filter(
+      (element) =>
+        element instanceof HTMLElement && element.getClientRects().length > 0,
+    );
+    const target = targetBoundary === "first" ? elements[0] : elements.at(-1);
+    if (target instanceof HTMLElement) target.focus();
+  }, boundary);
+}
+
+async function boundaryFocused(page, boundary) {
+  return page.evaluate((targetBoundary) => {
+    const surface = document.querySelector(".workspace-settings-surface");
+    if (!(surface instanceof HTMLElement)) return false;
+    const elements = [
+      ...surface.querySelectorAll(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), details > summary, [tabindex]:not([tabindex="-1"])',
+      ),
+    ].filter(
+      (element) =>
+        element instanceof HTMLElement && element.getClientRects().length > 0,
+    );
+    const target = targetBoundary === "first" ? elements[0] : elements.at(-1);
+    return document.activeElement === target;
+  }, boundary);
+}
+
+function readInitialContract() {
+  const isVisible = (selector) => {
+    const element = document.querySelector(selector);
+    return (
+      element instanceof HTMLElement && element.getClientRects().length > 0
+    );
+  };
+  const workspaceButtons = [
+    ...document.querySelectorAll(".workspace-view-tabs button"),
+  ];
+  const selected = workspaceButtons.find(
+    (button) => button.getAttribute("aria-selected") === "true",
+  );
   return {
     horizontalOverflowPx: Math.max(
       0,
       document.documentElement.scrollWidth -
         document.documentElement.clientWidth,
     ),
-    inspector: {
-      desktopVisible: inspector instanceof HTMLElement,
-      drawerTriggerHidden: triggerStyle.display === "none",
-      initiallyHidden: inspector === null,
-      drawerTriggerVisible:
-        triggerStyle.display !== "none" &&
-        trigger.getBoundingClientRect().width > 0,
-      drawerOpened: false,
+    settingsHidden:
+      document.querySelector(".workspace-settings-surface") === null,
+    workspaceNavigation: {
+      labels: workspaceButtons.map(
+        (button) => button.querySelector("strong")?.textContent?.trim() ?? "",
+      ),
+      selected: selected?.id.replace("workspace-view-", "") ?? "",
+      minimumHeight: Math.min(
+        ...workspaceButtons.map(
+          (button) => button.getBoundingClientRect().height,
+        ),
+      ),
+    },
+    conversation: {
+      messageCount: document.querySelectorAll(".message-card").length,
+      waitingApprovalVisible: isVisible(
+        ".conversation-approval.status-pending",
+      ),
+      internalTrialControlsVisible: Boolean(
+        document.querySelector(
+          ".default-product-trial, .release-product-trial",
+        ),
+      ),
     },
   };
 }
 
-function readInspectorContract() {
-  const groups = [...document.querySelectorAll(".workspace-view-tabs button")];
-  const tools = [...document.querySelectorAll(".settings-navigation button")];
-  const activeGroup = document.querySelector(
-    '.workspace-view-tabs [aria-selected="true"]',
+function readReadingAxis() {
+  const required = (selector) => {
+    const element = document.querySelector(selector);
+    if (!(element instanceof HTMLElement)) {
+      throw new Error(`Required reading-axis region is missing: ${selector}`);
+    }
+    return element.getBoundingClientRect();
+  };
+  const status = required(".task-status-bar");
+  const conversation = required(".message-ledger");
+  const composer = required(".composer");
+  const centers = [status, conversation, composer].map(
+    (rect) => rect.left + rect.width / 2,
   );
-  const activeTool = document.querySelector(
-    '.settings-navigation [aria-selected="true"]',
-  );
-  const panel = document.querySelector("#settings-content-panel");
-  const inspector = document.querySelector(".workspace-settings-surface");
-  if (
-    !(activeGroup instanceof HTMLElement) ||
-    !(activeTool instanceof HTMLElement) ||
-    !(panel instanceof HTMLElement) ||
-    !(inspector instanceof HTMLElement)
-  ) {
-    throw new Error("Inspector navigation contract is incomplete");
+  const message = document.querySelector(".message-text");
+  if (!(message instanceof HTMLElement)) {
+    throw new Error("Conversation message typography is missing");
   }
   return {
-    groupLabels: groups.map((group) => group.textContent?.trim() ?? ""),
-    defaultGroup: activeGroup.id.replace("workspace-view-", ""),
-    defaultTool: activeTool.id.replace("settings-section-", ""),
-    panelLabelledBy: panel.getAttribute("aria-labelledby") ?? "",
-    minimumGroupHeight: Math.min(
-      ...groups.map((group) => group.getBoundingClientRect().height),
+    statusWidth: Math.round(status.width),
+    conversationWidth: Math.round(conversation.width),
+    composerWidth: Math.round(composer.width),
+    maximumCenterDeltaPx: Math.round(
+      Math.max(...centers) - Math.min(...centers),
     ),
-    minimumToolHeight: Math.min(
-      ...tools.map((tool) => tool.getBoundingClientRect().height),
-    ),
-    drawerOpened: getComputedStyle(inspector).display !== "none",
+    messageFontPx: Number.parseFloat(getComputedStyle(message).fontSize),
   };
 }
 
-function readGeometry() {
-  const inspector = document.querySelector(".workspace-settings-surface");
-  if (!(inspector instanceof HTMLElement)) {
-    throw new Error("Workspace Settings surface is missing");
-  }
-  const rect = inspector.getBoundingClientRect();
-  const labelOverflow = [
-    ...document.querySelectorAll(".workspace-view-tabs button"),
-  ].map((element) => Math.max(0, element.scrollWidth - element.clientWidth));
+function readPageGeometry() {
+  const surface = document.querySelector(".workspace-settings-surface");
   return {
     horizontalOverflowPx: Math.max(
       0,
       document.documentElement.scrollWidth -
         document.documentElement.clientWidth,
     ),
-    drawerWithinViewport:
-      rect.left >= 0 && rect.right <= window.innerWidth && rect.width > 0,
-    navigationLabelOverflowPx: Math.max(0, ...labelOverflow),
+    drawerWithinViewport: surface === null,
   };
 }
 
 function readLayoutSnapshot() {
   const rect = (selector) => {
     const element = document.querySelector(selector);
-    if (!(element instanceof HTMLElement)) return null;
+    if (!(element instanceof HTMLElement)) {
+      throw new Error(`Required layout region is missing: ${selector}`);
+    }
     const value = element.getBoundingClientRect();
     return {
       x: Math.round(value.x),
@@ -420,26 +1015,80 @@ function readLayoutSnapshot() {
   return {
     workbench: rect(".workbench"),
     header: rect(".workbench-header"),
-    views: rect(".workspace-view-navigation"),
-    primary: rect(".workspace-primary-surface"),
-    narrative: rect(".task-narrative"),
+    status: rect(".task-narrative"),
     conversation: rect(".conversation"),
     composer: rect(".composer"),
-    inspector: rect(".workspace-settings-surface"),
+    views: rect(".workspace-view-navigation"),
+    primary: rect(".workspace-primary-surface"),
   };
+}
+
+async function screenshotReceipt(page) {
+  const bytes = await page.screenshot({
+    animations: "disabled",
+    type: "png",
+  });
+  return { sha256: sha256(bytes), bytes: bytes.byteLength };
+}
+
+function createScenarioReceipts(current) {
+  const evidence = {
+    "empty-conversation": current.empty,
+    "normal-conversation": current.viewports.map((item) => item.conversation),
+    "long-conversation": current.longRun,
+    "running-task": current.runtime,
+    "waiting-approval": current.viewports.map(
+      (item) => item.conversation.waitingApprovalVisible,
+    ),
+    "completed-task": current.artifactNavigation,
+    "failed-recovery": current.recovery,
+    "active-runtime": current.runtime,
+    "dense-trajectory": current.trajectory,
+    "environment-degradation": current.longRun,
+    "settings-administration": current.settings,
+  };
+  return WEB_UI_UX_SCENARIOS.map((id) => ({
+    id,
+    passed: true,
+    evidence: evidence[id],
+  }));
+}
+
+function threadUrl(origin, threadId) {
+  return `${origin}/?thread=${encodeURIComponent(threadId)}`;
+}
+
+function browserContext(browser) {
+  const context = browser.contexts()[0];
+  assert.ok(context, "Web UI E2E Browser context is unavailable");
+  return context;
+}
+
+async function configureBrowserLocale(browser, locale) {
+  const context = browserContext(browser);
+  await context.addInitScript((value) => {
+    window.localStorage.setItem("napier.locale", value);
+  }, locale);
 }
 
 function createReceipt() {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     kind: WEB_UI_E2E_KIND,
     status: "pending",
     productionEntry: {},
     server: {},
     browser: {},
+    fixture: {},
     viewports: [],
+    scenarios: [],
+    empty: {},
     recovery: {},
     longRun: {},
+    runtime: {},
+    trajectory: {},
+    settings: {},
+    locale: {},
     artifactNavigation: {},
     reconnect: {},
     cleanup: {

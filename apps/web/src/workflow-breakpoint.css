@@ -69,7 +69,7 @@
 .workflow-breakpoint-result span,
 .workflow-breakpoint-result small {
   font-family: var(--mono);
-  font-size: 6px;
+  font-size: var(--text-xs);
   color: var(--ink-faint);
   text-transform: uppercase;
   letter-spacing: 0.09em;
@@ -91,7 +91,7 @@
   max-width: 43em;
   margin: 2px 0 0;
   font-family: var(--serif);
-  font-size: 8px;
+  font-size: var(--text-xs);
   line-height: 1.45;
   color: var(--ink-soft);
 }
@@ -100,7 +100,7 @@
   display: flex;
   align-items: baseline;
   padding: 4px 5px;
-  font-size: 9px;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--vermilion);
   border: 1px solid rgb(164 75 56 / 35%);
@@ -132,7 +132,7 @@
   margin: 0;
   overflow: hidden;
   font-family: var(--mono);
-  font-size: 7px;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--ink);
   text-overflow: ellipsis;
@@ -142,7 +142,7 @@
 .workflow-breakpoint-note {
   margin: 0;
   font-family: var(--serif);
-  font-size: 7px;
+  font-size: var(--text-xs);
   font-style: italic;
   line-height: 1.45;
   color: var(--ink-faint);
@@ -188,7 +188,7 @@
 .workflow-breakpoint-file strong {
   overflow: hidden;
   font-family: var(--mono);
-  font-size: 7px;
+  font-size: var(--text-xs);
   font-weight: 500;
   color: var(--ink);
   text-overflow: ellipsis;
@@ -202,7 +202,7 @@
   justify-content: center;
   gap: 6px;
   font-family: var(--mono);
-  font-size: 7px;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: #ecf1f9;
   text-transform: uppercase;
@@ -247,7 +247,7 @@
 
 .workflow-breakpoint-result strong {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--text-xs);
   color: var(--ledger);
   text-transform: uppercase;
 }
@@ -272,7 +272,7 @@
   margin: 0;
   padding: 7px 8px;
   font-family: var(--mono);
-  font-size: 7px;
+  font-size: var(--text-xs);
   line-height: 1.45;
   color: #7d3025;
   background: rgb(164 75 56 / 8%);

@@ -4,7 +4,6 @@ import type {
   JsonValue,
 } from "@napier/contracts";
 
-import type { AgentRuntime } from "./agent-runtime.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { LocalStore } from "./store.js";
 import type {
@@ -23,6 +22,7 @@ import {
   ExecutionPlanWorkflowToolRuntime,
 } from "./workflow-tool-runtime.js";
 import { workflowSchemaSha256 } from "./workflow-schemas.js";
+import type { WorkflowRuntimeEnvironment } from "./workflow-runtime-ports.js";
 
 export interface WorkflowToolNodeOutcome {
   result: ExecutionPlanWorkflowNodeResult;
@@ -48,13 +48,13 @@ export class ExecutionPlanWorkflowToolNodeExecutor {
 
   constructor(
     private readonly store: LocalStore,
-    agentRuntime: AgentRuntime,
+    environment: WorkflowRuntimeEnvironment,
     private readonly ledger: ExecutionPlanWorkflowLedger,
     private readonly operations: WorkflowToolNodeOperations,
   ) {
     this.runtime = new ExecutionPlanWorkflowToolRuntime(
       store,
-      agentRuntime,
+      environment,
       ledger,
     );
   }

@@ -1,28 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
 import { FlaskConical, GitCompareArrows, RotateCcw } from "lucide-react";
 
-import type {
-  ExecutionPlan,
-  ExecutionPlanWorkflowExperimentMode,
-  ExecutionPlanWorkflowExperimentPreview,
-  ExecutionPlanWorkflowExperimentResultFrame,
-  ExecutionPlanWorkflowManifest,
-} from "@napier/contracts";
+import type { ExecutionPlan } from "@napier/contracts";
 
-import { formatApiErrorMessage } from "./api-error";
-import {
-  executeWorkflowExperiment,
-  previewWorkflowExperiment,
-  type WorkflowExperimentWebRequest,
-} from "./workflow-experiment-api";
+import { useWorkflowExperimentDesk } from "./use-workflow-experiment-desk";
 import { workflowExperimentCopy as copy } from "./workflow-experiment-copy";
-import {
-  buildWorkflowExperimentRequest,
-  defaultWorkflowExperimentSourcePlanId,
-  downloadWorkflowExperimentResult,
-  loadWorkflowExperimentManifest,
-  shortWorkflowExperimentId,
-} from "./workflow-experiment-desk-helpers";
+import { shortWorkflowExperimentId } from "./workflow-experiment-desk-helpers";
 import {
   WorkflowExperimentComparisonDocket,
   WorkflowExperimentPreviewDocket,
@@ -33,13 +15,15 @@ import {
   WorkflowExperimentModelField,
 } from "./WorkflowExperimentFields";
 import { WorkflowExperimentModeField } from "./WorkflowExperimentModeField";
-import { projectWorkflowExperimentComparison } from "./workflow-experiment-view-model";
 import "./workflow-experiment.css";
 
-interface PreviewState {
-  preview: ExecutionPlanWorkflowExperimentPreview;
-  request: WorkflowExperimentWebRequest;
-  planId: string;
+export interface WorkflowExperimentDeskProps {
+  threadId: string;
+  plans: ExecutionPlan[];
+  running: boolean;
+  selectedModelKey: string;
+  selectedModelConfigured: boolean;
+  onOpenThread: (threadId: string) => void | Promise<void>;
 }
 
 export default function WorkflowExperimentDesk({
@@ -49,275 +33,21 @@ export default function WorkflowExperimentDesk({
   selectedModelKey,
   selectedModelConfigured,
   onOpenThread,
-}: {
-  threadId: string;
-  plans: ExecutionPlan[];
-  running: boolean;
-  selectedModelKey: string;
-  selectedModelConfigured: boolean;
-  onOpenThread: (threadId: string) => void | Promise<void>;
-}) {
-  const [manifest, setManifest] = useState<ExecutionPlanWorkflowManifest>();
-  const [manifestFilename, setManifestFilename] = useState("");
-  const [sourcePlanId, setSourcePlanId] = useState(
-    defaultWorkflowExperimentSourcePlanId(plans),
-  );
-  const [fromNodeId, setFromNodeId] = useState("");
-  const [mode, setMode] =
-    useState<ExecutionPlanWorkflowExperimentMode>("subgraph");
-  const [simulatedOutput, setSimulatedOutput] = useState("");
-  const [replacementInput, setReplacementInput] = useState("");
-  const [replacementWorkflowInput, setReplacementWorkflowInput] = useState("");
-  const [replaceModel, setReplaceModel] = useState(false);
-  const [previewState, setPreviewState] = useState<PreviewState>();
-  const [confirmed, setConfirmed] = useState(false);
-  const [result, setResult] =
-    useState<ExecutionPlanWorkflowExperimentResultFrame>();
-  const [busy, setBusy] = useState<"manifest" | "preview" | "execute">();
-  const [streamedFrameCount, setStreamedFrameCount] = useState(0);
-  const [error, setError] = useState<string>();
-  const activeRequest = useRef<AbortController | undefined>(undefined);
-  const operationGeneration = useRef(0);
-  const selectedNode = manifest?.nodes.find((node) => node.id === fromNodeId);
-  const canReplaceModel =
-    mode !== "simulate_node" &&
-    mode !== "replace_workflow_input" &&
-    (selectedNode?.type === "agent" || selectedNode?.type === "map");
-
-  const comparison = useMemo(
-    () =>
-      result?.experiment.comparison
-        ? projectWorkflowExperimentComparison(result.experiment.comparison)
-        : undefined,
-    [result],
-  );
-
-  useEffect(() => {
-    activeRequest.current?.abort();
-    activeRequest.current = undefined;
-    operationGeneration.current += 1;
-    setManifest(undefined);
-    setManifestFilename("");
-    setSourcePlanId(defaultWorkflowExperimentSourcePlanId(plans));
-    setFromNodeId("");
-    setMode("subgraph");
-    setSimulatedOutput("");
-    setReplacementInput("");
-    setReplacementWorkflowInput("");
-    setReplaceModel(false);
-    setPreviewState(undefined);
-    setConfirmed(false);
-    setResult(undefined);
-    setBusy(undefined);
-    setStreamedFrameCount(0);
-    setError(undefined);
-    return () => {
-      activeRequest.current?.abort();
-      activeRequest.current = undefined;
-      operationGeneration.current += 1;
-    };
-  }, [threadId]);
-
-  useEffect(() => {
-    if (!plans.some((plan) => plan.id === sourcePlanId)) {
-      setSourcePlanId(defaultWorkflowExperimentSourcePlanId(plans));
-      invalidatePreview();
-    }
-  }, [plans, sourcePlanId]);
-
-  useEffect(() => {
-    if (replaceModel) invalidatePreview();
-  }, [selectedModelKey, selectedModelConfigured]);
-
-  const startOperation = (): {
-    controller: AbortController;
-    generation: number;
-  } => {
-    activeRequest.current?.abort();
-    const controller = new AbortController();
-    const generation = operationGeneration.current + 1;
-    operationGeneration.current = generation;
-    activeRequest.current = controller;
-    return { controller, generation };
-  };
-
-  const isCurrentOperation = (
-    controller: AbortController,
-    generation: number,
-  ): boolean =>
-    !controller.signal.aborted &&
-    activeRequest.current === controller &&
-    operationGeneration.current === generation;
-
-  const finishOperation = (
-    controller: AbortController,
-    generation: number,
-  ): void => {
-    if (!isCurrentOperation(controller, generation)) return;
-    activeRequest.current = undefined;
-    setBusy(undefined);
-  };
-
-  const clearPreview = (): void => {
-    setPreviewState(undefined);
-    setConfirmed(false);
-    setResult(undefined);
-    setStreamedFrameCount(0);
-  };
-
-  const invalidatePreview = (): void => {
-    activeRequest.current?.abort();
-    activeRequest.current = undefined;
-    operationGeneration.current += 1;
-    clearPreview();
-    setBusy(undefined);
-  };
-
-  const loadManifest = async (file: File): Promise<void> => {
-    const operation = startOperation();
-    setBusy("manifest");
-    setError(undefined);
-    clearPreview();
-    try {
-      const parsed = await loadWorkflowExperimentManifest(file);
-      if (!isCurrentOperation(operation.controller, operation.generation)) {
-        return;
-      }
-      setManifest(parsed);
-      setManifestFilename(file.name);
-      setFromNodeId(parsed.outputNodeId);
-      setSimulatedOutput("");
-      setReplacementInput("");
-      setReplacementWorkflowInput("");
-    } catch (loadError) {
-      if (!isCurrentOperation(operation.controller, operation.generation)) {
-        return;
-      }
-      setManifest(undefined);
-      setManifestFilename("");
-      setFromNodeId("");
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : copy.errors.manifestInvalid,
-      );
-    } finally {
-      finishOperation(operation.controller, operation.generation);
-    }
-  };
-
-  const preview = async (): Promise<void> => {
-    if (!manifest || !sourcePlanId || busy) return;
-    const operation = startOperation();
-    setBusy("preview");
-    setError(undefined);
-    clearPreview();
-    try {
-      const request = buildWorkflowExperimentRequest({
-        manifest,
-        fromNodeId,
-        mode,
-        simulatedOutput,
-        replacementInput,
-        replacementWorkflowInput,
-        replaceModel,
-        canReplaceModel,
-        selectedModelKey,
-      });
-      const projected = await previewWorkflowExperiment(
-        threadId,
-        sourcePlanId,
-        request,
-        operation.controller.signal,
-      );
-      if (!isCurrentOperation(operation.controller, operation.generation)) {
-        return;
-      }
-      setPreviewState({ preview: projected, request, planId: sourcePlanId });
-    } catch (previewError) {
-      if (!isCurrentOperation(operation.controller, operation.generation)) {
-        return;
-      }
-      setError(formatApiErrorMessage(previewError));
-    } finally {
-      finishOperation(operation.controller, operation.generation);
-    }
-  };
-
-  const execute = async (): Promise<void> => {
-    if (running) {
-      setError(copy.errors.sourceRunning);
-      return;
-    }
-    if (!previewState || busy) {
-      setError(copy.errors.previewRequired);
-      return;
-    }
-    if (previewState.preview.requiresSideEffectConfirmation && !confirmed) {
-      setError(copy.errors.confirmationRequired);
-      return;
-    }
-    const operation = startOperation();
-    setBusy("execute");
-    setError(undefined);
-    setResult(undefined);
-    setStreamedFrameCount(0);
-    try {
-      const frame = await executeWorkflowExperiment(
-        threadId,
-        previewState.planId,
-        {
-          ...previewState.request,
-          expectedPreviewSha256: previewState.preview.previewSha256,
-          ...(previewState.preview.requiresSideEffectConfirmation
-            ? { confirmSideEffects: true }
-            : {}),
-        },
-        previewState.preview,
-        () => {
-          if (isCurrentOperation(operation.controller, operation.generation)) {
-            setStreamedFrameCount((count) => count + 1);
-          }
-        },
-        operation.controller.signal,
-      );
-      if (!isCurrentOperation(operation.controller, operation.generation)) {
-        return;
-      }
-      setResult(frame);
-    } catch (executeError) {
-      if (!isCurrentOperation(operation.controller, operation.generation)) {
-        return;
-      }
-      setError(formatApiErrorMessage(executeError));
-    } finally {
-      finishOperation(operation.controller, operation.generation);
-    }
-  };
-
-  const reset = (): void => {
-    invalidatePreview();
-    setManifest(undefined);
-    setManifestFilename("");
-    setFromNodeId("");
-    setMode("subgraph");
-    setSimulatedOutput("");
-    setReplacementInput("");
-    setReplacementWorkflowInput("");
-    setReplaceModel(false);
-    setError(undefined);
-  };
-
-  const download = (): void => {
-    if (!result) return;
-    downloadWorkflowExperimentResult(result);
-  };
+}: WorkflowExperimentDeskProps) {
+  const desk = useWorkflowExperimentDesk({
+    threadId,
+    plans,
+    running,
+    selectedModelKey,
+    selectedModelConfigured,
+  });
+  const disabled = Boolean(desk.busy);
 
   return (
     <article
       className="workflow-experiment-desk"
       aria-labelledby="workflow-experiment-title"
-      aria-busy={Boolean(busy)}
+      aria-busy={disabled}
     >
       <header className="workflow-experiment-heading">
         <div className="workflow-experiment-seal" aria-hidden="true">
@@ -329,26 +59,27 @@ export default function WorkflowExperimentDesk({
           <p>{copy.body}</p>
         </div>
         <span className="workflow-experiment-folio">
-          {manifest ? manifest.nodeCount.toString().padStart(2, "0") : "--"}
+          {desk.manifest
+            ? desk.manifest.nodeCount.toString().padStart(2, "0")
+            : "--"}
         </span>
       </header>
 
       <div className="workflow-experiment-controls">
         <WorkflowExperimentManifestField
-          busy={Boolean(busy)}
-          filename={manifestFilename}
-          manifestAvailable={Boolean(manifest)}
-          onFile={(file) => void loadManifest(file)}
+          busy={disabled}
+          filename={desk.manifestFilename}
+          manifestAvailable={Boolean(desk.manifest)}
+          onFile={(file) => void desk.loadManifest(file)}
         />
-
         <label>
           <span>{copy.sourcePlan}</span>
           <select
-            value={sourcePlanId}
-            disabled={Boolean(busy)}
+            value={desk.sourcePlanId}
+            disabled={disabled}
             onChange={(event) => {
-              setSourcePlanId(event.target.value);
-              invalidatePreview();
+              desk.setSourcePlanId(event.target.value);
+              desk.invalidatePreview();
             }}
           >
             {plans.map((plan) => (
@@ -359,92 +90,90 @@ export default function WorkflowExperimentDesk({
             ))}
           </select>
         </label>
-
         <WorkflowExperimentCheckpointField
-          manifest={manifest}
-          mode={mode}
-          value={fromNodeId}
-          busy={Boolean(busy)}
+          manifest={desk.manifest}
+          mode={desk.mode}
+          value={desk.fromNodeId}
+          busy={disabled}
           onChange={(nodeId) => {
-            setFromNodeId(nodeId);
-            const node = manifest?.nodes.find(
+            desk.setFromNodeId(nodeId);
+            const node = desk.manifest?.nodes.find(
               (candidate) => candidate.id === nodeId,
             );
             if (node?.type !== "agent" && node?.type !== "map") {
-              setReplaceModel(false);
+              desk.setReplaceModel(false);
             }
-            setSimulatedOutput("");
-            setReplacementInput("");
-            setReplacementWorkflowInput("");
-            invalidatePreview();
+            desk.setSimulatedOutput("");
+            desk.setReplacementInput("");
+            desk.setReplacementWorkflowInput("");
+            desk.invalidatePreview();
           }}
         />
-
         <WorkflowExperimentModeField
-          mode={mode}
-          simulatedOutput={simulatedOutput}
-          replacementInput={replacementInput}
-          replacementWorkflowInput={replacementWorkflowInput}
-          disabled={!manifest || Boolean(busy)}
+          mode={desk.mode}
+          simulatedOutput={desk.simulatedOutput}
+          replacementInput={desk.replacementInput}
+          replacementWorkflowInput={desk.replacementWorkflowInput}
+          disabled={!desk.manifest || disabled}
           onModeChange={(next) => {
-            setMode(next);
+            desk.setMode(next);
             if (next === "simulate_node" || next === "replace_workflow_input") {
-              setReplaceModel(false);
+              desk.setReplaceModel(false);
             }
-            invalidatePreview();
+            desk.invalidatePreview();
           }}
           onSimulatedOutputChange={(next) => {
-            setSimulatedOutput(next);
-            invalidatePreview();
+            desk.setSimulatedOutput(next);
+            desk.invalidatePreview();
           }}
           onReplacementInputChange={(next) => {
-            setReplacementInput(next);
-            invalidatePreview();
+            desk.setReplacementInput(next);
+            desk.invalidatePreview();
           }}
           onReplacementWorkflowInputChange={(next) => {
-            setReplacementWorkflowInput(next);
-            invalidatePreview();
+            desk.setReplacementWorkflowInput(next);
+            desk.invalidatePreview();
           }}
         />
-
         <WorkflowExperimentModelField
-          mode={mode}
-          manifestAvailable={Boolean(manifest)}
-          canReplaceModel={canReplaceModel}
+          mode={desk.mode}
+          manifestAvailable={Boolean(desk.manifest)}
+          canReplaceModel={desk.canReplaceModel}
           selectedModelConfigured={selectedModelConfigured}
           selectedModelKey={selectedModelKey}
-          checked={replaceModel}
-          busy={Boolean(busy)}
+          checked={desk.replaceModel}
+          busy={disabled}
           onChange={(checked) => {
-            setReplaceModel(checked);
-            invalidatePreview();
+            desk.setReplaceModel(checked);
+            desk.invalidatePreview();
           }}
         />
-
         <div className="workflow-experiment-actions">
           <button
             type="button"
             disabled={
-              !manifest ||
-              !sourcePlanId ||
-              (mode !== "replace_workflow_input" && !fromNodeId) ||
-              (mode === "simulate_node" && simulatedOutput.trim() === "") ||
-              (mode === "replace_input" && replacementInput.trim() === "") ||
-              (mode === "replace_workflow_input" &&
-                replacementWorkflowInput.trim() === "") ||
+              !desk.manifest ||
+              !desk.sourcePlanId ||
+              (desk.mode !== "replace_workflow_input" && !desk.fromNodeId) ||
+              (desk.mode === "simulate_node" &&
+                desk.simulatedOutput.trim() === "") ||
+              (desk.mode === "replace_input" &&
+                desk.replacementInput.trim() === "") ||
+              (desk.mode === "replace_workflow_input" &&
+                desk.replacementWorkflowInput.trim() === "") ||
               running ||
-              Boolean(busy)
+              disabled
             }
-            onClick={() => void preview()}
+            onClick={() => void desk.preview()}
           >
             <GitCompareArrows size={12} aria-hidden="true" />
-            {busy === "preview" ? copy.previewing : copy.preview}
+            {desk.busy === "preview" ? copy.previewing : copy.preview}
           </button>
           <button
             type="button"
             className="is-secondary"
-            disabled={Boolean(busy) || (!manifest && !result)}
-            onClick={reset}
+            disabled={disabled || (!desk.manifest && !desk.result)}
+            onClick={desk.reset}
           >
             <RotateCcw size={12} aria-hidden="true" />
             {copy.reset}
@@ -452,34 +181,31 @@ export default function WorkflowExperimentDesk({
         </div>
       </div>
 
-      {!manifest && !previewState && !result ? (
+      {!desk.manifest && !desk.previewState && !desk.result ? (
         <p className="workflow-experiment-empty">{copy.empty}</p>
       ) : null}
-
-      {previewState ? (
+      {desk.previewState ? (
         <WorkflowExperimentPreviewDocket
-          preview={previewState.preview}
-          confirmed={confirmed}
-          busy={Boolean(busy)}
-          disabled={Boolean(busy) || running}
-          streamedFrameCount={streamedFrameCount}
-          onConfirmed={setConfirmed}
-          onExecute={() => void execute()}
+          preview={desk.previewState.preview}
+          confirmed={desk.confirmed}
+          busy={disabled}
+          disabled={disabled || running}
+          streamedFrameCount={desk.streamedFrameCount}
+          onConfirmed={desk.setConfirmed}
+          onExecute={() => void desk.execute()}
         />
       ) : null}
-
-      {comparison && result ? (
+      {desk.comparison && desk.result ? (
         <WorkflowExperimentComparisonDocket
-          view={comparison}
-          result={result}
-          onOpenThread={() => void onOpenThread(result.targetThreadId)}
-          onDownload={download}
+          view={desk.comparison}
+          result={desk.result}
+          onOpenThread={() => void onOpenThread(desk.result!.targetThreadId)}
+          onDownload={() => desk.download()}
         />
       ) : null}
-
-      {error ? (
+      {desk.error ? (
         <p className="workflow-experiment-error" role="alert">
-          {error}
+          {desk.error}
         </p>
       ) : null}
     </article>

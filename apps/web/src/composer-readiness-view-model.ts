@@ -35,6 +35,13 @@ const BROWSER_MODES = new Set<ModeId>([
   "browser",
   "safe_automation",
 ]);
+const PROCESS_TOOLS = new Set([
+  "run_command",
+  "javascript_kernel",
+  "python_kernel",
+  "node_debugger",
+  "workspace_process",
+]);
 
 export function composerRunReadiness(
   profile: AgentProfile | undefined,
@@ -82,10 +89,15 @@ export function composerRunReadiness(
       blocked.length > 0
         ? `Cannot start ${modeLabel(modeId)}: ${blocked.map((item) => `${item.label} ${item.value.toLowerCase()}`).join("; ")}. Review or restore capabilities before sending.`
         : warned.some(
-              (item) => item.id === "sandbox" && item.value === "Host direct",
+              (item) =>
+                item.id === "sandbox" && item.value === "Read-only fallback",
             )
-          ? "Host-direct execution is explicitly enabled without OS isolation. Commands run on this machine."
-          : "",
+          ? "Starts with safe reads only. Configure Sandbox when the task needs edits, commands, Browser sessions, Extensions, or Subagents."
+          : warned.some(
+                (item) => item.id === "sandbox" && item.value === "Host direct",
+              )
+            ? "Host-direct execution is explicitly enabled without OS isolation. Commands run on this machine."
+            : "",
     items,
   };
 }
@@ -116,7 +128,11 @@ function sandboxReadiness(
   const record = projection.readiness.find((item) =>
     item.id.startsWith("sandbox:"),
   );
-  const required = SANDBOX_MODES.has(modeId);
+  const required =
+    SANDBOX_MODES.has(modeId) ||
+    (modeId === "custom" &&
+      projection.toolPolicy !== "observe" &&
+      projection.configuredTools.some((tool) => PROCESS_TOOLS.has(tool)));
   if (!required) {
     return inactiveItem("sandbox", "Sandbox", "Not needed");
   }
@@ -124,11 +140,11 @@ function sandboxReadiness(
     return {
       id: "sandbox",
       label: "Sandbox",
-      value: "Unavailable",
-      state: "blocked",
+      value: "Read-only fallback",
+      state: "warn",
       detail:
         record?.detail ??
-        "No supported Sandbox provider is reported by the Runtime.",
+        "No supported Sandbox provider is reported. The Runtime will expose only its negotiated safe read-only tool surface.",
     };
   }
   if (record.id === "sandbox:host-direct") {
@@ -182,6 +198,20 @@ function browserReadiness(
 function permissionReadiness(
   projection: EffectiveAgentCapabilityProjectionV1,
 ): ComposerReadinessItem {
+  const sandboxUnavailable = projection.readiness.some(
+    (record) =>
+      record.id.startsWith("sandbox:") && record.status === "unavailable",
+  );
+  if (sandboxUnavailable && projection.toolPolicy !== "observe") {
+    return {
+      id: "permission",
+      label: "Permission",
+      value: "Read-only fallback",
+      state: "warn",
+      detail:
+        "The configured write policy remains unchanged, but this Run will withhold mutating and process-backed capabilities until Sandbox is ready.",
+    };
+  }
   const value =
     projection.toolPolicy === "observe"
       ? "Read only"

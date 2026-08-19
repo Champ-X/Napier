@@ -1,5 +1,4 @@
 import { useRef } from "react";
-
 import { FatalState, LoadingShell } from "./AppInitialStates";
 import { AppLedgerNavigation } from "./AppLedgerNavigation";
 import { AppWorkbenchHeader } from "./AppWorkbenchHeader";
@@ -7,44 +6,38 @@ import { composerCanStartRun } from "./composer-run-availability";
 import { Composer } from "./Composer";
 import { ConversationWorkspace } from "./ConversationWorkspace";
 import { copy } from "./copy";
-import { SessionWorkspace } from "./SessionWorkspace";
+import { TaskWorkspace } from "./TaskWorkspace";
 import { TaskNarrativeBoundary } from "./TaskNarrativeBoundary";
 import { TraceWorkspace } from "./TraceWorkspace";
 import { useConversationAutoScroll } from "./use-conversation-auto-scroll";
 import { useTaskControlNavigation } from "./use-task-control-navigation";
 import { useWorkspaceShell } from "./use-workspace-shell";
 import { useWorkspaceViewModel } from "./use-workspace-view-model";
-import {
-  WorkbenchDeferredDecisions,
-  WorkbenchDeferredNotices,
-} from "./WorkbenchDeferredPanels";
+import { WorkbenchDeferredDecisions, WorkbenchDeferredNotices } from "./WorkbenchDeferredPanels";
 import { WorkspaceSettingsSurface } from "./WorkspaceSettingsSurface";
-
 export function App() {
   const vm = useWorkspaceViewModel(),
-    conversationEnd = useRef<HTMLDivElement>(null);
-  const shell = useWorkspaceShell(vm.setInspectorTab);
+    conversationEnd = useRef<HTMLDivElement>(null),
+    conversationViewport = useRef<HTMLElement>(null),
+    shell = useWorkspaceShell(vm.setInspectorTab);
   useConversationAutoScroll({
     endRef: conversationEnd,
+    viewportRef: conversationViewport,
     messageCount: vm.messages.length,
     streamingText: vm.streamingText,
     running: vm.isRunning,
     view: shell.workspaceView,
   });
-
   const taskControls = useTaskControlNavigation({
     activeRunId: vm.activeRunId,
     events: vm.detail?.events ?? [],
     onSelectInspector: shell.routeInspector,
   });
-
   if (vm.isLoading) return <LoadingShell />;
   if (!vm.bootstrap) {
     return <FatalState message={vm.error ?? copy.notices.disconnected} />;
   }
-
-  const activeAgent = vm.detail?.agent ?? vm.bootstrap.agents[0],
-    activeModel = vm.selectedModel;
+  const activeAgent = vm.detail?.agent ?? vm.bootstrap.agents[0], activeModel = vm.selectedModel;
   const canStartRun = composerCanStartRun({
     text: vm.composer,
     hasThread: Boolean(vm.detail),
@@ -72,7 +65,11 @@ export function App() {
                 onStop={() => void vm.stop()}
               />
               <WorkbenchDeferredNotices vm={vm} />
-              <ConversationWorkspace vm={vm} endRef={conversationEnd} />
+              <ConversationWorkspace
+                vm={vm}
+                endRef={conversationEnd}
+                viewportRef={conversationViewport}
+              />
               <WorkbenchDeferredDecisions
                 vm={vm}
                 browserControlsAvailable={taskControls.browserControlsAvailable}
@@ -89,22 +86,21 @@ export function App() {
               />
             </section>
           ) : null}
-          {shell.workspaceView === "trace" ? (
+          {shell.workspaceView === "trajectory" ? (
             <TraceWorkspace vm={vm} activeModel={activeModel} />
           ) : null}
-          {shell.workspaceView === "session" ? (
+          {shell.workspaceView === "task" ? (
             <section
-              id="workspace-panel-session"
-              className="workspace-view-panel session-workspace-view"
+              id="workspace-panel-task"
+              className="workspace-view-panel task-workspace-view"
               role="tabpanel"
-              aria-labelledby="workspace-view-session"
+              aria-labelledby="workspace-view-task"
             >
-              <SessionWorkspace
+              <TaskWorkspace
                 vm={vm}
-                section={shell.sessionSection}
+                section={shell.taskSection}
                 activeModel={activeModel}
-                onSection={shell.setSessionSection}
-                onConversation={() => shell.setWorkspaceView("conversation")}
+                onSection={shell.setTaskSection}
               />
             </section>
           ) : null}
@@ -118,6 +114,10 @@ export function App() {
           onSection={shell.setSettingsSection}
           onClose={shell.closeSettings}
           onWorkspaceSwitch={vm.switchWorkspaceRoot}
+          onConversation={() => {
+            shell.closeSettings();
+            shell.setWorkspaceView("conversation");
+          }}
         />
       ) : null}
     </div>

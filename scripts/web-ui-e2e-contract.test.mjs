@@ -6,12 +6,13 @@ import { describe, expect, it } from "vitest";
 import rootPackage from "../package.json" with { type: "json" };
 import {
   assertWebUiE2eReceipt,
-  DEFAULT_PRODUCT_TRIAL_CASE_IDS,
-  INSPECTOR_GROUP_LABELS,
+  DEFAULT_TASK_SECTION_LABELS,
+  SETTINGS_SECTION_LABELS,
   WEB_UI_E2E_KIND,
-  WEB_UI_LONG_RUN_NARRATIVE_EXPECTATION,
-  WEB_UI_NARRATIVE_EXPECTATION,
   WEB_UI_E2E_VIEWPORTS,
+  WEB_UI_NARRATIVE_EXPECTATION,
+  WEB_UI_UX_SCENARIOS,
+  WORKSPACE_VIEW_LABELS,
 } from "./web-ui-e2e-contract.mjs";
 
 describe("Web UI E2E receipt contract", () => {
@@ -27,42 +28,52 @@ describe("Web UI E2E receipt contract", () => {
     );
   });
 
-  it("accepts complete production, responsive, keyboard, and cleanup evidence", () => {
+  it("accepts complete desktop, keyboard, long-list, and cleanup evidence", () => {
     expect(() => assertWebUiE2eReceipt(validReceipt())).not.toThrow();
   });
 
-  it("covers the required 1440px desktop and 390px mobile product paths", () => {
+  it("covers only the three required desktop viewports", () => {
     expect(WEB_UI_E2E_VIEWPORTS).toEqual([
-      { width: 1_600, height: 900, layout: "drawer" },
-      { width: 1_440, height: 900, layout: "drawer" },
-      { width: 1_200, height: 800, layout: "drawer" },
-      { width: 900, height: 800, layout: "drawer" },
-      { width: 390, height: 844, layout: "drawer" },
+      { width: 1_280, height: 900, layout: "desktop" },
+      { width: 1_440, height: 900, layout: "desktop" },
+      { width: 1_920, height: 1_080, layout: "desktop" },
     ]);
   });
 
-  it("rejects a viewport with horizontal overflow", () => {
+  it("rejects horizontal overflow", () => {
     const receipt = validReceipt();
-    receipt.viewports[3].geometry.horizontalOverflowPx = 1;
-    expect(() => assertWebUiE2eReceipt(receipt)).toThrow(
-      /Expected values to be strictly equal/u,
-    );
+    receipt.viewports[0].geometry.horizontalOverflowPx = 1;
+    expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
   });
 
-  it("rejects drift from the six default Product Trial cases", () => {
+  it("rejects internal Product Trial controls on the default task path", () => {
     const receipt = validReceipt();
-    receipt.viewports[0].defaultProductTrial.optionValues.pop();
-    expect(() => assertWebUiE2eReceipt(receipt)).toThrow(
-      /Expected values to be strictly deep-equal/u,
-    );
+    receipt.viewports[0].task.internalTrialControlsVisible = true;
+    expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
+  });
+
+  it("rejects an unbounded dense trajectory", () => {
+    const receipt = validReceipt();
+    receipt.trajectory.mountedEventRows = 181;
+    expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
+  });
+
+  it("rejects undersized credential controls in Settings", () => {
+    const receipt = validReceipt();
+    receipt.settings.credentialRegisterMinimumControlHeight = 43;
+    expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
+  });
+
+  it("rejects untranslated deep Settings and Plan copy", () => {
+    const receipt = validReceipt();
+    receipt.locale.contextTitles.credentials = "Provider credentials";
+    expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
   });
 
   it("rejects false operating-system isolation claims", () => {
     const receipt = validReceipt();
     receipt.browser.osIsolationClaimed = true;
-    expect(() => assertWebUiE2eReceipt(receipt)).toThrow(
-      /Expected values to be strictly equal/u,
-    );
+    expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
   });
 
   it("rejects unsupported runner arguments before starting the Server", async () => {
@@ -76,7 +87,7 @@ describe("Web UI E2E receipt contract", () => {
 
 function validReceipt() {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     kind: WEB_UI_E2E_KIND,
     status: "passed",
     productionEntry: {
@@ -106,179 +117,176 @@ function validReceipt() {
     },
     viewports: WEB_UI_E2E_VIEWPORTS.map((viewport) => ({
       ...viewport,
-      inspector: {
-        groupLabels: [...INSPECTOR_GROUP_LABELS],
-        defaultGroup: "conversation",
-        defaultTool: "context",
-        panelLabelledBy: "settings-section-context",
-        minimumGroupHeight: 44,
-        minimumToolHeight: 44,
-        desktopVisible: false,
-        drawerTriggerHidden: false,
+      workspaceNavigation: {
+        labels: [...WORKSPACE_VIEW_LABELS],
+        selected: "conversation",
+        minimumHeight: 32,
+      },
+      conversation: {
+        messageCount: 2,
+        waitingApprovalVisible: true,
+        internalTrialControlsVisible: false,
+      },
+      task: {
+        sections: [...DEFAULT_TASK_SECTION_LABELS],
+        sectionCount: 3,
+        defaultSection: "overview",
+        internalTrialControlsVisible: false,
+      },
+      settings: {
         initiallyHidden: true,
-        drawerTriggerVisible: true,
-        drawerOpened: true,
-        openFocusTarget: "settings-section-context",
+        dialog: true,
+        modal: true,
+        labels: [...SETTINGS_SECTION_LABELS],
+        minimumSectionHeight: 52,
+        drawerWithinViewport: true,
         escapeRestoredTriggerFocus: true,
         closedAfterEscape: true,
       },
       geometry: {
         horizontalOverflowPx: 0,
         drawerWithinViewport: true,
-        navigationLabelOverflowPx: 0,
+      },
+      readingAxis: {
+        statusWidth: 800,
+        conversationWidth: 800,
+        composerWidth: 800,
+        maximumCenterDeltaPx: 0,
+        messageFontPx: 15,
       },
       layoutSnapshot: Object.fromEntries(
         [
           "workbench",
           "header",
-          "narrative",
+          "status",
           "conversation",
           "composer",
           "views",
           "primary",
-        ].map((key) => [
-          key,
-          { x: 0, y: 0, width: 100, height: key === "conversation" ? 100 : 50 },
-        ]),
+        ].map((key) => [key, { x: 0, y: 0, width: 100, height: 50 }]),
       ),
       keyboard: {
-        manualActivationPreserved: true,
-        groupNavigationPassed: true,
-        toolNavigationPassed: true,
+        workspaceNavigationPassed: true,
+        taskNavigationPassed: true,
       },
-      browserInspector: {
-        tabSelected: true,
-        panelLabelledBy: "session-section-browser",
-        title: "Browser",
-        actionDisabled: true,
-        layoutRect: { x: 0, y: 0, width: 100, height: 50 },
-        selectedBackend: "browser_use_cloud",
-        localDisclosure:
-          "A separate visible browser with a fresh local profile. Downloads, uploads, typing, secrets, purchases, publishing, deletion are disabled. Pause freezes only the agent process. Take over leaves the browser interactive. CAPTCHA enters takeover automatically. Stop closes the task browser and its process group.",
-        cloudDisclosure:
-          "Browser Use receives the task, start URL, allowed domains, page data. Provider-plan retention applies; zero retention is not assumed; usage can cross the ceiling between polls. Stop tears down the one-off task and session. Pause and Take over are unavailable.",
-        consentRequired: true,
-        consentChecked: false,
-        provider: "browser-use",
-        modelId: "browser-use-2.0",
-        credentialEnv: "BROWSER_USE_API_KEY",
-        maxCostUsd: "1",
-        localProductDefault: {
-          provider: "openai",
-          modelId: "gpt-4.1",
-          credentialEnv: "",
-          credentialBinding:
-            "Active credential · E2E OpenAI reference · available. The secret stays server-side.",
-        },
-        retryRecovery: {
-          actionVisible: true,
-          settingsPreserved: true,
-          recovery:
-            "The browser process exited. Retry the task with the same settings.",
-        },
-        restoredHistory: {
-          status: "browser_use_local · restored history · terminal",
-          retryVisible: true,
-          steps: "Step 1 extract_content https://example.com/",
-          recovery:
-            "Browser task stopped when the Napier server restarted. Retry the same task to start a fresh browser session.",
-        },
-        credentialRecovery:
-          "The selected browser task credential is missing. Set BROWSER_USE_API_KEY in the server environment.",
-        credentialRecoveryCode: "credential_missing",
-      },
-      defaultProductTrial: {
-        collapsedByDefault: true,
-        expanded: true,
-        reCollapsed: true,
-        trigger: "Record default product trial",
-        optionValues: [...DEFAULT_PRODUCT_TRIAL_CASE_IDS],
-        selectedCaseId: DEFAULT_PRODUCT_TRIAL_CASE_IDS[0],
-        selectedRunId: "run_fixture01",
-        productVersion: "0.1.2",
-        releaseControlVisible: true,
-        horizontalOverflowPx: 0,
-        withinNarrative: true,
-      },
-      ...(viewport.width === 1_600
-        ? {
-            casebookTrials: {
-              onboardingAvailable: true,
-              onboardingComposerLoaded: true,
-              templateCoverageCount: "0/10",
-              templateCoverageOptions: 10,
-              qualificationBlocked: true,
-              productTrialRunOptions: 3,
-              productTrialRecorded:
-                "0.1.2 · incomplete1/10 Cases · 100% success · UX 5/5",
-              controlledHarnessGate: "ready",
-              controlledHarnessEvidence:
-                "Coding vs OMP13/12 passed · 13/13 decisivenapier not worse · minimum 3 decisive Trials · 67% decisive coverageBrowser autonomy vs Browser Use3/3 passed · 3/3 decisivenapier not worse · minimum 3 decisive Trials · 67% decisive coverageQuantified advantageevidence vs OMP · proven · Napier 1.000 vs OMP 0.778 verifiable final evidence rate · n=9/9",
-              requestCount: 3,
-              maximumConcurrentRequests: 1,
-              summary:
-                "Latest batch · 3/3 completed · 2 passed · 67% mean agreement",
-              historyCount: "3",
-            },
-          }
-        : {}),
       narrative: {
-        ...WEB_UI_NARRATIVE_EXPECTATION,
-        metrics: "1s / 15m 0s · 1,680 / 250,000 tokens · $0.0420 / $10.00",
-        artifactControlVisible: true,
-        refreshPreserved: viewport.width === 1_600,
+        title: WEB_UI_NARRATIVE_EXPECTATION.title,
+        phase: WEB_UI_NARRATIVE_EXPECTATION.phase,
+        currentAction: WEB_UI_NARRATIVE_EXPECTATION.currentAction,
+        metrics: "1s · 1,680 tokens",
+        blocker: WEB_UI_NARRATIVE_EXPECTATION.blocker,
+        nextStep: WEB_UI_NARRATIVE_EXPECTATION.nextStep,
+        harness: WEB_UI_NARRATIVE_EXPECTATION.harness,
+        detailsControlVisible: true,
+        refreshPreserved: viewport.width === 1_440,
       },
       console: { errorCount: 0 },
-      screenshot: {
-        sha256: "d".repeat(64),
-        bytes: 42,
-      },
+      screenshot: { sha256: "d".repeat(64), bytes: 42 },
     })),
-    recovery: {
-      title: "Recover interrupted verification",
-      phase: "Recovery blocked",
-      currentAction: "Automatic recovery stopped safely",
-      completedItem: "Inspect recovery evidence",
-      blocker: "2 safety conditions require review.",
-      nextStep: "Review the Retry card or resume manually.",
-      selectedThreadPreserved: true,
-      refreshPreserved: true,
+    scenarios: WEB_UI_UX_SCENARIOS.map((id) => ({ id, passed: true })),
+    empty: {
+      welcomeVisible: true,
+      composerVisible: true,
+      titleMatched: true,
+      internalTrialControlsVisible: false,
     },
     longRun: {
-      ...WEB_UI_LONG_RUN_NARRATIVE_EXPECTATION,
-      metrics: "30m 0s / 45m 0s · 21,200 / 1,000,000 tokens · $0.3100 / $10.00",
-      artifactControlVisible: false,
-      refreshPreserved: true,
+      showEarlierVisible: true,
+      mountedFeedItems: 160,
+      expandedFeedItems: 175,
+      environmentFallbackVisible: true,
+      environmentFallbackTools: "14 / 42 tools active",
+      environmentFallbackRepair: "Run options → Sandbox setup",
+      environmentFallbackWithinStatus: true,
+      horizontalOverflowPx: 0,
       activityAggregation: {
-        summaries: [
-          "Inspect · 12 steps",
-          "Research · 5 steps",
-          "Inspect · 3 steps",
-        ],
         collapsedMountedChildren: 0,
         expandedMountedChildren: 12,
+      },
+    },
+    runtime: {
+      composerHeight: 184,
+      fallbackWarningVisible: true,
+      runningIndicatorVisible: true,
+      runtimeSectionVisible: true,
+      sectionCount: 4,
+      browserSurfaceVisible: true,
+    },
+    trajectory: {
+      title: "Run trajectory",
+      eventCount: 214,
+      mountedEventRows: 180,
+      runCount: 2,
+      keyVisible: true,
+      incrementalControlVisible: true,
+      harnessVisible: true,
+      harnessFocused: true,
+      contextPruningVisible: true,
+      contextPruningSaved: true,
+      contextContinuityVisible: true,
+      contextContinuityBound: true,
+    },
+    settings: {
+      dialog: true,
+      modal: true,
+      focusTrappedForward: true,
+      focusTrappedBackward: true,
+      escapeRestoredTriggerFocus: true,
+      defaultProductTrialHidden: true,
+      developerProductTrialAvailable: true,
+      revisionHistoryVisible: true,
+      revisionHistoryMinimumFontPx: 12,
+      revisionHistoryMinimumButtonHeight: 44,
+      packageDeskCount: 3,
+      packageManagementMinimumFontPx: 12,
+      packageManagementMinimumActionHeight: 44,
+      credentialRegisterVisible: true,
+      credentialRegisterMinimumFontPx: 12,
+      credentialRegisterMinimumControlHeight: 44,
+    },
+    locale: {
+      lang: "zh-CN",
+      workspaceLabels: ["对话", "任务", "轨迹"],
+      taskSections: ["概览", "变更", "验证"],
+      settingsLabels: [
+        "智能体与模型",
+        "记忆",
+        "扩展",
+        "工作区",
+        "自动化",
+        "设计系统",
+        "开发者",
+        "语言",
+      ],
+      composerPlaceholder: "给 Napier 一个任务、问题或长期目标……",
+      trajectoryTitles: { page: "运行轨迹", map: "运行轨迹" },
+      contextTitles: {
+        page: "智能体上下文",
+        model: "运行模型",
+        credentials: "提供商凭证",
+      },
+      planTitles: {
+        studio: "工作流工作室",
+        library: "模板库",
+        refresh: "刷新模板库",
       },
     },
     artifactNavigation: {
       outputCount: 2,
       previews: [
-        {
-          path: "artifacts/output-report.md",
-          focused: true,
-          preview: "# Output report\nVerified delivery.\n",
-        },
-        {
-          path: "artifacts/source-notes.md",
-          focused: true,
-          preview: "# Source notes\nEvidence index.\n",
-        },
+        { path: "artifacts/output-report.md", focused: true },
+        { path: "artifacts/source-notes.md", focused: true },
       ],
+    },
+    recovery: {
+      phase: "Recovery blocked",
+      selectedThreadPreserved: true,
+      refreshPreserved: true,
     },
     reconnect: {
       disconnected: true,
       samePort: true,
       narrativePreserved: true,
-      browserTaskHistoryPreserved: true,
       restartStartupDurationMs: 3,
     },
     cleanup: {
@@ -302,8 +310,6 @@ function runScript(args) {
       stderr += chunk.toString("utf8");
     });
     child.once("error", reject);
-    child.once("exit", (code, signal) => {
-      resolve({ code, signal, stderr });
-    });
+    child.once("exit", (code, signal) => resolve({ code, signal, stderr }));
   });
 }

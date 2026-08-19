@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 
+import { advancedSurfaceCopy } from "./advanced-surface-copy";
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
 import { shouldShowWelcomePanel, WelcomePanel } from "./WelcomePanel";
 
@@ -10,23 +11,19 @@ type WorkspaceViewModel = ReturnType<typeof useWorkspaceViewModel>;
 export function ConversationWorkspace({
   vm,
   endRef,
-}: {
-  vm: Pick<
-    WorkspaceViewModel,
-    | "branchFrom"
-    | "detail"
-    | "messages"
-    | "refreshActiveThread"
-    | "streamingText"
-  >;
-  endRef: React.RefObject<HTMLDivElement | null>;
-}) {
+  viewportRef,
+}: ConversationWorkspaceProps) {
+  const accessibilityCopy = advancedSurfaceCopy.accessibility;
   const showWelcome = shouldShowConversationWelcome(
     vm.messages,
     vm.detail?.events.length ?? 0,
   );
   return (
-    <section className="conversation" aria-label="Conversation">
+    <section
+      ref={viewportRef}
+      className="conversation"
+      aria-label={accessibilityCopy.conversation}
+    >
       {showWelcome ? (
         <WelcomePanel />
       ) : (
@@ -43,6 +40,19 @@ export function ConversationWorkspace({
       )}
     </section>
   );
+}
+
+export interface ConversationWorkspaceProps {
+  vm: Pick<
+    WorkspaceViewModel,
+    | "branchFrom"
+    | "detail"
+    | "messages"
+    | "refreshActiveThread"
+    | "streamingText"
+  >;
+  endRef: React.RefObject<HTMLDivElement | null>;
+  viewportRef: React.RefObject<HTMLElement | null>;
 }
 
 export function shouldShowConversationWelcome(

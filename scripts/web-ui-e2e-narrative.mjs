@@ -13,12 +13,7 @@ export async function readWebUiNarrative(page, expected) {
       return (
         text(".thread-heading h1") === target.title &&
         text(".task-narrative-current > span") === target.phase &&
-        text(".task-narrative-current strong") === target.currentAction &&
-        text(".task-narrative-completed p") === target.completedItem &&
-        text(".task-narrative-blocker p") === target.blocker &&
-        text(".task-narrative-next p") === target.nextStep &&
-        text(".task-narrative-completed button").replace(/^Outputs · /u, "") ===
-          target.artifactPath
+        text(".task-narrative-current strong") === target.currentAction
       );
     },
     expected,
@@ -34,28 +29,25 @@ export async function readWebUiNarrative(page, expected) {
       phase: text(".task-narrative-current > span"),
       currentAction: text(".task-narrative-current strong"),
       metrics: text(".task-narrative-current small"),
-      completedItem: text(".task-narrative-completed p"),
       blocker: text(".task-narrative-blocker p"),
       nextStep: text(".task-narrative-next p"),
-      artifactPath: text(".task-narrative-completed button").replace(
-        /^Outputs · /u,
-        "",
-      ),
-      artifactControlVisible: Boolean(
-        document.querySelector(".task-narrative-completed button"),
+      harness: text(".task-narrative-harness p"),
+      detailsControlVisible: Boolean(
+        document.querySelector(".task-status-details > summary"),
       ),
     };
   });
-  for (const key of [
-    "title",
-    "phase",
-    "currentAction",
-    "completedItem",
-    "blocker",
-    "nextStep",
-    "artifactPath",
-  ]) {
+  for (const key of ["title", "phase", "currentAction"]) {
     assert.equal(narrative[key], expected[key]);
+  }
+  if (typeof expected.blocker === "string") {
+    assert.equal(narrative.blocker, expected.blocker);
+  }
+  if (typeof expected.nextStep === "string") {
+    assert.equal(narrative.nextStep, expected.nextStep);
+  }
+  if (typeof expected.harness === "string") {
+    assert.equal(narrative.harness, expected.harness);
   }
   return narrative;
 }
@@ -129,13 +121,10 @@ export async function verifyWebUiServerRestart(
       timeout: WEB_UI_START_TIMEOUT_MS,
     });
     assert.deepEqual(await readWebUiNarrative(page, expected), before);
-    const browserTaskHistoryPreserved =
-      await readRestoredBrowserTaskHistory(page);
     return {
       disconnected,
       samePort: restarted.origin === origin,
       narrativePreserved: true,
-      browserTaskHistoryPreserved,
       restartStartupDurationMs: restarted.receipt.startupDurationMs,
       runtime: restarted,
     };
@@ -145,26 +134,6 @@ export async function verifyWebUiServerRestart(
   } finally {
     await page.close();
   }
-}
-
-async function readRestoredBrowserTaskHistory(page) {
-  await page.locator("#workspace-view-session").click();
-  await page.locator("#session-section-browser").click();
-  await page.waitForFunction(
-    () =>
-      document
-        .querySelector(".browser-task-actions [role=status]")
-        ?.textContent?.includes("restored history · terminal") === true,
-    undefined,
-    { timeout: WEB_UI_START_TIMEOUT_MS },
-  );
-  return page.evaluate(
-    () =>
-      document
-        .querySelector(".browser-task-terminal")
-        ?.textContent?.includes("stopped when the Napier server restarted") ===
-      true,
-  );
 }
 
 export async function verifyWebUiRecoveryNarrative(browser, origin, expected) {
@@ -214,22 +183,75 @@ export async function verifyWebUiLongRunNarrative(browser, origin, expected) {
     });
     const after = await readWebUiNarrative(page, expected);
     assert.deepEqual(after, before);
+    await page.locator(".environment-degradation-notice").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
     await page.waitForFunction(
       () =>
-        document.querySelectorAll(".conversation-activity-group").length === 3,
+        document.querySelectorAll(".conversation-activity-group").length ===
+          3 &&
+        document.querySelector(".conversation-show-earlier") instanceof
+          HTMLElement,
       undefined,
       { timeout: WEB_UI_START_TIMEOUT_MS },
     );
-    const collapsed = await page.evaluate(() => ({
-      summaries: [
-        ...document.querySelectorAll(
-          ".conversation-activity-group > summary strong",
+    const collapsed = await page.evaluate(() => {
+      const feedItems = () =>
+        document.querySelectorAll(
+          ".message-ledger > :is(article, details, section)",
+        ).length;
+      return {
+        showEarlierVisible:
+          document.querySelector(".conversation-show-earlier") instanceof
+          HTMLElement,
+        mountedFeedItems: feedItems(),
+        summaries: [
+          ...document.querySelectorAll(
+            ".conversation-activity-group > summary strong",
+          ),
+        ].map((item) => item.textContent?.trim() ?? ""),
+        mountedChildren: document.querySelectorAll(
+          ".conversation-activity-group-items > details",
+        ).length,
+      };
+    });
+    await page.locator(".conversation-show-earlier").click();
+    await page.waitForFunction(
+      () =>
+        document.querySelectorAll(
+          ".message-ledger > :is(article, details, section)",
+        ).length > 160,
+      undefined,
+      { timeout: WEB_UI_START_TIMEOUT_MS },
+    );
+    const expandedFeedItems = await page
+      .locator(".message-ledger > :is(article, details, section)")
+      .count();
+    const environmentFallbackGeometry = await page.evaluate(() => {
+      const notice = document.querySelector(".environment-degradation-notice");
+      const status = document.querySelector(".task-status-bar");
+      if (
+        !(notice instanceof HTMLElement) ||
+        !(status instanceof HTMLElement)
+      ) {
+        return { withinStatus: false, horizontalOverflowPx: -1 };
+      }
+      const noticeRect = notice.getBoundingClientRect();
+      const statusRect = status.getBoundingClientRect();
+      return {
+        withinStatus:
+          noticeRect.top >= statusRect.top &&
+          noticeRect.bottom <= statusRect.bottom &&
+          noticeRect.left >= statusRect.left &&
+          noticeRect.right <= statusRect.right,
+        horizontalOverflowPx: Math.max(
+          0,
+          document.documentElement.scrollWidth -
+            document.documentElement.clientWidth,
         ),
-      ].map((item) => item.textContent?.trim() ?? ""),
-      mountedChildren: document.querySelectorAll(
-        ".conversation-activity-group-items > details",
-      ).length,
-    }));
+      };
+    });
     await page
       .locator(".conversation-activity-group > summary")
       .first()
@@ -244,7 +266,23 @@ export async function verifyWebUiLongRunNarrative(browser, origin, expected) {
     );
     return {
       ...after,
+      environmentFallbackVisible: await page
+        .locator(".environment-degradation-notice")
+        .isVisible(),
+      environmentFallbackTools:
+        (
+          await page.locator(".environment-degradation-tools").textContent()
+        )?.trim() ?? "",
+      environmentFallbackRepair:
+        (
+          await page.locator(".environment-degradation-repair").textContent()
+        )?.trim() ?? "",
+      environmentFallbackWithinStatus: environmentFallbackGeometry.withinStatus,
+      horizontalOverflowPx: environmentFallbackGeometry.horizontalOverflowPx,
       refreshPreserved: true,
+      showEarlierVisible: collapsed.showEarlierVisible,
+      mountedFeedItems: collapsed.mountedFeedItems,
+      expandedFeedItems,
       activityAggregation: {
         summaries: collapsed.summaries,
         collapsedMountedChildren: collapsed.mountedChildren,
@@ -310,25 +348,14 @@ export async function verifyWebUiArtifactNavigation(browser, origin, expected) {
 }
 
 async function readRecoveryNarrative(page, expected) {
-  const narrative = await readWebUiNarrative(page, {
-    ...expected,
-    artifactPath: "",
-  });
-  const {
-    metrics: _metrics,
-    artifactPath: _artifactPath,
-    artifactControlVisible: _artifactControlVisible,
-    ...visible
-  } = narrative;
-  assert.deepEqual(visible, {
-    title: expected.title,
-    phase: expected.phase,
-    currentAction: expected.currentAction,
-    completedItem: expected.completedItem,
-    blocker: expected.blocker,
-    nextStep: expected.nextStep,
-  });
-  return visible;
+  const narrative = await readWebUiNarrative(page, expected);
+  return {
+    title: narrative.title,
+    phase: narrative.phase,
+    currentAction: narrative.currentAction,
+    blocker: narrative.blocker,
+    nextStep: narrative.nextStep,
+  };
 }
 
 function browserContext(browser) {

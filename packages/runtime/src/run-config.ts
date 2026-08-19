@@ -1,5 +1,4 @@
 import { createHash } from "node:crypto";
-
 import type {
   AgentProfile,
   AutomaticRecoveryPolicy,
@@ -33,7 +32,10 @@ import {
   normalizeSubagentLimits,
 } from "./agents.js";
 import { createPromptVariableCatalog } from "./prompt-variables.js";
-import { CORE_STATELESS_READ_TOOL_NAMES } from "./read-only-tool-names.js";
+import {
+  projectRunExecutionCapabilitySurface,
+  validRunExecutionCapabilitySurface,
+} from "./run-execution-tool-surface.js";
 import { normalizeToolLoopGuardPolicy } from "./tool-loop-guard.js";
 
 const SHA256 = /^[a-f0-9]{64}$/;
@@ -49,6 +51,7 @@ const SUBAGENT_ROLES = new Set<SubagentRole>([
 ]);
 const EXECUTION_MODES = new Set<RunExecutionMode>([
   "standard",
+  "environment_degraded_read_only",
   "safe_read_only_recovery",
   "workflow_map_read_only",
   "workflow_loop_read_only",
@@ -56,9 +59,6 @@ const EXECUTION_MODES = new Set<RunExecutionMode>([
   "model_experiment_single_call",
   "tool_experiment_read_only",
 ]);
-const READ_ONLY_EXECUTION_TOOLS = new Set<string>(
-  CORE_STATELESS_READ_TOOL_NAMES,
-);
 const V1_FINGERPRINT_KEYS = new Set([
   "schemaVersion",
   "agentRevision",
@@ -173,7 +173,10 @@ export function createRunConfigurationFingerprint(
       "Run configuration Prompt Variable catalog does not match the Agent profile",
     );
   }
-  const readOnlyExecution = executionMode !== "standard";
+  const executionSurface = projectRunExecutionCapabilitySurface(
+    profile,
+    executionMode,
+  );
   const singleModelCall = executionMode === "model_experiment_single_call";
   const modelAdvisor = effectiveModelAdvisorPolicy(profile);
   const toolLoopGuard = effectiveToolLoopGuardPolicy(profile);
@@ -188,20 +191,12 @@ export function createRunConfigurationFingerprint(
     agentRevision: profile.revision,
     model: structuredClone(model),
     thinkingLevel: profile.thinkingLevel,
-    toolPolicy: readOnlyExecution ? "observe" : profile.toolPolicy,
-    enabledTools: canonicalSet(
-      singleModelCall
-        ? []
-        : readOnlyExecution
-          ? profile.enabledTools.filter((tool) =>
-              READ_ONLY_EXECUTION_TOOLS.has(tool),
-            )
-          : profile.enabledTools,
-    ),
+    toolPolicy: executionSurface.toolPolicy,
+    enabledTools: canonicalSet(executionSurface.enabledTools),
     enabledSkills: singleModelCall ? [] : canonicalSet(profile.enabledSkills),
-    enabledSubagents: readOnlyExecution
-      ? []
-      : (canonicalSet(profile.enabledSubagents ?? []) as SubagentRole[]),
+    enabledSubagents: canonicalSet(
+      executionSurface.enabledSubagents,
+    ) as SubagentRole[],
     subagentLimits: normalizeSubagentLimits(
       profile.subagentLimits ?? structuredClone(DEFAULT_SUBAGENT_LIMITS),
     ),
@@ -348,10 +343,12 @@ export function validateRunConfigurationFingerprint(
     "executionMode",
   ) as RunExecutionMode;
   if (
-    executionMode !== "standard" &&
-    (toolPolicy !== "observe" ||
-      enabledSubagents.length > 0 ||
-      enabledTools.some((tool) => !READ_ONLY_EXECUTION_TOOLS.has(tool)))
+    !validRunExecutionCapabilitySurface({
+      mode: executionMode,
+      toolPolicy,
+      enabledTools,
+      enabledSubagents,
+    })
   ) {
     throw new Error(
       "Run configuration fingerprint read-only boundary is invalid",

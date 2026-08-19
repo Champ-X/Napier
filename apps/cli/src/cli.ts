@@ -139,7 +139,7 @@ async function executeRun(
         }));
       return {
         threadId: thread.id,
-        invoke: (signal, onEvent) => services.runtime.runPrompt(cliRunPromptOptions(options, thread.id, signal, onEvent)),
+        invoke: (signal, onEvent) => services.kernel.runPrompt(cliRunPromptOptions(options, thread.id, signal, onEvent)),
       };
     },
   );
@@ -157,7 +157,7 @@ async function executeResume(
     return {
       threadId: options.threadId,
       invoke: (signal, onEvent) =>
-        services.runtime.resumeInterruptedRun({
+        services.kernel.resumeInterruptedRun({
           threadId: options.threadId,
           ...(options.runId ? { runId: options.runId } : {}),
           ...(options.model ? { model: options.model } : {}),

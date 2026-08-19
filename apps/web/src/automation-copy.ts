@@ -1,4 +1,7 @@
-export const automationCopy = {
+import { deepMergeCopy, getLocale } from "./locale";
+import { automationCopyZh } from "./automation-copy.zh";
+
+export const automationCopyEn = {
   eyebrow: "BACKGROUND OPERATIONS",
   title: "Automations",
   loading: "Opening automation register...",
@@ -184,6 +187,14 @@ export const automationCopy = {
   deadLetterRetryHistoryVerificationValid: "Verified history",
   deadLetterRetryHistoryVerificationInvalid: "Invalid history",
   deadLetterRetryHistoryEmpty: "No retry apply events yet.",
+  historyHash: "History",
+  previewHash: "Preview",
+  retriedHash: "Retried",
+  verificationHash: "Verify",
+  observedHash: "Observed",
+  candidateSetHash: "Set",
+  previewSetHash: "Preview set",
+  resultHash: "Result",
   retryableShort: "Retryable",
   blockedShort: "Blocked",
   deadLetterRetryCandidateStatuses: {
@@ -215,3 +226,8 @@ export const automationCopy = {
     failed: "Failed",
   },
 } as const;
+
+export const automationCopy = deepMergeCopy(
+  automationCopyEn,
+  getLocale() === "zh" ? automationCopyZh : {},
+);

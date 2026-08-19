@@ -6,9 +6,9 @@ import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabiliti
 
 import { agentCapabilityBadgeText } from "./agent-capability-view-model";
 import { focusCapabilityContract } from "./agent-capability-composer-summary";
+import { advancedSurfaceCopy } from "./advanced-surface-copy";
 import {
   composerModeDependency,
-  composerModeNeedsSandboxSetup,
   composerModes,
 } from "./composer-mode-view-model";
 import {
@@ -20,6 +20,15 @@ import "./agent-capability-composer.css";
 
 const LazySandboxSetupCard = lazy(() => import("./SandboxSetupCard"));
 
+export interface ComposerCapabilityControlProps {
+  agent: AgentProfile | undefined;
+  disabled: boolean;
+  selectedPreset: AgentCapabilityPresetId | undefined;
+  onSelectedPresetChange(preset: AgentCapabilityPresetId | undefined): void;
+  onReview(): void;
+  onReadinessChange(readiness: ComposerRunReadiness): void;
+}
+
 export function ComposerCapabilityControl({
   agent,
   disabled,
@@ -27,14 +36,8 @@ export function ComposerCapabilityControl({
   onSelectedPresetChange,
   onReview,
   onReadinessChange,
-}: {
-  agent: AgentProfile | undefined;
-  disabled: boolean;
-  selectedPreset: AgentCapabilityPresetId | undefined;
-  onSelectedPresetChange: (preset: AgentCapabilityPresetId | undefined) => void;
-  onReview: () => void;
-  onReadinessChange: (readiness: ComposerRunReadiness) => void;
-}) {
+}: ComposerCapabilityControlProps) {
+  const accessibilityCopy = advancedSurfaceCopy.accessibility;
   const [sandboxOpen, setSandboxOpen] = useState(false);
   const { projection, loading, error } = useAgentCapabilityProjection(
     agent?.id,
@@ -51,11 +54,6 @@ export function ComposerCapabilityControl({
       composerRunReadiness(agent, projection, loading, error, selectedPreset),
     [agent, error, loading, projection, selectedPreset],
   );
-  const sandboxBlocked = Boolean(
-    activeMode &&
-    activeDependency &&
-    composerModeNeedsSandboxSetup(activeMode.id, activeDependency),
-  );
   const invalidSandboxBinding = Boolean(
     projection?.readiness.some(
       (record) =>
@@ -71,13 +69,13 @@ export function ComposerCapabilityControl({
   return (
     <div
       className={`agent-capability-composer state-${projection?.driftState ?? "loading"}`}
-      aria-label="Next-run task mode and effective Agent capabilities"
+      aria-label={accessibilityCopy.nextRunCapabilities}
       data-scope="next-run-only"
     >
       <div
         className="composer-mode-row"
         role="group"
-        aria-label="Next-run task mode"
+        aria-label={accessibilityCopy.nextRunMode}
       >
         {modes.map((mode) => {
           const dependency = composerModeDependency(mode.id, projection);
@@ -95,7 +93,7 @@ export function ComposerCapabilityControl({
               }
               onClick={() => onSelectedPresetChange(mode.id)}
             >
-              {dependency.level === "blocked" ? (
+              {dependency.level !== "ready" ? (
                 <AlertTriangle size={11} aria-hidden="true" />
               ) : null}
               {mode.label}
@@ -112,7 +110,7 @@ export function ComposerCapabilityControl({
           {activeDependency.message}
         </p>
       ) : null}
-      {sandboxBlocked || sandboxOpen ? (
+      {sandboxOpen ? (
         <div className="composer-sandbox-setup">
           <Suspense fallback={<div className="sandbox-setup-card" />}>
             <LazySandboxSetupCard
@@ -123,7 +121,7 @@ export function ComposerCapabilityControl({
       ) : null}
       <div
         className="composer-readiness-row"
-        aria-label="Current run readiness"
+        aria-label={accessibilityCopy.currentRunReadiness}
       >
         {runReadiness.items.map((item) =>
           item.id === "sandbox" ? (
@@ -131,9 +129,8 @@ export function ComposerCapabilityControl({
               key={item.id}
               type="button"
               className={`composer-readiness-item manage state-${item.state}`}
-              title={`${item.detail} Manage Sandbox setup.`}
-              aria-expanded={sandboxBlocked || sandboxOpen}
-              disabled={disabled}
+              title={`${item.detail} ${accessibilityCopy.manageSandbox}`}
+              aria-expanded={sandboxOpen}
               onClick={() => setSandboxOpen((current) => !current)}
             >
               <strong>{item.label}</strong>
@@ -162,12 +159,14 @@ export function ComposerCapabilityControl({
             ? `${activeMode?.label ?? selectedPreset} 1×`
             : agent
               ? agentCapabilityBadgeText(agent)
-              : "Read only"}
+              : accessibilityCopy.readOnly}
         </span>
         <button
           type="button"
           aria-label={
-            selectedPreset ? "Use Agent default" : "Review Agent settings"
+            selectedPreset
+              ? accessibilityCopy.useAgentDefault
+              : accessibilityCopy.reviewAgentSettings
           }
           onClick={() => {
             if (selectedPreset) {
@@ -178,7 +177,9 @@ export function ComposerCapabilityControl({
             }
           }}
         >
-          {selectedPreset ? "Use default" : "Agent settings"}
+          {selectedPreset
+            ? accessibilityCopy.useDefault
+            : accessibilityCopy.agentSettings}
           <ArrowRight size={11} aria-hidden="true" />
         </button>
       </div>

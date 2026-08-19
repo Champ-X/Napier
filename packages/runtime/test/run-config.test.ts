@@ -155,6 +155,54 @@ describe("Run configuration fingerprints", () => {
         executionMode: "workflow_loop_read_only",
       }),
     );
+    const environmentDegraded = createRunConfigurationFingerprint(
+      {
+        ...PROFILE,
+        enabledTools: [
+          "read_file",
+          "web_search",
+          "web_fetch",
+          "browser",
+          "research_source",
+          "apply_patch",
+          "run_command",
+        ],
+      },
+      PROFILE.model,
+      "environment_degraded_read_only",
+    );
+    expect(validateRunConfigurationFingerprint(environmentDegraded)).toEqual(
+      expect.objectContaining({
+        toolPolicy: "observe",
+        enabledTools: [
+          "browser",
+          "read_file",
+          "research_source",
+          "web_fetch",
+          "web_search",
+        ],
+        enabledSubagents: [],
+        executionMode: "environment_degraded_read_only",
+      }),
+    );
+    const invalidEnvironmentDegraded = {
+      ...environmentDegraded,
+      toolPolicy: "workspace" as const,
+    };
+    invalidEnvironmentDegraded.contentSha256 = createHash("sha256")
+      .update(
+        canonicalJson(
+          Object.fromEntries(
+            Object.entries(invalidEnvironmentDegraded).filter(
+              ([key]) => key !== "contentSha256",
+            ),
+          ),
+        ),
+      )
+      .digest("hex");
+    expect(() =>
+      validateRunConfigurationFingerprint(invalidEnvironmentDegraded),
+    ).toThrow("read-only boundary is invalid");
   });
 
   it("binds Skill catalog hashes without copying Skill instructions", () => {

@@ -47,4 +47,36 @@ describe("Effective Capabilities Prompt layer", () => {
     expect(prompt).toContain("Browser interaction: read_only");
     expect(prompt).toContain("Do not claim or silently substitute");
   });
+
+  it("explains the negotiated environment fallback without exposing withheld tools", () => {
+    const prompt = formatEffectiveCapabilitiesPrompt({
+      requestedTools: [
+        "read_file",
+        "web_search",
+        "browser",
+        "research_source",
+        "apply_patch",
+        "run_command",
+      ],
+      activeTools: ["read_file", "web_search", "browser", "research_source"],
+      toolPolicy: "workspace",
+      sandboxId: "unsupported",
+      restrictedReadOnlyExecution: false,
+      executionMode: "environment_degraded_read_only",
+      advisorCorrection: false,
+      browserInteractionConfirmationAvailable: false,
+    });
+
+    expect(prompt).toContain("Execution mode: environment_degraded_read_only");
+    expect(prompt).toContain(
+      "Active tools (4): browser, read_file, research_source, web_search",
+    );
+    expect(prompt).toContain("apply_patch, run_command");
+    expect(prompt).toContain("Browser interaction: read_only");
+    expect(prompt).toContain("internal plan controls");
+    expect(prompt).toContain("the process Sandbox is unavailable");
+    expect(prompt).toContain(
+      "Workspace writes, commands, verification processes",
+    );
+  });
 });

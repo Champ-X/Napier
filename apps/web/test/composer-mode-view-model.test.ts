@@ -57,15 +57,15 @@ describe("Composer task modes", () => {
     ).toEqual({ level: "ready", message: "" });
   });
 
-  it("blocks process-capable modes when the sandbox is unavailable", () => {
+  it("warns and offers setup while process modes use a read-only fallback", () => {
     const coding = composerModeDependency("coding", projection("unavailable"));
-    expect(coding.level).toBe("blocked");
+    expect(coding.level).toBe("warn");
     expect(coding.message).toContain("Sandbox is unavailable");
     expect(composerModeNeedsSandboxSetup("coding", coding)).toBe(true);
     expect(
       composerModeDependency("safe_automation", projection("unavailable"))
         .level,
-    ).toBe("blocked");
+    ).toBe("warn");
   });
 
   it("does not offer Sandbox setup for unrelated blocked dependencies", () => {

@@ -5,18 +5,21 @@ import type {
   EvaluationCasebookCase,
 } from "@napier/contracts";
 import type { EvaluationCasebookTemplate } from "@napier/contracts/evaluation-casebook-template";
+import { advancedSurfaceCopy } from "./advanced-surface-copy";
+
+export interface EvaluationCasebookTemplateCreateButtonProps {
+  template: EvaluationCasebookTemplate | undefined;
+  disabled: boolean;
+  creating: boolean;
+  onCreate(): void;
+}
 
 export function EvaluationCasebookTemplateCreateButton({
   template,
   disabled,
   creating,
   onCreate,
-}: {
-  template: EvaluationCasebookTemplate | undefined;
-  disabled: boolean;
-  creating: boolean;
-  onCreate(): void;
-}) {
+}: EvaluationCasebookTemplateCreateButtonProps) {
   if (!template) return null;
   return (
     <button
@@ -26,9 +29,21 @@ export function EvaluationCasebookTemplateCreateButton({
       onClick={onCreate}
     >
       <ClipboardList size={11} aria-hidden="true" />
-      {creating ? "Creating release template…" : "Use release template"}
+      {creating
+        ? advancedSurfaceCopy.casebookTemplate.creating
+        : advancedSurfaceCopy.casebookTemplate.useTemplate}
     </button>
   );
+}
+
+export interface EvaluationCasebookTemplateCoverageProps {
+  casebook: EvaluationCasebook;
+  cases: EvaluationCasebookCase[];
+  template: EvaluationCasebookTemplate | undefined;
+  selectedCaseId: string;
+  disabled: boolean;
+  onSelect(caseId: string): void;
+  onUseTaskPrompt(prompt: string): void;
 }
 
 export function EvaluationCasebookTemplateCoverage({
@@ -39,15 +54,8 @@ export function EvaluationCasebookTemplateCoverage({
   disabled,
   onSelect,
   onUseTaskPrompt,
-}: {
-  casebook: EvaluationCasebook;
-  cases: EvaluationCasebookCase[];
-  template: EvaluationCasebookTemplate | undefined;
-  selectedCaseId: string;
-  disabled: boolean;
-  onSelect(caseId: string): void;
-  onUseTaskPrompt(prompt: string): void;
-}) {
+}: EvaluationCasebookTemplateCoverageProps) {
+  const copy = advancedSurfaceCopy.casebookTemplate;
   if (!casebook.templateId || !template) return null;
   const covered = new Set(cases.map((item) => item.templateCaseId));
   const completed = template.cases.filter((item) =>
@@ -60,7 +68,7 @@ export function EvaluationCasebookTemplateCoverage({
     >
       <header>
         <div>
-          <span>FIXED PRODUCT COVERAGE</span>
+          <span>{copy.track}</span>
           <h6 id={`casebook-template-${casebook.id}`}>{template.name}</h6>
         </div>
         <strong>
@@ -69,16 +77,16 @@ export function EvaluationCasebookTemplateCoverage({
       </header>
       <p>{template.description}</p>
       <label>
-        <span>Coverage slot for the reviewed evaluation</span>
+        <span>{copy.slot}</span>
         <select
-          aria-label="Product Casebook coverage slot"
+          aria-label={copy.slotLabel}
           value={selectedCaseId}
           disabled={disabled}
           onChange={(event) => onSelect(event.currentTarget.value)}
         >
           {template.cases.map((item) => (
             <option key={item.id} value={item.id}>
-              {covered.has(item.id) ? "Replace" : "Open"} · {item.title}
+              {covered.has(item.id) ? copy.replace : copy.open} · {item.title}
             </option>
           ))}
         </select>
@@ -113,22 +121,16 @@ export function EvaluationCasebookTemplateCoverage({
                   onUseTaskPrompt(item.taskPrompt);
                 }}
               >
-                Use in composer
+                {copy.useInComposer}
               </button>
             </details>
           </li>
         ))}
       </ol>
       {completed < template.cases.length ? (
-        <p role="status">
-          Qualification unlocks after every fixed coverage slot has reviewed
-          evidence.
-        </p>
+        <p role="status">{copy.incomplete}</p>
       ) : (
-        <p role="status">
-          Fixed Product Casebook coverage is complete and ready for
-          qualification trials.
-        </p>
+        <p role="status">{copy.complete}</p>
       )}
     </section>
   );

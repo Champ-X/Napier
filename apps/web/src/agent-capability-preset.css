@@ -23,7 +23,7 @@
 .agent-capability-preset span,
 .agent-capability-preset code {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--text-xs);
 }
 
 .agent-capability-preset > header span {
@@ -34,7 +34,7 @@
 .agent-capability-preset p,
 .agent-capability-preset small {
   margin: 0;
-  font-size: 11px;
+  font-size: var(--text-xs);
   line-height: 1.55;
   color: var(--ink-muted);
 }

@@ -261,6 +261,7 @@ describe("Browser Use local task HTTP", () => {
     expect(backendCredential).toBe("private-reference-credential");
     expect(responseText).not.toContain("private-reference-credential");
     expect(responseText).not.toContain("credentialEnv");
+    await service.shutdown();
   });
 
   it("returns an actionable recovery when the active credential reference cannot resolve", async () => {

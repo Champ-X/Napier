@@ -1,7 +1,13 @@
-export const planCopy = {
+import { deepMergeCopy, getLocale } from "./locale";
+import { planZh } from "./plan-copy.zh";
+
+export const planCopyEn = {
   eyebrow: "EXECUTION MAP",
   title: "Durable plan",
   count: "plans",
+  studioEyebrow: "STUDIO · ADVANCED",
+  studioTitle: "Workflow studio",
+  studioBody: "Experiments, portable plans, templates, and policy evidence.",
   empty:
     "Ask a live model to create a plan for multi-step work. Every transition will settle in the ledger.",
   objective: "Objective",
@@ -458,3 +464,8 @@ export const planCopy = {
   safety:
     "Steps settle only with explicit evidence. File verification hashes actual workspace bytes; interrupted running steps become blocked with an unknown outcome.",
 } as const;
+
+export const planCopy = deepMergeCopy(
+  planCopyEn,
+  getLocale() === "zh" ? planZh : {},
+);

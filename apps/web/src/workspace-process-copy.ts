@@ -1,4 +1,7 @@
-export const workspaceProcessCopy = {
+import { deepMergeCopy, getLocale } from "./locale";
+import { workspaceProcessCopyZh } from "./workspace-process-copy.zh";
+
+export const workspaceProcessCopyEn = {
   eyebrow: "SANDBOX SESSIONS",
   title: "Workspace processes",
   description:
@@ -92,3 +95,8 @@ export const workspaceProcessCopy = {
   inputError:
     "Process input was rejected or its outcome is unknown. Refresh the session before retrying.",
 } as const;
+
+export const workspaceProcessCopy = deepMergeCopy(
+  workspaceProcessCopyEn,
+  getLocale() === "zh" ? workspaceProcessCopyZh : {},
+);

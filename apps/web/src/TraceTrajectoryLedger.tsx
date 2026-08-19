@@ -1,10 +1,24 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 
 import type {
   TraceTrajectoryEvent,
   TraceTrajectoryRun,
 } from "./trace-trajectory-model";
+import { copy } from "./copy";
+import { getLocale } from "./locale";
+import { traceTrajectoryCopy } from "./trace-trajectory-copy";
+
+const TRACE_EVENT_WINDOW = 180;
+
+export interface TraceTrajectoryRunSectionProps {
+  run: TraceTrajectoryRun;
+  selectedEventId: string | undefined;
+  visibleEventIds: Set<string>;
+  forceOpen: boolean;
+  latest: boolean;
+  onSelect: (eventId: string) => void;
+}
 
 export function TraceTrajectoryRunSection({
   run,
@@ -13,17 +27,11 @@ export function TraceTrajectoryRunSection({
   forceOpen,
   latest,
   onSelect,
-}: {
-  run: TraceTrajectoryRun;
-  selectedEventId: string | undefined;
-  visibleEventIds: Set<string>;
-  forceOpen: boolean;
-  latest: boolean;
-  onSelect: (eventId: string) => void;
-}) {
+}: TraceTrajectoryRunSectionProps) {
   const [collapsed, setCollapsed] = useState(
     !latest && run.status !== "running",
   );
+  const [eventLimit, setEventLimit] = useState(TRACE_EVENT_WINDOW);
   const matchingTurns = run.turns
     .map((turn) => ({
       ...turn,
@@ -32,8 +40,24 @@ export function TraceTrajectoryRunSection({
       ),
     }))
     .filter((turn) => turn.events.length > 0);
-  if (matchingTurns.length === 0) return null;
+  const matchingEventCount = matchingTurns.reduce(
+    (total, turn) => total + turn.events.length,
+    0,
+  );
+  const visibleTurns = traceTurnWindow(matchingTurns, eventLimit);
+  const hiddenEventCount = Math.max(0, matchingEventCount - eventLimit);
   const open = forceOpen ? true : !collapsed;
+  const selectedInRun = Boolean(
+    selectedEventId &&
+    matchingTurns.some((turn) =>
+      turn.events.some((event) => event.event.id === selectedEventId),
+    ),
+  );
+  useEffect(() => setEventLimit(TRACE_EVENT_WINDOW), [run.id]);
+  useEffect(() => {
+    if (selectedInRun) setEventLimit(matchingEventCount);
+  }, [matchingEventCount, selectedInRun]);
+  if (matchingTurns.length === 0) return null;
   return (
     <article className={`trace-run status-${run.status}`}>
       <button
@@ -46,22 +70,42 @@ export function TraceTrajectoryRunSection({
           {String(run.ordinal).padStart(2, "0")}
         </span>
         <span>
-          <strong>Run {String(run.ordinal)}</strong>
+          <strong>
+            {traceTrajectoryCopy.run} {formatNumber(run.ordinal)}
+          </strong>
           <small>{shortRunId(run.id)}</small>
         </span>
         <span className="trace-run-meta">
           <small>{formatTraceDuration(run.durationMs)}</small>
-          <i>{run.status}</i>
+          <i>{traceTrajectoryCopy.statuses[run.status]}</i>
         </span>
         <ChevronDown size={13} aria-hidden="true" />
       </button>
       {open ? (
         <div className="trace-run-turns">
-          {matchingTurns.map((turn) => (
+          {hiddenEventCount > 0 ? (
+            <button
+              className="trace-show-earlier"
+              type="button"
+              onClick={() =>
+                setEventLimit((current) => current + TRACE_EVENT_WINDOW)
+              }
+            >
+              {copy.trace.showEarlier} · {hiddenEventCount}
+            </button>
+          ) : null}
+          {visibleTurns.map((turn) => (
             <section className="trace-turn" key={turn.index}>
               <header>
-                <span>{turn.label}</span>
-                <small>{turn.events.length} events</small>
+                <span>
+                  {turn.index === 0
+                    ? traceTrajectoryCopy.setup
+                    : `${traceTrajectoryCopy.turn} ${formatNumber(turn.index)}`}
+                </span>
+                <small>
+                  {formatNumber(turn.events.length)}{" "}
+                  {traceTrajectoryCopy.events}
+                </small>
               </header>
               <ol>
                 {turn.events.map((event) => (
@@ -79,6 +123,21 @@ export function TraceTrajectoryRunSection({
       ) : null}
     </article>
   );
+}
+
+export function traceTurnWindow(
+  turns: TraceTrajectoryRun["turns"],
+  limit: number,
+): TraceTrajectoryRun["turns"] {
+  const visible: TraceTrajectoryRun["turns"] = [];
+  let remaining = Math.max(0, limit);
+  for (let index = turns.length - 1; index >= 0 && remaining > 0; index -= 1) {
+    const turn = turns[index]!;
+    const events = turn.events.slice(-remaining);
+    if (events.length > 0) visible.unshift({ ...turn, events });
+    remaining -= events.length;
+  }
+  return visible;
 }
 
 function TraceTrajectoryEventRow({
@@ -104,7 +163,9 @@ function TraceTrajectoryEventRow({
         <span className="trace-event-copy">
           <span className="trace-event-title">
             <strong>{event.label}</strong>
-            <i className={`status-${event.status}`}>{event.status}</i>
+            <i className={`status-${event.status}`}>
+              {traceTrajectoryCopy.statuses[event.status]}
+            </i>
           </span>
           <small>{event.summary}</small>
         </span>
@@ -125,12 +186,17 @@ function TraceTrajectoryEventRow({
 
 function TraceEventAudit({ event }: { event: TraceTrajectoryEvent }) {
   const items = [
-    ["Type", event.event.type],
-    ["Role", event.role],
-    ["Lane", event.lane],
-    ...(event.callOrdinal ? [["Call", `C${event.callOrdinal}`]] : []),
-    ["Summary", event.summarySource],
-    ["Run", shortRunId(event.event.runId)],
+    [traceTrajectoryCopy.audit.type, event.event.type],
+    [traceTrajectoryCopy.audit.role, event.role],
+    [traceTrajectoryCopy.audit.lane, traceTrajectoryCopy.lanes[event.lane]],
+    ...(event.callOrdinal
+      ? [[traceTrajectoryCopy.audit.call, `C${event.callOrdinal}`]]
+      : []),
+    [
+      traceTrajectoryCopy.audit.summary,
+      traceTrajectoryCopy.summarySources[event.summarySource],
+    ],
+    [traceTrajectoryCopy.audit.run, shortRunId(event.event.runId)],
   ];
   return (
     <div className="trace-event-audit">
@@ -145,11 +211,31 @@ function TraceEventAudit({ event }: { event: TraceTrajectoryEvent }) {
 }
 
 export function formatTraceDuration(milliseconds: number): string {
-  if (milliseconds < 1_000) return `${Math.round(milliseconds)}ms`;
+  const units = traceTrajectoryCopy.durationUnits;
+  if (milliseconds < 1_000) {
+    return `${formatNumber(Math.round(milliseconds))}${units.milliseconds}`;
+  }
   const seconds = milliseconds / 1_000;
-  if (seconds < 60) return `${seconds.toFixed(seconds < 10 ? 1 : 0)}s`;
+  if (seconds < 60) {
+    return `${formatDecimal(seconds, seconds < 10 ? 1 : 0)}${units.seconds}`;
+  }
   const minutes = Math.floor(seconds / 60);
-  return `${String(minutes)}m ${String(Math.round(seconds % 60))}s`;
+  return `${formatNumber(minutes)}${units.minutes} ${formatNumber(
+    Math.round(seconds % 60),
+  )}${units.seconds}`;
+}
+
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat(getLocale() === "zh" ? "zh-CN" : "en").format(
+    value,
+  );
+}
+
+function formatDecimal(value: number, digits: number): string {
+  return new Intl.NumberFormat(getLocale() === "zh" ? "zh-CN" : "en", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(value);
 }
 
 function formatTimestamp(value: string): string {

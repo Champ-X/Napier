@@ -1,13 +1,21 @@
 import type { ThreadDetail } from "@napier/contracts";
 import { copy } from "./copy";
 import { getLocale } from "./locale";
+import { latestModelHarnessView, type ModelHarnessFamily } from "./model-harness-view";
 import { taskRunProgress } from "./task-run-progress";
 
 type TaskNarrativeProjection = NonNullable<ThreadDetail["taskNarrative"]>;
 type TaskNarrativePhase = TaskNarrativeProjection["phase"];
 
 export interface TaskNarrative extends TaskNarrativeProjection {
+  elapsed?: string;
   metrics?: string;
+  harness?: {
+    family: ModelHarnessFamily;
+    toolSurface: "full" | "focused";
+    activeToolCount: number;
+    configuredToolCount: number;
+  };
 }
 
 export function taskNarrative(
@@ -31,7 +39,22 @@ export function taskNarrative(
       baseNarrative("ready", "Ready", copy.narrative.emptyAction),
     );
   const projected = projectedNarrative(detail, now);
-  return localizePhaseLabel(projected ?? legacyTaskNarrative(detail, now));
+  const narrative = projected ?? legacyTaskNarrative(detail, now);
+  const runId = detail.thread.currentRunId ?? detail.runs.at(-1)?.id;
+  const harness = latestModelHarnessView(detail.events, runId);
+  return localizePhaseLabel({
+    ...narrative,
+    ...(harness
+      ? {
+          harness: {
+            family: harness.family,
+            toolSurface: harness.toolSurface,
+            activeToolCount: harness.activeToolCount,
+            configuredToolCount: harness.configuredToolCount,
+          },
+        }
+      : {}),
+  });
 }
 
 // Server- and legacy-projected phase labels are English. Localize the label
@@ -120,7 +143,7 @@ function legacyTaskNarrative(
         detail.thread.status === "failed" ? "Needs review" : "Blocked",
       currentAction: blockedStep?.title ?? "Review the failed run",
       completedItems,
-      ...(failedRun ? { metrics: runMetrics(failedRun, now) } : {}),
+      ...(failedRun ? runMetrics(failedRun, now) : {}),
       blocker,
       ...(nextStep ? { nextStep: nextStep.title } : {}),
     };
@@ -138,7 +161,7 @@ function legacyTaskNarrative(
         runProgress.currentAction ??
         "Model is preparing the next action",
       completedItems,
-      metrics: runMetrics(running, now),
+      ...runMetrics(running, now),
       ...(nextStep ? { nextStep: nextStep.title } : {}),
     };
   }
@@ -161,7 +184,7 @@ function legacyTaskNarrative(
           .filter((step) => step.status === "completed")
           .slice(-3)
           .map((step) => step.title) ?? completedItems,
-      ...(completedRun ? { metrics: runMetrics(completedRun, now) } : {}),
+      ...(completedRun ? runMetrics(completedRun, now) : {}),
       nextStep: "Start a follow-up task or inspect the evidence.",
     };
   }
@@ -185,7 +208,7 @@ function projectedNarrative(
     : undefined;
   return {
     ...narrative,
-    ...(metricRun ? { metrics: runMetrics(metricRun, now) } : {}),
+    ...(metricRun ? runMetrics(metricRun, now) : {}),
   };
 }
 
@@ -202,7 +225,7 @@ function operatorDecisionNarrative(
     phaseLabel: "Waiting",
     currentAction: decision.header,
     completedItems,
-    ...(run ? { metrics: runMetrics(run, now) } : {}),
+    ...(run ? runMetrics(run, now) : {}),
     blocker: "Operator input is required before the run can continue.",
     ...(nextStep ? { nextStep } : {}),
   };
@@ -253,7 +276,7 @@ function recoveryNarrative(
       phaseLabel: "Recovering",
       currentAction: "Assessing the interrupted run",
       completedItems: recoveredItems,
-      metrics: runMetrics(interrupted, now),
+      ...runMetrics(interrupted, now),
       blocker: "Recovery safety evidence is being evaluated.",
     };
   }
@@ -263,7 +286,7 @@ function recoveryNarrative(
       phaseLabel: "Recovery blocked",
       currentAction: "Automatic recovery stopped safely",
       completedItems: recoveredItems,
-      metrics: runMetrics(interrupted, now),
+      ...runMetrics(interrupted, now),
       blocker: `${assessment.blockReasons.length} safety condition${
         assessment.blockReasons.length === 1 ? "" : "s"
       } ${assessment.blockReasons.length === 1 ? "requires" : "require"} review.`,
@@ -276,7 +299,7 @@ function recoveryNarrative(
       phaseLabel: "Recovering",
       currentAction: "Waiting for a recovery claim",
       completedItems: recoveredItems,
-      metrics: runMetrics(interrupted, now),
+      ...runMetrics(interrupted, now),
       blocker: "The verified retry is waiting for its recovery worker.",
     };
   }
@@ -292,7 +315,7 @@ function recoveryNarrative(
           ? "Claiming the interrupted run"
           : "Restoring from verified read-only evidence",
       completedItems: recoveredItems,
-      metrics: runMetrics(recoveryRun ?? interrupted, now),
+      ...runMetrics(recoveryRun ?? interrupted, now),
       nextStep: `Attempt ${attempt.attempt}/${attempt.maxAttempts} is in progress.`,
     };
   }
@@ -305,7 +328,7 @@ function recoveryNarrative(
       phaseLabel: "Recovered",
       currentAction: "Interrupted work recovered",
       completedItems: recoveredItems,
-      metrics: runMetrics(recoveryRun ?? interrupted, now),
+      ...runMetrics(recoveryRun ?? interrupted, now),
       nextStep: "Inspect the recovered output or start a follow-up task.",
     };
   }
@@ -318,7 +341,7 @@ function recoveryNarrative(
       phaseLabel: "Recovery failed",
       currentAction: "Review the recovery attempt",
       completedItems: recoveredItems,
-      metrics: runMetrics(interrupted, now),
+      ...runMetrics(interrupted, now),
       blocker: `Attempt ${attempt.attempt}/${attempt.maxAttempts} ${attempt.status}.`,
       nextStep: "Review the Retry card or resume manually.",
     };
@@ -355,7 +378,7 @@ function pausedBudgetNarrative(
       ? "Partial result preserved at the budget boundary"
       : "Run paused at its budget boundary",
     completedItems,
-    metrics: runMetrics(run, now),
+    ...runMetrics(run, now),
     nextStep: partial
       ? "Continue from preserved artifacts and open work."
       : "Continue from the recorded progress.",
@@ -381,21 +404,28 @@ function completedNarrativeItems(
   return planItems.length > 0 ? planItems : runItems;
 }
 
-function runMetrics(run: ThreadDetail["runs"][number], now: number): string {
+function runMetrics(
+  run: ThreadDetail["runs"][number],
+  now: number,
+): Pick<TaskNarrative, "elapsed" | "metrics"> {
   const finishedAt = run.finishedAt ? Date.parse(run.finishedAt) : now;
   const elapsedMs = Math.max(0, finishedAt - Date.parse(run.startedAt));
   const tokens = run.usage.inputTokens + run.usage.outputTokens;
-  return [
+  const elapsed = formatDuration(elapsedMs);
+  return {
+    elapsed,
+    metrics: [
     run.limits
-      ? `${formatDuration(elapsedMs)} / ${formatDuration(run.limits.timeoutMs)}`
-      : formatDuration(elapsedMs),
+        ? `${elapsed} / ${formatDuration(run.limits.timeoutMs)}`
+        : elapsed,
     run.limits
       ? `${tokens.toLocaleString()} / ${run.limits.maxTotalTokens.toLocaleString()} tokens`
       : `${tokens.toLocaleString()} tokens`,
     run.limits
       ? `$${run.usage.costUsd.toFixed(4)} / $${run.limits.maxCostUsd.toFixed(2)}`
       : `$${run.usage.costUsd.toFixed(4)}`,
-  ].join(" · ");
+    ].join(" · "),
+  };
 }
 
 function formatDuration(milliseconds: number): string {

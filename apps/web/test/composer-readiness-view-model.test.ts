@@ -78,7 +78,7 @@ describe("Composer run readiness", () => {
     );
   });
 
-  it("blocks Coding when Sandbox is unavailable and warns for host-direct", () => {
+  it("degrades Coding to safe reads when Sandbox is unavailable and warns for host-direct", () => {
     const unavailable = composerRunReadiness(
       profile("coding"),
       projection({
@@ -91,11 +91,12 @@ describe("Composer run readiness", () => {
       undefined,
       "coding",
     );
-    expect(unavailable.canRun).toBe(false);
-    expect(unavailable.message).toContain("Sandbox unavailable");
+    expect(unavailable.canRun).toBe(true);
+    expect(unavailable.level).toBe("warn");
+    expect(unavailable.message).toContain("safe reads only");
     expect(
       unavailable.items.find((item) => item.id === "permission")?.value,
-    ).toBe("Workspace changes");
+    ).toBe("Read-only fallback");
 
     const hostDirect = composerRunReadiness(
       profile("coding"),
@@ -114,12 +115,12 @@ describe("Composer run readiness", () => {
     expect(hostDirect.message).toContain("without OS isolation");
   });
 
-  it("does not pre-block the full Agent default on an unused process capability", () => {
+  it("makes the full Agent default transparently read-only when process capability is unavailable", () => {
     const readiness = composerRunReadiness(
       profile("coding"),
       projection({
         policy: "workspace",
-        tools: [],
+        tools: [tool("run_command", "unavailable")],
         sandbox: sandbox("unavailable"),
       }),
       false,
@@ -127,8 +128,10 @@ describe("Composer run readiness", () => {
     );
 
     expect(readiness.canRun).toBe(true);
+    expect(readiness.level).toBe("warn");
+    expect(readiness.message).toContain("safe reads only");
     expect(readiness.items.find((item) => item.id === "sandbox")).toEqual(
-      expect.objectContaining({ state: "inactive", value: "Not needed" }),
+      expect.objectContaining({ state: "warn", value: "Read-only fallback" }),
     );
   });
 
@@ -165,13 +168,7 @@ describe("Composer run readiness", () => {
     const revised = { ...profile("research"), revision: 2 };
 
     expect(
-      composerRunReadiness(
-        revised,
-        current,
-        false,
-        undefined,
-        "research",
-      ),
+      composerRunReadiness(revised, current, false, undefined, "research"),
     ).toEqual(
       expect.objectContaining({
         canRun: false,

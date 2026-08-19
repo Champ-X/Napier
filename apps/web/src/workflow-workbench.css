@@ -2,7 +2,7 @@
   padding: 9px 10px;
   margin: 0 0 10px;
   font-family: var(--mono);
-  font-size: 7px;
+  font-size: var(--text-xs);
   line-height: 1.45;
   color: #7d3025;
   background: rgb(164 75 56 / 8%);

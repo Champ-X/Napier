@@ -17,6 +17,7 @@ import {
   hashContextSummary,
   parseContextCheckpointPayload,
 } from "./compaction.js";
+import { validContinuityBinding } from "./context-continuity-evidence.js";
 
 export function createContextCheckpointCalibrationReport(
   threadId: string,
@@ -30,7 +31,7 @@ export function createContextCheckpointCalibrationReport(
   const messageEvents = contextMessageEvents(threadEvents);
   const samples = threadEvents
     .filter((event) => event.type === "context.compaction.completed")
-    .map((event) => createCheckpointSample(event, messageEvents));
+    .map((event) => createCheckpointSample(event, messageEvents, threadEvents));
   const failures = threadEvents
     .filter((event) => event.type === "context.compaction.failed")
     .map(createFailureSample);
@@ -93,6 +94,7 @@ export function createContextCheckpointCalibrationReport(
 function createCheckpointSample(
   event: RunEvent,
   messageEvents: RunEvent[],
+  threadEvents: RunEvent[],
 ): ContextCheckpointCalibrationSample {
   const checkpoint = parseContextCheckpointPayload(event.payload);
   if (!checkpoint) {
@@ -127,14 +129,18 @@ function createCheckpointSample(
     hashContextEvents(source) === checkpoint.sourceSha256;
   const summaryMatches =
     hashContextSummary(checkpoint) === checkpoint.summarySha256;
+  const continuityMatches = validContinuityBinding(checkpoint, threadEvents);
+  const verified = sourceMatches && summaryMatches && continuityMatches;
   return withSampleHash({
     eventId: event.id,
     ...(event.runId ? { runId: event.runId } : {}),
     seq: event.seq,
-    state: sourceMatches && summaryMatches ? "verified" : "drifted",
+    state: verified ? "verified" : "drifted",
     reason:
-      sourceMatches && summaryMatches
+      verified
         ? "source_and_summary_hash_verified"
+        : !continuityMatches
+          ? "continuity_hash_mismatch"
         : sourceMatches
           ? "summary_hash_mismatch"
           : summaryMatches

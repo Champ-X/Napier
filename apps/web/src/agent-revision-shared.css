@@ -1,0 +1,144 @@
+.agent-revision-card,
+.agent-rollback-ticket {
+  --agent-history-column-min: calc(var(--space-20) + var(--space-8));
+  --agent-history-columns:
+    repeat(auto-fit, minmax(min(var(--agent-history-column-min), 100%), 1fr));
+  --agent-history-heading-size:
+    clamp(var(--text-sm), calc(var(--text-sm) + 0.15vw), var(--text-base));
+}
+
+.agent-revision-card > header,
+.agent-rollback-ticket > header {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.agent-revision-card > header > div,
+.agent-rollback-ticket > header > div {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-1);
+}
+
+.agent-revision-card > header span,
+.agent-rollback-ticket > header span {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.agent-revision-card h4,
+.agent-rollback-ticket h4 {
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-sans);
+  font-size: var(--agent-history-heading-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--leading-heading);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-revision-card > dl,
+.agent-rollback-ticket > dl {
+  display: grid;
+  grid-template-columns: var(--agent-history-columns);
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+}
+
+.agent-revision-card > dl div,
+.agent-rollback-ticket > dl div {
+  min-width: 0;
+  padding-block-start: var(--space-2);
+  border-block-start: 1px solid var(--color-border-subtle);
+}
+
+.agent-revision-card dt,
+.agent-revision-card dd,
+.agent-rollback-ticket dt,
+.agent-rollback-ticket dd {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-revision-card dd,
+.agent-rollback-ticket dd {
+  margin: var(--space-1) 0 0;
+  color: var(--color-fg);
+}
+
+.agent-revision-card > button,
+.agent-rollback-actions button,
+.agent-rollback-ticket > header button {
+  min-height: calc(var(--control-target-primary) + var(--space-1));
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-fg);
+  cursor: pointer;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.agent-revision-card > button:hover:not(:disabled),
+.agent-rollback-actions button:hover:not(:disabled),
+.agent-rollback-ticket > header button:hover:not(:disabled) {
+  color: var(--color-accent-hover);
+  background: var(--color-accent-subtle);
+  border-color: var(--color-border-strong);
+}
+
+.agent-revision-card > button:active:not(:disabled),
+.agent-rollback-actions button:active:not(:disabled),
+.agent-rollback-ticket > header button:active:not(:disabled) {
+  transform: translateY(var(--space-1));
+}
+
+.agent-revision-card > button:focus-visible,
+.agent-rollback-actions button:focus-visible,
+.agent-rollback-ticket > header button:focus-visible {
+  outline: var(--control-focus-width) solid var(--color-focus-ring);
+  outline-offset: var(--control-focus-offset);
+  box-shadow: 0 0 0 var(--control-focus-offset) var(--color-surface);
+}
+
+.agent-revision-card > button:disabled,
+.agent-rollback-actions button:disabled,
+.agent-rollback-ticket > header button:disabled {
+  color: var(--color-fg-disabled);
+  cursor: not-allowed;
+  background: var(--color-bg-subtle);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-revision-card > button,
+  .agent-rollback-actions button,
+  .agent-rollback-ticket > header button {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .agent-revision-card > button,
+  .agent-rollback-actions button,
+  .agent-rollback-ticket > header button {
+    border-color: ButtonText;
+  }
+}

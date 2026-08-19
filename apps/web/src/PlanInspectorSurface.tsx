@@ -2,7 +2,9 @@ import { lazy, Suspense } from "react";
 
 import type { ExecutionPlan, RunEvent } from "@napier/contracts";
 import { copy } from "./copy";
+import { planCopy } from "./plan-copy";
 import type { InspectorTab } from "./use-workspace-view-model";
+import "./plan-inspector-surface.css";
 
 const LazyPlanPanel = lazy(() => import("./PlanPanel"));
 
@@ -26,9 +28,9 @@ export function PlanInspectorSurface({
     <div className={`plan-inspector-surface surface-${surface}`}>
       {surface === "studio" ? (
         <header className="plan-studio-heading">
-          <span>STUDIO / ADVANCED</span>
-          <h2>Workflow studio</h2>
-          <p>Experiments, portable plans, templates, and policy evidence.</p>
+          <span>{planCopy.studioEyebrow}</span>
+          <h2>{planCopy.studioTitle}</h2>
+          <p>{planCopy.studioBody}</p>
         </header>
       ) : null}
       <Suspense

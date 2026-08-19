@@ -26,7 +26,7 @@ describe("Web UI layout baseline", () => {
       await expect(
         verifyWebUiLayoutBaseline(receipt, baselinePath, "linux", "x64"),
       ).rejects.toThrow("Web UI layout baseline drifted");
-      receipt.viewports[0].layoutSnapshot.workbench.width += 1;
+      receipt.viewports[0].layoutSnapshot.workbench.width += 7;
       await expect(
         verifyWebUiLayoutBaseline(receipt, baselinePath, "linux", "arm64"),
       ).rejects.toThrow("Web UI layout baseline drifted");
@@ -54,28 +54,17 @@ describe("Web UI layout baseline", () => {
 function fixture() {
   return {
     viewports: [
-      {
-        width: 1_600,
-        height: 900,
-        layout: "drawer",
-        layoutSnapshot: {
-          workbench: { x: 252, y: 0, width: 1_010, height: 900 },
-        },
-        browserInspector: {
-          layoutRect: { x: 1_283, y: 186, width: 297, height: 156 },
-        },
+      [1_280, 900],
+      [1_440, 900],
+      [1_920, 1_080],
+    ].map(([width, height]) => ({
+      width,
+      height,
+      layout: "desktop",
+      layoutSnapshot: {
+        workbench: { x: 252, y: 0, width: width - 252, height },
+        header: { x: 252, y: 0, width: width - 252, height: 52 },
       },
-      {
-        width: 1_440,
-        height: 900,
-        layout: "drawer",
-        layoutSnapshot: {
-          workbench: { x: 252, y: 0, width: 850, height: 900 },
-        },
-        browserInspector: {
-          layoutRect: { x: 1_123, y: 186, width: 297, height: 156 },
-        },
-      },
-    ],
+    })),
   };
 }

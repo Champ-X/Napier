@@ -1,0 +1,192 @@
+.plan-blueprint-library-card .blueprint-record-list {
+  display: grid;
+  gap: var(--stack-sm);
+  margin-block-start: var(--stack-md);
+}
+
+.plan-blueprint-library-card .blueprint-record {
+  display: grid;
+  gap: var(--stack-sm);
+  padding: var(--inset-md);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-inline-start: var(--space-1) solid var(--color-accent);
+  border-radius: var(--radius-md);
+}
+
+.plan-blueprint-library-card .blueprint-record-archived {
+  border-inline-start-color: var(--color-border-strong);
+  opacity: 0.82;
+}
+
+.plan-blueprint-library-card .blueprint-record > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--inline-md);
+}
+
+.plan-blueprint-library-card .blueprint-record > header > div {
+  display: grid;
+  gap: var(--stack-xs);
+  min-width: 0;
+}
+
+.plan-blueprint-library-card .blueprint-record strong {
+  overflow: hidden;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  color: var(--color-fg);
+  text-overflow: ellipsis;
+}
+
+.plan-blueprint-library-card .blueprint-record :is(span, dt, dd, code) {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+}
+
+.plan-blueprint-library-card .blueprint-record code {
+  overflow: hidden;
+  color: var(--color-accent);
+  text-overflow: ellipsis;
+}
+
+.plan-blueprint-library-card .blueprint-record p {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-body);
+  color: var(--color-fg-muted);
+}
+
+.plan-blueprint-library-card .blueprint-record dl {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(calc(var(--space-20) + var(--space-20)), 1fr)
+  );
+  gap: var(--space-1);
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.plan-blueprint-library-card .blueprint-record dl > div {
+  display: grid;
+  min-width: 0;
+  gap: var(--stack-xs);
+  padding: var(--inset-sm);
+  background: var(--color-bg-subtle);
+}
+
+.plan-blueprint-library-card .blueprint-record dd {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.plan-blueprint-library-card .blueprint-record-actions {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(calc(var(--space-20) + var(--space-20)), 100%), 1fr)
+  );
+  gap: var(--space-2);
+  margin-block-start: var(--stack-sm);
+}
+
+.plan-blueprint-library-card .blueprint-record-actions button {
+  display: inline-flex;
+  min-width: calc(var(--control-target-primary) + var(--space-1));
+  min-height: calc(var(--control-target-primary) + var(--space-1));
+  align-items: center;
+  justify-content: center;
+  padding: var(--inset-xs) var(--inset-sm);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-fg);
+  cursor: pointer;
+  user-select: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.plan-blueprint-library-card
+  .blueprint-record-actions
+  button:hover:not(:disabled) {
+  color: var(--color-accent);
+  background: var(--color-accent-subtle);
+  border-color: var(--color-accent-hover);
+}
+
+.plan-blueprint-library-card
+  .blueprint-record-actions
+  button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.plan-blueprint-library-card .blueprint-record-actions button:focus-visible {
+  outline: var(--control-focus-width) solid var(--color-focus-ring);
+  outline-offset: var(--control-focus-offset);
+  box-shadow: 0 0 0 var(--control-focus-offset) var(--color-surface);
+}
+
+.plan-blueprint-library-card .blueprint-record-actions button:disabled {
+  color: var(--color-fg-disabled);
+  cursor: not-allowed;
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
+}
+
+.plan-blueprint-library-card .blueprint-record-actions button:first-child {
+  color: var(--color-fg-on-accent);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.plan-blueprint-library-card
+  .blueprint-record-actions
+  button:first-child:hover:not(:disabled) {
+  color: var(--color-fg-on-accent);
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+@container blueprint-library (max-width: 768px) {
+  .plan-blueprint-library-card .blueprint-record > header {
+    display: grid;
+  }
+
+  .plan-blueprint-library-card .blueprint-record code {
+    max-width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plan-blueprint-library-card .blueprint-record-actions button {
+    transition-duration: 0.01ms;
+  }
+}
+
+@media (forced-colors: active) {
+  .plan-blueprint-library-card .blueprint-record,
+  .plan-blueprint-library-card .blueprint-record-actions button {
+    border-color: CanvasText;
+  }
+
+  .plan-blueprint-library-card .blueprint-record-actions button:focus-visible {
+    outline: var(--control-focus-width) solid Highlight;
+    outline-offset: var(--control-focus-offset);
+    box-shadow: none;
+  }
+}

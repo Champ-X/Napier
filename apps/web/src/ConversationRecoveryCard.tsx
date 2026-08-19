@@ -7,29 +7,18 @@ import {
   XCircle,
 } from "lucide-react";
 
-import type { AutomaticRecoveryBlockReason } from "@napier/contracts";
+import { conversationDetailCopy } from "./conversation-detail-copy";
 import type { ConversationRecovery } from "./conversation-recovery-view-model";
+import { getLocale } from "./locale";
 
-const BLOCK_REASON: Record<AutomaticRecoveryBlockReason, string> = {
-  configuration_missing: "Run configuration evidence is missing.",
-  legacy_configuration: "Legacy schema has no bound recovery policy.",
-  policy_manual: "The frozen Agent policy requires manual Resume.",
-  run_not_interrupted: "The source Run is not interrupted.",
-  workflow_managed: "The source Run is resumed by its Workflow Plan.",
-  demo_model: "The demo model cannot verify current state.",
-  event_limit_exceeded: "The evidence range exceeds the safety limit.",
-  unresolved_tool_call: "A tool start has no unique terminal outcome.",
-  unsafe_tool_effect: "A write or delegated side effect was observed.",
-  unknown_tool_effect: "A tool effect is not proven read-only.",
-  attempt_limit_reached: "The frozen attempt limit is exhausted.",
-  untrusted_recovery_chain: "The recovery chain is not trusted.",
-};
+export interface ConversationRecoveryCardProps {
+  item: ConversationRecovery;
+}
 
 export function ConversationRecoveryCard({
   item,
-}: {
-  item: ConversationRecovery;
-}) {
+}: ConversationRecoveryCardProps) {
+  const copy = conversationDetailCopy.recovery;
   const active = item.status === "claimed" || item.status === "running";
   const Icon =
     item.status === "completed"
@@ -52,7 +41,7 @@ export function ConversationRecoveryCard({
         <RotateCcw size={15} aria-hidden="true" />
         <div>
           <span>
-            Retry · {statusLabel(item.status)}
+            {copy.label} · {copy.statuses[item.status]}
             {item.attempt
               ? ` · ${item.attempt.attempt}/${item.attempt.maxAttempts}`
               : ""}
@@ -69,7 +58,7 @@ export function ConversationRecoveryCard({
       {item.assessment.blockReasons.length > 0 ? (
         <ul className="conversation-recovery-blockers">
           {item.assessment.blockReasons.map((reason) => (
-            <li key={reason}>{BLOCK_REASON[reason]}</li>
+            <li key={reason}>{copy.blockReasons[reason]}</li>
           ))}
         </ul>
       ) : (
@@ -79,45 +68,47 @@ export function ConversationRecoveryCard({
       )}
       <dl>
         <div>
-          <dt>Mode</dt>
-          <dd>{humanize(item.assessment.policy.mode)}</dd>
+          <dt>{copy.mode}</dt>
+          <dd>{copy.modes[item.assessment.policy.mode]}</dd>
         </div>
         <div>
-          <dt>Evidence</dt>
+          <dt>{copy.evidence}</dt>
           <dd>
-            {item.assessment.eventRange.eventCount} events ·{" "}
-            {item.assessment.toolCalls.total} tools
+            {formatNumber(item.assessment.eventRange.eventCount)} {copy.events}{" "}
+            · {formatNumber(item.assessment.toolCalls.total)} {copy.tools}
           </dd>
         </div>
         <div>
-          <dt>Read only</dt>
+          <dt>{copy.readOnly}</dt>
           <dd>
-            {item.assessment.toolCalls.readOnly}/
-            {item.assessment.toolCalls.total}
+            {formatNumber(item.assessment.toolCalls.readOnly)}/
+            {formatNumber(item.assessment.toolCalls.total)}
           </dd>
         </div>
         <div>
-          <dt>Risk</dt>
+          <dt>{copy.risk}</dt>
           <dd>
-            {item.assessment.toolCalls.unsafe} unsafe ·{" "}
-            {item.assessment.toolCalls.unknownEffect} unknown ·{" "}
-            {item.assessment.toolCalls.unresolved} unresolved
+            {formatNumber(item.assessment.toolCalls.unsafe)} {copy.unsafe} ·{" "}
+            {formatNumber(item.assessment.toolCalls.unknownEffect)}{" "}
+            {copy.unknown} ·{" "}
+            {formatNumber(item.assessment.toolCalls.unresolved)}{" "}
+            {copy.unresolved}
           </dd>
         </div>
         {item.settlement ? (
           <div>
-            <dt>Stop</dt>
+            <dt>{copy.stop}</dt>
             <dd>{settlementSummary(item.settlement)}</dd>
           </div>
         ) : null}
         <div>
-          <dt>Source Run</dt>
+          <dt>{copy.sourceRun}</dt>
           <dd title={item.assessment.interruptedRunId}>
             {shortId(item.assessment.interruptedRunId)}
           </dd>
         </div>
         <div>
-          <dt>Receipt</dt>
+          <dt>{copy.receipt}</dt>
           <dd title={item.assessment.contentSha256}>
             {item.assessment.contentSha256.slice(0, 12)}
           </dd>
@@ -128,39 +119,30 @@ export function ConversationRecoveryCard({
 }
 
 function recoverySummary(item: ConversationRecovery): string {
-  if (item.status === "skipped") return "Automatic recovery stopped safely";
-  if (item.status === "completed") return "Interrupted work recovered";
-  if (item.status === "claimed") return "Recovery lease claimed";
-  if (item.status === "running") return "Restoring from verified evidence";
-  if (item.status === "interrupted") return "Recovery Run was interrupted";
-  if (item.status === "abandoned") return "Recovery claim was abandoned";
-  if (item.status === "cancelled") return "Recovery Run was cancelled";
-  return "Recovery attempt failed";
+  return conversationDetailCopy.recovery.summaries[item.status];
 }
 
 function recoveryGuidance(item: ConversationRecovery): string {
+  const copy = conversationDetailCopy.recovery;
   if (item.status === "completed") {
-    return "The continuation completed from a verified read-only boundary.";
+    return copy.completedGuidance;
   }
   if (item.status === "claimed" || item.status === "running") {
-    return "Napier is reopening durable evidence without replaying side effects.";
+    return copy.activeGuidance;
   }
-  return "The structured outcome is shown; private diagnostics remain in Trace.";
-}
-
-function statusLabel(status: ConversationRecovery["status"]): string {
-  return status === "skipped" ? "blocked" : humanize(status);
+  return copy.traceGuidance;
 }
 
 function settlementSummary(
   settlement: NonNullable<ConversationRecovery["settlement"]>,
 ): string {
+  const copy = conversationDetailCopy.recovery.settlement;
   if (
     settlement.budgetReason === "timeout" &&
     (settlement.limit !== undefined ||
       settlement.observedElapsedMs !== undefined)
   ) {
-    return `Timeout · ${formatDuration(
+    return `${copy.timeout} · ${formatDuration(
       settlement.limit ?? settlement.observedElapsedMs ?? 0,
     )}`;
   }
@@ -168,33 +150,44 @@ function settlementSummary(
     settlement.budgetReason === "turns" &&
     settlement.observedTurns !== undefined
   ) {
-    return `Turn limit · ${settlement.observedTurns}`;
+    return `${copy.turns} · ${formatNumber(settlement.observedTurns)}`;
   }
   if (
     settlement.budgetReason === "tokens" &&
     settlement.observedTotalTokens !== undefined
   ) {
-    return `Token limit · ${settlement.observedTotalTokens.toLocaleString()}`;
+    return `${copy.tokens} · ${formatNumber(settlement.observedTotalTokens)}`;
   }
   if (
     settlement.budgetReason === "cost" &&
     settlement.observedCostUsd !== undefined
   ) {
-    return `Cost limit · $${settlement.observedCostUsd.toFixed(2)}`;
+    return `${copy.cost} · ${formatCurrency(settlement.observedCostUsd)}`;
   }
-  return humanize(settlement.budgetReason);
+  return copy[settlement.budgetReason];
 }
 
 function formatDuration(milliseconds: number): string {
   const seconds = Math.max(0, Math.round(milliseconds / 1_000));
+  const copy = conversationDetailCopy.recovery.settlement;
   return seconds >= 60
-    ? `${Math.floor(seconds / 60)}m ${seconds % 60}s`
-    : `${seconds}s`;
+    ? `${formatNumber(Math.floor(seconds / 60))}${copy.minutes} ${formatNumber(
+        seconds % 60,
+      )}${copy.seconds}`
+    : `${formatNumber(seconds)}${copy.seconds}`;
 }
 
-function humanize(value: string): string {
-  const normalized = value.replaceAll("_", " ");
-  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat(getLocale() === "zh" ? "zh-CN" : "en").format(
+    value,
+  );
+}
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat(getLocale() === "zh" ? "zh-CN" : "en", {
+    style: "currency",
+    currency: "USD",
+  }).format(value);
 }
 
 function shortId(value: string): string {
@@ -202,7 +195,7 @@ function shortId(value: string): string {
 }
 
 function formatTime(value: string): string {
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat(getLocale() === "zh" ? "zh-CN" : "en", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,

@@ -15,10 +15,10 @@ export function TraceWorkspace({
 }) {
   return (
     <section
-      id="workspace-panel-trace"
-      className="workspace-view-panel trace-workspace-view"
+      id="workspace-panel-trajectory"
+      className="workspace-view-panel trajectory-workspace-view"
       role="tabpanel"
-      aria-labelledby="workspace-view-trace"
+      aria-labelledby="workspace-view-trajectory"
     >
       <Suspense
         fallback={

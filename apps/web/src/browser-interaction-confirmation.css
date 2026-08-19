@@ -1,0 +1,167 @@
+.browser-interaction-confirmation {
+  position: relative;
+  z-index: 4;
+  container-type: inline-size;
+  padding: var(--inset-md);
+  margin: 0 var(--inset-lg) var(--stack-md)
+    calc(var(--layout-sidebar-compact) + var(--space-1));
+  color: var(--color-fg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-warning-border);
+  border-inline-start: var(--control-focus-width) solid var(--color-warning);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-raised);
+}
+
+.run-decision-dockets > .browser-interaction-confirmation {
+  margin-inline: 0;
+}
+
+.browser-interaction-confirmation header {
+  display: grid;
+  grid-template-columns: var(--control-target) minmax(0, 1fr) auto;
+  gap: var(--inline-sm);
+  align-items: center;
+}
+
+.browser-interaction-confirmation header > svg,
+.browser-interaction-confirmation code,
+.browser-interaction-confirmation dd {
+  color: var(--color-warning);
+}
+
+.browser-interaction-confirmation header div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--stack-xs);
+}
+
+.browser-interaction-confirmation header span,
+.browser-interaction-confirmation dt,
+.browser-interaction-confirmation code,
+.browser-interaction-confirmation dd {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.browser-interaction-confirmation header span,
+.browser-interaction-confirmation dt {
+  color: var(--color-fg-subtle);
+}
+
+.browser-interaction-confirmation header strong {
+  font-family: var(--font-sans);
+  font-size: clamp(var(--text-base), 2cqi, var(--text-lg));
+  font-weight: var(--font-weight-semibold);
+}
+
+.browser-interaction-confirmation p {
+  margin: var(--stack-sm) 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-compact);
+  color: var(--color-fg-muted);
+}
+
+.browser-interaction-confirmation dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--stack-sm);
+  margin: 0;
+}
+
+.browser-interaction-confirmation dl div {
+  min-width: 0;
+  padding: var(--inset-xs);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.browser-interaction-confirmation dd {
+  margin: var(--stack-xs) 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.browser-interaction-confirmation footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--inline-sm);
+  padding-block-start: var(--stack-sm);
+  margin-block-start: var(--stack-sm);
+  border-block-start: 1px solid var(--color-border-subtle);
+}
+
+.browser-confirmation-approve,
+.browser-confirmation-reject {
+  display: inline-flex;
+  min-width: calc(var(--control-target-primary) + var(--space-1));
+  min-height: calc(var(--control-target-primary) + var(--space-1));
+  align-items: center;
+  justify-content: center;
+  gap: var(--inline-xs);
+  padding-inline: var(--inset-sm);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.browser-confirmation-approve {
+  color: var(--color-fg-on-accent);
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+}
+
+.browser-confirmation-reject {
+  color: var(--color-danger);
+  background: var(--color-surface);
+  border: 1px solid var(--color-danger-border);
+}
+
+.browser-confirmation-approve:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+.browser-confirmation-reject:hover:not(:disabled) {
+  color: var(--color-danger-fg);
+  background: var(--color-danger-surface);
+}
+
+.browser-interaction-confirmation button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.browser-interaction-confirmation button:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 var(--control-focus-offset) var(--color-surface),
+    0 0 0 calc(var(--control-focus-offset) + var(--control-focus-width))
+      var(--color-focus-ring);
+}
+
+.browser-interaction-confirmation button:disabled,
+.browser-interaction-confirmation[aria-busy="true"] button {
+  color: var(--color-fg-disabled);
+  cursor: not-allowed;
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
+}
+
+@media (max-width: 1280px) {
+  .browser-interaction-confirmation {
+    margin-inline: calc(var(--layout-sidebar-compact) - var(--space-6))
+      var(--inset-sm);
+  }
+}
+
+@media (forced-colors: active) {
+  .browser-interaction-confirmation,
+  .browser-interaction-confirmation button {
+    border-color: ButtonText;
+  }
+}

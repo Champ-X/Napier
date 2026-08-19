@@ -18,6 +18,14 @@ export const CORE_STATELESS_READ_TOOL_NAMES = [
   "skill_resource",
 ] as const;
 
+export const ENVIRONMENT_DEGRADED_READ_TOOL_NAMES = [
+  ...CORE_STATELESS_READ_TOOL_NAMES,
+  "web_search",
+  "web_fetch",
+  "browser",
+  "research_source",
+] as const;
+
 export const DEFAULT_AGENT_ENABLED_TOOLS = [
   ...WORKSPACE_STATELESS_READ_TOOL_NAMES,
   "web_search",

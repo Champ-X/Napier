@@ -14,6 +14,7 @@ import { copy } from "./copy";
 import { workspaceTreeCopy as t } from "./workspace-tree-copy";
 import type { TrashedThreadReceipt } from "./use-thread-trash";
 import { listWorkspaceThreads } from "./workspace-tree-api";
+import { WorkspaceThreadPreviews } from "./WorkspaceThreadPreviews";
 
 const LazyThreadList = lazy(() => import("./ThreadList"));
 const LazyWorkspaceFolderPicker = lazy(() => import("./WorkspaceFolderPicker"));
@@ -30,6 +31,19 @@ interface RecentWorkspace {
  * runtime. Selecting one of their sessions performs one atomic workspace +
  * thread switch while the app shell remains mounted.
  */
+export interface WorkspaceTreeProps {
+  currentRoot: string;
+  threads: ThreadSummary[];
+  selectedThreadId: string | undefined;
+  busyThreadId: string | undefined;
+  trashedThread: TrashedThreadReceipt | undefined;
+  onSelect(threadId: string): void;
+  onTrash(threadId: string): void;
+  onRestore(): void;
+  onWorkspaceSwitch(root: string, threadId?: string): Promise<void>;
+  onOpenWorkspaceSettings(): void;
+}
+
 export function WorkspaceTree({
   currentRoot,
   threads,
@@ -41,18 +55,7 @@ export function WorkspaceTree({
   onRestore,
   onWorkspaceSwitch,
   onOpenWorkspaceSettings,
-}: {
-  currentRoot: string;
-  threads: ThreadSummary[];
-  selectedThreadId: string | undefined;
-  busyThreadId: string | undefined;
-  trashedThread: TrashedThreadReceipt | undefined;
-  onSelect(threadId: string): void;
-  onTrash(threadId: string): void;
-  onRestore(): void;
-  onWorkspaceSwitch(root: string, threadId?: string): Promise<void>;
-  onOpenWorkspaceSettings(): void;
-}) {
+}: WorkspaceTreeProps) {
   const [projects, setProjects] = useState<RecentWorkspace[]>([]);
   const [switching, setSwitching] = useState<string | undefined>(undefined);
   const [expandedRoots, setExpandedRoots] = useState<Set<string>>(
@@ -166,7 +169,9 @@ export function WorkspaceTree({
                   type="button"
                   className="workspace-tree-toggle"
                   aria-expanded={open}
-                  aria-label={`${open ? "Collapse" : "Expand"} ${project.name}`}
+                  aria-label={`${
+                    open ? t.collapseWorkspace : t.expandWorkspace
+                  } ${project.name}`}
                   onClick={() => void toggleRoot(project.root)}
                 >
                   {open ? (
@@ -203,10 +208,12 @@ export function WorkspaceTree({
                 >
                   {failedRoots.has(project.root) ? (
                     <p className="workspace-tree-message">
-                      Unable to load sessions
+                      {t.loadSessionsError}
                     </p>
                   ) : isLoading && projectThreads.length === 0 ? (
-                    <p className="workspace-tree-message">Loading sessions…</p>
+                    <p className="workspace-tree-message">
+                      {t.loadingSessions}
+                    </p>
                   ) : current ? (
                     <Suspense fallback={<div className="thread-list" />}>
                       <LazyThreadList
@@ -262,43 +269,6 @@ export function stableWorkspaceProjects(
     ordered.push({ root: currentRoot, name: basename(currentRoot) });
   }
   return ordered;
-}
-
-function WorkspaceThreadPreviews({
-  threads,
-  onSelect,
-}: {
-  threads: ThreadSummary[];
-  onSelect(threadId: string): void;
-}) {
-  if (threads.length === 0) {
-    return <p className="workspace-tree-message">No sessions yet</p>;
-  }
-  return (
-    <div className="workspace-thread-previews">
-      {threads.map((thread) => (
-        <button
-          type="button"
-          key={thread.id}
-          onClick={() => onSelect(thread.id)}
-        >
-          <span>{thread.title}</span>
-          <time dateTime={thread.updatedAt}>
-            {relativeDate(thread.updatedAt)}
-          </time>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function relativeDate(value: string): string {
-  const days = Math.max(
-    0,
-    Math.floor((Date.now() - Date.parse(value)) / 86_400_000),
-  );
-  if (days === 0) return "Today";
-  return `${String(days)}d`;
 }
 
 function basename(root: string): string {

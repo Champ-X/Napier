@@ -1,7 +1,6 @@
-import type {
-  SandboxSetupPreview,
-  SandboxSetupStatus,
-} from "@napier/contracts/sandbox-setup";
+import type { SandboxSetupPreview } from "@napier/contracts/sandbox-setup";
+
+import { environmentSetupCopy } from "./environment-setup-copy";
 
 export interface SandboxSetupCopy {
   title: string;
@@ -10,47 +9,10 @@ export interface SandboxSetupCopy {
   actionable: boolean;
 }
 
-const STATUS_COPY: Record<SandboxSetupStatus, SandboxSetupCopy> = {
-  ready: {
-    title: "Image found",
-    detail:
-      "The pinned image is present. Apply the exact preview to verify every production capability and runtime resource boundary before activation. If the toolchain has drifted, Setup rebuilds it once from the packaged source and verifies again.",
-    action: "Verify & activate",
-    actionable: true,
-  },
-  pullable: {
-    title: "Official release available",
-    detail:
-      "Apply the exact preview to anonymously pull the reviewed immutable release, verify its source and toolchain, then run every production capability check. If the public registry is unavailable, Setup builds the same pinned source locally.",
-    action: "Install & activate",
-    actionable: true,
-  },
-  buildable: {
-    title: "Build required",
-    detail:
-      "A local Docker daemon is ready. Napier can build the pinned toolchain, then prove its process, memory, CPU, storage, filesystem, privilege, and network limits.",
-    action: "Build & activate",
-    actionable: true,
-  },
-  runtime_unavailable: {
-    title: "Docker offline",
-    detail:
-      "Start a supported local Docker daemon. Remote Docker endpoints are rejected.",
-    action: "Docker required",
-    actionable: false,
-  },
-  unsupported: {
-    title: "Host unsupported",
-    detail: "This host cannot run the pinned OCI Sandbox setup.",
-    action: "Unavailable",
-    actionable: false,
-  },
-};
-
 export function sandboxSetupCopy(
   preview: SandboxSetupPreview,
 ): SandboxSetupCopy {
-  return STATUS_COPY[preview.status];
+  return environmentSetupCopy.sandbox.statuses[preview.status];
 }
 
 export function sandboxSetupReady(

@@ -12,9 +12,10 @@ type ThreadRunReadinessCapabilities = Pick<
 >;
 
 export type ThreadPromptReadiness =
-  | { ready: true }
+  | { ready: true; executionMode: "standard" }
   | {
-      ready: false;
+      ready: true;
+      executionMode: "environment_degraded_read_only";
       code: "sandbox_unavailable";
       message: string;
       projectionSha256: string;
@@ -27,18 +28,18 @@ export async function inspectThreadPromptReadiness(input: {
   capabilityPreset?: AgentCapabilityPresetId;
 }): Promise<ThreadPromptReadiness> {
   const thread = input.store.getThread(input.threadId);
-  if (!input.capabilityPreset) return { ready: true };
   const projection =
     await input.agentCapabilities.blockedRunReadinessProjection(
       thread.agentId,
       input.capabilityPreset,
     );
-  if (!projection) return { ready: true };
+  if (!projection) return { ready: true, executionMode: "standard" };
   const sandbox = projection.readiness.find((record) =>
     record.id.startsWith("sandbox:"),
   );
   return {
-    ready: false,
+    ready: true,
+    executionMode: "environment_degraded_read_only",
     code: "sandbox_unavailable",
     message: processRunReadinessMessage(sandbox),
     projectionSha256: projection.projectionSha256,

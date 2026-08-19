@@ -1,0 +1,171 @@
+.receipt-trust-anchor-list,
+.receipt-trust-subscriptions ol {
+  display: grid;
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.receipt-trust-anchor-list > li,
+.receipt-trust-subscriptions li {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-2);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.receipt-trust-anchor-list label,
+.receipt-trust-anchor-list label > span,
+.receipt-trust-subscriptions li > span:first-child {
+  display: flex;
+  min-width: 0;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.receipt-trust-anchor-list label > span,
+.receipt-trust-subscriptions li > span:first-child {
+  flex-direction: column;
+  gap: var(--space-0);
+  align-items: flex-start;
+}
+
+.receipt-trust-anchor-list small,
+.receipt-trust-anchor-list code,
+.receipt-trust-subscriptions code {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.receipt-trust-workbench mark {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-success);
+  background: var(--color-success-surface);
+  border-radius: var(--radius-full);
+}
+
+.receipt-trust-anchor-list > li[data-status="revoked"] mark,
+.receipt-trust-subscriptions li[data-status="paused"] mark {
+  color: var(--color-danger-fg);
+  background: var(--color-danger-surface);
+}
+
+.receipt-trust-subscriptions {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.receipt-trust-subscriptions > header,
+.receipt-trust-active-directory {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.receipt-trust-active-directory {
+  padding: var(--space-2);
+  color: var(--color-success);
+  background: var(--color-success-surface);
+  border: 1px solid var(--color-success-border);
+  border-radius: var(--radius-sm);
+}
+
+.receipt-trust-active-directory > span {
+  display: grid;
+  flex: 1;
+}
+
+.receipt-trust-evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.receipt-trust-evidence {
+  min-width: 0;
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.receipt-trust-evidence > summary {
+  display: flex;
+  min-height: var(--control-target);
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2);
+  cursor: pointer;
+}
+
+.receipt-trust-evidence > summary > span {
+  display: grid;
+  min-width: 0;
+}
+
+.receipt-trust-evidence small {
+  overflow: hidden;
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.receipt-trust-evidence pre {
+  max-height: 20rem;
+  padding: var(--space-3);
+  margin: 0;
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-fg);
+  background: var(--color-surface-muted);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.receipt-trust-empty-state,
+.receipt-trust-error,
+.receipt-trust-safety {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.receipt-trust-workbench > .receipt-trust-error,
+.receipt-trust-workbench > .receipt-trust-safety {
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+}
+
+.receipt-trust-workbench > .receipt-trust-error {
+  color: var(--color-danger-fg);
+  background: var(--color-danger-surface);
+  border: 1px solid var(--color-danger-border);
+}
+
+.receipt-trust-workbench > .receipt-trust-safety {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  color: var(--color-fg-muted);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.receipt-trust-workbench > .receipt-trust-safety svg {
+  flex: 0 0 auto;
+  margin: 0;
+  color: var(--color-fg-muted);
+}

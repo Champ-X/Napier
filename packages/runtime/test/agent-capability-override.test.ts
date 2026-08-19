@@ -131,11 +131,25 @@ describe("temporary Agent capability preset overrides", () => {
       expect(ordinary.status, ordinary.error).toBe("completed");
       expect(ordinary.configuration).toEqual(
         expect.objectContaining({
-          toolPolicy: agentBefore.toolPolicy,
-          enabledTools: [...agentBefore.enabledTools].sort(),
+          toolPolicy: "observe",
+          executionMode: "environment_degraded_read_only",
+          enabledTools: expect.arrayContaining([
+            "read_file",
+            "web_search",
+            "web_fetch",
+            "browser",
+            "research_source",
+          ]),
           enabledSkills: [...agentBefore.enabledSkills].sort(),
-          enabledSubagents: [...(agentBefore.enabledSubagents ?? [])].sort(),
+          enabledSubagents: [],
         }),
+      );
+      expect(ordinary.configuration?.enabledTools).not.toEqual(
+        expect.arrayContaining([
+          "apply_patch",
+          "run_command",
+          "workspace_process",
+        ]),
       );
       expect(ordinary.configuration?.contentSha256).not.toBe(
         overridden.configuration?.contentSha256,

@@ -43,7 +43,18 @@ export function useTaskControlNavigation({
         target.focus({ preventScroll: true });
         return;
       }
-      openInspector("plan");
+      openInspector("files");
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          const taskArtifact = [
+            ...document.querySelectorAll<HTMLElement>(
+              ".task-artifact-card[data-artifact-path]",
+            ),
+          ].find((candidate) => candidate.dataset["artifactPath"] === path);
+          taskArtifact?.scrollIntoView({ behavior: "smooth", block: "center" });
+          taskArtifact?.focus({ preventScroll: true });
+        }),
+      );
     },
     [openInspector],
   );

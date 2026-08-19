@@ -5,7 +5,7 @@ import type {
   RunRecord,
 } from "@napier/contracts";
 
-import type { AgentRuntime, RunPromptOptions } from "./agent-runtime.js";
+import type { RunPromptOptions } from "./agent-runtime-options.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { LocalStore } from "./store.js";
 import type {
@@ -28,6 +28,7 @@ import {
   parseExecutionPlanWorkflowNodeOutput,
   workflowSchemaSha256,
 } from "./workflow-schemas.js";
+import type { WorkflowAgentExecutionPort } from "./workflow-runtime-ports.js";
 
 export interface WorkflowAgentNodeOutcome {
   result: ExecutionPlanWorkflowNodeResult;
@@ -51,7 +52,7 @@ export interface WorkflowAgentNodeOperations {
 export class ExecutionPlanWorkflowAgentNodeExecutor {
   constructor(
     private readonly store: LocalStore,
-    private readonly agentRuntime: AgentRuntime,
+    private readonly agentExecution: WorkflowAgentExecutionPort,
     private readonly ledger: ExecutionPlanWorkflowLedger,
     private readonly operations: WorkflowAgentNodeOperations,
   ) {}
@@ -126,7 +127,7 @@ export class ExecutionPlanWorkflowAgentNodeExecutor {
         },
         ...(context.onEvent ? { onEvent: context.onEvent } : {}),
       };
-      run = await this.agentRuntime.runPrompt(runOptions);
+      run = await this.agentExecution.runPrompt(runOptions);
     } catch (error) {
       const cancelled = context.signal?.aborted === true;
       const errorCode = cancelled

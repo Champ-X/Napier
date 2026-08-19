@@ -7,12 +7,17 @@ import {
 } from "lucide-react";
 
 import type { ConversationSubagent } from "./conversation-subagent-view-model";
+import { conversationDetailCopy } from "./conversation-detail-copy";
+import { getLocale } from "./locale";
+
+export interface ConversationSubagentCardProps {
+  item: ConversationSubagent;
+}
 
 export function ConversationSubagentCard({
   item,
-}: {
-  item: ConversationSubagent;
-}) {
+}: ConversationSubagentCardProps) {
+  const copy = conversationDetailCopy.subagent;
   const Icon =
     item.task.status === "completed"
       ? CheckCircle2
@@ -32,7 +37,8 @@ export function ConversationSubagentCard({
         <Bot size={15} aria-hidden="true" />
         <div>
           <span>
-            Subagent · {item.task.role} · {item.task.status}
+            {copy.label} · {copy.roles[item.task.role]} ·{" "}
+            {copy.statuses[item.task.status]}
           </span>
           <strong>{item.task.description}</strong>
         </div>
@@ -45,91 +51,96 @@ export function ConversationSubagentCard({
       </summary>
       <dl>
         <div>
-          <dt>Model</dt>
+          <dt>{copy.model}</dt>
           <dd>
             {item.task.model.provider}/{item.task.model.id}
           </dd>
         </div>
         <div>
-          <dt>Turns</dt>
-          <dd>{item.task.turnCount}</dd>
+          <dt>{copy.turns}</dt>
+          <dd>{formatNumber(item.task.turnCount)}</dd>
         </div>
         <div>
-          <dt>Steps</dt>
-          <dd>{item.task.stepCount}</dd>
+          <dt>{copy.steps}</dt>
+          <dd>{formatNumber(item.task.stepCount)}</dd>
         </div>
         <div>
-          <dt>Usage</dt>
+          <dt>{copy.usage}</dt>
           <dd>
-            {(
-              item.task.usage.inputTokens + item.task.usage.outputTokens
-            ).toLocaleString()}{" "}
-            tokens
+            {formatNumber(
+              item.task.usage.inputTokens + item.task.usage.outputTokens,
+            )}{" "}
+            {copy.tokens}
           </dd>
         </div>
         <div>
-          <dt>Outcome</dt>
+          <dt>{copy.outcome}</dt>
           <dd>
-            {item.itemCount} items · {item.evidenceCount} evidence ·{" "}
-            {item.unknownCount} unknown
+            {formatNumber(item.itemCount)} {copy.items} ·{" "}
+            {formatNumber(item.evidenceCount)} {copy.evidence} ·{" "}
+            {formatNumber(item.unknownCount)} {copy.unknown}
           </dd>
         </div>
         <div>
-          <dt>Risk</dt>
+          <dt>{copy.risk}</dt>
           <dd>
-            {item.blockerCount} blocker · {item.warningCount} warning
+            {formatNumber(item.blockerCount)} {copy.blocker} ·{" "}
+            {formatNumber(item.warningCount)} {copy.warning}
           </dd>
         </div>
         {item.task.stopReason ? (
           <div>
-            <dt>Stop</dt>
-            <dd>{humanize(item.task.stopReason)}</dd>
+            <dt>{copy.stop}</dt>
+            <dd>{copy.stopReasons[item.task.stopReason]}</dd>
           </div>
         ) : null}
       </dl>
       {item.task.outcome ? (
         <section className="conversation-subagent-outcome">
-          <strong>Outcome summary</strong>
+          <strong>{copy.outcomeSummary}</strong>
           <p>{item.task.outcome.summary}</p>
           <ul>
             {item.task.outcome.items.slice(0, 5).map((outcome, index) => (
               <li className={`severity-${outcome.severity}`} key={index}>
-                <span>{outcome.kind}</span>
+                <span>{copy.outcomeKinds[outcome.kind]}</span>
                 <strong>{outcome.title}</strong>
-                <small>{outcome.evidenceCount} evidence · details hidden</small>
+                <small>
+                  {formatNumber(outcome.evidenceCount)} {copy.evidence} ·{" "}
+                  {copy.detailsHidden}
+                </small>
               </li>
             ))}
           </ul>
         </section>
       ) : item.task.hasError ? (
         <p className="conversation-subagent-error">
-          {safeFailureSummary(item.task.status, item.task.stopReason)}
+          {safeFailureSummary(item)}
         </p>
       ) : (
         <p className="conversation-subagent-guidance">
-          {active
-            ? "The delegated task is running independently."
-            : "No structured outcome was recorded."}
+          {active ? copy.runningGuidance : copy.emptyGuidance}
         </p>
       )}
     </details>
   );
 }
 
-function safeFailureSummary(
-  status: string,
-  stopReason: string | undefined,
-): string {
-  return `Delegation ${humanize(status)}${stopReason ? ` · ${humanize(stopReason)}` : ""}. Inspect Trace for private diagnostics.`;
+function safeFailureSummary(item: ConversationSubagent): string {
+  const copy = conversationDetailCopy.subagent;
+  const reason = item.task.stopReason
+    ? ` · ${copy.stopReasons[item.task.stopReason]}`
+    : "";
+  return `${copy.failurePrefix} ${copy.statuses[item.task.status]}${reason}${copy.failureSeparator}${copy.failureGuidance}`;
 }
 
-function humanize(value: string): string {
-  const normalized = value.replaceAll("_", " ");
-  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat(getLocale() === "zh" ? "zh-CN" : "en").format(
+    value,
+  );
 }
 
 function formatTime(value: string): string {
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat(getLocale() === "zh" ? "zh-CN" : "en", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,

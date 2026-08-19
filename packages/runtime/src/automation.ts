@@ -1,6 +1,6 @@
 import type { AutomationSchedule, ScheduleClaim } from "@napier/contracts";
 
-import { AgentRuntime } from "./agent-runtime.js";
+import type { AgentExecutionPort } from "./agent-execution.js";
 import { createId } from "./ids.js";
 import { LocalStore } from "./store.js";
 
@@ -32,7 +32,7 @@ export class AutomationService {
 
   constructor(
     readonly store: LocalStore,
-    readonly runtime: AgentRuntime,
+    readonly runtime: Pick<AgentExecutionPort, "modelRegistry" | "runPrompt">,
     options: AutomationServiceOptions = {},
   ) {
     this.workerId = options.workerId ?? createId("scheduler");

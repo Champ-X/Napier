@@ -37,7 +37,7 @@ describe("Browser interaction confirmation panel", () => {
     });
     const serialized = JSON.stringify(tree);
 
-    expect(serialized).toContain("Confirm ");
+    expect(serialized).toContain("Confirm");
     expect(serialized).toContain("type");
     expect(serialized).toContain("Enter data");
     expect(serialized).toContain("Effect");

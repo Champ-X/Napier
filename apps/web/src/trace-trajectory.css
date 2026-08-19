@@ -1,27 +1,20 @@
 .trace-trajectory {
-  --trajectory-input: #2ba268;
-  --trajectory-model: #9573b8;
-  --trajectory-tools: #df8828;
+  --trajectory-input: var(--color-trajectory-input-fg);
+  --trajectory-model: var(--color-trajectory-model-fg);
+  --trajectory-tools: var(--color-trajectory-tool-fg);
   position: relative;
   container-type: inline-size;
   padding: 24px;
   margin-bottom: 24px;
   overflow: visible;
-  background: #f4f7fc;
-  border: 1px solid var(--rule-strong);
-  border-radius: 8px;
-  box-shadow: 0 14px 40px rgb(43 51 47 / 7%);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-raised);
 }
 
 .trace-trajectory::before {
-  position: absolute;
-  top: -1px;
-  right: 24px;
-  left: 24px;
-  height: 3px;
-  content: "";
-  background: var(--vermilion);
-  border-radius: 0 0 2px 2px;
+  content: none;
 }
 
 .trace-trajectory-header,
@@ -71,14 +64,14 @@
 .trace-overview-axis small,
 .trace-run-index > header span {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--text-annotation);
   color: var(--ink-faint);
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
 
 .trace-trajectory-header > div > span {
-  color: var(--vermilion);
+  color: var(--color-accent);
 }
 
 .trace-trajectory-header h3 {
@@ -104,7 +97,7 @@
   gap: 7px;
   padding: 7px 10px;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--text-xs);
   color: var(--ink-faint);
   text-transform: uppercase;
   background: rgb(255 255 255 / 72%);
@@ -120,14 +113,14 @@
 }
 
 .trace-trajectory-state.is-live {
-  color: var(--ledger);
-  background: #e6efea;
-  border-color: #b8ccc2;
+  color: var(--color-success);
+  background: var(--color-success-surface);
+  border-color: var(--color-success-border);
 }
 
 .trace-trajectory-state.is-live i {
-  background: var(--ledger);
-  box-shadow: 0 0 0 4px rgb(45 85 71 / 12%);
+  background: var(--color-success);
+  box-shadow: 0 0 0 var(--space-1) var(--color-success-surface);
   animation: trace-pulse 1.6s ease-in-out infinite;
 }
 
@@ -218,7 +211,7 @@
   width: 24px;
   height: 24px;
   flex: 0 0 24px;
-  font-size: 10px;
+  font-size: var(--text-annotation);
   font-style: normal;
   color: var(--paper-bright);
   background: var(--trajectory-input);
@@ -240,7 +233,7 @@
 .trace-lane-tabs button > span {
   overflow: hidden;
   flex: 1 1 auto;
-  font-size: 11px;
+  font-size: var(--text-annotation);
   font-weight: 650;
   text-align: left;
   text-overflow: ellipsis;
@@ -249,7 +242,7 @@
 
 .trace-lane-tabs button > small {
   min-width: 22px;
-  font-size: 10px;
+  font-size: var(--text-annotation);
   color: var(--ink-faint);
   text-align: right;
 }
@@ -266,7 +259,7 @@
   height: 32px;
   padding: 0 10px;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--text-annotation);
   color: var(--ink-faint);
   cursor: pointer;
   background: transparent;
@@ -311,7 +304,7 @@
   min-width: 0;
   padding: 9px 0;
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--text-annotation);
   color: var(--ink);
   background: transparent;
   border: 0;
@@ -344,7 +337,7 @@
 .trace-trajectory-search kbd {
   padding: 2px 5px;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--text-annotation);
   color: var(--ink-faint);
   background: var(--paper-deep);
   border: 1px solid var(--rule);
@@ -379,14 +372,14 @@
 }
 
 .trace-overview-disclosure > summary > span {
-  font-size: 11px;
+  font-size: var(--text-annotation);
   font-weight: 650;
   text-transform: uppercase;
 }
 
 .trace-overview-disclosure > summary > small {
   flex: 1 1 auto;
-  font-size: 10px;
+  font-size: var(--text-annotation);
   color: var(--ink-faint);
 }
 
@@ -422,7 +415,7 @@
 
 .trace-overview header strong {
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--text-annotation);
   font-weight: 500;
   color: #71837a;
   text-transform: uppercase;
@@ -440,7 +433,7 @@
   height: 24px;
   padding: 0 8px;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--text-annotation);
   color: #8b9099;
   cursor: pointer;
   background: transparent;
@@ -484,14 +477,14 @@
 .trace-lane-label {
   gap: 0;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--text-annotation);
   color: #a2a7b0;
   text-transform: uppercase;
 }
 
 .trace-lane-label small {
   margin-left: 4px;
-  font-size: 8px;
+  font-size: var(--text-annotation);
   color: #747b86;
 }
 
@@ -519,7 +512,7 @@
   padding: 0;
   overflow: hidden;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--text-annotation);
   color: transparent;
   text-align: left;
   text-overflow: ellipsis;
@@ -621,7 +614,7 @@
 
 .trace-run-index > header output {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--text-annotation);
   color: var(--ledger);
 }
 
@@ -690,7 +683,7 @@
 .trace-run-heading i {
   max-width: 180px;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--text-annotation);
   color: var(--ink-faint);
 }
 
@@ -712,6 +705,26 @@
   border-top: 1px solid var(--rule);
 }
 
+.trace-show-earlier {
+  display: flex;
+  min-height: var(--control-target-primary);
+  align-items: center;
+  justify-content: center;
+  margin: var(--space-3);
+  padding: 0 var(--inset-md);
+  font-size: var(--text-sm);
+  color: var(--color-accent);
+  cursor: pointer;
+  background: var(--color-accent-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.trace-show-earlier:hover {
+  color: var(--color-accent-hover);
+  border-color: var(--color-border-strong);
+}
+
 .trace-turn {
   padding-top: 12px;
 }
@@ -720,7 +733,7 @@
   justify-content: space-between;
   padding: 0 4px 7px 48px;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--text-annotation);
   color: var(--ink-soft);
   text-transform: uppercase;
 }
@@ -767,7 +780,7 @@
 .trace-event-sequence {
   gap: 7px;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--text-annotation);
   color: var(--ink-faint);
 }
 
@@ -805,7 +818,7 @@
 .trace-event-copy strong {
   overflow: hidden;
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--text-annotation);
   font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -815,7 +828,7 @@
   flex: 0 0 auto;
   padding: 3px 5px;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--text-annotation);
   font-style: normal;
   color: var(--ink-faint);
   text-transform: uppercase;
@@ -856,13 +869,13 @@
 }
 
 .trace-event-meta strong {
-  font-size: 10px;
+  font-size: var(--text-annotation);
   font-weight: 650;
   color: var(--ink);
 }
 
 .trace-event-meta time {
-  font-size: 9px;
+  font-size: var(--text-annotation);
   color: var(--ink-faint);
 }
 
@@ -904,13 +917,13 @@
 }
 
 .trace-event-audit small {
-  font-size: 8px;
+  font-size: var(--text-annotation);
   color: var(--ink-faint);
   text-transform: uppercase;
 }
 
 .trace-event-audit strong {
-  font-size: 10px;
+  font-size: var(--text-annotation);
   font-weight: 500;
   color: var(--ink-soft);
 }
@@ -941,7 +954,7 @@
 
 .trace-trajectory-empty span {
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--text-annotation);
   color: var(--vermilion);
   text-transform: uppercase;
 }
@@ -1007,7 +1020,7 @@
     padding-inline: 6px;
   }
   .trace-lane-tabs button > span {
-    font-size: 9px;
+    font-size: var(--text-annotation);
   }
   .trace-lane-tabs button > small {
     display: none;

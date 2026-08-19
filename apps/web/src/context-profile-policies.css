@@ -1,0 +1,288 @@
+.context-option-group,
+.context-budget-grid {
+  min-width: 0;
+  padding-block-start: var(--inset-sm);
+  margin: var(--stack-xs) 0 var(--stack-sm);
+  border: 0;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.context-recovery-policy,
+.context-tool-loop-guard {
+  min-width: 0;
+  padding: var(--inset-sm);
+  margin: var(--stack-xs) 0 var(--stack-sm);
+  background: var(--color-success-surface);
+  border: 1px solid var(--color-success-border);
+  border-radius: var(--radius-sm);
+}
+
+.context-recovery-policy.mode-manual,
+.context-tool-loop-guard.is-disabled {
+  background: var(--color-warning-surface);
+  border-color: var(--color-warning-border);
+}
+
+.context-recovery-policy > legend,
+.context-tool-loop-guard > legend {
+  padding-inline: var(--space-1);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-fg-subtle);
+}
+
+.context-recovery-policy > header,
+.context-tool-loop-guard > header {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: var(--inline-sm);
+  padding-block-end: var(--inset-xs);
+  margin-block-end: var(--stack-sm);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.context-recovery-policy > header svg,
+.context-tool-loop-guard > header > svg {
+  flex: none;
+  margin-block-start: var(--space-1);
+  color: var(--color-success);
+}
+
+.context-recovery-policy.mode-manual > header svg,
+.context-tool-loop-guard.is-disabled > header > svg {
+  color: var(--color-warning);
+}
+
+.context-recovery-policy > header div,
+.context-tool-loop-guard > header > div {
+  display: grid;
+  min-width: 0;
+  gap: var(--stack-xs);
+}
+
+.context-recovery-policy > header strong,
+.context-tool-loop-guard > header strong {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.context-recovery-policy > header span,
+.context-tool-loop-guard > header div span {
+  font-size: var(--text-xs);
+  color: var(--color-fg-subtle);
+}
+
+.context-recovery-grid,
+.context-loop-grid {
+  display: grid;
+  min-width: 0;
+  gap: var(--stack-sm);
+}
+
+.context-recovery-grid {
+  grid-template-columns: minmax(0, 1.4fr) repeat(2, minmax(0, 0.8fr));
+}
+
+.context-loop-grid {
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 2.2fr);
+}
+
+.context-recovery-grid .context-field,
+.context-loop-grid .context-field {
+  margin: 0;
+}
+
+.context-recovery-grid input,
+.context-loop-grid input[type="number"] {
+  text-align: center;
+}
+
+.context-recovery-policy > p,
+.context-tool-loop-guard > p {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--inline-xs);
+  margin: var(--stack-sm) 0 0;
+  font-size: var(--text-xs);
+  line-height: var(--leading-compact);
+  color: var(--color-fg-muted);
+}
+
+.context-recovery-policy > p svg,
+.context-tool-loop-guard > p svg {
+  flex: none;
+  margin-block-start: var(--space-1);
+  color: var(--color-success);
+}
+
+.context-loop-toggle {
+  display: inline-flex;
+  min-height: var(--control-target-primary);
+  flex: none;
+  align-items: center;
+  gap: var(--inline-xs);
+  padding-inline: var(--inset-xs);
+  margin-inline-start: auto;
+  font-size: var(--text-xs);
+  color: var(--color-success);
+  cursor: pointer;
+  background: var(--color-surface);
+  border: 1px solid var(--color-success-border);
+  border-radius: var(--radius-sm);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.is-disabled .context-loop-toggle {
+  color: var(--color-fg-subtle);
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
+}
+
+.context-loop-toggle:hover {
+  color: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+.context-loop-toggle:has(input:focus-visible),
+.context-option-grid > label:has(input:focus-visible) {
+  outline: none;
+  box-shadow:
+    0 0 0 var(--control-focus-offset) var(--color-surface),
+    0 0 0 calc(var(--control-focus-offset) + var(--control-focus-width))
+      var(--color-focus-ring);
+}
+
+.context-loop-toggle:active,
+.context-option-grid > label:active {
+  transform: scale(0.99);
+}
+
+.context-loop-toggle:has(input:disabled),
+.context-option-grid > label:has(input:disabled) {
+  color: var(--color-fg-disabled);
+  cursor: not-allowed;
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
+  opacity: 0.72;
+}
+
+.context-loop-toggle input,
+.context-option-grid input {
+  width: var(--space-4);
+  height: var(--space-4);
+  flex: none;
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+.context-tool-loop-guard > .context-loop-error {
+  color: var(--color-danger);
+}
+
+.context-option-group legend,
+.context-budget-grid legend {
+  padding-inline-end: var(--inset-xs);
+}
+
+.context-option-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--stack-sm);
+}
+
+.context-option-grid > label {
+  display: flex;
+  min-width: 0;
+  min-height: var(--control-target-primary);
+  align-items: flex-start;
+  gap: var(--inline-sm);
+  padding: var(--inset-xs);
+  cursor: pointer;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.context-option-grid > label:hover {
+  border-color: var(--color-accent-hover);
+}
+
+.context-option-grid > label:has(input:checked) {
+  background: var(--color-accent-subtle);
+  border-color: var(--color-accent);
+}
+
+.context-option-grid label > span {
+  display: grid;
+  min-width: 0;
+  gap: var(--stack-xs);
+}
+
+.context-option-grid strong,
+.context-option-grid small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.context-option-grid strong {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.context-option-grid small {
+  font-size: var(--text-xs);
+  color: var(--color-fg-subtle);
+}
+
+.context-budget-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--stack-xs);
+}
+
+.context-budget-grid legend {
+  margin-block-end: var(--stack-sm);
+}
+
+.context-budget-grid .context-field {
+  margin: 0;
+}
+
+.context-budget-grid input {
+  text-align: center;
+}
+
+@container context-panel (max-width: 768px) {
+  .context-recovery-grid,
+  .context-loop-grid,
+  .context-option-grid,
+  .context-budget-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .context-loop-toggle,
+  .context-option-grid > label {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .context-recovery-policy,
+  .context-tool-loop-guard,
+  .context-loop-toggle,
+  .context-option-grid > label {
+    border-color: ButtonText;
+  }
+
+  .context-loop-toggle:has(input:focus-visible),
+  .context-option-grid > label:has(input:focus-visible) {
+    outline: var(--control-focus-width) solid Highlight;
+    outline-offset: var(--control-focus-offset);
+    box-shadow: none;
+  }
+}

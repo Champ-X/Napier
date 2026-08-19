@@ -1,0 +1,253 @@
+.context-prompt-variables {
+  min-width: 0;
+  padding: var(--inset-sm);
+  margin: var(--stack-xs) 0 var(--stack-sm);
+  background: var(--color-warning-surface);
+  border: 1px solid var(--color-warning-border);
+  border-radius: var(--radius-sm);
+}
+
+.context-prompt-variables > legend {
+  padding-inline: var(--space-1);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-warning);
+}
+
+.context-prompt-variables > header,
+.context-prompt-variables > header > div {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.context-prompt-variables > header {
+  justify-content: space-between;
+  gap: var(--inline-sm);
+  padding-block-end: var(--inset-xs);
+  border-bottom: 1px solid var(--color-warning-border);
+}
+
+.context-prompt-variables > header > div {
+  gap: var(--inline-sm);
+}
+
+.context-prompt-variables > header svg {
+  flex: none;
+  color: var(--color-warning);
+}
+
+.context-prompt-variables > header span {
+  display: grid;
+  min-width: 0;
+  gap: var(--stack-xs);
+}
+
+.context-prompt-variables > header strong {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.context-prompt-variables > header small {
+  font-size: var(--text-xs);
+  color: var(--color-fg-subtle);
+}
+
+.prompt-variable-add,
+.prompt-variable-token,
+.prompt-variable-remove {
+  display: inline-flex;
+  min-height: var(--control-target);
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-fg);
+  cursor: pointer;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.prompt-variable-add {
+  flex: none;
+  gap: var(--inline-xs);
+  min-height: var(--control-target-primary);
+  padding-inline: var(--inset-sm);
+}
+
+.prompt-variable-add:hover:not(:disabled),
+.prompt-variable-token:hover:not(:disabled),
+.prompt-variable-remove:hover:not(:disabled) {
+  color: var(--color-accent-hover);
+  background: var(--color-accent-subtle);
+  border-color: var(--color-accent-hover);
+}
+
+.prompt-variable-add:focus-visible,
+.prompt-variable-token:focus-visible,
+.prompt-variable-remove:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 var(--control-focus-offset) var(--color-surface),
+    0 0 0 calc(var(--control-focus-offset) + var(--control-focus-width))
+      var(--color-focus-ring);
+}
+
+.prompt-variable-add:active:not(:disabled),
+.prompt-variable-token:active:not(:disabled),
+.prompt-variable-remove:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.prompt-variable-add:disabled,
+.prompt-variable-token:disabled,
+.prompt-variable-remove:disabled {
+  color: var(--color-fg-disabled);
+  cursor: not-allowed;
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
+}
+
+.context-prompt-variables > p,
+.prompt-variable-skill-note,
+.prompt-variable-error,
+.prompt-variable-empty {
+  font-size: var(--text-xs);
+  line-height: var(--leading-compact);
+}
+
+.context-prompt-variables > p,
+.prompt-variable-skill-note,
+.prompt-variable-empty {
+  color: var(--color-fg-muted);
+}
+
+.context-prompt-variables > p,
+.prompt-variable-error {
+  margin: var(--stack-sm) 0 0;
+}
+
+.prompt-variable-empty {
+  padding: var(--inset-sm);
+  margin-block-start: var(--stack-sm);
+  text-align: center;
+  background: var(--color-surface-raised);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.prompt-variable-list {
+  display: grid;
+  gap: var(--stack-sm);
+  margin-block-start: var(--stack-sm);
+}
+
+.prompt-variable-row {
+  min-width: 0;
+  padding: var(--inset-xs);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-inline-start: var(--control-focus-offset) solid var(--color-warning);
+  border-radius: var(--radius-sm);
+}
+
+.prompt-variable-row[aria-invalid="true"] {
+  background: var(--color-danger-surface);
+  border-color: var(--color-danger-border);
+}
+
+.prompt-variable-row > header {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--inline-xs);
+  padding-block-end: var(--inset-xs);
+  margin-block-end: var(--stack-sm);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.prompt-variable-row > header > span,
+.prompt-variable-token code {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.prompt-variable-row > header > span {
+  color: var(--color-fg-subtle);
+}
+
+.prompt-variable-token {
+  min-width: 0;
+  padding-inline: var(--inset-xs);
+  overflow: hidden;
+}
+
+.prompt-variable-token code {
+  overflow: hidden;
+  color: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prompt-variable-remove {
+  width: var(--control-target);
+  flex: none;
+  margin-inline-start: auto;
+  color: var(--color-danger);
+}
+
+.prompt-variable-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--stack-sm);
+}
+
+.prompt-variable-grid .context-field {
+  margin: 0;
+}
+
+.prompt-variable-grid .prompt-variable-value,
+.prompt-variable-skill-note {
+  grid-column: 1 / -1;
+}
+
+.prompt-variable-grid textarea {
+  min-height: var(--space-16);
+}
+
+.prompt-variable-skill-note {
+  margin: 0;
+  padding: var(--inset-xs);
+  background: var(--color-success-surface);
+  border-inline-start: var(--control-focus-offset) solid var(--color-success);
+}
+
+.prompt-variable-error {
+  color: var(--color-danger);
+}
+
+@container context-panel (max-width: 768px) {
+  .prompt-variable-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (forced-colors: active) {
+  .context-prompt-variables,
+  .prompt-variable-row,
+  .prompt-variable-add,
+  .prompt-variable-token,
+  .prompt-variable-remove {
+    border-color: ButtonText;
+  }
+
+  .prompt-variable-add:focus-visible,
+  .prompt-variable-token:focus-visible,
+  .prompt-variable-remove:focus-visible {
+    outline: var(--control-focus-width) solid Highlight;
+    outline-offset: var(--control-focus-offset);
+    box-shadow: none;
+  }
+}

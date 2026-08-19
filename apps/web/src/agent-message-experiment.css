@@ -61,7 +61,7 @@
 .agent-experiment-model-delta span,
 .agent-experiment-change-grid > div > span {
   font-family: var(--mono);
-  font-size: 6px;
+  font-size: var(--text-xs);
   color: var(--ink-faint);
   text-transform: uppercase;
   letter-spacing: 0.09em;
@@ -88,7 +88,7 @@
   max-width: 44em;
   margin: 2px 0 0;
   font-family: var(--serif);
-  font-size: 8px;
+  font-size: var(--text-xs);
   line-height: 1.5;
   color: var(--ink-soft);
 }
@@ -122,7 +122,7 @@
   min-width: 0;
   padding: 7px 8px;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--text-xs);
   color: var(--ink);
   background: rgb(246 251 255 / 88%);
   border: 1px solid var(--rule-strong);
@@ -160,7 +160,7 @@
 .agent-experiment-model strong {
   overflow: hidden;
   font-family: var(--mono);
-  font-size: 7px;
+  font-size: var(--text-xs);
   color: var(--ink);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -183,7 +183,7 @@
   min-height: 27px;
   padding: 0 9px;
   font-family: var(--mono);
-  font-size: 7px;
+  font-size: var(--text-xs);
   color: var(--paper-bright);
   background: var(--ledger);
   border: 1px solid var(--ledger);
@@ -210,7 +210,7 @@
 .agent-experiment-safety {
   margin: 0;
   font-family: var(--serif);
-  font-size: 8px;
+  font-size: var(--text-xs);
   line-height: 1.5;
   color: var(--ink-soft);
 }
@@ -274,7 +274,7 @@
   display: grid;
   place-items: center;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--text-xs);
   color: var(--vermilion);
   background: var(--paper-bright);
   border: 1px solid var(--rule-strong);
@@ -297,13 +297,13 @@
 .agent-experiment-model-delta strong {
   overflow-wrap: anywhere;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--text-xs);
   color: var(--ink);
 }
 
 .agent-experiment-sides small {
   font-family: var(--mono);
-  font-size: 6px;
+  font-size: var(--text-xs);
   line-height: 1.4;
   color: var(--ink-faint);
 }
@@ -331,7 +331,7 @@
   margin: 0;
   overflow-wrap: anywhere;
   font-family: var(--mono);
-  font-size: 7px;
+  font-size: var(--text-xs);
   color: var(--ink);
 }
 
@@ -339,7 +339,7 @@
 .agent-experiment-preview footer code,
 .agent-experiment-comparison footer code {
   font-family: var(--mono);
-  font-size: 6px;
+  font-size: var(--text-xs);
   color: var(--ink-faint);
 }
 
@@ -360,7 +360,7 @@
 
 .agent-experiment-preview footer > span {
   font-family: var(--mono);
-  font-size: 6px;
+  font-size: var(--text-xs);
   color: var(--ink-faint);
 }
 
@@ -381,7 +381,7 @@
 
 .agent-experiment-metrics strong {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--text-xs);
   color: var(--ledger);
 }
 
@@ -435,7 +435,7 @@
   padding: 2px 4px;
   overflow-wrap: anywhere;
   font-family: var(--mono);
-  font-size: 6px;
+  font-size: var(--text-xs);
   color: var(--ink-soft);
   background: var(--paper-deep);
 }
@@ -443,7 +443,7 @@
 .agent-experiment-change-grid p {
   margin: 5px 0 0;
   font-family: var(--serif);
-  font-size: 7px;
+  font-size: var(--text-xs);
   color: var(--ink-faint);
 }
 

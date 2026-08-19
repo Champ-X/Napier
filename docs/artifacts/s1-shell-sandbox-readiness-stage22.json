@@ -1,7 +1,7 @@
 {
   "kind": "napier.s1-shell-sandbox-readiness-stage22",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-16T17:38:32.008Z",
+  "generatedAt": "2026-08-19T19:11:17.980Z",
   "implementation": {
     "modelSha256": "5adf9c20cd914638326e744b7a90ab9d9e956240fa24adb3b34994401d46691d",
     "checkerSha256": "174fb44f4e628224815d34d92e06407f8aa6831d89dd8d7ac8cefd6c65c0d065",
@@ -70,23 +70,23 @@
         {
           "kind": "sandbox-product-acceptance-stage13",
           "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-          "sha256": "89c9ec57d0ba5dc6be917fb295cc0fae5bb204a3909b370934c4f44bf609df86",
+          "sha256": "26a6ad03929c5a04eb869f5eb494c40a33c496fb5c12d54839e0dc419c4653a0",
           "verifierSha256": "0ab91832a93c9a7bbddc676d8d516c9fa5923f1666a5742b59a1da3d29bc892e"
         },
         {
           "kind": "sandbox-acquisition-stage20",
           "path": "docs/artifacts/sandbox-acquisition-stage20.json",
-          "sha256": "9261727af000cd74bbdfd93fc8bd1f47cdf1be36efdeb8d5957dd802905c7213",
+          "sha256": "110bc8b1f3dfaf539e6fa188fbab500ada27315ac8171d4b55789816dda4f7d5",
           "verifierSha256": "f4c5da21639fa64ed673df066c39d903e0539eb955639fdbbbc350741e274881"
         },
         {
           "kind": "linux-host-product-acceptance-stage19",
           "path": "docs/artifacts/linux-host-product-acceptance-stage19.json",
-          "sha256": "921812a96428bd627e128bfde3d4f4f6abe35132f83237e7360e81cb9640b0c1",
+          "sha256": "91aaf9292efd2cfe642f73557ddaee7a9be3042a02e31ba13dc40e10a0793808",
           "verifierSha256": "e1272cfa34b7bc00913198faf222007b9403b3ce799d9cfd918b68920bcab386"
         }
       ],
-      "evidenceSetSha256": "b2d8035c54b54759d0d2d675f041412321e954931d8f2369059ee1295dd7fda0"
+      "evidenceSetSha256": "838439c98d2ecc68d66f3f8725e31f2ca7231d21bebe69cdb30891f8a12d2254"
     },
     {
       "id": "daemon_execution_recovery",
@@ -95,7 +95,7 @@
         {
           "kind": "sandbox-product-acceptance-stage13",
           "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-          "sha256": "89c9ec57d0ba5dc6be917fb295cc0fae5bb204a3909b370934c4f44bf609df86",
+          "sha256": "26a6ad03929c5a04eb869f5eb494c40a33c496fb5c12d54839e0dc419c4653a0",
           "verifierSha256": "0ab91832a93c9a7bbddc676d8d516c9fa5923f1666a5742b59a1da3d29bc892e"
         },
         {
@@ -125,11 +125,11 @@
         {
           "kind": "linux-host-product-acceptance-stage19",
           "path": "docs/artifacts/linux-host-product-acceptance-stage19.json",
-          "sha256": "921812a96428bd627e128bfde3d4f4f6abe35132f83237e7360e81cb9640b0c1",
+          "sha256": "91aaf9292efd2cfe642f73557ddaee7a9be3042a02e31ba13dc40e10a0793808",
           "verifierSha256": "e1272cfa34b7bc00913198faf222007b9403b3ce799d9cfd918b68920bcab386"
         }
       ],
-      "evidenceSetSha256": "3284d5f8b3a83e60bf6ee26e337eced36b6679db1d8a9a52c2cfc236a6c03fd4"
+      "evidenceSetSha256": "cd8cff2bdf75e880b102db7febaf1306fe2b1bc9c3b989f770251d8fef8c20a4"
     },
     {
       "id": "isolation_and_fail_closed_limits",
@@ -156,7 +156,7 @@
         {
           "kind": "sandbox-product-acceptance-stage13",
           "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-          "sha256": "89c9ec57d0ba5dc6be917fb295cc0fae5bb204a3909b370934c4f44bf609df86",
+          "sha256": "26a6ad03929c5a04eb869f5eb494c40a33c496fb5c12d54839e0dc419c4653a0",
           "verifierSha256": "0ab91832a93c9a7bbddc676d8d516c9fa5923f1666a5742b59a1da3d29bc892e"
         },
         {
@@ -166,7 +166,7 @@
           "verifierSha256": "d733b13f7da23d1397d236cdb55ffcca108b7a696e5b89d94f2f94a1fc503946"
         }
       ],
-      "evidenceSetSha256": "9dce3f4b35cbb1c5110c9cdd7e9a0b9704c97e083f614de65ce13b2041869583"
+      "evidenceSetSha256": "f7530ec3c2f0d6703fe71c6147bf37230559d83a285a74c81e2d0086d0013cc8"
     },
     {
       "id": "run_scoped_mode_and_profile_upgrade",
@@ -175,14 +175,14 @@
         {
           "kind": "profile-upgrade-stage21",
           "path": "docs/artifacts/profile-upgrade-stage21.json",
-          "sha256": "2b80516b2d604ebf5117248d9879d9ce7f65d23ae0b9e723007d247c249fb5a0",
+          "sha256": "f2d1bdac348221b613563358e07219ed96d343fd2c0f17d37607e2a7782a0263",
           "verifierSha256": "fa2ee85bfb674ee0bc27af7ec1f98395af42bd266d39a2cd4d4de25b0802d9bb"
         }
       ],
-      "evidenceSetSha256": "a97eee2593aa2799992f8a1a1110be28153a207ef2711dc809c5a1cf7af15774"
+      "evidenceSetSha256": "136925e76c086272f2d81929a0877922b3584a81951964a00144717e1e888c9f"
     }
   ],
-  "requirementSetSha256": "c07ac42edce576e93f1f56cfd73803c275682f5a13dfc95b81ce1a450a6e62d0",
+  "requirementSetSha256": "96559c4c087773823862e6a423fffbf02c1c31502bcf8d36c9db5c781e77a7b5",
   "externalRequirements": [
     {
       "id": "public_signed_external_release",
@@ -222,5 +222,5 @@
       "windows_host_product_acceptance"
     ]
   },
-  "contentSha256": "3cf5f54bacca6d23e80640ca555c5cfba3f3a981435e6e4c752a20fff84d49d4"
+  "contentSha256": "d8851bc84f547bb11efcf586a673bd269c045f7f2620a99c7c803ecfb4f5819d"
 }

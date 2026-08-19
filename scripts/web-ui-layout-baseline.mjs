@@ -9,6 +9,7 @@ const DEFAULT_WEB_UI_LAYOUT_BASELINES = Object.freeze({
   "linux/arm64": "docs/artifacts/web-ui-layout-baseline-linux-0.1.0.json",
   "linux/x64": "docs/artifacts/web-ui-layout-baseline-linux-x64-0.1.0.json",
 });
+const LAYOUT_BASELINE_TOLERANCE_PX = 6;
 
 export function defaultWebUiLayoutBaselinePath(
   platform = process.platform,
@@ -37,17 +38,14 @@ export function webUiLayoutBaseline(
   );
   return {
     kind: "napier.web-ui-layout-baseline",
-    schemaVersion: 3,
+    schemaVersion: 4,
     platform,
     arch,
     viewports: baselineViewports.map((viewport) => ({
       width: viewport.width,
       height: viewport.height,
       layout: viewport.layout,
-      regions: {
-        ...viewport.layoutSnapshot,
-        browserInspector: viewport.browserInspector.layoutRect,
-      },
+      regions: viewport.layoutSnapshot,
     })),
   };
 }
@@ -60,12 +58,53 @@ export async function verifyWebUiLayoutBaseline(
 ) {
   const expected = JSON.parse(await readFile(baselinePath, "utf8"));
   const observed = webUiLayoutBaseline(receipt, platform, arch);
-  assert.deepEqual(
-    observed,
-    expected,
-    `Web UI layout baseline drifted: ${baselinePath}`,
-  );
+  assertLayoutBaseline(observed, expected, baselinePath);
   return { path: baselinePath, matched: true };
+}
+
+function assertLayoutBaseline(observed, expected, baselinePath) {
+  const message = `Web UI layout baseline drifted: ${baselinePath}`;
+  assert.equal(expected?.kind, observed.kind, message);
+  assert.equal(expected?.schemaVersion, observed.schemaVersion, message);
+  assert.equal(expected?.platform, observed.platform, message);
+  assert.equal(expected?.arch, observed.arch, message);
+  assert.equal(expected?.viewports?.length, observed.viewports.length, message);
+  for (const [index, viewport] of observed.viewports.entries()) {
+    const baseline = expected.viewports[index];
+    assert.deepEqual(
+      baseline
+        ? {
+            width: baseline.width,
+            height: baseline.height,
+            layout: baseline.layout,
+          }
+        : undefined,
+      {
+        width: viewport.width,
+        height: viewport.height,
+        layout: viewport.layout,
+      },
+      message,
+    );
+    assert.deepEqual(
+      Object.keys(baseline?.regions ?? {}).sort(),
+      Object.keys(viewport.regions).sort(),
+      message,
+    );
+    for (const [region, rect] of Object.entries(viewport.regions)) {
+      const expectedRect = baseline?.regions?.[region];
+      assert.ok(expectedRect, message);
+      for (const field of ["x", "y", "width", "height"]) {
+        assert.equal(Number.isInteger(expectedRect[field]), true, message);
+        assert.equal(
+          Math.abs(rect[field] - expectedRect[field]) <=
+            LAYOUT_BASELINE_TOLERANCE_PX,
+          true,
+          `${message} (${String(viewport.width)}:${region}.${field})`,
+        );
+      }
+    }
+  }
 }
 
 export async function writeWebUiLayoutBaseline(

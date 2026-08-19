@@ -12,9 +12,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AgentRuntime } from "../src/agent-runtime.js";
 import { assessToolCall } from "../src/policy.js";
-import {
-  type OsSandboxAdapter,
-  type SandboxedProcess,
+import type {
+  OsSandboxAdapter,
+  SandboxedProcess,
+  SandboxLaunchRequest,
 } from "../src/sandbox.js";
 import { ModelRegistry } from "../src/models.js";
 import { LocalStore } from "../src/store.js";
@@ -160,7 +161,20 @@ function controlledServiceSandbox(): OsSandboxAdapter {
   const stderr = new PassThrough();
   return {
     id: "controlled-local-preview",
-    async launch(): Promise<SandboxedProcess> {
+    async launch(request: SandboxLaunchRequest): Promise<SandboxedProcess> {
+      if (JSON.stringify(request.args).includes("napier_shell_probe_v1")) {
+        const probeStdout = new PassThrough();
+        const probeStderr = new PassThrough();
+        probeStdout.end("napier_shell_probe_v1");
+        probeStderr.end();
+        return {
+          stdin: new PassThrough(),
+          stdout: probeStdout,
+          stderr: probeStderr,
+          exit: Promise.resolve({ code: 0, signal: null }),
+          terminate: async () => undefined,
+        };
+      }
       return {
         stdin: new PassThrough(),
         stdout,

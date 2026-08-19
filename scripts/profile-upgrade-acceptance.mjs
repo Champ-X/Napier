@@ -145,10 +145,12 @@ async function runWebArm(browser, origin, root) {
   page.on("pageerror", (error) => consoleErrors.push(error.message));
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(origin, { waitUntil: "domcontentloaded" });
-  await page.locator("#inspector-group-inspect").click();
+  await page.locator(".workbench-settings").click();
+  await page.locator("#settings-section-context").waitFor({
+    state: "visible",
+  });
   const card = page.locator("#agent-capability-contract-review");
   await card.waitFor({ state: "visible" });
-  await card.getByText("Safe contract upgrade diff").waitFor();
   await card.getByText("enabledSkills").waitFor();
   await card.locator("details").first().locator("summary").click();
   await card.getByText("skill_load").waitFor();
@@ -160,11 +162,7 @@ async function runWebArm(browser, origin, root) {
   ).then((response) => response.json());
   assertUpgradePreview(preview.upgradePreview);
   await card.locator('input[type="checkbox"]').check();
-  await card
-    .getByRole("button", {
-      name: "Upgrade while preserving overrides",
-    })
-    .click();
+  await card.locator(".agent-capability-restore").click();
   await card.getByText(/v4 · current · explicit_overrides/u).waitFor();
   const horizontalOverflowPx = await page.evaluate(
     () => document.documentElement.scrollWidth - window.innerWidth,

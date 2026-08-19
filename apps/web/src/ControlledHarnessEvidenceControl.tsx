@@ -9,25 +9,17 @@ import type {
 } from "@napier/contracts/controlled-harness-evidence";
 import type { EvaluationCasebookTemplate } from "@napier/contracts/evaluation-casebook-template";
 
+import { advancedSurfaceCopy } from "./advanced-surface-copy";
 import {
   getControlledHarnessGate,
   recordControlledHarnessEvidence,
 } from "./controlled-harness-evidence-api";
 
 const DOMAIN_LABELS: Record<ControlledHarnessComparisonDomain, string> = {
-  search: "Search vs OMP",
-  browser_omp: "Browser vs OMP",
-  coding: "Coding vs OMP",
-  browser_autonomy: "Browser autonomy vs Browser Use",
+  ...advancedSurfaceCopy.controlled.domains,
 };
 
-export function ControlledHarnessEvidenceControl({
-  threadId,
-  casebook,
-  template,
-  loadGate = getControlledHarnessGate,
-  submitEvidence = recordControlledHarnessEvidence,
-}: {
+export interface ControlledHarnessEvidenceControlProps {
   threadId: string;
   casebook: EvaluationCasebook;
   template: EvaluationCasebookTemplate | undefined;
@@ -36,7 +28,17 @@ export function ControlledHarnessEvidenceControl({
     casebookId: string,
   ): Promise<ControlledHarnessGateProjection>;
   submitEvidence?: typeof recordControlledHarnessEvidence;
-}) {
+}
+
+export function ControlledHarnessEvidenceControl({
+  threadId,
+  casebook,
+  template,
+  loadGate = getControlledHarnessGate,
+  submitEvidence = recordControlledHarnessEvidence,
+}: ControlledHarnessEvidenceControlProps) {
+  const copy = advancedSurfaceCopy.controlled;
+  const smallCopy = advancedSurfaceCopy.smallLabels;
   const [projection, setProjection] =
     useState<ControlledHarnessGateProjection>();
   const [busy, setBusy] = useState(false);
@@ -69,8 +71,7 @@ export function ControlledHarnessEvidenceControl({
     setBusy(true);
     setError(undefined);
     try {
-      if (file.size > 512 * 1024)
-        throw new Error("Controlled Harness evidence exceeds 512 KiB");
+      if (file.size > 512 * 1024) throw new Error(copy.sizeError);
       const input = JSON.parse(await file.text()) as ControlledHarnessEvidence;
       const result = await submitEvidence(threadId, casebook.id, input);
       setProjection(result.gate);
@@ -88,29 +89,23 @@ export function ControlledHarnessEvidenceControl({
     >
       <header>
         <div>
-          <span>CONTROLLED HARNESS TRACK</span>
-          <h6 id={`controlled-harness-${casebook.id}`}>
-            Competitor evidence gate
-          </h6>
+          <span>{copy.track}</span>
+          <h6 id={`controlled-harness-${casebook.id}`}>{copy.title}</h6>
         </div>
         <strong
           className={
             projection?.controlledTrackReady ? "is-ready" : "is-blocked"
           }
         >
-          {projection?.controlledTrackReady ? "ready" : "not proven"}
+          {projection?.controlledTrackReady ? copy.ready : copy.notProven}
         </strong>
       </header>
-      <p>
-        Import the sanitized, hash-verified bundle generated from same-model,
-        equivalent-Prompt, isolated comparison Trials. Narrow wins remain
-        blocked until their fixed sample thresholds are met.
-      </p>
+      <p>{copy.body}</p>
       <label className="controlled-harness-import">
         <Upload size={12} aria-hidden="true" />
-        <span>{busy ? "Verifying evidence…" : "Import evidence bundle"}</span>
+        <span>{busy ? copy.verifying : copy.import}</span>
         <input
-          aria-label="Controlled Harness evidence bundle"
+          aria-label={copy.bundleLabel}
           type="file"
           accept="application/json,.json"
           disabled={busy}
@@ -140,14 +135,14 @@ export function ControlledHarnessEvidenceControl({
               >
                 <strong>{DOMAIN_LABELS[gate.domain]}</strong>
                 <span>
-                  {gate.napierPassed}/{gate.baselinePassed} passed ·{" "}
-                  {gate.decisiveTrialCount}/{gate.trialCount} decisive
+                  {gate.napierPassed}/{gate.baselinePassed} {copy.passed} ·{" "}
+                  {gate.decisiveTrialCount}/{gate.trialCount} {copy.decisive}
                 </span>
                 <small>
-                  {gate.verdict.replaceAll("_", " ")} · minimum{" "}
-                  {gate.minimumDecisiveTrialCount} decisive Trials ·{" "}
-                  {Math.ceil(gate.minimumDecisiveCoverage * 100)}% decisive
-                  coverage
+                  {copy.verdicts[gate.verdict]} · {copy.minimum}{" "}
+                  {gate.minimumDecisiveTrialCount} {copy.trials} ·{" "}
+                  {Math.ceil(gate.minimumDecisiveCoverage * 100)}%{" "}
+                  {copy.coverage}
                 </small>
               </article>
             ))}
@@ -159,37 +154,35 @@ export function ControlledHarnessEvidenceControl({
                 : "controlled-harness-advantage is-blocked"
             }
           >
-            <strong>Quantified advantage</strong>
+            <strong>{copy.advantage}</strong>
             <span>
-              {projection.advantageGate?.metric ?? "recovery"} vs{" "}
+              {copy.metrics[projection.advantageGate?.metric ?? "recovery"]}{" "}
+              {smallCopy.comparisonSeparator}{" "}
               {baselineLabel(projection.advantageGate?.baseline)} ·{" "}
               {projection.advantageGate?.advantageReady
-                ? "proven"
-                : "not proven"}
+                ? copy.proven
+                : copy.notProven}
               {projection.advantageGate?.napierValue !== null &&
               projection.advantageGate?.napierValue !== undefined &&
               projection.advantageGate.baselineValue !== null
-                ? ` · Napier ${projection.advantageGate.napierValue.toFixed(3)} vs ${baselineLabel(projection.advantageGate.baseline)} ${projection.advantageGate.baselineValue.toFixed(3)} ${projection.advantageGate.unit.replaceAll("_", " ")} · n=${projection.advantageGate.napierSampleCount}/${projection.advantageGate.baselineSampleCount}`
+                ? ` · Napier ${projection.advantageGate.napierValue.toFixed(3)} ${smallCopy.comparisonSeparator} ${baselineLabel(projection.advantageGate.baseline)} ${projection.advantageGate.baselineValue.toFixed(3)} ${unitLabel(projection.advantageGate.unit)} · ${smallCopy.sampleSize}=${projection.advantageGate.napierSampleCount}/${projection.advantageGate.baselineSampleCount}`
                 : ""}
             </span>
           </div>
           {projection.blockers.length > 0 ? (
             <ul className="controlled-harness-blockers">
               {projection.blockers.map((blocker) => (
-                <li key={blocker}>{blocker.replaceAll("_", " ")}</li>
+                <li key={blocker}>{blockerLabel(blocker)}</li>
               ))}
             </ul>
           ) : null}
         </>
       ) : (
-        <p role="status">No controlled comparison evidence recorded.</p>
+        <p role="status">{copy.empty}</p>
       )}
       <footer>
         <FlaskConical size={12} aria-hidden="true" />
-        <small>
-          This covers competitor comparisons only; the Default Product, safety,
-          cross-platform, and supply-chain gates remain independent.
-        </small>
+        <small>{copy.footer}</small>
       </footer>
     </section>
   );
@@ -201,6 +194,27 @@ function shortHash(value: string): string {
 
 function baselineLabel(value: "omp" | "browser_use" | undefined): string {
   return value === "browser_use" ? "Browser Use" : "OMP";
+}
+
+function unitLabel(value: string): string {
+  return (
+    advancedSurfaceCopy.controlled.units[
+      value as keyof typeof advancedSurfaceCopy.controlled.units
+    ] ?? value.replaceAll("_", " ")
+  );
+}
+
+function blockerLabel(value: string): string {
+  const [reason, domain] = value.split(":", 2);
+  const reasonLabel =
+    advancedSurfaceCopy.controlled.blockers[
+      reason as keyof typeof advancedSurfaceCopy.controlled.blockers
+    ] ??
+    reason?.replaceAll("_", " ") ??
+    value;
+  return domain && domain in DOMAIN_LABELS
+    ? `${reasonLabel}: ${DOMAIN_LABELS[domain as ControlledHarnessComparisonDomain]}`
+    : reasonLabel;
 }
 
 function toErrorMessage(error: unknown): string {

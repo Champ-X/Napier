@@ -4,14 +4,19 @@ import {
   conversationCitationTargetId,
   type ConversationCitation,
 } from "./conversation-citation-view-model";
+import { conversationDetailCopy } from "./conversation-detail-copy";
+import { getLocale } from "./locale";
+
+export interface ConversationCitationCardProps {
+  citation: ConversationCitation;
+  index: number;
+}
 
 export function ConversationCitationCard({
   citation,
   index,
-}: {
-  citation: ConversationCitation;
-  index: number;
-}) {
+}: ConversationCitationCardProps) {
+  const copy = conversationDetailCopy.citation;
   return (
     <details
       id={conversationCitationTargetId(citation)}
@@ -20,11 +25,13 @@ export function ConversationCitationCard({
       <summary>
         <BookOpenCheck size={15} aria-hidden="true" />
         <div>
-          <span>Citation {index}</span>
+          <span>
+            {copy.label} {formatNumber(index)}
+          </span>
           <strong>
             {citation.sourceKind === "web_fetch"
-              ? "Web source evidence"
-              : "Browser source evidence"}
+              ? copy.webEvidence
+              : copy.browserEvidence}
           </strong>
         </div>
         <time dateTime={citation.createdAt}>
@@ -33,44 +40,41 @@ export function ConversationCitationCard({
       </summary>
       <dl>
         <div>
-          <dt>Source</dt>
+          <dt>{copy.source}</dt>
           <dd>{shortId(citation.sourceId)}</dd>
         </div>
         <div>
-          <dt>Lines</dt>
+          <dt>{copy.lines}</dt>
           <dd>
             {citation.startLine}–{citation.endLine}
           </dd>
         </div>
         <div>
-          <dt>Capture</dt>
+          <dt>{copy.capture}</dt>
           <dd title={citation.sourceContentSha256}>
             {citation.sourceContentSha256.slice(0, 12)}
           </dd>
         </div>
         <div>
-          <dt>Title</dt>
+          <dt>{copy.title}</dt>
           <dd title={citation.sourceTitleSha256}>
             {citation.sourceTitleSha256.slice(0, 12)}
           </dd>
         </div>
         <div>
-          <dt>Quote</dt>
+          <dt>{copy.quote}</dt>
           <dd title={citation.quoteSha256}>
             {citation.quoteSha256.slice(0, 12)}
           </dd>
         </div>
         <div>
-          <dt>Claim</dt>
+          <dt>{copy.claim}</dt>
           <dd title={citation.claimSha256}>
             {citation.claimSha256.slice(0, 12)}
           </dd>
         </div>
       </dl>
-      <p>
-        Evidence binding only — source authority and claim sufficiency still
-        require review.
-      </p>
+      <p>{copy.guidance}</p>
     </details>
   );
 }
@@ -80,9 +84,15 @@ function shortId(value: string): string {
 }
 
 function formatTime(value: string): string {
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat(getLocale() === "zh" ? "zh-CN" : "en", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
   }).format(new Date(value));
+}
+
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat(getLocale() === "zh" ? "zh-CN" : "en").format(
+    value,
+  );
 }

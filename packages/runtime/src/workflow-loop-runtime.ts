@@ -6,7 +6,6 @@ import {
   type RunRecord,
 } from "@napier/contracts";
 
-import type { AgentRuntime } from "./agent-runtime.js";
 import type { EventSink } from "./event-sink.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createProcessLeaseOwnerId } from "./ids.js";
@@ -31,6 +30,7 @@ import {
   MAX_EXECUTION_PLAN_WORKFLOW_NODE_OUTPUT_BYTES,
   workflowSchemaSha256,
 } from "./workflow-schemas.js";
+import type { WorkflowAgentExecutionPort } from "./workflow-runtime-ports.js";
 
 const RUN_LEASE_TTL_MS = 60_000;
 const RUN_LEASE_HEARTBEAT_MS = 20_000;
@@ -64,11 +64,11 @@ export class ExecutionPlanWorkflowLoopRuntime {
 
   constructor(
     private readonly store: LocalStore,
-    agentRuntime: AgentRuntime,
+    agentExecution: WorkflowAgentExecutionPort,
     private readonly ledger: ExecutionPlanWorkflowLedger,
   ) {
     this.iterations = new ExecutionPlanWorkflowLoopIterationRuntime(
-      agentRuntime,
+      agentExecution,
       ledger,
     );
   }

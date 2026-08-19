@@ -385,9 +385,9 @@ export async function createServices(options?: ServerServiceOptions): Promise<Na
   const evaluations = new RunEvaluationService(store, models);
   const evaluationCasebookQualifications = new EvaluationCasebookQualificationService(store, models);
   const evaluationSuites = new EvaluationSuiteService(store, models);
-  const automation = new AutomationService(store, runtime);
-  const channels = new ChannelService(store, runtime);
-  const recovery = new RecoveryService(store, runtime);
+  const automation = new AutomationService(store, kernel);
+  const channels = new ChannelService(store, kernel);
+  const recovery = new RecoveryService(store, kernel);
   const browserTasks = new BrowserTasks(dataRoot, credentials, options?.env);
   const { receiptTrustDirectories, receiptTrustDirectorySubscriptions } = createReceiptTrustServices(store, options);
   if (options?.startAutomation) {

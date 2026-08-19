@@ -66,7 +66,7 @@ describe("ControlledHarnessEvidenceControl", () => {
     expect(container.textContent).toContain("Coding vs OMP");
     expect(container.textContent).toContain("13/12 passed · 13/13 decisive");
     expect(container.textContent).toContain(
-      "sample not proven:browser autonomy",
+      "Sample threshold is not proven: Browser autonomy vs Browser Use",
     );
     expect(container.textContent).toContain("Quantified advantage");
     expect(container.textContent).toContain(

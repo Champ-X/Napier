@@ -1,203 +1,49 @@
 {
   "kind": "napier.web-ui-layout-baseline",
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "platform": "linux",
   "arch": "x64",
   "viewports": [
     {
-      "width": 1600,
+      "width": 1280,
       "height": 900,
       "layout": "desktop",
       "regions": {
-        "workbench": {
-          "x": 252,
-          "y": 0,
-          "width": 1010,
-          "height": 900
-        },
-        "header": {
-          "x": 252,
-          "y": 0,
-          "width": 1010,
-          "height": 76
-        },
-        "narrative": {
-          "x": 252,
-          "y": 76,
-          "width": 1010,
-          "height": 59
-        },
-        "conversation": {
-          "x": 252,
-          "y": 135,
-          "width": 1010,
-          "height": 314
-        },
-        "composer": {
-          "x": 321,
-          "y": 669,
-          "width": 917,
-          "height": 212
-        },
-        "inspector": {
-          "x": 1262,
-          "y": 0,
-          "width": 338,
-          "height": 900
-        },
-        "browserInspector": {
-          "x": 1283,
-          "y": 182,
-          "width": 297,
-          "height": 143
-        }
+        "workbench": { "x": 248, "y": 0, "width": 1032, "height": 900 },
+        "header": { "x": 248, "y": 0, "width": 1032, "height": 52 },
+        "status": { "x": 248, "y": 52, "width": 1032, "height": 45 },
+        "conversation": { "x": 248, "y": 97, "width": 1032, "height": 377 },
+        "composer": { "x": 364, "y": 694, "width": 800, "height": 184 },
+        "views": { "x": 540, "y": 10, "width": 367, "height": 32 },
+        "primary": { "x": 248, "y": 52, "width": 1032, "height": 848 }
       }
     },
     {
-      "width": 1200,
-      "height": 800,
+      "width": 1440,
+      "height": 900,
       "layout": "desktop",
       "regions": {
-        "workbench": {
-          "x": 252,
-          "y": 0,
-          "width": 610,
-          "height": 800
-        },
-        "header": {
-          "x": 252,
-          "y": 0,
-          "width": 610,
-          "height": 76
-        },
-        "narrative": {
-          "x": 252,
-          "y": 76,
-          "width": 610,
-          "height": 59
-        },
-        "conversation": {
-          "x": 252,
-          "y": 135,
-          "width": 610,
-          "height": 180
-        },
-        "composer": {
-          "x": 321,
-          "y": 535,
-          "width": 517,
-          "height": 246
-        },
-        "inspector": {
-          "x": 862,
-          "y": 0,
-          "width": 338,
-          "height": 800
-        },
-        "browserInspector": {
-          "x": 883,
-          "y": 182,
-          "width": 297,
-          "height": 143
-        }
+        "workbench": { "x": 248, "y": 0, "width": 1192, "height": 900 },
+        "header": { "x": 248, "y": 0, "width": 1192, "height": 52 },
+        "status": { "x": 248, "y": 52, "width": 1192, "height": 45 },
+        "conversation": { "x": 248, "y": 97, "width": 1192, "height": 377 },
+        "composer": { "x": 444, "y": 694, "width": 800, "height": 184 },
+        "views": { "x": 593, "y": 10, "width": 367, "height": 32 },
+        "primary": { "x": 248, "y": 52, "width": 1192, "height": 848 }
       }
     },
     {
-      "width": 900,
-      "height": 800,
-      "layout": "drawer",
+      "width": 1920,
+      "height": 1080,
+      "layout": "desktop",
       "regions": {
-        "workbench": {
-          "x": 232,
-          "y": 0,
-          "width": 668,
-          "height": 800
-        },
-        "header": {
-          "x": 232,
-          "y": 0,
-          "width": 668,
-          "height": 76
-        },
-        "narrative": {
-          "x": 232,
-          "y": 76,
-          "width": 668,
-          "height": 59
-        },
-        "conversation": {
-          "x": 232,
-          "y": 135,
-          "width": 668,
-          "height": 189
-        },
-        "composer": {
-          "x": 301,
-          "y": 544,
-          "width": 575,
-          "height": 237
-        },
-        "inspector": {
-          "x": 470,
-          "y": 0,
-          "width": 430,
-          "height": 800
-        },
-        "browserInspector": {
-          "x": 491,
-          "y": 226,
-          "width": 389,
-          "height": 131
-        }
-      }
-    },
-    {
-      "width": 390,
-      "height": 844,
-      "layout": "drawer",
-      "regions": {
-        "workbench": {
-          "x": 68,
-          "y": 0,
-          "width": 322,
-          "height": 844
-        },
-        "header": {
-          "x": 68,
-          "y": 0,
-          "width": 322,
-          "height": 76
-        },
-        "narrative": {
-          "x": 68,
-          "y": 76,
-          "width": 322,
-          "height": 197
-        },
-        "conversation": {
-          "x": 68,
-          "y": 273,
-          "width": 322,
-          "height": 115
-        },
-        "composer": {
-          "x": 109,
-          "y": 518,
-          "width": 269,
-          "height": 316
-        },
-        "inspector": {
-          "x": 84,
-          "y": 0,
-          "width": 306,
-          "height": 844
-        },
-        "browserInspector": {
-          "x": 105,
-          "y": 226,
-          "width": 265,
-          "height": 143
-        }
+        "workbench": { "x": 248, "y": 0, "width": 1672, "height": 1080 },
+        "header": { "x": 248, "y": 0, "width": 1672, "height": 52 },
+        "status": { "x": 248, "y": 52, "width": 1672, "height": 45 },
+        "conversation": { "x": 248, "y": 97, "width": 1672, "height": 557 },
+        "composer": { "x": 684, "y": 874, "width": 800, "height": 184 },
+        "views": { "x": 753, "y": 10, "width": 367, "height": 32 },
+        "primary": { "x": 248, "y": 52, "width": 1672, "height": 1028 }
       }
     }
   ]

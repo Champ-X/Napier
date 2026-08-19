@@ -2,6 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import {
+  canonicalJson,
   createPlanArtifactEventPayload,
   LocalStore,
   sha256,
@@ -26,6 +27,10 @@ export async function seedWebUiNarrativeFixture(root) {
     });
     const agent = store.listAgents()[0];
     if (!agent) throw new Error("Web UI E2E Agent fixture is unavailable");
+    const emptyThread = await store.createThread({
+      title: "Start a new desktop task",
+      agentId: agent.id,
+    });
     const thread = await store.createThread({
       title: "Ship verified research brief",
       agentId: agent.id,
@@ -36,6 +41,17 @@ export async function seedWebUiNarrativeFixture(root) {
       agentId: agent.id,
       model: { provider: "faux-narrative", id: "faux-1" },
     });
+    await appendConversationMessages(store, thread.id, run.id, [
+      ["user", "Prepare and verify the research brief."],
+      ["assistant", "The brief is ready for final approval."],
+    ]);
+    await appendModelHarnessResolution(
+      store,
+      thread.id,
+      run.id,
+      "faux-narrative",
+    );
+    await appendToolResultContextPruning(store, thread.id, run.id);
     const plan = await store.createPlan(thread.id, {
       objective: "Deliver a verified research brief with operator approval.",
       steps: [
@@ -186,20 +202,95 @@ export async function seedWebUiNarrativeFixture(root) {
         effect: "write",
       },
     });
+    const runningThread = await store.createThread({
+      title: "Run active browser verification",
+      agentId: agent.id,
+    });
+    const { run: runningRun } = await store.createLeasedRun(
+      {
+        threadId: runningThread.id,
+        agentId: agent.id,
+        model: { provider: "faux-running", id: "faux-1" },
+      },
+      {
+        ownerId: `process:${String(process.pid)}:web_ui_e2e`,
+        ttlMs: 10 * 60_000,
+      },
+    );
+    const runningPlan = await store.createPlan(runningThread.id, {
+      objective: "Verify the active browser result.",
+      steps: [
+        {
+          id: "browse",
+          title: "Inspect active browser",
+          description: "Review the current browser session.",
+          verification: "The browser result is recorded.",
+        },
+      ],
+    });
+    await store.transitionPlanStep(runningPlan.id, "browse", {
+      action: "start",
+      runId: runningRun.id,
+    });
+    await appendConversationMessages(store, runningThread.id, runningRun.id, [
+      ["user", "Verify the active browser result."],
+    ]);
+    await store.appendEvent({
+      threadId: runningThread.id,
+      runId: runningRun.id,
+      type: "tool.completed",
+      category: "tool",
+      visibility: "user",
+      payload: {
+        callId: "call_running_browser",
+        toolName: "browser",
+        status: "completed",
+        effect: "read",
+        details: { action: "open" },
+      },
+    });
     const longRunThread = await store.createThread({
       title: "Synthesize long-running evidence",
       agentId: agent.id,
     });
+    const priorLongRun = await store.createRun({
+      threadId: longRunThread.id,
+      agentId: agent.id,
+      model: { provider: "faux-long-run", id: "faux-1" },
+    });
+    await appendConversationMessages(store, longRunThread.id, priorLongRun.id, [
+      ["user", "Establish the first evidence checkpoint."],
+      ["assistant", "The first evidence checkpoint is recorded."],
+    ]);
+    await store.finishRun(priorLongRun.id, "completed");
     const longRun = await store.createRun({
       threadId: longRunThread.id,
       agentId: agent.id,
       model: { provider: "faux-long-run", id: "faux-1" },
     });
+    await appendConversationMessages(
+      store,
+      longRunThread.id,
+      longRun.id,
+      Array.from({ length: 170 }, (_, index) => [
+        index % 2 === 0 ? "user" : "assistant",
+        `Long conversation checkpoint ${String(index + 1).padStart(3, "0")}`,
+      ]),
+    );
     await appendCompletedToolCalls(store, longRunThread.id, longRun.id, [
       ["read_file", 12],
       ["web_search", 5],
       ["browser", 3],
     ]);
+    await appendModelHarnessResolution(
+      store,
+      longRunThread.id,
+      longRun.id,
+      "faux-long-run",
+    );
+    await appendToolResultContextPruning(store, longRunThread.id, longRun.id);
+    await appendEnvironmentDegradation(store, longRunThread.id, longRun.id);
+    await appendContextContinuityCheckpoint(store, longRunThread.id, longRun.id);
     await store.finishRun(longRun.id, "completed", {
       usage: {
         inputTokens: 18_000,
@@ -305,6 +396,10 @@ export async function seedWebUiNarrativeFixture(root) {
     });
     await store.setThreadStatus(thread.id, "waiting");
     return {
+      empty: {
+        threadId: emptyThread.id,
+        title: emptyThread.title,
+      },
       threadId: thread.id,
       title: thread.title,
       phase: "Waiting",
@@ -312,10 +407,16 @@ export async function seedWebUiNarrativeFixture(root) {
       completedItem: "Inspect source evidence",
       blocker: "Operator input is required before the run can continue.",
       nextStep: "Approve final delivery",
+      harness: "Generic · Focused · 18 / 42 tools",
       artifactPath: "artifacts/research-brief.md",
       latestTerminalRunId: run.id,
       browserTask,
       casebook,
+      running: {
+        threadId: runningThread.id,
+        runId: runningRun.id,
+        title: runningThread.title,
+      },
       recovery: {
         threadId: recoveryThread.id,
         title: recoveryThread.title,
@@ -428,4 +529,197 @@ async function appendCompletedToolCalls(store, threadId, runId, groups) {
       }
     }
   }
+}
+
+async function appendConversationMessages(store, threadId, runId, messages) {
+  for (const [role, text] of messages) {
+    await store.appendEvent({
+      threadId,
+      runId,
+      type: `message.${role}`,
+      category: "message",
+      visibility: "user",
+      payload: { role, text },
+    });
+  }
+}
+
+async function appendModelHarnessResolution(store, threadId, runId, provider) {
+  const activeToolNames = [
+    "request_operator_decision",
+    "create_plan",
+    "update_plan_step",
+    "record_run_milestone",
+    "skill_load",
+    "list_files",
+    "read_file",
+    "search_files",
+    "inspect_code",
+    "read_symbol",
+    "list_symbols",
+    "apply_patch",
+    "verify_workspace",
+    "run_command",
+    "lsp_diagnostics",
+    "web_search",
+    "web_fetch",
+    "browser",
+  ];
+  const omittedToolNames = Array.from(
+    { length: 24 },
+    (_, index) => `deferred_tool_${String(index + 1).padStart(2, "0")}`,
+  );
+  const content = {
+    kind: "napier.model-harness-resolution",
+    schemaVersion: 1,
+    harnessId: "napier.model-harness.generic.v1",
+    family: "generic",
+    promptDialect: "compact",
+    provider,
+    model: "faux-1",
+    modelApi: "faux:e2e",
+    attempt: 1,
+    intents: ["coding"],
+    toolSurface: "focused",
+    configuredToolCount: 42,
+    activeToolCount: 18,
+    activeToolNames,
+    omittedToolNames,
+    configuredToolDefinitionBytes: 60_000,
+    activeToolDefinitionBytes: 24_000,
+    savedToolDefinitionBytes: 36_000,
+    maxRetries: 1,
+    maxRetriesSource: "harness",
+    maxRetryDelayMs: 30_000,
+    maxRetryDelayMsSource: "harness",
+  };
+  await store.appendEvent({
+    threadId,
+    runId,
+    type: "model.harness.resolved",
+    category: "model",
+    visibility: "debug",
+    payload: { ...content, contentSha256: sha256(canonicalJson(content)) },
+  });
+}
+
+async function appendToolResultContextPruning(store, threadId, runId) {
+  const content = {
+    kind: "napier.tool-result-context-pruning",
+    schemaVersion: 1,
+    attempt: 1,
+    messageCount: 20,
+    toolResultCount: 8,
+    replacementCount: 4,
+    supersededResultCount: 1,
+    repeatedErrorCount: 1,
+    largeResultCount: 1,
+    emptyResultCount: 1,
+    originalToolResultTextBytes: 60_000,
+    activeToolResultTextBytes: 24_000,
+    savedToolResultTextBytes: 36_000,
+    originalToolResultSetSha256: "a".repeat(64),
+    activeToolResultSetSha256: "b".repeat(64),
+    replacementSetSha256: "c".repeat(64),
+  };
+  await store.appendEvent({
+    threadId,
+    runId,
+    type: "model.context.tool-results.pruned",
+    category: "model",
+    visibility: "debug",
+    payload: { ...content, contentSha256: sha256(canonicalJson(content)) },
+  });
+}
+
+async function appendEnvironmentDegradation(store, threadId, runId) {
+  const activeToolNames = Array.from(
+    { length: 14 },
+    (_, index) => `read_tool_${String(index + 1).padStart(2, "0")}`,
+  );
+  const omittedToolNames = Array.from(
+    { length: 28 },
+    (_, index) => `withheld_tool_${String(index + 1).padStart(2, "0")}`,
+  );
+  const content = {
+    kind: "napier.environment-capability-negotiation",
+    schemaVersion: 1,
+    status: "degraded_read_only",
+    executionMode: "environment_degraded_read_only",
+    reason: "sandbox_unavailable",
+    sandboxId: "unsupported",
+    readinessId: "sandbox:unsupported",
+    readinessDetailSha256: "d".repeat(64),
+    configuredToolCount: 42,
+    activeToolCount: 14,
+    activeToolNames,
+    omittedToolNames,
+    repairComponent: "sandbox",
+    repairCommand:
+      "napier setup --workspace 'WORKSPACE_PATH' --component sandbox",
+  };
+  await store.appendEvent({
+    threadId,
+    runId,
+    type: "run.environment.negotiated",
+    category: "system",
+    visibility: "user",
+    payload: { ...content, contentSha256: sha256(canonicalJson(content)) },
+  });
+}
+
+async function appendContextContinuityCheckpoint(store, threadId, runId) {
+  const events = await store.listEvents(threadId);
+  const fromSeq = events[0]?.seq ?? 1;
+  const toSeq = events.at(-1)?.seq ?? fromSeq;
+  const sourceEvents = events.filter(
+    (event) =>
+      event.type === "message.user" ||
+      event.type === "message.assistant" ||
+      event.type === "goal.continuation.prompt",
+  );
+  const continuityEvents = events.filter(
+    (event) =>
+      event.visibility === "user" &&
+      (event.type === "tool.completed" ||
+        event.type === "tool.failed" ||
+        event.type === "tool.blocked" ||
+        event.type === "tool.result_reused" ||
+        event.type.startsWith("plan.") ||
+        event.type.startsWith("operator.decision.") ||
+        event.type.startsWith("run.recovery.") ||
+        event.type === "run.environment.negotiated" ||
+        event.type === "verification.completed" ||
+        event.type === "workspace.file.mutated" ||
+        event.type === "agent.milestone.recorded" ||
+        event.type === "goal.evaluated"),
+  );
+  const summary =
+    "Continue with the verified environment boundary, completed reads, and remaining validation step.";
+  await store.appendEvent({
+    threadId,
+    runId,
+    type: "context.compaction.completed",
+    category: "model",
+    visibility: "user",
+    payload: {
+      schemaVersion: 1,
+      checkpointId: "checkpoint_e2e_continuity",
+      fromSeq,
+      toSeq,
+      retainedFromSeq: toSeq + 1,
+      sourceEventCount: sourceEvents.length,
+      sourceSha256: sha256(sourceEvents.map((event) => JSON.stringify(event)).join("\n")),
+      summarySha256: sha256(summary),
+      summary,
+      decisions: ["Keep the degraded read-only environment boundary."],
+      openLoops: ["Complete final validation before delivery."],
+      artifacts: [],
+      continuityProjectionVersion: 1,
+      continuityEventCount: continuityEvents.length,
+      continuitySha256: sha256(
+        continuityEvents.map((event) => JSON.stringify(event)).join("\n"),
+      ),
+    },
+  });
 }

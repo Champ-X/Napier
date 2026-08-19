@@ -1,0 +1,65 @@
+.context-ledger {
+  padding: 0;
+  margin: var(--stack-lg) 0 0;
+}
+
+.context-row {
+  display: grid;
+  grid-template-columns: var(--space-24) minmax(0, 1fr);
+  gap: var(--inline-sm);
+  padding-block: var(--inset-sm);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.context-row dt {
+  display: flex;
+  align-items: center;
+  gap: var(--inline-xs);
+  font-size: var(--text-xs);
+  color: var(--color-fg-subtle);
+}
+
+.context-row dd {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--stack-xs);
+  margin: 0;
+}
+
+.context-row dd strong {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.context-row dd > span {
+  font-size: var(--text-xs);
+  line-height: var(--leading-compact);
+  color: var(--color-fg-muted);
+}
+
+.context-row code {
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--leading-compact);
+  color: var(--color-fg-muted);
+}
+
+@container context-panel (max-width: 1024px) {
+  .context-row {
+    grid-template-columns: var(--space-20) minmax(0, 1fr);
+  }
+}
+
+@container context-panel (max-width: 768px) {
+  .context-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (forced-colors: active) {
+  .context-row {
+    border-color: CanvasText;
+  }
+}

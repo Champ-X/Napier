@@ -1,10 +1,29 @@
+import { mkdirSync } from "node:fs";
 import { PassThrough } from "node:stream";
 
+import { AgentRuntime } from "../src/agent-runtime.js";
+import type { McpExtensionManager } from "../src/mcp.js";
+import type { ModelRegistry } from "../src/models.js";
 import type {
   OsSandboxAdapter,
   SandboxedProcess,
   SandboxLaunchRequest,
 } from "../src/sandbox.js";
+import type { LocalStore } from "../src/store.js";
+
+export function processReadyAgentRuntime(
+  store: LocalStore,
+  registry: ModelRegistry,
+  extensionManager?: McpExtensionManager,
+): AgentRuntime {
+  mkdirSync(store.workspaceRoot, { recursive: true });
+  return new AgentRuntime(
+    store,
+    registry,
+    extensionManager,
+    processReadySandbox("agent-runtime-test"),
+  );
+}
 
 export function processReadySandbox(
   id: string,
@@ -36,7 +55,7 @@ export function settledProcess(stdoutText: string): SandboxedProcess {
   const stdin = new PassThrough();
   const stdout = new PassThrough();
   const stderr = new PassThrough();
-  setImmediate(() => {
+  void Promise.resolve().then(() => {
     stdout.end(stdoutText);
     stderr.end();
   });

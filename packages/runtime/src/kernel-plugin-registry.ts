@@ -6,6 +6,7 @@ import {
   type KernelPluginManifest,
 } from "./kernel-plugin-manifest.js";
 import type { KernelServiceRegistration } from "./kernel-service-registry.js";
+import type { AgentModelCallExtension } from "./kernel-model-call-pipeline.js";
 
 export interface KernelPluginScope {
   register<T>(registration: KernelServiceRegistration<T>): void;
@@ -13,6 +14,7 @@ export interface KernelPluginScope {
     name: Name,
     handler: KernelHookHandler<Name>,
   ): () => void;
+  interceptModelCall(extension: AgentModelCallExtension): () => void;
   resolve(): Promise<void>;
   dispose(): Promise<void>;
 }

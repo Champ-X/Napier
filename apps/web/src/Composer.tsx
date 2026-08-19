@@ -11,6 +11,7 @@ import {
 import type { AgentProfile } from "@napier/contracts";
 import type { InspectorTab } from "./use-workspace-view-model";
 import { copy } from "./copy";
+import { shellCopy } from "./shell-copy";
 import {
   initialComposerRunReadiness,
   type ComposerRunReadiness,
@@ -115,11 +116,11 @@ export function Composer({
           <details className="composer-options">
             <summary>
               <SlidersHorizontal size={12} aria-hidden="true" />
-              {copy.composer.runOptions}
+              {shellCopy.composer.runOptions}
             </summary>
             <div className="composer-options-popover">
               <Suspense
-                fallback={<span>{copy.composer.checkingRunOptions}</span>}
+                fallback={<span>{shellCopy.composer.checkingRunOptions}</span>}
               >
                 <LazyComposerCapabilityControl
                   agent={activeAgent}
@@ -237,7 +238,7 @@ function ComposerReadinessNotices({
   readiness: ComposerRunReadiness;
   pending: boolean;
 }) {
-  if (running) return null;
+  if (running && readiness.level !== "warn") return null;
   if (!modelConfigured) {
     return (
       <p id={MODEL_WARNING_ID} className="composer-model-warning" role="status">

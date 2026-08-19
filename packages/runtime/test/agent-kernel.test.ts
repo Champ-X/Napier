@@ -16,6 +16,7 @@ import {
   createKernelServiceKey,
   KERNEL_CONVERSATION_ARTIFACTS,
   KERNEL_MODEL_ADAPTER,
+  KERNEL_MODEL_CALL_PIPELINE,
   KERNEL_POLICY_ADAPTER,
   KERNEL_PROMPT_ADAPTER,
   KERNEL_TOOL_ADAPTER,
@@ -89,10 +90,18 @@ describe("Agent Kernel", () => {
       });
       const provider = fauxProvider({ provider: "faux-kernel" });
       provider.setResponses([
-        fauxAssistantMessage(
-          fauxToolCall("read_file", { path: "evidence.txt" }),
-          { stopReason: "toolUse" },
-        ),
+        (context) => {
+          expect(JSON.stringify(context.messages)).toContain(
+            "Kernel realtime extension marker",
+          );
+          expect(context.systemPrompt).toContain("<model_adapter");
+          expect(context.systemPrompt).toContain("<model_harness");
+          expect(context.systemPrompt).toContain("Active tools (8)");
+          return fauxAssistantMessage(
+            fauxToolCall("read_file", { path: "evidence.txt" }),
+            { stopReason: "toolUse" },
+          );
+        },
         (context) => {
           expect(JSON.stringify(context.messages)).toContain("kernel evidence");
           return fauxAssistantMessage("Kernel read verified.");
@@ -104,6 +113,12 @@ describe("Agent Kernel", () => {
       expect(
         (await services.kernel.services.resolve(KERNEL_MODEL_ADAPTER)).registry,
       ).toBe(services.models);
+      expect(
+        (await services.kernel.services.resolve(KERNEL_MODEL_ADAPTER)).pipeline,
+      ).toBe(services.kernel.modelCalls);
+      expect(
+        await services.kernel.services.resolve(KERNEL_MODEL_CALL_PIPELINE),
+      ).toBe(services.kernel.modelCalls);
       expect(
         (await services.kernel.services.resolve(KERNEL_PROMPT_ADAPTER)).create,
       ).toBe(createAgentPromptBuilder);
@@ -144,6 +159,32 @@ describe("Agent Kernel", () => {
       await expect(services.kernel.services.resolve(pluginKey)).resolves.toBe(
         "active",
       );
+      const modelCallPhases: string[] = [];
+      plugin.interceptModelCall(
+        {
+          id: "test.context-marker",
+          prepare: (call) => {
+            modelCallPhases.push(`prepare:${call.attempt}`);
+            return {
+              context: {
+                ...call.context,
+                messages: [
+                  ...call.context.messages,
+                  {
+                    role: "user",
+                    content: "Kernel realtime extension marker",
+                    timestamp: Date.now(),
+                  },
+                ],
+              },
+            };
+          },
+          around: (_call, next) => {
+            modelCallPhases.push("around");
+            return next();
+          },
+        },
+      );
 
       const run = await services.kernel.runPrompt({
         threadId: thread.id,
@@ -163,6 +204,12 @@ describe("Agent Kernel", () => {
         ]),
       );
       expect(pluginToolRequests).toBe(1);
+      expect(modelCallPhases).toEqual([
+        "prepare:1",
+        "around",
+        "prepare:1",
+        "around",
+      ]);
       const inspection = services.kernel.inspect();
       expect(inspection.profile.id).toBe("cli");
       expect(inspection.plugins).toEqual(
@@ -207,9 +254,33 @@ describe("Agent Kernel", () => {
       expect(inspection.services).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ id: "runtime.model", state: "resolved" }),
+          expect.objectContaining({
+            id: "runtime.model-call-pipeline",
+            state: "resolved",
+          }),
           expect.objectContaining({ id: "runtime.prompt", state: "resolved" }),
           expect.objectContaining({ id: "runtime.tool", state: "resolved" }),
           expect.objectContaining({ id: "runtime.policy", state: "resolved" }),
+        ]),
+      );
+      expect(inspection.modelCalls).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: "napier.model-aware-harness",
+            owner: "kernel.harness",
+            prepare: true,
+          }),
+          expect.objectContaining({
+            id: "napier.tool-result-context-pruner",
+            owner: "kernel.context",
+            prepare: true,
+          }),
+          expect.objectContaining({
+            id: "test.context-marker",
+            owner: "plugin.fixture",
+            prepare: true,
+            around: true,
+          }),
         ]),
       );
       expect(inspection.completionControl).toEqual(
@@ -269,6 +340,39 @@ describe("Agent Kernel", () => {
           }),
         ]),
       );
+      expect(services.kernel.inspect().modelCalls).toEqual([
+        expect.objectContaining({
+          id: "napier.model-aware-harness",
+          owner: "kernel.harness",
+        }),
+        expect.objectContaining({
+          id: "napier.tool-result-context-pruner",
+          owner: "kernel.context",
+        }),
+      ]);
+      const harnessEvents = (await services.store.listEvents(thread.id)).filter(
+        (event) => event.type === "model.harness.resolved",
+      );
+      expect(harnessEvents).toHaveLength(2);
+      expect(harnessEvents[0]?.payload).toEqual(
+        expect.objectContaining({
+          family: "generic",
+          toolSurface: "full",
+          activeToolNames: expect.arrayContaining(["read_file"]),
+          contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        }),
+      );
+      const pruningEvents = (await services.store.listEvents(thread.id)).filter(
+        (event) => event.type === "model.context.tool-results.pruned",
+      );
+      expect(pruningEvents).toHaveLength(2);
+      expect(pruningEvents[1]?.payload).toEqual(
+        expect.objectContaining({
+          kind: "napier.tool-result-context-pruning",
+          toolResultCount: 1,
+          contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        }),
+      );
 
       const firstProvider = fauxProvider({ provider: "faux-replaceable" });
       firstProvider.setResponses([
@@ -325,6 +429,36 @@ describe("Agent Kernel", () => {
         model: { provider: "napier", id: "demo" },
       });
       expect(legacyRun.status).toBe("completed");
+
+      const guardedProvider = fauxProvider({ provider: "faux-guarded" });
+      guardedProvider.setResponses([
+        fauxAssistantMessage("This response must not be reached."),
+      ]);
+      services.models.registerProvider(guardedProvider.provider);
+      const guardedThread = await services.store.createThread({
+        title: "Kernel model-call invariant",
+        agentId: agent.id,
+      });
+      const unsafe = services.kernel.scope("plugin.unsafe-fixture");
+      unsafe.interceptModelCall({
+        id: "test.raise-token-limit",
+        prepare: (call) => ({
+          options: {
+            ...call.options,
+            maxTokens:
+              (call.options.maxTokens ?? call.model.maxTokens) + 1,
+          },
+        }),
+      });
+      const guardedRun = await services.kernel.runPrompt({
+        threadId: guardedThread.id,
+        text: "Attempt an unsafe model-call rewrite.",
+        model: { provider: "faux-guarded", id: "faux-1" },
+      });
+      expect(guardedRun.status).toBe("failed");
+      expect(guardedRun.error).toContain("model provider call failed");
+      expect(guardedProvider.state.callCount).toBe(0);
+      await unsafe.dispose();
     } finally {
       await services.shutdown();
       await services.shutdown();

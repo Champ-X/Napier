@@ -1,16 +1,22 @@
 import type { BrowserInteractionConfirmation } from "@napier/contracts/browser-interaction-confirmation";
-import { BROWSER_INTERACTION_EFFECT_LABELS } from "@napier/contracts/browser-interaction-confirmation";
 import { Check, MousePointerClick, X } from "lucide-react";
+
+import { browserLiveCopy } from "./browser-live-copy";
+import { getLocale } from "./locale";
+import "./browser-interaction-confirmation.css";
+
+export interface BrowserInteractionConfirmationPanelProps {
+  confirmation: BrowserInteractionConfirmation;
+  busy: boolean;
+  onDecision: (decision: "approve" | "reject") => Promise<void>;
+}
 
 export function BrowserInteractionConfirmationPanel({
   confirmation,
   busy,
   onDecision,
-}: {
-  confirmation: BrowserInteractionConfirmation;
-  busy: boolean;
-  onDecision: (decision: "approve" | "reject") => Promise<void>;
-}) {
+}: BrowserInteractionConfirmationPanelProps) {
+  const copy = browserLiveCopy.confirmation;
   return (
     <section
       className="browser-interaction-confirmation"
@@ -21,41 +27,38 @@ export function BrowserInteractionConfirmationPanel({
       <header>
         <MousePointerClick size={17} aria-hidden="true" />
         <div>
-          <span>BROWSER ACTION</span>
+          <span>{copy.eyebrow}</span>
           <strong id={`browser-confirmation-${confirmation.id}`}>
-            Confirm {confirmation.action}
+            {copy.confirm} {copy.actions[confirmation.action]}
           </strong>
         </div>
         <code title={confirmation.requestSha256}>
           {confirmation.requestSha256.slice(0, 12)}
         </code>
       </header>
-      <p>
-        This one action is paused before execution. Approval is bound to the
-        exact validated arguments and cannot be reused.
-      </p>
+      <p>{copy.description}</p>
       <dl>
         <div>
-          <dt>Action</dt>
-          <dd>{confirmation.action}</dd>
+          <dt>{copy.labels.action}</dt>
+          <dd>{copy.actions[confirmation.action]}</dd>
         </div>
         {confirmation.preview.effect ? (
           <div>
-            <dt>Effect</dt>
-            <dd>
-              {BROWSER_INTERACTION_EFFECT_LABELS[confirmation.preview.effect]}
-            </dd>
+            <dt>{copy.labels.effect}</dt>
+            <dd>{copy.effects[confirmation.preview.effect]}</dd>
           </div>
         ) : null}
         <div>
-          <dt>Arguments</dt>
+          <dt>{copy.labels.arguments}</dt>
           <dd title={confirmation.argumentsSha256}>
             {confirmation.argumentsSha256.slice(0, 12)}
           </dd>
         </div>
         {confirmation.preview.targetSha256 ? (
           <div>
-            <dt>Target {confirmation.preview.targetKind}</dt>
+            <dt>
+              {copy.labels.target} {confirmation.preview.targetKind}
+            </dt>
             <dd title={confirmation.preview.targetSha256}>
               {confirmation.preview.targetSha256.slice(0, 12)}
             </dd>
@@ -63,7 +66,10 @@ export function BrowserInteractionConfirmationPanel({
         ) : null}
         {confirmation.preview.textSha256 ? (
           <div>
-            <dt>Text · {String(confirmation.preview.textBytes ?? 0)} bytes</dt>
+            <dt>
+              {copy.labels.text} · {String(confirmation.preview.textBytes ?? 0)}{" "}
+              {copy.labels.bytes}
+            </dt>
             <dd title={confirmation.preview.textSha256}>
               {confirmation.preview.textSha256.slice(0, 12)}
             </dd>
@@ -71,7 +77,10 @@ export function BrowserInteractionConfirmationPanel({
         ) : null}
         {confirmation.preview.valueSetSha256 ? (
           <div>
-            <dt>Values · {String(confirmation.preview.valueCount ?? 0)}</dt>
+            <dt>
+              {copy.labels.values} ·{" "}
+              {String(confirmation.preview.valueCount ?? 0)}
+            </dt>
             <dd title={confirmation.preview.valueSetSha256}>
               {confirmation.preview.valueSetSha256.slice(0, 12)}
             </dd>
@@ -79,7 +88,7 @@ export function BrowserInteractionConfirmationPanel({
         ) : null}
         {confirmation.preview.pathSha256 ? (
           <div>
-            <dt>Workspace path</dt>
+            <dt>{copy.labels.workspacePath}</dt>
             <dd title={confirmation.preview.pathSha256}>
               {confirmation.preview.pathSha256.slice(0, 12)}
             </dd>
@@ -87,7 +96,10 @@ export function BrowserInteractionConfirmationPanel({
         ) : null}
         {confirmation.preview.fileSha256 ? (
           <div>
-            <dt>File · {String(confirmation.preview.fileBytes ?? 0)} bytes</dt>
+            <dt>
+              {copy.labels.file} · {String(confirmation.preview.fileBytes ?? 0)}{" "}
+              {copy.labels.bytes}
+            </dt>
             <dd title={confirmation.preview.fileSha256}>
               {confirmation.preview.fileSha256.slice(0, 12)}
             </dd>
@@ -95,7 +107,7 @@ export function BrowserInteractionConfirmationPanel({
         ) : null}
         {confirmation.preview.pageStateSha256 ? (
           <div>
-            <dt>Page state</dt>
+            <dt>{copy.labels.pageState}</dt>
             <dd title={confirmation.preview.pageStateSha256}>
               {confirmation.preview.pageStateSha256.slice(0, 12)}
             </dd>
@@ -103,20 +115,26 @@ export function BrowserInteractionConfirmationPanel({
         ) : null}
         {confirmation.preview.sourceImageSha256 ? (
           <div>
-            <dt>Source image</dt>
+            <dt>{copy.labels.sourceImage}</dt>
             <dd title={confirmation.preview.sourceImageSha256}>
               {confirmation.preview.sourceImageSha256.slice(0, 12)}
             </dd>
           </div>
         ) : null}
         <div>
-          <dt>Expires</dt>
-          <dd>{new Date(confirmation.expiresAt).toLocaleTimeString()}</dd>
+          <dt>{copy.labels.expires}</dt>
+          <dd>
+            {new Date(confirmation.expiresAt).toLocaleTimeString(
+              getLocale() === "zh" ? "zh-CN" : "en",
+            )}
+          </dd>
         </div>
         <div>
-          <dt>Cross-origin</dt>
+          <dt>{copy.labels.crossOrigin}</dt>
           <dd>
-            {confirmation.preview.crossOriginAuthorized ? "authorized" : "no"}
+            {confirmation.preview.crossOriginAuthorized
+              ? copy.authorized
+              : copy.unauthorized}
           </dd>
         </div>
       </dl>
@@ -128,7 +146,7 @@ export function BrowserInteractionConfirmationPanel({
           onClick={() => void onDecision("reject")}
         >
           <X size={12} aria-hidden="true" />
-          Reject
+          {copy.reject}
         </button>
         <button
           type="button"
@@ -137,7 +155,7 @@ export function BrowserInteractionConfirmationPanel({
           onClick={() => void onDecision("approve")}
         >
           <Check size={12} aria-hidden="true" />
-          Approve once
+          {copy.approve}
         </button>
       </footer>
     </section>

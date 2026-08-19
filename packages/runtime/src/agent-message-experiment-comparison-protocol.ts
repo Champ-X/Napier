@@ -20,6 +20,7 @@ const MODEL_ID = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$/u;
 const TOOL_NAME = /^[A-Za-z][A-Za-z0-9_.:-]{0,127}$/u;
 const EXECUTION_MODES = new Set<RunExecutionMode>([
   "standard",
+  "environment_degraded_read_only",
   "safe_read_only_recovery",
   "workflow_map_read_only",
   "workflow_loop_read_only",

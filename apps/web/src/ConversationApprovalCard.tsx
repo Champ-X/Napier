@@ -7,12 +7,16 @@ import {
 } from "lucide-react";
 
 import type { ConversationApproval } from "./conversation-approval-view-model";
+import { getLocale } from "./locale";
+import { taskSurfaceCopy } from "./task-surface-copy";
+
+export interface ConversationApprovalCardProps {
+  approval: ConversationApproval;
+}
 
 export function ConversationApprovalCard({
   approval,
-}: {
-  approval: ConversationApproval;
-}) {
+}: ConversationApprovalCardProps) {
   const Icon =
     approval.decision.status === "pending"
       ? Clock3
@@ -32,7 +36,10 @@ export function ConversationApprovalCard({
       <summary>
         <CircleHelp size={15} aria-hidden="true" />
         <div>
-          <span>Approval · {approval.decision.status}</span>
+          <span>
+            {taskSurfaceCopy.approval.label} ·{" "}
+            {taskSurfaceCopy.approval.statuses[approval.decision.status]}
+          </span>
           <strong>{approval.decision.header}</strong>
         </div>
         <Icon size={14} aria-hidden="true" />
@@ -60,31 +67,37 @@ export function ConversationApprovalCard({
       </ul>
       <dl>
         <div>
-          <dt>Mode</dt>
+          <dt>{taskSurfaceCopy.approval.mode}</dt>
           <dd>
             {approval.decision.multiSelect
-              ? "Multiple choices"
-              : "Single choice"}
+              ? taskSurfaceCopy.approval.multiple
+              : taskSurfaceCopy.approval.single}
           </dd>
         </div>
         <div>
-          <dt>Selected</dt>
+          <dt>{taskSurfaceCopy.approval.selected}</dt>
           <dd>
             {approval.selectedLabels.length > 0
               ? approval.selectedLabels.join(", ")
-              : "None"}
+              : taskSurfaceCopy.approval.none}
           </dd>
         </div>
         {approval.customAnswerRecorded ? (
           <div>
-            <dt>Custom answer</dt>
-            <dd>Recorded · content hidden</dd>
+            <dt>{taskSurfaceCopy.approval.customAnswer}</dt>
+            <dd>{taskSurfaceCopy.approval.recordedHidden}</dd>
           </div>
         ) : null}
         {approval.decision.cancellationReason ? (
           <div>
-            <dt>Reason</dt>
-            <dd>{humanize(approval.decision.cancellationReason)}</dd>
+            <dt>{taskSurfaceCopy.approval.reason}</dt>
+            <dd>
+              {
+                taskSurfaceCopy.approval.cancellationReasons[
+                  approval.decision.cancellationReason
+                ]
+              }
+            </dd>
           </div>
         ) : null}
       </dl>
@@ -96,25 +109,11 @@ export function ConversationApprovalCard({
 }
 
 function approvalGuidance(approval: ConversationApproval): string {
-  if (approval.decision.status === "pending") {
-    return "Operator input is required before the Run can continue.";
-  }
-  if (approval.decision.status === "answered") {
-    return "Answer recorded. Continue the Run from the active approval panel.";
-  }
-  if (approval.decision.status === "continued") {
-    return "The answer was accepted and execution continued.";
-  }
-  return "The approval was cancelled; no continuation was started.";
-}
-
-function humanize(value: string): string {
-  const normalized = value.replaceAll("_", " ");
-  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+  return taskSurfaceCopy.approval.guidance[approval.decision.status];
 }
 
 function formatTime(value: string): string {
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat(getLocale() === "zh" ? "zh-CN" : "en", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,

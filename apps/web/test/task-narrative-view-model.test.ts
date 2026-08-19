@@ -346,6 +346,25 @@ describe("Task narrative", () => {
       }),
     );
   });
+
+  it("adds a concise model Harness summary to the active task", () => {
+    const detail = fixture();
+    detail.thread.status = "running";
+    detail.thread.currentRunId = "run_1";
+    detail.runs.push(run("running"));
+    detail.events.push(modelHarnessResolved());
+
+    expect(taskNarrative(detail)).toEqual(
+      expect.objectContaining({
+        harness: {
+          family: "openai",
+          toolSurface: "focused",
+          activeToolCount: 2,
+          configuredToolCount: 3,
+        },
+      }),
+    );
+  });
 });
 
 function fixture(): ThreadDetail {
@@ -610,6 +629,44 @@ function toolTerminal(
     visibility: "user",
     createdAt: timestamp(3),
     payload: { callId, toolName },
+  };
+}
+
+function modelHarnessResolved(): RunEvent {
+  return {
+    id: "event_harness",
+    threadId: "thread_1",
+    runId: "run_1",
+    seq: 8,
+    type: "model.harness.resolved",
+    category: "model",
+    visibility: "debug",
+    createdAt: timestamp(2),
+    payload: {
+      kind: "napier.model-harness-resolution",
+      schemaVersion: 1,
+      harnessId: "napier.model-harness.openai.v1",
+      family: "openai",
+      promptDialect: "instruction-led",
+      provider: "openai",
+      model: "gpt-5",
+      modelApi: "openai-responses",
+      attempt: 1,
+      intents: ["coding"],
+      toolSurface: "focused",
+      configuredToolCount: 3,
+      activeToolCount: 2,
+      activeToolNames: ["read_file", "apply_patch"],
+      omittedToolNames: ["browser"],
+      configuredToolDefinitionBytes: 1_000,
+      activeToolDefinitionBytes: 300,
+      savedToolDefinitionBytes: 700,
+      maxRetries: 2,
+      maxRetriesSource: "harness",
+      maxRetryDelayMs: 30_000,
+      maxRetryDelayMsSource: "harness",
+      contentSha256: "a".repeat(64),
+    },
   };
 }
 

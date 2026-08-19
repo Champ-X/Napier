@@ -1,4 +1,7 @@
-export const workflowExperimentCopy = {
+import { deepMergeCopy, getLocale } from "./locale";
+import { workflowExperimentCopyZh } from "./workflow-experiment-copy.zh";
+
+export const workflowExperimentCopyEn = {
   eyebrow: "CONTROLLED RE-EXECUTION",
   title: "Workflow experiment desk",
   body: "Load a versioned Workflow manifest, choose a checkpoint, inspect historical effects, then fork into an isolated Thread.",
@@ -129,3 +132,8 @@ export const workflowExperimentCopy = {
     unavailable: "Unavailable",
   },
 } as const;
+
+export const workflowExperimentCopy = deepMergeCopy(
+  workflowExperimentCopyEn,
+  getLocale() === "zh" ? workflowExperimentCopyZh : {},
+);

@@ -102,7 +102,7 @@ export async function runOpenWebResearchBenchmark(
     const signal = options.signal
       ? AbortSignal.any([options.signal, timeoutSignal])
       : timeoutSignal;
-    const run = await runtime.runtime.runPrompt({
+    const run = await runtime.kernel.runPrompt({
       threadId: thread.id,
       text: loaded.prompt,
       model: options.model,

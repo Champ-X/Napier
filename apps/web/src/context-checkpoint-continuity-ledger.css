@@ -1,0 +1,45 @@
+.context-checkpoint-continuity-ledger {
+  --context-continuity-column-min: calc(var(--space-20) + var(--space-6));
+  --context-continuity-grid:
+    repeat(
+      auto-fit,
+      minmax(min(var(--context-continuity-column-min), 100%), 1fr)
+    );
+  --context-continuity-heading-size:
+    clamp(var(--text-sm), calc(var(--text-sm) + 0.15vw), var(--text-base));
+}
+
+.context-checkpoint-continuity-ledger > header h3 {
+  font-size: var(--context-continuity-heading-size);
+}
+
+.context-checkpoint-continuity-ledger > header div > span,
+.context-checkpoint-continuity-ledger > header > span,
+.context-checkpoint-continuity-ledger > p,
+.context-checkpoint-continuity-ledger .model-context-envelope-card > header span,
+.context-checkpoint-continuity-ledger .model-context-envelope-card > header code,
+.context-checkpoint-continuity-ledger .model-context-envelope-card dt,
+.context-checkpoint-continuity-ledger .model-context-envelope-card dd,
+.context-checkpoint-continuity-ledger .model-context-envelope-card > p span,
+.context-checkpoint-continuity-ledger .model-context-envelope-card > p code,
+.context-checkpoint-continuity-ledger .model-context-envelope-card > footer span,
+.context-checkpoint-continuity-ledger .model-context-envelope-card > footer code {
+  font-size: var(--text-xs);
+}
+
+.context-checkpoint-continuity-ledger .model-context-envelope-card dl {
+  display: grid;
+  grid-template-columns: var(--context-continuity-grid);
+  gap: var(--space-2) var(--space-3);
+  align-items: start;
+}
+
+.context-checkpoint-continuity-ledger .model-context-envelope-card dl div {
+  min-width: 0;
+}
+
+@media (forced-colors: active) {
+  .context-checkpoint-continuity-ledger .model-context-envelope-card {
+    border-inline-start-color: CanvasText;
+  }
+}

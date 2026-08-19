@@ -1,5 +1,7 @@
 import { deepMergeCopy, getLocale } from "./locale";
 import { zh } from "./copy.zh";
+import { desktopWorkbenchCopy } from "./desktop-workbench-copy";
+import { goalCopyEn } from "./goal-copy";
 import { recoveryCopy } from "./recovery-copy";
 
 export const en = {
@@ -43,10 +45,6 @@ export const en = {
     undo: "Undo",
     restoring: "Restoring...",
   },
-  composer: {
-    runOptions: "Run options",
-    checkingRunOptions: "Checking run options...",
-  },
   sessionView: {
     eyebrow: "Thread-bound control plane",
     title: "Session",
@@ -56,6 +54,7 @@ export const en = {
     events: "Events",
     tools: "Session tools",
   },
+  taskView: desktopWorkbenchCopy.taskView,
   sections: {
     plan: "Plan",
     studio: "Studio",
@@ -68,8 +67,8 @@ export const en = {
   },
   tabs: {
     conversation: "Conversation",
-    session: "Session",
-    trace: "Trace",
+    session: "Task",
+    trace: "Trajectory",
     processes: "Processes",
     files: "Files",
     lab: "Lab",
@@ -87,53 +86,7 @@ export const en = {
   planLoading: "Durable plan",
   planNextPrompt:
     "Continue the durable execution plan. Start the next ready step, perform it, verify its stated condition, and settle the step with concrete evidence before moving on.",
-  trace: {
-    title: "Run evidence",
-    empty: "Events will appear here as the run unfolds.",
-    sequence: "SEQ",
-    otel: {
-      eyebrow: "VENDOR-NEUTRAL TRACE",
-      title: "OpenTelemetry export",
-      body: "Project this ledger into OTLP/JSON spans for Collector, Jaeger, Tempo, or another compatible backend.",
-      scope: "Export scope",
-      threadScope: "Complete Thread",
-      runScope: "Single Run",
-      export: "Export OTLP trace",
-      exporting: "Binding spans...",
-      exported: "OTLP trace exported",
-      verify: "Verify archived JSON",
-      verifying: "Checking archive...",
-      verified: "OTLP trace verified",
-      invalid: "OTLP trace invalid",
-      noDiagnostics: "No diagnostics",
-      spans: "Spans",
-      events: "Events",
-      eventAnchor: "Event anchor",
-      safety:
-        "Metadata-only export excludes prompts, completions, reasoning, tool I/O, notes, evidence text, and credential locators.",
-      errors: {
-        artifactTooLarge: "OTLP trace artifact is larger than 10 MiB.",
-        artifactInvalid: "OTLP trace artifact must be valid JSON.",
-      },
-    },
-    summary: {
-      eyebrow: "SUMMARY BOUNDARY",
-      title: "Trace summary coverage",
-      genericTypes: "Generic fallback",
-      noGeneric: "No generic fallback in this event set.",
-      receipt: "Receipt",
-      verificationPending: "Verifying receipt",
-      verificationValid: "Receipt verified",
-      verificationInvalid: "Receipt invalid",
-      noDiagnostics: "No diagnostics",
-      sources: {
-        bounded: "Bounded",
-        fixed: "Fixed",
-        category: "Category",
-        generic: "Generic",
-      },
-    },
-  },
+  trace: desktopWorkbenchCopy.trace,
   lab: {
     eyebrow: "RUN LAB",
     title: "Compare evidence",
@@ -258,6 +211,7 @@ export const en = {
       environment: "Local signer · environment",
       publicKey: "Verify only · public key",
       environmentVariable: "PKCS#8 private-key environment variable",
+      environmentVariablePlaceholder: "NAPIER_RELEASE_SIGNING_KEY",
       publicKeySpki: "SPKI public key · Base64 DER",
       publicKeyPlaceholder: "MCowBQYDK2VwAyEA…",
       signing: "Local signing",
@@ -825,19 +779,7 @@ export const en = {
       timed_out: "Timed out",
     },
   },
-  goal: {
-    title: "Durable goal",
-    empty: "Set an objective that can span multiple runs.",
-    placeholder: "Define a verifiable outcome...",
-    set: "Set goal",
-    clear: "Clear",
-    active: "Active",
-    completed: "Verified",
-    blocked: "Blocked",
-    evidence: "Latest evidence",
-    noProgress: "No progress",
-    guardrail: "Napier fails closed when evidence is insufficient.",
-  },
+  goal: goalCopyEn,
   memory: {
     title: "Reviewed memory",
     eyebrow: "CONTEXT VAULT",
@@ -920,18 +862,7 @@ export const en = {
       "Switching rebuilds the runtime on the new folder and shows that folder's own ledgers. This folder's ledgers stay intact and return if you switch back. Not allowed while a run is active.",
     chipLabel: "Workspace",
   },
-  settingsSurface: {
-    eyebrow: "Workspace configuration",
-    title: "Settings",
-    body: "Configuration that survives beyond a single conversation or Run.",
-    close: "Close settings",
-    contextSection: "Agent & Model",
-    contextSectionDescription: "Providers, policies, skills and credentials",
-    memorySection: "Memory",
-    memorySectionDescription: "Workspace knowledge and review cadence",
-    extensionsSection: "Extensions",
-    extensionsSectionDescription: "MCP, packages and trust",
-  },
+  settingsSurface: desktopWorkbenchCopy.settingsSurface,
   welcome: {
     eyebrow: "A glass-box agent runtime",
     title: "Work that leaves evidence.",
@@ -955,6 +886,17 @@ export const en = {
   narrative: {
     blockedBy: "Blocked by",
     next: "Next",
+    details: "Details",
+    runMetrics: "Run metrics",
+    harness: "Run mode",
+    harnessFocused: "Focused",
+    harnessFull: "Full",
+    harnessTools: "tools",
+    environmentFallback: "Read-only environment fallback",
+    environmentFallbackBody:
+      "Sandbox is unavailable. Safe inspection can continue; edits and process-backed capabilities remain withheld.",
+    environmentToolsActive: "tools active",
+    environmentRepair: "Run options → Sandbox setup",
     browserControls: "Browser controls",
     stop: "Stop",
     emptyAction: "Choose or create a ledger",

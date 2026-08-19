@@ -3,6 +3,7 @@ import type { EvaluationCasebookTemplate } from "@napier/contracts/evaluation-ca
 import { ClipboardCheck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { advancedSurfaceCopy } from "./advanced-surface-copy";
 import {
   createEvaluationCasebook,
   listEvaluationCasebooks,
@@ -19,19 +20,22 @@ export const DEFAULT_PRODUCT_CASE_IDS = [
   "long-task-recovery",
 ] as const;
 
+export interface DefaultProductTrialRecorderProps {
+  threadId: string;
+  runs: RunRecord[];
+  listCasebooks?: typeof listEvaluationCasebooks;
+  listTemplates?: typeof listEvaluationCasebookTemplates;
+  createCasebook?: typeof createEvaluationCasebook;
+}
+
 export function DefaultProductTrialRecorder({
   threadId,
   runs,
   listCasebooks = listEvaluationCasebooks,
   listTemplates = listEvaluationCasebookTemplates,
   createCasebook = createEvaluationCasebook,
-}: {
-  threadId: string;
-  runs: RunRecord[];
-  listCasebooks?: typeof listEvaluationCasebooks;
-  listTemplates?: typeof listEvaluationCasebookTemplates;
-  createCasebook?: typeof createEvaluationCasebook;
-}) {
+}: DefaultProductTrialRecorderProps) {
+  const copy = advancedSurfaceCopy.defaultTrial;
   const terminalRun = latestTerminalRun(runs);
   const [open, setOpen] = useState(false);
   const [casebook, setCasebook] = useState<EvaluationCasebook>();
@@ -67,9 +71,9 @@ export function DefaultProductTrialRecorder({
           casebooks.find((item) => item.templateId === releaseTemplate?.id),
         );
         if (!releaseTemplate) {
-          setError("Release Product Casebook template is unavailable.");
+          setError(copy.templateUnavailable);
         } else if (casesMissingFrom(releaseTemplate).length > 0) {
-          setError("Release Product Casebook is missing required M4 cases.");
+          setError(copy.casesMissing);
         }
       })
       .catch((loadError: unknown) => {
@@ -109,21 +113,19 @@ export function DefaultProductTrialRecorder({
     >
       <summary>
         <ClipboardCheck size={11} aria-hidden="true" />
-        Record default product trial
+        {copy.summary}
       </summary>
       {open ? (
         <div>
-          <p>
-            Bind this real terminal Run to one of the six M4 core product cases.
-          </p>
+          <p>{copy.body}</p>
           {casebook &&
           template &&
           cases.length === DEFAULT_PRODUCT_CASE_IDS.length ? (
             <>
               <label>
-                <span>Core case</span>
+                <span>{copy.coreCase}</span>
                 <select
-                  aria-label="Default product core case"
+                  aria-label={copy.coreCaseLabel}
                   value={selectedCaseId}
                   onChange={(event) => setSelectedCaseId(event.target.value)}
                 >
@@ -145,14 +147,14 @@ export function DefaultProductTrialRecorder({
           ) : template && cases.length === DEFAULT_PRODUCT_CASE_IDS.length ? (
             <button
               type="button"
-              aria-label="Prepare default product trial record"
+              aria-label={copy.prepareLabel}
               disabled={busy}
               onClick={() => void prepareCasebook()}
             >
-              {busy ? "Preparing…" : "Prepare product trial record"}
+              {busy ? copy.preparing : copy.prepare}
             </button>
           ) : !template && !error ? (
-            <p role="status">Loading product trial contract…</p>
+            <p role="status">{copy.loading}</p>
           ) : null}
           {error ? <p role="alert">{error}</p> : null}
         </div>

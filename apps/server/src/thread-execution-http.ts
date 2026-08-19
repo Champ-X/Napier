@@ -1,6 +1,5 @@
 import type { RunEvent, RunRecord, StreamFrame } from "@napier/contracts";
 import {
-  type AgentRuntime,
   type AgentKernel,
   hashEventStream,
   type LocalStore,
@@ -41,7 +40,7 @@ const MAX_PROMPT_REQUEST_BYTES = 64 * 1024;
 
 type ThreadExecutionStore = Pick<LocalStore, "getDetail" | "getThread">;
 type ThreadExecutionRuntime = Pick<
-  AgentRuntime,
+  AgentKernel,
   "continueOperatorDecision" | "resumeInterruptedRun" | "runPrompt" | "stop"
 >;
 
@@ -58,11 +57,14 @@ export interface ThreadExecutionHttpServices {
     | "conversationPlans"
     | "conversationRecoveries"
     | "conversationSubagents"
+    | "continueOperatorDecision"
     | "operatorDecisions"
+    | "resumeInterruptedRun"
+    | "runPrompt"
+    | "stop"
     | "taskNarratives"
   >;
   models: ModelRegistry;
-  runtime: ThreadExecutionRuntime;
   agentCapabilities: Pick<
     import("@napier/runtime").LocalAgentRuntimeServices["agentCapabilities"],
     "blockedRunReadinessProjection"
@@ -74,7 +76,7 @@ export function registerThreadExecutionHttp(
   services: ThreadExecutionHttpServices,
 ): void {
   registerDecisionContinuationHttp(app, services);
-  registerStopHttp(app, services.runtime);
+  registerStopHttp(app, services.kernel);
   registerResumeHttp(app, services);
   registerPromptHttp(app, services);
 }
@@ -90,7 +92,7 @@ function registerDecisionContinuationHttp(
       const decisionId = context.req.param("decisionId");
       setOperatorDecisionContinueStreamHeaders(context, threadId, decisionId);
       return streamAgentRun(context, services, threadId, (onEvent) =>
-        services.runtime.continueOperatorDecision({
+        services.kernel.continueOperatorDecision({
           threadId,
           decisionId,
           onEvent,
@@ -140,7 +142,7 @@ function registerResumeHttp(
     }
     setThreadResumeStreamHeaders(context, threadId, body.runId, body.model);
     return streamAgentRun(context, services, threadId, (onEvent) =>
-      services.runtime.resumeInterruptedRun({
+      services.kernel.resumeInterruptedRun({
         threadId,
         ...(body.runId ? { runId: body.runId } : {}),
         ...(body.model ? { model: body.model } : {}),
@@ -188,13 +190,12 @@ function registerPromptHttp(
           ? { capabilityPreset: body.capabilityPreset }
           : {}),
       });
-      if (!readiness.ready) {
-        context.header("X-Napier-Run-Readiness", readiness.code);
+      if (readiness.executionMode === "environment_degraded_read_only") {
+        context.header("X-Napier-Run-Readiness", "degraded_read_only");
         context.header(
           "X-Napier-Agent-Capability-Projection-SHA256",
           readiness.projectionSha256,
         );
-        return jsonError(context, readiness.message, 409);
       }
     } catch (error) {
       if (!errorMessage(error).startsWith("Thread not found:")) {
@@ -213,7 +214,7 @@ function registerPromptHttp(
       body.sourceContinuityRunId,
     );
     return streamAgentRun(context, services, threadId, (onEvent) =>
-      services.runtime.runPrompt({
+      services.kernel.runPrompt({
         threadId,
         text: body.text,
         ...(body.model ? { model: body.model } : {}),

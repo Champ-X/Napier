@@ -6,18 +6,18 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "f97e36ae75299622ac34a4cdaf9aadff921e84f1b9fa4ff3b08b3c86d10745e2",
+  "artifactSetSha256": "6138ccba791313e12efd6e7a6f139433391c45326ead3c1ae153fd33130c445f",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "ec7b0e2800352e82b4a5b90f01c0cbce3a5fd6008aeb9a4cb4e29b875efbff03",
+      "sha256": "472f09217a3ca2b497372a56e2d1285f57a342bc99af8923f524a5f84e83e81f",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "8eaeab2ee1768c27497a1e488ae02134e8e58a24905124ee73d8ba4b15cf5ee7",
+      "sha256": "8a0ae0b326a5a5729755ab515ecb2220e3a4ca639d084079a4b2f86e66ca3ed2",
       "valid": true
     },
     {
@@ -53,7 +53,7 @@
     {
       "kind": "sandbox-product-acceptance-stage13",
       "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-      "sha256": "89c9ec57d0ba5dc6be917fb295cc0fae5bb204a3909b370934c4f44bf609df86",
+      "sha256": "26a6ad03929c5a04eb869f5eb494c40a33c496fb5c12d54839e0dc419c4653a0",
       "valid": true
     },
     {
@@ -89,25 +89,25 @@
     {
       "kind": "linux-host-product-acceptance-stage19",
       "path": "docs/artifacts/linux-host-product-acceptance-stage19.json",
-      "sha256": "921812a96428bd627e128bfde3d4f4f6abe35132f83237e7360e81cb9640b0c1",
+      "sha256": "91aaf9292efd2cfe642f73557ddaee7a9be3042a02e31ba13dc40e10a0793808",
       "valid": true
     },
     {
       "kind": "sandbox-acquisition-stage20",
       "path": "docs/artifacts/sandbox-acquisition-stage20.json",
-      "sha256": "9261727af000cd74bbdfd93fc8bd1f47cdf1be36efdeb8d5957dd802905c7213",
+      "sha256": "110bc8b1f3dfaf539e6fa188fbab500ada27315ac8171d4b55789816dda4f7d5",
       "valid": true
     },
     {
       "kind": "profile-upgrade-stage21",
       "path": "docs/artifacts/profile-upgrade-stage21.json",
-      "sha256": "2b80516b2d604ebf5117248d9879d9ce7f65d23ae0b9e723007d247c249fb5a0",
+      "sha256": "f2d1bdac348221b613563358e07219ed96d343fd2c0f17d37607e2a7782a0263",
       "valid": true
     },
     {
       "kind": "s1-shell-sandbox-readiness-stage22",
       "path": "docs/artifacts/s1-shell-sandbox-readiness-stage22.json",
-      "sha256": "92e726cf84f7ab32b9f0c2b710450e089eaec8a7b0850e51bc8503026d759c12",
+      "sha256": "2f5be0fd4a99de00d54bf8ef120cc4a516706ff86ad3622eb5ac31c536877757",
       "valid": true
     },
     {
@@ -119,19 +119,19 @@
     {
       "kind": "web-dist-audit",
       "path": "docs/artifacts/web-dist-audit-0.1.0.json",
-      "sha256": "1c48dd9e2c41cf2800fc2a0112ee743940e0f1676211467dbd75f83ad93ec0ea",
+      "sha256": "45319d4f3f20431b451304a2c2d340139f18e47d49f9c58ea455c49262e23186",
       "valid": true
     },
     {
       "kind": "web-dist-manifest",
       "path": "docs/artifacts/web-dist-0.1.0.sha256",
-      "sha256": "39c848ed69d5caea5e4d8de720c8544c06ae0a61b20f1dd3bb2b6823a59ef371",
+      "sha256": "bd5395f95123eb189d39ff11714e9b6b47c433452c328578bf8023e4a1eb5cdc",
       "valid": true
     },
     {
       "kind": "management-openapi",
       "path": "docs/artifacts/management-openapi-0.1.0.json",
-      "sha256": "7c8ea2f8236b7c7cfed83a499f0b662873d71da5ce097bba73e948624cac7be3",
+      "sha256": "97d1f3fc1996d2a2c44fbe98e4928509a388ec9b06d395318a5b040ecd547961",
       "valid": true
     },
     {
@@ -155,13 +155,13 @@
     {
       "kind": "default-product-source-bound-smoke",
       "path": "docs/artifacts/default-product-source-bound-smoke-m4-0.1.3.json",
-      "sha256": "c94263657a2907b5bae5511136697aec3020de89434e1611c2b93e1c5a41e2fc",
+      "sha256": "7fa119695ab32d2e039ae08cbd648feaf707867d452b8a3f0012cc3d36967db7",
       "valid": true
     },
     {
       "kind": "default-product-source-manifest",
       "path": "docs/artifacts/default-product-source-manifest-0.1.3.json",
-      "sha256": "94e3ed9ff936c259712d347c6130aa8f4eb7245a7da43581ea07979c9c4b548f",
+      "sha256": "631a4daca37c073b052fae824c2b3e55760950d5e04d2cfc1ed07e845381da9d",
       "valid": true
     },
     {

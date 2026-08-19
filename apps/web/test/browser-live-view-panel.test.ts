@@ -3,10 +3,19 @@ import { describe, expect, it } from "vitest";
 
 describe("Browser Live diagnosis handoff", () => {
   it("renders an explicit isolated-profile takeover route without solving CAPTCHAs", async () => {
-    const source = await readFile(
-      new URL("../src/BrowserLiveViewPanel.tsx", import.meta.url),
-      "utf8",
-    );
+    const source = (
+      await Promise.all(
+        [
+          "BrowserLiveViewPanel.tsx",
+          "BrowserLiveViewSurface.tsx",
+          "use-browser-live-view-controller.ts",
+          "use-browser-session-control.ts",
+          "browser-live-copy.ts",
+        ].map((file) =>
+          readFile(new URL(`../src/${file}`, import.meta.url), "utf8"),
+        ),
+      )
+    ).join("\n");
 
     expect(source).toContain("Human verification required");
     expect(source).toContain("Login required");

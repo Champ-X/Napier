@@ -8,7 +8,7 @@ import type {
   JsonValue,
 } from "@napier/contracts";
 
-import { AgentRuntime } from "./agent-runtime.js";
+import type { AgentExecutionPort } from "./agent-execution.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
 import { createInboundDeadLetterRetryPreview } from "./inbound-dead-letters.js";
@@ -29,7 +29,7 @@ export class ChannelService<
 
   constructor(
     readonly store: TStore,
-    readonly runtime: AgentRuntime,
+    readonly runtime: Pick<AgentExecutionPort, "modelRegistry" | "runPrompt">,
     options: ChannelServiceOptions = {},
   ) {
     const sweepMs = options.sweepMs ?? DEFAULT_SWEEP_MS;

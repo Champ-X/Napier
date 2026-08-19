@@ -38,7 +38,13 @@ describe("Agent tool deadline", () => {
       workspaceRoot: path.join(root, "workspace"),
     });
     await store.initialize();
-    const agent = store.listAgents()[0]!;
+    const seededAgent = store.listAgents()[0]!;
+    const agent = await store.updateAgent(seededAgent.id, {
+      toolPolicy: "observe",
+      enabledTools: ["read_file"],
+      enabledSkills: [],
+      enabledSubagents: [],
+    });
     const thread = await store.createThread({
       title: "MCP deadline",
       agentId: agent.id,

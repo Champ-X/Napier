@@ -9,6 +9,7 @@ import type { ConversationPlan } from "./conversation-plan-view-model";
 import type { ConversationRecovery } from "./conversation-recovery-view-model";
 import type { ConversationSubagent } from "./conversation-subagent-view-model";
 import type { ConversationToolActivity } from "./conversation-tool-activity-view-model";
+import { conversationActivityCopy } from "./conversation-activity-copy";
 
 export type ConversationGroupedActivityItem =
   | { kind: "network"; seq: number; activity: ConversationNetworkActivity }
@@ -132,7 +133,7 @@ function activityGroup(pending: PendingGroup): ConversationActivityGroup {
     id: `${pending.descriptor.key}:${String(first.seq)}`,
     seq: first.seq,
     label: pending.descriptor.label,
-    summary: `${pending.descriptor.subject} · ${String(count)} steps`,
+    summary: `${pending.descriptor.subject} · ${String(count)} ${conversationActivityCopy.group.steps}`,
     createdAt: last.activity.createdAt,
     items: pending.items,
   };
@@ -163,6 +164,6 @@ function toolStage(
 }
 
 function stageDescriptor(stage: ReturnType<typeof toolStage>): GroupDescriptor {
-  const subject = stage.charAt(0).toUpperCase() + stage.slice(1);
+  const subject = conversationActivityCopy.group.stages[stage];
   return { key: `stage:${stage}`, label: subject, subject };
 }

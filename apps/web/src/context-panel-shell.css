@@ -1,0 +1,269 @@
+.context-workbench {
+  container-name: context-panel;
+  container-type: inline-size;
+  min-width: 0;
+  padding-inline: var(--inset-md);
+}
+
+.context-version {
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-fg-subtle);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.context-error,
+.context-model-warning {
+  overflow-wrap: anywhere;
+  font-size: var(--text-xs);
+  line-height: var(--leading-compact);
+  color: var(--color-danger-fg);
+}
+
+.context-error {
+  padding: var(--inset-xs) var(--inset-sm);
+  margin: 0 0 var(--stack-sm);
+  background: var(--color-danger-surface);
+  border: 1px solid var(--color-danger-border);
+  border-inline-start-width: var(--control-focus-width);
+  border-radius: var(--radius-sm);
+}
+
+.context-runtime-card,
+.agent-config-sheet {
+  min-width: 0;
+  margin-block-end: var(--stack-md);
+  padding: var(--inset-md);
+  color: var(--color-fg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.context-runtime-card {
+  position: relative;
+  overflow: hidden;
+  border-inline-start: var(--control-focus-width) solid var(--color-accent);
+  box-shadow: var(--shadow-raised);
+}
+
+.context-runtime-card > header,
+.context-section-heading {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--inline-sm);
+}
+
+.context-runtime-card > header > div:last-child,
+.context-section-heading > div:nth-child(2) {
+  display: grid;
+  min-width: 0;
+  gap: var(--stack-xs);
+}
+
+.context-runtime-card > header span,
+.context-section-heading > div:nth-child(2) > span {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-fg-subtle);
+}
+
+.context-runtime-card h3,
+.context-section-heading h3 {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: clamp(var(--text-base), 2cqi, var(--text-xl));
+  font-weight: var(--font-weight-semibold);
+}
+
+.context-section-glyph {
+  display: grid;
+  width: var(--control-target);
+  height: var(--control-target);
+  flex: none;
+  place-items: center;
+  color: var(--color-accent);
+  background: var(--color-accent-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+.context-runtime-card .context-field {
+  margin-block-start: var(--stack-sm);
+}
+
+.context-runtime-card > p,
+.context-form-note {
+  margin: var(--stack-sm) 0 0;
+  font-size: var(--text-xs);
+  line-height: var(--leading-compact);
+  color: var(--color-fg-muted);
+}
+
+.context-section-heading {
+  padding-block-end: var(--inset-sm);
+  margin-block-end: var(--stack-sm);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.credential-count {
+  margin-inline-start: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-fg-subtle);
+}
+
+.context-field,
+.context-field > span {
+  min-width: 0;
+}
+
+.context-field {
+  display: grid;
+  gap: var(--stack-xs);
+  margin-block-end: var(--stack-sm);
+}
+
+.context-field > span,
+.context-option-group legend,
+.context-budget-grid legend {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-fg-subtle);
+}
+
+.context-field input,
+.context-field select,
+.context-field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-target-primary);
+  padding: var(--inset-xs);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-compact);
+  color: var(--color-fg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.context-field select {
+  padding-inline-end: var(--inset-lg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.context-field textarea {
+  min-height: var(--space-24);
+  resize: vertical;
+}
+
+.context-field input::placeholder,
+.context-field textarea::placeholder {
+  color: var(--color-fg-subtle);
+}
+
+.context-field input:hover:not(:disabled),
+.context-field select:hover:not(:disabled),
+.context-field textarea:hover:not(:disabled) {
+  border-color: var(--color-accent-hover);
+}
+
+.context-field input:focus-visible,
+.context-field select:focus-visible,
+.context-field textarea:focus-visible,
+.context-save:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 var(--control-focus-offset) var(--color-surface),
+    0 0 0 calc(var(--control-focus-offset) + var(--control-focus-width))
+      var(--color-focus-ring);
+}
+
+.context-field input:invalid:not(:placeholder-shown),
+.context-field textarea:invalid:not(:placeholder-shown),
+.context-field [aria-invalid="true"] {
+  border-color: var(--color-danger-border);
+}
+
+.context-field :disabled,
+.context-field input:read-only {
+  color: var(--color-fg-disabled);
+  cursor: not-allowed;
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
+}
+
+.context-field small {
+  font-size: var(--text-xs);
+  line-height: var(--leading-compact);
+  color: var(--color-fg-subtle);
+}
+
+.context-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--stack-sm);
+}
+
+.context-save {
+  width: 100%;
+  min-height: var(--control-target-primary);
+  margin-block-start: var(--stack-xs);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.context-save:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.context-save[aria-busy="true"] {
+  cursor: wait;
+}
+
+.context-form-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--inline-xs);
+}
+
+.context-form-note svg {
+  flex: none;
+  margin-block-start: var(--space-1);
+  color: var(--color-success);
+}
+
+.context-model-warning {
+  margin: 0;
+}
+
+@container context-panel (max-width: 768px) {
+  .context-field-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (forced-colors: active) {
+  .context-runtime-card,
+  .agent-config-sheet,
+  .context-field input,
+  .context-field select,
+  .context-field textarea,
+  .context-save {
+    border-color: ButtonText;
+  }
+
+  .context-field input:focus-visible,
+  .context-field select:focus-visible,
+  .context-field textarea:focus-visible,
+  .context-save:focus-visible {
+    outline: var(--control-focus-width) solid Highlight;
+    outline-offset: var(--control-focus-offset);
+    box-shadow: none;
+  }
+}

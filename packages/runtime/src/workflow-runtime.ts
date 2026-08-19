@@ -6,7 +6,6 @@ import type {
   JsonValue,
 } from "@napier/contracts";
 
-import type { AgentRuntime } from "./agent-runtime.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
 import type { LocalStore } from "./store.js";
@@ -45,6 +44,11 @@ import {
 } from "./workflow-node-dispatcher.js";
 import { executeExecutionPlanWorkflowReadyBatch } from "./workflow-parallel-scheduler.js";
 import { finishExecutionPlanWorkflow } from "./workflow-result.js";
+import {
+  resolveWorkflowRuntimeEnvironment,
+  type WorkflowAgentExecutionPort,
+  type WorkflowRuntimeEnvironment,
+} from "./workflow-runtime-ports.js";
 
 export type { RunExecutionPlanWorkflowOptions } from "./workflow-context-factory.js";
 
@@ -62,8 +66,13 @@ export class ExecutionPlanWorkflowRuntime {
 
   constructor(
     private readonly store: LocalStore,
-    agentRuntime: AgentRuntime,
+    agentExecution: WorkflowAgentExecutionPort,
+    environment?: WorkflowRuntimeEnvironment,
   ) {
+    const runtimeEnvironment = resolveWorkflowRuntimeEnvironment(
+      agentExecution,
+      environment,
+    );
     this.ledger = new ExecutionPlanWorkflowLedger(store);
     this.contexts = new ExecutionPlanWorkflowContextFactory(store, this.ledger);
     this.artifactSettlement = new ExecutionPlanWorkflowArtifactSettlement(
@@ -79,7 +88,8 @@ export class ExecutionPlanWorkflowRuntime {
     );
     this.nodeDispatcher = new ExecutionPlanWorkflowNodeDispatcher(
       store,
-      agentRuntime,
+      agentExecution,
+      runtimeEnvironment,
       this.ledger,
       {
         blockNode: (context, node, failure) =>

@@ -12,19 +12,25 @@ import {
   getSandboxSetupPreview,
   getSandboxUninstallPreview,
 } from "./sandbox-setup-api";
+import { environmentSetupCopy } from "./environment-setup-copy";
+import { SandboxSetupLedger } from "./SandboxSetupLedger";
 import {
   sandboxSetupCopy,
   sandboxSetupReady,
 } from "./sandbox-setup-view-model";
+import "./sandbox-setup.css";
 import { SANDBOX_READY_EVENT } from "./use-agent-capability-projection";
+
+export interface SandboxSetupCardProps {
+  onActivated?: () => void | Promise<void>;
+  reviewInvalidBinding?: boolean;
+}
 
 export function SandboxSetupCard({
   onActivated,
   reviewInvalidBinding = false,
-}: {
-  onActivated?: () => void | Promise<void>;
-  reviewInvalidBinding?: boolean;
-}) {
+}: SandboxSetupCardProps) {
+  const sandboxCopy = environmentSetupCopy.sandbox;
   const [preview, setPreview] = useState<SandboxSetupPreview>();
   const [busy, setBusy] = useState<
     "loading" | "applying" | "uninstalling" | undefined
@@ -51,8 +57,8 @@ export function SandboxSetupCard({
 
   const apply = useCallback(async () => {
     if (!preview) return;
-    const copy = sandboxSetupCopy(preview);
-    if (!copy.actionable) return;
+    const statusCopy = sandboxSetupCopy(preview);
+    if (!statusCopy.actionable) return;
     setBusy("applying");
     setError(undefined);
     try {
@@ -117,7 +123,7 @@ export function SandboxSetupCard({
     }
   }, [onActivated, removal]);
 
-  const copy = preview ? sandboxSetupCopy(preview) : undefined;
+  const statusCopy = preview ? sandboxSetupCopy(preview) : undefined;
   const imageReady = sandboxSetupReady(preview);
   const ready = imageReady;
 
@@ -131,60 +137,34 @@ export function SandboxSetupCard({
           {ready ? <Check size={18} /> : <Box size={18} />}
         </div>
         <div>
-          <span>PROCESS PLANE · PINNED OCI</span>
+          <span>{sandboxCopy.eyebrow}</span>
           <h3 id="sandbox-setup-title">
-            {ready ? "Sandbox active" : "Enable coding runtime"}
+            {ready ? sandboxCopy.title.ready : sandboxCopy.title.pending}
           </h3>
         </div>
         {busy === "loading" ? (
           <RefreshCw
-            className="provider-setup-spinner"
+            className="sandbox-setup-spinner"
             size={14}
-            aria-label="Checking Sandbox runtime"
+            aria-label={sandboxCopy.checkingAria}
           />
         ) : null}
       </header>
 
-      {preview && copy ? (
+      {preview && statusCopy ? (
         <>
-          <div className="sandbox-setup-ledger">
-            <div>
-              <span>STATUS</span>
-              <strong>{ready ? "ACTIVE" : copy.title}</strong>
-            </div>
-            <div>
-              <span>IMAGE</span>
-              <code>{preview.imageReference}</code>
-            </div>
-            <div>
-              <span>SOURCE</span>
-              <strong>{sandboxAcquisitionLabel(preview.acquisition)}</strong>
-            </div>
-            {preview.releaseDigest ? (
-              <div>
-                <span>RELEASE</span>
-                <code>{preview.releaseDigest.slice(0, 19)}</code>
-              </div>
-            ) : null}
-            <div>
-              <span>TOOLCHAIN</span>
-              <strong>NODE · PY · GIT · LSP · DAP</strong>
-            </div>
-            <div>
-              <span>PREVIEW</span>
-              <code>{preview.contentSha256.slice(0, 12)}</code>
-            </div>
-          </div>
-          <p className="sandbox-setup-detail">
-            {ready
-              ? "The current Web Runtime now routes new process work through the verified immutable image."
-              : copy.detail}
-          </p>
+          <SandboxSetupLedger
+            preview={preview}
+            ready={ready}
+            statusTitle={statusCopy.title}
+            statusDetail={statusCopy.detail}
+          />
           {removal ? (
             <div className="sandbox-uninstall-preview" role="status">
-              <strong>Remove Napier binding?</strong>
+              <strong>{sandboxCopy.removalTitle}</strong>
               <span>
-                Fallback · {removal.fallbackSandbox} · image retained locally
+                {sandboxCopy.fallback} · {removal.fallbackSandbox} ·{" "}
+                {sandboxCopy.imageRetained}
               </span>
               <code>{removal.contentSha256.slice(0, 12)}</code>
             </div>
@@ -196,7 +176,7 @@ export function SandboxSetupCard({
               ) : (
                 <Check size={12} aria-hidden="true" />
               )}
-              Local daemon · no remote endpoint
+              {sandboxCopy.boundary}
             </span>
             {removal ? (
               <div className="sandbox-setup-actions">
@@ -208,16 +188,18 @@ export function SandboxSetupCard({
                       disabled={Boolean(busy)}
                       onClick={() => setRemoval(undefined)}
                     >
-                      Keep active
+                      {sandboxCopy.keepActive}
                     </button>
                     <button
                       type="button"
+                      className="danger"
+                      aria-busy={busy === "uninstalling"}
                       disabled={Boolean(busy)}
                       onClick={() => void uninstall()}
                     >
                       {busy === "uninstalling"
-                        ? "Removing binding…"
-                        : "Remove binding"}
+                        ? sandboxCopy.removing
+                        : sandboxCopy.remove}
                     </button>
                   </>
                 ) : (
@@ -227,8 +209,8 @@ export function SandboxSetupCard({
                     onClick={() => setRemoval(undefined)}
                   >
                     {removal.status === "not_installed"
-                      ? "No binding · close"
-                      : "Cannot safely remove · close"}
+                      ? sandboxCopy.noBindingClose
+                      : sandboxCopy.cannotRemoveClose}
                   </button>
                 )}
               </div>
@@ -236,15 +218,16 @@ export function SandboxSetupCard({
               <div className="sandbox-setup-actions">
                 <span className="provider-setup-ready" role="status">
                   <Check size={13} aria-hidden="true" />
-                  Coding runtime ready
+                  {sandboxCopy.ready}
                 </span>
                 <button
                   type="button"
                   className="secondary"
+                  aria-busy={busy === "loading"}
                   disabled={Boolean(busy)}
                   onClick={() => void reviewRemoval()}
                 >
-                  Review removal
+                  {sandboxCopy.reviewRemoval}
                 </button>
               </div>
             ) : (
@@ -252,19 +235,21 @@ export function SandboxSetupCard({
                 <button
                   type="button"
                   className="secondary"
+                  aria-busy={busy === "loading"}
                   disabled={Boolean(busy)}
                   onClick={() => void reviewRemoval()}
                 >
-                  Review saved binding
+                  {sandboxCopy.reviewSavedBinding}
                 </button>
                 <button
                   type="button"
-                  disabled={!copy.actionable || busy === "applying"}
+                  aria-busy={busy === "applying"}
+                  disabled={!statusCopy.actionable || busy === "applying"}
                   onClick={() => void apply()}
                 >
                   {busy === "applying"
-                    ? "Verifying · repairing drift if needed…"
-                    : copy.action}
+                    ? sandboxCopy.applying
+                    : statusCopy.action}
                 </button>
               </div>
             )}
@@ -276,11 +261,11 @@ export function SandboxSetupCard({
           type="button"
           onClick={() => void loadPreview()}
         >
-          Retry Sandbox check
+          {sandboxCopy.retry}
         </button>
       ) : (
         <p className="sandbox-setup-detail" role="status">
-          Inspecting the local Docker runtime and pinned image…
+          {sandboxCopy.checking}
         </p>
       )}
 
@@ -291,14 +276,6 @@ export function SandboxSetupCard({
       ) : null}
     </section>
   );
-}
-
-function sandboxAcquisitionLabel(
-  acquisition: SandboxSetupPreview["acquisition"],
-): string {
-  if (acquisition === "external_release") return "SIGNED RELEASE";
-  if (acquisition === "packaged_source") return "PINNED SOURCE";
-  return "LOCAL VERIFIED";
 }
 
 export default SandboxSetupCard;

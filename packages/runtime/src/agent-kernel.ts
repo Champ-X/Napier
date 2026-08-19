@@ -1,12 +1,20 @@
-import type { RunEvent, RunRecord } from "@napier/contracts";
+import type { RunRecord } from "@napier/contracts";
 import type { KernelPluginInspection } from "@napier/contracts/kernel-plugins";
-
 import { createAgentPromptBuilder } from "./agent-prompt-builder.js";
-import type { RunPromptOptions } from "./agent-runtime-options.js";
+import type {
+  ContinueOperatorDecisionOptions,
+  ResumeInterruptedRunAutomaticallyOptions,
+  ResumeInterruptedRunOptions,
+  RunPromptOptions,
+} from "./agent-runtime-options.js";
 import type { AgentRuntime } from "./agent-runtime.js";
 import { AgentKernelScope } from "./agent-kernel-scope.js";
-import type { EventSink } from "./event-sink.js";
 import { KernelHookRegistry, type KernelHookName } from "./kernel-hooks.js";
+import {
+  composeEventSink,
+  KernelCompletionControlObserver,
+  type KernelCompletionControlProjection,
+} from "./kernel-completion-control.js";
 import {
   resolveKernelProfile,
   type KernelProfileId,
@@ -43,27 +51,23 @@ import { ConversationActivityCandidatesProjectionService } from "./kernel-activi
 import { ConversationPlansProjectionService } from "./kernel-conversation-plans-projection.js";
 import { ConversationRecoveriesProjectionService } from "./kernel-recovery-projection.js";
 import { ConversationSubagentsProjectionService } from "./kernel-subagent-projection.js";
-
+import {
+  ComposableAgentModelCallPipeline,
+  type AgentModelCallExtensionInspection,
+} from "./kernel-model-call-pipeline.js";
+import { installBuiltinModelCallExtensions } from "./builtin-model-call-extensions.js";
 export interface KernelModelAdapter {
   registry: ModelRegistry;
+  pipeline: ComposableAgentModelCallPipeline;
 }
-
 export interface KernelPromptAdapter {
   create: typeof createAgentPromptBuilder;
 }
-
 export interface KernelToolAdapter {
   createWorkspaceTools: typeof createWorkspaceTools;
 }
-
 export interface KernelPolicyAdapter {
   preflight: typeof preflightAgentToolPolicy;
-}
-
-export interface KernelCompletionControlProjection {
-  total: number;
-  counts: Record<string, number>;
-  latest?: { type: string; runId: string; seq: number };
 }
 
 export interface AgentKernelInspection {
@@ -71,6 +75,7 @@ export interface AgentKernelInspection {
   plugins: KernelPluginInspection[];
   services: KernelServiceInspection[];
   hooks: Array<{ name: KernelHookName; owners: string[]; count: number }>;
+  modelCalls: AgentModelCallExtensionInspection[];
   completionControl: KernelCompletionControlProjection;
 }
 
@@ -80,6 +85,10 @@ export const KERNEL_AGENT_RUNTIME =
   createKernelServiceKey<AgentRuntime>("runtime.agent");
 export const KERNEL_MODEL_ADAPTER =
   createKernelServiceKey<KernelModelAdapter>("runtime.model");
+export const KERNEL_MODEL_CALL_PIPELINE =
+  createKernelServiceKey<ComposableAgentModelCallPipeline>(
+    "runtime.model-call-pipeline",
+  );
 export const KERNEL_PROMPT_ADAPTER =
   createKernelServiceKey<KernelPromptAdapter>("runtime.prompt");
 export const KERNEL_TOOL_ADAPTER =
@@ -145,6 +154,7 @@ export class AgentKernel {
     readonly services: KernelServiceRegistry,
     readonly hooks: KernelHookRegistry,
     readonly plugins: KernelPluginRegistry,
+    readonly modelCalls: ComposableAgentModelCallPipeline,
     private readonly completionControl: KernelCompletionControlObserver,
     readonly threadSummaries: ThreadSummaryProjectionService,
     readonly taskNarratives: TaskNarrativeProjectionService,
@@ -171,18 +181,67 @@ export class AgentKernel {
     });
   }
 
+  async resumeInterruptedRun(
+    options: ResumeInterruptedRunOptions,
+  ): Promise<RunRecord> {
+    const runtime = await this.services.resolve(KERNEL_AGENT_RUNTIME);
+    return runtime.resumeInterruptedRun({
+      ...options,
+      onEvent: composeEventSink(this.hooks, options.onEvent),
+    });
+  }
+
+  async continueOperatorDecision(
+    options: ContinueOperatorDecisionOptions,
+  ): Promise<RunRecord> {
+    const runtime = await this.services.resolve(KERNEL_AGENT_RUNTIME);
+    return runtime.continueOperatorDecision({
+      ...options,
+      onEvent: composeEventSink(this.hooks, options.onEvent),
+    });
+  }
+
+  async resumeInterruptedRunAutomatically(
+    options: ResumeInterruptedRunAutomaticallyOptions,
+  ): Promise<RunRecord> {
+    const runtime = await this.services.resolve(KERNEL_AGENT_RUNTIME);
+    return runtime.resumeInterruptedRunAutomatically({
+      ...options,
+      onEvent: composeEventSink(this.hooks, options.onEvent),
+    });
+  }
+
+  stop(threadId: string): boolean {
+    return this.services.require(KERNEL_AGENT_RUNTIME).stop(threadId);
+  }
+
+  get modelRegistry(): ModelRegistry {
+    return this.services.require(KERNEL_MODEL_ADAPTER).registry;
+  }
+
+  get toolInvocationResultCapsules() {
+    return this.services.require(KERNEL_AGENT_RUNTIME)
+      .toolInvocationResultCapsules;
+  }
+
   inspect(): AgentKernelInspection {
     return {
       profile: this.profile,
       plugins: this.plugins.inspect(),
       services: this.services.inspect(),
       hooks: this.hooks.inspect(),
+      modelCalls: this.modelCalls.inspect(),
       completionControl: this.completionControl.inspect(),
     };
   }
 
   scope(owner: string): AgentKernelScope {
-    return new AgentKernelScope(this.services, this.hooks, owner);
+    return new AgentKernelScope(
+      this.services,
+      this.hooks,
+      this.modelCalls,
+      owner,
+    );
   }
 
   async shutdown(): Promise<void> {
@@ -202,10 +261,13 @@ export async function createAgentKernel(input: {
   const profile = resolveKernelProfile(input.profile);
   const services = new KernelServiceRegistry();
   const hooks = new KernelHookRegistry();
+  const modelCalls = new ComposableAgentModelCallPipeline();
+  installBuiltinModelCallExtensions(modelCalls, input.runtime.store);
   const plugins = new KernelPluginRegistry(
-    (owner) => new AgentKernelScope(services, hooks, owner),
+    (owner) => new AgentKernelScope(services, hooks, modelCalls, owner),
   );
   const completionControl = new KernelCompletionControlObserver();
+  let runtimePipelineDetach: (() => void) | undefined;
   services.register({
     key: KERNEL_PROFILE,
     create: () => profile,
@@ -301,9 +363,18 @@ export async function createAgentKernel(input: {
       ),
   });
   services.register({
-    key: KERNEL_MODEL_ADAPTER,
+    key: KERNEL_MODEL_CALL_PIPELINE,
     dependencies: [KERNEL_PROFILE],
-    create: () => ({ registry: input.models }),
+    create: () => modelCalls,
+    dispose: (pipeline) => pipeline.shutdown(),
+  });
+  services.register({
+    key: KERNEL_MODEL_ADAPTER,
+    dependencies: [KERNEL_PROFILE, KERNEL_MODEL_CALL_PIPELINE],
+    create: (resolver) => ({
+      registry: input.models,
+      pipeline: resolver.require(KERNEL_MODEL_CALL_PIPELINE),
+    }),
   });
   services.register({
     key: KERNEL_PROMPT_ADAPTER,
@@ -347,13 +418,24 @@ export async function createAgentKernel(input: {
   services.register({
     key: KERNEL_AGENT_RUNTIME,
     dependencies: [
+      KERNEL_MODEL_CALL_PIPELINE,
       KERNEL_MODEL_ADAPTER,
       KERNEL_PROMPT_ADAPTER,
       KERNEL_TOOL_ADAPTER,
       KERNEL_POLICY_ADAPTER,
       KERNEL_COMPLETION_CONTROL,
     ],
-    create: () => input.runtime,
+    create: (resolver) => {
+      const detach = input.runtime.attachKernelModelCallPipeline(
+        resolver.require(KERNEL_MODEL_CALL_PIPELINE),
+      );
+      runtimePipelineDetach = detach;
+      return input.runtime;
+    },
+    dispose: () => {
+      runtimePipelineDetach?.();
+      runtimePipelineDetach = undefined;
+    },
   });
   await installBuiltinKernelPlugins({
     plugins,
@@ -367,6 +449,7 @@ export async function createAgentKernel(input: {
     ...(input.browser ? { browser: input.browser } : {}),
   });
   await services.resolve(KERNEL_AGENT_RUNTIME);
+  await services.resolve(KERNEL_MODEL_CALL_PIPELINE);
   const threadSummaries = await services.resolve(KERNEL_THREAD_SUMMARIES);
   const taskNarratives = await services.resolve(KERNEL_TASK_NARRATIVES);
   const activePlans = await services.resolve(KERNEL_ACTIVE_PLANS);
@@ -399,6 +482,7 @@ export async function createAgentKernel(input: {
     services,
     hooks,
     plugins,
+    modelCalls,
     completionControl,
     threadSummaries,
     taskNarratives,
@@ -413,49 +497,4 @@ export async function createAgentKernel(input: {
     conversationSubagents,
     operatorDecisions,
   );
-}
-
-class KernelCompletionControlObserver {
-  private readonly counts = new Map<string, number>();
-  private latest: KernelCompletionControlProjection["latest"];
-  private unsubscribe: (() => void) | undefined;
-
-  attach(hooks: KernelHookRegistry): void {
-    this.unsubscribe = hooks.on(
-      "completion.control",
-      ({ control, event, runId }) => {
-        this.counts.set(control, (this.counts.get(control) ?? 0) + 1);
-        this.latest = { type: control, runId, seq: event.seq };
-      },
-      "kernel.completion-control",
-    );
-  }
-
-  inspect(): KernelCompletionControlProjection {
-    return {
-      total: [...this.counts.values()].reduce(
-        (total, count) => total + count,
-        0,
-      ),
-      counts: Object.fromEntries(
-        [...this.counts].sort(([left], [right]) => left.localeCompare(right)),
-      ),
-      ...(this.latest ? { latest: { ...this.latest } } : {}),
-    };
-  }
-
-  dispose(): void {
-    this.unsubscribe?.();
-    this.unsubscribe = undefined;
-  }
-}
-
-function composeEventSink(
-  hooks: KernelHookRegistry,
-  sink: EventSink | undefined,
-): EventSink {
-  return async (event: RunEvent) => {
-    await hooks.observe(event);
-    await sink?.(event);
-  };
 }

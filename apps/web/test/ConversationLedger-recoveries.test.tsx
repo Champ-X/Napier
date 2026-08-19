@@ -34,7 +34,7 @@ describe("Conversation Ledger recoveries", () => {
       );
     });
 
-    expect(container.textContent).toContain("Retry · blocked");
+    expect(container.textContent).toContain("Retry · Blocked");
     expect(container.textContent).toContain(
       "Automatic recovery stopped safely",
     );
