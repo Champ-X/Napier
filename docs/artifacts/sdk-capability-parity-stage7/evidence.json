@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "5112e5e256ab96408a604963e9cbfb318a782d2ddb4b4bdcd1abde710a72c0d2",
+      "stdoutSha256": "85fe9459179c62e18305dfa1d0b0beb23f73ef3858b13c7809f5a649f61a3071",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "1d431d19ec45aaa9ffcceb5715931190877315f0d3b9aa3451af71a3b10a5f06",
-      "receiptSha256": "afeb0bf309a964aeb27426a5f913ebaff42c8be92ea4083772547377d49ab8b1"
+      "evidenceSha256": "9d5fea38d8d4cfd2c54ea57e12bd818987de9d3003c9e2e607da45bd0c618c3d",
+      "receiptSha256": "58686cf87959d1b8dca74f6e05f3a44c0830899a4bd5938e9d4bff3a3b860394"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "9fe833c71427ba2a8f6c31f87958d056c013ab4569de7f94bf2aba103d16657c",
+      "stdoutSha256": "52ad88cd975cce953c357b24fc31076a1113fb9c12c0be18c5cf96d2c964fe0e",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "83c70481a10d66b9d8db6c859b26fd90750709a1e71d32a4882e95a185bf733e",
-      "receiptSha256": "c01a0d3d07895c4ff39089816471d7b5f3d8497d71837357f742e403cf4b9313"
+      "evidenceSha256": "a43f4bac0bce9de286ddbb883bf1ec98c50d1f1b15c4aa28a95a1871ac83fa3b",
+      "receiptSha256": "d8a8792901c979a18f4bfa750bdd92b45b02e0a6e65a2702a34c62d602439845"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -486,7 +486,6 @@
       "relativeTo": "d81f77b64998fd786aa7a514f53494adb255e1e5",
       "changedPaths": [
         "\"UX \\347\\263\\273\\347\\273\\237\\345\\214\\226\\344\\274\\230\\345\\214\\226\\347\\233\\256\\346\\240\\207.md\"",
-        ".claude/super-design/ui-memory.md",
         ".github/workflows/publish-sandbox.yml",
         ".github/workflows/s1-shell-sandbox-completion.yml",
         ".github/workflows/windows-host-product-acceptance.yml",
@@ -808,7 +807,6 @@
         "apps/web/src/RunLabPanel.tsx",
         "apps/web/src/SandboxSetupCard.tsx",
         "apps/web/src/SandboxSetupLedger.tsx",
-        "apps/web/src/SessionWorkspace.tsx",
         "apps/web/src/SettingsLanguagePanel.tsx",
         "apps/web/src/SkillContentDesk.tsx",
         "apps/web/src/SkillContentReceiptCard.tsx",
@@ -2114,6 +2112,8 @@
         "scripts/product-performance-report.mjs",
         "scripts/product-performance.mjs",
         "scripts/product-performance.test.mjs",
+        "scripts/production-server-state-isolation.test.mjs",
+        "scripts/production-server-test-environment.mjs",
         "scripts/profile-upgrade-acceptance.mjs",
         "scripts/profile-upgrade-artifact.mjs",
         "scripts/prompt-regression-matrix.mjs",
@@ -2181,7 +2181,10 @@
         "scripts/sdk-capability-parity-evidence.mjs",
         "scripts/sdk-capability-parity-evidence.test.mjs",
         "scripts/sdk-capability-parity-identity.mjs",
+        "scripts/sdk-capability-parity-receipts.mjs",
         "scripts/sdk-capability-parity-stage7-history.mjs",
+        "scripts/sdk-capability-production-server-harness.mjs",
+        "scripts/sdk-capability-production-server.test.mjs",
         "scripts/skill-lifecycle-ab-process.mjs",
         "scripts/skill-load-fast-core-evidence-lib.mjs",
         "scripts/verify-default-product-breadth.mjs",
@@ -2219,10 +2222,6 @@
         "skills/research-brief/SKILL.md"
       ],
       "files": {
-        ".claude/super-design/ui-memory.md": {
-          "sha256": "a5d93d6725dc62887cf1a4288d09bffe615d99454fa6f8188287a2b4b382ae56",
-          "lines": 1346
-        },
         ".github/workflows/publish-sandbox.yml": {
           "sha256": "53ee5b8c315d4b02c2b50f21ec5f367a5c2ab77d7216c8231d529009fcf5865b",
           "lines": 486
@@ -5876,12 +5875,12 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "1d431d19ec45aaa9ffcceb5715931190877315f0d3b9aa3451af71a3b10a5f06",
+          "sha256": "9d5fea38d8d4cfd2c54ea57e12bd818987de9d3003c9e2e607da45bd0c618c3d",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "83c70481a10d66b9d8db6c859b26fd90750709a1e71d32a4882e95a185bf733e",
-          "lines": 69
+          "sha256": "a43f4bac0bce9de286ddbb883bf1ec98c50d1f1b15c4aa28a95a1871ac83fa3b",
+          "lines": 71
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
           "sha256": "15c0b752cdc8f6cafb9c19d557dc71db2cf1243f6ce3b6449afe2397327c51cd",
@@ -8707,6 +8706,14 @@
           "sha256": "79d8e0b16e319f8b1ba19d88963377aca8632689b4ebc0cc9ad7ff789bba1f28",
           "lines": 379
         },
+        "scripts/production-server-state-isolation.test.mjs": {
+          "sha256": "0124cacca3885ac06428d7000c9cb617df4bde772f724e5bb64d2ea4e0563bb2",
+          "lines": 74
+        },
+        "scripts/production-server-test-environment.mjs": {
+          "sha256": "ba6b7964057a2d43b221ae9ed6c5740ac2407fc035baa6811bbc3c3eebf3e466",
+          "lines": 12
+        },
         "scripts/profile-upgrade-acceptance.mjs": {
           "sha256": "04d7864eeec5383abb5d564e4ed0a06332a5bd4ab7caaa2d4608992183655782",
           "lines": 440
@@ -8964,20 +8971,32 @@
           "lines": 438
         },
         "scripts/sdk-capability-parity-evidence.mjs": {
-          "sha256": "e52c5727822fdb30551564ca9683ef5fa92534b74c8194c7617b6071c824bf55",
-          "lines": 481
+          "sha256": "4d66345607dc8db6d3f4582388834b24a9d6897f682fa0d31a7d70622df19c82",
+          "lines": 483
         },
         "scripts/sdk-capability-parity-evidence.test.mjs": {
-          "sha256": "ec625ec94c01cc6b9b8baf24e99f8d4d67f7011fb4f5cca71c0dcc23e3e095d8",
-          "lines": 308
+          "sha256": "46ce2a7df83a555416611ca434dd04852f287ef5c54f1464a2aba594e8fc0ab1",
+          "lines": 311
         },
         "scripts/sdk-capability-parity-identity.mjs": {
-          "sha256": "986ccb3c7bbae4f3e950658d27873383557e875037f4125b63a948200ffa2f2a",
-          "lines": 485
+          "sha256": "edd8523b299ae50fb246be76838f5edf0fac654b56488c7ba4c6344bcafad702",
+          "lines": 489
+        },
+        "scripts/sdk-capability-parity-receipts.mjs": {
+          "sha256": "6e9ea16a5e4b0aaf8e6469c35759ccb0ef97d6bb7733b6bba2a9a0d89cbeccfa",
+          "lines": 249
         },
         "scripts/sdk-capability-parity-stage7-history.mjs": {
           "sha256": "9eaab480df84dbb132143ccf49a2f874c0581d25ef3390de8f6e8dcae60d4c20",
           "lines": 253
+        },
+        "scripts/sdk-capability-production-server-harness.mjs": {
+          "sha256": "20f4deb8dfe9195e0e0eca25da134853f863ebfba502840e058c859bf700caf4",
+          "lines": 262
+        },
+        "scripts/sdk-capability-production-server.test.mjs": {
+          "sha256": "955c5a3a6387d0598f076458f2d3a4367b029069da6a9e0eef5f88faa7af9f58",
+          "lines": 99
         },
         "scripts/skill-lifecycle-ab-process.mjs": {
           "sha256": "1417481bb8030330b7324ed15f1c6613e6546e845e29fe52544ff0277a114856",
@@ -9052,8 +9071,8 @@
           "lines": 333
         },
         "scripts/web-ui-e2e-contract.test.mjs": {
-          "sha256": "f8b36e41aee181db9dd512274040fdfb59ce51e4b7a96586929eab77d2ad148d",
-          "lines": 315
+          "sha256": "77541b8b5d860ce13776b934599a17a1167d64c456412942a9c6348c7a06f4c0",
+          "lines": 324
         },
         "scripts/web-ui-e2e-default-product-trial.mjs": {
           "sha256": "d48e0914a1eef07e861c1f27364a4db358a870c7dfaf82bc34258a7eee9f4ab4",
@@ -9068,8 +9087,8 @@
           "lines": 365
         },
         "scripts/web-ui-e2e-runtime.mjs": {
-          "sha256": "464177728cf85967e46527bb94d7fb29c67940ad15e765cc0fc1ada5a3d2d77b",
-          "lines": 256
+          "sha256": "1e9de3b667f27c6fded75cd9d688bc6ae72c920e8d5ba1cec3d41bf3874b9d91",
+          "lines": 259
         },
         "scripts/web-ui-layout-baseline.mjs": {
           "sha256": "55fd54c777ac14ca01bf21f6ac5f86d0bb8ea6e3e45c6a5934da10049ffef724",
@@ -9122,8 +9141,7 @@
       },
       "deletedPaths": [
         "\"UX \\347\\263\\273\\347\\273\\237\\345\\214\\226\\344\\274\\230\\345\\214\\226\\347\\233\\256\\346\\240\\207.md\"",
-        "apps/web/src/AgentCapabilityStatusBadge.tsx",
-        "apps/web/src/SessionWorkspace.tsx"
+        "apps/web/src/AgentCapabilityStatusBadge.tsx"
       ],
       "excludedContent": [
         {
@@ -9143,7 +9161,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "8b41cd1c5dfbe378aae6efee8a77c57e90b432417d90e8b4e057ff9cb6925876"
+      "manifestSha256": "21d6a4f30b7a3cabcfdb0f22dfa1ef4c497518247711f30c206df69aff81259c"
     },
     "executionClosure": {
       "algorithm": {
@@ -19697,6 +19715,8 @@
             "packages/sdk/dist/management-client.js",
             "packages/sdk/dist/management.js",
             "packages/sdk/examples/effective-capabilities.mjs",
+            "scripts/production-server-test-environment.mjs",
+            "scripts/sdk-capability-parity-receipts.mjs",
             "scripts/sdk-capability-production-process.mjs",
             "scripts/sdk-capability-production-server-harness.mjs",
             "scripts/sdk-capability-production-server.test.mjs"
@@ -20635,10 +20655,10 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 890,
+            "executionFiles": 892,
             "sourceCounterparts": 886,
             "packageManifests": 3,
-            "allFiles": 1779
+            "allFiles": 1781
           },
           "executionAreaCounts": {
             "apps/server/dist": 120,
@@ -20646,7 +20666,7 @@
             "packages/contracts/dist": 24,
             "packages/runtime/dist": 739,
             "packages/sdk/dist": 3,
-            "scripts": 3
+            "scripts": 5
           },
           "files": {
             "apps/server/dist/agent-capability-http.js": {
@@ -27753,20 +27773,28 @@
               "sha256": "0fac3b1141ce309411b80a38977a04d8424c64c4d2d772dacec340f2f72fc0bc",
               "lines": 7
             },
+            "scripts/production-server-test-environment.mjs": {
+              "sha256": "ba6b7964057a2d43b221ae9ed6c5740ac2407fc035baa6811bbc3c3eebf3e466",
+              "lines": 12
+            },
+            "scripts/sdk-capability-parity-receipts.mjs": {
+              "sha256": "6e9ea16a5e4b0aaf8e6469c35759ccb0ef97d6bb7733b6bba2a9a0d89cbeccfa",
+              "lines": 249
+            },
             "scripts/sdk-capability-production-process.mjs": {
               "sha256": "92780c89bd6fad6708dc0e87e042fd88fec2f6969d813a1a82b9a50ba88d8850",
               "lines": 396
             },
             "scripts/sdk-capability-production-server-harness.mjs": {
-              "sha256": "cfcf332f32a3f5e0604a345c5d41524f7a63700d5b781ff0e0a06d8fdeb14a1c",
-              "lines": 250
+              "sha256": "20f4deb8dfe9195e0e0eca25da134853f863ebfba502840e058c859bf700caf4",
+              "lines": 262
             },
             "scripts/sdk-capability-production-server.test.mjs": {
-              "sha256": "6fe2da58addd29d4a7983631df149f7429cde357e5f22c29b102547510cd4ce4",
-              "lines": 45
+              "sha256": "955c5a3a6387d0598f076458f2d3a4367b029069da6a9e0eef5f88faa7af9f58",
+              "lines": 99
             }
           },
-          "manifestSha256": "d7c4c3bb930d925a9141bdf1b3d6d09c390bfe7ab3d25d20eb215a8f293701da"
+          "manifestSha256": "40fd27c5ef05e643b9645a29acff06f96ec28ab5485a7b484dd50c542bba3bd3"
         }
       },
       "excludedCategories": [
@@ -27788,16 +27816,16 @@
         },
         {
           "category": "protected_user_files",
-          "reason": ".env, goal.md, the interview document, ai-news-weekly/, and kakeya/ are outside the repair and evidence boundary."
+          "reason": ".env, .claude/, goal.md, the interview document, ai-news-weekly/, and kakeya/ are outside the repair and evidence boundary."
         },
         {
           "category": "evidence_self_content_hash",
           "reason": "evidence.json cannot contain its own content hash; the external Stage 8 repair commit binds that blob."
         }
       ],
-      "manifestSha256": "378073d8fd2125a210dc3efdb806be7a182636e56241f39ee99a7a720db6613f"
+      "manifestSha256": "8a7530576bd428f08b741b9cc913563937b9166622b2aa9026288d90d0651a34"
     },
-    "manifestSha256": "1281aa0361f23a35e8bb80d2787ff0e1af4703d728a64d00388cdc11c6741374"
+    "manifestSha256": "d7c2a411f21979ccaca859dc5aeaac6aced962f7eff1a852259f109c63098dc9"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -27965,6 +27993,7 @@
   "protectedFiles": {
     "excluded": [
       ".env",
+      ".claude/",
       "goal.md",
       "docs/napier-interview-deep-dive.zh-CN.md",
       "ai-news-weekly/",
@@ -27987,11 +28016,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "1d431d19ec45aaa9ffcceb5715931190877315f0d3b9aa3451af71a3b10a5f06"
+      "sha256": "9d5fea38d8d4cfd2c54ea57e12bd818987de9d3003c9e2e607da45bd0c618c3d"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "83c70481a10d66b9d8db6c859b26fd90750709a1e71d32a4882e95a185bf733e"
+      "sha256": "a43f4bac0bce9de286ddbb883bf1ec98c50d1f1b15c4aa28a95a1871ac83fa3b"
     }
   }
 }

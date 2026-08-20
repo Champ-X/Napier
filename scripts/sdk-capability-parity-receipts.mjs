@@ -113,7 +113,7 @@ export function verifyFourStateParity(value) {
 }
 
 export function verifyProductionServerTrace(value, identity) {
-  exactKeys(value, [
+  const traceKeys = [
     "schemaVersion",
     "serverEntrySha256",
     "sdkManagementEntrySha256",
@@ -122,13 +122,17 @@ export function verifyProductionServerTrace(value, identity) {
     "child",
     "example",
     "sdk",
+  ];
+  if (value.schemaVersion >= 2) traceKeys.push("workspaceRegistryIsolated");
+  traceKeys.push(
     "storeNonMutation",
     "portClosed",
     "postExitSdkRequestFailed",
     "cleanup",
     "storeDigests",
-  ]);
-  assert.equal(value.schemaVersion, 1);
+  );
+  exactKeys(value, traceKeys);
+  assert.ok(value.schemaVersion === 1 || value.schemaVersion === 2);
   assert.equal(
     value.serverEntrySha256,
     identity.files["apps/server/dist/index.js"],
@@ -137,15 +141,10 @@ export function verifyProductionServerTrace(value, identity) {
     value.sdkManagementEntrySha256,
     identity.files["packages/sdk/dist/management.js"],
   );
-  assert.deepEqual(value.allowlistedEnvironmentKeys, [
-    "LANG",
-    "NAPIER_HOME",
-    "NAPIER_PORT",
-    "NAPIER_WORKSPACE",
-    "NODE_ENV",
-    "TMPDIR",
-    "TZ",
-  ]);
+  const environmentKeys = ["LANG", "NAPIER_HOME", "NAPIER_PORT"];
+  if (value.schemaVersion >= 2) environmentKeys.push("NAPIER_STATE_HOME");
+  environmentKeys.push("NAPIER_WORKSPACE", "NODE_ENV", "TMPDIR", "TZ");
+  assert.deepEqual(value.allowlistedEnvironmentKeys, environmentKeys);
   exactKeys(value.listener, [
     "loopback",
     "ephemeralNonzeroPort",
@@ -182,6 +181,9 @@ export function verifyProductionServerTrace(value, identity) {
     },
   );
   sha256(value.sdk.projectionSha256);
+  if (value.schemaVersion >= 2) {
+    assert.equal(value.workspaceRegistryIsolated, true);
+  }
   assert.equal(value.storeNonMutation, true);
   assert.equal(value.portClosed, true);
   assert.equal(value.postExitSdkRequestFailed, true);

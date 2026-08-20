@@ -15,6 +15,8 @@ import path from "node:path";
 
 import { chromium } from "playwright-core";
 
+import { isolatedProductionServerEnvironment } from "./production-server-test-environment.mjs";
+
 export const WEB_UI_START_TIMEOUT_MS = 300_000;
 const CLOSE_TIMEOUT_MS = 30_000;
 const MAX_SERVER_OUTPUT_BYTES = 128 * 1024;
@@ -45,18 +47,7 @@ export async function startProductionWebServer(root, port = 0) {
   const startedAt = performance.now();
   const child = spawn(process.execPath, [SERVER_ENTRY], {
     cwd: process.cwd(),
-    env: {
-      LANG: "C",
-      NAPIER_HOME: path.join(root, "state"),
-      NAPIER_E2E_MODEL_KEY: "e2e-placeholder-key",
-      NAPIER_PORT: String(port),
-      NAPIER_WORKSPACE: path.join(root, "workspace"),
-      NODE_ENV: "test",
-      NO_PROXY: "127.0.0.1,localhost",
-      PATH: process.env.PATH ?? "/usr/bin:/bin",
-      TMPDIR: path.join(root, "tmp"),
-      TZ: "UTC",
-    },
+    env: productionWebServerEnvironment(root, port),
     stdio: ["ignore", "pipe", "pipe"],
   });
   const observed = observeServer(child);
@@ -87,6 +78,18 @@ export async function startProductionWebServer(root, port = 0) {
     await terminate(child, observed.exit).catch(() => undefined);
     throw error;
   }
+}
+
+export function productionWebServerEnvironment(root, port = 0) {
+  return isolatedProductionServerEnvironment(root, {
+    LANG: "C",
+    NAPIER_E2E_MODEL_KEY: "e2e-placeholder-key",
+    NAPIER_PORT: String(port),
+    NODE_ENV: "test",
+    NO_PROXY: "127.0.0.1,localhost",
+    PATH: process.env.PATH ?? "/usr/bin:/bin",
+    TZ: "UTC",
+  });
 }
 
 export async function startWebUiBrowser(root) {

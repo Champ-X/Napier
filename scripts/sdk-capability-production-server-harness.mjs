@@ -21,28 +21,20 @@ import {
   runExample,
   withTimeout,
 } from "./sdk-capability-production-process.mjs";
+import { isolatedProductionServerEnvironment } from "./production-server-test-environment.mjs";
 
 const SERVER_ENTRY = path.resolve("apps/server/dist/index.js");
 const STARTUP_TIMEOUT_MS = 10_000;
+const TEMP_ROOT_PREFIX = "napier-capability-production-trace-";
 
 export async function runBoundProductionServerTrace() {
-  const root = await mkdtemp(
-    path.join(tmpdir(), "napier-sdk-production-trace-"),
-  );
+  const root = await mkdtemp(path.join(tmpdir(), TEMP_ROOT_PREFIX));
   const workspaceRoot = path.join(root, "workspace");
   const dataRoot = path.join(root, "state");
   const childTempRoot = path.join(root, "tmp");
-  const serverEnvironment = {
-    LANG: "C",
-    NAPIER_HOME: dataRoot,
-    NAPIER_PORT: "0",
-    NAPIER_WORKSPACE: workspaceRoot,
-    NODE_ENV: "test",
-    TMPDIR: childTempRoot,
-    TZ: "UTC",
-  };
+  const serverEnvironment = productionSdkServerEnvironment(root);
   const receipt = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     serverEntrySha256: await sha256File(SERVER_ENTRY),
     sdkManagementEntrySha256: await sha256File(
       path.resolve("packages/sdk/dist/management.js"),
@@ -80,6 +72,7 @@ export async function runBoundProductionServerTrace() {
       ownership: "",
       projectionSha256: "",
     },
+    workspaceRegistryIsolated: false,
     storeNonMutation: false,
     portClosed: false,
     postExitSdkRequestFailed: false,
@@ -115,7 +108,17 @@ export async function runBoundProductionServerTrace() {
     receipt.listener.loopback = true;
     receipt.listener.ephemeralNonzeroPort = true;
     receipt.listener.announcedOriginSha256 = sha256Text(origin);
-    await waitForFile(path.join(dataRoot, "workspace.json"));
+    await Promise.all([
+      waitForFile(path.join(dataRoot, "workspace.json")),
+      waitForFile(path.join(dataRoot, "recent-workspaces.json")),
+    ]);
+    const registry = JSON.parse(
+      await readFile(path.join(dataRoot, "recent-workspaces.json"), "utf8"),
+    );
+    assert.equal(Array.isArray(registry), true);
+    assert.equal(registry.length, 1);
+    assert.equal(registry[0]?.root, await realpath(workspaceRoot));
+    receipt.workspaceRegistryIsolated = true;
     const before = await storeDigests(dataRoot);
     const example = await runExample(origin, childTempRoot);
     receipt.sdk = {
@@ -170,6 +173,15 @@ export async function runBoundProductionServerTrace() {
   return receipt;
 }
 
+export function productionSdkServerEnvironment(root) {
+  return isolatedProductionServerEnvironment(root, {
+    LANG: "C",
+    NAPIER_PORT: "0",
+    NODE_ENV: "test",
+    TZ: "UTC",
+  });
+}
+
 async function waitForFile(filePath) {
   for (let attempt = 0; attempt < 100; attempt += 1) {
     if (
@@ -194,7 +206,7 @@ async function validateOwnedRoot(root) {
   return (
     !info.isSymbolicLink() &&
     path.dirname(canonicalRoot) === canonicalTmp &&
-    path.basename(canonicalRoot).startsWith("napier-sdk-production-trace-")
+    path.basename(canonicalRoot).startsWith(TEMP_ROOT_PREFIX)
   );
 }
 

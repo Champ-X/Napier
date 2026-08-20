@@ -150,6 +150,7 @@ export function createEvidence(input) {
     protectedFiles: {
       excluded: [
         ".env",
+        ".claude/",
         "goal.md",
         "docs/napier-interview-deep-dive.zh-CN.md",
         "ai-news-weekly/",
@@ -266,6 +267,7 @@ async function verifyEvidence(value, texts, fourState, trace, options) {
   assert.deepEqual(value.protectedFiles, {
     excluded: [
       ".env",
+      ".claude/",
       "goal.md",
       "docs/napier-interview-deep-dive.zh-CN.md",
       "ai-news-weekly/",

@@ -1,11 +1,12 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "serverEntrySha256": "79f8aac8270ed1ffa1e4bdf23a6f060ae77b6965f07cb535afcbcd2cb25bc880",
   "sdkManagementEntrySha256": "2fdccaa60aaa7088f2b5ab868e5446683e401744ad4364c36d52a29c6c0da83e",
   "allowlistedEnvironmentKeys": [
     "LANG",
     "NAPIER_HOME",
     "NAPIER_PORT",
+    "NAPIER_STATE_HOME",
     "NAPIER_WORKSPACE",
     "NODE_ENV",
     "TMPDIR",
@@ -14,7 +15,7 @@
   "listener": {
     "loopback": true,
     "ephemeralNonzeroPort": true,
-    "announcedOriginSha256": "504c29e45d49d42ddc190c58c8c07a150700e185be75883ea5b4acf67b0a2df3"
+    "announcedOriginSha256": "a01bed8171bea0444ac16da8724f3f69d916970f278ea8a8561d9cc0562b3caf"
   },
   "child": {
     "startupBounded": true,
@@ -22,8 +23,8 @@
     "gracefulZeroExit": true,
     "forcedCleanup": false,
     "stdoutBytes": 46,
-    "stderrBytes": 114,
-    "totalOutputBytes": 160,
+    "stderrBytes": 0,
+    "totalOutputBytes": 46,
     "maximumOutputBytes": 65536
   },
   "example": {
@@ -47,6 +48,7 @@
     "ownership": "recommended",
     "projectionSha256": "0d7f722d75bbb74fdd3719a286913e244e3a825b21a1c3317c9bc89f8e80bd1f"
   },
+  "workspaceRegistryIsolated": true,
   "storeNonMutation": true,
   "portClosed": true,
   "postExitSdkRequestFailed": true,
@@ -56,14 +58,14 @@
   },
   "storeDigests": {
     "before": {
-      "rawWorkspaceSha256": "1e363dac2ce7ad9e61243c9db5c09130347770aae93b7c4e6f0dae0facf216e6",
-      "logicalStoreSha256": "1425c19fbfe982c3d73663e7c9c4ef50cca63460b85f7df8e73d52cf933f7b88",
-      "eventManifestSha256": "3a3b42a93e8a5447e47ca582fe059e1c6e1e7e15557bdc8247984e0f95774397"
+      "rawWorkspaceSha256": "dd43d2859d14d3f3e04d90d14822cb444ab02b5973bbcf5bad682763f4160e05",
+      "logicalStoreSha256": "84a43f5b4c923163b014e37649c1a3dca817b50b0e5922126f406cc9b4e08637",
+      "eventManifestSha256": "59ab40213cfd1d934517a10f12fa319720bc976cab0fbd115cb595ddf84160ff"
     },
     "after": {
-      "rawWorkspaceSha256": "1e363dac2ce7ad9e61243c9db5c09130347770aae93b7c4e6f0dae0facf216e6",
-      "logicalStoreSha256": "1425c19fbfe982c3d73663e7c9c4ef50cca63460b85f7df8e73d52cf933f7b88",
-      "eventManifestSha256": "3a3b42a93e8a5447e47ca582fe059e1c6e1e7e15557bdc8247984e0f95774397"
+      "rawWorkspaceSha256": "dd43d2859d14d3f3e04d90d14822cb444ab02b5973bbcf5bad682763f4160e05",
+      "logicalStoreSha256": "84a43f5b4c923163b014e37649c1a3dca817b50b0e5922126f406cc9b4e08637",
+      "eventManifestSha256": "59ab40213cfd1d934517a10f12fa319720bc976cab0fbd115cb595ddf84160ff"
     }
   }
 }

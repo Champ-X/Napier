@@ -14,6 +14,7 @@ import {
   WEB_UI_UX_SCENARIOS,
   WORKSPACE_VIEW_LABELS,
 } from "./web-ui-e2e-contract.mjs";
+import { productionWebServerEnvironment } from "./web-ui-e2e-runtime.mjs";
 
 describe("Web UI E2E receipt contract", () => {
   it("keeps the production Web gate wired into the root check", () => {
@@ -74,6 +75,14 @@ describe("Web UI E2E receipt contract", () => {
     const receipt = validReceipt();
     receipt.browser.osIsolationClaimed = true;
     expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
+  });
+
+  it("isolates the machine-level workspace registry inside the E2E root", () => {
+    const root = path.resolve("/tmp/napier-web-ui-e2e-contract");
+    const environment = productionWebServerEnvironment(root, 0);
+
+    expect(environment.NAPIER_STATE_HOME).toBe(path.join(root, "state"));
+    expect(environment.NAPIER_WORKSPACE).toBe(path.join(root, "workspace"));
   });
 
   it("rejects unsupported runner arguments before starting the Server", async () => {
