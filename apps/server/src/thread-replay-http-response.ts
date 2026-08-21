@@ -301,6 +301,7 @@ export function setRunComparisonHeaders(
     "X-Napier-Trace-Summary-Boundary-Diagnostics-SHA256",
     sha256Json(comparison.traceSummaryBoundaryDelta.diagnostics),
   );
+  setHarnessComparisonHeaders(context, comparison);
   context.header(
     "X-Napier-Event-Type-Delta-SHA256",
     sha256Json(comparison.eventTypeDelta),
@@ -334,6 +335,69 @@ export function setRunComparisonHeaders(
       comparison.right.configurationSha256,
     );
   }
+}
+
+function setHarnessComparisonHeaders(
+  context: Context,
+  comparison: RunComparison,
+): void {
+  const { left, right, delta, fairness, harnessResolution } =
+    comparison.harness;
+  context.header("X-Napier-Harness-Fairness-Status", fairness.status);
+  context.header("X-Napier-Harness-Fairness-SHA256", fairness.contentSha256);
+  context.header(
+    "X-Napier-Harness-Fairness-Diagnostics-SHA256",
+    sha256Json(fairness.diagnostics),
+  );
+  for (const [name, dimension] of Object.entries({
+    Provider: fairness.provider,
+    Model: fairness.model,
+    Task: fairness.task,
+    Environment: fairness.environment,
+    Budget: fairness.budget,
+  })) {
+    context.header(`X-Napier-Harness-Fairness-${name}`, dimension.status);
+  }
+  context.header("X-Napier-Left-Harness-SHA256", left.contentSha256);
+  context.header("X-Napier-Right-Harness-SHA256", right.contentSha256);
+  context.header(
+    "X-Napier-Harness-Resolution-Status",
+    harnessResolution.status,
+  );
+  if (harnessResolution.leftSha256)
+    context.header(
+      "X-Napier-Left-Harness-Resolution-SHA256",
+      harnessResolution.leftSha256,
+    );
+  if (harnessResolution.rightSha256)
+    context.header(
+      "X-Napier-Right-Harness-Resolution-SHA256",
+      harnessResolution.rightSha256,
+    );
+  context.header(
+    "X-Napier-Harness-Comparison-SHA256",
+    comparison.harness.contentSha256,
+  );
+  context.header(
+    "X-Napier-Left-Harness-Repeated-Call-Count",
+    String(left.toolEfficiency.repeatedCallCount),
+  );
+  context.header(
+    "X-Napier-Right-Harness-Repeated-Call-Count",
+    String(right.toolEfficiency.repeatedCallCount),
+  );
+  context.header(
+    "X-Napier-Left-Harness-No-New-Information-Count",
+    String(left.toolEfficiency.noNewInformationCount),
+  );
+  context.header(
+    "X-Napier-Right-Harness-No-New-Information-Count",
+    String(right.toolEfficiency.noNewInformationCount),
+  );
+  context.header(
+    "X-Napier-Harness-Intervention-Delta",
+    String(delta.interventionCount),
+  );
 }
 
 function threadReplayBundleFilename(bundle: ThreadReplayBundle): string {

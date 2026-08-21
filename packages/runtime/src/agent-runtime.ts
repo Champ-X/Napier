@@ -35,7 +35,6 @@ import {
 
 import {
   buildContextCompactionMessages,
-  contextEventText,
   contextMessageEvents,
   createContextCheckpoint,
   formatContextCheckpoint,
@@ -43,6 +42,9 @@ import {
   parseContextCompactionResponse,
   planContextProjection,
 } from "./compaction.js";
+import { captureConversationSurfaceTurn } from "./conversation-surface-capture.js";
+import { ConversationSurfaceCapsuleStore } from "./conversation-surface-capsule-store.js";
+import { projectConversationSurface } from "./conversation-surface.js";
 import { createDelegationLedgerProjection } from "./delegation-ledger.js";
 import type { EventSink } from "./event-sink.js";
 import { createEffectiveCapabilitiesPromptBuilder } from "./effective-capabilities-prompt-builder.js";
@@ -58,10 +60,11 @@ import {
   agentToolInputLedgerProjection as toolInputLedgerProjection,
   agentToolOutputLedgerProjection as toolOutputLedgerProjection,
 } from "./agent-tool-ledger.js";
-import { AgentCapabilityRuntime } from "./agent-capability-runtime.js";
-import type { AgentNetworkCapabilities } from "./agent-capability-runtime.js";
+import {
+  AgentCapabilityRuntime,
+  type AgentNetworkCapabilities,
+} from "./agent-capability-runtime.js";
 import { compileAuxiliaryPrompt } from "./agent-prompt-layers.js";
-import { createAgentPromptBuilder } from "./agent-prompt-builder.js";
 import { resolveOperatorDecisionCapabilityContinuation } from "./agent-capability-override.js";
 import { createAgentRunStartedPayload } from "./agent-run-started-event.js";
 import {
@@ -76,14 +79,13 @@ import {
 } from "./agent-runtime-utils.js";
 import { resolveAgentRunModel } from "./agent-run-model.js";
 import {
-  contextHistoryCharacterBudget,
   extractAssistantReasoning,
   mapModelUsage,
   modelRefFromModel,
   providerMessages,
 } from "./agent-model-projection.js";
-import { preflightAgentToolPolicy } from "./agent-tool-policy-preflight.js";
-import { builtInToolEffect } from "./agent-tool-effects.js";
+import { contextHistoryCharacterBudget } from "./model-context-token-meter.js";
+import { builtInToolHarnessProjection } from "./agent-tool-effects.js";
 import {
   AgentToolResultLifecycle,
   toolLife,
@@ -111,7 +113,7 @@ import {
   type FrozenToolResultReplayController,
   validateAgentMessageToolResultReplay,
 } from "./agent-message-tool-result-replay.js";
-import { createAgentMilestoneTool } from "./agent-milestone-tool.js";
+import { createAgentRunControlTools } from "./agent-run-control-tools.js";
 import { createAgentMilestoneContextProjection } from "./agent-milestones.js";
 import {
   applyGoalEvaluation,
@@ -141,6 +143,7 @@ import {
 import { modelAdapterReceipt } from "./model-adapters.js";
 import { ModelDeltaBatcher } from "./model-delta-batcher.js";
 import { AgentModelCallPipelineHost } from "./agent-model-call-pipeline-host.js";
+import { AgentTurnPipelineHost } from "./agent-turn-pipeline-host.js";
 import { modelFailureError } from "./model-turn-deadline.js";
 import { ModelInvocationCapsuleStore } from "./model-invocation-capsule-store.js";
 import { captureCompiledModelInvocation } from "./model-invocation-capture.js";
@@ -166,17 +169,14 @@ import {
   resolvePromptCapabilityProfile,
 } from "./internal-research-recovery-authorization.js";
 import {
-  formatImportedHistoryMessage,
   formatImportedLedgerBoundary,
   localImportedThroughSeq,
 } from "./import-boundary-format.js";
-import { createOperatorDecisionTool } from "./operator-decision-tool.js";
 import {
   prepareAutomaticSkillRecoveryOptions,
   prepareManualSkillRecoveryOptions,
 } from "./research-recovery-options.js";
 import { formatOperatorDecisionContinuation } from "./operator-decisions.js";
-import { createPlanTools } from "./plan-tools.js";
 import {
   PROMPT_VARIABLES_RESOLVED_EVENT,
   resolvePromptVariables,
@@ -247,6 +247,8 @@ export class AgentRuntime {
   private readonly runLeaseOwnerId = createProcessLeaseOwnerId("worker");
   private readonly modelCalls = new AgentModelCallPipelineHost();
   readonly attachKernelModelCallPipeline = this.modelCalls.attach;
+  private readonly turns = new AgentTurnPipelineHost();
+  readonly attachKernelTurnPipeline = this.turns.attach;
   private readonly capabilities: AgentCapabilityRuntime;
   readonly browserLiveViews: BrowserLiveViewService;
   readonly browserSessionControls: BrowserSessionControlService;
@@ -273,6 +275,9 @@ export class AgentRuntime {
       store,
     ),
     readonly browserSessionPauses = new BrowserSessionPauseManager(store),
+    readonly conversationSurfaceCapsules = new ConversationSurfaceCapsuleStore(
+      store.dataRoot,
+    ),
   ) {
     this.capabilities = new AgentCapabilityRuntime(
       store,
@@ -1211,6 +1216,7 @@ export class AgentRuntime {
     toolResultReplay?: FrozenToolResultReplayController,
     onEvent?: EventSink,
   ): Promise<string> {
+    const turnPipeline = this.turns.current();
     const workflowInvocation = isWorkflowRunSource(run.source);
     const history = await this.buildModelHistory(
       run,
@@ -1284,7 +1290,7 @@ export class AgentRuntime {
       },
       onEvent,
     );
-    const tools = this.capabilities.createTools({
+    let tools = this.capabilities.createTools({
       profile,
       threadId: run.threadId,
       runId: run.id,
@@ -1301,32 +1307,14 @@ export class AgentRuntime {
       !advisorCorrection &&
       !workflowInvocation
     ) {
-      tools.push(...createPlanTools(this.store, run));
       tools.push(
-        createAgentMilestoneTool({
+        ...createAgentRunControlTools({
           store: this.store,
-          threadId: run.threadId,
-          runId: run.id,
-          onRecorded: async (mutation) => {
-            if (!onEvent) return;
-            for (const event of mutation.events) {
-              await onEvent(event);
-            }
+          run,
+          onOperatorDecision: (id) => {
+            pendingOperatorDecisionId = id;
           },
-        }),
-      );
-      tools.push(
-        createOperatorDecisionTool({
-          store: this.store,
-          threadId: run.threadId,
-          runId: run.id,
-          onRequested: async (mutation) => {
-            pendingOperatorDecisionId = mutation.decision.id;
-            if (!onEvent) return;
-            for (const event of mutation.events) {
-              await onEvent(event);
-            }
-          },
+          ...(onEvent ? { onEvent } : {}),
         }),
       );
     }
@@ -1350,6 +1338,12 @@ export class AgentRuntime {
     ) {
       tools.push(...subagents.createTools());
     }
+    const toolSelection = await turnPipeline.compileTools({
+      immediate: tools,
+      deferred: deferredExtensionTools,
+    });
+    tools = toolSelection.immediate;
+    deferredExtensionTools = toolSelection.deferred;
     const toolResultLifecycle = toolLife(
       this,
       [budget, run, tools, deferredExtensionTools],
@@ -1369,6 +1363,11 @@ export class AgentRuntime {
       browserInteractionConfirmationAvailable:
         this.browserInteractionConfirmations.available &&
         !environmentDegradedExecution,
+      model,
+      messages: providerMessages([
+        ...history.messages,
+        { role: "user", content: prompt, timestamp: Date.now() },
+      ]),
     });
     const checkpointContext = history.checkpoint
       ? formatContextCheckpoint(history.checkpoint)
@@ -1390,7 +1389,7 @@ export class AgentRuntime {
         workflowInvocation ? run.id : undefined,
       ),
     );
-    const buildCompiledPrompt = createAgentPromptBuilder(
+    const buildCompiledPrompt = turnPipeline.createPromptBuilder(
       {
         resolvedSystemPrompt,
         skillCatalog: skillCatalogOverlay,
@@ -1415,7 +1414,7 @@ export class AgentRuntime {
     ).systemPrompt;
     let currentModelContextEnvelope: ModelContextEnvelopeReceipt | undefined;
     const streamWithModelContextEnvelope = this.modelCalls
-      .current()
+      .current(this.store)
       .createAgentTurnStream({
         host: this,
         budget,
@@ -1427,6 +1426,7 @@ export class AgentRuntime {
             milestoneContextProjection,
             activeToolLoopGuard,
             (requestContext.tools ?? []).map((tool) => tool.name),
+            requestContext.messages,
           ),
         nextTurnIndex: nextModelContextEnvelopeTurnIndex,
         onEnvelope: (envelope) => {
@@ -1480,6 +1480,7 @@ export class AgentRuntime {
               status: "blocked",
               ...toolInputLedgerProjection(toolCall.name, args),
               policyReason: budgetExhaustion.message,
+              harnessInterventionReason: "budget_pause",
             },
           },
           onEvent,
@@ -1519,7 +1520,7 @@ export class AgentRuntime {
         );
         return { block: true, reason };
       }
-      const policyBlock = await preflightAgentToolPolicy({
+      const policyBlock = await turnPipeline.preflightPolicy({
         store: this.store,
         run,
         profile,
@@ -1617,6 +1618,8 @@ export class AgentRuntime {
         payload: {
           messageCount: history.messages.length,
           rawMessageCount: history.rawMessageCount,
+          toolExchangeCount: history.toolExchangeCount,
+          omittedToolExchangeCount: history.omittedToolExchangeCount,
           compacted: history.compacted,
           ...(history.checkpoint
             ? {
@@ -1628,6 +1631,7 @@ export class AgentRuntime {
           skills: profile.enabledSkills,
           policy: profile.toolPolicy,
           advisorCorrection,
+          ...turnPipeline.resolutionEvidence(toolSelection.receipt),
           toolCount: tools.length,
           deferredToolCount: deferredExtensionTools.length,
           delegationTaskCount: delegationLedgerProjection.taskCount,
@@ -1955,6 +1959,7 @@ export class AgentRuntime {
     await deltaBatcher.flush();
     if (event.type === "turn_start" || event.type === "turn_end") {
       if (event.type === "turn_start") budget.beginPrimaryTurn();
+      await captureConversationSurfaceTurn({ host: this, run, event, envelope: modelContextEnvelope, ...(onEvent ? { onEvent } : {}) });
       await this.record(
         {
           threadId: run.threadId,
@@ -2110,9 +2115,8 @@ export class AgentRuntime {
             callId: event.toolCallId,
             toolName: event.toolName,
             status: "started",
-            ...(builtInToolEffect(event.toolName, event.args)
-              ? { effect: builtInToolEffect(event.toolName, event.args)! }
-              : {}),
+            callInputSha256: createToolCallSha256(event.toolName, event.args),
+            ...builtInToolHarnessProjection(event.toolName, event.args),
             ...toolResultLifecycle.toolInput(
               event.args,
               toolInputLedgerProjection(event.toolName, event.args),
@@ -2313,12 +2317,16 @@ export class AgentRuntime {
     messages: AgentMessage[];
     checkpoint?: ContextCheckpointSnapshot;
     rawMessageCount: number;
+    toolExchangeCount: number;
+    omittedToolExchangeCount: number;
     compacted: boolean;
   }> {
     if (isWorkflowRunSource(run.source)) {
       return {
         messages: [],
         rawMessageCount: 0,
+        toolExchangeCount: 0,
+        omittedToolExchangeCount: 0,
         compacted: false,
       };
     }
@@ -2531,68 +2539,32 @@ export class AgentRuntime {
       }
       budget.throwIfExhausted();
     }
+    const surface = await projectConversationSurface({
+      events,
+      textEvents: projectedEvents,
+      model,
+      importedEventCount,
+      projectionRun: run,
+      minimumEventSeq:
+        plan.needsCompaction && !compacted
+          ? (projectedEvents[0]?.seq ??
+            (checkpoint?.toSeq !== undefined ? checkpoint.toSeq + 1 : 1))
+          : checkpoint?.toSeq !== undefined
+            ? checkpoint.toSeq + 1
+            : 1,
+      capsules: this.conversationSurfaceCapsules,
+      resultCapsules: this.toolInvocationResultCapsules,
+      modelInvocationCapsules: this.modelInvocationCapsules,
+    });
     return {
-      messages: this.contextEventsToAgentMessages(
-        projectedEvents,
-        model,
-        importedEventCount,
-      ),
+      messages: surface.messages,
       ...(checkpoint ? { checkpoint } : {}),
       rawMessageCount: projectedEvents.length,
+      toolExchangeCount: surface.toolExchangeCount,
+      omittedToolExchangeCount: surface.omittedToolExchangeCount,
       compacted,
     };
   }
-
-  private contextEventsToAgentMessages(
-    events: RunEvent[],
-    model: Model<Api>,
-    importedEventCount: number,
-  ): AgentMessage[] {
-    return events.flatMap((event): AgentMessage[] => {
-      const eventText = contextEventText(event);
-      if (!eventText) return [];
-      const text =
-        event.seq <= importedEventCount
-          ? formatImportedHistoryMessage(event.seq, eventText)
-          : eventText;
-      if (
-        event.type === "message.user" ||
-        event.type === "goal.continuation.prompt"
-      ) {
-        const message: UserMessage = {
-          role: "user",
-          content: text,
-          timestamp: Date.parse(event.createdAt),
-        };
-        return [message];
-      }
-      const message: AssistantMessage = {
-        role: "assistant",
-        content: [{ type: "text", text }],
-        api: model.api,
-        provider: model.provider,
-        model: model.id,
-        usage: {
-          input: 0,
-          output: 0,
-          cacheRead: 0,
-          cacheWrite: 0,
-          totalTokens: 0,
-          cost: {
-            input: 0,
-            output: 0,
-            cacheRead: 0,
-            cacheWrite: 0,
-            total: 0,
-          },
-        },
-        stopReason: "stop",
-        timestamp: Date.parse(event.createdAt),
-      };
-      return [message];
-    });
-  }
-
   private async evaluateActiveGoal(
     threadId: string,
     runId: string,

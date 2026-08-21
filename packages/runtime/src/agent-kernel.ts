@@ -1,6 +1,5 @@
 import type { RunRecord } from "@napier/contracts";
 import type { KernelPluginInspection } from "@napier/contracts/kernel-plugins";
-import { createAgentPromptBuilder } from "./agent-prompt-builder.js";
 import type {
   ContinueOperatorDecisionOptions,
   ResumeInterruptedRunAutomaticallyOptions,
@@ -40,8 +39,6 @@ import {
   OperatorDecisionsProjectionService,
 } from "./kernel-detail-projections.js";
 import type { ModelRegistry } from "./models.js";
-import { preflightAgentToolPolicy } from "./agent-tool-policy-preflight.js";
-import { createWorkspaceTools } from "./tools.js";
 import {
   installBuiltinKernelPlugins,
   type KernelBuiltinBrowserInput,
@@ -56,26 +53,33 @@ import {
   type AgentModelCallExtensionInspection,
 } from "./kernel-model-call-pipeline.js";
 import { installBuiltinModelCallExtensions } from "./builtin-model-call-extensions.js";
+import {
+  AgentTurnPipeline,
+  type AgentTurnPipelineAdapters,
+  type AgentTurnPipelineInspection,
+} from "./agent-turn-pipeline.js";
+import {
+  attachAgentRuntimePipelines,
+  KERNEL_TURN_PIPELINE,
+  registerAgentTurnPipelineServices,
+} from "./agent-turn-kernel-services.js";
+export {
+  KERNEL_POLICY_ADAPTER,
+  KERNEL_PROMPT_ADAPTER,
+  KERNEL_TOOL_ADAPTER,
+  KERNEL_TURN_PIPELINE,
+} from "./agent-turn-kernel-services.js";
 export interface KernelModelAdapter {
   registry: ModelRegistry;
   pipeline: ComposableAgentModelCallPipeline;
 }
-export interface KernelPromptAdapter {
-  create: typeof createAgentPromptBuilder;
-}
-export interface KernelToolAdapter {
-  createWorkspaceTools: typeof createWorkspaceTools;
-}
-export interface KernelPolicyAdapter {
-  preflight: typeof preflightAgentToolPolicy;
-}
-
 export interface AgentKernelInspection {
   profile: ResolvedKernelProfile;
   plugins: KernelPluginInspection[];
   services: KernelServiceInspection[];
   hooks: Array<{ name: KernelHookName; owners: string[]; count: number }>;
   modelCalls: AgentModelCallExtensionInspection[];
+  turnPipeline: AgentTurnPipelineInspection;
   completionControl: KernelCompletionControlProjection;
 }
 
@@ -89,12 +93,6 @@ export const KERNEL_MODEL_CALL_PIPELINE =
   createKernelServiceKey<ComposableAgentModelCallPipeline>(
     "runtime.model-call-pipeline",
   );
-export const KERNEL_PROMPT_ADAPTER =
-  createKernelServiceKey<KernelPromptAdapter>("runtime.prompt");
-export const KERNEL_TOOL_ADAPTER =
-  createKernelServiceKey<KernelToolAdapter>("runtime.tool");
-export const KERNEL_POLICY_ADAPTER =
-  createKernelServiceKey<KernelPolicyAdapter>("runtime.policy");
 export const KERNEL_COMPLETION_CONTROL =
   createKernelServiceKey<KernelCompletionControlObserver>(
     "runtime.completion-control",
@@ -155,6 +153,7 @@ export class AgentKernel {
     readonly hooks: KernelHookRegistry,
     readonly plugins: KernelPluginRegistry,
     readonly modelCalls: ComposableAgentModelCallPipeline,
+    readonly turnPipeline: AgentTurnPipeline,
     private readonly completionControl: KernelCompletionControlObserver,
     readonly threadSummaries: ThreadSummaryProjectionService,
     readonly taskNarratives: TaskNarrativeProjectionService,
@@ -231,6 +230,7 @@ export class AgentKernel {
       services: this.services.inspect(),
       hooks: this.hooks.inspect(),
       modelCalls: this.modelCalls.inspect(),
+      turnPipeline: this.turnPipeline.inspect(),
       completionControl: this.completionControl.inspect(),
     };
   }
@@ -257,6 +257,7 @@ export async function createAgentKernel(input: {
   models: ModelRegistry;
   search?: KernelBuiltinSearchInput;
   browser?: KernelBuiltinBrowserInput;
+  turnAdapters?: Partial<AgentTurnPipelineAdapters>;
 }): Promise<AgentKernel> {
   const profile = resolveKernelProfile(input.profile);
   const services = new KernelServiceRegistry();
@@ -376,20 +377,10 @@ export async function createAgentKernel(input: {
       pipeline: resolver.require(KERNEL_MODEL_CALL_PIPELINE),
     }),
   });
-  services.register({
-    key: KERNEL_PROMPT_ADAPTER,
-    dependencies: [KERNEL_PROFILE],
-    create: () => ({ create: createAgentPromptBuilder }),
-  });
-  services.register({
-    key: KERNEL_TOOL_ADAPTER,
-    dependencies: [KERNEL_PROFILE],
-    create: () => ({ createWorkspaceTools }),
-  });
-  services.register({
-    key: KERNEL_POLICY_ADAPTER,
-    dependencies: [KERNEL_PROFILE],
-    create: () => ({ preflight: preflightAgentToolPolicy }),
+  registerAgentTurnPipelineServices({
+    services,
+    profileKey: KERNEL_PROFILE,
+    ...(input.turnAdapters ? { adapters: input.turnAdapters } : {}),
   });
   services.register({
     key: KERNEL_COMPLETION_CONTROL,
@@ -420,16 +411,15 @@ export async function createAgentKernel(input: {
     dependencies: [
       KERNEL_MODEL_CALL_PIPELINE,
       KERNEL_MODEL_ADAPTER,
-      KERNEL_PROMPT_ADAPTER,
-      KERNEL_TOOL_ADAPTER,
-      KERNEL_POLICY_ADAPTER,
+      KERNEL_TURN_PIPELINE,
       KERNEL_COMPLETION_CONTROL,
     ],
     create: (resolver) => {
-      const detach = input.runtime.attachKernelModelCallPipeline(
+      runtimePipelineDetach = attachAgentRuntimePipelines(
+        input.runtime,
+        resolver.require(KERNEL_TURN_PIPELINE),
         resolver.require(KERNEL_MODEL_CALL_PIPELINE),
       );
-      runtimePipelineDetach = detach;
       return input.runtime;
     },
     dispose: () => {
@@ -450,6 +440,7 @@ export async function createAgentKernel(input: {
   });
   await services.resolve(KERNEL_AGENT_RUNTIME);
   await services.resolve(KERNEL_MODEL_CALL_PIPELINE);
+  const turnPipeline = await services.resolve(KERNEL_TURN_PIPELINE);
   const threadSummaries = await services.resolve(KERNEL_THREAD_SUMMARIES);
   const taskNarratives = await services.resolve(KERNEL_TASK_NARRATIVES);
   const activePlans = await services.resolve(KERNEL_ACTIVE_PLANS);
@@ -483,6 +474,7 @@ export async function createAgentKernel(input: {
     hooks,
     plugins,
     modelCalls,
+    turnPipeline,
     completionControl,
     threadSummaries,
     taskNarratives,

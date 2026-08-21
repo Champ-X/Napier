@@ -102,7 +102,11 @@ export async function preflightAgentToolPolicy(input: {
           input.store.workspaceRoot,
         ));
   if (!decision.allowed) {
-    return block(input, decision.reason);
+    return recordAgentToolPolicyBlock(
+      input,
+      decision.reason,
+      harnessPolicyBlockReason(decision.risk),
+    );
   }
   const action = browserInteractionAction(input.toolCall.name, input.args);
   if (!action) return undefined;
@@ -116,15 +120,17 @@ export async function preflightAgentToolPolicy(input: {
     return undefined;
   }
   if (input.run.source !== "user") {
-    return block(
+    return recordAgentToolPolicyBlock(
       input,
       "Browser interaction confirmation is available only for user Runs",
+      "capability_block",
     );
   }
   if (!input.confirmations.available) {
-    return block(
+    return recordAgentToolPolicyBlock(
       input,
       "Browser interaction confirmation is unavailable in this entry point",
+      "capability_block",
     );
   }
   const owner = { threadId: input.run.threadId, runId: input.run.id };
@@ -139,7 +145,7 @@ export async function preflightAgentToolPolicy(input: {
     );
   } catch (error) {
     if (error instanceof SensitiveBrowserTargetError) {
-      return block(input, error.message);
+      return recordAgentToolPolicyBlock(input, error.message, "safety_block");
     }
     throw error;
   }
@@ -180,9 +186,10 @@ export async function preflightAgentToolPolicy(input: {
     return undefined;
   }
   discardBrowserConfirmationCandidates(input.confirmations, candidates);
-  return block(
+  return recordAgentToolPolicyBlock(
     input,
     `Browser ${action} action was not confirmed (${confirmation.confirmation.status})`,
+    "approval_block",
   );
 }
 
@@ -296,7 +303,7 @@ function browserPageConfirmationRequest(
     : undefined;
 }
 
-async function block(
+export async function recordAgentToolPolicyBlock(
   input: {
     store: LocalStore;
     run: RunRecord;
@@ -305,6 +312,10 @@ async function block(
     onEvent?: EventSink;
   },
   reason: string,
+  harnessInterventionReason?:
+    | "approval_block"
+    | "capability_block"
+    | "safety_block",
 ): Promise<BeforeToolCallResult> {
   const event = await input.store.appendEvent({
     threadId: input.run.threadId,
@@ -318,6 +329,7 @@ async function block(
       status: "blocked",
       ...agentToolInputLedgerProjection(input.toolCall.name, input.args),
       policyReason: reason,
+      ...(harnessInterventionReason ? { harnessInterventionReason } : {}),
     },
   });
   try {
@@ -326,6 +338,12 @@ async function block(
     // Durable policy evidence survives a disconnected observer.
   }
   return { block: true, reason };
+}
+
+function harnessPolicyBlockReason(risk: string) {
+  return risk === "high" || risk === "critical"
+    ? ("safety_block" as const)
+    : ("capability_block" as const);
 }
 
 function browserInteractionAction(

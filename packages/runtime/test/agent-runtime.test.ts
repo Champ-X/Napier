@@ -3936,7 +3936,7 @@ describe("AgentRuntime demo path", () => {
       model: { provider: "faux-mcp", id: "faux-1" },
     });
 
-    expect(run.status).toBe("completed");
+    expect(run.status, run.error).toBe("completed");
     expect(toolCallCount).toBe(1);
     expect(faux.state.callCount).toBe(4);
     const events = await store.listEvents(thread.id);

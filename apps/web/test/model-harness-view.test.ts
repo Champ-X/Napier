@@ -1,7 +1,10 @@
 import type { RunEvent } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
 
-import { latestModelHarnessView, modelHarnessViews } from "../src/model-harness-view";
+import {
+  latestModelHarnessView,
+  modelHarnessViews,
+} from "../src/model-harness-view";
 
 describe("model Harness view", () => {
   it("projects valid durable Harness decisions", () => {
@@ -9,6 +12,7 @@ describe("model Harness view", () => {
     expect(modelHarnessViews([valid])).toEqual([
       expect.objectContaining({
         eventSeq: 7,
+        schemaVersion: 1,
         runId: "run_1",
         family: "openai",
         intents: ["coding"],
@@ -18,20 +22,61 @@ describe("model Harness view", () => {
         savedToolDefinitionBytes: 700,
       }),
     ]);
-    expect(latestModelHarnessView([event(6), valid], "run_1")?.eventSeq).toBe(7);
+    expect(latestModelHarnessView([event(6), valid], "run_1")?.eventSeq).toBe(
+      7,
+    );
+  });
+
+  it("projects model-rule v2 receipts while preserving v1 compatibility", () => {
+    const modern = event(8, {
+      schemaVersion: 2,
+      harnessId: "napier.model-harness-resolution.rules-v1.v2",
+      baseHarnessId: "napier.model-harness.openai.v1",
+      ruleSetVersion: "napier.model-harness-rules.v1",
+      matchedRuleId: "openai-reasoning",
+      policySource: "model_rule",
+      taskPhase: "coding",
+      environmentCapabilities: ["workspace_write", "process", "mcp"],
+      guidanceSha256: "b".repeat(64),
+    });
+
+    expect(modelHarnessViews([event(7), modern])).toEqual([
+      expect.objectContaining({ schemaVersion: 1 }),
+      expect.objectContaining({
+        schemaVersion: 2,
+        baseHarnessId: "napier.model-harness.openai.v1",
+        matchedRuleId: "openai-reasoning",
+        policySource: "model_rule",
+        taskPhase: "coding",
+        environmentCapabilities: ["workspace_write", "process", "mcp"],
+        guidanceSha256: "b".repeat(64),
+      }),
+    ]);
   });
 
   it("rejects count, byte, and receipt-shape drift", () => {
     const base = event(1);
-    expect(modelHarnessViews([
-      { ...base, payload: { ...asRecord(base.payload), activeToolCount: 3 } },
-      { ...base, payload: { ...asRecord(base.payload), savedToolDefinitionBytes: 699 } },
-      { ...base, payload: { ...asRecord(base.payload), contentSha256: "bad" } },
-    ])).toEqual([]);
+    expect(
+      modelHarnessViews([
+        { ...base, payload: { ...asRecord(base.payload), activeToolCount: 3 } },
+        {
+          ...base,
+          payload: { ...asRecord(base.payload), savedToolDefinitionBytes: 699 },
+        },
+        {
+          ...base,
+          payload: { ...asRecord(base.payload), contentSha256: "bad" },
+        },
+        event(2, {
+          schemaVersion: 2,
+          harnessId: "napier.model-harness-resolution.rules-v1.v2",
+        }),
+      ]),
+    ).toEqual([]);
   });
 });
 
-function event(seq: number): RunEvent {
+function event(seq: number, overrides: Record<string, unknown> = {}): RunEvent {
   return {
     id: `event_${seq}`,
     threadId: "thread_1",
@@ -65,10 +110,13 @@ function event(seq: number): RunEvent {
       maxRetryDelayMs: 30_000,
       maxRetryDelayMsSource: "harness",
       contentSha256: "a".repeat(64),
+      ...overrides,
     },
   };
 }
 
-function asRecord(value: RunEvent["payload"]): Record<string, RunEvent["payload"]> {
+function asRecord(
+  value: RunEvent["payload"],
+): Record<string, RunEvent["payload"]> {
   return value as Record<string, RunEvent["payload"]>;
 }

@@ -696,7 +696,9 @@ function hangingProvider(response: () => Promise<string>): Provider<Api> {
     reasoning: false,
     input: ["text"] as const,
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-    contextWindow: 8_192,
+    // Keep cancellation tests above the full default Prompt/tool surface so
+    // the provider stream, rather than context-pressure admission, is under test.
+    contextWindow: 32_000,
     maxTokens: 1_024,
   };
   const stream = () => {

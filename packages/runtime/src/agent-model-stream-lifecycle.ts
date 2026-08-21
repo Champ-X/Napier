@@ -1,6 +1,7 @@
 import type { StreamFn } from "@earendil-works/pi-agent-core";
 import type {
   Api,
+  AssistantMessage,
   AssistantMessageEventStream,
   Context,
   Model,
@@ -24,6 +25,9 @@ import type { CompiledPromptArtifact } from "./prompt-compiler.js";
 import type { RunBudgetTracker } from "./run-budget.js";
 import type { LocalStore } from "./store.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { recoverModelContextOverflow } from "./model-context-overflow-recovery.js";
+import { mapModelUsage } from "./agent-model-projection.js";
+import { createUsageAccounting } from "./token-accounting.js";
 
 export interface AgentModelCallPreparation {
   run: RunRecord;
@@ -58,9 +62,15 @@ export interface AgentModelStreamLifecycleInput {
     context: Context,
   ): CompiledPromptArtifact;
   nextTurnIndex(): number;
-  onEnvelope(envelope: ModelContextEnvelopeReceipt): void;
+  onEnvelope(envelope: ModelContextEnvelopeReceipt | undefined): void;
   prepareCall?(
     call: AgentModelCallPreparation,
+  ): PreparedAgentModelCall | Promise<PreparedAgentModelCall>;
+  finalizeCall?(
+    call: AgentModelCallPreparation & {
+      compiledPrompt: CompiledPromptArtifact;
+      recoveryAttempt: 0 | 1;
+    },
   ): PreparedAgentModelCall | Promise<PreparedAgentModelCall>;
   invokeCall?(
     call: AgentModelInvocation,
@@ -93,6 +103,8 @@ export function agentModelStreamLife(
         signal,
         priorEvidence,
       }) => {
+        currentEnvelope = undefined;
+        input.onEnvelope(undefined);
         const nextContext =
           attempt === 1
             ? attemptContext
@@ -114,59 +126,148 @@ export function agentModelStreamLife(
               ...(input.onEvent ? { onEvent: input.onEvent } : {}),
             })
           : { context: nextContext, options: nextOptions };
-        const compiledPrompt = input.buildCompiledPrompt(
-          model,
-          preparedCall.options,
-          preparedCall.context,
-        );
-        const captured = await captureCompiledModelInvocation({
-          store: input.host.store,
-          capsules: input.host.modelInvocationCapsules,
-          run: input.run,
-          model,
-          context: preparedCall.context,
-          options: preparedCall.options,
-          turnIndex: input.nextTurnIndex(),
-          purpose: "agent_turn",
-          compiledPrompt,
-          ...(input.onEvent ? { onEvent: input.onEvent } : {}),
-        });
-        currentEnvelope = captured.envelope;
-        input.onEnvelope(captured.envelope);
-        return {
-          context: captured.context,
-          options: preparedCall.options,
-          source: input.invokeCall
-            ? input.invokeCall(
-                {
-                  run: input.run,
-                  attempt,
-                  model,
-                  context: captured.context,
-                  options: preparedCall.options,
-                  compiledPrompt,
-                  envelope: captured.envelope,
-                },
-                () =>
+        const createInvocation = async (
+          recoveryAttempt: 0 | 1,
+          baseContext = preparedCall.context,
+        ) => {
+          const compiledPrompt = input.buildCompiledPrompt(
+            model,
+            preparedCall.options,
+            baseContext,
+          );
+          const finalizedCall = input.finalizeCall
+            ? await input.finalizeCall({
+                run: input.run,
+                attempt,
+                model,
+                context: baseContext,
+                options: preparedCall.options,
+                compiledPrompt,
+                recoveryAttempt,
+                ...(input.onEvent ? { onEvent: input.onEvent } : {}),
+              })
+            : preparedCall;
+          const captured = await captureCompiledModelInvocation({
+            store: input.host.store,
+            capsules: input.host.modelInvocationCapsules,
+            run: input.run,
+            model,
+            context: finalizedCall.context,
+            options: finalizedCall.options,
+            turnIndex: input.nextTurnIndex(),
+            purpose: "agent_turn",
+            compiledPrompt,
+            ...(input.onEvent ? { onEvent: input.onEvent } : {}),
+          });
+          currentEnvelope = captured.envelope;
+          input.onEnvelope(captured.envelope);
+          const call = {
+            run: input.run,
+            attempt,
+            model,
+            context: captured.context,
+            options: finalizedCall.options,
+            compiledPrompt,
+            envelope: captured.envelope,
+            ...(input.onEvent ? { onEvent: input.onEvent } : {}),
+          };
+          return {
+            context: captured.context,
+            options: finalizedCall.options,
+            envelope: captured.envelope,
+            source: input.invokeCall
+              ? input.invokeCall(call, () =>
                   modelStream(
                     cancellation,
                     model,
                     captured.context,
-                    preparedCall.options,
+                    finalizedCall.options,
                   ),
-              )
-            : modelStream(
-                cancellation,
+                )
+              : modelStream(
+                  cancellation,
+                  model,
+                  captured.context,
+                  finalizedCall.options,
+                ),
+          };
+        };
+        const first = await createInvocation(0);
+        return {
+          context: first.context,
+          options: first.options,
+          source: recoverModelContextOverflow({
+            source: first.source,
+            signal,
+            recover: async (error) => {
+              const action = await recordContextOverflow(
+                input,
                 model,
-                captured.context,
-                preparedCall.options,
-              ),
+                error,
+                first.envelope,
+              );
+              currentEnvelope = undefined;
+              input.onEnvelope(undefined);
+              if (action !== "retry") {
+                input.budget.throwIfExhausted();
+                throw new Error("Model context overflow recovery unavailable");
+              }
+              return (await createInvocation(1, first.context)).source;
+            },
+          }),
         };
       },
       onDetected: (evidence, action) =>
         recordDetection(input, model, evidence, action, currentEnvelope),
     });
   };
+}
+
+async function recordContextOverflow(
+  input: AgentModelStreamLifecycleInput,
+  model: Model<Api>,
+  error: AssistantMessage,
+  envelope: ModelContextEnvelopeReceipt,
+): Promise<"retry" | "budget_exhausted"> {
+  const usage = mapModelUsage(error.usage);
+  const usageAccounting = createUsageAccounting(
+    { provider: model.provider, id: model.id },
+    usage,
+  );
+  input.budget.observeAuxiliaryUsage(usage, Date.now(), usageAccounting);
+  const action = input.budget.exhaustion
+    ? ("budget_exhausted" as const)
+    : ("retry" as const);
+  const content = {
+    kind: "napier.model-context-overflow" as const,
+    schemaVersion: 1 as const,
+    action,
+    provider: model.provider,
+    model: model.id,
+    diagnosticSha256: sha256(error.errorMessage ?? ""),
+    usage,
+    usageAccounting,
+    modelContextEnvelopeSha256: envelope.contentSha256,
+    modelContextEnvelopeTurnIndex: envelope.turnIndex,
+    modelContextMessageSetSha256: envelope.messageSetSha256,
+    modelContextToolDefinitionSetSha256: envelope.toolDefinitionSetSha256,
+  };
+  const event = await input.host.store.appendEvent({
+    threadId: input.run.threadId,
+    runId: input.run.id,
+    type: "model.context.overflow",
+    category: "model",
+    visibility: "debug",
+    payload: { ...content, contentSha256: sha256(canonicalJson(content)) },
+  });
+  if (input.onEvent) {
+    try {
+      await input.onEvent(event);
+    } catch {
+      // Durable overflow evidence survives a disconnected stream.
+    }
+  }
+  return action;
 }
 
 function redirectedContext(

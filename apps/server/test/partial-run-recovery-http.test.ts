@@ -99,13 +99,11 @@ describe("partial Run recovery HTTP", () => {
       expect.objectContaining({ status: "failed", outcome: "partial" }),
     );
 
+    let recoveryPrompt = "";
     const recovery = fauxProvider({ provider: "faux-partial-recovery" });
     recovery.setResponses([
       (context) => {
-        const prompt = JSON.stringify(context.messages);
-        expect(prompt).toContain("<run-recovery>");
-        expect(prompt).toContain("<recovery-plan-context>");
-        expect(prompt).not.toContain("partial-report.md");
+        recoveryPrompt = JSON.stringify(context.messages);
         return fauxAssistantMessage("Continued from the partial checkpoint.");
       },
       fauxAssistantMessage('{"facts":[]}'),
@@ -127,6 +125,9 @@ describe("partial Run recovery HTTP", () => {
     expect(response.headers.get("x-napier-run-id")).toBe(partial.id);
     expect(response.headers.get("x-napier-resume-requested")).toBe("true");
     const frames = parseSseFrames(await response.text());
+    expect(recoveryPrompt).toContain("<run-recovery>");
+    expect(recoveryPrompt).toContain("<recovery-plan-context>");
+    expect(recoveryPrompt).not.toContain("partial-report.md");
     const done = frames.at(-1);
     expect(done?.type).toBe("done");
     if (!done || done.type !== "done") throw new Error("Missing done frame");

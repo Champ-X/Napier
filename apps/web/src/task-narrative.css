@@ -182,61 +182,79 @@
 
 .task-result-summary {
   width: min(var(--layout-reading-target), 100%);
-  margin: 0 auto var(--space-3);
-  padding-top: var(--space-3);
+  margin: 0 auto var(--space-2);
 }
 
 .task-narrative-completed {
-  display: grid;
-  grid-template-columns: minmax(160px, 0.8fr) minmax(0, 1.4fr);
-  gap: var(--stack-md) var(--inline-xl);
-  padding: var(--inset-md);
+  overflow: hidden;
   background: var(--color-success-surface);
   border: 1px solid var(--color-success-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
 }
 
-.task-narrative-completed > header {
+.task-completion-strip {
   display: flex;
+  min-height: 38px;
   align-items: center;
   gap: var(--inline-sm);
+  padding: 3px 6px 3px 10px;
   color: var(--color-success);
 }
 
-.task-narrative-completed > header > div {
-  display: grid;
-  gap: var(--stack-xs);
+.task-completion-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: baseline;
+  gap: var(--inline-sm);
 }
 
-.task-narrative-completed > header span {
+.task-completion-copy span,
+.task-completion-counts {
   font-size: var(--text-xs);
   color: var(--color-fg-muted);
+  white-space: nowrap;
 }
 
-.task-narrative-completed > header strong {
-  font-size: var(--text-lg);
+.task-completion-copy strong {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-fg);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.task-narrative-completed ul {
+.task-completion-details {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--stack-sm) var(--inline-lg);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-8);
+  border-top: 1px solid var(--color-success-border);
+}
+
+.task-completion-details ul {
+  display: grid;
+  min-width: 0;
   gap: var(--stack-xs);
   margin: 0;
   padding-inline-start: var(--space-4);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   line-height: var(--leading-compact);
 }
 
-.task-narrative-completed nav {
-  grid-column: 1 / -1;
+.task-completion-details nav {
   display: flex;
   min-width: 0;
   flex-wrap: wrap;
   gap: var(--inline-sm);
+  justify-content: flex-end;
 }
 
 .task-narrative-completed button {
   display: inline-flex;
-  min-height: var(--control-target);
+  min-height: 30px;
   max-width: 100%;
   align-items: center;
   gap: var(--inline-xs);
@@ -252,6 +270,25 @@
   border-radius: var(--radius-sm);
 }
 
+.task-completion-primary-output {
+  max-width: 180px !important;
+}
+
+.task-completion-toggle {
+  flex: 0 0 auto;
+  color: var(--color-fg-muted) !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+.task-completion-toggle svg {
+  transition: transform var(--duration-base) var(--ease-standard);
+}
+
+.task-completion-toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
 .task-narrative-completed button:hover {
   color: var(--color-accent-hover);
   border-color: var(--color-border-strong);
@@ -260,6 +297,14 @@
 .task-narrative-completed button:active:not(:disabled) {
   color: var(--color-accent-active);
   border-color: var(--color-accent-active);
+}
+
+.task-narrative-completed button:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 var(--control-focus-offset) var(--color-success-surface),
+    0 0 0 calc(var(--control-focus-offset) + var(--control-focus-width))
+      var(--color-focus-ring);
 }
 
 .task-narrative.phase-working .task-narrative-current > span,
@@ -281,6 +326,31 @@
   .task-narrative {
     padding-inline: var(--space-10) var(--space-3);
   }
+
+  .task-completion-counts {
+    display: none;
+  }
+
+  .task-completion-primary-output {
+    max-width: 132px !important;
+  }
+
+  .task-completion-toggle span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .task-completion-details {
+    grid-template-columns: 1fr;
+    padding-left: var(--space-6);
+  }
+
+  .task-completion-details nav {
+    justify-content: flex-start;
+  }
 }
 
 @media (forced-colors: active) {
@@ -289,6 +359,12 @@
   }
 
   .task-status-details > summary:focus-visible {
+    outline: var(--control-focus-width) solid Highlight;
+    outline-offset: var(--control-focus-offset);
+    box-shadow: none;
+  }
+
+  .task-narrative-completed button:focus-visible {
     outline: var(--control-focus-width) solid Highlight;
     outline-offset: var(--control-focus-offset);
     box-shadow: none;

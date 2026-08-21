@@ -3379,8 +3379,8 @@ export interface RunComparison {
   configurationDelta: RunConfigurationDelta;
   contextCoverageDelta: RunContextCoverageDelta;
   traceSummaryBoundaryDelta: RunTraceSummaryBoundaryDelta;
+  harness: import("./run-harness-effects.js").RunHarnessComparison;
 }
-
 const TRACE_SUMMARY_BOUNDARY_EXACT_EVENT_TYPES = new Set(["trace.otlp.exported", "thread.imported", "model.response"]);
 
 const TRACE_SUMMARY_BOUNDARY_EVENT_PREFIXES = [

@@ -330,4 +330,143 @@ describe("Model adapter capture", () => {
       await services.shutdown();
     }
   });
+
+  it("binds one concrete model Harness resolution to Provider context, Ledger, and Prompt Package", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-model-harness-v2-"));
+    roots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot);
+    const services = await createLocalAgentRuntime({
+      workspaceRoot,
+      dataRoot: path.join(root, "state"),
+      env: {},
+      sandbox: new UnsupportedSandboxAdapter("model-harness-v2-test"),
+    });
+    try {
+      let providerSystemPrompt = "";
+      let providerToolNames: string[] = [];
+      const provider = fauxProvider({
+        provider: "openai",
+        api: "openai-responses",
+        models: [{ id: "gpt-5.4-2026-08-01", reasoning: true }],
+      });
+      provider.setResponses([
+        (context) => {
+          providerSystemPrompt = context.systemPrompt ?? "";
+          providerToolNames = (context.tools ?? []).map((tool) => tool.name);
+          return fauxAssistantMessage("MODEL_HARNESS_V2_DONE");
+        },
+        () => fauxAssistantMessage('{"facts":[]}'),
+      ]);
+      services.models.registerProvider(provider.provider);
+      const agent = services.store.listAgents()[0]!;
+      await services.store.updateAgent(agent.id, {
+        enabledTools: [
+          "list_files",
+          "read_file",
+          "search_files",
+          "inspect_code",
+          "apply_patch",
+          "verify_workspace",
+          "run_command",
+          "workspace_process",
+          "javascript_kernel",
+          "python_kernel",
+          "browser",
+          "web_search",
+          "web_fetch",
+          "inspect_data",
+          "data_frame",
+          "sqlite_query",
+          "git_inspect",
+          "git_stage_preview",
+          "git_stage_apply",
+          "lsp_diagnostics",
+          "lsp_symbols",
+          "lsp_definition",
+          "lsp_references",
+        ],
+      });
+      const thread = await services.store.createThread({
+        title: "Concrete model Harness",
+        agentId: agent.id,
+      });
+      const privatePrompt = "Implement and verify PRIVATE_HARNESS_TASK_49b1.";
+      const run = await services.runtime.runPrompt({
+        threadId: thread.id,
+        text: privatePrompt,
+        model: { provider: "openai", id: "gpt-5.4-2026-08-01" },
+      });
+
+      expect(run.status, run.error).toBe("completed");
+      expect(providerToolNames.length).toBeGreaterThan(0);
+      expect(providerToolNames.length).toBeLessThanOrEqual(20);
+      expect(providerSystemPrompt).toContain(
+        '<model_harness id="napier.model-harness-resolution.rules-v1.v2" base="napier.model-harness.openai.v1" rule="openai-reasoning">',
+      );
+      expect(providerSystemPrompt).toContain("Current task phase: coding.");
+      const events = await services.store.listEvents(thread.id);
+      const harness = events.find(
+        (event) =>
+          event.runId === run.id && event.type === "model.harness.resolved",
+      );
+      expect(harness?.payload).toEqual(
+        expect.objectContaining({
+          schemaVersion: 2,
+          matchedRuleId: "openai-reasoning",
+          policySource: "model_rule",
+          taskPhase: "coding",
+          activeToolCount: providerToolNames.length,
+          activeToolNames: providerToolNames,
+        }),
+      );
+      expect(JSON.stringify(harness?.payload)).not.toContain(privatePrompt);
+      const envelope = events.find(
+        (event) =>
+          event.runId === run.id &&
+          event.type === "context.model_envelope" &&
+          event.payload["turnIndex"] === 0,
+      );
+      const promptPackage = events.find(
+        (event) =>
+          event.runId === run.id &&
+          event.type === "context.prompt_package" &&
+          event.payload["turnIndex"] === 0,
+      );
+      expect(envelope?.payload).toEqual(
+        expect.objectContaining({
+          toolCount: harness?.payload["activeToolCount"],
+        }),
+      );
+      expect(promptPackage?.payload).toEqual(
+        expect.objectContaining({
+          systemPromptSha256: envelope?.payload["systemPromptSha256"],
+          effectiveCapabilities: expect.objectContaining({
+            toolCount: harness?.payload["activeToolCount"],
+          }),
+          layers: expect.arrayContaining([
+            expect.objectContaining({
+              id: "effective_capabilities",
+              contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+            }),
+          ]),
+        }),
+      );
+      const invocation = events.find(
+        (event) =>
+          event.runId === run.id &&
+          event.type === "context.model_invocation" &&
+          event.payload["turnIndex"] === 0,
+      );
+      const capsule = await services.runtime.modelInvocationCapsules.read(
+        String(invocation?.payload["capsuleSha256"]),
+      );
+      expect(capsule.context.systemPrompt).toBe(providerSystemPrompt);
+      expect(capsule.context.tools.map((tool) => tool.name)).toEqual(
+        providerToolNames,
+      );
+    } finally {
+      await services.shutdown();
+    }
+  });
 });

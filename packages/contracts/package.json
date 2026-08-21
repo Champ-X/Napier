@@ -60,6 +60,10 @@
       "types": "./dist/controlled-harness-evidence.d.ts",
       "import": "./dist/controlled-harness-evidence.js"
     },
+    "./run-harness-effects": {
+      "types": "./dist/run-harness-effects.d.ts",
+      "import": "./dist/run-harness-effects.js"
+    },
     "./provider-setup": {
       "types": "./dist/provider-setup.d.ts",
       "import": "./dist/provider-setup.js"

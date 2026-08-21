@@ -173,9 +173,10 @@ describe("Agent persistent JavaScript kernel integration", () => {
         { stopReason: "toolUse" },
       ),
       (context) => {
-        const processId = JSON.stringify(context.messages).match(
-          /process_[a-z0-9]{20}/u,
-        )?.[0];
+        const processId = Array.from(
+          JSON.stringify(context.messages).matchAll(/process_[a-z0-9]{20}/gu),
+          (match) => match[0],
+        ).at(-1);
         expect(processId).toBeDefined();
         return fauxAssistantMessage(
           fauxToolCall("javascript_kernel", {

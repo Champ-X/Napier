@@ -74,9 +74,47 @@ describe("trajectory Chinese copy", () => {
     expect(text).toContain("已完成");
     expect(text).toContain("轮次 1");
     expect(text).toContain("1 个事件");
-    expect(text).toContain("摘要来源");
-    expect(text).toContain("固定摘要");
-    expect(text).not.toContain("SummaryFixed");
+    expect(text).not.toContain("摘要来源");
+  });
+
+  it("renders a four-section event inspector with bounded evidence", async () => {
+    const container = installChineseDom();
+    const { TraceTrajectoryEventDetail } =
+      await import("../src/TraceTrajectoryEventDetail");
+    const event = trajectoryEvent();
+    event.event.type = "model.response";
+    event.event.payload = {
+      model: "deepseek-v4-flash",
+      stopReason: "toolUse",
+      modelContextEnvelopeTurnIndex: 1,
+      usage: { inputTokens: 6873, outputTokens: 1217 },
+      textSha256: "a".repeat(64),
+      privateText: "TOP_SECRET_MODEL_OUTPUT",
+    };
+
+    render(<TraceTrajectoryEventDetail event={event} />, container);
+    const text = container.textContent ?? "";
+    expect(text).toContain("摘要");
+    expect(text).toContain("上下文");
+    expect(text).toContain("证据");
+    expect(text).toContain("计时");
+    expect(text).toContain("任务完成。");
+    expect(text).not.toContain("TOP_SECRET_MODEL_OUTPUT");
+
+    const evidenceTab = [...container.querySelectorAll('[role="tab"]')].find(
+      (candidate) => candidate.textContent?.includes("证据"),
+    ) as HTMLButtonElement;
+    evidenceTab.dispatchEvent(new Event("click", { bubbles: true }));
+    await Promise.resolve();
+    const evidence = container.textContent ?? "";
+    expect(evidence).toContain("模型");
+    expect(evidence).toContain("输入 Token");
+    expect(evidence).toContain("文本 SHA-256");
+    expect(evidence).toContain("deepseek-v4-flash");
+    expect(evidence).toContain("6873");
+    expect(evidence).toContain("aaaaaaaaaaaa…");
+    expect(evidence).not.toContain("INPUT TOKENS");
+    expect(evidence).not.toContain("TOP_SECRET_MODEL_OUTPUT");
   });
 });
 

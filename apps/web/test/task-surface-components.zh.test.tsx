@@ -45,22 +45,42 @@ describe("ordinary task surface Chinese copy", () => {
     const container = installChineseDom();
     const { default: TaskCompletionSummary } =
       await import("../src/TaskCompletionSummary");
+    const onOpenArtifact = vi.fn();
 
     render(
       <TaskCompletionSummary
-        completedItems={["已验证交付"]}
+        completedItems={["已验证交付", "已生成预览"]}
         plans={[]}
         activePlan={{ outputPaths: ["artifacts/report.md"] }}
-        onOpenArtifact={vi.fn()}
+        onOpenArtifact={onOpenArtifact}
       />,
       container,
     );
-    const markup = container.textContent ?? "";
+    const collapsedMarkup = container.textContent ?? "";
+    const toggle = container.querySelector(
+      '.task-completion-toggle[aria-expanded="false"]',
+    ) as HTMLButtonElement;
+    const primaryOutput = container.querySelector(
+      ".task-completion-primary-output",
+    ) as HTMLButtonElement;
 
-    expect(markup).toContain("任务结果");
+    expect(collapsedMarkup).toContain("任务结果");
+    expect(collapsedMarkup).toContain("已验证交付");
+    expect(collapsedMarkup).toContain("2 项结果");
+    expect(collapsedMarkup).toContain("report.md");
+    expect(container.querySelector(".task-completion-details")).toBeNull();
+    expect(collapsedMarkup).not.toContain("已生成预览");
+    click(primaryOutput);
+    expect(onOpenArtifact).toHaveBeenCalledWith("artifacts/report.md");
+
+    click(toggle);
+    await Promise.resolve();
+    const expandedMarkup = container.textContent ?? "";
     expect(container.innerHTML).toContain('aria-label="任务输出"');
-    expect(markup).toContain("输出 · artifacts/report.md");
-    expect(markup).not.toContain("Task result");
+    expect(container.innerHTML).toContain('aria-expanded="true"');
+    expect(expandedMarkup).toContain("已生成预览");
+    expect(expandedMarkup).toContain("输出 · artifacts/report.md");
+    expect(expandedMarkup).not.toContain("Task result");
   });
 });
 
@@ -81,6 +101,10 @@ function installChineseDom(): HTMLElement {
   const container = document.getElementById("app") as unknown as HTMLElement;
   containers.push(container);
   return container;
+}
+
+function click(element: Element): void {
+  element.dispatchEvent(new Event("click", { bubbles: true }));
 }
 
 function planItem(): ConversationPlan {

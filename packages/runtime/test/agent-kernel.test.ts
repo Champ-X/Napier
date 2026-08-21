@@ -8,11 +8,12 @@ import {
   fauxProvider,
   fauxToolCall,
 } from "@earendil-works/pi-ai";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   ARTIFACT_KERNEL_PLUGIN_ID,
   BROWSER_KERNEL_PLUGIN_ID,
+  createAgentKernel,
   createKernelServiceKey,
   KERNEL_CONVERSATION_ARTIFACTS,
   KERNEL_MODEL_ADAPTER,
@@ -20,13 +21,15 @@ import {
   KERNEL_POLICY_ADAPTER,
   KERNEL_PROMPT_ADAPTER,
   KERNEL_TOOL_ADAPTER,
+  KERNEL_TURN_PIPELINE,
   resolveKernelProfile,
   SEARCH_KERNEL_PLUGIN_ID,
 } from "../src/kernel.js";
 import { createAgentPromptBuilder } from "../src/agent-prompt-builder.js";
-import { preflightAgentToolPolicy } from "../src/agent-tool-policy-preflight.js";
+import { AgentRuntime } from "../src/agent-runtime.js";
 import { createLocalAgentRuntime } from "../src/local-agent-runtime.js";
-import { createWorkspaceTools } from "../src/tools.js";
+import { ModelRegistry } from "../src/models.js";
+import { LocalStore } from "../src/store.js";
 import { UnsupportedSandboxAdapter } from "../src/sandbox.js";
 import {
   processReadySandbox,
@@ -120,16 +123,17 @@ describe("Agent Kernel", () => {
         await services.kernel.services.resolve(KERNEL_MODEL_CALL_PIPELINE),
       ).toBe(services.kernel.modelCalls);
       expect(
-        (await services.kernel.services.resolve(KERNEL_PROMPT_ADAPTER)).create,
-      ).toBe(createAgentPromptBuilder);
+        (await services.kernel.services.resolve(KERNEL_PROMPT_ADAPTER)).id,
+      ).toBe("napier.prompt.default");
       expect(
-        (await services.kernel.services.resolve(KERNEL_TOOL_ADAPTER))
-          .createWorkspaceTools,
-      ).toBe(createWorkspaceTools);
+        (await services.kernel.services.resolve(KERNEL_TOOL_ADAPTER)).id,
+      ).toBe("napier.tool.default");
       expect(
-        (await services.kernel.services.resolve(KERNEL_POLICY_ADAPTER))
-          .preflight,
-      ).toBe(preflightAgentToolPolicy);
+        (await services.kernel.services.resolve(KERNEL_POLICY_ADAPTER)).id,
+      ).toBe("napier.policy.default");
+      expect(await services.kernel.services.resolve(KERNEL_TURN_PIPELINE)).toBe(
+        services.kernel.turnPipeline,
+      );
 
       const observed: string[] = [];
       for (const name of [
@@ -160,31 +164,29 @@ describe("Agent Kernel", () => {
         "active",
       );
       const modelCallPhases: string[] = [];
-      plugin.interceptModelCall(
-        {
-          id: "test.context-marker",
-          prepare: (call) => {
-            modelCallPhases.push(`prepare:${call.attempt}`);
-            return {
-              context: {
-                ...call.context,
-                messages: [
-                  ...call.context.messages,
-                  {
-                    role: "user",
-                    content: "Kernel realtime extension marker",
-                    timestamp: Date.now(),
-                  },
-                ],
-              },
-            };
-          },
-          around: (_call, next) => {
-            modelCallPhases.push("around");
-            return next();
-          },
+      plugin.interceptModelCall({
+        id: "test.context-marker",
+        prepare: (call) => {
+          modelCallPhases.push(`prepare:${call.attempt}`);
+          return {
+            context: {
+              ...call.context,
+              messages: [
+                ...call.context.messages,
+                {
+                  role: "user",
+                  content: "Kernel realtime extension marker",
+                  timestamp: Date.now(),
+                },
+              ],
+            },
+          };
         },
-      );
+        around: (_call, next) => {
+          modelCallPhases.push("around");
+          return next();
+        },
+      });
 
       const run = await services.kernel.runPrompt({
         threadId: thread.id,
@@ -261,8 +263,18 @@ describe("Agent Kernel", () => {
           expect.objectContaining({ id: "runtime.prompt", state: "resolved" }),
           expect.objectContaining({ id: "runtime.tool", state: "resolved" }),
           expect.objectContaining({ id: "runtime.policy", state: "resolved" }),
+          expect.objectContaining({
+            id: "runtime.turn-pipeline",
+            state: "resolved",
+          }),
         ]),
       );
+      expect(inspection.turnPipeline).toEqual({
+        promptAdapterId: "napier.prompt.default",
+        toolAdapterId: "napier.tool.default",
+        policyAdapterId: "napier.policy.default",
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      });
       expect(inspection.modelCalls).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
@@ -274,6 +286,12 @@ describe("Agent Kernel", () => {
             id: "napier.tool-result-context-pruner",
             owner: "kernel.context",
             prepare: true,
+          }),
+          expect.objectContaining({
+            id: "napier.model-context-token-governor",
+            owner: "kernel.context",
+            order: 10_000,
+            finalize: true,
           }),
           expect.objectContaining({
             id: "test.context-marker",
@@ -349,6 +367,11 @@ describe("Agent Kernel", () => {
           id: "napier.tool-result-context-pruner",
           owner: "kernel.context",
         }),
+        expect.objectContaining({
+          id: "napier.model-context-token-governor",
+          owner: "kernel.context",
+          order: 10_000,
+        }),
       ]);
       const harnessEvents = (await services.store.listEvents(thread.id)).filter(
         (event) => event.type === "model.harness.resolved",
@@ -360,6 +383,16 @@ describe("Agent Kernel", () => {
           toolSurface: "full",
           activeToolNames: expect.arrayContaining(["read_file"]),
           contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        }),
+      );
+      const prepared = (await services.store.listEvents(thread.id)).find(
+        (event) => event.type === "context.prepared",
+      );
+      expect(prepared?.payload).toEqual(
+        expect.objectContaining({
+          turnPipelineSha256: inspection.turnPipeline.contentSha256,
+          candidateToolSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+          activeToolSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
         }),
       );
       const pruningEvents = (await services.store.listEvents(thread.id)).filter(
@@ -445,8 +478,7 @@ describe("Agent Kernel", () => {
         prepare: (call) => ({
           options: {
             ...call.options,
-            maxTokens:
-              (call.options.maxTokens ?? call.model.maxTokens) + 1,
+            maxTokens: (call.options.maxTokens ?? call.model.maxTokens) + 1,
           },
         }),
       });
@@ -575,6 +607,173 @@ describe("Agent Kernel", () => {
       );
     } finally {
       await services.shutdown();
+    }
+  });
+
+  it("runs custom Prompt, Tool, and stricter Policy adapters in the live path and detaches them on shutdown", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-turn-pipeline-"));
+    roots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot);
+    await writeFile(
+      path.join(workspaceRoot, "evidence.txt"),
+      "private evidence\n",
+    );
+    const store = new LocalStore({
+      workspaceRoot,
+      dataRoot: path.join(root, "state"),
+    });
+    await store.initialize();
+    const models = new ModelRegistry();
+    const runtime = new AgentRuntime(
+      store,
+      models,
+      undefined,
+      new UnsupportedSandboxAdapter("turn-pipeline-test"),
+    );
+    const promptCreate: typeof createAgentPromptBuilder = (sources, active) =>
+      createAgentPromptBuilder(
+        {
+          ...sources,
+          resolvedSystemPrompt: `${sources.resolvedSystemPrompt}\nKernel prompt adapter marker.`,
+        },
+        active,
+      );
+    const selectTools = vi.fn((candidates) => ({
+      immediate: candidates.immediate.filter(
+        (tool) => tool.name === "read_file",
+      ),
+      deferred: [],
+    }));
+    const extraPolicy = vi.fn(() => ({
+      block: true as const,
+      reason: "Kernel policy adapter blocked this otherwise allowed read",
+    }));
+    const kernel = await createAgentKernel({
+      profile: "base",
+      runtime,
+      models,
+      turnAdapters: {
+        prompt: { id: "test.prompt.marker", create: promptCreate },
+        tool: { id: "test.tool.read-only", select: selectTools },
+        policy: { id: "test.policy.stricter", preflight: extraPolicy },
+      },
+    });
+    let kernelClosed = false;
+    try {
+      const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+        toolPolicy: "observe",
+        enabledTools: ["read_file"],
+      });
+      const thread = await store.createThread({
+        title: "Custom Turn Pipeline",
+        agentId: agent.id,
+      });
+      const provider = fauxProvider({ provider: "faux-turn-pipeline" });
+      provider.setResponses([
+        (context) => {
+          expect(context.systemPrompt).toContain(
+            "Kernel prompt adapter marker",
+          );
+          expect(context.tools?.map((tool) => tool.name)).toEqual([
+            "read_file",
+          ]);
+          return fauxAssistantMessage(
+            fauxToolCall("read_file", { path: "evidence.txt" }),
+            { stopReason: "toolUse" },
+          );
+        },
+        (context) => {
+          expect(JSON.stringify(context.messages)).toContain(
+            "Kernel policy adapter blocked this otherwise allowed read",
+          );
+          expect(JSON.stringify(context.messages)).not.toContain(
+            "private evidence",
+          );
+          return fauxAssistantMessage("Stricter Kernel policy verified.");
+        },
+        fauxAssistantMessage('{"facts":[]}'),
+      ]);
+      models.registerProvider(provider.provider);
+
+      const run = await kernel.runPrompt({
+        threadId: thread.id,
+        text: "Try to read the evidence file.",
+        model: { provider: "faux-turn-pipeline", id: "faux-1" },
+      });
+
+      expect(run.status, run.error).toBe("completed");
+      expect(selectTools).toHaveBeenCalledOnce();
+      expect(extraPolicy).toHaveBeenCalledOnce();
+      expect(kernel.inspect().turnPipeline).toEqual(
+        expect.objectContaining({
+          promptAdapterId: "test.prompt.marker",
+          toolAdapterId: "test.tool.read-only",
+          policyAdapterId: "test.policy.stricter",
+        }),
+      );
+      const events = await store.listEvents(thread.id);
+      expect(events).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            type: "tool.blocked",
+            payload: expect.objectContaining({
+              toolName: "read_file",
+              policyReason:
+                "Kernel policy adapter blocked this otherwise allowed read",
+            }),
+          }),
+          expect.objectContaining({
+            type: "context.prepared",
+            payload: expect.objectContaining({
+              toolCount: 1,
+              turnPipelineSha256: kernel.inspect().turnPipeline.contentSha256,
+            }),
+          }),
+        ]),
+      );
+      expect(events.some((event) => event.type === "tool.completed")).toBe(
+        false,
+      );
+
+      await kernel.shutdown();
+      kernelClosed = true;
+      const standaloneThread = await store.createThread({
+        title: "Detached Turn Pipeline",
+        agentId: agent.id,
+      });
+      const standaloneProvider = fauxProvider({
+        provider: "faux-detached-turn-pipeline",
+      });
+      standaloneProvider.setResponses([
+        (context) => {
+          expect(context.systemPrompt).not.toContain(
+            "Kernel prompt adapter marker",
+          );
+          expect(context.tools?.length).toBeGreaterThan(1);
+          return fauxAssistantMessage("Standalone defaults restored.");
+        },
+        fauxAssistantMessage('{"facts":[]}'),
+      ]);
+      models.registerProvider(standaloneProvider.provider);
+      const standaloneRun = await runtime.runPrompt({
+        threadId: standaloneThread.id,
+        text: "Verify standalone defaults.",
+        model: {
+          provider: "faux-detached-turn-pipeline",
+          id: "faux-1",
+        },
+      });
+      expect(standaloneRun.status, standaloneRun.error).toBe("completed");
+      const replacementKernel = await createAgentKernel({
+        profile: "base",
+        runtime,
+        models,
+      });
+      await replacementKernel.shutdown();
+    } finally {
+      if (!kernelClosed) await kernel.shutdown();
+      store.close();
     }
   });
 });

@@ -103,6 +103,35 @@ describe("Model Prompt evidence bindings", () => {
       ]),
     ).toThrow("terminal binding is duplicated");
   });
+
+  it("accepts one provider overflow as the terminal Prompt binding", () => {
+    const fixture = evidence();
+    const overflowEvent = event(
+      fixture.responseEvent.seq,
+      "model.context.overflow",
+      {
+        ...fixture.responseEvent.payload,
+        action: "retry",
+      },
+    );
+    expect(() =>
+      assertModelPromptEvidenceBindings([
+        fixture.envelopeEvent,
+        fixture.adapterEvent,
+        fixture.packageEvent,
+        overflowEvent,
+      ]),
+    ).not.toThrow();
+    expect(() =>
+      assertModelPromptEvidenceBindings([
+        fixture.envelopeEvent,
+        fixture.adapterEvent,
+        fixture.packageEvent,
+        overflowEvent,
+        { ...fixture.responseEvent, seq: fixture.responseEvent.seq + 1 },
+      ]),
+    ).toThrow("terminal binding is duplicated");
+  });
 });
 
 function evidence(turnIndex = 0, sequenceOffset = 0) {

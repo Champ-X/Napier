@@ -179,15 +179,15 @@
 .trajectory-workspace-view .panel-section {
   width: min(1440px, 100%);
   margin: 0 auto;
-  padding: 30px clamp(28px, 4vw, 64px) 80px;
+  padding: 18px clamp(22px, 3vw, 48px) 64px;
 }
 
 .trajectory-workspace-view .trace-trajectory {
-  padding: clamp(18px, 2.4vw, 30px);
+  padding: clamp(12px, 1.6vw, 18px);
 }
 
 .trajectory-workspace-view .trace-trajectory-header h3 {
-  font-size: clamp(28px, 3vw, 42px);
+  font-size: clamp(18px, 1.6vw, 22px);
 }
 
 .trajectory-workspace-view .trace-trajectory-header p {
@@ -215,7 +215,7 @@
 }
 
 .trajectory-workspace-view .trace-overview-lane {
-  min-height: 42px;
+  min-height: 30px;
 }
 
 .trajectory-workspace-view .trace-segment {
@@ -225,7 +225,11 @@
 }
 
 .trajectory-workspace-view .trace-turn li > button {
-  padding-block: 11px;
+  padding-block: 7px;
+}
+
+.trajectory-workspace-view .panel-section > .panel-heading {
+  display: none;
 }
 
 .task-workspace {

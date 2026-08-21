@@ -17,6 +17,8 @@ import {
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { MODEL_CONTEXT_ENVELOPE_EVENT } from "./model-context-envelope.js";
+import { compareRunHarnessEffects } from "./run-harness-comparison.js";
+import { projectRunHarnessEffectMetrics } from "./run-harness-effect-metrics.js";
 import { compareRunConfigurations } from "./run-config.js";
 import type { ReplayStorePort } from "./store-port.js";
 
@@ -106,6 +108,16 @@ export async function compareRuns(
     left.run.configuration,
     right.run.configuration,
   );
+  const leftHarness = projectRunHarnessEffectMetrics(
+    left.run,
+    left.events,
+    left.eventStreamSha256,
+  );
+  const rightHarness = projectRunHarnessEffectMetrics(
+    right.run,
+    right.events,
+    right.eventStreamSha256,
+  );
   return {
     threadId,
     left,
@@ -125,6 +137,12 @@ export async function compareRuns(
     traceSummaryBoundaryDelta: traceSummaryBoundaryDelta(
       left.events,
       right.events,
+    ),
+    harness: compareRunHarnessEffects(
+      left.run,
+      leftHarness,
+      right.run,
+      rightHarness,
     ),
   };
 }

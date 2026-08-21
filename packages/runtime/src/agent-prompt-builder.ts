@@ -1,4 +1,5 @@
 import type { DelegationLedgerProjection } from "@napier/contracts";
+import type { Message } from "@earendil-works/pi-ai";
 
 import {
   createAgentPromptCompilerLayers,
@@ -29,6 +30,7 @@ export function createAgentPromptBuilder(
   effectiveCapabilitiesForTools?: (
     activeTools: readonly string[],
     adapter: ModelAdapterReceiptV2,
+    messages?: readonly Message[],
   ) => string,
 ) {
   return (
@@ -37,6 +39,7 @@ export function createAgentPromptBuilder(
     milestones: AgentMilestoneContextProjection,
     toolLoopGuard: ActiveToolLoopGuard | undefined,
     activeTools?: readonly string[],
+    messages?: readonly Message[],
   ): CompiledPromptArtifact =>
     compilePrompt({
       purpose: "agent_turn",
@@ -48,6 +51,7 @@ export function createAgentPromptBuilder(
               effectiveCapabilities: effectiveCapabilitiesForTools(
                 activeTools,
                 adapter,
+                messages,
               ),
             }
           : {}),

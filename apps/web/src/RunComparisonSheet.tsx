@@ -3,6 +3,7 @@ import type { RunComparison } from "@napier/contracts";
 import { copy } from "./copy";
 import { runConfigurationFieldCopy } from "./run-configuration-copy";
 import { MetricDelta } from "./RunLabComparisonControls";
+import { RunHarnessComparison } from "./RunHarnessComparison";
 import {
   contextCoverageClassName,
   contextCoverageStatusLabel,
@@ -105,6 +106,7 @@ export function RunComparisonSheet({
           value={formatSignedCost(comparison.metricDelta.costUsd)}
         />
       </div>
+      <RunHarnessComparison harness={comparison.harness} />
       <div
         className={`configuration-drift ${contextCoverageClassName(comparison.contextCoverageDelta.status)}`}
       >

@@ -46,6 +46,7 @@ export function assertModelPromptEvidenceBindings(
       event.type !== MODEL_ADAPTER_EVENT &&
       event.type !== COMPILED_PROMPT_PACKAGE_EVENT &&
       event.type !== "model.response" &&
+      event.type !== "model.context.overflow" &&
       event.type !== "model.thinking_loop.detected"
     ) {
       continue;
@@ -80,7 +81,9 @@ export function assertModelPromptEvidenceBindings(
           : undefined;
       if (
         turnIndex !== undefined &&
-        (event.type === "model.response" || payload?.["action"] === "retry")
+        (event.type === "model.response" ||
+          event.type === "model.context.overflow" ||
+          payload?.["action"] === "retry")
       ) {
         if (run.responses.has(turnIndex)) {
           throw new Error(

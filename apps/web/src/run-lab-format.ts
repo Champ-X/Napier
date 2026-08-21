@@ -62,6 +62,22 @@ export function traceSummaryCoverageClassName(
   return "is-changed";
 }
 
+export function harnessFairnessStatusLabel(
+  status: RunComparison["harness"]["fairness"]["status"],
+): string {
+  if (status === "comparable") return copy.lab.harnessComparable;
+  if (status === "not_comparable") return copy.lab.harnessNotComparable;
+  return copy.lab.harnessInsufficientEvidence;
+}
+
+export function harnessFairnessClassName(
+  status: RunComparison["harness"]["fairness"]["status"],
+): string {
+  if (status === "comparable") return "is-unchanged";
+  if (status === "insufficient_evidence") return "is-unavailable";
+  return "is-changed";
+}
+
 export function shortRunLabId(value: string): string {
   return value.length > 15
     ? `${value.slice(0, 7)}...${value.slice(-5)}`

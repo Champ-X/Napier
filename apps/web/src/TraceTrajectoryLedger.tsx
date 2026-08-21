@@ -179,34 +179,7 @@ function TraceTrajectoryEventRow({
           <ChevronDown size={15} aria-hidden="true" />
         </span>
       </button>
-      {selected ? <TraceEventAudit event={event} /> : null}
     </li>
-  );
-}
-
-function TraceEventAudit({ event }: { event: TraceTrajectoryEvent }) {
-  const items = [
-    [traceTrajectoryCopy.audit.type, event.event.type],
-    [traceTrajectoryCopy.audit.role, event.role],
-    [traceTrajectoryCopy.audit.lane, traceTrajectoryCopy.lanes[event.lane]],
-    ...(event.callOrdinal
-      ? [[traceTrajectoryCopy.audit.call, `C${event.callOrdinal}`]]
-      : []),
-    [
-      traceTrajectoryCopy.audit.summary,
-      traceTrajectoryCopy.summarySources[event.summarySource],
-    ],
-    [traceTrajectoryCopy.audit.run, shortRunId(event.event.runId)],
-  ];
-  return (
-    <div className="trace-event-audit">
-      {items.map(([label, value]) => (
-        <span key={label}>
-          <small>{label}</small>
-          <strong>{value}</strong>
-        </span>
-      ))}
-    </div>
   );
 }
 

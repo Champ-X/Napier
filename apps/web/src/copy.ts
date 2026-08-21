@@ -3,6 +3,7 @@ import { zh } from "./copy.zh";
 import { desktopWorkbenchCopy } from "./desktop-workbench-copy";
 import { goalCopyEn } from "./goal-copy";
 import { recoveryCopy } from "./recovery-copy";
+import { runEvidenceComparisonCopy } from "./run-evidence-comparison-copy";
 
 export const en = {
   appName: "Napier",
@@ -122,21 +123,7 @@ export const en = {
       "Candidate model responses are fully bound to context envelopes.",
     contextCoverageDelta: "Delta",
     contextCoverageDiagnostics: "Diagnostics",
-    traceSummaryCoverage: "Trace summary coverage",
-    traceSummaryClean: "Clean",
-    traceSummaryGenericPresent: "Generic fallback",
-    traceSummaryRegressed: "Regressed",
-    traceSummaryHealthy:
-      "Candidate trace summaries avoid the generic raw-payload fallback.",
-    traceSummaryDiagnostics: "Summary diagnostics",
-    traceSummaryGeneric: "Generic",
-    traceSummaryGenericDelta: "Generic delta",
-    traceSummaryDedicatedDelta: "Dedicated delta",
-    traceSummaryDelta: "Summary delta",
-    traceSummaryReceipt: "Summary receipt",
-    traceSummaryVerification: "Summary verification",
-    traceSummaryVerified: "Verified",
-    traceSummaryInvalid: "Invalid",
+    ...runEvidenceComparisonCopy,
     cost: "Cost",
     noDelta: "No event-type differences.",
     configuration: "Configuration drift",

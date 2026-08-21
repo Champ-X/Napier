@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "85fe9459179c62e18305dfa1d0b0beb23f73ef3858b13c7809f5a649f61a3071",
+      "stdoutSha256": "6a31c31753efa1c51928becd28c86f24c3028940981251ee58d00455b13deeaf",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "9d5fea38d8d4cfd2c54ea57e12bd818987de9d3003c9e2e607da45bd0c618c3d",
-      "receiptSha256": "58686cf87959d1b8dca74f6e05f3a44c0830899a4bd5938e9d4bff3a3b860394"
+      "evidenceSha256": "73d5fc08fb88f11fe72ede6eea8eeb37bb2a14598bad20023aff950a4e527c07",
+      "receiptSha256": "4053bc513225886ff50fd22f48621de2b73556202f86ccaea5e7ecd0560c9a87"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "52ad88cd975cce953c357b24fc31076a1113fb9c12c0be18c5cf96d2c964fe0e",
+      "stdoutSha256": "286ef545becefbce5cf55db784d6b416c3a9509198d5041713723f96e96b3b95",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "a43f4bac0bce9de286ddbb883bf1ec98c50d1f1b15c4aa28a95a1871ac83fa3b",
-      "receiptSha256": "d8a8792901c979a18f4bfa750bdd92b45b02e0a6e65a2702a34c62d602439845"
+      "evidenceSha256": "9edccf8250c9a6a5092ec58de19cd460ebbcbd33aa050af0cb49fd286f0b897f",
+      "receiptSha256": "4fc64a0e5712983b8a1c791f73ac57efef14574cc9058ebac1e9f5160a919715"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -489,6 +489,7 @@
         ".github/workflows/publish-sandbox.yml",
         ".github/workflows/s1-shell-sandbox-completion.yml",
         ".github/workflows/windows-host-product-acceptance.yml",
+        ".prettierignore",
         "DESIGN.md",
         "README.md",
         "apps/cli/package.json",
@@ -591,6 +592,7 @@
         "apps/server/src/thread-execution-http-validation.ts",
         "apps/server/src/thread-execution-http.ts",
         "apps/server/src/thread-lifecycle-http.ts",
+        "apps/server/src/thread-replay-http-response.ts",
         "apps/server/src/thread-run-readiness.ts",
         "apps/server/src/workflow-http.ts",
         "apps/server/src/workspace-directories-http.ts",
@@ -611,6 +613,7 @@
         "apps/server/test/process-run-readiness-test-fixture.ts",
         "apps/server/test/recent-workspaces.test.ts",
         "apps/server/test/release-product-trial-http.test.ts",
+        "apps/server/test/run-harness-comparison-http-response.test.ts",
         "apps/server/test/sandbox-setup-http.test.ts",
         "apps/server/test/thread-capability-preset-http.test.ts",
         "apps/server/test/thread-execution-http-guards.test.ts",
@@ -801,6 +804,7 @@
         "apps/web/src/RunComparisonSheet.tsx",
         "apps/web/src/RunDecisionDockets.tsx",
         "apps/web/src/RunEvaluationSheet.tsx",
+        "apps/web/src/RunHarnessComparison.tsx",
         "apps/web/src/RunLabComparisonControls.tsx",
         "apps/web/src/RunLabExperimentDesks.tsx",
         "apps/web/src/RunLabFixtureCards.tsx",
@@ -830,6 +834,7 @@
         "apps/web/src/TraceQualityLedgers.tsx",
         "apps/web/src/TraceTrajectory.tsx",
         "apps/web/src/TraceTrajectoryControls.tsx",
+        "apps/web/src/TraceTrajectoryEventDetail.tsx",
         "apps/web/src/TraceTrajectoryLedger.tsx",
         "apps/web/src/TraceTrajectoryOverview.tsx",
         "apps/web/src/TraceTrajectoryRunIndex.tsx",
@@ -1056,6 +1061,7 @@
         "apps/web/src/run-configuration-copy.ts",
         "apps/web/src/run-event-contract.ts",
         "apps/web/src/run-event-view.ts",
+        "apps/web/src/run-evidence-comparison-copy.ts",
         "apps/web/src/run-intent-id.ts",
         "apps/web/src/run-lab-format.ts",
         "apps/web/src/sandbox-setup-api.ts",
@@ -1106,6 +1112,7 @@
         "apps/web/src/tool-trace-summary.ts",
         "apps/web/src/trace-event-summary-view.ts",
         "apps/web/src/trace-trajectory-copy.ts",
+        "apps/web/src/trace-trajectory-event-detail-view.ts",
         "apps/web/src/trace-trajectory-events.ts",
         "apps/web/src/trace-trajectory-layout.ts",
         "apps/web/src/trace-trajectory-model.ts",
@@ -1282,6 +1289,7 @@
         "apps/web/test/research-source-event-view.test.ts",
         "apps/web/test/responsive-inspector.test.ts",
         "apps/web/test/run-event-view.test.ts",
+        "apps/web/test/run-harness-comparison.test.tsx",
         "apps/web/test/sandbox-setup-api.test.ts",
         "apps/web/test/sandbox-setup-view-model.test.ts",
         "apps/web/test/schedule-event-view.test.ts",
@@ -1308,6 +1316,7 @@
         "apps/web/test/tool-event-view.test.ts",
         "apps/web/test/tool-result-context-pruning-view.test.ts",
         "apps/web/test/trace-trajectory-components.zh.test.tsx",
+        "apps/web/test/trace-trajectory-event-detail-view.test.ts",
         "apps/web/test/trace-trajectory-model.test.ts",
         "apps/web/test/trace-trajectory-window.test.ts",
         "apps/web/test/use-next-run-capability-preset.test.ts",
@@ -1425,6 +1434,7 @@
         "examples/kernel-plugin-status/package.json",
         "examples/kernel-plugin-status/src/host.ts",
         "examples/kernel-plugin-status/tsconfig.json",
+        "next.md",
         "package-lock.json",
         "package.json",
         "packages/contracts/package.json",
@@ -1441,6 +1451,7 @@
         "packages/contracts/src/manual-run-recovery.ts",
         "packages/contracts/src/model-context-envelope.ts",
         "packages/contracts/src/release-product-trial.ts",
+        "packages/contracts/src/run-harness-effects.ts",
         "packages/contracts/src/sandbox-setup.ts",
         "packages/contracts/src/skill-lifecycle.ts",
         "packages/contracts/src/skill-load-research.ts",
@@ -1479,6 +1490,7 @@
         "packages/runtime/src/agent-model-stream-lifecycle.ts",
         "packages/runtime/src/agent-prompt-builder.ts",
         "packages/runtime/src/agent-prompt-layers.ts",
+        "packages/runtime/src/agent-run-control-tools.ts",
         "packages/runtime/src/agent-run-started-event.ts",
         "packages/runtime/src/agent-runtime-options.ts",
         "packages/runtime/src/agent-runtime-utils.ts",
@@ -1491,6 +1503,9 @@
         "packages/runtime/src/agent-tool-readiness.ts",
         "packages/runtime/src/agent-tool-result-lifecycle.ts",
         "packages/runtime/src/agent-tool-specialized-ledger.ts",
+        "packages/runtime/src/agent-turn-kernel-services.ts",
+        "packages/runtime/src/agent-turn-pipeline-host.ts",
+        "packages/runtime/src/agent-turn-pipeline.ts",
         "packages/runtime/src/agents.ts",
         "packages/runtime/src/artifact-status.ts",
         "packages/runtime/src/automation.ts",
@@ -1544,6 +1559,14 @@
         "packages/runtime/src/conversation-plans-projection.ts",
         "packages/runtime/src/conversation-recoveries-projection.ts",
         "packages/runtime/src/conversation-subagents-projection.ts",
+        "packages/runtime/src/conversation-surface-capsule-store.ts",
+        "packages/runtime/src/conversation-surface-capsule.ts",
+        "packages/runtime/src/conversation-surface-capture.ts",
+        "packages/runtime/src/conversation-surface-declarations.ts",
+        "packages/runtime/src/conversation-surface-legacy.ts",
+        "packages/runtime/src/conversation-surface-result-evidence.ts",
+        "packages/runtime/src/conversation-surface-usage.ts",
+        "packages/runtime/src/conversation-surface.ts",
         "packages/runtime/src/data-frame-tool.ts",
         "packages/runtime/src/default-agent-capability-contract.ts",
         "packages/runtime/src/doctor-git-runtime-probe.ts",
@@ -1561,6 +1584,7 @@
         "packages/runtime/src/evaluation-casebook-qualification.ts",
         "packages/runtime/src/evaluation-casebook-templates.ts",
         "packages/runtime/src/evaluation-casebooks.ts",
+        "packages/runtime/src/evaluation.ts",
         "packages/runtime/src/extension-capabilities.ts",
         "packages/runtime/src/extensions.ts",
         "packages/runtime/src/git-branch-switch-arguments.ts",
@@ -1621,9 +1645,15 @@
         "packages/runtime/src/mcp-stdio.ts",
         "packages/runtime/src/model-adapters.ts",
         "packages/runtime/src/model-context-envelope.ts",
+        "packages/runtime/src/model-context-overflow-recovery.ts",
+        "packages/runtime/src/model-context-token-extension.ts",
+        "packages/runtime/src/model-context-token-meter.ts",
+        "packages/runtime/src/model-context-token-pressure.ts",
         "packages/runtime/src/model-delta-batcher.ts",
         "packages/runtime/src/model-harness-extension.ts",
         "packages/runtime/src/model-harness-profile.ts",
+        "packages/runtime/src/model-harness-receipt.ts",
+        "packages/runtime/src/model-harness-resolution.ts",
         "packages/runtime/src/model-invocation-capsule-store.ts",
         "packages/runtime/src/model-invocation-capture.ts",
         "packages/runtime/src/model-invocation-experiments.ts",
@@ -1694,6 +1724,9 @@
         "packages/runtime/src/run-failure-settlement.ts",
         "packages/runtime/src/run-failure-source.ts",
         "packages/runtime/src/run-finalization-reserve.ts",
+        "packages/runtime/src/run-harness-comparison.ts",
+        "packages/runtime/src/run-harness-context-metrics.ts",
+        "packages/runtime/src/run-harness-effect-metrics.ts",
         "packages/runtime/src/run-intents.ts",
         "packages/runtime/src/run-lease-renewal.ts",
         "packages/runtime/src/run-lease-state.ts",
@@ -1704,6 +1737,7 @@
         "packages/runtime/src/run-progress-governor.ts",
         "packages/runtime/src/run-progress-vector.ts",
         "packages/runtime/src/run-recovery-prompt.ts",
+        "packages/runtime/src/run-replay.ts",
         "packages/runtime/src/run-research-budget.ts",
         "packages/runtime/src/run-stream.ts",
         "packages/runtime/src/sandbox-container-lsp-runtime.ts",
@@ -1847,14 +1881,19 @@
         "packages/runtime/test/agent-capability-recommendation.test.ts",
         "packages/runtime/test/agent-capability-store-state.test.ts",
         "packages/runtime/test/agent-coder-subagent.test.ts",
+        "packages/runtime/test/agent-context-overflow-recovery.test.ts",
         "packages/runtime/test/agent-delta-batching.test.ts",
         "packages/runtime/test/agent-javascript-kernel.test.ts",
+        "packages/runtime/test/agent-kernel-turn-pipeline-continuation.test.ts",
+        "packages/runtime/test/agent-kernel-turn-pipeline-failure.test.ts",
         "packages/runtime/test/agent-kernel.test.ts",
         "packages/runtime/test/agent-local-preview-lease.test.ts",
         "packages/runtime/test/agent-manual-run-recovery.test.ts",
         "packages/runtime/test/agent-message-experiments.test.ts",
         "packages/runtime/test/agent-node-debugger.test.ts",
+        "packages/runtime/test/agent-python-kernel.test.ts",
         "packages/runtime/test/agent-recovery-plan-context.test.ts",
+        "packages/runtime/test/agent-run-harness-evidence.test.ts",
         "packages/runtime/test/agent-runtime-utils.test.ts",
         "packages/runtime/test/agent-runtime.test.ts",
         "packages/runtime/test/agent-skill-load-vertical.test.ts",
@@ -1864,6 +1903,7 @@
         "packages/runtime/test/agent-thinking-loop-guard.test.ts",
         "packages/runtime/test/agent-tool-deadline.test.ts",
         "packages/runtime/test/agent-tool-failure-context.test.ts",
+        "packages/runtime/test/agent-turn-pipeline.test.ts",
         "packages/runtime/test/agent-web-fetch-save.test.ts",
         "packages/runtime/test/agent-web-fetch.test.ts",
         "packages/runtime/test/agent-web-search.test.ts",
@@ -1888,6 +1928,7 @@
         "packages/runtime/test/conversation-plans-projection.test.ts",
         "packages/runtime/test/conversation-recoveries-projection.test.ts",
         "packages/runtime/test/conversation-subagents-projection.test.ts",
+        "packages/runtime/test/conversation-surface.test.ts",
         "packages/runtime/test/doctor-runtime-probes.test.ts",
         "packages/runtime/test/doctor-sandbox-resource-probe.test.ts",
         "packages/runtime/test/effective-capabilities-prompt.test.ts",
@@ -1896,6 +1937,7 @@
         "packages/runtime/test/fixtures/browser-preview/app.js",
         "packages/runtime/test/fixtures/browser-preview/index.html",
         "packages/runtime/test/git-branch-switch.test.ts",
+        "packages/runtime/test/git-conflict-inspect.test.ts",
         "packages/runtime/test/independent-model-advisor.test.ts",
         "packages/runtime/test/kernel-activity-candidates-projection.test.ts",
         "packages/runtime/test/kernel-browser-plugin.test.ts",
@@ -1922,6 +1964,8 @@
         "packages/runtime/test/model-adapter-capture.test.ts",
         "packages/runtime/test/model-adapters.test.ts",
         "packages/runtime/test/model-context-envelope.test.ts",
+        "packages/runtime/test/model-context-overflow-recovery.test.ts",
+        "packages/runtime/test/model-context-token-pressure.test.ts",
         "packages/runtime/test/model-delta-batcher.test.ts",
         "packages/runtime/test/model-harness-profile.test.ts",
         "packages/runtime/test/model-invocation-experiments.test.ts",
@@ -1982,6 +2026,8 @@
         "packages/runtime/test/run-control-messages.test.ts",
         "packages/runtime/test/run-event-admission.test.ts",
         "packages/runtime/test/run-failure-classification.test.ts",
+        "packages/runtime/test/run-harness-comparison-integration.test.ts",
+        "packages/runtime/test/run-harness-effect.test.ts",
         "packages/runtime/test/run-intents.test.ts",
         "packages/runtime/test/run-lease-persistence.test.ts",
         "packages/runtime/test/run-lease-reconciliation.test.ts",
@@ -2233,6 +2279,10 @@
         ".github/workflows/windows-host-product-acceptance.yml": {
           "sha256": "2d036f5bbbde9eda93b285fb9348a019754b14db1859042c881aa81a31d75795",
           "lines": 270
+        },
+        ".prettierignore": {
+          "sha256": "f950f808051b2f47eca16d98709d5ad839f588c3a6c9707b93f0819e76217095",
+          "lines": 9
         },
         "DESIGN.md": {
           "sha256": "c301496cc09101bc51086d57b052f7e6c25356cfd5d04ce797f785360e343556",
@@ -2642,6 +2692,10 @@
           "sha256": "12e8a3b9b3cef267e30041dd3bef85b040c9c46edbb96d864488c1d9f3ef5ac9",
           "lines": 253
         },
+        "apps/server/src/thread-replay-http-response.ts": {
+          "sha256": "2017f2ee7ef253022053e30575ae5306d596d35bdf85c0f30ad63718df64f8c0",
+          "lines": 473
+        },
         "apps/server/src/thread-run-readiness.ts": {
           "sha256": "24fbb7d63f8dce57f5dda22f8071e0995351d2be1ced233fc4f59cb98f51e86e",
           "lines": 47
@@ -2707,8 +2761,8 @@
           "lines": 294
         },
         "apps/server/test/partial-run-recovery-http.test.ts": {
-          "sha256": "aff8a1980597dd6922272defed64b02eae447132ca4b61a7d4ab686a06cfda0f",
-          "lines": 173
+          "sha256": "992eedd52127941f2cff8c2bdd90a6ea8b5ce573fbc3a162fd29575a3ca42efd",
+          "lines": 174
         },
         "apps/server/test/process-run-readiness-test-fixture.ts": {
           "sha256": "0de02cdd7b40ac405803cee358e29311ddbc3232d147b94757043c83e81220b1",
@@ -2721,6 +2775,10 @@
         "apps/server/test/release-product-trial-http.test.ts": {
           "sha256": "2134404a425aac3ad58cdbc47acc411ad5d6af9e3a3ab65b0cec35bbd0153c45",
           "lines": 212
+        },
+        "apps/server/test/run-harness-comparison-http-response.test.ts": {
+          "sha256": "0399ed313ea0db0eb25329e297b11f7f5e24e3d8bf1756bd60e6dda4e5df4bc6",
+          "lines": 235
         },
         "apps/server/test/sandbox-setup-http.test.ts": {
           "sha256": "f955fa30994b1830701489e34e37027d0311171d7f4abd91de86e359e436d1d1",
@@ -3467,8 +3525,8 @@
           "lines": 95
         },
         "apps/web/src/RunComparisonSheet.tsx": {
-          "sha256": "fadc21c1856ec4351a1f5b0f523bddff7bfe35c89d1fc8942ec6873e5d099f3d",
-          "lines": 287
+          "sha256": "45fb66d661a1ae8ca038f197ec6db309e5a8cebbdeef7c637947151826eaa1b9",
+          "lines": 289
         },
         "apps/web/src/RunDecisionDockets.tsx": {
           "sha256": "60cc25f352e02ad3f8dc940af0f5a7f140c33992c33d7555fa8c679150a6e6f5",
@@ -3477,6 +3535,10 @@
         "apps/web/src/RunEvaluationSheet.tsx": {
           "sha256": "3fbda0a698b45d7e74a59501a81df6098e884b93b48ad196adbaf3764a2d9eca",
           "lines": 136
+        },
+        "apps/web/src/RunHarnessComparison.tsx": {
+          "sha256": "ae9665eec800af551cc871f1f914db76729f06d82dce222bffb057425353cd48",
+          "lines": 106
         },
         "apps/web/src/RunLabComparisonControls.tsx": {
           "sha256": "b4e4b6f94f338ac9cee67d6d566b5b753b92fcdf52c24c71488685a20135740a",
@@ -3527,8 +3589,8 @@
           "lines": 107
         },
         "apps/web/src/TaskCompletionSummary.tsx": {
-          "sha256": "9a8fe9ee268604fdbc5ad89a826a02cc6bd5788953b0638f31fc02739a92d22b",
-          "lines": 82
+          "sha256": "4d1eb2ec2bc7cb77a742a4bdf887565f20f2a962ca83db477f4067a1a24195b7",
+          "lines": 140
         },
         "apps/web/src/TaskNarrativeBar.tsx": {
           "sha256": "fd7a9d53c52b5cbf5f10602488832bba8c317a73960e5f8f6d1aa5a4edaba507",
@@ -3587,16 +3649,20 @@
           "lines": 253
         },
         "apps/web/src/TraceTrajectory.tsx": {
-          "sha256": "882b2f0c69f63a20f9bb30199ad9971cb0e95a58db6fe0270677e9b3b385ab01",
-          "lines": 137
+          "sha256": "c7f8cdf1369865e0f6fa9c740c447fc620a3187f2d30b774a04f5976a65b6680",
+          "lines": 148
         },
         "apps/web/src/TraceTrajectoryControls.tsx": {
           "sha256": "5ba9ca7c7f19ee647f77a54b6742899b5099710c92a55910abbf97f535a42b74",
           "lines": 115
         },
+        "apps/web/src/TraceTrajectoryEventDetail.tsx": {
+          "sha256": "1342ab248c6ccb4862621bf30f29a7ce5a1f6580c88a3adc5a13d78bddacea5d",
+          "lines": 112
+        },
         "apps/web/src/TraceTrajectoryLedger.tsx": {
-          "sha256": "305611a946e3f5c115b7cb74f91cb0499e4c7b073a1ce05d08a1d063f8e8f70f",
-          "lines": 251
+          "sha256": "30b2a0ef2ee086645e38cd1107595528d35f08599112aecdf38a8109cb63672c",
+          "lines": 224
         },
         "apps/web/src/TraceTrajectoryOverview.tsx": {
           "sha256": "6cadc6aea2e98c4b92ef8df2a7165f4c272af29b50c6c0733672ca16f3bd652c",
@@ -4091,8 +4157,8 @@
           "lines": 274
         },
         "apps/web/src/copy.ts": {
-          "sha256": "dce67f69b9a2ccd746a2dce3cab7b5ac613e945542d7a53cc07298d59540da75",
-          "lines": 913
+          "sha256": "f8331884399c798060cc6f73bb5415aa51a983b2fe0af66bbeda3ee72b638803",
+          "lines": 900
         },
         "apps/web/src/copy.zh.ts": {
           "sha256": "b6a2b0d82ac1d6df7063fcabf0b41a345fa3d365bc4f8c567b6bffc341ef5238",
@@ -4207,8 +4273,8 @@
           "lines": 17
         },
         "apps/web/src/lab-core-copy.zh.ts": {
-          "sha256": "8540992f9be55ee13ccdfdb9e79df9fa95e34aac19c5c9cbb7b923ce0fc59af1",
-          "lines": 127
+          "sha256": "7bc7cd4b5651119363c91d39307e3f2843c87de42ef16acbb041e897b8265e03",
+          "lines": 144
         },
         "apps/web/src/lab-suite-copy.zh.ts": {
           "sha256": "17ce8339e535c9924b57d957b8fd68e05d39186993991ace1879c1241d760df8",
@@ -4279,8 +4345,8 @@
           "lines": 220
         },
         "apps/web/src/model-harness-view.ts": {
-          "sha256": "5ed2040b0658dae3302459f9963de7037aee60f2c2c76c54ce636b2a7f948a69",
-          "lines": 168
+          "sha256": "5e9cb8e16020a289f295e51084a2e0b9dec52d39f70fda052356cfa78896c190",
+          "lines": 370
         },
         "apps/web/src/model-invocation-experiment-copy.ts": {
           "sha256": "3d1b907df19cec22bf490c1034c45b8724b83880b3ac44f5c6f2b22fcde377bc",
@@ -4498,13 +4564,17 @@
           "sha256": "aec40c33d20510a1b884d099ec5a906f57c8133a5ceeb4dd7605a2eeb069de5e",
           "lines": 347
         },
+        "apps/web/src/run-evidence-comparison-copy.ts": {
+          "sha256": "278b49bc6d24a09a6816b824b6f41ad6ce1558ef9c454d13235c06bd4ae9d8b0",
+          "lines": 35
+        },
         "apps/web/src/run-intent-id.ts": {
           "sha256": "be322f643ef6642d451bb8393ac0839fc65028a85f18ca5879933c62193b9cb6",
           "lines": 60
         },
         "apps/web/src/run-lab-format.ts": {
-          "sha256": "1e2f5f6c4af1b4fed837279158d510549e6e2d77216b12c136f621d3e720148d",
-          "lines": 69
+          "sha256": "47f0e4b160d8219ad14072d6fcd72d58918b2117f45c4682d542bcd42199a3c8",
+          "lines": 85
         },
         "apps/web/src/sandbox-setup-api.ts": {
           "sha256": "d16810acad1af962e487e6c50a7f33c265be74475b49cdb74bec9ad3d4b10f13",
@@ -4627,8 +4697,8 @@
           "lines": 437
         },
         "apps/web/src/task-narrative.css": {
-          "sha256": "c9004af82eaab15f3ae101e920ef15e032c9bb3a0432b58206b0174319057349",
-          "lines": 296
+          "sha256": "8c5e739b529924a7e89ac126f80b0b257d5c882693d569a4b232a2960f175e65",
+          "lines": 372
         },
         "apps/web/src/task-run-progress.ts": {
           "sha256": "6b27af401aac4958246c6224a8bd05a6da045059b16cbb7197d8d7d91d51d8d0",
@@ -4639,8 +4709,8 @@
           "lines": 60
         },
         "apps/web/src/task-surface-copy.ts": {
-          "sha256": "9d16b9bd7fa523e87b710d4dccb5cd45a7d30dbfa09606a412ce2e3dfeed7347",
-          "lines": 143
+          "sha256": "12d68e5c17bad3f02d8ba0665c00bbb72f6c94a63c03f15e2e43196296b38909",
+          "lines": 151
         },
         "apps/web/src/thread-detail-view-state.ts": {
           "sha256": "e23c15f17bb0a6573886aa5fbd80694ec04776b20940f7782c03a0aa66cbea4f",
@@ -4695,8 +4765,12 @@
           "lines": 754
         },
         "apps/web/src/trace-trajectory-copy.ts": {
-          "sha256": "598be679497c0ef1d3be60176ba7a3ef42420138b3030138a318f0fc1747166b",
-          "lines": 168
+          "sha256": "5aa30b96d35c8ffcb38f06c571648164f5756f1bc0265d8957ec97712c4d9d5e",
+          "lines": 266
+        },
+        "apps/web/src/trace-trajectory-event-detail-view.ts": {
+          "sha256": "8db4834efb7a48f4d53c91a821ad1e08dbfeb7401f2d9317423137b99f70facd",
+          "lines": 213
         },
         "apps/web/src/trace-trajectory-events.ts": {
           "sha256": "e8440a20a36e8f95b68acd2f6e1d9f223ee3143fb469df024e24970f9e5afeb4",
@@ -4711,8 +4785,8 @@
           "lines": 476
         },
         "apps/web/src/trace-trajectory.css": {
-          "sha256": "d074231044010d162cfbb814ef37e8fd98828a91ffe75768d71e977c0ac62fe5",
-          "lines": 1092
+          "sha256": "28426920b990832bcb18422dff78d1ef52f76fd1fba1f51d7910dfcbd7de0888",
+          "lines": 1321
         },
         "apps/web/src/use-active-channel-delivery-polling.ts": {
           "sha256": "24a355f699d821cddf900a0a5cc548a1c03a2c69c871fbdee095580e8ba71e8a",
@@ -4971,8 +5045,8 @@
           "lines": 434
         },
         "apps/web/src/workspace-shell.css": {
-          "sha256": "37f046188c80af5f05718134a9a09e5103475a15f74134dc74d0b3c35b61c124",
-          "lines": 1841
+          "sha256": "a49aa6668beb4742639da60f187c7cbc90a4d54034bbfc6e05c98013db4f89a1",
+          "lines": 1845
         },
         "apps/web/src/workspace-tree-api.ts": {
           "sha256": "9a8826998a2635e542743038402bc4937cbcda91bcd168f74a238cd581ba6e88",
@@ -5335,8 +5409,8 @@
           "lines": 128
         },
         "apps/web/test/model-harness-view.test.ts": {
-          "sha256": "96843a3974da805b14bb67db9d649551ea1ca7da094d2814bc4df62d03e6767a",
-          "lines": 74
+          "sha256": "3347099832e5929f91d34d721bf945376996264d46ec7771253ecdd9371f2eb6",
+          "lines": 122
         },
         "apps/web/test/model-stream-event-view.test.ts": {
           "sha256": "7b11bde39a6447ebd0d9f50d605f2b7ffbd46a2a2732b808d0b35dce05fa7aa9",
@@ -5401,6 +5475,10 @@
         "apps/web/test/run-event-view.test.ts": {
           "sha256": "b50012b9e6261c033c7007255ecefe3b62884d5a2a766daaa8e4564f9dd9a17b",
           "lines": 187
+        },
+        "apps/web/test/run-harness-comparison.test.tsx": {
+          "sha256": "9bd89b1a028d80805c70244ed6b9fb08c1e7a245bf42abf0f490af0b5baf710d",
+          "lines": 145
         },
         "apps/web/test/sandbox-setup-api.test.ts": {
           "sha256": "a9b706eb8e6a1b2da9d65a31158500ccf8c387b0e1086a99efb63d3471265637",
@@ -5471,8 +5549,8 @@
           "lines": 61
         },
         "apps/web/test/task-surface-components.zh.test.tsx": {
-          "sha256": "9eb9468b628fe5e614fd727427c47d636911d3f76f47e2f7f89d387e4a8baead",
-          "lines": 155
+          "sha256": "949f1bb7c2aadfcfdd0c3575dafdf0f36e855c5cf075f0def004062a7cef747a",
+          "lines": 179
         },
         "apps/web/test/temporary-capability-preset-api.test.ts": {
           "sha256": "f7f8eb654deadc4e80dd489af45336ec8f2e8ffab76ab105ee3917049d662083",
@@ -5503,8 +5581,12 @@
           "lines": 63
         },
         "apps/web/test/trace-trajectory-components.zh.test.tsx": {
-          "sha256": "fee9852a8dbc33da6c0c6c14ffa5a06069a4c3bf27251b3e881f27779fa381f8",
-          "lines": 125
+          "sha256": "955dcc03c8f2bf4132bda2948994edfc9242f4cf61a42611aca98aab3070b560",
+          "lines": 163
+        },
+        "apps/web/test/trace-trajectory-event-detail-view.test.ts": {
+          "sha256": "a79eee4d26c3bf63b288036733108bf4aa06d88cc0c90c96af7b14976a9b4bea",
+          "lines": 108
         },
         "apps/web/test/trace-trajectory-model.test.ts": {
           "sha256": "502daf2577b0f118d63517a1d3928e6b3b8ae9554c3fd9a0b30485770f01447f",
@@ -5523,8 +5605,8 @@
           "lines": 156
         },
         "apps/web/test/workbench-layout.test.ts": {
-          "sha256": "1ec491ba55bb72c0a705b993b592dce80d6c5fe5bb529736c47d770fcef7b573",
-          "lines": 432
+          "sha256": "621484e0ed39acad1fec2676f60bf3443d0525fcbd2854e2256a1ee26404c179",
+          "lines": 434
         },
         "apps/web/test/workspace-process-event-view.test.ts": {
           "sha256": "30e7067e65bcbaa5d46d71b1814d97b9b1b10fbdaf472205a6075619abedcb05",
@@ -5623,7 +5705,7 @@
           "lines": 11
         },
         "docs/architecture-budget.json": {
-          "sha256": "ab150f77b2c9fde8f1dc252c3e8a3b9e74299179f2d2edc84cb2f32bc44b661d",
+          "sha256": "907fffdb6ebbf5ed1b657f7dcafa1c1a67e7e5072fe2868e2d91ee67010a9ca0",
           "lines": 242
         },
         "docs/architecture.md": {
@@ -5739,12 +5821,12 @@
           "lines": 87
         },
         "docs/artifacts/default-product-source-bound-smoke-m4-0.1.3.json": {
-          "sha256": "7fa119695ab32d2e039ae08cbd648feaf707867d452b8a3f0012cc3d36967db7",
-          "lines": 174
+          "sha256": "64c3b5b06782399ca3f107a0dd2b7728ef061b65de3c14d4f816b2c4a389a88e",
+          "lines": 171
         },
         "docs/artifacts/default-product-source-manifest-0.1.3.json": {
-          "sha256": "631a4daca37c073b052fae824c2b3e55760950d5e04d2cfc1ed07e845381da9d",
-          "lines": 8198
+          "sha256": "a9afb800bd4f066d668b228149a2dad548a9b743fd00c4cba43dbca4a50dac60",
+          "lines": 8328
         },
         "docs/artifacts/default-product-trial-m4-0.1.2.json": {
           "sha256": "f83a7edbc673388806d5f58f4e6faf2f7e1e9d9ccfec16bdcb96705f3bde38c4",
@@ -5819,7 +5901,7 @@
           "lines": 116
         },
         "docs/artifacts/release-artifacts-audit-0.1.0.json": {
-          "sha256": "aaa4f9e3681e719aef3035be8ac64ada990f0e8f5f75c47e976d304af9362eb7",
+          "sha256": "7104765b5361a62c539696bc0d85be41a86680b8093ee96551ab64a79f980b14",
           "lines": 1015
         },
         "docs/artifacts/runtime-environment-audit-0.1.0.json": {
@@ -5827,7 +5909,7 @@
           "lines": 36
         },
         "docs/artifacts/s1-shell-sandbox-readiness-stage22.json": {
-          "sha256": "2f5be0fd4a99de00d54bf8ef120cc4a516706ff86ad3622eb5ac31c536877757",
+          "sha256": "7f351144be1e2b6f09b9b80b54d61be78b7d15e5f6a9df53ffeef0eff8300331",
           "lines": 226
         },
         "docs/artifacts/sandbox-acquisition-stage20.json": {
@@ -5863,7 +5945,7 @@
           "lines": 107
         },
         "docs/artifacts/sandbox-product-acceptance-stage13.json": {
-          "sha256": "26a6ad03929c5a04eb869f5eb494c40a33c496fb5c12d54839e0dc419c4653a0",
+          "sha256": "aa9466edf9e9d7fd47a2e9503fb3df5255219bbd70730fde9dd279f7028e5bea",
           "lines": 365
         },
         "docs/artifacts/sandbox-security-casebook-stage12.json": {
@@ -5875,11 +5957,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "9d5fea38d8d4cfd2c54ea57e12bd818987de9d3003c9e2e607da45bd0c618c3d",
+          "sha256": "73d5fc08fb88f11fe72ede6eea8eeb37bb2a14598bad20023aff950a4e527c07",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "a43f4bac0bce9de286ddbb883bf1ec98c50d1f1b15c4aa28a95a1871ac83fa3b",
+          "sha256": "9edccf8250c9a6a5092ec58de19cd460ebbcbd33aa050af0cb49fd286f0b897f",
           "lines": 71
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -5958,6 +6040,10 @@
           "sha256": "9e995a4829a11c1e91f1e99197be32170371e9173afe6920175c9122a3e224e7",
           "lines": 16
         },
+        "next.md": {
+          "sha256": "9f4e5985fc06f96d52d61dc8af9178fdb14009597e17dfcc3dafdcfeca2826e9",
+          "lines": 278
+        },
         "package-lock.json": {
           "sha256": "c864637c7a1918cc6190cb8bff5470462819d77d3e77f0c43c35b634cc61b26e",
           "lines": 4325
@@ -5967,8 +6053,8 @@
           "lines": 153
         },
         "packages/contracts/package.json": {
-          "sha256": "be0e8daee62c6bfdb44e74e905472d25a446002f279f4e0a4b91f778925e7fd5",
-          "lines": 96
+          "sha256": "9c89a88413e2a916b23a6a71f89cf188d7a74aa9548f39af368fac49f4eac4e5",
+          "lines": 100
         },
         "packages/contracts/src/agent-capabilities.ts": {
           "sha256": "9f4a572d3f1db22d57956d57da2dbd00058d0e8162432c72b50e0622924c9133",
@@ -6003,7 +6089,7 @@
           "lines": 441
         },
         "packages/contracts/src/index.ts": {
-          "sha256": "216c0321cee9914dc6d16a007212d38f97aa2761b1c58398665d4be39a5abb98",
+          "sha256": "3cdc303b01de2dc9d63221d9923556df80cb4c5bd1f5375c310211dda0fb0ccd",
           "lines": 6438
         },
         "packages/contracts/src/kernel-plugins.ts": {
@@ -6021,6 +6107,10 @@
         "packages/contracts/src/release-product-trial.ts": {
           "sha256": "0c276e3f3afd26bc64ef9fc8bf5f5b41b9955443e4dd7b9b091bab932d50452c",
           "lines": 106
+        },
+        "packages/contracts/src/run-harness-effects.ts": {
+          "sha256": "166bf7cb10a4b898a62c0514e68a3690521536375a613e80db0d16c653f07fdc",
+          "lines": 141
         },
         "packages/contracts/src/sandbox-setup.ts": {
           "sha256": "4cf4b250ddb61db85d2d80a5dd599397fc7133947bde1bf0a603159abaebce10",
@@ -6131,8 +6221,8 @@
           "lines": 66
         },
         "packages/runtime/src/agent-kernel.ts": {
-          "sha256": "b98cf40a1469cb7e1501b699e7277adb38c655c60085d10508f300a6100acb89",
-          "lines": 500
+          "sha256": "a675418f62402b6baff430e3eb593e914ccabdc99d6db99fcbc9d35da21bb903",
+          "lines": 492
         },
         "packages/runtime/src/agent-message-experiment-comparison-protocol.ts": {
           "sha256": "04e0a3302e5d2ac022bcd68aa806dd56784a7c1ec2e056ff1193063b7918b5f3",
@@ -6155,24 +6245,28 @@
           "lines": 89
         },
         "packages/runtime/src/agent-model-call-pipeline-host.ts": {
-          "sha256": "923d878b81f7fbe535b5cc12be4f1685a7764ef97e84bd4cb81a3225c0395b09",
-          "lines": 26
+          "sha256": "715778c9ffdb6a6fd0550902b0477290f769744e0499d1632f1077062fc565ab",
+          "lines": 33
         },
         "packages/runtime/src/agent-model-projection.ts": {
-          "sha256": "d825f4e2463f0f8c49de79736663e8c6bf8a404ef30852f3dbd4ca7d3b147879",
-          "lines": 53
+          "sha256": "b43701bee3e185a2f77620aadf14b4d137587bcb29ddfd516c83fef61bfd49c3",
+          "lines": 46
         },
         "packages/runtime/src/agent-model-stream-lifecycle.ts": {
-          "sha256": "a25d7983ab3dee314fcefe3bf4c6df20996447a6768b4390cabeac294dfd1704",
-          "lines": 239
+          "sha256": "768c3d4a7be5f1b90a64e1f25da5c80d3fe3ca6817a7ba2433273fd68f699e1d",
+          "lines": 340
         },
         "packages/runtime/src/agent-prompt-builder.ts": {
-          "sha256": "7f915ad5522fc01e63a3e84d7942f4a5f757a7fa833ab6817197bb90b4a4852f",
-          "lines": 59
+          "sha256": "7cd1950f031e58a9c605a8544bf560f4ea84b2a0e453ab736f5d231f6e34da32",
+          "lines": 63
         },
         "packages/runtime/src/agent-prompt-layers.ts": {
           "sha256": "34b78380b19d33fffe65c4f8a8f5142048898fef6e650a4717094bbdf53d76af",
           "lines": 138
+        },
+        "packages/runtime/src/agent-run-control-tools.ts": {
+          "sha256": "b6a998d9e1ae63babafa86495d91c2c6e115a3a2347216d65cfe943e2f950455",
+          "lines": 42
         },
         "packages/runtime/src/agent-run-started-event.ts": {
           "sha256": "7025f06db94201c2df70269ca32f67b40bbd1d614ede3e8523e33078fcab3dfb",
@@ -6183,20 +6277,20 @@
           "lines": 81
         },
         "packages/runtime/src/agent-runtime-utils.ts": {
-          "sha256": "22e0d96b795447955846ffac03d9d18172ca97438e3e14fe249572d78bc9e01e",
-          "lines": 149
+          "sha256": "8966f2e22a48a0f377013518a20fea9ee88e6ca8aa3ac71b8f25ab9f6c9a316f",
+          "lines": 146
         },
         "packages/runtime/src/agent-runtime.ts": {
-          "sha256": "441c25a828bb9b4ed5a3ae7e7c4f4313baae2ed1802b7b87447622f91d0b8f88",
-          "lines": 3334
+          "sha256": "8d0838f2c999784390d8448810bb49584eec895c694052295a30f573d6899a26",
+          "lines": 3306
         },
         "packages/runtime/src/agent-sessions.ts": {
           "sha256": "d01d8e95a59134c330a2c65f55c4790c97019974ebfe85e83b4e4429f039f2c4",
           "lines": 242
         },
         "packages/runtime/src/agent-tool-effects.ts": {
-          "sha256": "5d53868ee1ddca3a12c1220d71dc909f63f88b9e26494161d99df3d9d10e912c",
-          "lines": 101
+          "sha256": "722503a6d5a13f117e941cb1b6fd196e86912a05e6c0239f3b51b1d823d38742",
+          "lines": 125
         },
         "packages/runtime/src/agent-tool-failure-context.ts": {
           "sha256": "25a3deb006a1b0167bae480c4ed9ec81af53c538e7bc8fa09f5308feebf57abd",
@@ -6207,8 +6301,8 @@
           "lines": 472
         },
         "packages/runtime/src/agent-tool-policy-preflight.ts": {
-          "sha256": "2167fa5c2659294b94e746821769f9b412c9626549d96b23a57eb225736962fd",
-          "lines": 377
+          "sha256": "c0d26d83228bc0ba829eb8ef8af3a62b8d2a95d82c737dbf7b3c2cb86db49e63",
+          "lines": 395
         },
         "packages/runtime/src/agent-tool-readiness.ts": {
           "sha256": "b88d587a86fbdb9e9d129c73736397773b93472192f04731220b1eaa2b65b212",
@@ -6221,6 +6315,18 @@
         "packages/runtime/src/agent-tool-specialized-ledger.ts": {
           "sha256": "92cdc186790dbb4cbc7ee92b9c93856214c924ad76658933779e8b04bb34aff2",
           "lines": 80
+        },
+        "packages/runtime/src/agent-turn-kernel-services.ts": {
+          "sha256": "01e0e1b1f2bc3119eeeadf13c82bfbc01fe907828829dafc614bcc7d51ab0106",
+          "lines": 86
+        },
+        "packages/runtime/src/agent-turn-pipeline-host.ts": {
+          "sha256": "f85717737268078394b235b5049594e42825d2b7d23edc4acbea9ca72f6645bc",
+          "lines": 26
+        },
+        "packages/runtime/src/agent-turn-pipeline.ts": {
+          "sha256": "b9f643f10c161dbd6b1417e3bedf63a78cd5c8dc514b96189a9006b80d7001d7",
+          "lines": 307
         },
         "packages/runtime/src/agents.ts": {
           "sha256": "3d5834e2e5141c1394ea572245ec60e8d50466a93de26203fc9de54a4838343f",
@@ -6343,8 +6449,8 @@
           "lines": 4
         },
         "packages/runtime/src/builtin-model-call-extensions.ts": {
-          "sha256": "572f519df0e842dec7fdc0f2ffe60d5703bcb010503bf39ff7e34c9368e4b726",
-          "lines": 12
+          "sha256": "cf9db9279e6a5b92de6de6db6e4bc0448368f0e45698718dab7fc09d5d87457f",
+          "lines": 14
         },
         "packages/runtime/src/channels.ts": {
           "sha256": "baf309368b2003a41295f129d99b8a14b88dedc2a71ac5a46a27224a2a4a340e",
@@ -6434,6 +6540,38 @@
           "sha256": "28e43bbccdbc0fccac4401efd2e9b3531a46037757c117912e52a9f4d40e663a",
           "lines": 118
         },
+        "packages/runtime/src/conversation-surface-capsule-store.ts": {
+          "sha256": "42e99681ecedeb4bed711dc3202a96e00c3a7f09297f4b59a371595194bcdebf",
+          "lines": 71
+        },
+        "packages/runtime/src/conversation-surface-capsule.ts": {
+          "sha256": "c09a3574387d17a2ca833d1ed4cf09258e944572f8d1870e6716b2a76116caf8",
+          "lines": 482
+        },
+        "packages/runtime/src/conversation-surface-capture.ts": {
+          "sha256": "099e17528ca84b66221637fcd319981f62249e46e306bec49b46b0f4303c29f9",
+          "lines": 142
+        },
+        "packages/runtime/src/conversation-surface-declarations.ts": {
+          "sha256": "e7f1fbdfe7654bb661f4370dfdae1c6ed1734ec563e9df944b9d21d76bf5744d",
+          "lines": 92
+        },
+        "packages/runtime/src/conversation-surface-legacy.ts": {
+          "sha256": "ee5944a14b927ed262fed9a1ac0deb0da9b08a0c22181a8e47d8e70382e6ecbd",
+          "lines": 230
+        },
+        "packages/runtime/src/conversation-surface-result-evidence.ts": {
+          "sha256": "64932d8bc708629afbbcce488b065147fa57486ab476d4be5a5af2b357c09166",
+          "lines": 122
+        },
+        "packages/runtime/src/conversation-surface-usage.ts": {
+          "sha256": "b43a4503ab64ffbdd54c79718afbd6cc928e338d876eef6dcc9f21e8da779d3d",
+          "lines": 44
+        },
+        "packages/runtime/src/conversation-surface.ts": {
+          "sha256": "8979474bc832450f1aa81b330f30e12f1653da040619f74785032bdc534a01ad",
+          "lines": 390
+        },
         "packages/runtime/src/data-frame-tool.ts": {
           "sha256": "45f4162d27e5b120726664d28398bf3ad038561e8ba8b6999d1f8525fe07aa6c",
           "lines": 370
@@ -6467,8 +6605,8 @@
           "lines": 95
         },
         "packages/runtime/src/effective-capabilities-prompt-builder.ts": {
-          "sha256": "c347666209d9f4004ddf41becf8644749c9f87af7761a559901b77e5953d139a",
-          "lines": 30
+          "sha256": "92cd5d9503b8fd1945e1b7857397d29afebbf5cdbc8ef75eccc43b5657e1f275",
+          "lines": 45
         },
         "packages/runtime/src/effective-capabilities-prompt.ts": {
           "sha256": "36bdb7ed795c62b6e10ab7887286bd76cb93c10634584625ae471b2b90b55819",
@@ -6501,6 +6639,10 @@
         "packages/runtime/src/evaluation-casebooks.ts": {
           "sha256": "26b0f6b0916bcee390e43585b3c545e78e74974d0b48ea6114dc0596e3885080",
           "lines": 727
+        },
+        "packages/runtime/src/evaluation.ts": {
+          "sha256": "76c2044fbdc6370e603d51ec5413f74b646a43062d1a3fa5c24e70ca10f80f97",
+          "lines": 673
         },
         "packages/runtime/src/extension-capabilities.ts": {
           "sha256": "d1c4f84b6033b59aad6981aeb90fe8fbe1a255e8c7c43b856e3d9051e494130b",
@@ -6599,8 +6741,8 @@
           "lines": 209
         },
         "packages/runtime/src/kernel-model-call-pipeline.ts": {
-          "sha256": "f20fbc400b656fb7d750cf99ae78bdb6d2694c14f309363d781478197ec37c51",
-          "lines": 261
+          "sha256": "016852b1a9e82d6d11401e810974777e01a8f2e0fb2e0ed9fa134acd94f66c66",
+          "lines": 325
         },
         "packages/runtime/src/kernel-plugin-manifest.ts": {
           "sha256": "75ff59b4592c11c5012cd6df5928667f86869dce6a6961113213057b81188b46",
@@ -6647,8 +6789,8 @@
           "lines": 63
         },
         "packages/runtime/src/kernel.ts": {
-          "sha256": "459962663615efc1801b3f8f0d62203c8214a50c466575eb4c51aa4fac2f8197",
-          "lines": 25
+          "sha256": "9e0b9db3e237551f80bafb1dffd51322351b5301c23cebf906131e6ffbdd876f",
+          "lines": 27
         },
         "packages/runtime/src/local-agent-runtime.ts": {
           "sha256": "ed0ded3a3c93fa8dba28d022eb57522b538e121b2f28f0e7e45c90fec1806063",
@@ -6739,8 +6881,24 @@
           "lines": 326
         },
         "packages/runtime/src/model-context-envelope.ts": {
-          "sha256": "1bf9df904ffcc488755ded2e32fa3d5e5c325d8f52f892c80f114f5439b1b6e4",
-          "lines": 340
+          "sha256": "76fdacd17651890a666f62097c57b7d733ad74055561e94178bfe83af7715090",
+          "lines": 341
+        },
+        "packages/runtime/src/model-context-overflow-recovery.ts": {
+          "sha256": "d3854c73314dcfa0b22782b5686b0306fc8e1645016876fe526da767bcebc18a",
+          "lines": 145
+        },
+        "packages/runtime/src/model-context-token-extension.ts": {
+          "sha256": "b70c0dea3360248d9efabc466b36c5c81a3ebdcea1bd3f77baa781957e5505ed",
+          "lines": 54
+        },
+        "packages/runtime/src/model-context-token-meter.ts": {
+          "sha256": "9a6e1b6f93ac609de4a929121e425be6bd54e4bb2325d550212b1d32ed93fd1d",
+          "lines": 219
+        },
+        "packages/runtime/src/model-context-token-pressure.ts": {
+          "sha256": "bc2a34a7a83b4b1618e8734fdc0db19b289c7da15ec49c0a0caa8c21fdd9f280",
+          "lines": 228
         },
         "packages/runtime/src/model-delta-batcher.ts": {
           "sha256": "f098a22125f13710a0a3e73b9abb0e2e07306b1a20f9bb82534b8c4379baba2a",
@@ -6751,8 +6909,16 @@
           "lines": 40
         },
         "packages/runtime/src/model-harness-profile.ts": {
-          "sha256": "70825d887887e554b2f0569298b642a91a30600ca5cef33f35d9a919e4eb53e1",
-          "lines": 258
+          "sha256": "cc7aac456b42de9b7b8f18f2bc9b5403443e1be8faeb9cfce9fe5af61732d5fc",
+          "lines": 283
+        },
+        "packages/runtime/src/model-harness-receipt.ts": {
+          "sha256": "53fcd5f179ea9c414014ef49c6d99dbf160e6550522feee7fa2dc60849a5b3e4",
+          "lines": 259
+        },
+        "packages/runtime/src/model-harness-resolution.ts": {
+          "sha256": "497fb7fcd45daa298a28f7bc3617b1af2c249735a977ede0fe0662a7b0cd91a9",
+          "lines": 407
         },
         "packages/runtime/src/model-invocation-capsule-store.ts": {
           "sha256": "41eab25d5bedf8c9edd93775c674f19ed964172625b3d0690044d4a745fa2639",
@@ -6767,8 +6933,8 @@
           "lines": 481
         },
         "packages/runtime/src/model-prompt-evidence-bindings.ts": {
-          "sha256": "bb269f1d6263f4167d37b1b638fbabca0a33d051cef0b6ebc72eea3c57bf354b",
-          "lines": 191
+          "sha256": "c480a999d353653f530191ca60594a17d90e228181c4e30907e14510efa57e5d",
+          "lines": 194
         },
         "packages/runtime/src/model-semantic-stall-observer.ts": {
           "sha256": "29e234c666ef92769e4c80919626438fc07bbdc569f19c3dc6811a381058c7b7",
@@ -6963,7 +7129,7 @@
           "lines": 121
         },
         "packages/runtime/src/release-product-identity.ts": {
-          "sha256": "5b91ef241096819e24ae89cb481d0c272ff786cc20b057b81f9fbbb805b36b3a",
+          "sha256": "a87086cc929b07db7e2835d22092986aaa1b2ad9bc0c6d074c1111144df6bd50",
           "lines": 3
         },
         "packages/runtime/src/release-product-trial-adoption.ts": {
@@ -7034,6 +7200,18 @@
           "sha256": "7e3b7f18d60914c0076b15901afcaf440ad6c4281f942a2e6d67052f0064b6ea",
           "lines": 155
         },
+        "packages/runtime/src/run-harness-comparison.ts": {
+          "sha256": "9b8b124c225b06770a29458608df45bddbf0543f99b333d540fb042f4421284e",
+          "lines": 218
+        },
+        "packages/runtime/src/run-harness-context-metrics.ts": {
+          "sha256": "fe106397f0b64972d0d0dd735dd729a7015303f754b1826f31025e2ee4e3b2f3",
+          "lines": 343
+        },
+        "packages/runtime/src/run-harness-effect-metrics.ts": {
+          "sha256": "9c233e0baca8c9957c4e59364f2b59ff3d358072ef98c536428a81b7d94c3563",
+          "lines": 332
+        },
         "packages/runtime/src/run-intents.ts": {
           "sha256": "8af9a35808222e2195530480e9b747f2ba3427977be5c881ceb5719fa776587d",
           "lines": 43
@@ -7073,6 +7251,10 @@
         "packages/runtime/src/run-recovery-prompt.ts": {
           "sha256": "613f8e0ba5ae8a843945cd60c247dc3d023154b7c36599055a4cc3f332bed98f",
           "lines": 192
+        },
+        "packages/runtime/src/run-replay.ts": {
+          "sha256": "76fd53b2eaba55fbaed62cfb2d273f049935db30e97fca56d22de8f2ef243a28",
+          "lines": 423
         },
         "packages/runtime/src/run-research-budget.ts": {
           "sha256": "84306f55c1158ce2c4102368641a1ab2f38b5076f3f7e32ae53db4303e9ed261",
@@ -7646,17 +7828,29 @@
           "sha256": "d9f6d31a9f2e92836e4dc75921e746b16a1b22655e91098582de62f312d634f6",
           "lines": 416
         },
+        "packages/runtime/test/agent-context-overflow-recovery.test.ts": {
+          "sha256": "c64cf6b019dfefdd06e5865e32801a2e6522de2bc098c36af8d51309eb93bdd5",
+          "lines": 203
+        },
         "packages/runtime/test/agent-delta-batching.test.ts": {
           "sha256": "25abc62b34fa7714761c7930d320bbc2f7a3934824de305823aab940fa131864",
           "lines": 96
         },
         "packages/runtime/test/agent-javascript-kernel.test.ts": {
-          "sha256": "d5faad4b149d2ec7147868cdfc3537ce1541a9de101f2902ac9251eb731fbc05",
-          "lines": 305
+          "sha256": "7a9f08531d6b54b090c426bff81d3d13a6da0858d635f97ed34b1f6d6d7583cc",
+          "lines": 306
+        },
+        "packages/runtime/test/agent-kernel-turn-pipeline-continuation.test.ts": {
+          "sha256": "aa04d17ccb4093736bf3d22e180d6104e588267a5cc1a24be9d29f20e29a308c",
+          "lines": 291
+        },
+        "packages/runtime/test/agent-kernel-turn-pipeline-failure.test.ts": {
+          "sha256": "5ada80233238e86a162a3622459e3794a905725e74458ce9fe3e7d994ef1856d",
+          "lines": 150
         },
         "packages/runtime/test/agent-kernel.test.ts": {
-          "sha256": "df610b66a754cbeece9b9ec0f199a1209d8a8ca6c30c88f362e607e727c3b91b",
-          "lines": 580
+          "sha256": "b96466a76fd325e1797f7400e7d46ca1c851ae5fb27b1fa9a6a685ec14d6dc41",
+          "lines": 779
         },
         "packages/runtime/test/agent-local-preview-lease.test.ts": {
           "sha256": "4eafe387b815a7022c784a38cc324f039194a4e00bc8b4f786fcd2c0d2e481e4",
@@ -7674,16 +7868,24 @@
           "sha256": "4541d414697124e4abb485bcfccb070bbc0b5a9051066b1717d5ea063b0e33d5",
           "lines": 427
         },
+        "packages/runtime/test/agent-python-kernel.test.ts": {
+          "sha256": "378e094a69b24eaf0c2950d3300831c4985032749f2792ac904039177608325d",
+          "lines": 277
+        },
         "packages/runtime/test/agent-recovery-plan-context.test.ts": {
           "sha256": "4d2136513c92e6fdbd6a885a77b6d38337ecb5fa73634cd06e3e42ce381f0211",
           "lines": 185
+        },
+        "packages/runtime/test/agent-run-harness-evidence.test.ts": {
+          "sha256": "416ed5aa5716b912c889a04f54fea8e790fd4d79203ebd55e70b59759a98301c",
+          "lines": 113
         },
         "packages/runtime/test/agent-runtime-utils.test.ts": {
           "sha256": "6467aa0bc2add1257a3af5070cfc97ff036afd21363ad2ffb8cf55ff9ece97cf",
           "lines": 50
         },
         "packages/runtime/test/agent-runtime.test.ts": {
-          "sha256": "be7378efb5b997c03aef40049e98c4b20e7afce4af2bda2e41e3adf5074c557a",
+          "sha256": "a9973b0b0fac4118f4c15ba55f3d5e6eb341cacf2cb4581b6643a7ee7d50c526",
           "lines": 4302
         },
         "packages/runtime/test/agent-skill-load-vertical.test.ts": {
@@ -7713,6 +7915,10 @@
         "packages/runtime/test/agent-tool-failure-context.test.ts": {
           "sha256": "cf871193fafe498b783932ff88abff5dd16c529c71f0d666da5ad36f1f59039a",
           "lines": 68
+        },
+        "packages/runtime/test/agent-turn-pipeline.test.ts": {
+          "sha256": "164c24ffd797d6897188090a0c97c443cb06d6e8a04ef525fa5e535d01b92e41",
+          "lines": 222
         },
         "packages/runtime/test/agent-web-fetch-save.test.ts": {
           "sha256": "b18d74fe0e1b6949b690a94718844a1e1e00e60c2039626b7b14f20309439083",
@@ -7810,6 +8016,10 @@
           "sha256": "b586354a24b6d8b7096c557a10e9799b4ea39beb69666cce0eb0a41b5d692a4b",
           "lines": 174
         },
+        "packages/runtime/test/conversation-surface.test.ts": {
+          "sha256": "17e93c9fab9bb3347b16325a73f9610d140b9c25c8d21d298c605d8d9420e651",
+          "lines": 486
+        },
         "packages/runtime/test/doctor-runtime-probes.test.ts": {
           "sha256": "053d5a9297492196c6fb63f547a0875049087751685b5d39073727e68e470857",
           "lines": 238
@@ -7841,6 +8051,10 @@
         "packages/runtime/test/git-branch-switch.test.ts": {
           "sha256": "f1a3d62f75a8c260afcd6b00deb3cd82a476877a154044bca897bfd19f4fc697",
           "lines": 984
+        },
+        "packages/runtime/test/git-conflict-inspect.test.ts": {
+          "sha256": "1edf0a7e505cd0fc192e34478ce1a9528279302e3079ca15f41c101e8670294a",
+          "lines": 823
         },
         "packages/runtime/test/independent-model-advisor.test.ts": {
           "sha256": "6c8c017ae18bf2735e9bdbc1023d898a213c73dc61fee94cb81baf1bfa47ddff",
@@ -7935,8 +8149,8 @@
           "lines": 259
         },
         "packages/runtime/test/model-adapter-capture.test.ts": {
-          "sha256": "7a34dcd506167b93233acfdbd2e7658a9157dabe97db43de905dfda2dc833fdb",
-          "lines": 333
+          "sha256": "8f410456dfefd80431b6ee5f5ac948ffa337b4a0467e357ea31f94c1c8f24498",
+          "lines": 472
         },
         "packages/runtime/test/model-adapters.test.ts": {
           "sha256": "c694941593f336ca16f14cc733e952f86266ff7e5097914899b341b2048dd524",
@@ -7946,25 +8160,33 @@
           "sha256": "1af003195a7719f6d5aeeabac54062711169ec64cef35bd85dcc01f33c6b0a81",
           "lines": 215
         },
+        "packages/runtime/test/model-context-overflow-recovery.test.ts": {
+          "sha256": "5500a6932824bc46ed6d11aec57591a74319e3c140ab6fc44816a68df297ef35",
+          "lines": 132
+        },
+        "packages/runtime/test/model-context-token-pressure.test.ts": {
+          "sha256": "ff40d8d756e1cb43d16ceecf191003a8258e464586874eb7184a7b0fd4005b46",
+          "lines": 190
+        },
         "packages/runtime/test/model-delta-batcher.test.ts": {
           "sha256": "e64528e85a6fc71f6356d7cd87cf63f1f115c13f02168f648e2c568cd47056c8",
           "lines": 177
         },
         "packages/runtime/test/model-harness-profile.test.ts": {
-          "sha256": "2f11dd25edbf8e856d7e1fc71e4b9120142cd0a4218a6c256c17f6310130e61d",
-          "lines": 120
+          "sha256": "98d647a99008577aa182acd4a4f00fada7b9fe356c5849fa71a7a0c77edc28a5",
+          "lines": 503
         },
         "packages/runtime/test/model-invocation-experiments.test.ts": {
           "sha256": "9d6509c0736b49037b89bd01de88b722867a9508f3a99727623b7fe20a91b54e",
           "lines": 503
         },
         "packages/runtime/test/model-prompt-evidence-bindings.test.ts": {
-          "sha256": "f62cabc5e282b00e816c3f89c9a2de92bf9ad6e0c4727b2c6582ee42eae6a4a9",
-          "lines": 195
+          "sha256": "c47f50d7d30d53244770420f6a2f8a2c3ac4a39ca46f51ce7c34211b91b5453c",
+          "lines": 224
         },
         "packages/runtime/test/model-stream-cancellation.test.ts": {
-          "sha256": "b7a47009457e5fb3c8ea5e65e1c61bc88726e05735d65e89e3f10ad1c6040e99",
-          "lines": 882
+          "sha256": "626a7f12fb676244f8ae4d3465d2081e0d68967510c58cfbb57a94ed4dc6304e",
+          "lines": 884
         },
         "packages/runtime/test/model-thinking-loop-detector.test.ts": {
           "sha256": "5ca1848c1271f28df868ab5ebfb8e4d5aeaca67bdb7c44e877e140660013d17b",
@@ -8185,6 +8407,14 @@
         "packages/runtime/test/run-failure-classification.test.ts": {
           "sha256": "10c642fe6169965edaa04b2076feb33dde22597b2da7706e7d37b0b90cddbf69",
           "lines": 107
+        },
+        "packages/runtime/test/run-harness-comparison-integration.test.ts": {
+          "sha256": "ff17435ad0b3736916fa211187c150a9cd3a3b0122890031101280e35d6fe5cf",
+          "lines": 76
+        },
+        "packages/runtime/test/run-harness-effect.test.ts": {
+          "sha256": "014867dbe2f3e1f6fd07b91ea7bd8f4e352ec4a9b9270d814d37f1610e634802",
+          "lines": 596
         },
         "packages/runtime/test/run-intents.test.ts": {
           "sha256": "981872e8945662123538fc9317d983fcb902f7317b488567ae72f3f9847be033",
@@ -8975,7 +9205,7 @@
           "lines": 483
         },
         "scripts/sdk-capability-parity-evidence.test.mjs": {
-          "sha256": "46ce2a7df83a555416611ca434dd04852f287ef5c54f1464a2aba594e8fc0ab1",
+          "sha256": "b60bd172d241950fb9ebbab984559f0b76209f9c013ee1fc79fb9972f363d68a",
           "lines": 311
         },
         "scripts/sdk-capability-parity-identity.mjs": {
@@ -9039,7 +9269,7 @@
           "lines": 64
         },
         "scripts/verify-default-product-source-bound-smoke.mjs": {
-          "sha256": "c8171a034d075229efeb7c188cbf2dc4981014daf98ed63d5d2e63298dd6f10d",
+          "sha256": "26266157c5c7377597076ce660a46f3172672b5b547592e59e72259b322bf9aa",
           "lines": 118
         },
         "scripts/verify-default-product-trial.mjs": {
@@ -9161,7 +9391,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "21d6a4f30b7a3cabcfdb0f22dfa1ef4c497518247711f30c206df69aff81259c"
+      "manifestSha256": "6df0f75180baa9c19265d326a7432b5231bbf2b38e95fd213887136cd407c42b"
     },
     "executionClosure": {
       "algorithm": {
@@ -9426,6 +9656,7 @@
             "packages/runtime/dist/agent-process-tool-ledger.js",
             "packages/runtime/dist/agent-prompt-builder.js",
             "packages/runtime/dist/agent-prompt-layers.js",
+            "packages/runtime/dist/agent-run-control-tools.js",
             "packages/runtime/dist/agent-run-model.js",
             "packages/runtime/dist/agent-run-started-event.js",
             "packages/runtime/dist/agent-runtime-utils.js",
@@ -9439,6 +9670,9 @@
             "packages/runtime/dist/agent-tool-result-lifecycle.js",
             "packages/runtime/dist/agent-tool-result-text.js",
             "packages/runtime/dist/agent-tool-specialized-ledger.js",
+            "packages/runtime/dist/agent-turn-kernel-services.js",
+            "packages/runtime/dist/agent-turn-pipeline-host.js",
+            "packages/runtime/dist/agent-turn-pipeline.js",
             "packages/runtime/dist/agents.js",
             "packages/runtime/dist/artifact-receipts.js",
             "packages/runtime/dist/artifact-status.js",
@@ -9529,6 +9763,14 @@
             "packages/runtime/dist/conversation-plans-projection.js",
             "packages/runtime/dist/conversation-recoveries-projection.js",
             "packages/runtime/dist/conversation-subagents-projection.js",
+            "packages/runtime/dist/conversation-surface-capsule-store.js",
+            "packages/runtime/dist/conversation-surface-capsule.js",
+            "packages/runtime/dist/conversation-surface-capture.js",
+            "packages/runtime/dist/conversation-surface-declarations.js",
+            "packages/runtime/dist/conversation-surface-legacy.js",
+            "packages/runtime/dist/conversation-surface-result-evidence.js",
+            "packages/runtime/dist/conversation-surface-usage.js",
+            "packages/runtime/dist/conversation-surface.js",
             "packages/runtime/dist/credential-references.js",
             "packages/runtime/dist/credentials.js",
             "packages/runtime/dist/dap-protocol.js",
@@ -9721,9 +9963,15 @@
             "packages/runtime/dist/model-advisor-evidence.js",
             "packages/runtime/dist/model-advisor.js",
             "packages/runtime/dist/model-context-envelope.js",
+            "packages/runtime/dist/model-context-overflow-recovery.js",
+            "packages/runtime/dist/model-context-token-extension.js",
+            "packages/runtime/dist/model-context-token-meter.js",
+            "packages/runtime/dist/model-context-token-pressure.js",
             "packages/runtime/dist/model-delta-batcher.js",
             "packages/runtime/dist/model-harness-extension.js",
             "packages/runtime/dist/model-harness-profile.js",
+            "packages/runtime/dist/model-harness-receipt.js",
+            "packages/runtime/dist/model-harness-resolution.js",
             "packages/runtime/dist/model-invocation-capsule-store.js",
             "packages/runtime/dist/model-invocation-capsule.js",
             "packages/runtime/dist/model-invocation-capture.js",
@@ -9831,6 +10079,9 @@
             "packages/runtime/dist/run-failure-settlement.js",
             "packages/runtime/dist/run-failure-source.js",
             "packages/runtime/dist/run-finalization-reserve.js",
+            "packages/runtime/dist/run-harness-comparison.js",
+            "packages/runtime/dist/run-harness-context-metrics.js",
+            "packages/runtime/dist/run-harness-effect-metrics.js",
             "packages/runtime/dist/run-intents.js",
             "packages/runtime/dist/run-lease-renewal.js",
             "packages/runtime/dist/run-lease-state.js",
@@ -10386,6 +10637,7 @@
             "packages/runtime/src/agent-process-tool-ledger.ts",
             "packages/runtime/src/agent-prompt-builder.ts",
             "packages/runtime/src/agent-prompt-layers.ts",
+            "packages/runtime/src/agent-run-control-tools.ts",
             "packages/runtime/src/agent-run-model.ts",
             "packages/runtime/src/agent-run-started-event.ts",
             "packages/runtime/src/agent-runtime-utils.ts",
@@ -10399,6 +10651,9 @@
             "packages/runtime/src/agent-tool-result-lifecycle.ts",
             "packages/runtime/src/agent-tool-result-text.ts",
             "packages/runtime/src/agent-tool-specialized-ledger.ts",
+            "packages/runtime/src/agent-turn-kernel-services.ts",
+            "packages/runtime/src/agent-turn-pipeline-host.ts",
+            "packages/runtime/src/agent-turn-pipeline.ts",
             "packages/runtime/src/agents.ts",
             "packages/runtime/src/artifact-receipts.ts",
             "packages/runtime/src/artifact-status.ts",
@@ -10489,6 +10744,14 @@
             "packages/runtime/src/conversation-plans-projection.ts",
             "packages/runtime/src/conversation-recoveries-projection.ts",
             "packages/runtime/src/conversation-subagents-projection.ts",
+            "packages/runtime/src/conversation-surface-capsule-store.ts",
+            "packages/runtime/src/conversation-surface-capsule.ts",
+            "packages/runtime/src/conversation-surface-capture.ts",
+            "packages/runtime/src/conversation-surface-declarations.ts",
+            "packages/runtime/src/conversation-surface-legacy.ts",
+            "packages/runtime/src/conversation-surface-result-evidence.ts",
+            "packages/runtime/src/conversation-surface-usage.ts",
+            "packages/runtime/src/conversation-surface.ts",
             "packages/runtime/src/credential-references.ts",
             "packages/runtime/src/credentials.ts",
             "packages/runtime/src/dap-protocol.ts",
@@ -10681,9 +10944,15 @@
             "packages/runtime/src/model-advisor-evidence.ts",
             "packages/runtime/src/model-advisor.ts",
             "packages/runtime/src/model-context-envelope.ts",
+            "packages/runtime/src/model-context-overflow-recovery.ts",
+            "packages/runtime/src/model-context-token-extension.ts",
+            "packages/runtime/src/model-context-token-meter.ts",
+            "packages/runtime/src/model-context-token-pressure.ts",
             "packages/runtime/src/model-delta-batcher.ts",
             "packages/runtime/src/model-harness-extension.ts",
             "packages/runtime/src/model-harness-profile.ts",
+            "packages/runtime/src/model-harness-receipt.ts",
+            "packages/runtime/src/model-harness-resolution.ts",
             "packages/runtime/src/model-invocation-capsule-store.ts",
             "packages/runtime/src/model-invocation-capsule.ts",
             "packages/runtime/src/model-invocation-capture.ts",
@@ -10791,6 +11060,9 @@
             "packages/runtime/src/run-failure-settlement.ts",
             "packages/runtime/src/run-failure-source.ts",
             "packages/runtime/src/run-finalization-reserve.ts",
+            "packages/runtime/src/run-harness-comparison.ts",
+            "packages/runtime/src/run-harness-context-metrics.ts",
+            "packages/runtime/src/run-harness-effect-metrics.ts",
             "packages/runtime/src/run-intents.ts",
             "packages/runtime/src/run-lease-renewal.ts",
             "packages/runtime/src/run-lease-state.ts",
@@ -11147,16 +11419,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 958,
-            "sourceCounterparts": 953,
+            "executionFiles": 979,
+            "sourceCounterparts": 974,
             "packageManifests": 2,
-            "allFiles": 1913
+            "allFiles": 1955
           },
           "executionAreaCounts": {
             "apps/cli/dist": 67,
             "apps/server/dist": 118,
             "packages/contracts/dist": 24,
-            "packages/runtime/dist": 741,
+            "packages/runtime/dist": 762,
             "packages/runtime/test/fixtures": 3,
             "packages/sdk/dist": 3,
             "scripts": 2
@@ -12119,8 +12391,8 @@
               "lines": 104
             },
             "apps/server/dist/thread-replay-http-response.js": {
-              "sha256": "6ba82cef4b1f92ea165854f7a53fb886e91edb5bed20467735ecd5ac87fa8843",
-              "lines": 174
+              "sha256": "bd186c37ddbaf267348b8df1892ca088983c08a835db7dbc673802b1e1bb4dc8",
+              "lines": 198
             },
             "apps/server/dist/thread-run-readiness.js": {
               "sha256": "d3bee9190e0a6f947aa8fd086214b88b155d0411411f73e779d9c25a7198cd30",
@@ -12591,8 +12863,8 @@
               "lines": 202
             },
             "apps/server/src/thread-replay-http-response.ts": {
-              "sha256": "7123bc220384d1829e092a6d23780756c2f287adbd700433d4f01733ae36a19e",
-              "lines": 409
+              "sha256": "2017f2ee7ef253022053e30575ae5306d596d35bdf85c0f30ad63718df64f8c0",
+              "lines": 473
             },
             "apps/server/src/thread-run-readiness.ts": {
               "sha256": "24fbb7d63f8dce57f5dda22f8071e0995351d2be1ced233fc4f59cb98f51e86e",
@@ -12739,8 +13011,8 @@
               "lines": 1
             },
             "packages/contracts/package.json": {
-              "sha256": "be0e8daee62c6bfdb44e74e905472d25a446002f279f4e0a4b91f778925e7fd5",
-              "lines": 96
+              "sha256": "9c89a88413e2a916b23a6a71f89cf188d7a74aa9548f39af368fac49f4eac4e5",
+              "lines": 100
             },
             "packages/contracts/src/agent-capabilities.ts": {
               "sha256": "9f4a572d3f1db22d57956d57da2dbd00058d0e8162432c72b50e0622924c9133",
@@ -12787,7 +13059,7 @@
               "lines": 441
             },
             "packages/contracts/src/index.ts": {
-              "sha256": "216c0321cee9914dc6d16a007212d38f97aa2761b1c58398665d4be39a5abb98",
+              "sha256": "3cdc303b01de2dc9d63221d9923556df80cb4c5bd1f5375c310211dda0fb0ccd",
               "lines": 6438
             },
             "packages/contracts/src/management-http.ts": {
@@ -12879,8 +13151,8 @@
               "lines": 45
             },
             "packages/runtime/dist/agent-kernel.js": {
-              "sha256": "dfc8b786a60a0c012b9c4813ebb7008d3f74a7d79e89d5ffd89e653efece8481",
-              "lines": 296
+              "sha256": "a70a4d63893c2c57a70aff9c1432619c6f4fea1ff0d756c274a6b8790a4f1fc0",
+              "lines": 284
             },
             "packages/runtime/dist/agent-kernels.js": {
               "sha256": "df4db736a1d61b598af354146fea77c2374e0c25351e0f6ebf4067da2c2ceead",
@@ -12927,16 +13199,16 @@
               "lines": 335
             },
             "packages/runtime/dist/agent-model-call-pipeline-host.js": {
-              "sha256": "97a1c0564d47d9dadb5b78704f618832ca2b1368ebf8883946c70d74803970ae",
-              "lines": 22
+              "sha256": "4545e46349193db3d163f3d9044529366122d5afcd3a6ff13a7e800b34867ac8",
+              "lines": 29
             },
             "packages/runtime/dist/agent-model-projection.js": {
-              "sha256": "f5ac719f119ac51a59767d53f4e3023cd735cb10afd7d82ea395e0ff0c5dc211",
-              "lines": 33
+              "sha256": "18ade5051e4125e9d5dfe29ca05de1731338794374c83c44c770da5583fc0f02",
+              "lines": 30
             },
             "packages/runtime/dist/agent-model-stream-lifecycle.js": {
-              "sha256": "3aabbefe0d88fbaf6b504fdf2ef610a72f585049b81f28754ab8d258e2c1a07c",
-              "lines": 128
+              "sha256": "58bba8e5170af819d52e1f43d72c06fdc83e97cfe6f66a147c4dd6201ae583a2",
+              "lines": 208
             },
             "packages/runtime/dist/agent-network-tool-ledger.js": {
               "sha256": "0412b2199df51f05f349453b73fe2a0d2e2146e1605bd5877391f713a214b456",
@@ -12947,12 +13219,16 @@
               "lines": 82
             },
             "packages/runtime/dist/agent-prompt-builder.js": {
-              "sha256": "7c7821e6070438441c978a412ce99c0d6d12fd6afee35e6ee2d5853915c49845",
+              "sha256": "ee324a4b1528b2ea4105d7f0d0533757fd1c4e0dad542b07f6c9f0964b5b6d7f",
               "lines": 22
             },
             "packages/runtime/dist/agent-prompt-layers.js": {
               "sha256": "f90fa1b1ec23cfc32aa9946260eaac61c0051873a5a6acb9632b64aa62bfb6bf",
               "lines": 73
+            },
+            "packages/runtime/dist/agent-run-control-tools.js": {
+              "sha256": "317f29ead60ca76330df8eed7075eeaeca61a5aa3e4fec0de18f16785edb2ebc",
+              "lines": 29
             },
             "packages/runtime/dist/agent-run-model.js": {
               "sha256": "68f81519d5c34be91c1d6e6d88ebb0c4abc6e579d947d3806b716ab520a37ee7",
@@ -12963,20 +13239,20 @@
               "lines": 37
             },
             "packages/runtime/dist/agent-runtime-utils.js": {
-              "sha256": "c712fdb9956a4593116837af66b343c39332260e43362fba059b5a7b5fb550dd",
-              "lines": 100
+              "sha256": "010a6c5c332b5436be5d8532ba03ae21d360243407d8ae9a6f293f6fa4247de0",
+              "lines": 101
             },
             "packages/runtime/dist/agent-runtime.js": {
-              "sha256": "d366fa281043341423f86792fc394fa0bd35e8cbb1a2522073025ab13e755baf",
-              "lines": 2277
+              "sha256": "713031debe2c0723343d0a07deea75999cf22664ff39f9dbb8c17fe200f5204d",
+              "lines": 2257
             },
             "packages/runtime/dist/agent-sessions.js": {
               "sha256": "98c965694b191330d8c67e45c953a39d1f09f5fd05b32aa9f71aba9bfe6e7065",
               "lines": 113
             },
             "packages/runtime/dist/agent-tool-effects.js": {
-              "sha256": "e4c52ec16284fd001776f658e477eff436d76aae65b0c79b1d341df32d92378d",
-              "lines": 95
+              "sha256": "c274ea5416aa55f84c3d57f0bbb47cd17c279d4e34076030da3ca1dfbb546066",
+              "lines": 110
             },
             "packages/runtime/dist/agent-tool-failure-context.js": {
               "sha256": "7f6df4b1355e7dd40da7b7e1d0a3726fd461d07af469317130634babefd7f013",
@@ -12987,8 +13263,8 @@
               "lines": 354
             },
             "packages/runtime/dist/agent-tool-policy-preflight.js": {
-              "sha256": "33c9028e1bcbfb7fb9ec7346f93bb83dcffd79d787902ccaebf1fd38ea9ae856",
-              "lines": 222
+              "sha256": "8a4b57594dad1cd224a517b910028014efdc1403db7c429cc16af67dcbeb8899",
+              "lines": 228
             },
             "packages/runtime/dist/agent-tool-readiness.js": {
               "sha256": "1cb194984b9aac1e7645665e7a5026e113f5d207b940b9ede9e712bfb5d74e3b",
@@ -13005,6 +13281,18 @@
             "packages/runtime/dist/agent-tool-specialized-ledger.js": {
               "sha256": "735104a4dfc3148779c303df6c1346b4291f74a77f8afe819eb6385cf5a541ac",
               "lines": 34
+            },
+            "packages/runtime/dist/agent-turn-kernel-services.js": {
+              "sha256": "818f9cba56edb807243c7e9e3da6ba99fa336b1cbb8224fc8985faa1f9fd83b6",
+              "lines": 51
+            },
+            "packages/runtime/dist/agent-turn-pipeline-host.js": {
+              "sha256": "a837d88e2c15a8d87e77ee4566375f5eacb39f48147543dfc125cba73c7eada3",
+              "lines": 22
+            },
+            "packages/runtime/dist/agent-turn-pipeline.js": {
+              "sha256": "36afef36049fc211a13334b0a37bf3dc8bbdf0b2a891592fa33ee6dfe28f2e59",
+              "lines": 173
             },
             "packages/runtime/dist/agents.js": {
               "sha256": "07efc8506d8cd4b4a637c38332bdf13870c56f2c4423c9abf779b2426a074741",
@@ -13275,8 +13563,8 @@
               "lines": 4
             },
             "packages/runtime/dist/builtin-model-call-extensions.js": {
-              "sha256": "f64c90ab639f02c0017fb22b5df66b286a78b7ae0bbe56fa63bef556cbb0cbb2",
-              "lines": 6
+              "sha256": "eb5e736d080c3d9a2691449c3f7598027e38ad84d98005f47f0fdc8d83f93277",
+              "lines": 8
             },
             "packages/runtime/dist/channels.js": {
               "sha256": "2a0f9345e229ad752305f1fa06cb2b8c04913dcec5b2561c91cc0fb8b7ea5c16",
@@ -13366,6 +13654,38 @@
               "sha256": "d5bdc933f606fad144686b4deea419e86860198c6cf846f1c8b2823df6c0e835",
               "lines": 85
             },
+            "packages/runtime/dist/conversation-surface-capsule-store.js": {
+              "sha256": "130fb2c297fadc6391fc2fff1cd0b4285b4a652b697de27be2752bda57f42e96",
+              "lines": 39
+            },
+            "packages/runtime/dist/conversation-surface-capsule.js": {
+              "sha256": "27a2aabe70340f7f4f1009f8a9f8b026aaf32666ee3a8f405db3b22c55d6ed68",
+              "lines": 311
+            },
+            "packages/runtime/dist/conversation-surface-capture.js": {
+              "sha256": "2b5464bf322f79454abf8129b70feb44d052b16d4d36b36d67e3260945657fa0",
+              "lines": 90
+            },
+            "packages/runtime/dist/conversation-surface-declarations.js": {
+              "sha256": "1272c95195510571279cb4d51cf80fdc5c595f99fd3f6723e5b294cb2c8fdbbf",
+              "lines": 72
+            },
+            "packages/runtime/dist/conversation-surface-legacy.js": {
+              "sha256": "1752cf01bfc59e33802f764432fb8d35742fbb3fe6ebcaa539a8926429651c08",
+              "lines": 145
+            },
+            "packages/runtime/dist/conversation-surface-result-evidence.js": {
+              "sha256": "e6b46524e78e3a48ec0978bf820071495a52be0ac9f28652b2734ebea4e1760f",
+              "lines": 75
+            },
+            "packages/runtime/dist/conversation-surface-usage.js": {
+              "sha256": "639a0cf844707537d2353ad0d2e6c692e835ad806529ec3d3cfe5bd41d7499cb",
+              "lines": 33
+            },
+            "packages/runtime/dist/conversation-surface.js": {
+              "sha256": "d1d4c60fda26ae565024e205ff99281faaa934073edfac6ba55406070b1afa2b",
+              "lines": 228
+            },
             "packages/runtime/dist/credential-references.js": {
               "sha256": "70b97d01a6f5ea4e982e449c059f42a2e30abf4a69fbc68362eb5d464498cd0d",
               "lines": 81
@@ -13439,8 +13759,8 @@
               "lines": 98
             },
             "packages/runtime/dist/effective-capabilities-prompt-builder.js": {
-              "sha256": "81070f5acc1a810d05834241b31c4a79ecb500d4352afc902e1864cc80abe385",
-              "lines": 8
+              "sha256": "083e0908997b023afebbc199d5703c36211360fa788940622bf3ae2f0feef518",
+              "lines": 17
             },
             "packages/runtime/dist/effective-capabilities-prompt.js": {
               "sha256": "70a1f0c06b5073c703008339b625c6d2d36dce552db99b7cb83f3ba3cdaa99a2",
@@ -13499,8 +13819,8 @@
               "lines": 445
             },
             "packages/runtime/dist/evaluation.js": {
-              "sha256": "b104c442395277cfebd509e650b445992c190f406f80487c6a4eb3b18b596f91",
-              "lines": 502
+              "sha256": "bd0cff27cb2d4db36cdc46070892507cb1b34adff071b3866a98c5284737f7d9",
+              "lines": 499
             },
             "packages/runtime/dist/execution-plan-blueprint-outcome-baseline.js": {
               "sha256": "fa298f92541e0b53c966b8740e84a2fd37a50bf492bc46d986c82b715fdaab6c",
@@ -13887,8 +14207,8 @@
               "lines": 153
             },
             "packages/runtime/dist/kernel-model-call-pipeline.js": {
-              "sha256": "7f21ca5b80431130eafeb6f7155af4640d0edcd4a4e408837827158d9c38e954",
-              "lines": 159
+              "sha256": "49d9cc093a85df7afe0711d9c8cb313e5e947c64fb3632dd74d0f044438c08c0",
+              "lines": 195
             },
             "packages/runtime/dist/kernel-plugin-manifest.js": {
               "sha256": "85af13327fbafc8cdb424514dc6093a1f62c0e7febed4c1262f3799b8644935b",
@@ -13935,8 +14255,8 @@
               "lines": 32
             },
             "packages/runtime/dist/kernel.js": {
-              "sha256": "459962663615efc1801b3f8f0d62203c8214a50c466575eb4c51aa4fac2f8197",
-              "lines": 25
+              "sha256": "9e0b9db3e237551f80bafb1dffd51322351b5301c23cebf906131e6ffbdd876f",
+              "lines": 27
             },
             "packages/runtime/dist/local-agent-runtime.js": {
               "sha256": "2d49520772d7c1b73f61ef629bfa746ab9d4cf67bec9c2284a90b19953c5dd98",
@@ -14131,8 +14451,24 @@
               "lines": 388
             },
             "packages/runtime/dist/model-context-envelope.js": {
-              "sha256": "96e98fa6ccfc8808e6c93b2bb8779b40ee7cd72a7d904ae0605fd370a6404636",
-              "lines": 260
+              "sha256": "c8c426b8dc4643943ea90eb24db10f29d35228e6022e1a834117f24e8b890dba",
+              "lines": 262
+            },
+            "packages/runtime/dist/model-context-overflow-recovery.js": {
+              "sha256": "d592d83f98460b05163e61111f1e327b825479a9987a5aed161b243a4a082bdf",
+              "lines": 106
+            },
+            "packages/runtime/dist/model-context-token-extension.js": {
+              "sha256": "1b3f582b6cdaae1444586430cb928f899d213f59a4e7289436dcd40916411b60",
+              "lines": 41
+            },
+            "packages/runtime/dist/model-context-token-meter.js": {
+              "sha256": "19a279bdc72f36e3ccc312e742e52a2d876afc89328b27a07292aa8311cb2948",
+              "lines": 108
+            },
+            "packages/runtime/dist/model-context-token-pressure.js": {
+              "sha256": "0f246517459853fbf26b0ae351b4fd3a40f8d2afc0a82613ab807bb47b6e4079",
+              "lines": 140
             },
             "packages/runtime/dist/model-delta-batcher.js": {
               "sha256": "20230c0ac2c42bbddd460b0dc00d467083fb92b7497ef6f4f91d480364b7f497",
@@ -14143,8 +14479,16 @@
               "lines": 31
             },
             "packages/runtime/dist/model-harness-profile.js": {
-              "sha256": "789194cbb170c383c3737dab9cb1d4f35278273f9a8cd01b965fd6325f2f013e",
-              "lines": 180
+              "sha256": "6a6aa4ec479a87d1cb8e835c5109cf4a5972c923bb9b87fba4f3462281fe8433",
+              "lines": 219
+            },
+            "packages/runtime/dist/model-harness-receipt.js": {
+              "sha256": "6141c125ba610f6e8f35127cbdba0a3f95d0d81144323eae7d514657581d9a30",
+              "lines": 176
+            },
+            "packages/runtime/dist/model-harness-resolution.js": {
+              "sha256": "f8a46369a4f1a60b521a23e9c25f1fd363223b854fc6110c06e89366992b93bb",
+              "lines": 265
             },
             "packages/runtime/dist/model-invocation-capsule-store.js": {
               "sha256": "3b697c3acdc07e0547fe69d9c057f94c9820ada61b8aac158e56e47dfb2b49c8",
@@ -14187,8 +14531,8 @@
               "lines": 348
             },
             "packages/runtime/dist/model-prompt-evidence-bindings.js": {
-              "sha256": "b291975d9217641cde90e47edd229c0eb984088ee03e1c533358c59cd6647cfd",
-              "lines": 132
+              "sha256": "56e4411b4a1c4c880ea6a36088c9750aa10ee14fb19f584ab9170a596d06ebb2",
+              "lines": 135
             },
             "packages/runtime/dist/model-semantic-stall-observer.js": {
               "sha256": "315528f54548038449acdf6ad7d169c5797bcb5b689fa8f4f17e1ebb2aa216ae",
@@ -14451,7 +14795,7 @@
               "lines": 86
             },
             "packages/runtime/dist/release-product-identity.js": {
-              "sha256": "f32194b6890e1f2328c6dc82abee080bbe9e33a91946377d8eda2acc8e95ead7",
+              "sha256": "f49c80497f14125431f1991ade19768eca8db63e287d99a7d64b1c5cf9346470",
               "lines": 2
             },
             "packages/runtime/dist/release-product-trial-adoption.js": {
@@ -14574,6 +14918,18 @@
               "sha256": "fb9773edea47e4a747ac747d6732be8b4ac5769df95ddd31226735c240724850",
               "lines": 100
             },
+            "packages/runtime/dist/run-harness-comparison.js": {
+              "sha256": "784e4f9d8ec9528284a7f3551bc1be30771368062c659458b659711b4c98c648",
+              "lines": 123
+            },
+            "packages/runtime/dist/run-harness-context-metrics.js": {
+              "sha256": "5e26f828cd5c66dd425376f509ec4f0538b1592179ff634bc410c0c4378e0aad",
+              "lines": 232
+            },
+            "packages/runtime/dist/run-harness-effect-metrics.js": {
+              "sha256": "46e22c5cb648dd801860aa3f6974a26f75ec6c17c74d2a9e0476874f6ec02fe1",
+              "lines": 253
+            },
             "packages/runtime/dist/run-intents.js": {
               "sha256": "f2cab0c7897c7260f009386ae1b8881d9a2d4b07bcf3baaadd0d902ab6500fa3",
               "lines": 27
@@ -14615,8 +14971,8 @@
               "lines": 168
             },
             "packages/runtime/dist/run-replay.js": {
-              "sha256": "7d7c88d8541d4c3b4891fd433872c1bd3bce652a3af5dcc8394fcab484fa8371",
-              "lines": 299
+              "sha256": "fa0f64c92b8ce7246dc4ca8140004743de3bcdb52a7312b3bb4c1437f51b7fcc",
+              "lines": 304
             },
             "packages/runtime/dist/run-research-budget.js": {
               "sha256": "bf6327cf877a1a3f149002f491126edeac8132a23e47e2783f732dab3765f575",
@@ -15847,8 +16203,8 @@
               "lines": 66
             },
             "packages/runtime/src/agent-kernel.ts": {
-              "sha256": "b98cf40a1469cb7e1501b699e7277adb38c655c60085d10508f300a6100acb89",
-              "lines": 500
+              "sha256": "a675418f62402b6baff430e3eb593e914ccabdc99d6db99fcbc9d35da21bb903",
+              "lines": 492
             },
             "packages/runtime/src/agent-kernels.ts": {
               "sha256": "4b4bbbbdec465441ec972e749de201c61871d333bc18de3c2a4c315ed1c6a128",
@@ -15895,16 +16251,16 @@
               "lines": 495
             },
             "packages/runtime/src/agent-model-call-pipeline-host.ts": {
-              "sha256": "923d878b81f7fbe535b5cc12be4f1685a7764ef97e84bd4cb81a3225c0395b09",
-              "lines": 26
+              "sha256": "715778c9ffdb6a6fd0550902b0477290f769744e0499d1632f1077062fc565ab",
+              "lines": 33
             },
             "packages/runtime/src/agent-model-projection.ts": {
-              "sha256": "d825f4e2463f0f8c49de79736663e8c6bf8a404ef30852f3dbd4ca7d3b147879",
-              "lines": 53
+              "sha256": "b43701bee3e185a2f77620aadf14b4d137587bcb29ddfd516c83fef61bfd49c3",
+              "lines": 46
             },
             "packages/runtime/src/agent-model-stream-lifecycle.ts": {
-              "sha256": "a25d7983ab3dee314fcefe3bf4c6df20996447a6768b4390cabeac294dfd1704",
-              "lines": 239
+              "sha256": "768c3d4a7be5f1b90a64e1f25da5c80d3fe3ca6817a7ba2433273fd68f699e1d",
+              "lines": 340
             },
             "packages/runtime/src/agent-network-tool-ledger.ts": {
               "sha256": "6005269e84129a6c9176e96f3f10454fd1ae2d44db4a431e4ea9e7198f18f436",
@@ -15915,12 +16271,16 @@
               "lines": 137
             },
             "packages/runtime/src/agent-prompt-builder.ts": {
-              "sha256": "7f915ad5522fc01e63a3e84d7942f4a5f757a7fa833ab6817197bb90b4a4852f",
-              "lines": 59
+              "sha256": "7cd1950f031e58a9c605a8544bf560f4ea84b2a0e453ab736f5d231f6e34da32",
+              "lines": 63
             },
             "packages/runtime/src/agent-prompt-layers.ts": {
               "sha256": "34b78380b19d33fffe65c4f8a8f5142048898fef6e650a4717094bbdf53d76af",
               "lines": 138
+            },
+            "packages/runtime/src/agent-run-control-tools.ts": {
+              "sha256": "b6a998d9e1ae63babafa86495d91c2c6e115a3a2347216d65cfe943e2f950455",
+              "lines": 42
             },
             "packages/runtime/src/agent-run-model.ts": {
               "sha256": "16d02aaefbdcf1d472faed5610ec75952412a9d0b533771c1166bef07a283e63",
@@ -15931,20 +16291,20 @@
               "lines": 67
             },
             "packages/runtime/src/agent-runtime-utils.ts": {
-              "sha256": "22e0d96b795447955846ffac03d9d18172ca97438e3e14fe249572d78bc9e01e",
-              "lines": 149
+              "sha256": "8966f2e22a48a0f377013518a20fea9ee88e6ca8aa3ac71b8f25ab9f6c9a316f",
+              "lines": 146
             },
             "packages/runtime/src/agent-runtime.ts": {
-              "sha256": "441c25a828bb9b4ed5a3ae7e7c4f4313baae2ed1802b7b87447622f91d0b8f88",
-              "lines": 3334
+              "sha256": "8d0838f2c999784390d8448810bb49584eec895c694052295a30f573d6899a26",
+              "lines": 3306
             },
             "packages/runtime/src/agent-sessions.ts": {
               "sha256": "d01d8e95a59134c330a2c65f55c4790c97019974ebfe85e83b4e4429f039f2c4",
               "lines": 242
             },
             "packages/runtime/src/agent-tool-effects.ts": {
-              "sha256": "5d53868ee1ddca3a12c1220d71dc909f63f88b9e26494161d99df3d9d10e912c",
-              "lines": 101
+              "sha256": "722503a6d5a13f117e941cb1b6fd196e86912a05e6c0239f3b51b1d823d38742",
+              "lines": 125
             },
             "packages/runtime/src/agent-tool-failure-context.ts": {
               "sha256": "25a3deb006a1b0167bae480c4ed9ec81af53c538e7bc8fa09f5308feebf57abd",
@@ -15955,8 +16315,8 @@
               "lines": 472
             },
             "packages/runtime/src/agent-tool-policy-preflight.ts": {
-              "sha256": "2167fa5c2659294b94e746821769f9b412c9626549d96b23a57eb225736962fd",
-              "lines": 377
+              "sha256": "c0d26d83228bc0ba829eb8ef8af3a62b8d2a95d82c737dbf7b3c2cb86db49e63",
+              "lines": 395
             },
             "packages/runtime/src/agent-tool-readiness.ts": {
               "sha256": "b88d587a86fbdb9e9d129c73736397773b93472192f04731220b1eaa2b65b212",
@@ -15973,6 +16333,18 @@
             "packages/runtime/src/agent-tool-specialized-ledger.ts": {
               "sha256": "92cdc186790dbb4cbc7ee92b9c93856214c924ad76658933779e8b04bb34aff2",
               "lines": 80
+            },
+            "packages/runtime/src/agent-turn-kernel-services.ts": {
+              "sha256": "01e0e1b1f2bc3119eeeadf13c82bfbc01fe907828829dafc614bcc7d51ab0106",
+              "lines": 86
+            },
+            "packages/runtime/src/agent-turn-pipeline-host.ts": {
+              "sha256": "f85717737268078394b235b5049594e42825d2b7d23edc4acbea9ca72f6645bc",
+              "lines": 26
+            },
+            "packages/runtime/src/agent-turn-pipeline.ts": {
+              "sha256": "b9f643f10c161dbd6b1417e3bedf63a78cd5c8dc514b96189a9006b80d7001d7",
+              "lines": 307
             },
             "packages/runtime/src/agents.ts": {
               "sha256": "3d5834e2e5141c1394ea572245ec60e8d50466a93de26203fc9de54a4838343f",
@@ -16243,8 +16615,8 @@
               "lines": 4
             },
             "packages/runtime/src/builtin-model-call-extensions.ts": {
-              "sha256": "572f519df0e842dec7fdc0f2ffe60d5703bcb010503bf39ff7e34c9368e4b726",
-              "lines": 12
+              "sha256": "cf9db9279e6a5b92de6de6db6e4bc0448368f0e45698718dab7fc09d5d87457f",
+              "lines": 14
             },
             "packages/runtime/src/channels.ts": {
               "sha256": "baf309368b2003a41295f129d99b8a14b88dedc2a71ac5a46a27224a2a4a340e",
@@ -16334,6 +16706,38 @@
               "sha256": "28e43bbccdbc0fccac4401efd2e9b3531a46037757c117912e52a9f4d40e663a",
               "lines": 118
             },
+            "packages/runtime/src/conversation-surface-capsule-store.ts": {
+              "sha256": "42e99681ecedeb4bed711dc3202a96e00c3a7f09297f4b59a371595194bcdebf",
+              "lines": 71
+            },
+            "packages/runtime/src/conversation-surface-capsule.ts": {
+              "sha256": "c09a3574387d17a2ca833d1ed4cf09258e944572f8d1870e6716b2a76116caf8",
+              "lines": 482
+            },
+            "packages/runtime/src/conversation-surface-capture.ts": {
+              "sha256": "099e17528ca84b66221637fcd319981f62249e46e306bec49b46b0f4303c29f9",
+              "lines": 142
+            },
+            "packages/runtime/src/conversation-surface-declarations.ts": {
+              "sha256": "e7f1fbdfe7654bb661f4370dfdae1c6ed1734ec563e9df944b9d21d76bf5744d",
+              "lines": 92
+            },
+            "packages/runtime/src/conversation-surface-legacy.ts": {
+              "sha256": "ee5944a14b927ed262fed9a1ac0deb0da9b08a0c22181a8e47d8e70382e6ecbd",
+              "lines": 230
+            },
+            "packages/runtime/src/conversation-surface-result-evidence.ts": {
+              "sha256": "64932d8bc708629afbbcce488b065147fa57486ab476d4be5a5af2b357c09166",
+              "lines": 122
+            },
+            "packages/runtime/src/conversation-surface-usage.ts": {
+              "sha256": "b43a4503ab64ffbdd54c79718afbd6cc928e338d876eef6dcc9f21e8da779d3d",
+              "lines": 44
+            },
+            "packages/runtime/src/conversation-surface.ts": {
+              "sha256": "8979474bc832450f1aa81b330f30e12f1653da040619f74785032bdc534a01ad",
+              "lines": 390
+            },
             "packages/runtime/src/credential-references.ts": {
               "sha256": "4b6b407902816631f1befa89792b29b0dbfe2872dca9220ecafb4ceb050e5813",
               "lines": 104
@@ -16407,8 +16811,8 @@
               "lines": 142
             },
             "packages/runtime/src/effective-capabilities-prompt-builder.ts": {
-              "sha256": "c347666209d9f4004ddf41becf8644749c9f87af7761a559901b77e5953d139a",
-              "lines": 30
+              "sha256": "92cd5d9503b8fd1945e1b7857397d29afebbf5cdbc8ef75eccc43b5657e1f275",
+              "lines": 45
             },
             "packages/runtime/src/effective-capabilities-prompt.ts": {
               "sha256": "36bdb7ed795c62b6e10ab7887286bd76cb93c10634584625ae471b2b90b55819",
@@ -16467,8 +16871,8 @@
               "lines": 626
             },
             "packages/runtime/src/evaluation.ts": {
-              "sha256": "85b767efaad9c1f184ef35798355473500a5475d85a82deeba1a9db0cea4f0a9",
-              "lines": 675
+              "sha256": "76c2044fbdc6370e603d51ec5413f74b646a43062d1a3fa5c24e70ca10f80f97",
+              "lines": 673
             },
             "packages/runtime/src/execution-plan-blueprint-outcome-baseline.ts": {
               "sha256": "251360dd42326df33afa10b09ee74b82fe7764adba76a8f44e7b4b038138bcca",
@@ -16855,8 +17259,8 @@
               "lines": 209
             },
             "packages/runtime/src/kernel-model-call-pipeline.ts": {
-              "sha256": "f20fbc400b656fb7d750cf99ae78bdb6d2694c14f309363d781478197ec37c51",
-              "lines": 261
+              "sha256": "016852b1a9e82d6d11401e810974777e01a8f2e0fb2e0ed9fa134acd94f66c66",
+              "lines": 325
             },
             "packages/runtime/src/kernel-plugin-manifest.ts": {
               "sha256": "75ff59b4592c11c5012cd6df5928667f86869dce6a6961113213057b81188b46",
@@ -16903,8 +17307,8 @@
               "lines": 63
             },
             "packages/runtime/src/kernel.ts": {
-              "sha256": "459962663615efc1801b3f8f0d62203c8214a50c466575eb4c51aa4fac2f8197",
-              "lines": 25
+              "sha256": "9e0b9db3e237551f80bafb1dffd51322351b5301c23cebf906131e6ffbdd876f",
+              "lines": 27
             },
             "packages/runtime/src/local-agent-runtime.ts": {
               "sha256": "ed0ded3a3c93fa8dba28d022eb57522b538e121b2f28f0e7e45c90fec1806063",
@@ -17099,8 +17503,24 @@
               "lines": 577
             },
             "packages/runtime/src/model-context-envelope.ts": {
-              "sha256": "1bf9df904ffcc488755ded2e32fa3d5e5c325d8f52f892c80f114f5439b1b6e4",
-              "lines": 340
+              "sha256": "76fdacd17651890a666f62097c57b7d733ad74055561e94178bfe83af7715090",
+              "lines": 341
+            },
+            "packages/runtime/src/model-context-overflow-recovery.ts": {
+              "sha256": "d3854c73314dcfa0b22782b5686b0306fc8e1645016876fe526da767bcebc18a",
+              "lines": 145
+            },
+            "packages/runtime/src/model-context-token-extension.ts": {
+              "sha256": "b70c0dea3360248d9efabc466b36c5c81a3ebdcea1bd3f77baa781957e5505ed",
+              "lines": 54
+            },
+            "packages/runtime/src/model-context-token-meter.ts": {
+              "sha256": "9a6e1b6f93ac609de4a929121e425be6bd54e4bb2325d550212b1d32ed93fd1d",
+              "lines": 219
+            },
+            "packages/runtime/src/model-context-token-pressure.ts": {
+              "sha256": "bc2a34a7a83b4b1618e8734fdc0db19b289c7da15ec49c0a0caa8c21fdd9f280",
+              "lines": 228
             },
             "packages/runtime/src/model-delta-batcher.ts": {
               "sha256": "f098a22125f13710a0a3e73b9abb0e2e07306b1a20f9bb82534b8c4379baba2a",
@@ -17111,8 +17531,16 @@
               "lines": 40
             },
             "packages/runtime/src/model-harness-profile.ts": {
-              "sha256": "70825d887887e554b2f0569298b642a91a30600ca5cef33f35d9a919e4eb53e1",
-              "lines": 258
+              "sha256": "cc7aac456b42de9b7b8f18f2bc9b5403443e1be8faeb9cfce9fe5af61732d5fc",
+              "lines": 283
+            },
+            "packages/runtime/src/model-harness-receipt.ts": {
+              "sha256": "53fcd5f179ea9c414014ef49c6d99dbf160e6550522feee7fa2dc60849a5b3e4",
+              "lines": 259
+            },
+            "packages/runtime/src/model-harness-resolution.ts": {
+              "sha256": "497fb7fcd45daa298a28f7bc3617b1af2c249735a977ede0fe0662a7b0cd91a9",
+              "lines": 407
             },
             "packages/runtime/src/model-invocation-capsule-store.ts": {
               "sha256": "41eab25d5bedf8c9edd93775c674f19ed964172625b3d0690044d4a745fa2639",
@@ -17155,8 +17583,8 @@
               "lines": 481
             },
             "packages/runtime/src/model-prompt-evidence-bindings.ts": {
-              "sha256": "bb269f1d6263f4167d37b1b638fbabca0a33d051cef0b6ebc72eea3c57bf354b",
-              "lines": 191
+              "sha256": "c480a999d353653f530191ca60594a17d90e228181c4e30907e14510efa57e5d",
+              "lines": 194
             },
             "packages/runtime/src/model-semantic-stall-observer.ts": {
               "sha256": "29e234c666ef92769e4c80919626438fc07bbdc569f19c3dc6811a381058c7b7",
@@ -17419,7 +17847,7 @@
               "lines": 121
             },
             "packages/runtime/src/release-product-identity.ts": {
-              "sha256": "5b91ef241096819e24ae89cb481d0c272ff786cc20b057b81f9fbbb805b36b3a",
+              "sha256": "a87086cc929b07db7e2835d22092986aaa1b2ad9bc0c6d074c1111144df6bd50",
               "lines": 3
             },
             "packages/runtime/src/release-product-trial-adoption.ts": {
@@ -17542,6 +17970,18 @@
               "sha256": "7e3b7f18d60914c0076b15901afcaf440ad6c4281f942a2e6d67052f0064b6ea",
               "lines": 155
             },
+            "packages/runtime/src/run-harness-comparison.ts": {
+              "sha256": "9b8b124c225b06770a29458608df45bddbf0543f99b333d540fb042f4421284e",
+              "lines": 218
+            },
+            "packages/runtime/src/run-harness-context-metrics.ts": {
+              "sha256": "fe106397f0b64972d0d0dd735dd729a7015303f754b1826f31025e2ee4e3b2f3",
+              "lines": 343
+            },
+            "packages/runtime/src/run-harness-effect-metrics.ts": {
+              "sha256": "9c233e0baca8c9957c4e59364f2b59ff3d358072ef98c536428a81b7d94c3563",
+              "lines": 332
+            },
             "packages/runtime/src/run-intents.ts": {
               "sha256": "8af9a35808222e2195530480e9b747f2ba3427977be5c881ceb5719fa776587d",
               "lines": 43
@@ -17583,8 +18023,8 @@
               "lines": 192
             },
             "packages/runtime/src/run-replay.ts": {
-              "sha256": "89d37160102d8c56bffa05e5f0d8f0a8f5ff49f78458e3d9eb64d68c79bd7454",
-              "lines": 405
+              "sha256": "76fd53b2eaba55fbaed62cfb2d273f049935db30e97fca56d22de8f2ef243a28",
+              "lines": 423
             },
             "packages/runtime/src/run-research-budget.ts": {
               "sha256": "84306f55c1158ce2c4102368641a1ab2f38b5076f3f7e32ae53db4303e9ed261",
@@ -18815,7 +19255,7 @@
               "lines": 32
             }
           },
-          "manifestSha256": "67251c682e5ad9e1380320b3ea248deef63c27197de4047aeb3a0381309d2fd8"
+          "manifestSha256": "8fb4c621e2fad70bd3bb26e5adaab32b80901a5e4ef61537950399301dc4e34a"
         },
         "productionServerTrace": {
           "roots": [
@@ -19001,6 +19441,7 @@
             "packages/runtime/dist/agent-process-tool-ledger.js",
             "packages/runtime/dist/agent-prompt-builder.js",
             "packages/runtime/dist/agent-prompt-layers.js",
+            "packages/runtime/dist/agent-run-control-tools.js",
             "packages/runtime/dist/agent-run-model.js",
             "packages/runtime/dist/agent-run-started-event.js",
             "packages/runtime/dist/agent-runtime-utils.js",
@@ -19014,6 +19455,9 @@
             "packages/runtime/dist/agent-tool-result-lifecycle.js",
             "packages/runtime/dist/agent-tool-result-text.js",
             "packages/runtime/dist/agent-tool-specialized-ledger.js",
+            "packages/runtime/dist/agent-turn-kernel-services.js",
+            "packages/runtime/dist/agent-turn-pipeline-host.js",
+            "packages/runtime/dist/agent-turn-pipeline.js",
             "packages/runtime/dist/agents.js",
             "packages/runtime/dist/artifact-receipts.js",
             "packages/runtime/dist/artifact-status.js",
@@ -19103,6 +19547,14 @@
             "packages/runtime/dist/conversation-plans-projection.js",
             "packages/runtime/dist/conversation-recoveries-projection.js",
             "packages/runtime/dist/conversation-subagents-projection.js",
+            "packages/runtime/dist/conversation-surface-capsule-store.js",
+            "packages/runtime/dist/conversation-surface-capsule.js",
+            "packages/runtime/dist/conversation-surface-capture.js",
+            "packages/runtime/dist/conversation-surface-declarations.js",
+            "packages/runtime/dist/conversation-surface-legacy.js",
+            "packages/runtime/dist/conversation-surface-result-evidence.js",
+            "packages/runtime/dist/conversation-surface-usage.js",
+            "packages/runtime/dist/conversation-surface.js",
             "packages/runtime/dist/credential-references.js",
             "packages/runtime/dist/credentials.js",
             "packages/runtime/dist/dap-protocol.js",
@@ -19295,9 +19747,15 @@
             "packages/runtime/dist/model-advisor-evidence.js",
             "packages/runtime/dist/model-advisor.js",
             "packages/runtime/dist/model-context-envelope.js",
+            "packages/runtime/dist/model-context-overflow-recovery.js",
+            "packages/runtime/dist/model-context-token-extension.js",
+            "packages/runtime/dist/model-context-token-meter.js",
+            "packages/runtime/dist/model-context-token-pressure.js",
             "packages/runtime/dist/model-delta-batcher.js",
             "packages/runtime/dist/model-harness-extension.js",
             "packages/runtime/dist/model-harness-profile.js",
+            "packages/runtime/dist/model-harness-receipt.js",
+            "packages/runtime/dist/model-harness-resolution.js",
             "packages/runtime/dist/model-invocation-capsule-store.js",
             "packages/runtime/dist/model-invocation-capsule.js",
             "packages/runtime/dist/model-invocation-capture.js",
@@ -19405,6 +19863,9 @@
             "packages/runtime/dist/run-failure-settlement.js",
             "packages/runtime/dist/run-failure-source.js",
             "packages/runtime/dist/run-finalization-reserve.js",
+            "packages/runtime/dist/run-harness-comparison.js",
+            "packages/runtime/dist/run-harness-context-metrics.js",
+            "packages/runtime/dist/run-harness-effect-metrics.js",
             "packages/runtime/dist/run-intents.js",
             "packages/runtime/dist/run-lease-renewal.js",
             "packages/runtime/dist/run-lease-state.js",
@@ -19895,6 +20356,7 @@
             "packages/runtime/src/agent-process-tool-ledger.ts",
             "packages/runtime/src/agent-prompt-builder.ts",
             "packages/runtime/src/agent-prompt-layers.ts",
+            "packages/runtime/src/agent-run-control-tools.ts",
             "packages/runtime/src/agent-run-model.ts",
             "packages/runtime/src/agent-run-started-event.ts",
             "packages/runtime/src/agent-runtime-utils.ts",
@@ -19908,6 +20370,9 @@
             "packages/runtime/src/agent-tool-result-lifecycle.ts",
             "packages/runtime/src/agent-tool-result-text.ts",
             "packages/runtime/src/agent-tool-specialized-ledger.ts",
+            "packages/runtime/src/agent-turn-kernel-services.ts",
+            "packages/runtime/src/agent-turn-pipeline-host.ts",
+            "packages/runtime/src/agent-turn-pipeline.ts",
             "packages/runtime/src/agents.ts",
             "packages/runtime/src/artifact-receipts.ts",
             "packages/runtime/src/artifact-status.ts",
@@ -19997,6 +20462,14 @@
             "packages/runtime/src/conversation-plans-projection.ts",
             "packages/runtime/src/conversation-recoveries-projection.ts",
             "packages/runtime/src/conversation-subagents-projection.ts",
+            "packages/runtime/src/conversation-surface-capsule-store.ts",
+            "packages/runtime/src/conversation-surface-capsule.ts",
+            "packages/runtime/src/conversation-surface-capture.ts",
+            "packages/runtime/src/conversation-surface-declarations.ts",
+            "packages/runtime/src/conversation-surface-legacy.ts",
+            "packages/runtime/src/conversation-surface-result-evidence.ts",
+            "packages/runtime/src/conversation-surface-usage.ts",
+            "packages/runtime/src/conversation-surface.ts",
             "packages/runtime/src/credential-references.ts",
             "packages/runtime/src/credentials.ts",
             "packages/runtime/src/dap-protocol.ts",
@@ -20189,9 +20662,15 @@
             "packages/runtime/src/model-advisor-evidence.ts",
             "packages/runtime/src/model-advisor.ts",
             "packages/runtime/src/model-context-envelope.ts",
+            "packages/runtime/src/model-context-overflow-recovery.ts",
+            "packages/runtime/src/model-context-token-extension.ts",
+            "packages/runtime/src/model-context-token-meter.ts",
+            "packages/runtime/src/model-context-token-pressure.ts",
             "packages/runtime/src/model-delta-batcher.ts",
             "packages/runtime/src/model-harness-extension.ts",
             "packages/runtime/src/model-harness-profile.ts",
+            "packages/runtime/src/model-harness-receipt.ts",
+            "packages/runtime/src/model-harness-resolution.ts",
             "packages/runtime/src/model-invocation-capsule-store.ts",
             "packages/runtime/src/model-invocation-capsule.ts",
             "packages/runtime/src/model-invocation-capture.ts",
@@ -20299,6 +20778,9 @@
             "packages/runtime/src/run-failure-settlement.ts",
             "packages/runtime/src/run-failure-source.ts",
             "packages/runtime/src/run-finalization-reserve.ts",
+            "packages/runtime/src/run-harness-comparison.ts",
+            "packages/runtime/src/run-harness-context-metrics.ts",
+            "packages/runtime/src/run-harness-effect-metrics.ts",
             "packages/runtime/src/run-intents.ts",
             "packages/runtime/src/run-lease-renewal.ts",
             "packages/runtime/src/run-lease-state.ts",
@@ -20655,16 +21137,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 892,
-            "sourceCounterparts": 886,
+            "executionFiles": 913,
+            "sourceCounterparts": 907,
             "packageManifests": 3,
-            "allFiles": 1781
+            "allFiles": 1823
           },
           "executionAreaCounts": {
             "apps/server/dist": 120,
             "other": 1,
             "packages/contracts/dist": 24,
-            "packages/runtime/dist": 739,
+            "packages/runtime/dist": 760,
             "packages/sdk/dist": 3,
             "scripts": 5
           },
@@ -21094,8 +21576,8 @@
               "lines": 104
             },
             "apps/server/dist/thread-replay-http-response.js": {
-              "sha256": "6ba82cef4b1f92ea165854f7a53fb886e91edb5bed20467735ecd5ac87fa8843",
-              "lines": 174
+              "sha256": "bd186c37ddbaf267348b8df1892ca088983c08a835db7dbc673802b1e1bb4dc8",
+              "lines": 198
             },
             "apps/server/dist/thread-run-readiness.js": {
               "sha256": "d3bee9190e0a6f947aa8fd086214b88b155d0411411f73e779d9c25a7198cd30",
@@ -21574,8 +22056,8 @@
               "lines": 202
             },
             "apps/server/src/thread-replay-http-response.ts": {
-              "sha256": "7123bc220384d1829e092a6d23780756c2f287adbd700433d4f01733ae36a19e",
-              "lines": 409
+              "sha256": "2017f2ee7ef253022053e30575ae5306d596d35bdf85c0f30ad63718df64f8c0",
+              "lines": 473
             },
             "apps/server/src/thread-run-readiness.ts": {
               "sha256": "24fbb7d63f8dce57f5dda22f8071e0995351d2be1ced233fc4f59cb98f51e86e",
@@ -21726,8 +22208,8 @@
               "lines": 1
             },
             "packages/contracts/package.json": {
-              "sha256": "be0e8daee62c6bfdb44e74e905472d25a446002f279f4e0a4b91f778925e7fd5",
-              "lines": 96
+              "sha256": "9c89a88413e2a916b23a6a71f89cf188d7a74aa9548f39af368fac49f4eac4e5",
+              "lines": 100
             },
             "packages/contracts/src/agent-capabilities.ts": {
               "sha256": "9f4a572d3f1db22d57956d57da2dbd00058d0e8162432c72b50e0622924c9133",
@@ -21774,7 +22256,7 @@
               "lines": 441
             },
             "packages/contracts/src/index.ts": {
-              "sha256": "216c0321cee9914dc6d16a007212d38f97aa2761b1c58398665d4be39a5abb98",
+              "sha256": "3cdc303b01de2dc9d63221d9923556df80cb4c5bd1f5375c310211dda0fb0ccd",
               "lines": 6438
             },
             "packages/contracts/src/management-http.ts": {
@@ -21866,8 +22348,8 @@
               "lines": 45
             },
             "packages/runtime/dist/agent-kernel.js": {
-              "sha256": "dfc8b786a60a0c012b9c4813ebb7008d3f74a7d79e89d5ffd89e653efece8481",
-              "lines": 296
+              "sha256": "a70a4d63893c2c57a70aff9c1432619c6f4fea1ff0d756c274a6b8790a4f1fc0",
+              "lines": 284
             },
             "packages/runtime/dist/agent-kernels.js": {
               "sha256": "df4db736a1d61b598af354146fea77c2374e0c25351e0f6ebf4067da2c2ceead",
@@ -21914,16 +22396,16 @@
               "lines": 335
             },
             "packages/runtime/dist/agent-model-call-pipeline-host.js": {
-              "sha256": "97a1c0564d47d9dadb5b78704f618832ca2b1368ebf8883946c70d74803970ae",
-              "lines": 22
+              "sha256": "4545e46349193db3d163f3d9044529366122d5afcd3a6ff13a7e800b34867ac8",
+              "lines": 29
             },
             "packages/runtime/dist/agent-model-projection.js": {
-              "sha256": "f5ac719f119ac51a59767d53f4e3023cd735cb10afd7d82ea395e0ff0c5dc211",
-              "lines": 33
+              "sha256": "18ade5051e4125e9d5dfe29ca05de1731338794374c83c44c770da5583fc0f02",
+              "lines": 30
             },
             "packages/runtime/dist/agent-model-stream-lifecycle.js": {
-              "sha256": "3aabbefe0d88fbaf6b504fdf2ef610a72f585049b81f28754ab8d258e2c1a07c",
-              "lines": 128
+              "sha256": "58bba8e5170af819d52e1f43d72c06fdc83e97cfe6f66a147c4dd6201ae583a2",
+              "lines": 208
             },
             "packages/runtime/dist/agent-network-tool-ledger.js": {
               "sha256": "0412b2199df51f05f349453b73fe2a0d2e2146e1605bd5877391f713a214b456",
@@ -21934,12 +22416,16 @@
               "lines": 82
             },
             "packages/runtime/dist/agent-prompt-builder.js": {
-              "sha256": "7c7821e6070438441c978a412ce99c0d6d12fd6afee35e6ee2d5853915c49845",
+              "sha256": "ee324a4b1528b2ea4105d7f0d0533757fd1c4e0dad542b07f6c9f0964b5b6d7f",
               "lines": 22
             },
             "packages/runtime/dist/agent-prompt-layers.js": {
               "sha256": "f90fa1b1ec23cfc32aa9946260eaac61c0051873a5a6acb9632b64aa62bfb6bf",
               "lines": 73
+            },
+            "packages/runtime/dist/agent-run-control-tools.js": {
+              "sha256": "317f29ead60ca76330df8eed7075eeaeca61a5aa3e4fec0de18f16785edb2ebc",
+              "lines": 29
             },
             "packages/runtime/dist/agent-run-model.js": {
               "sha256": "68f81519d5c34be91c1d6e6d88ebb0c4abc6e579d947d3806b716ab520a37ee7",
@@ -21950,20 +22436,20 @@
               "lines": 37
             },
             "packages/runtime/dist/agent-runtime-utils.js": {
-              "sha256": "c712fdb9956a4593116837af66b343c39332260e43362fba059b5a7b5fb550dd",
-              "lines": 100
+              "sha256": "010a6c5c332b5436be5d8532ba03ae21d360243407d8ae9a6f293f6fa4247de0",
+              "lines": 101
             },
             "packages/runtime/dist/agent-runtime.js": {
-              "sha256": "d366fa281043341423f86792fc394fa0bd35e8cbb1a2522073025ab13e755baf",
-              "lines": 2277
+              "sha256": "713031debe2c0723343d0a07deea75999cf22664ff39f9dbb8c17fe200f5204d",
+              "lines": 2257
             },
             "packages/runtime/dist/agent-sessions.js": {
               "sha256": "98c965694b191330d8c67e45c953a39d1f09f5fd05b32aa9f71aba9bfe6e7065",
               "lines": 113
             },
             "packages/runtime/dist/agent-tool-effects.js": {
-              "sha256": "e4c52ec16284fd001776f658e477eff436d76aae65b0c79b1d341df32d92378d",
-              "lines": 95
+              "sha256": "c274ea5416aa55f84c3d57f0bbb47cd17c279d4e34076030da3ca1dfbb546066",
+              "lines": 110
             },
             "packages/runtime/dist/agent-tool-failure-context.js": {
               "sha256": "7f6df4b1355e7dd40da7b7e1d0a3726fd461d07af469317130634babefd7f013",
@@ -21974,8 +22460,8 @@
               "lines": 354
             },
             "packages/runtime/dist/agent-tool-policy-preflight.js": {
-              "sha256": "33c9028e1bcbfb7fb9ec7346f93bb83dcffd79d787902ccaebf1fd38ea9ae856",
-              "lines": 222
+              "sha256": "8a4b57594dad1cd224a517b910028014efdc1403db7c429cc16af67dcbeb8899",
+              "lines": 228
             },
             "packages/runtime/dist/agent-tool-readiness.js": {
               "sha256": "1cb194984b9aac1e7645665e7a5026e113f5d207b940b9ede9e712bfb5d74e3b",
@@ -21992,6 +22478,18 @@
             "packages/runtime/dist/agent-tool-specialized-ledger.js": {
               "sha256": "735104a4dfc3148779c303df6c1346b4291f74a77f8afe819eb6385cf5a541ac",
               "lines": 34
+            },
+            "packages/runtime/dist/agent-turn-kernel-services.js": {
+              "sha256": "818f9cba56edb807243c7e9e3da6ba99fa336b1cbb8224fc8985faa1f9fd83b6",
+              "lines": 51
+            },
+            "packages/runtime/dist/agent-turn-pipeline-host.js": {
+              "sha256": "a837d88e2c15a8d87e77ee4566375f5eacb39f48147543dfc125cba73c7eada3",
+              "lines": 22
+            },
+            "packages/runtime/dist/agent-turn-pipeline.js": {
+              "sha256": "36afef36049fc211a13334b0a37bf3dc8bbdf0b2a891592fa33ee6dfe28f2e59",
+              "lines": 173
             },
             "packages/runtime/dist/agents.js": {
               "sha256": "07efc8506d8cd4b4a637c38332bdf13870c56f2c4423c9abf779b2426a074741",
@@ -22258,8 +22756,8 @@
               "lines": 4
             },
             "packages/runtime/dist/builtin-model-call-extensions.js": {
-              "sha256": "f64c90ab639f02c0017fb22b5df66b286a78b7ae0bbe56fa63bef556cbb0cbb2",
-              "lines": 6
+              "sha256": "eb5e736d080c3d9a2691449c3f7598027e38ad84d98005f47f0fdc8d83f93277",
+              "lines": 8
             },
             "packages/runtime/dist/channels.js": {
               "sha256": "2a0f9345e229ad752305f1fa06cb2b8c04913dcec5b2561c91cc0fb8b7ea5c16",
@@ -22349,6 +22847,38 @@
               "sha256": "d5bdc933f606fad144686b4deea419e86860198c6cf846f1c8b2823df6c0e835",
               "lines": 85
             },
+            "packages/runtime/dist/conversation-surface-capsule-store.js": {
+              "sha256": "130fb2c297fadc6391fc2fff1cd0b4285b4a652b697de27be2752bda57f42e96",
+              "lines": 39
+            },
+            "packages/runtime/dist/conversation-surface-capsule.js": {
+              "sha256": "27a2aabe70340f7f4f1009f8a9f8b026aaf32666ee3a8f405db3b22c55d6ed68",
+              "lines": 311
+            },
+            "packages/runtime/dist/conversation-surface-capture.js": {
+              "sha256": "2b5464bf322f79454abf8129b70feb44d052b16d4d36b36d67e3260945657fa0",
+              "lines": 90
+            },
+            "packages/runtime/dist/conversation-surface-declarations.js": {
+              "sha256": "1272c95195510571279cb4d51cf80fdc5c595f99fd3f6723e5b294cb2c8fdbbf",
+              "lines": 72
+            },
+            "packages/runtime/dist/conversation-surface-legacy.js": {
+              "sha256": "1752cf01bfc59e33802f764432fb8d35742fbb3fe6ebcaa539a8926429651c08",
+              "lines": 145
+            },
+            "packages/runtime/dist/conversation-surface-result-evidence.js": {
+              "sha256": "e6b46524e78e3a48ec0978bf820071495a52be0ac9f28652b2734ebea4e1760f",
+              "lines": 75
+            },
+            "packages/runtime/dist/conversation-surface-usage.js": {
+              "sha256": "639a0cf844707537d2353ad0d2e6c692e835ad806529ec3d3cfe5bd41d7499cb",
+              "lines": 33
+            },
+            "packages/runtime/dist/conversation-surface.js": {
+              "sha256": "d1d4c60fda26ae565024e205ff99281faaa934073edfac6ba55406070b1afa2b",
+              "lines": 228
+            },
             "packages/runtime/dist/credential-references.js": {
               "sha256": "70b97d01a6f5ea4e982e449c059f42a2e30abf4a69fbc68362eb5d464498cd0d",
               "lines": 81
@@ -22422,8 +22952,8 @@
               "lines": 98
             },
             "packages/runtime/dist/effective-capabilities-prompt-builder.js": {
-              "sha256": "81070f5acc1a810d05834241b31c4a79ecb500d4352afc902e1864cc80abe385",
-              "lines": 8
+              "sha256": "083e0908997b023afebbc199d5703c36211360fa788940622bf3ae2f0feef518",
+              "lines": 17
             },
             "packages/runtime/dist/effective-capabilities-prompt.js": {
               "sha256": "70a1f0c06b5073c703008339b625c6d2d36dce552db99b7cb83f3ba3cdaa99a2",
@@ -22482,8 +23012,8 @@
               "lines": 445
             },
             "packages/runtime/dist/evaluation.js": {
-              "sha256": "b104c442395277cfebd509e650b445992c190f406f80487c6a4eb3b18b596f91",
-              "lines": 502
+              "sha256": "bd0cff27cb2d4db36cdc46070892507cb1b34adff071b3866a98c5284737f7d9",
+              "lines": 499
             },
             "packages/runtime/dist/execution-plan-blueprint-outcome-baseline.js": {
               "sha256": "fa298f92541e0b53c966b8740e84a2fd37a50bf492bc46d986c82b715fdaab6c",
@@ -22870,8 +23400,8 @@
               "lines": 153
             },
             "packages/runtime/dist/kernel-model-call-pipeline.js": {
-              "sha256": "7f21ca5b80431130eafeb6f7155af4640d0edcd4a4e408837827158d9c38e954",
-              "lines": 159
+              "sha256": "49d9cc093a85df7afe0711d9c8cb313e5e947c64fb3632dd74d0f044438c08c0",
+              "lines": 195
             },
             "packages/runtime/dist/kernel-plugin-manifest.js": {
               "sha256": "85af13327fbafc8cdb424514dc6093a1f62c0e7febed4c1262f3799b8644935b",
@@ -22918,8 +23448,8 @@
               "lines": 32
             },
             "packages/runtime/dist/kernel.js": {
-              "sha256": "459962663615efc1801b3f8f0d62203c8214a50c466575eb4c51aa4fac2f8197",
-              "lines": 25
+              "sha256": "9e0b9db3e237551f80bafb1dffd51322351b5301c23cebf906131e6ffbdd876f",
+              "lines": 27
             },
             "packages/runtime/dist/local-agent-runtime.js": {
               "sha256": "2d49520772d7c1b73f61ef629bfa746ab9d4cf67bec9c2284a90b19953c5dd98",
@@ -23114,8 +23644,24 @@
               "lines": 388
             },
             "packages/runtime/dist/model-context-envelope.js": {
-              "sha256": "96e98fa6ccfc8808e6c93b2bb8779b40ee7cd72a7d904ae0605fd370a6404636",
-              "lines": 260
+              "sha256": "c8c426b8dc4643943ea90eb24db10f29d35228e6022e1a834117f24e8b890dba",
+              "lines": 262
+            },
+            "packages/runtime/dist/model-context-overflow-recovery.js": {
+              "sha256": "d592d83f98460b05163e61111f1e327b825479a9987a5aed161b243a4a082bdf",
+              "lines": 106
+            },
+            "packages/runtime/dist/model-context-token-extension.js": {
+              "sha256": "1b3f582b6cdaae1444586430cb928f899d213f59a4e7289436dcd40916411b60",
+              "lines": 41
+            },
+            "packages/runtime/dist/model-context-token-meter.js": {
+              "sha256": "19a279bdc72f36e3ccc312e742e52a2d876afc89328b27a07292aa8311cb2948",
+              "lines": 108
+            },
+            "packages/runtime/dist/model-context-token-pressure.js": {
+              "sha256": "0f246517459853fbf26b0ae351b4fd3a40f8d2afc0a82613ab807bb47b6e4079",
+              "lines": 140
             },
             "packages/runtime/dist/model-delta-batcher.js": {
               "sha256": "20230c0ac2c42bbddd460b0dc00d467083fb92b7497ef6f4f91d480364b7f497",
@@ -23126,8 +23672,16 @@
               "lines": 31
             },
             "packages/runtime/dist/model-harness-profile.js": {
-              "sha256": "789194cbb170c383c3737dab9cb1d4f35278273f9a8cd01b965fd6325f2f013e",
-              "lines": 180
+              "sha256": "6a6aa4ec479a87d1cb8e835c5109cf4a5972c923bb9b87fba4f3462281fe8433",
+              "lines": 219
+            },
+            "packages/runtime/dist/model-harness-receipt.js": {
+              "sha256": "6141c125ba610f6e8f35127cbdba0a3f95d0d81144323eae7d514657581d9a30",
+              "lines": 176
+            },
+            "packages/runtime/dist/model-harness-resolution.js": {
+              "sha256": "f8a46369a4f1a60b521a23e9c25f1fd363223b854fc6110c06e89366992b93bb",
+              "lines": 265
             },
             "packages/runtime/dist/model-invocation-capsule-store.js": {
               "sha256": "3b697c3acdc07e0547fe69d9c057f94c9820ada61b8aac158e56e47dfb2b49c8",
@@ -23170,8 +23724,8 @@
               "lines": 348
             },
             "packages/runtime/dist/model-prompt-evidence-bindings.js": {
-              "sha256": "b291975d9217641cde90e47edd229c0eb984088ee03e1c533358c59cd6647cfd",
-              "lines": 132
+              "sha256": "56e4411b4a1c4c880ea6a36088c9750aa10ee14fb19f584ab9170a596d06ebb2",
+              "lines": 135
             },
             "packages/runtime/dist/model-semantic-stall-observer.js": {
               "sha256": "315528f54548038449acdf6ad7d169c5797bcb5b689fa8f4f17e1ebb2aa216ae",
@@ -23434,7 +23988,7 @@
               "lines": 86
             },
             "packages/runtime/dist/release-product-identity.js": {
-              "sha256": "f32194b6890e1f2328c6dc82abee080bbe9e33a91946377d8eda2acc8e95ead7",
+              "sha256": "f49c80497f14125431f1991ade19768eca8db63e287d99a7d64b1c5cf9346470",
               "lines": 2
             },
             "packages/runtime/dist/release-product-trial-adoption.js": {
@@ -23557,6 +24111,18 @@
               "sha256": "fb9773edea47e4a747ac747d6732be8b4ac5769df95ddd31226735c240724850",
               "lines": 100
             },
+            "packages/runtime/dist/run-harness-comparison.js": {
+              "sha256": "784e4f9d8ec9528284a7f3551bc1be30771368062c659458b659711b4c98c648",
+              "lines": 123
+            },
+            "packages/runtime/dist/run-harness-context-metrics.js": {
+              "sha256": "5e26f828cd5c66dd425376f509ec4f0538b1592179ff634bc410c0c4378e0aad",
+              "lines": 232
+            },
+            "packages/runtime/dist/run-harness-effect-metrics.js": {
+              "sha256": "46e22c5cb648dd801860aa3f6974a26f75ec6c17c74d2a9e0476874f6ec02fe1",
+              "lines": 253
+            },
             "packages/runtime/dist/run-intents.js": {
               "sha256": "f2cab0c7897c7260f009386ae1b8881d9a2d4b07bcf3baaadd0d902ab6500fa3",
               "lines": 27
@@ -23598,8 +24164,8 @@
               "lines": 168
             },
             "packages/runtime/dist/run-replay.js": {
-              "sha256": "7d7c88d8541d4c3b4891fd433872c1bd3bce652a3af5dcc8394fcab484fa8371",
-              "lines": 299
+              "sha256": "fa0f64c92b8ce7246dc4ca8140004743de3bcdb52a7312b3bb4c1437f51b7fcc",
+              "lines": 304
             },
             "packages/runtime/dist/run-research-budget.js": {
               "sha256": "bf6327cf877a1a3f149002f491126edeac8132a23e47e2783f732dab3765f575",
@@ -24826,8 +25392,8 @@
               "lines": 66
             },
             "packages/runtime/src/agent-kernel.ts": {
-              "sha256": "b98cf40a1469cb7e1501b699e7277adb38c655c60085d10508f300a6100acb89",
-              "lines": 500
+              "sha256": "a675418f62402b6baff430e3eb593e914ccabdc99d6db99fcbc9d35da21bb903",
+              "lines": 492
             },
             "packages/runtime/src/agent-kernels.ts": {
               "sha256": "4b4bbbbdec465441ec972e749de201c61871d333bc18de3c2a4c315ed1c6a128",
@@ -24874,16 +25440,16 @@
               "lines": 495
             },
             "packages/runtime/src/agent-model-call-pipeline-host.ts": {
-              "sha256": "923d878b81f7fbe535b5cc12be4f1685a7764ef97e84bd4cb81a3225c0395b09",
-              "lines": 26
+              "sha256": "715778c9ffdb6a6fd0550902b0477290f769744e0499d1632f1077062fc565ab",
+              "lines": 33
             },
             "packages/runtime/src/agent-model-projection.ts": {
-              "sha256": "d825f4e2463f0f8c49de79736663e8c6bf8a404ef30852f3dbd4ca7d3b147879",
-              "lines": 53
+              "sha256": "b43701bee3e185a2f77620aadf14b4d137587bcb29ddfd516c83fef61bfd49c3",
+              "lines": 46
             },
             "packages/runtime/src/agent-model-stream-lifecycle.ts": {
-              "sha256": "a25d7983ab3dee314fcefe3bf4c6df20996447a6768b4390cabeac294dfd1704",
-              "lines": 239
+              "sha256": "768c3d4a7be5f1b90a64e1f25da5c80d3fe3ca6817a7ba2433273fd68f699e1d",
+              "lines": 340
             },
             "packages/runtime/src/agent-network-tool-ledger.ts": {
               "sha256": "6005269e84129a6c9176e96f3f10454fd1ae2d44db4a431e4ea9e7198f18f436",
@@ -24894,12 +25460,16 @@
               "lines": 137
             },
             "packages/runtime/src/agent-prompt-builder.ts": {
-              "sha256": "7f915ad5522fc01e63a3e84d7942f4a5f757a7fa833ab6817197bb90b4a4852f",
-              "lines": 59
+              "sha256": "7cd1950f031e58a9c605a8544bf560f4ea84b2a0e453ab736f5d231f6e34da32",
+              "lines": 63
             },
             "packages/runtime/src/agent-prompt-layers.ts": {
               "sha256": "34b78380b19d33fffe65c4f8a8f5142048898fef6e650a4717094bbdf53d76af",
               "lines": 138
+            },
+            "packages/runtime/src/agent-run-control-tools.ts": {
+              "sha256": "b6a998d9e1ae63babafa86495d91c2c6e115a3a2347216d65cfe943e2f950455",
+              "lines": 42
             },
             "packages/runtime/src/agent-run-model.ts": {
               "sha256": "16d02aaefbdcf1d472faed5610ec75952412a9d0b533771c1166bef07a283e63",
@@ -24910,20 +25480,20 @@
               "lines": 67
             },
             "packages/runtime/src/agent-runtime-utils.ts": {
-              "sha256": "22e0d96b795447955846ffac03d9d18172ca97438e3e14fe249572d78bc9e01e",
-              "lines": 149
+              "sha256": "8966f2e22a48a0f377013518a20fea9ee88e6ca8aa3ac71b8f25ab9f6c9a316f",
+              "lines": 146
             },
             "packages/runtime/src/agent-runtime.ts": {
-              "sha256": "441c25a828bb9b4ed5a3ae7e7c4f4313baae2ed1802b7b87447622f91d0b8f88",
-              "lines": 3334
+              "sha256": "8d0838f2c999784390d8448810bb49584eec895c694052295a30f573d6899a26",
+              "lines": 3306
             },
             "packages/runtime/src/agent-sessions.ts": {
               "sha256": "d01d8e95a59134c330a2c65f55c4790c97019974ebfe85e83b4e4429f039f2c4",
               "lines": 242
             },
             "packages/runtime/src/agent-tool-effects.ts": {
-              "sha256": "5d53868ee1ddca3a12c1220d71dc909f63f88b9e26494161d99df3d9d10e912c",
-              "lines": 101
+              "sha256": "722503a6d5a13f117e941cb1b6fd196e86912a05e6c0239f3b51b1d823d38742",
+              "lines": 125
             },
             "packages/runtime/src/agent-tool-failure-context.ts": {
               "sha256": "25a3deb006a1b0167bae480c4ed9ec81af53c538e7bc8fa09f5308feebf57abd",
@@ -24934,8 +25504,8 @@
               "lines": 472
             },
             "packages/runtime/src/agent-tool-policy-preflight.ts": {
-              "sha256": "2167fa5c2659294b94e746821769f9b412c9626549d96b23a57eb225736962fd",
-              "lines": 377
+              "sha256": "c0d26d83228bc0ba829eb8ef8af3a62b8d2a95d82c737dbf7b3c2cb86db49e63",
+              "lines": 395
             },
             "packages/runtime/src/agent-tool-readiness.ts": {
               "sha256": "b88d587a86fbdb9e9d129c73736397773b93472192f04731220b1eaa2b65b212",
@@ -24952,6 +25522,18 @@
             "packages/runtime/src/agent-tool-specialized-ledger.ts": {
               "sha256": "92cdc186790dbb4cbc7ee92b9c93856214c924ad76658933779e8b04bb34aff2",
               "lines": 80
+            },
+            "packages/runtime/src/agent-turn-kernel-services.ts": {
+              "sha256": "01e0e1b1f2bc3119eeeadf13c82bfbc01fe907828829dafc614bcc7d51ab0106",
+              "lines": 86
+            },
+            "packages/runtime/src/agent-turn-pipeline-host.ts": {
+              "sha256": "f85717737268078394b235b5049594e42825d2b7d23edc4acbea9ca72f6645bc",
+              "lines": 26
+            },
+            "packages/runtime/src/agent-turn-pipeline.ts": {
+              "sha256": "b9f643f10c161dbd6b1417e3bedf63a78cd5c8dc514b96189a9006b80d7001d7",
+              "lines": 307
             },
             "packages/runtime/src/agents.ts": {
               "sha256": "3d5834e2e5141c1394ea572245ec60e8d50466a93de26203fc9de54a4838343f",
@@ -25218,8 +25800,8 @@
               "lines": 4
             },
             "packages/runtime/src/builtin-model-call-extensions.ts": {
-              "sha256": "572f519df0e842dec7fdc0f2ffe60d5703bcb010503bf39ff7e34c9368e4b726",
-              "lines": 12
+              "sha256": "cf9db9279e6a5b92de6de6db6e4bc0448368f0e45698718dab7fc09d5d87457f",
+              "lines": 14
             },
             "packages/runtime/src/channels.ts": {
               "sha256": "baf309368b2003a41295f129d99b8a14b88dedc2a71ac5a46a27224a2a4a340e",
@@ -25309,6 +25891,38 @@
               "sha256": "28e43bbccdbc0fccac4401efd2e9b3531a46037757c117912e52a9f4d40e663a",
               "lines": 118
             },
+            "packages/runtime/src/conversation-surface-capsule-store.ts": {
+              "sha256": "42e99681ecedeb4bed711dc3202a96e00c3a7f09297f4b59a371595194bcdebf",
+              "lines": 71
+            },
+            "packages/runtime/src/conversation-surface-capsule.ts": {
+              "sha256": "c09a3574387d17a2ca833d1ed4cf09258e944572f8d1870e6716b2a76116caf8",
+              "lines": 482
+            },
+            "packages/runtime/src/conversation-surface-capture.ts": {
+              "sha256": "099e17528ca84b66221637fcd319981f62249e46e306bec49b46b0f4303c29f9",
+              "lines": 142
+            },
+            "packages/runtime/src/conversation-surface-declarations.ts": {
+              "sha256": "e7f1fbdfe7654bb661f4370dfdae1c6ed1734ec563e9df944b9d21d76bf5744d",
+              "lines": 92
+            },
+            "packages/runtime/src/conversation-surface-legacy.ts": {
+              "sha256": "ee5944a14b927ed262fed9a1ac0deb0da9b08a0c22181a8e47d8e70382e6ecbd",
+              "lines": 230
+            },
+            "packages/runtime/src/conversation-surface-result-evidence.ts": {
+              "sha256": "64932d8bc708629afbbcce488b065147fa57486ab476d4be5a5af2b357c09166",
+              "lines": 122
+            },
+            "packages/runtime/src/conversation-surface-usage.ts": {
+              "sha256": "b43a4503ab64ffbdd54c79718afbd6cc928e338d876eef6dcc9f21e8da779d3d",
+              "lines": 44
+            },
+            "packages/runtime/src/conversation-surface.ts": {
+              "sha256": "8979474bc832450f1aa81b330f30e12f1653da040619f74785032bdc534a01ad",
+              "lines": 390
+            },
             "packages/runtime/src/credential-references.ts": {
               "sha256": "4b6b407902816631f1befa89792b29b0dbfe2872dca9220ecafb4ceb050e5813",
               "lines": 104
@@ -25382,8 +25996,8 @@
               "lines": 142
             },
             "packages/runtime/src/effective-capabilities-prompt-builder.ts": {
-              "sha256": "c347666209d9f4004ddf41becf8644749c9f87af7761a559901b77e5953d139a",
-              "lines": 30
+              "sha256": "92cd5d9503b8fd1945e1b7857397d29afebbf5cdbc8ef75eccc43b5657e1f275",
+              "lines": 45
             },
             "packages/runtime/src/effective-capabilities-prompt.ts": {
               "sha256": "36bdb7ed795c62b6e10ab7887286bd76cb93c10634584625ae471b2b90b55819",
@@ -25442,8 +26056,8 @@
               "lines": 626
             },
             "packages/runtime/src/evaluation.ts": {
-              "sha256": "85b767efaad9c1f184ef35798355473500a5475d85a82deeba1a9db0cea4f0a9",
-              "lines": 675
+              "sha256": "76c2044fbdc6370e603d51ec5413f74b646a43062d1a3fa5c24e70ca10f80f97",
+              "lines": 673
             },
             "packages/runtime/src/execution-plan-blueprint-outcome-baseline.ts": {
               "sha256": "251360dd42326df33afa10b09ee74b82fe7764adba76a8f44e7b4b038138bcca",
@@ -25830,8 +26444,8 @@
               "lines": 209
             },
             "packages/runtime/src/kernel-model-call-pipeline.ts": {
-              "sha256": "f20fbc400b656fb7d750cf99ae78bdb6d2694c14f309363d781478197ec37c51",
-              "lines": 261
+              "sha256": "016852b1a9e82d6d11401e810974777e01a8f2e0fb2e0ed9fa134acd94f66c66",
+              "lines": 325
             },
             "packages/runtime/src/kernel-plugin-manifest.ts": {
               "sha256": "75ff59b4592c11c5012cd6df5928667f86869dce6a6961113213057b81188b46",
@@ -25878,8 +26492,8 @@
               "lines": 63
             },
             "packages/runtime/src/kernel.ts": {
-              "sha256": "459962663615efc1801b3f8f0d62203c8214a50c466575eb4c51aa4fac2f8197",
-              "lines": 25
+              "sha256": "9e0b9db3e237551f80bafb1dffd51322351b5301c23cebf906131e6ffbdd876f",
+              "lines": 27
             },
             "packages/runtime/src/local-agent-runtime.ts": {
               "sha256": "ed0ded3a3c93fa8dba28d022eb57522b538e121b2f28f0e7e45c90fec1806063",
@@ -26074,8 +26688,24 @@
               "lines": 577
             },
             "packages/runtime/src/model-context-envelope.ts": {
-              "sha256": "1bf9df904ffcc488755ded2e32fa3d5e5c325d8f52f892c80f114f5439b1b6e4",
-              "lines": 340
+              "sha256": "76fdacd17651890a666f62097c57b7d733ad74055561e94178bfe83af7715090",
+              "lines": 341
+            },
+            "packages/runtime/src/model-context-overflow-recovery.ts": {
+              "sha256": "d3854c73314dcfa0b22782b5686b0306fc8e1645016876fe526da767bcebc18a",
+              "lines": 145
+            },
+            "packages/runtime/src/model-context-token-extension.ts": {
+              "sha256": "b70c0dea3360248d9efabc466b36c5c81a3ebdcea1bd3f77baa781957e5505ed",
+              "lines": 54
+            },
+            "packages/runtime/src/model-context-token-meter.ts": {
+              "sha256": "9a6e1b6f93ac609de4a929121e425be6bd54e4bb2325d550212b1d32ed93fd1d",
+              "lines": 219
+            },
+            "packages/runtime/src/model-context-token-pressure.ts": {
+              "sha256": "bc2a34a7a83b4b1618e8734fdc0db19b289c7da15ec49c0a0caa8c21fdd9f280",
+              "lines": 228
             },
             "packages/runtime/src/model-delta-batcher.ts": {
               "sha256": "f098a22125f13710a0a3e73b9abb0e2e07306b1a20f9bb82534b8c4379baba2a",
@@ -26086,8 +26716,16 @@
               "lines": 40
             },
             "packages/runtime/src/model-harness-profile.ts": {
-              "sha256": "70825d887887e554b2f0569298b642a91a30600ca5cef33f35d9a919e4eb53e1",
-              "lines": 258
+              "sha256": "cc7aac456b42de9b7b8f18f2bc9b5403443e1be8faeb9cfce9fe5af61732d5fc",
+              "lines": 283
+            },
+            "packages/runtime/src/model-harness-receipt.ts": {
+              "sha256": "53fcd5f179ea9c414014ef49c6d99dbf160e6550522feee7fa2dc60849a5b3e4",
+              "lines": 259
+            },
+            "packages/runtime/src/model-harness-resolution.ts": {
+              "sha256": "497fb7fcd45daa298a28f7bc3617b1af2c249735a977ede0fe0662a7b0cd91a9",
+              "lines": 407
             },
             "packages/runtime/src/model-invocation-capsule-store.ts": {
               "sha256": "41eab25d5bedf8c9edd93775c674f19ed964172625b3d0690044d4a745fa2639",
@@ -26130,8 +26768,8 @@
               "lines": 481
             },
             "packages/runtime/src/model-prompt-evidence-bindings.ts": {
-              "sha256": "bb269f1d6263f4167d37b1b638fbabca0a33d051cef0b6ebc72eea3c57bf354b",
-              "lines": 191
+              "sha256": "c480a999d353653f530191ca60594a17d90e228181c4e30907e14510efa57e5d",
+              "lines": 194
             },
             "packages/runtime/src/model-semantic-stall-observer.ts": {
               "sha256": "29e234c666ef92769e4c80919626438fc07bbdc569f19c3dc6811a381058c7b7",
@@ -26394,7 +27032,7 @@
               "lines": 121
             },
             "packages/runtime/src/release-product-identity.ts": {
-              "sha256": "5b91ef241096819e24ae89cb481d0c272ff786cc20b057b81f9fbbb805b36b3a",
+              "sha256": "a87086cc929b07db7e2835d22092986aaa1b2ad9bc0c6d074c1111144df6bd50",
               "lines": 3
             },
             "packages/runtime/src/release-product-trial-adoption.ts": {
@@ -26517,6 +27155,18 @@
               "sha256": "7e3b7f18d60914c0076b15901afcaf440ad6c4281f942a2e6d67052f0064b6ea",
               "lines": 155
             },
+            "packages/runtime/src/run-harness-comparison.ts": {
+              "sha256": "9b8b124c225b06770a29458608df45bddbf0543f99b333d540fb042f4421284e",
+              "lines": 218
+            },
+            "packages/runtime/src/run-harness-context-metrics.ts": {
+              "sha256": "fe106397f0b64972d0d0dd735dd729a7015303f754b1826f31025e2ee4e3b2f3",
+              "lines": 343
+            },
+            "packages/runtime/src/run-harness-effect-metrics.ts": {
+              "sha256": "9c233e0baca8c9957c4e59364f2b59ff3d358072ef98c536428a81b7d94c3563",
+              "lines": 332
+            },
             "packages/runtime/src/run-intents.ts": {
               "sha256": "8af9a35808222e2195530480e9b747f2ba3427977be5c881ceb5719fa776587d",
               "lines": 43
@@ -26558,8 +27208,8 @@
               "lines": 192
             },
             "packages/runtime/src/run-replay.ts": {
-              "sha256": "89d37160102d8c56bffa05e5f0d8f0a8f5ff49f78458e3d9eb64d68c79bd7454",
-              "lines": 405
+              "sha256": "76fd53b2eaba55fbaed62cfb2d273f049935db30e97fca56d22de8f2ef243a28",
+              "lines": 423
             },
             "packages/runtime/src/run-research-budget.ts": {
               "sha256": "84306f55c1158ce2c4102368641a1ab2f38b5076f3f7e32ae53db4303e9ed261",
@@ -27794,7 +28444,7 @@
               "lines": 99
             }
           },
-          "manifestSha256": "40fd27c5ef05e643b9645a29acff06f96ec28ab5485a7b484dd50c542bba3bd3"
+          "manifestSha256": "61f3526db6489ad49dc71c1b06ad9aa9a885b5223358ab2f837d73a402f14b26"
         }
       },
       "excludedCategories": [
@@ -27823,9 +28473,9 @@
           "reason": "evidence.json cannot contain its own content hash; the external Stage 8 repair commit binds that blob."
         }
       ],
-      "manifestSha256": "8a7530576bd428f08b741b9cc913563937b9166622b2aa9026288d90d0651a34"
+      "manifestSha256": "42100ddda2f078868fd1b0be5f404533f820816bb2a9427d6bad7267d5bcd7f1"
     },
-    "manifestSha256": "d7c2a411f21979ccaca859dc5aeaac6aced962f7eff1a852259f109c63098dc9"
+    "manifestSha256": "03998501a4849a3fc53dc9985680231e23f65b11bc5a355ad6d674c469fa783f"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -28016,11 +28666,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "9d5fea38d8d4cfd2c54ea57e12bd818987de9d3003c9e2e607da45bd0c618c3d"
+      "sha256": "73d5fc08fb88f11fe72ede6eea8eeb37bb2a14598bad20023aff950a4e527c07"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "a43f4bac0bce9de286ddbb883bf1ec98c50d1f1b15c4aa28a95a1871ac83fa3b"
+      "sha256": "9edccf8250c9a6a5092ec58de19cd460ebbcbd33aa050af0cb49fd286f0b897f"
     }
   }
 }

@@ -38,13 +38,6 @@ export function providerMessages(messages: AgentMessage[]): Message[] {
   return boundToolFailureContext(messages).filter(isProviderMessage);
 }
 
-export function contextHistoryCharacterBudget(model: Model<Api>): number {
-  return Math.max(
-    16_000,
-    Math.min(96_000, Math.floor(model.contextWindow * 1.5)),
-  );
-}
-
 export function extractAssistantReasoning(message: AssistantMessage): string {
   return message.content
     .filter((block) => block.type === "thinking")

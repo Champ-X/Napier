@@ -82,6 +82,7 @@ export interface RunEvaluationJudgment {
 export interface RunEvaluationGovernanceEvidence {
   contextCoverageDelta?: RunContextCoverageDelta;
   traceSummaryBoundaryDelta?: RunTraceSummaryBoundaryDelta;
+  harness?: Awaited<ReturnType<typeof compareRuns>>["harness"];
   comparisonGovernance?: RunEvaluationGovernanceBinding;
 }
 
@@ -122,11 +123,7 @@ export class RunEvaluationService {
         comparison.right,
         rubric,
         evaluatorModel,
-        {
-          contextCoverageDelta: comparison.contextCoverageDelta,
-          traceSummaryBoundaryDelta: comparison.traceSummaryBoundaryDelta,
-          comparisonGovernance,
-        },
+        { ...comparison, comparisonGovernance },
         { run: evaluationRun },
       );
       observedUsage = result.usage;
@@ -514,6 +511,7 @@ export function buildRunEvaluationMessages(
         traceSummaryBoundaryDelta:
           governanceEvidence?.traceSummaryBoundaryDelta ?? null,
         comparisonGovernance: governanceEvidence?.comparisonGovernance ?? null,
+        harness: governanceEvidence?.harness ?? null,
       }),
       "",
       "LEFT RUN:",

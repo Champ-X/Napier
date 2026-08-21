@@ -282,6 +282,7 @@ export function assertModelContextEnvelopeEventBindings(
 
 function isEnvelopeTerminalEvent(event: RunEvent): boolean {
   if (event.type === "model.response") return true;
+  if (event.type === "model.context.overflow") return true;
   return (
     event.type === "model.thinking_loop.detected" &&
     record(event.payload) &&

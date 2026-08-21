@@ -4,6 +4,7 @@ import type {
   Context,
   SimpleStreamOptions,
 } from "@earendil-works/pi-ai";
+import type { CompiledPromptArtifact } from "./prompt-compiler.js";
 
 import {
   agentModelStreamLife,
@@ -22,11 +23,19 @@ export interface AgentModelCallPatch {
   options?: SimpleStreamOptions;
 }
 
+export interface AgentModelCallFinalization extends AgentModelCallPreparation {
+  compiledPrompt: CompiledPromptArtifact;
+  recoveryAttempt: 0 | 1;
+}
+
 export interface AgentModelCallExtension {
   id: string;
   order?: number;
   prepare?(
     call: Readonly<AgentModelCallPreparation>,
+  ): AgentModelCallPatch | void | Promise<AgentModelCallPatch | void>;
+  finalize?(
+    call: Readonly<AgentModelCallFinalization>,
   ): AgentModelCallPatch | void | Promise<AgentModelCallPatch | void>;
   around?(
     call: Readonly<AgentModelInvocation>,
@@ -39,6 +48,7 @@ export interface AgentModelCallExtensionInspection {
   owner: string;
   order: number;
   prepare: boolean;
+  finalize: boolean;
   around: boolean;
 }
 
@@ -67,6 +77,7 @@ export class ComposableAgentModelCallPipeline implements AgentTurnModelCallPipel
     return agentModelStreamLife({
       ...input,
       prepareCall: (call) => this.prepare(call),
+      finalizeCall: (call) => this.finalize(call),
       invokeCall: (call, next) => this.invoke(call, next),
     });
   }
@@ -83,7 +94,17 @@ export class ComposableAgentModelCallPipeline implements AgentTurnModelCallPipel
     if (!Number.isSafeInteger(order) || order < -10_000 || order > 10_000) {
       throw new Error(`Model-call extension order is invalid: ${order}`);
     }
-    if (!extension.prepare && !extension.around) {
+    if (
+      extension.finalize &&
+      order === 10_000 &&
+      (owner !== "kernel.context" ||
+        extension.id !== "napier.model-context-token-governor")
+    ) {
+      throw new Error(
+        "Final model-call order is reserved for the context governor",
+      );
+    }
+    if (!extension.prepare && !extension.finalize && !extension.around) {
       throw new Error(
         `Model-call extension has no lifecycle behavior: ${extension.id}`,
       );
@@ -108,6 +129,7 @@ export class ComposableAgentModelCallPipeline implements AgentTurnModelCallPipel
       owner,
       order: extension.order,
       prepare: Boolean(extension.prepare),
+      finalize: Boolean(extension.finalize),
       around: Boolean(extension.around),
     }));
   }
@@ -170,6 +192,31 @@ export class ComposableAgentModelCallPipeline implements AgentTurnModelCallPipel
       return assertModelStream(stream, stored.extension.id);
     };
     return dispatch(0);
+  }
+
+  private async finalize(
+    original: AgentModelCallFinalization,
+  ): Promise<PreparedAgentModelCall> {
+    let finalized: PreparedAgentModelCall = {
+      context: original.context,
+      options: original.options,
+    };
+    for (const { extension } of this.ordered()) {
+      if (!extension.finalize) continue;
+      const patch = await extension.finalize(
+        Object.freeze({ ...original, context: finalized.context }),
+      );
+      if (!patch) continue;
+      if (patch.options) {
+        throw new Error(
+          `Final model-call extension cannot change compiled options: ${extension.id}`,
+        );
+      }
+      const next = applySafePatch(original, finalized, patch, extension.id);
+      assertStableTools(finalized.context, next.context, extension.id);
+      finalized = next;
+    }
+    return finalized;
   }
 
   private ordered(): StoredExtension[] {
@@ -239,6 +286,23 @@ function assertToolSubset(
   if ((candidate.tools ?? []).some((tool) => !allowed.has(tool))) {
     throw new Error(
       `Model-call extension cannot add tools after policy resolution: ${extensionId}`,
+    );
+  }
+}
+
+function assertStableTools(
+  original: Context,
+  candidate: Context,
+  extensionId: string,
+): void {
+  const before = original.tools ?? [];
+  const after = candidate.tools ?? [];
+  if (
+    before.length !== after.length ||
+    before.some((tool, index) => tool !== after[index])
+  ) {
+    throw new Error(
+      `Final model-call extension cannot change compiled tools: ${extensionId}`,
     );
   }
 }

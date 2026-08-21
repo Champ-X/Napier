@@ -38,6 +38,30 @@ const WRITE_TOOLS = new Set([
   "delegate_task",
   "subagent_worktree_apply",
 ]);
+const VERIFY_TOOLS = new Set([
+  "verify_workspace",
+  "lsp_diagnostics",
+  "git_review_preview",
+]);
+
+export type HarnessAction = "read" | "write" | "verify";
+
+export function builtInToolHarnessAction(
+  toolName: string,
+  args?: unknown,
+): HarnessAction | undefined {
+  if (VERIFY_TOOLS.has(toolName)) return "verify";
+  return builtInToolEffect(toolName, args);
+}
+
+export function builtInToolHarnessProjection(
+  toolName: string,
+  args?: unknown,
+): { effect: "read" | "write"; harnessAction: HarnessAction } | object {
+  const harnessAction = builtInToolHarnessAction(toolName, args);
+  const effect = builtInToolEffect(toolName, args);
+  return harnessAction && effect ? { effect, harnessAction } : {};
+}
 
 export function builtInToolEffect(
   toolName: string,

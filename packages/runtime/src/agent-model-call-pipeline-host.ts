@@ -1,10 +1,12 @@
 import {
-  createStandaloneAgentModelCallPipeline,
+  ComposableAgentModelCallPipeline,
   type AgentTurnModelCallPipeline,
 } from "./kernel-model-call-pipeline.js";
+import { installBuiltinModelCallExtensions } from "./builtin-model-call-extensions.js";
+import type { LocalStore } from "./store.js";
 
 export class AgentModelCallPipelineHost {
-  private readonly standalone = createStandaloneAgentModelCallPipeline();
+  private standalone: ComposableAgentModelCallPipeline | undefined;
   private attached: AgentTurnModelCallPipeline | undefined;
 
   readonly attach = (pipeline: AgentTurnModelCallPipeline): (() => void) => {
@@ -20,7 +22,12 @@ export class AgentModelCallPipelineHost {
     };
   };
 
-  current(): AgentTurnModelCallPipeline {
-    return this.attached ?? this.standalone;
+  current(store: LocalStore): AgentTurnModelCallPipeline {
+    if (this.attached) return this.attached;
+    if (!this.standalone) {
+      this.standalone = new ComposableAgentModelCallPipeline();
+      installBuiltinModelCallExtensions(this.standalone, store);
+    }
+    return this.standalone;
   }
 }

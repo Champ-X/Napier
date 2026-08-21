@@ -5,6 +5,7 @@ import { copy } from "./copy";
 import { getLocale } from "./locale";
 import { traceTrajectoryCopy } from "./trace-trajectory-copy";
 import { TraceTrajectoryControls } from "./TraceTrajectoryControls";
+import { TraceTrajectoryEventDetail } from "./TraceTrajectoryEventDetail";
 import { formatTraceDuration } from "./TraceTrajectoryLedger";
 import { TraceTrajectoryOverview } from "./TraceTrajectoryOverview";
 import { TraceTrajectoryRunIndex } from "./TraceTrajectoryRunIndex";
@@ -67,18 +68,28 @@ export function TraceTrajectory({
         onMetric={state.setMetric}
         onSelect={state.selectOverviewEvent}
       />
-      <TraceTrajectoryRunIndex
-        model={state.model}
-        viewMode={state.viewMode}
-        visibleEventIds={state.visibleEventIds}
-        selectedEventId={state.selectedEventId}
-        query={state.query}
-        onSelect={(eventId) =>
-          state.setSelectedEventId((current) =>
-            current === eventId ? undefined : eventId,
-          )
-        }
-      />
+      <div
+        className={`trace-event-workspace ${state.selectedEvent ? "has-detail" : ""}`}
+      >
+        <TraceTrajectoryRunIndex
+          model={state.model}
+          viewMode={state.viewMode}
+          visibleEventIds={state.visibleEventIds}
+          selectedEventId={state.selectedEventId}
+          query={state.query}
+          onSelect={(eventId) =>
+            state.setSelectedEventId((current) =>
+              current === eventId ? undefined : eventId,
+            )
+          }
+        />
+        {state.selectedEvent ? (
+          <TraceTrajectoryEventDetail
+            event={state.selectedEvent}
+            onClose={() => state.setSelectedEventId(undefined)}
+          />
+        ) : null}
+      </div>
     </section>
   );
 }

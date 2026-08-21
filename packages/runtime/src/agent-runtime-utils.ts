@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type { JsonValue } from "@napier/contracts";
+import { isModelContextOverflowMessage } from "./model-context-overflow-recovery.js";
 
 export class OperatorDecisionPendingError extends Error {
   constructor(readonly decisionId: string) {
@@ -113,11 +114,7 @@ export function publicModelFailureMessage(
   ) {
     return "The selected model is unavailable at the provider. Choose a current catalog model or verify the provider with Doctor, then retry.";
   }
-  if (
-    /context.{0,24}(?:length|limit|window|too large)|maximum context|too many tokens|request too large/u.test(
-      normalized,
-    )
-  ) {
+  if (isModelContextOverflowMessage(normalized)) {
     return "The model context exceeded the provider limit. Start a smaller follow-up or reduce attached context, then retry.";
   }
   if (

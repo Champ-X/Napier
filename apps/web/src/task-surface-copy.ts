@@ -63,9 +63,13 @@ export const taskSurfaceCopyEn = {
   completion: {
     eyebrow: "Completed",
     title: "Task result",
+    items: "results",
+    outputCount: "outputs",
     outputs: "Task outputs",
     open: "Open",
     output: "Outputs",
+    showDetails: "Show details",
+    hideDetails: "Hide details",
   },
 } as const;
 
@@ -131,9 +135,13 @@ export const taskSurfaceZh: LocaleOverride<typeof taskSurfaceCopyEn> = {
   completion: {
     eyebrow: "已完成",
     title: "任务结果",
+    items: "项结果",
+    outputCount: "个产物",
     outputs: "任务输出",
     open: "打开",
     output: "输出",
+    showDetails: "展开结果",
+    hideDetails: "收起结果",
   },
 };
 

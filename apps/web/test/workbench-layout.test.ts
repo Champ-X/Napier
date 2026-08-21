@@ -44,6 +44,8 @@ describe("Workbench layout", () => {
     expect(featureStyles).toContain(
       ".task-status-details > summary:focus-visible",
     );
+    expect(featureStyles).toContain(".task-completion-strip");
+    expect(featureStyles).toContain(".task-completion-toggle[aria-expanded");
     expect(featureStyles).toContain("@media (forced-colors: active)");
     expect(globalStyles).not.toContain(".task-narrative {");
   });

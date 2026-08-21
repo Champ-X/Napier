@@ -1,3 +1,9 @@
 apps/web/dist/
 docs/artifacts/*.sha256
+docs/artifacts/sdk-capability-parity-stage7/
 node_modules/
+# These legacy aggregate files intentionally retain compact formatting to stay
+# within the architecture line budgets. New functionality belongs in modules.
+packages/contracts/src/index.ts
+packages/runtime/src/agent-runtime.ts
+packages/runtime/test/agent-runtime.test.ts

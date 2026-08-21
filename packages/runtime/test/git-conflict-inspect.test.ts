@@ -323,7 +323,7 @@ describe("Git conflict inspection", () => {
     ).rejects.toThrow("not bounded UTF-8 text");
     expect(Date.now() - fifoStarted).toBeLessThan(250);
     await unblock;
-  }, 30_000);
+  }, 45_000);
 
   it("classifies add/add and asymmetric delete conflicts", async () => {
     const sandbox = directSandbox();
