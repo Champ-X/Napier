@@ -5,13 +5,13 @@
   "predecessor": {
     "productVersion": "0.1.2",
     "commit": "45c736f0b426db5d03f88adbb17acb8df32e7703",
-    "changedPathCount": 740,
-    "changedPathsSha256": "75380975409403e9df2101b52350dfa44ce2642c3c6ec5d19c1e79cf1a327a43"
+    "changedPathCount": 743,
+    "changedPathsSha256": "a135e2b1ff541c5aebca765f9ef84aa4e950053adab4f7f066b85333fd45efb7"
   },
   "identityDeclarationPath": "packages/runtime/src/release-product-identity.ts",
   "identityDeclarationSha256": "5a8dada43a7d464d3de4e65cc7c556def3391ef59f674cdb6949a1ce5362b62d",
-  "fileCount": 1662,
-  "totalBytes": 12598990,
+  "fileCount": 1665,
+  "totalBytes": 12604885,
   "files": [
     {
       "path": "apps/server/package.json",
@@ -1770,8 +1770,8 @@
     },
     {
       "path": "apps/web/src/ThreadList.tsx",
-      "bytes": 4602,
-      "sha256": "82b400bf25b072a2fd5f1ba0679cd462091e97a5ce275ca449d39fd7a5d1a876"
+      "bytes": 3798,
+      "sha256": "56f2f59faf8eccabfc3b454edb19c6694f7c07f3dfcba8b8a2106dffbafbbdf0"
     },
     {
       "path": "apps/web/src/ToolInvocationExperimentDesk.tsx",
@@ -1815,8 +1815,8 @@
     },
     {
       "path": "apps/web/src/TraceTrajectory.tsx",
-      "bytes": 4522,
-      "sha256": "c7f8cdf1369865e0f6fa9c740c447fc620a3187f2d30b774a04f5976a65b6680"
+      "bytes": 4651,
+      "sha256": "8ed46178d25a7e7db7e57994e4cf78abb2fc55a6789a5dec378db36a4ea57d34"
     },
     {
       "path": "apps/web/src/TraceTrajectoryControls.tsx",
@@ -1825,13 +1825,13 @@
     },
     {
       "path": "apps/web/src/TraceTrajectoryEventDetail.tsx",
-      "bytes": 3523,
-      "sha256": "1342ab248c6ccb4862621bf30f29a7ce5a1f6580c88a3adc5a13d78bddacea5d"
+      "bytes": 3812,
+      "sha256": "94cdfad89a4e4a9001155412250dc05252a98048148cfe7063a54095a468bbb4"
     },
     {
       "path": "apps/web/src/TraceTrajectoryLedger.tsx",
-      "bytes": 6991,
-      "sha256": "30b2a0ef2ee086645e38cd1107595528d35f08599112aecdf38a8109cb63672c"
+      "bytes": 7459,
+      "sha256": "8066cf6b89d132eafa3aa759318104fa1b8d3a0be4c936f1c03ad2ef29659559"
     },
     {
       "path": "apps/web/src/TraceTrajectoryOverview.tsx",
@@ -1965,8 +1965,13 @@
     },
     {
       "path": "apps/web/src/WorkspaceThreadPreviews.tsx",
-      "bytes": 1165,
-      "sha256": "0bddfb907afa21a0286f834b2d30d228279b199a8ddb90d3bb3d7b7fe00af524"
+      "bytes": 852,
+      "sha256": "9eaa1dc1104e8f7d38e89a19661e21760e34df6cec9b2c0dbcec88c494be5b0b"
+    },
+    {
+      "path": "apps/web/src/WorkspaceThreadRow.tsx",
+      "bytes": 1324,
+      "sha256": "59834db41f2c0c155b7ae28e6df91859d7bef0cdc8f6e38ab8d1b453b3264b32"
     },
     {
       "path": "apps/web/src/WorkspaceTree.tsx",
@@ -3485,8 +3490,8 @@
     },
     {
       "path": "apps/web/src/styles/shell-navigation.css",
-      "bytes": 11250,
-      "sha256": "7aad9c8bf8d04f0bb6db55657dc9a37319350add19aa385c6c96f7d5ef7eb3a0"
+      "bytes": 11626,
+      "sha256": "a86a720e68bab34ef7a305cca7ecbf4c8394c9509e7f5d5da0f1969898edb8e0"
     },
     {
       "path": "apps/web/src/styles/task-workbench.css",
@@ -3496,7 +3501,7 @@
     {
       "path": "apps/web/src/styles/tokens.css",
       "bytes": 4295,
-      "sha256": "9ea131c3bdc7ee53b48cbbb1bdb985a916bf403ac8086fe63b3080a007eb49a1"
+      "sha256": "f0da898967a7b109c3e172639d3c6c5b93634ed9ad1b7879ccb58a4da42b247a"
     },
     {
       "path": "apps/web/src/styles/trajectory.css",
@@ -3655,8 +3660,8 @@
     },
     {
       "path": "apps/web/src/trace-trajectory-copy.ts",
-      "bytes": 7804,
-      "sha256": "5aa30b96d35c8ffcb38f06c571648164f5756f1bc0265d8957ec97712c4d9d5e"
+      "bytes": 7865,
+      "sha256": "4f7b4e7f7a43a9f2e1fa4293dab89bbb4ce4352ef7b070a511182cf140a0b30f"
     },
     {
       "path": "apps/web/src/trace-trajectory-event-detail-view.ts",
@@ -3679,9 +3684,14 @@
       "sha256": "03993dd536da420ad8a7a9d44d4f0f569c2e55592c926a46b543d4333f5e8ff4"
     },
     {
+      "path": "apps/web/src/trace-trajectory-presentation.ts",
+      "bytes": 1886,
+      "sha256": "eb3bfcd796a82b16e33553ea8e0a99a520edc37421714e24c61ea5affe28a6d2"
+    },
+    {
       "path": "apps/web/src/trace-trajectory.css",
-      "bytes": 25667,
-      "sha256": "28426920b990832bcb18422dff78d1ef52f76fd1fba1f51d7910dfcbd7de0888"
+      "bytes": 27090,
+      "sha256": "099b38937d577cd2391893b5f6c31d6e920b1e35a8f088d9965f12b1a0e449c0"
     },
     {
       "path": "apps/web/src/typescript-ast-event-view.ts",
@@ -4135,8 +4145,13 @@
     },
     {
       "path": "apps/web/src/workspace-shell.css",
-      "bytes": 37314,
-      "sha256": "a49aa6668beb4742639da60f187c7cbc90a4d54034bbfc6e05c98013db4f89a1"
+      "bytes": 36747,
+      "sha256": "c4cd4c09be0124d46407d7a3870c278340211aaac963dc16edc12250f215ead2"
+    },
+    {
+      "path": "apps/web/src/workspace-thread-presentation.ts",
+      "bytes": 1580,
+      "sha256": "ea2fe9943705ade8640e2eec05859dbf8cb7c383bf2fa9dd4ee51a02c2e35883"
     },
     {
       "path": "apps/web/src/workspace-tree-api.ts",
@@ -4145,8 +4160,8 @@
     },
     {
       "path": "apps/web/src/workspace-tree-copy.ts",
-      "bytes": 2396,
-      "sha256": "13c24f20778b43e8a6b9a75aacb7c9fdefb28a98df9cc88eaf6d05f753284cbb"
+      "bytes": 2439,
+      "sha256": "11c5e95f0c7638cce9a53f53b29bd13656627b09a245657bd623cf9aaf832d6e"
     },
     {
       "path": "apps/web/src/write-linked-test-event-view.ts",
@@ -8324,5 +8339,5 @@
       "sha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c"
     }
   ],
-  "contentSha256": "54d9a6fe29409620239fdd85fee14f32232c610e698610ddddfffbefa2355865"
+  "contentSha256": "720c45b40b1a99895130c23158f6db1fb4efad7c7b15879b05ca97ea94e6827f"
 }

@@ -1,7 +1,7 @@
 import type { ThreadSummary } from "@napier/contracts";
 
-import { getLocale } from "./locale";
 import { workspaceTreeCopy as t } from "./workspace-tree-copy";
+import { WorkspaceThreadRow } from "./WorkspaceThreadRow";
 
 export interface WorkspaceThreadPreviewsProps {
   threads: ThreadSummary[];
@@ -16,26 +16,16 @@ export function WorkspaceThreadPreviews({
     return <p className="workspace-tree-message">{t.noSessions}</p>;
   }
   return (
-    <div className="workspace-thread-previews">
-      {threads.map((thread) => (
-        <button
-          type="button"
-          key={thread.id}
-          onClick={() => onSelect(thread.id)}
-        >
-          <span>{thread.title}</span>
-          <time dateTime={thread.updatedAt}>
-            {relativeDate(thread.updatedAt)}
-          </time>
-        </button>
+    <div className="thread-list workspace-thread-previews">
+      {threads.map((thread, index) => (
+        <div className="thread-row-shell is-preview" key={thread.id}>
+          <WorkspaceThreadRow
+            thread={thread}
+            index={index}
+            onSelect={onSelect}
+          />
+        </div>
       ))}
     </div>
   );
-}
-
-export function relativeDate(value: string, now = Date.now()): string {
-  const days = Math.max(0, Math.floor((now - Date.parse(value)) / 86_400_000));
-  return new Intl.RelativeTimeFormat(getLocale() === "zh" ? "zh-CN" : "en", {
-    numeric: "auto",
-  }).format(-days, "day");
 }

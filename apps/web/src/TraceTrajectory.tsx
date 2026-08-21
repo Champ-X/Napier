@@ -27,25 +27,30 @@ export function TraceTrajectory({
   if (state.model.events.length === 0) return <EmptyTrajectory />;
   return (
     <section className="trace-trajectory" aria-labelledby="trajectory-title">
-      <TrajectoryHeader runCount={state.model.runs.length} running={running} />
-      <dl className="trace-trajectory-stats">
-        <Stat
-          label={copy.trace.elapsed}
-          value={formatTraceDuration(state.model.durationMs)}
+      <div className="trace-trajectory-masthead">
+        <TrajectoryHeader
+          runCount={state.model.runs.length}
+          running={running}
         />
-        <Stat
-          label={copy.trace.turns}
-          value={formatNumber(state.model.turnCount)}
-        />
-        <Stat
-          label={copy.trace.calls}
-          value={formatNumber(state.model.callCount)}
-        />
-        <Stat
-          label={copy.trace.keyActions}
-          value={formatNumber(state.keyEventCount)}
-        />
-      </dl>
+        <dl className="trace-trajectory-stats">
+          <Stat
+            label={copy.trace.elapsed}
+            value={formatTraceDuration(state.model.durationMs)}
+          />
+          <Stat
+            label={copy.trace.turns}
+            value={formatNumber(state.model.turnCount)}
+          />
+          <Stat
+            label={copy.trace.calls}
+            value={formatNumber(state.model.callCount)}
+          />
+          <Stat
+            label={copy.trace.keyActions}
+            value={formatNumber(state.keyEventCount)}
+          />
+        </dl>
+      </div>
       <TraceTrajectoryControls
         events={state.model.events}
         activeLanes={state.activeLanes}

@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import type { TraceTrajectoryEvent } from "./trace-trajectory-model";
 import { traceTrajectoryCopy } from "./trace-trajectory-copy";
 import { traceTrajectoryEventDetailView } from "./trace-trajectory-event-detail-view";
+import { traceTrajectoryEventHighlights } from "./trace-trajectory-presentation";
 
 type DetailTab = "summary" | "context" | "evidence" | "timing";
 const TABS: DetailTab[] = ["summary", "context", "evidence", "timing"];
@@ -19,6 +20,7 @@ export function TraceTrajectoryEventDetail({
 }: TraceTrajectoryEventDetailProps) {
   const [tab, setTab] = useState<DetailTab>("summary");
   const detail = traceTrajectoryEventDetailView(event);
+  const highlights = traceTrajectoryEventHighlights(event, detail.evidence);
   const copy = traceTrajectoryCopy.detail;
   return (
     <section className="trace-event-detail" aria-label={copy.label}>
@@ -62,8 +64,11 @@ export function TraceTrajectoryEventDetail({
       <div className="trace-event-detail-panel" role="tabpanel">
         {tab === "summary" ? (
           <div className="trace-event-detail-summary">
-            <span>{event.label}</span>
-            <p>{event.summary}</p>
+            <div className="trace-event-detail-callout">
+              <span>{copy.atAGlance}</span>
+              <p>{event.summary}</p>
+            </div>
+            <DetailGrid fields={highlights} />
           </div>
         ) : null}
         {tab === "context" ? <DetailGrid fields={detail.context} /> : null}

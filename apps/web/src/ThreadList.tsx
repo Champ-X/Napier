@@ -4,6 +4,7 @@ import { RotateCcw, Trash2, X } from "lucide-react";
 import type { ThreadSummary } from "@napier/contracts";
 import { copy } from "./copy";
 import type { TrashedThreadReceipt } from "./use-thread-trash";
+import { WorkspaceThreadRow } from "./WorkspaceThreadRow";
 
 const trashCopy = copy.trash;
 
@@ -44,23 +45,12 @@ export function ThreadList({
               }`}
               key={thread.id}
             >
-              <button
-                className="thread-row"
-                type="button"
-                onClick={() => onSelect(thread.id)}
-                aria-current={active ? "page" : undefined}
-              >
-                <span className="thread-index">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <span className="thread-copy">
-                  <strong>{thread.title}</strong>
-                  <small>
-                    {thread.lastMessage || formatThreadDate(thread.updatedAt)}
-                  </small>
-                </span>
-                <StatusDot status={thread.status} />
-              </button>
+              <WorkspaceThreadRow
+                thread={thread}
+                index={index}
+                active={active}
+                onSelect={onSelect}
+              />
               <button
                 className="thread-trash-button"
                 type="button"
@@ -125,20 +115,3 @@ export function ThreadList({
 }
 
 export default ThreadList;
-
-function StatusDot({ status }: { status: ThreadSummary["status"] }) {
-  return (
-    <span
-      className={`status-dot status-${status}`}
-      title={status}
-      aria-label={status}
-    />
-  );
-}
-
-function formatThreadDate(value: string): string {
-  return new Intl.DateTimeFormat("zh-CN", {
-    month: "short",
-    day: "numeric",
-  }).format(new Date(value));
-}

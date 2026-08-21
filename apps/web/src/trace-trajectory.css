@@ -4,13 +4,13 @@
   --trajectory-tools: var(--color-trajectory-tool-fg);
   position: relative;
   container-type: inline-size;
-  padding: 16px;
+  padding: 0;
   margin-bottom: 18px;
   overflow: visible;
-  background: var(--color-bg-subtle);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-raised);
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-none);
 }
 
 .trace-trajectory::before {
@@ -45,18 +45,30 @@
   align-items: center;
 }
 
+.trace-trajectory-masthead {
+  display: grid;
+  grid-template-columns: minmax(230px, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  min-height: 52px;
+  padding: 7px 10px 7px 14px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--rule);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
 .trace-trajectory-header {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  padding: 1px 2px 12px;
+  padding: 0;
 }
 
 .trace-trajectory-header > div {
   min-width: 0;
   align-items: baseline;
   flex-direction: row;
-  gap: 12px;
+  gap: 10px;
 }
 
 .trace-trajectory-header > div > span,
@@ -78,8 +90,8 @@
 .trace-trajectory-header h3 {
   margin: 0;
   font-family: var(--serif);
-  font-size: 20px;
-  font-weight: 520;
+  font-size: 17px;
+  font-weight: 650;
   line-height: 1;
   letter-spacing: -0.03em;
 }
@@ -91,12 +103,12 @@
 .trace-trajectory-state {
   flex: 0 0 auto;
   gap: 7px;
-  padding: 7px 10px;
+  padding: 5px 8px;
   font-family: var(--mono);
   font-size: var(--text-xs);
   color: var(--ink-faint);
   text-transform: uppercase;
-  background: rgb(255 255 255 / 72%);
+  background: var(--paper-deep);
   border: 1px solid var(--rule);
   border-radius: 999px;
 }
@@ -121,21 +133,21 @@
 }
 
 .trace-trajectory-stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1px;
-  padding: 1px;
-  margin: 0 0 16px;
-  overflow: hidden;
-  background: var(--rule);
-  border: 1px solid var(--rule);
-  border-radius: 6px;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  background: transparent;
+  border: 0;
 }
 
 .trace-trajectory-stats div {
   min-width: 0;
-  padding: 8px 12px 7px;
-  background: rgb(255 255 255 / 83%);
+  padding: 2px 11px;
+  background: transparent;
+  border-left: 1px solid var(--rule);
 }
 
 .trace-trajectory-stats dt,
@@ -146,24 +158,26 @@
 }
 
 .trace-trajectory-stats dd {
-  margin: 2px 0 0;
+  margin: 1px 0 0;
   font-family: var(--mono);
-  font-size: 14px;
+  font-size: var(--text-xs);
+  font-weight: 650;
   color: var(--ink);
 }
 
 .trace-command-bar {
   position: sticky;
   z-index: 8;
-  top: 12px;
-  gap: 10px;
+  top: 0;
+  gap: 8px;
   min-height: 46px;
-  padding: 5px;
-  margin: 0 -5px 10px;
-  background: rgb(239 243 250 / 94%);
-  border: 1px solid var(--rule-strong);
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgb(36 48 43 / 10%);
+  padding: 6px 9px;
+  margin: 0;
+  background: var(--color-bg-subtle);
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
+  box-shadow: var(--shadow-none);
   backdrop-filter: blur(16px);
 }
 
@@ -177,8 +191,8 @@
 .trace-lane-tabs button {
   display: flex;
   align-items: center;
-  min-width: 96px;
-  height: 34px;
+  min-width: 92px;
+  height: 32px;
   flex: 1 1 0;
   gap: 8px;
   padding: 0 10px;
@@ -187,7 +201,7 @@
   cursor: pointer;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
 }
 
 .trace-lane-tabs button:hover {
@@ -199,14 +213,14 @@
   color: var(--ink);
   background: var(--paper-bright);
   border-color: var(--rule);
-  box-shadow: 0 2px 6px rgb(42 49 46 / 8%);
+  box-shadow: var(--shadow-raised);
 }
 
 .trace-lane-tabs button > i {
   display: grid;
-  width: 24px;
-  height: 24px;
-  flex: 0 0 24px;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
   font-size: var(--text-annotation);
   font-style: normal;
   color: var(--paper-bright);
@@ -246,13 +260,13 @@
 .trace-view-tabs {
   align-self: stretch;
   padding: 3px;
-  background: var(--paper-deep);
+  background: var(--color-surface-muted);
   border: 1px solid var(--rule);
   border-radius: 6px;
 }
 
 .trace-view-tabs button {
-  height: 32px;
+  height: 30px;
   padding: 0 10px;
   font-family: var(--mono);
   font-size: var(--text-annotation);
@@ -279,7 +293,7 @@
 
 .trace-trajectory-search {
   width: 190px;
-  min-height: 38px;
+  min-height: 32px;
   flex: 0 1 190px;
   gap: 7px;
   padding: 0 10px;
@@ -341,21 +355,22 @@
 }
 
 .trace-overview-disclosure {
-  margin-bottom: 10px;
+  margin: 0;
   overflow: hidden;
   background: #fff;
-  border: 1px solid #dfe2e7;
-  border-radius: 4px;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
 }
 
 .trace-overview-disclosure > summary {
-  min-height: 34px;
+  min-height: 30px;
   gap: 9px;
   padding: 0 11px;
   font-family: var(--mono);
   color: var(--ink-soft);
   cursor: pointer;
-  background: #fbfbfc;
+  background: var(--paper-bright);
   list-style: none;
 }
 
@@ -388,17 +403,17 @@
 
 .trace-overview {
   position: relative;
-  padding: 7px 10px 8px;
+  padding: 5px 10px 7px;
   overflow: hidden;
   color: var(--ink-soft);
-  background: #fff;
-  border-top: 1px solid #e3e5e9;
+  background: var(--paper-bright);
+  border-top: 1px solid var(--rule);
 }
 
 .trace-overview header {
   justify-content: flex-end;
-  min-height: 24px;
-  margin-bottom: 4px;
+  min-height: 22px;
+  margin-bottom: 2px;
 }
 
 .trace-overview header > div:first-child {
@@ -420,8 +435,8 @@
 .trace-metric-tabs {
   gap: 1px;
   padding: 2px;
-  background: #f1f2f4;
-  border: 1px solid #e1e3e7;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--rule);
   border-radius: 4px;
 }
 
@@ -439,9 +454,9 @@
 
 .trace-metric-tabs button:hover,
 .trace-metric-tabs button.is-active {
-  color: #31343a;
-  background: #fff;
-  box-shadow: 0 1px 3px rgb(32 36 44 / 10%);
+  color: var(--ink);
+  background: var(--paper-bright);
+  box-shadow: var(--shadow-raised);
 }
 
 .trace-overview-axis {
@@ -467,7 +482,7 @@
   display: grid;
   grid-template-columns: 54px minmax(0, 1fr);
   align-items: stretch;
-  min-height: 27px;
+  min-height: 24px;
 }
 
 .trace-lane-label {
@@ -491,14 +506,14 @@
 .trace-lane-track {
   position: relative;
   min-width: 0;
-  min-height: 27px;
+  min-height: 24px;
   overflow: hidden;
   background: repeating-linear-gradient(
     90deg,
     transparent 0 calc(25% - 1px),
-    #f1f2f4 calc(25% - 1px) 25%
+    var(--rule-soft) calc(25% - 1px) 25%
   );
-  border-bottom: 1px solid #f0f1f3;
+  border-bottom: 1px solid var(--rule-soft);
 }
 
 .trace-segment {
@@ -587,8 +602,8 @@
 }
 
 .trace-run-index {
-  margin-top: 4px;
-  border-top: 1px solid var(--rule-strong);
+  margin-top: 0;
+  border-top: 0;
 }
 
 .trace-event-workspace {
@@ -597,25 +612,32 @@
 
 .trace-event-workspace.has-detail {
   display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.75fr);
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.44fr);
+  gap: 0;
   align-items: start;
+}
+
+.trace-event-workspace.has-detail .trace-run-index {
+  border-right: 1px solid var(--rule);
 }
 
 .trace-run-index > header {
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 2px 8px;
+  padding: 10px 13px 8px;
+  background: var(--paper-bright);
+  border-bottom: 1px solid var(--rule);
 }
 
 .trace-run-index > header > div {
-  display: grid;
-  gap: 3px;
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
 }
 
 .trace-run-index > header strong {
   font-family: var(--serif);
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 600;
 }
 
@@ -626,17 +648,18 @@
 }
 
 .trace-run {
-  margin-bottom: 7px;
+  margin: 0;
   overflow: hidden;
-  background: rgb(255 255 255 / 48%);
-  border: 1px solid var(--rule);
-  border-radius: 7px;
+  background: var(--paper-bright);
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
 }
 
 .trace-run-heading {
   width: 100%;
   gap: 11px;
-  padding: 7px 10px;
+  padding: 7px 12px;
   color: inherit;
   text-align: left;
   cursor: pointer;
@@ -645,7 +668,7 @@
 }
 
 .trace-run-heading:hover {
-  background: rgb(223 228 236 / 65%);
+  background: var(--nav-soft);
 }
 
 .trace-run-ordinal {
@@ -708,7 +731,7 @@
 }
 
 .trace-run-turns {
-  padding: 0 10px 9px;
+  padding: 0;
   border-top: 1px solid var(--rule);
 }
 
@@ -733,16 +756,19 @@
 }
 
 .trace-turn {
-  padding-top: 8px;
+  padding-top: 0;
 }
 
 .trace-turn > header {
   justify-content: space-between;
-  padding: 0 4px 5px 44px;
+  min-height: 27px;
+  padding: 0 12px 0 60px;
   font-family: var(--mono);
   font-size: var(--text-annotation);
   color: var(--ink-soft);
   text-transform: uppercase;
+  background: var(--color-bg-subtle);
+  border-bottom: 1px solid var(--rule);
 }
 
 .trace-turn > header small {
@@ -757,17 +783,18 @@
 .trace-turn li {
   position: relative;
   margin: 0;
-  border-top: 1px solid var(--rule);
+  border-top: 0;
+  border-bottom: 1px solid var(--rule-soft);
 }
 
 .trace-turn li > button {
   display: grid;
   width: 100%;
-  min-height: 52px;
-  grid-template-columns: 48px minmax(0, 1fr) auto;
-  gap: 10px;
+  min-height: 58px;
+  grid-template-columns: 74px minmax(0, 1fr) auto;
+  gap: 12px;
   align-items: center;
-  padding: 7px 7px 7px 3px;
+  padding: 7px 12px 7px 9px;
   color: inherit;
   text-align: left;
   cursor: pointer;
@@ -777,11 +804,28 @@
 
 .trace-turn li > button:hover,
 .trace-turn li.is-selected > button {
-  background: linear-gradient(90deg, rgb(45 85 71 / 9%), transparent 78%);
+  background: var(--color-accent-subtle);
 }
 
 .trace-turn li.is-selected > button {
   box-shadow: inset 3px 0 var(--ledger);
+}
+
+.trace-event-identity {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.trace-event-role {
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: var(--text-annotation);
+  font-weight: 650;
+  color: var(--ink-soft);
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .trace-event-sequence {
@@ -825,7 +869,7 @@
 .trace-event-copy strong {
   overflow: hidden;
   font-family: var(--mono);
-  font-size: var(--text-annotation);
+  font-size: var(--text-xs);
   font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -833,7 +877,7 @@
 
 .trace-event-title > i {
   flex: 0 0 auto;
-  padding: 3px 5px;
+  padding: 2px 5px;
   font-family: var(--mono);
   font-size: var(--text-annotation);
   font-style: normal;
@@ -857,21 +901,38 @@
 }
 
 .trace-event-copy > small {
-  display: -webkit-box;
+  display: flex;
   margin-top: 3px;
   overflow: hidden;
   font-family: var(--serif);
   font-size: 13px;
   line-height: 1.45;
   color: var(--ink-soft);
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
+  white-space: nowrap;
+}
+
+.trace-event-summary-parts > span {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trace-event-summary-parts > span + span {
+  padding-left: 12px;
+}
+
+.trace-event-summary-parts > span + span::before {
+  position: absolute;
+  left: 4px;
+  color: var(--rule-strong);
+  content: "·";
 }
 
 .trace-event-meta {
   justify-content: flex-end;
   gap: 10px;
-  min-width: 126px;
+  min-width: 118px;
   font-family: var(--mono);
 }
 
@@ -909,14 +970,16 @@
 
 .trace-event-detail {
   position: sticky;
-  top: 70px;
+  top: 0;
   min-width: 0;
+  height: calc(100vh - 142px);
+  max-height: 760px;
   overflow: hidden;
   color: var(--ink);
   background: var(--paper-bright);
-  border: 1px solid var(--rule-strong);
-  border-radius: 7px;
-  box-shadow: var(--shadow-raised);
+  border: 0;
+  border-radius: 0;
+  box-shadow: var(--shadow-none);
 }
 
 .trace-event-detail-heading {
@@ -924,8 +987,8 @@
   grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 8px;
   align-items: center;
-  min-height: 54px;
-  padding: 8px 9px 8px 12px;
+  min-height: 58px;
+  padding: 9px 10px 9px 13px;
   background: var(--paper-deep);
   border-bottom: 1px solid var(--rule);
 }
@@ -951,7 +1014,7 @@
 
 .trace-event-detail-heading strong {
   font-family: var(--mono);
-  font-size: var(--text-xs);
+  font-size: 13px;
 }
 
 .trace-event-detail-heading > i {
@@ -996,7 +1059,7 @@
 .trace-event-detail-tabs {
   display: flex;
   gap: 2px;
-  padding: 6px 8px 0;
+  padding: 4px 8px 0;
   border-bottom: 1px solid var(--rule);
 }
 
@@ -1044,18 +1107,28 @@
 }
 
 .trace-event-detail-panel {
+  height: calc(100% - 99px);
   min-height: 172px;
-  max-height: min(48vh, 420px);
-  padding: 12px;
+  max-height: none;
+  padding: 13px;
   overflow: hidden auto;
 }
 
 .trace-event-detail-summary {
   display: grid;
-  gap: 8px;
+  gap: 12px;
 }
 
-.trace-event-detail-summary > span {
+.trace-event-detail-callout {
+  display: grid;
+  gap: 7px;
+  padding: 11px 12px;
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+}
+
+.trace-event-detail-callout > span {
   font-family: var(--mono);
   font-size: var(--text-annotation);
   color: var(--ledger);
@@ -1063,7 +1136,7 @@
   letter-spacing: 0.06em;
 }
 
-.trace-event-detail-summary p,
+.trace-event-detail-callout p,
 .trace-event-detail-empty {
   margin: 0;
   font-family: var(--serif);
@@ -1081,14 +1154,14 @@
   margin: 0;
   background: var(--rule);
   border: 1px solid var(--rule);
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
 }
 
 .trace-event-detail-grid > div {
   display: grid;
   min-width: 0;
   gap: 3px;
-  padding: 8px 9px;
+  padding: 9px 10px;
   background: var(--paper-bright);
 }
 
@@ -1160,6 +1233,7 @@
   gap: 14px;
   align-items: center;
   min-height: 130px;
+  padding: 16px;
   color: var(--ink-faint);
 }
 

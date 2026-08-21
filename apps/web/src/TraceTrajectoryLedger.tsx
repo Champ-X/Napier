@@ -8,6 +8,7 @@ import type {
 import { copy } from "./copy";
 import { getLocale } from "./locale";
 import { traceTrajectoryCopy } from "./trace-trajectory-copy";
+import { traceTrajectorySummarySegments } from "./trace-trajectory-presentation";
 
 const TRACE_EVENT_WINDOW = 180;
 
@@ -149,6 +150,7 @@ function TraceTrajectoryEventRow({
   selected: boolean;
   onSelect: (eventId: string) => void;
 }) {
+  const summarySegments = traceTrajectorySummarySegments(event.summary);
   return (
     <li
       id={`trace-event-${event.event.id}`}
@@ -157,8 +159,11 @@ function TraceTrajectoryEventRow({
       )}
     >
       <button type="button" onClick={() => onSelect(event.event.id)}>
-        <span className="trace-event-sequence">
-          <i />#{String(event.event.seq).padStart(3, "0")}
+        <span className="trace-event-identity">
+          <span className="trace-event-role">{event.role}</span>
+          <span className="trace-event-sequence">
+            <i />#{String(event.event.seq).padStart(3, "0")}
+          </span>
         </span>
         <span className="trace-event-copy">
           <span className="trace-event-title">
@@ -167,7 +172,11 @@ function TraceTrajectoryEventRow({
               {traceTrajectoryCopy.statuses[event.status]}
             </i>
           </span>
-          <small>{event.summary}</small>
+          <small className="trace-event-summary-parts">
+            {summarySegments.map((segment, index) => (
+              <span key={`${segment}:${String(index)}`}>{segment}</span>
+            ))}
+          </small>
         </span>
         <span className="trace-event-meta">
           {event.durationMs !== undefined ? (

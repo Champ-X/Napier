@@ -226,7 +226,7 @@ Principles:
     "reading-min": { "$type": "dimension", "$value": { "value": 760, "unit": "px" } },
     "reading-target": { "$type": "dimension", "$value": { "value": 800, "unit": "px" } },
     "reading-max": { "$type": "dimension", "$value": { "value": 840, "unit": "px" } },
-    "sidebar-expanded": { "$type": "dimension", "$value": { "value": 248, "unit": "px" } },
+    "sidebar-expanded": { "$type": "dimension", "$value": { "value": 272, "unit": "px" } },
     "sidebar-compact": { "$type": "dimension", "$value": { "value": 68, "unit": "px" } },
     "evidence-rail": { "$type": "dimension", "$value": { "value": 320, "unit": "px" } },
     "status-bar": { "$type": "dimension", "$value": { "value": 44, "unit": "px" } },
@@ -405,7 +405,7 @@ double box-shadow above.
 
 ## 9. Layout
 
-- Sidebar: 248px expanded and 68px compact.
+- Sidebar: 272px expanded and 68px compact.
 - Reading axis: 800px target, 760–840px allowed.
 - Evidence rail: 320px without moving the primary axis by more than 2px.
 - Task status: 44px; Settings form: 800px.

@@ -47,6 +47,7 @@ export const traceTrajectoryCopyEn = {
     context: "Context",
     evidence: "Evidence",
     timing: "Timing",
+    atAGlance: "At a glance",
     noEvidence: "No additional bounded evidence was recorded for this event.",
     fields: {
       eventType: "Event type",
@@ -164,6 +165,7 @@ export const traceTrajectoryZh: LocaleOverride<typeof traceTrajectoryCopyEn> = {
     context: "上下文",
     evidence: "证据",
     timing: "计时",
+    atAGlance: "关键信息",
     noEvidence: "该事件没有记录额外的边界化证据。",
     fields: {
       eventType: "事件类型",

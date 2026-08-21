@@ -18,6 +18,7 @@ export const workspaceTreeCopyEn = {
   loadSessionsError: "Unable to load sessions",
   loadingSessions: "Loading sessions…",
   noSessions: "No sessions yet",
+  events: "events",
   // Folder picker dialog
   pickerEyebrow: "Local folder",
   pickerTitle: "Choose a workspace",
@@ -43,6 +44,7 @@ export const workspaceTreeZh: LocaleOverride<typeof workspaceTreeCopyEn> = {
   loadSessionsError: "无法加载会话",
   loadingSessions: "正在加载会话……",
   noSessions: "暂无会话",
+  events: "个事件",
   pickerEyebrow: "本地文件夹",
   pickerTitle: "选择工作区",
   pickerBody:
