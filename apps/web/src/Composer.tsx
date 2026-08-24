@@ -83,34 +83,68 @@ export function Composer({
         submit();
       }}
     >
-      <div className="composer-rule" aria-hidden="true">
-        <span />
-        <span>
+      <div className="composer-input-row">
+        <span className="composer-mode" aria-hidden="true">
           {vm.openOperatorDecision
             ? vm.openOperatorDecision.header
             : vm.isRunning
               ? copy.runControlMode
               : copy.inputMode}
         </span>
-        <span />
+        <textarea
+          aria-label={
+            vm.isRunning ? copy.steeringPlaceholder : copy.composerPlaceholder
+          }
+          placeholder={
+            vm.isRunning ? copy.steeringPlaceholder : copy.composerPlaceholder
+          }
+          value={vm.composer}
+          rows={1}
+          disabled={
+            !vm.detail ||
+            Boolean(vm.openOperatorDecision) ||
+            Boolean(vm.browserInteractionConfirmation)
+          }
+          onChange={(event) => vm.setComposer(event.target.value)}
+          onKeyDown={(event) => handleComposerKeys(event, submit)}
+        />
+        {vm.isRunning ? (
+          <div className="composer-run-actions">
+            <button
+              className="run-button control"
+              type="submit"
+              disabled={!vm.composer.trim() || !vm.activeRunId}
+            >
+              <Send size={13} aria-hidden="true" />
+              {vm.controlMessageMode === "steering"
+                ? copy.steer
+                : copy.queueFollowUp}
+            </button>
+            <button
+              className="run-button stop"
+              type="button"
+              onClick={() => void vm.stop()}
+            >
+              <Square size={13} fill="currentColor" aria-hidden="true" />
+              {copy.stop}
+            </button>
+          </div>
+        ) : (
+          <button
+            className="run-button"
+            type="submit"
+            disabled={!canSubmit}
+            aria-describedby={runButtonDescription(
+              activeModel.configured,
+              runReadiness,
+              readinessPending,
+            )}
+          >
+            <Send size={14} aria-hidden="true" />
+            {copy.send}
+          </button>
+        )}
       </div>
-      <textarea
-        aria-label={
-          vm.isRunning ? copy.steeringPlaceholder : copy.composerPlaceholder
-        }
-        placeholder={
-          vm.isRunning ? copy.steeringPlaceholder : copy.composerPlaceholder
-        }
-        value={vm.composer}
-        rows={3}
-        disabled={
-          !vm.detail ||
-          Boolean(vm.openOperatorDecision) ||
-          Boolean(vm.browserInteractionConfirmation)
-        }
-        onChange={(event) => vm.setComposer(event.target.value)}
-        onKeyDown={(event) => handleComposerKeys(event, submit)}
-      />
       <div className="composer-footer">
         <div className="composer-hints">
           <details className="composer-options">
@@ -170,42 +204,6 @@ export function Composer({
             </label>
           ) : null}
         </div>
-        {vm.isRunning ? (
-          <div className="composer-run-actions">
-            <button
-              className="run-button control"
-              type="submit"
-              disabled={!vm.composer.trim() || !vm.activeRunId}
-            >
-              <Send size={13} aria-hidden="true" />
-              {vm.controlMessageMode === "steering"
-                ? copy.steer
-                : copy.queueFollowUp}
-            </button>
-            <button
-              className="run-button stop"
-              type="button"
-              onClick={() => void vm.stop()}
-            >
-              <Square size={13} fill="currentColor" aria-hidden="true" />
-              {copy.stop}
-            </button>
-          </div>
-        ) : (
-          <button
-            className="run-button"
-            type="submit"
-            disabled={!canSubmit}
-            aria-describedby={runButtonDescription(
-              activeModel.configured,
-              runReadiness,
-              readinessPending,
-            )}
-          >
-            <Send size={14} aria-hidden="true" />
-            {copy.send}
-          </button>
-        )}
       </div>
       <ComposerReadinessNotices
         running={vm.isRunning}

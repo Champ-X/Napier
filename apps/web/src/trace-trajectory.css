@@ -5,11 +5,11 @@
   position: relative;
   container-type: inline-size;
   padding: 0;
-  margin-bottom: 18px;
+  margin-bottom: var(--space-8);
   overflow: visible;
-  background: var(--paper-bright);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-md);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
   box-shadow: var(--shadow-none);
 }
 
@@ -50,11 +50,11 @@
   grid-template-columns: minmax(230px, 1fr) auto;
   gap: 14px;
   align-items: center;
-  min-height: 52px;
-  padding: 7px 10px 7px 14px;
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--rule);
-  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  min-height: 68px;
+  padding: 0 0 var(--space-4);
+  background: transparent;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
 }
 
 .trace-trajectory-header {
@@ -170,14 +170,13 @@
   z-index: 8;
   top: 0;
   gap: 8px;
-  min-height: 46px;
-  padding: 6px 9px;
-  margin: 0;
-  background: var(--color-bg-subtle);
-  border: 0;
-  border-bottom: 1px solid var(--rule);
-  border-radius: 0;
-  box-shadow: var(--shadow-none);
+  min-height: 50px;
+  padding: 7px 8px;
+  margin: var(--space-3) 0;
+  background: color-mix(in srgb, var(--color-paper) 92%, transparent);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-raised);
   backdrop-filter: blur(16px);
 }
 
@@ -355,12 +354,11 @@
 }
 
 .trace-overview-disclosure {
-  margin: 0;
+  margin: 0 0 var(--space-4);
   overflow: hidden;
   background: #fff;
-  border: 0;
-  border-bottom: 1px solid var(--rule);
-  border-radius: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
 
 .trace-overview-disclosure > summary {
@@ -602,8 +600,12 @@
 }
 
 .trace-run-index {
+  position: relative;
   margin-top: 0;
-  border-top: 0;
+  background: var(--color-paper);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-raised);
 }
 
 .trace-event-workspace {
@@ -624,8 +626,9 @@
 .trace-run-index > header {
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 13px 8px;
-  background: var(--paper-bright);
+  min-height: 52px;
+  padding: 10px var(--space-4);
+  background: var(--color-paper);
   border-bottom: 1px solid var(--rule);
 }
 
@@ -650,7 +653,7 @@
 .trace-run {
   margin: 0;
   overflow: hidden;
-  background: var(--paper-bright);
+  background: transparent;
   border: 0;
   border-bottom: 1px solid var(--rule);
   border-radius: 0;
@@ -659,7 +662,8 @@
 .trace-run-heading {
   width: 100%;
   gap: 11px;
-  padding: 7px 12px;
+  min-height: 54px;
+  padding: 8px var(--space-4) 8px var(--space-3);
   color: inherit;
   text-align: left;
   cursor: pointer;
@@ -678,9 +682,10 @@
   flex: 0 0 28px;
   font-family: var(--serif);
   font-size: 13px;
-  color: var(--paper-bright);
-  background: var(--ledger);
-  border-radius: 4px;
+  color: var(--color-paper);
+  background: var(--color-execution-spine);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 4px var(--color-execution-spine-subtle);
   place-items: center;
 }
 
@@ -731,8 +736,23 @@
 }
 
 .trace-run-turns {
+  position: relative;
   padding: 0;
   border-top: 1px solid var(--rule);
+}
+
+.trace-run-turns::before {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  left: 25px;
+  width: 2px;
+  content: "";
+  background: linear-gradient(
+    var(--color-execution-spine),
+    color-mix(in srgb, var(--color-execution-spine) 28%, transparent)
+  );
 }
 
 .trace-show-earlier {
@@ -760,9 +780,11 @@
 }
 
 .trace-turn > header {
+  position: relative;
+  z-index: 2;
   justify-content: space-between;
   min-height: 27px;
-  padding: 0 12px 0 60px;
+  padding: 0 var(--space-4) 0 58px;
   font-family: var(--mono);
   font-size: var(--text-annotation);
   color: var(--ink-soft);
@@ -782,6 +804,7 @@
 
 .trace-turn li {
   position: relative;
+  z-index: 2;
   margin: 0;
   border-top: 0;
   border-bottom: 1px solid var(--rule-soft);
@@ -791,10 +814,10 @@
   display: grid;
   width: 100%;
   min-height: 58px;
-  grid-template-columns: 74px minmax(0, 1fr) auto;
-  gap: 12px;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: var(--space-3);
   align-items: center;
-  padding: 7px 12px 7px 9px;
+  padding: 8px var(--space-4) 8px 0;
   color: inherit;
   text-align: left;
   cursor: pointer;
@@ -804,17 +827,22 @@
 
 .trace-turn li > button:hover,
 .trace-turn li.is-selected > button {
-  background: var(--color-accent-subtle);
+  background: color-mix(
+    in srgb,
+    var(--color-execution-spine-subtle) 70%,
+    var(--color-paper)
+  );
 }
 
 .trace-turn li.is-selected > button {
-  box-shadow: inset 3px 0 var(--ledger);
+  box-shadow: inset 3px 0 var(--color-execution-spine);
 }
 
 .trace-event-identity {
   display: grid;
   min-width: 0;
   gap: 3px;
+  justify-items: center;
 }
 
 .trace-event-role {
@@ -829,6 +857,11 @@
 }
 
 .trace-event-sequence {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  justify-content: flex-end;
+  padding-right: 1px;
   gap: 7px;
   font-family: var(--mono);
   font-size: var(--text-annotation);
@@ -836,22 +869,24 @@
 }
 
 .trace-event-sequence i {
-  width: 9px;
-  height: 9px;
+  position: absolute;
+  left: 20px;
+  width: 11px;
+  height: 11px;
   background: var(--trajectory-input);
-  border: 2px solid #f4f7fc;
+  border: 3px solid var(--color-paper);
   border-radius: 50%;
-  box-shadow: 0 0 0 1px var(--trajectory-input);
+  box-shadow: 0 0 0 1px var(--color-execution-spine);
 }
 
 .lane-model .trace-event-sequence i {
-  background: var(--trajectory-model);
-  box-shadow: 0 0 0 1px var(--trajectory-model);
+  background: var(--color-execution-spine);
+  box-shadow: 0 0 0 1px var(--color-execution-spine);
 }
 
 .lane-tools .trace-event-sequence i {
   background: var(--trajectory-tools);
-  box-shadow: 0 0 0 1px var(--trajectory-tools);
+  box-shadow: 0 0 0 1px var(--color-execution-spine);
 }
 
 .trace-event-copy {

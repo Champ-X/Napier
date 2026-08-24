@@ -128,6 +128,7 @@ export function assertWebUiE2eReceipt(receipt) {
     12,
   );
   assert.equal(receipt?.longRun?.environmentFallbackVisible, true);
+  assert.equal(receipt?.longRun?.environmentFallbackInitiallyHidden, true);
   assert.equal(
     receipt?.longRun?.environmentFallbackTools,
     "14 / 42 tools active",
@@ -136,14 +137,15 @@ export function assertWebUiE2eReceipt(receipt) {
     receipt?.longRun?.environmentFallbackRepair,
     "Run options → Sandbox setup",
   );
-  assert.equal(receipt?.longRun?.environmentFallbackWithinStatus, true);
+  assert.equal(receipt?.longRun?.environmentFallbackWithinDetails, true);
   assert.equal(receipt?.longRun?.horizontalOverflowPx, 0);
   assert.equal(receipt?.runtime?.runtimeSectionVisible, true);
   assert.equal(receipt?.runtime?.sectionCount, 4);
   assert.equal(receipt?.runtime?.browserSurfaceVisible, true);
   assert.equal(receipt?.runtime?.runningIndicatorVisible, true);
   assert.equal(receipt?.runtime?.fallbackWarningVisible, true);
-  assert.equal(receipt?.runtime?.composerHeight >= 184, true);
+  assert.equal(receipt?.runtime?.composerHeight >= 72, true);
+  assert.equal(receipt?.runtime?.composerHeight <= 240, true);
   assert.equal(receipt?.trajectory?.title, "Run trajectory");
   assert.equal(receipt?.trajectory?.eventCount > 180, true);
   assert.equal(receipt?.trajectory?.runCount >= 2, true);
@@ -266,8 +268,11 @@ export function assertViewportReceipt(viewport) {
   assert.equal(viewport.conversation.internalTrialControlsVisible, false);
   assert.equal(viewport.geometry.horizontalOverflowPx, 0);
   assert.equal(viewport.geometry.drawerWithinViewport, true);
-  assert.equal(viewport.readingAxis.statusWidth >= 760, true);
-  assert.equal(viewport.readingAxis.statusWidth <= 840, true);
+  assert.equal(viewport.readingAxis.statusWidth >= 120, true);
+  assert.equal(viewport.readingAxis.statusWidth <= 290, true);
+  assert.equal(viewport.readingAxis.statusHeight <= 58, true);
+  assert.equal(viewport.readingAxis.statusWithinCommandBar, true);
+  assert.equal(viewport.readingAxis.statusToModelGapPx >= 0, true);
   assert.equal(viewport.readingAxis.conversationWidth >= 760, true);
   assert.equal(viewport.readingAxis.conversationWidth <= 840, true);
   assert.equal(viewport.readingAxis.composerWidth >= 760, true);

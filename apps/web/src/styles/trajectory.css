@@ -1,4 +1,95 @@
 /* Milestones, delegation, trace, and telemetry surfaces. */
+.trace-evidence-stack {
+  margin-top: var(--space-6);
+  overflow: hidden;
+  background: var(--color-paper);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--workbench-panel-shadow);
+}
+
+.trace-evidence-stack > summary {
+  display: grid;
+  min-height: 64px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--inline-md);
+  align-items: center;
+  padding: var(--inset-sm) var(--inset-md);
+  cursor: pointer;
+  list-style: none;
+}
+
+.trace-evidence-stack > summary::-webkit-details-marker {
+  display: none;
+}
+
+.trace-evidence-stack > summary:hover {
+  background: var(--workbench-hover);
+}
+
+.trace-evidence-stack > summary > span:nth-child(2) {
+  display: grid;
+  gap: var(--stack-xs);
+}
+
+.trace-evidence-stack > summary strong {
+  font-size: var(--text-sm);
+}
+
+.trace-evidence-stack > summary small {
+  overflow: hidden;
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trace-evidence-stack > summary > svg {
+  color: var(--color-fg-subtle);
+  transition: transform var(--duration-base) var(--ease-standard);
+}
+
+.trace-evidence-stack[open] > summary > svg {
+  transform: rotate(180deg);
+}
+
+.trace-evidence-glyph {
+  display: grid;
+  width: var(--control-target);
+  height: var(--control-target);
+  color: var(--color-accent);
+  background: var(--color-execution-spine-subtle);
+  border-radius: var(--radius-full);
+  place-items: center;
+}
+
+.trace-evidence-content {
+  padding: var(--space-4);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.trace-evidence-content
+  > :is(
+    .otel-export-card,
+    .trace-summary-coverage,
+    .agent-milestone-ledger,
+    .tool-loop-guard-ledger,
+    .independent-advisor-ledger,
+    .delegation-ledger
+  ) {
+  margin-bottom: 0;
+  padding: var(--space-4) 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.trace-evidence-content > :last-child {
+  border-bottom: 0;
+}
+
 .agent-milestone-ledger {
   padding-bottom: 18px;
   margin-bottom: 18px;

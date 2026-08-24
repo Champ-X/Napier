@@ -7,13 +7,15 @@ import { Composer } from "./Composer";
 import { ConversationWorkspace } from "./ConversationWorkspace";
 import { copy } from "./copy";
 import { TaskWorkspace } from "./TaskWorkspace";
-import { TaskNarrativeBoundary } from "./TaskNarrativeBoundary";
 import { TraceWorkspace } from "./TraceWorkspace";
 import { useConversationAutoScroll } from "./use-conversation-auto-scroll";
 import { useTaskControlNavigation } from "./use-task-control-navigation";
 import { useWorkspaceShell } from "./use-workspace-shell";
 import { useWorkspaceViewModel } from "./use-workspace-view-model";
-import { WorkbenchDeferredDecisions, WorkbenchDeferredNotices } from "./WorkbenchDeferredPanels";
+import {
+  WorkbenchDeferredDecisions,
+  WorkbenchDeferredNotices,
+} from "./WorkbenchDeferredPanels";
 import { WorkspaceSettingsSurface } from "./WorkspaceSettingsSurface";
 export function App() {
   const vm = useWorkspaceViewModel(),
@@ -37,7 +39,8 @@ export function App() {
   if (!vm.bootstrap) {
     return <FatalState message={vm.error ?? copy.notices.disconnected} />;
   }
-  const activeAgent = vm.detail?.agent ?? vm.bootstrap.agents[0], activeModel = vm.selectedModel;
+  const activeAgent = vm.detail?.agent ?? vm.bootstrap.agents[0],
+    activeModel = vm.selectedModel;
   const canStartRun = composerCanStartRun({
     text: vm.composer,
     hasThread: Boolean(vm.detail),
@@ -48,7 +51,14 @@ export function App() {
     <div className="app-shell" data-workspace-view={shell.workspaceView}>
       <AppLedgerNavigation vm={vm} shell={shell} />
       <main className="workbench">
-        <AppWorkbenchHeader vm={vm} shell={shell} />
+        <AppWorkbenchHeader
+          vm={vm}
+          shell={shell}
+          browserControlsAvailable={taskControls.browserControlsAvailable}
+          onOpenArtifact={taskControls.openArtifact}
+          onOpenBrowserControls={taskControls.openBrowserControls}
+          onStop={() => void vm.stop()}
+        />
         <div className="workspace-primary-surface">
           {shell.workspaceView === "conversation" ? (
             <section
@@ -57,13 +67,6 @@ export function App() {
               role="tabpanel"
               aria-labelledby="workspace-view-conversation"
             >
-              <TaskNarrativeBoundary
-                detail={vm.detail}
-                browserControlsAvailable={taskControls.browserControlsAvailable}
-                onOpenArtifact={taskControls.openArtifact}
-                onOpenBrowserControls={taskControls.openBrowserControls}
-                onStop={() => void vm.stop()}
-              />
               <WorkbenchDeferredNotices vm={vm} />
               <ConversationWorkspace
                 vm={vm}

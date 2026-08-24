@@ -14,11 +14,7 @@ import { TaskValidationPanel } from "./TaskValidationPanel";
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
 
 type WorkspaceViewModel = ReturnType<typeof useWorkspaceViewModel>;
-export type TaskSection =
-  | "overview"
-  | "changes"
-  | "environment"
-  | "validation";
+export type TaskSection = "overview" | "changes" | "environment" | "validation";
 
 const BASE_SECTIONS = [
   { id: "overview", icon: LayoutList },
@@ -52,39 +48,41 @@ export function TaskWorkspace({
 
   return (
     <div className="task-workspace">
-      <header className="task-workspace-heading">
-        <span>{copy.taskView.eyebrow}</span>
-        <h1>{copy.taskView.title}</h1>
-        <p>{copy.taskView.body}</p>
-      </header>
-      <nav
-        className="task-section-navigation"
-        aria-label={copy.taskView.title}
-        role="tablist"
-      >
-        {sections.map((entry) => {
-          const Icon = entry.icon;
-          return (
-            <button
-              id={`task-section-${entry.id}`}
-              type="button"
-              className={section === entry.id ? "is-active" : ""}
-              role="tab"
-              aria-selected={section === entry.id}
-              aria-controls="task-content-panel"
-              tabIndex={section === entry.id ? 0 : -1}
-              key={entry.id}
-              onClick={() => onSection(entry.id)}
-              onKeyDown={(event) =>
-                moveTaskSection(event, entry.id, sections, onSection)
-              }
-            >
-              <Icon size={15} aria-hidden="true" />
-              {copy.taskView.sections[entry.id]}
-            </button>
-          );
-        })}
-      </nav>
+      <div className="task-workspace-masthead">
+        <header className="task-workspace-heading">
+          <span>{copy.taskView.eyebrow}</span>
+          <h1>{copy.taskView.title}</h1>
+          <p>{copy.taskView.body}</p>
+        </header>
+        <nav
+          className="task-section-navigation"
+          aria-label={copy.taskView.title}
+          role="tablist"
+        >
+          {sections.map((entry) => {
+            const Icon = entry.icon;
+            return (
+              <button
+                id={`task-section-${entry.id}`}
+                type="button"
+                className={section === entry.id ? "is-active" : ""}
+                role="tab"
+                aria-selected={section === entry.id}
+                aria-controls="task-content-panel"
+                tabIndex={section === entry.id ? 0 : -1}
+                key={entry.id}
+                onClick={() => onSection(entry.id)}
+                onKeyDown={(event) =>
+                  moveTaskSection(event, entry.id, sections, onSection)
+                }
+              >
+                <Icon size={15} aria-hidden="true" />
+                {copy.taskView.sections[entry.id]}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
       <div
         id="task-content-panel"
         className="task-content-surface"

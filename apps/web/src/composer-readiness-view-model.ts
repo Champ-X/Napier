@@ -9,6 +9,7 @@ import {
   type ComposerReadinessItem,
   type ComposerRunReadiness,
 } from "./composer-readiness-types";
+import { copy } from "./copy";
 
 export type {
   ComposerReadinessItem,
@@ -92,11 +93,11 @@ export function composerRunReadiness(
               (item) =>
                 item.id === "sandbox" && item.value === "Read-only fallback",
             )
-          ? "Starts with safe reads only. Configure Sandbox when the task needs edits, commands, Browser sessions, Extensions, or Subagents."
+          ? copy.readiness.safeReadsOnly
           : warned.some(
                 (item) => item.id === "sandbox" && item.value === "Host direct",
               )
-            ? "Host-direct execution is explicitly enabled without OS isolation. Commands run on this machine."
+            ? copy.readiness.hostDirect
             : "",
     items,
   };

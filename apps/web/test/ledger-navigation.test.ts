@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
 describe("Ledger navigation", () => {
-  it("supports explicit desktop collapse without hiding the thread list", async () => {
+  it("collapses at the compact desktop breakpoint without hiding the thread list", async () => {
     const [source, tree, styles] = await Promise.all([
       readFile(new URL("../src/LedgerNavigation.tsx", import.meta.url), "utf8"),
       readFile(new URL("../src/WorkspaceTree.tsx", import.meta.url), "utf8"),
@@ -12,13 +12,16 @@ describe("Ledger navigation", () => {
       ),
     ]);
 
-    expect(source).toContain("useState(false)");
+    expect(source).toContain('typeof window !== "undefined"');
+    expect(source).toContain("window.innerWidth <= 1320");
     expect(source).toContain(
       'className={`ledger-nav${collapsed ? " is-collapsed" : ""}`}',
     );
     expect(source).toContain("aria-pressed={collapsed}");
-    expect(source).toContain("Expand ledger navigation");
-    expect(source).toContain("Collapse ledger navigation");
+    expect(source).toContain("展开会话导航");
+    expect(source).toContain("收起会话导航");
+    expect(source).toContain("aria-label={copy.newThread}");
+    expect(source).toContain("aria-label={copy.settings}");
     // Sessions now nest under the workspace folder in WorkspaceTree; the
     // navigation shell renders the merged tree instead of a bare thread list.
     expect(source).toContain("<WorkspaceTree");

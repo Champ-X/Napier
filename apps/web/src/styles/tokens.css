@@ -1,5 +1,5 @@
 /* Generated from DESIGN.md. Do not edit by hand. */
-/* source-sha256: b133bb16e9a3d663787f22ebe1420e9691375d4d73e236b9bbcc63329b3988ea */
+/* source-sha256: bb2a3712ec5e609549e83308741e14ec430a8ac6c09b9c884a44e89af9f6968c */
 :root {
   color-scheme: light;
   --color-accent: #3A58EC;
@@ -11,17 +11,27 @@
   --color-border: #D5DAE1;
   --color-border-strong: #7A838D;
   --color-border-subtle: #E8EBF0;
+  --color-canvas: #F4F6F9;
   --color-danger: #B43F3E;
   --color-danger-accent: #E5484D;
   --color-danger-border: #B85A4B;
   --color-danger-fg: #843C2D;
   --color-danger-surface: #FDECEC;
+  --color-execution-spine: #4D6BFE;
+  --color-execution-spine-subtle: #EEF1FF;
   --color-fg: #1A1D1F;
   --color-fg-disabled: #596069;
   --color-fg-muted: #596069;
   --color-fg-on-accent: #FFFFFF;
   --color-fg-subtle: #69717B;
   --color-focus-ring: #4D6BFE;
+  --color-navigation-bg: #10141B;
+  --color-navigation-border: #2B3442;
+  --color-navigation-fg: #FFFFFF;
+  --color-navigation-fg-muted: #AEB9C7;
+  --color-navigation-surface: #171C25;
+  --color-navigation-surface-hover: #202733;
+  --color-paper: #FFFFFF;
   --color-success: #315B48;
   --color-success-border: #456B5B;
   --color-success-surface: #DFE9E0;
@@ -65,9 +75,12 @@
   --inset-sm: 12px;
   --inset-xl: 32px;
   --inset-xs: 8px;
+  --layout-command-bar: 58px;
   --layout-composer-max: 240px;
-  --layout-composer-min: 48px;
+  --layout-composer-min: 44px;
+  --layout-composer-shell: 72px;
   --layout-evidence-rail: 320px;
+  --layout-execution-gutter: 40px;
   --layout-reading-max: 840px;
   --layout-reading-min: 760px;
   --layout-reading-target: 800px;

@@ -157,7 +157,10 @@ function validReceipt() {
         drawerWithinViewport: true,
       },
       readingAxis: {
-        statusWidth: 800,
+        statusWidth: 220,
+        statusHeight: 32,
+        statusWithinCommandBar: true,
+        statusToModelGapPx: 8,
         conversationWidth: 800,
         composerWidth: 800,
         maximumCenterDeltaPx: 0,
@@ -203,10 +206,11 @@ function validReceipt() {
       showEarlierVisible: true,
       mountedFeedItems: 160,
       expandedFeedItems: 175,
+      environmentFallbackInitiallyHidden: true,
       environmentFallbackVisible: true,
       environmentFallbackTools: "14 / 42 tools active",
       environmentFallbackRepair: "Run options → Sandbox setup",
-      environmentFallbackWithinStatus: true,
+      environmentFallbackWithinDetails: true,
       horizontalOverflowPx: 0,
       activityAggregation: {
         collapsedMountedChildren: 0,
@@ -214,7 +218,7 @@ function validReceipt() {
       },
     },
     runtime: {
-      composerHeight: 184,
+      composerHeight: 120,
       fallbackWarningVisible: true,
       runningIndicatorVisible: true,
       runtimeSectionVisible: true,

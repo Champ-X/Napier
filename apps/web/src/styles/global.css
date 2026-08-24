@@ -24,6 +24,15 @@
   --rust: var(--color-danger-fg);
   --nav: var(--color-bg);
   --nav-soft: var(--color-surface-muted);
+  --workbench-canvas: var(--color-canvas);
+  --workbench-hover: color-mix(
+    in srgb,
+    var(--color-accent-subtle) 52%,
+    var(--color-paper)
+  );
+  --workbench-divider: var(--color-border-subtle);
+  --workbench-panel-shadow: 0 1px 2px
+    color-mix(in srgb, var(--color-fg) 5%, transparent);
   --shadow: var(--shadow-raised);
   --shadow-lift: var(--shadow-raised);
   --shadow-float: var(--shadow-modal);
@@ -52,7 +61,7 @@ body {
   min-width: 320px;
   overflow: hidden;
   color: var(--ink);
-  background: var(--paper);
+  background: var(--color-canvas);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }

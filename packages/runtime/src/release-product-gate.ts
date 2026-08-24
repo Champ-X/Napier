@@ -23,6 +23,7 @@ import {
   distinctReleaseProductIdentities,
   releaseProductVersionRequiresIdentity,
   resolveReleaseProductIdentity,
+  validateRunReleaseIdentity,
 } from "./release-product-identity-policy.js";
 import { parseReleaseProductTrialAdoption } from "./release-product-trial-adoption.js";
 import { projectReleaseProductVersion } from "./release-product-version-gate.js";
@@ -166,6 +167,35 @@ export function parseReleaseProductTrial(
 export function parseDirectReleaseProductGate(
   input: unknown,
 ): ReleaseProductGateProjection | undefined {
+  return parseDirectReleaseProductGateWithIdentity(input);
+}
+
+/**
+ * Verifies an immutable historical Gate against the release identity recorded
+ * when it was produced. Runtime ingestion must continue to use
+ * parseDirectReleaseProductGate so current-version evidence stays bound to the
+ * running source tree.
+ */
+export function parseHistoricalDirectReleaseProductGate(
+  input: unknown,
+  expectedReleaseIdentitySha256: string,
+): ReleaseProductGateProjection | undefined {
+  let expectedIdentity: string | undefined;
+  try {
+    expectedIdentity = validateRunReleaseIdentity(
+      expectedReleaseIdentitySha256,
+    );
+  } catch {
+    return undefined;
+  }
+  if (!expectedIdentity) return undefined;
+  return parseDirectReleaseProductGateWithIdentity(input, expectedIdentity);
+}
+
+function parseDirectReleaseProductGateWithIdentity(
+  input: unknown,
+  historicalReleaseIdentitySha256?: string,
+): ReleaseProductGateProjection | undefined {
   if (!input || typeof input !== "object" || Array.isArray(input))
     return undefined;
   const value = input as Record<string, unknown>;
@@ -200,15 +230,23 @@ export function parseDirectReleaseProductGate(
   }
   let currentReleaseIdentitySha256: string | undefined;
   try {
-    currentReleaseIdentitySha256 = resolveReleaseProductIdentity(
-      value["currentProductVersion"],
+    const recordedIdentity =
       typeof value["currentReleaseIdentitySha256"] === "string"
         ? value["currentReleaseIdentitySha256"]
-        : undefined,
-    );
+        : undefined;
+    currentReleaseIdentitySha256 = historicalReleaseIdentitySha256
+      ? recordedIdentity === historicalReleaseIdentitySha256
+        ? historicalReleaseIdentitySha256
+        : undefined
+      : resolveReleaseProductIdentity(
+          value["currentProductVersion"],
+          recordedIdentity,
+        );
   } catch {
     return undefined;
   }
+  if (historicalReleaseIdentitySha256 && !currentReleaseIdentitySha256)
+    return undefined;
   const trials = value["trials"].map(parseReleaseProductTrial);
   if (trials.some((trial) => !trial)) return undefined;
   const validTrials = trials as ReleaseProductTrial[];

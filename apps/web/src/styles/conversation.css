@@ -1,38 +1,63 @@
 /* Conversation feed, task decisions, and composer. */
 .message-ledger {
-  width: min(var(--layout-reading-target), calc(100% - var(--space-12)));
+  width: min(var(--layout-reading-max), calc(100% - var(--space-12)));
   min-height: 100%;
   margin: 0 auto;
-  padding: var(--space-10) 0 var(--space-20);
+  padding: var(--space-8) 0 var(--space-16);
 }
 
 .message-card {
   position: relative;
   display: grid;
-  grid-template-columns: 37px minmax(0, 1fr);
-  margin-bottom: 34px;
-  animation: entry-rise 320ms both cubic-bezier(0.2, 0.72, 0.2, 1);
+  grid-template-columns: var(--layout-execution-gutter) minmax(0, 1fr);
+  margin-bottom: var(--space-8);
+  animation: entry-rise var(--duration-slow) both var(--ease-out);
 }
 
 .message-gutter {
   position: relative;
-  padding-top: 3px;
+  z-index: 1;
+  padding-top: 1px;
   font-family: var(--mono);
   font-size: var(--text-xs);
   color: var(--ink-faint);
 }
 
+.message-gutter > span {
+  display: grid;
+  width: 28px;
+  height: 22px;
+  color: var(--color-accent);
+  background: var(--color-paper);
+  border: 1px solid var(--color-execution-spine);
+  border-radius: var(--radius-full);
+  place-items: center;
+}
+
+.role-user .message-gutter > span {
+  color: var(--color-fg-on-accent);
+  background: var(--color-execution-spine);
+}
+
 .message-gutter i {
   position: absolute;
   top: 22px;
-  left: 9px;
-  bottom: -32px;
-  width: 1px;
-  background: var(--rule);
+  left: 13px;
+  bottom: calc(var(--space-8) * -1);
+  width: 2px;
+  background: color-mix(
+    in srgb,
+    var(--color-execution-spine) 34%,
+    var(--color-border-subtle)
+  );
 }
 
 .message-card:last-of-type .message-gutter i {
-  background: linear-gradient(var(--rule), transparent);
+  background: linear-gradient(
+    var(--color-execution-spine),
+    var(--color-border-subtle),
+    transparent
+  );
 }
 
 .message-content {
@@ -41,8 +66,9 @@
 
 .role-user .message-content {
   padding: var(--inset-md);
-  background: var(--color-bg-subtle);
-  border: 1px solid var(--color-border-subtle);
+  background: var(--color-execution-spine-subtle);
+  border: 0;
+  border-left: 2px solid var(--color-execution-spine);
   border-radius: var(--radius-md);
 }
 
@@ -61,7 +87,7 @@
 }
 
 .role-assistant .message-content > header > span {
-  color: var(--ledger);
+  color: var(--color-accent);
 }
 
 .message-content time,
@@ -211,11 +237,12 @@
 }
 
 .activity-card {
-  margin: -11px 0 25px 37px;
+  margin: calc(var(--space-3) * -1) 0 var(--space-6)
+    var(--layout-execution-gutter);
   color: var(--ink-soft);
-  background: var(--paper-deep);
-  border: 1px solid var(--rule);
-  border-left: 3px solid var(--rule-strong);
+  background: var(--color-paper);
+  border: 1px solid var(--color-border-subtle);
+  border-left: 2px solid var(--color-execution-spine);
   border-radius: var(--radius-sm);
 }
 
@@ -804,59 +831,65 @@
   position: relative;
   z-index: 3;
   min-width: 0;
-  width: min(var(--layout-reading-target), calc(100% - var(--space-12)));
+  width: min(var(--layout-reading-max), calc(100% - var(--space-12)));
   grid-area: composer;
-  margin: 0 auto 22px;
-  padding: 6px 16px 12px;
-  background: rgb(255 255 255 / 88%);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-float);
-  backdrop-filter: blur(12px);
+  margin: 0 auto var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-paper);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-raised);
   transition:
-    border-color 180ms ease,
-    box-shadow 180ms ease,
-    transform 180ms ease;
+    border-color var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out);
 }
 
 .composer:focus-within {
-  border-color: rgb(77 107 254 / 42%);
+  border-color: var(--color-focus-ring);
   box-shadow:
-    0 0 0 4px var(--ledger-soft),
-    var(--shadow-float);
+    0 0 0 3px var(--color-accent-subtle),
+    var(--shadow-raised);
 }
 
-.composer-rule {
-  display: flex;
+.composer-input-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--inline-sm);
   align-items: center;
-  min-height: 20px;
-  padding: 4px 2px 0;
-  font-family: var(--mono);
-  font-size: var(--text-xs);
-  color: var(--ink-faint);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  min-height: var(--layout-composer-min);
 }
 
-.composer-rule span:first-child,
-.composer-rule span:last-child {
-  display: none;
+.composer-mode {
+  align-self: start;
+  margin-top: 15px;
+  font-family: var(--mono);
+  font-size: var(--text-annotation);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-accent);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .composer textarea {
   display: block;
   width: 100%;
   min-width: 0;
-  min-height: 66px;
-  max-height: 190px;
-  padding: 5px 3px 8px;
-  resize: vertical;
-  font-family: var(--serif);
-  font-size: 15px;
+  min-height: var(--layout-composer-min);
+  max-height: var(--layout-composer-max);
+  padding: 11px var(--space-1) 7px;
+  resize: none;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
   line-height: 1.55;
   color: var(--ink);
   background: transparent;
   border: 0;
+}
+
+.composer:focus-within textarea,
+.composer textarea:not(:placeholder-shown) {
+  min-height: 76px;
+  resize: vertical;
 }
 
 .composer textarea:focus {
@@ -872,10 +905,10 @@
   display: flex;
   min-width: 0;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
-  padding-top: 8px;
-  border-top: 1px solid var(--rule);
+  padding: var(--space-1) 0 0 calc(var(--layout-execution-gutter) + 3px);
+  border-top: 0;
 }
 
 .composer-hints {
@@ -915,7 +948,7 @@
   cursor: pointer;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 99px;
+  border-radius: var(--radius-sm);
   transition:
     color 140ms ease,
     background 140ms ease,
@@ -986,18 +1019,17 @@
   align-items: center;
   justify-content: center;
   gap: 7px;
-  min-width: 82px;
-  padding: 9px 16px;
+  min-width: 76px;
+  min-height: var(--control-target-primary);
+  padding: 0 var(--inset-md);
   font-size: var(--text-xs);
   font-weight: 700;
-  color: #fff;
+  color: var(--color-fg-on-accent);
   cursor: pointer;
-  background: linear-gradient(150deg, #6079ff 0%, var(--ledger) 100%);
-  border: 1px solid var(--ledger);
-  border-radius: 99px;
-  box-shadow:
-    0 1px 2px rgb(23 33 60 / 10%),
-    0 4px 12px rgb(77 107 254 / 26%);
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  box-shadow: none;
   transition:
     background 130ms ease,
     box-shadow 160ms ease,
@@ -1006,10 +1038,8 @@
 
 .run-button:hover:not(:disabled),
 .primary-wide:hover:not(:disabled) {
-  box-shadow:
-    0 1px 2px rgb(23 33 60 / 10%),
-    0 8px 20px rgb(77 107 254 / 34%);
-  transform: translateY(-1px);
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
 }
 
 .run-button.stop {

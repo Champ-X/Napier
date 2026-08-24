@@ -9,7 +9,10 @@ import {
 } from "../src/evaluation-casebook-templates.js";
 import {
   createReleaseProductTrial,
+  hashReleaseProductTrial,
   NAPIER_PRODUCT_VERSION,
+  parseDirectReleaseProductGate,
+  parseHistoricalDirectReleaseProductGate,
   parseReleaseProductTrial,
   projectReleaseProductGate,
 } from "../src/release-product-gate.js";
@@ -151,6 +154,60 @@ describe("Release Product Gate", () => {
         ...trial,
         releaseIdentitySha256: "f".repeat(64),
       }),
+    ).toBeUndefined();
+  });
+
+  it("verifies historical Gates without weakening current identity binding", () => {
+    const casebook = createEvaluationCasebook({
+      name: "Historical Release",
+      templateId: RELEASE_PRODUCT_CASEBOOK_TEMPLATE_ID,
+    });
+    const currentTrial = createReleaseProductTrial(
+      casebook,
+      completedRun("run_releasehistory01"),
+      {
+        casebookId: casebook.id,
+        templateCaseId: "settings",
+        runId: "run_releasehistory01",
+        productVersion: NAPIER_PRODUCT_VERSION,
+        status: "passed",
+        configurationInterventions: 0,
+        humanInterventions: 0,
+        recoveryEvents: 0,
+        uxScore: 5,
+      },
+      {
+        id: "release_trial_history001",
+        recordedAt: "2026-08-13T00:00:00.000Z",
+      },
+    );
+    const historicalIdentity = "a".repeat(64);
+    const historicalTrial = {
+      ...currentTrial,
+      releaseIdentitySha256: historicalIdentity,
+      contentSha256: "",
+    };
+    historicalTrial.contentSha256 = hashReleaseProductTrial(historicalTrial);
+    const historicalGate = projectReleaseProductGate(
+      casebook,
+      [historicalTrial],
+      NAPIER_PRODUCT_VERSION,
+      [],
+      historicalIdentity,
+    );
+
+    expect(parseDirectReleaseProductGate(historicalGate)).toBeUndefined();
+    expect(
+      parseHistoricalDirectReleaseProductGate(
+        historicalGate,
+        historicalIdentity,
+      ),
+    ).toEqual(historicalGate);
+    expect(
+      parseHistoricalDirectReleaseProductGate(
+        historicalGate,
+        NAPIER_RELEASE_IDENTITY_SHA256,
+      ),
     ).toBeUndefined();
   });
 

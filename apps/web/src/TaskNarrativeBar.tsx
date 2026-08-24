@@ -79,14 +79,9 @@ export function TaskNarrativeBar({
             {narrative.currentAction}
           </strong>
         </div>
-        {narrative.elapsed ? (
-          <time className="task-status-elapsed">
-            <Clock3 size={14} aria-hidden="true" />
-            {narrative.elapsed}
-          </time>
-        ) : null}
-        <EnvironmentDegradationNotice detail={detail} />
-        {narrative.metrics ||
+        {narrative.currentAction ||
+        narrative.elapsed ||
+        narrative.metrics ||
         narrative.blocker ||
         narrative.nextStep ||
         narrative.harness ? (
@@ -96,6 +91,16 @@ export function TaskNarrativeBar({
               <ChevronDown size={14} aria-hidden="true" />
             </summary>
             <div className="task-status-details-popover">
+              <section className="task-narrative-action-detail">
+                <span>{copy.narrative.currentAction}</span>
+                <p>{narrative.currentAction}</p>
+              </section>
+              {narrative.elapsed ? (
+                <section>
+                  <span>{copy.narrative.elapsed}</span>
+                  <p>{narrative.elapsed}</p>
+                </section>
+              ) : null}
               {narrative.blocker ? (
                 <section className="task-narrative-blocker">
                   <span>{copy.narrative.blockedBy}</span>
@@ -128,6 +133,7 @@ export function TaskNarrativeBar({
                   </p>
                 </section>
               ) : null}
+              <EnvironmentDegradationNotice detail={detail} />
             </div>
           </details>
         ) : null}

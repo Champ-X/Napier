@@ -19,7 +19,15 @@ export function SettingsLanguagePanel({
     { id: "en", label: copy.language.english },
   ];
   return (
-    <div className="language-panel">
+    <section
+      className="language-panel"
+      aria-labelledby="settings-language-title"
+    >
+      <header className="settings-inline-heading">
+        <span>{copy.language.section}</span>
+        <h2 id="settings-language-title">{copy.language.section}</h2>
+        <p>{copy.language.sectionDescription}</p>
+      </header>
       <p className="language-panel-current">
         {copy.language.current}:{" "}
         <strong>
@@ -42,6 +50,6 @@ export function SettingsLanguagePanel({
           </button>
         ))}
       </div>
-    </div>
+    </section>
   );
 }

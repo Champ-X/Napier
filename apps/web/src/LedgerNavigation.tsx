@@ -31,7 +31,9 @@ export function LedgerNavigation({
   onOpenWorkspaceSettings(): void;
   onOpenSettings(): void;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(
+    () => typeof window !== "undefined" && window.innerWidth <= 1320,
+  );
   return (
     <nav
       className={`ledger-nav${collapsed ? " is-collapsed" : ""}`}
@@ -48,11 +50,7 @@ export function LedgerNavigation({
         <button
           className="ledger-collapse-button"
           type="button"
-          aria-label={
-            collapsed
-              ? "Expand ledger navigation"
-              : "Collapse ledger navigation"
-          }
+          aria-label={collapsed ? "展开会话导航" : "收起会话导航"}
           aria-pressed={collapsed}
           onClick={() => setCollapsed((current) => !current)}
         >
@@ -64,7 +62,12 @@ export function LedgerNavigation({
         </button>
       </div>
 
-      <button className="new-ledger-button" type="button" onClick={onNewThread}>
+      <button
+        className="new-ledger-button"
+        type="button"
+        aria-label={copy.newThread}
+        onClick={onNewThread}
+      >
         <Plus size={15} aria-hidden="true" />
         <span>{copy.newThread}</span>
         <kbd>N</kbd>
@@ -86,6 +89,7 @@ export function LedgerNavigation({
       <button
         className="workspace-settings-button"
         type="button"
+        aria-label={copy.settings}
         onClick={onOpenSettings}
       >
         <Settings2 size={14} aria-hidden="true" />

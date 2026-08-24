@@ -27,6 +27,12 @@ export const en = {
   modelUnavailable: "Model unavailable",
   modelUnavailableHint:
     "Configure this provider in Context before starting a run or evaluation.",
+  readiness: {
+    safeReadsOnly:
+      "Starts with safe reads only. Configure Sandbox when the task needs edits, commands, Browser sessions, Extensions, or Subagents.",
+    hostDirect:
+      "Host-direct execution is explicitly enabled without OS isolation. Commands run on this machine.",
+  },
   steer: "Steer",
   queueFollowUp: "Queue next",
   controlMode: "Run input mode",
@@ -873,6 +879,8 @@ export const en = {
   narrative: {
     blockedBy: "Blocked by",
     next: "Next",
+    currentAction: "Current action",
+    elapsed: "Elapsed",
     details: "Details",
     runMetrics: "Run metrics",
     harness: "Run mode",

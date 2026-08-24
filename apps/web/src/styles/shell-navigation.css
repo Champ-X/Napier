@@ -18,9 +18,9 @@
   flex-direction: column;
   padding: 20px 13px 14px;
   overflow: hidden;
-  color: var(--ink);
-  background: var(--nav);
-  border-right: 1px solid var(--rule);
+  color: var(--color-navigation-fg);
+  background: var(--color-navigation-bg);
+  border-right: 1px solid var(--color-navigation-border);
   transition:
     padding 160ms ease,
     width 160ms ease;
@@ -54,17 +54,17 @@
   height: 30px;
   flex: 0 0 auto;
   padding: 0;
-  color: var(--ink-faint);
+  color: var(--color-navigation-fg-muted);
   cursor: pointer;
-  background: var(--paper);
-  border: 1px solid var(--rule);
+  background: var(--color-navigation-surface);
+  border: 1px solid var(--color-navigation-border);
   border-radius: 6px;
   place-items: center;
 }
 
 .ledger-collapse-button:hover {
-  color: var(--ledger);
-  background: var(--ledger-soft);
+  color: var(--color-navigation-fg);
+  background: var(--color-navigation-surface-hover);
 }
 
 .brand-mark {
@@ -100,7 +100,7 @@
   margin-top: 1px;
   overflow: hidden;
   font-size: var(--text-xs);
-  color: var(--ink-faint);
+  color: var(--color-navigation-fg-muted);
   text-overflow: ellipsis;
   text-transform: uppercase;
   letter-spacing: 0.13em;
@@ -116,10 +116,10 @@
   padding: 0 10px;
   font-size: 12px;
   font-weight: 600;
-  color: #fff;
+  color: var(--color-navigation-fg);
   cursor: pointer;
-  background: var(--ledger);
-  border: 1px solid var(--ledger);
+  background: var(--color-navigation-surface);
+  border: 1px solid var(--color-navigation-border);
   border-radius: 8px;
   transition:
     background 160ms ease,
@@ -128,8 +128,8 @@
 }
 
 .new-ledger-button:hover {
-  background: #3a5bef;
-  border-color: #3a5bef;
+  background: var(--color-navigation-surface-hover);
+  border-color: var(--color-execution-spine);
   transform: translateY(-1px);
 }
 
@@ -208,7 +208,7 @@
   padding: 0 9px 8px;
   font-family: var(--mono);
   font-size: var(--text-xs);
-  color: var(--ink-faint);
+  color: var(--color-navigation-fg-muted);
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
@@ -218,7 +218,7 @@
   flex: 1;
   overflow: auto;
   scrollbar-width: thin;
-  scrollbar-color: var(--rule-strong) transparent;
+  scrollbar-color: var(--color-navigation-border) transparent;
 }
 
 .thread-row-shell {
@@ -230,13 +230,13 @@
 }
 
 .thread-row-shell:hover {
-  background: var(--nav-soft);
+  background: var(--color-navigation-surface);
 }
 
 .thread-row-shell.is-active {
-  color: var(--ink);
-  background: var(--ledger-soft);
-  box-shadow: inset 0 0 0 1px var(--color-border-subtle);
+  color: var(--color-navigation-fg);
+  background: var(--color-navigation-surface-hover);
+  box-shadow: inset 0 0 0 1px var(--color-navigation-border);
 }
 
 .thread-row-shell.is-active::before {
@@ -246,7 +246,7 @@
   left: -4px;
   width: 2px;
   content: "";
-  background: var(--ledger);
+  background: var(--color-execution-spine);
 }
 
 .thread-row {
@@ -272,7 +272,7 @@
   width: 28px;
   height: 28px;
   padding: 0;
-  color: var(--ink-faint);
+  color: var(--color-navigation-fg-muted);
   cursor: pointer;
   visibility: hidden;
   background: transparent;
@@ -372,7 +372,7 @@
 .thread-undo span {
   font-family: var(--mono);
   font-size: var(--text-xs);
-  color: var(--ink-faint);
+  color: var(--color-navigation-fg-muted);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -407,7 +407,7 @@
   padding-top: 2px;
   font-family: var(--mono);
   font-size: var(--text-xs);
-  color: var(--ink-faint);
+  color: var(--color-navigation-fg-muted);
 }
 
 .thread-copy {
@@ -438,7 +438,7 @@
   flex: 0 0 auto;
   font-family: var(--mono);
   font-size: var(--text-xs);
-  color: var(--ink-faint);
+  color: var(--color-navigation-fg-muted);
 }
 
 .thread-copy small {
@@ -454,14 +454,14 @@
 
 .thread-row-shell.is-active .thread-copy small,
 .thread-row-shell.is-active .thread-index {
-  color: var(--ink-soft);
+  color: var(--color-navigation-fg-muted);
 }
 
 .status-dot {
   width: 6px;
   height: 6px;
   margin-top: 5px;
-  background: var(--rule-strong);
+  background: var(--color-navigation-fg-muted);
   border-radius: 50%;
 }
 

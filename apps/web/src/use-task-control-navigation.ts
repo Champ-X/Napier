@@ -35,7 +35,7 @@ export function useTaskControlNavigation({
     (path: string) => {
       const target = [
         ...document.querySelectorAll<HTMLElement>(
-          ".conversation-artifact[data-artifact-path]",
+          ".conversation-artifact:not(.task-artifact-card)[data-artifact-path]",
         ),
       ].find((candidate) => candidate.dataset["artifactPath"] === path);
       if (target) {
