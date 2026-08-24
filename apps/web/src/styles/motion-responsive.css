@@ -247,6 +247,90 @@
   }
 }
 
+/*
+ * Design §13/§18.1 narrow reflow ladder (320–719px). The shell keeps 普通文本、
+ * 导航、表单 free of page-level horizontal scrolling; only 图表、表格、diff、代码
+ * keep their own overflow:auto containers. The command bar drops its fixed side
+ * columns so it can never force the page wider than the 320px floor.
+ */
+@media (max-width: 720px) {
+  .workbench-header {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    padding-inline: var(--space-3);
+  }
+
+  .run-meta {
+    gap: var(--space-1);
+  }
+}
+
+@media (max-width: 560px) {
+  /* Design §13: 序号轨道隐藏。Collapse the execution number spine so the
+     conversation reads as a single column and the content axis owns its own
+     width instead of the desktop reading cap plus rail offset. */
+  .message-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .message-gutter {
+    display: none;
+  }
+
+  .message-ledger,
+  .composer {
+    width: auto;
+  }
+
+  .message-ledger {
+    padding-right: var(--space-3);
+    padding-left: var(--space-3);
+  }
+
+  .activity-card summary {
+    grid-template-columns: 16px minmax(0, 1fr);
+  }
+
+  .operator-decision,
+  .composer {
+    margin-right: var(--space-3);
+    margin-left: var(--space-3);
+  }
+
+  .run-decision-dockets {
+    padding-right: var(--space-3);
+    padding-left: var(--space-3);
+  }
+
+  /* Design §13: 任务步骤单列。 */
+  .task-artifact-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .composer-options-popover {
+    left: var(--space-3);
+  }
+}
+
+@media (max-width: 390px) {
+  .workbench-header {
+    padding-inline: var(--space-2);
+  }
+
+  .message-ledger,
+  .operator-decision,
+  .run-decision-dockets,
+  .composer {
+    margin-right: var(--space-2);
+    margin-left: var(--space-2);
+    padding-right: var(--space-2);
+    padding-left: var(--space-2);
+  }
+
+  .welcome-panel {
+    width: calc(100% - var(--space-4));
+  }
+}
+
 @media (forced-colors: active) {
   .message-actions > summary {
     outline: var(--control-focus-offset) solid ButtonText;

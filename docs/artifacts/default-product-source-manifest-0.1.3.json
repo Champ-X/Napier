@@ -11,7 +11,7 @@
   "identityDeclarationPath": "packages/runtime/src/release-product-identity.ts",
   "identityDeclarationSha256": "5a8dada43a7d464d3de4e65cc7c556def3391ef59f674cdb6949a1ce5362b62d",
   "fileCount": 1682,
-  "totalBytes": 12674520,
+  "totalBytes": 12676412,
   "files": [
     {
       "path": "apps/server/package.json",
@@ -3520,8 +3520,8 @@
     },
     {
       "path": "apps/web/src/styles/motion-responsive.css",
-      "bytes": 4503,
-      "sha256": "9bfa2f7f989e51077788d55f1493b2116ed8344027b41c836ff6b2bc1d629bce"
+      "bytes": 6395,
+      "sha256": "4eab13b607624595a478e21fdbbc48aa5efc725f99ae6f83ac6411e988b9015a"
     },
     {
       "path": "apps/web/src/styles/planning.css",
@@ -8424,5 +8424,5 @@
       "sha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c"
     }
   ],
-  "contentSha256": "e0003ff63f0f87baf20de98ff56b309abe4154a77e0c79aa50ebe87d48ea0b06"
+  "contentSha256": "7666b7ab9f2d2c57371bd60f6e032cb8b2acb5741489d9ca7fc128da239861ef"
 }
