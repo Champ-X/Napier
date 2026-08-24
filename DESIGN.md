@@ -73,6 +73,14 @@ Principles:
       "700": { "$type": "color", "$value": "#3A54E0" },
       "800": { "$type": "color", "$value": "#3048C8" }
     },
+    "ink": {
+      "100": { "$type": "color", "$value": "#E7ECF2" },
+      "300": { "$type": "color", "$value": "#AEB9C7" },
+      "700": { "$type": "color", "$value": "#2B3442" },
+      "800": { "$type": "color", "$value": "#202733" },
+      "900": { "$type": "color", "$value": "#171C25" },
+      "950": { "$type": "color", "$value": "#10141B" }
+    },
     "success": {
       "100": { "$type": "color", "$value": "#DFE9E0" },
       "600": { "$type": "color", "$value": "#456B5B" },
@@ -108,6 +116,8 @@ Principles:
       "surface-raised": { "$type": "color", "$value": "{color.neutral.50}" },
       "surface-muted": { "$type": "color", "$value": "{color.neutral.150}" },
       "surface-selected": { "$type": "color", "$value": "{color.brand.50}" },
+      "canvas": { "$type": "color", "$value": "{color.neutral.100}" },
+      "paper": { "$type": "color", "$value": "{color.neutral.0}" },
       "fg": { "$type": "color", "$value": "{color.neutral.900}" },
       "fg-muted": { "$type": "color", "$value": "{color.neutral.700}" },
       "fg-subtle": { "$type": "color", "$value": "{color.neutral.600}" },
@@ -121,6 +131,14 @@ Principles:
       "accent-active": { "$type": "color", "$value": "{color.brand.800}" },
       "accent-subtle": { "$type": "color", "$value": "{color.brand.50}" },
       "focus-ring": { "$type": "color", "$value": "{color.brand.500}" },
+      "navigation-bg": { "$type": "color", "$value": "{color.ink.950}" },
+      "navigation-surface": { "$type": "color", "$value": "{color.ink.900}" },
+      "navigation-surface-hover": { "$type": "color", "$value": "{color.ink.800}" },
+      "navigation-border": { "$type": "color", "$value": "{color.ink.700}" },
+      "navigation-fg": { "$type": "color", "$value": "{color.neutral.0}" },
+      "navigation-fg-muted": { "$type": "color", "$value": "{color.ink.300}" },
+      "execution-spine": { "$type": "color", "$value": "{color.brand.500}" },
+      "execution-spine-subtle": { "$type": "color", "$value": "{color.brand.50}" },
       "success": { "$type": "color", "$value": "{color.success.700}" },
       "success-surface": { "$type": "color", "$value": "{color.success.100}" },
       "success-border": { "$type": "color", "$value": "{color.success.600}" },
@@ -241,12 +259,15 @@ Principles:
     "evidence-rail": { "$type": "dimension", "$value": { "value": 340, "unit": "px" } },
     "evidence-rail-max": { "$type": "dimension", "$value": { "value": 400, "unit": "px" } },
     "topbar": { "$type": "dimension", "$value": { "value": 50, "unit": "px" } },
+    "command-bar": { "$type": "dimension", "$value": { "value": 58, "unit": "px" } },
     "status-bar": { "$type": "dimension", "$value": { "value": 40, "unit": "px" } },
     "settings-form": { "$type": "dimension", "$value": { "value": 800, "unit": "px" } },
     "composer-min": { "$type": "dimension", "$value": { "value": 56, "unit": "px" } },
     "composer-rest-max": { "$type": "dimension", "$value": { "value": 88, "unit": "px" } },
+    "composer-shell": { "$type": "dimension", "$value": { "value": 72, "unit": "px" } },
     "composer-max": { "$type": "dimension", "$value": { "value": 160, "unit": "px" } },
-    "composer-expanded-max": { "$type": "dimension", "$value": { "value": 240, "unit": "px" } }
+    "composer-expanded-max": { "$type": "dimension", "$value": { "value": 240, "unit": "px" } },
+    "execution-gutter": { "$type": "dimension", "$value": { "value": 40, "unit": "px" } }
   },
   "control": {
     "target": { "$type": "dimension", "$value": { "value": 32, "unit": "px" } },
@@ -308,6 +329,15 @@ contrast. `check:web-design` rejects any drift between the two representations.
 - 600 (color): #3A58EC
 - 700 (color): #3A54E0
 - 800 (color): #3048C8
+```
+
+```tokens color.ink
+- 100 (color): #E7ECF2
+- 300 (color): #AEB9C7
+- 700 (color): #2B3442
+- 800 (color): #202733
+- 900 (color): #171C25
+- 950 (color): #10141B
 ```
 
 ```tokens color.status
@@ -473,6 +503,26 @@ The layout concession order is deterministic:
 Tables, timelines, code, terminal output, and diffs may scroll horizontally
 inside their own bounded surfaces. Ordinary text, navigation, forms, and the
 application shell may not.
+
+### 9.1 Retained V2 shell tokens
+
+The following tokens are generated for the current V2 workbench shell and remain
+available to feature CSS during the v1.1 migration window. They are retained,
+not new surface area, and may be deprecated once the AppFrame solver and unified
+ContentAxis fully own these values:
+
+- `--color-navigation-bg`, `--color-navigation-surface`,
+  `--color-navigation-surface-hover`, `--color-navigation-border`,
+  `--color-navigation-fg`, and `--color-navigation-fg-muted` describe the single
+  persistent dark project navigator. No other product surface uses the ink ramp.
+- `--color-execution-spine` and `--color-execution-spine-subtle` express causal
+  continuity shared by conversation, task, and trajectory. Trajectory
+  input/model/tool colors classify data and never replace the spine.
+- `--color-canvas` is the main workspace background; `--color-paper` is the
+  bounded reading surface inside it.
+- `--layout-command-bar` (58px) is the combined identity, view, status, model,
+  and settings row. `--layout-composer-shell` (72px) is the composer at rest.
+  `--layout-execution-gutter` (40px) is the shared spine gutter.
 
 ## 10. Agent Prompt Guide
 

@@ -1,5 +1,5 @@
 /* Generated from DESIGN.md. Do not edit by hand. */
-/* source-sha256: bb2a3712ec5e609549e83308741e14ec430a8ac6c09b9c884a44e89af9f6968c */
+/* source-sha256: 3c3d2341dbfa9ce089d00bd977153947181aeba3f206a8c2d938ea7cd2736c02 */
 :root {
   color-scheme: light;
   --color-accent: #3A58EC;
@@ -75,23 +75,31 @@
   --inset-sm: 12px;
   --inset-xl: 32px;
   --inset-xs: 8px;
+  --layout-center-min: 640px;
   --layout-command-bar: 58px;
-  --layout-composer-max: 240px;
-  --layout-composer-min: 44px;
+  --layout-composer-expanded-max: 240px;
+  --layout-composer-max: 160px;
+  --layout-composer-min: 56px;
+  --layout-composer-rest-max: 88px;
   --layout-composer-shell: 72px;
-  --layout-evidence-rail: 320px;
+  --layout-evidence-rail: 340px;
+  --layout-evidence-rail-max: 400px;
+  --layout-evidence-rail-min: 320px;
   --layout-execution-gutter: 40px;
-  --layout-reading-max: 840px;
-  --layout-reading-min: 760px;
+  --layout-reading-max: 880px;
+  --layout-reading-min: 640px;
   --layout-reading-target: 800px;
   --layout-settings-form: 800px;
-  --layout-sidebar-compact: 68px;
-  --layout-sidebar-expanded: 272px;
-  --layout-status-bar: 44px;
+  --layout-sidebar-compact: 56px;
+  --layout-sidebar-expanded: 240px;
+  --layout-sidebar-expanded-max: 280px;
+  --layout-sidebar-expanded-min: 224px;
+  --layout-status-bar: 40px;
+  --layout-topbar: 50px;
   --leading-body: 1.7;
   --leading-compact: 1.45;
   --leading-heading: 1.3;
-  --radius-full: 18px;
+  --radius-full: 999px;
   --radius-lg: 14px;
   --radius-md: 10px;
   --radius-sm: 6px;
@@ -119,7 +127,7 @@
   --text-2xl: 30px;
   --text-3xl: 32px;
   --text-4xl: 40px;
-  --text-annotation: 11px;
+  --text-annotation: 12px;
   --text-base: 15px;
   --text-lg: 16px;
   --text-sm: 13px;
