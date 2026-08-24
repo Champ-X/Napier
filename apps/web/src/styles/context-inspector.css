@@ -102,3 +102,23 @@
   min-height: 0;
   overflow: hidden auto;
 }
+
+@media (forced-colors: active) {
+  .context-inspector {
+    border-inline-start-color: CanvasText;
+  }
+
+  .context-inspector:focus-visible {
+    outline: var(--control-focus-width) solid Highlight;
+  }
+
+  .context-inspector-pin:focus-visible,
+  .context-inspector-close:focus-visible {
+    outline: var(--control-focus-width) solid Highlight;
+    outline-offset: var(--control-focus-offset);
+  }
+
+  .context-inspector-pin.is-pinned {
+    color: Highlight;
+  }
+}
