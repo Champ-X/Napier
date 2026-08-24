@@ -5,13 +5,13 @@
   "predecessor": {
     "productVersion": "0.1.2",
     "commit": "45c736f0b426db5d03f88adbb17acb8df32e7703",
-    "changedPathCount": 758,
-    "changedPathsSha256": "898ae4c6acffbe721da7e45777114e79cf758d5fa863c5880e8283c673e99b94"
+    "changedPathCount": 759,
+    "changedPathsSha256": "f00927751a3426c50e204abdc506329fa1cd8a7e125fa66f6ec94000ab8c222a"
   },
   "identityDeclarationPath": "packages/runtime/src/release-product-identity.ts",
   "identityDeclarationSha256": "5a8dada43a7d464d3de4e65cc7c556def3391ef59f674cdb6949a1ce5362b62d",
-  "fileCount": 1679,
-  "totalBytes": 12656102,
+  "fileCount": 1680,
+  "totalBytes": 12663693,
   "files": [
     {
       "path": "apps/server/package.json",
@@ -1760,8 +1760,8 @@
     },
     {
       "path": "apps/web/src/TaskOverviewPanel.tsx",
-      "bytes": 4643,
-      "sha256": "ebd3ea88e5504d00191c8cc599f7616a930b405f8bc7f09c137eee77dd2c36be"
+      "bytes": 6671,
+      "sha256": "aef946c1c553b45074cf4575d8799b2bdeb46ee228c4eff2f5fd3153e45e5845"
     },
     {
       "path": "apps/web/src/TaskRuntimePanel.tsx",
@@ -1775,8 +1775,8 @@
     },
     {
       "path": "apps/web/src/TaskWorkspace.tsx",
-      "bytes": 4944,
-      "sha256": "f35350009d488ca43e363063d456517d340f8217512096a262466f41f395f802"
+      "bytes": 4828,
+      "sha256": "1a6094381ac30103c83dda1b942bfcd364ca0187ba9f12dced297634bfa016ac"
     },
     {
       "path": "apps/web/src/ThreadList.tsx",
@@ -2665,8 +2665,8 @@
     },
     {
       "path": "apps/web/src/copy.zh.ts",
-      "bytes": 14158,
-      "sha256": "b39c5665efb832107c8f061e281f5d0654897f32fa69c6326578d70499136c64"
+      "bytes": 14382,
+      "sha256": "46f6106d413dabcf12c22f6961e39209a6a12817078f5003080e68e4a0040256"
     },
     {
       "path": "apps/web/src/credential-card.css",
@@ -2705,8 +2705,8 @@
     },
     {
       "path": "apps/web/src/desktop-workbench-copy.ts",
-      "bytes": 9818,
-      "sha256": "51cdc8158b150e6202f4b242766e9979c71904b13944960d66294f8f2ee05673"
+      "bytes": 10038,
+      "sha256": "f7359c40c04441be9583d887d85319160e3c7fcc022cdb7de0ab195cf017f353"
     },
     {
       "path": "apps/web/src/download-json-artifact.ts",
@@ -3574,6 +3574,11 @@
       "sha256": "3db5636cfad604b89db08031c57a044cc39715be46439225226052bf3d9f0a66"
     },
     {
+      "path": "apps/web/src/task-overview-view-model.ts",
+      "bytes": 3936,
+      "sha256": "97b46759f3f1075d5a9e4ac92da5d2ea6903bf93360563068d58262dc3dca541"
+    },
+    {
       "path": "apps/web/src/task-run-progress.ts",
       "bytes": 4852,
       "sha256": "6b27af401aac4958246c6224a8bd05a6da045059b16cbb7197d8d7d91d51d8d0"
@@ -4210,8 +4215,8 @@
     },
     {
       "path": "apps/web/src/workspace-shell.css",
-      "bytes": 38565,
-      "sha256": "af4d5accc86df58f2dac36d5a807998d4e3527f40ac4573cb9c9daee59df1465"
+      "bytes": 39864,
+      "sha256": "1c6d4f3230b7656bbb86f285c433bdbdb33e9af2d4cf117d1ee85f357804301b"
     },
     {
       "path": "apps/web/src/workspace-thread-presentation.ts",
@@ -8409,5 +8414,5 @@
       "sha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c"
     }
   ],
-  "contentSha256": "c8eddc29f167e3f3bd989ab8efa1a6433d247e59721e7f13dbfef96a00c91a88"
+  "contentSha256": "6b88ac56691a72ef7e23995e400413ff6a7445f1f9089b1424baf82966ce7451"
 }

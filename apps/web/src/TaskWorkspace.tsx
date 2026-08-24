@@ -49,11 +49,7 @@ export function TaskWorkspace({
   return (
     <div className="task-workspace">
       <div className="task-workspace-masthead">
-        <header className="task-workspace-heading">
-          <span>{copy.taskView.eyebrow}</span>
-          <h1>{copy.taskView.title}</h1>
-          <p>{copy.taskView.body}</p>
-        </header>
+        <span className="task-workspace-eyebrow">{copy.taskView.eyebrow}</span>
         <nav
           className="task-section-navigation"
           aria-label={copy.taskView.title}
