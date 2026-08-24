@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { conversationIsNearBottom } from "../src/use-conversation-auto-scroll";
+import { conversationIsNearBottom } from "../src/conversation-proximity";
 
 describe("Conversation auto-scroll proximity", () => {
   it("follows output only while the reader remains near the bottom", () => {

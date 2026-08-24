@@ -9,7 +9,6 @@ import { ConversationWorkspace } from "./ConversationWorkspace";
 import { copy } from "./copy";
 import { TaskWorkspace } from "./TaskWorkspace";
 import { TraceWorkspace } from "./TraceWorkspace";
-import { useConversationAutoScroll } from "./use-conversation-auto-scroll";
 import { useTaskControlNavigation } from "./use-task-control-navigation";
 import { useWorkspaceShell } from "./use-workspace-shell";
 import { useWorkspaceViewModel } from "./use-workspace-view-model";
@@ -22,14 +21,6 @@ export function App() {
     conversationEnd = useRef<HTMLDivElement>(null),
     conversationViewport = useRef<HTMLElement>(null),
     shell = useWorkspaceShell(vm.setInspectorTab);
-  useConversationAutoScroll({
-    endRef: conversationEnd,
-    viewportRef: conversationViewport,
-    messageCount: vm.messages.length,
-    streamingText: vm.streamingText,
-    running: vm.isRunning,
-    view: shell.workspaceView,
-  });
   const taskControls = useTaskControlNavigation({
     activeRunId: vm.activeRunId,
     events: vm.detail?.events ?? [],

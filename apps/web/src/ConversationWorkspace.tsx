@@ -1,6 +1,8 @@
 import { lazy, Suspense } from "react";
 
 import { advancedSurfaceCopy } from "./advanced-surface-copy";
+import { ConversationFollowButton } from "./ConversationFollowButton";
+import { useConversationFollow } from "./use-conversation-follow";
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
 import { shouldShowWelcomePanel, WelcomePanel } from "./WelcomePanel";
 
@@ -14,6 +16,14 @@ export function ConversationWorkspace({
   viewportRef,
 }: ConversationWorkspaceProps) {
   const accessibilityCopy = advancedSurfaceCopy.accessibility;
+  const follow = useConversationFollow({
+    endRef,
+    viewportRef,
+    itemCount: vm.messages.length,
+    streamingText: vm.streamingText,
+    running: vm.isRunning,
+    view: "conversation",
+  });
   const showWelcome = shouldShowConversationWelcome(
     vm.messages,
     vm.detail?.events.length ?? 0,
@@ -38,6 +48,11 @@ export function ConversationWorkspace({
           />
         </Suspense>
       )}
+      <ConversationFollowButton
+        paused={follow.paused}
+        pendingCount={follow.pendingCount}
+        onJump={follow.jumpToLatest}
+      />
     </section>
   );
 }
@@ -47,6 +62,7 @@ export interface ConversationWorkspaceProps {
     WorkspaceViewModel,
     | "branchFrom"
     | "detail"
+    | "isRunning"
     | "messages"
     | "refreshActiveThread"
     | "streamingText"

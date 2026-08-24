@@ -1,0 +1,69 @@
+/* Floating "new activity" affordance for the conversation feed (design §9.1).
+   Sits at the bottom of the scroll surface and offers to resume auto-follow. */
+.conversation-follow {
+  position: sticky;
+  inset-block-end: var(--space-2);
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  margin-block-start: calc(var(--space-6) * -1);
+  padding-block-start: var(--space-6);
+  pointer-events: none;
+}
+
+.conversation-follow-button {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+  min-height: var(--control-target);
+  padding-block: var(--space-1);
+  padding-inline: var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-fg-on-accent);
+  pointer-events: auto;
+  cursor: pointer;
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-raised);
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.conversation-follow-button:hover {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+.conversation-follow-button:active {
+  background: var(--color-accent-active);
+  transform: translateY(1px);
+}
+
+.conversation-follow-button:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 var(--control-focus-offset) var(--color-surface),
+    0 0 0 calc(var(--control-focus-offset) + var(--control-focus-width))
+      var(--color-focus-ring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .conversation-follow-button {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .conversation-follow-button {
+    border-color: ButtonText;
+  }
+
+  .conversation-follow-button:focus-visible {
+    outline: var(--control-focus-width) solid Highlight;
+    outline-offset: var(--control-focus-offset);
+    box-shadow: none;
+  }
+}

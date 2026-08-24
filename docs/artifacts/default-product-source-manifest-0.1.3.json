@@ -5,13 +5,13 @@
   "predecessor": {
     "productVersion": "0.1.2",
     "commit": "45c736f0b426db5d03f88adbb17acb8df32e7703",
-    "changedPathCount": 754,
-    "changedPathsSha256": "9b52e0dc5455bbf708648cd12c3ede5289f86223a8defe52049043825af3360a"
+    "changedPathCount": 758,
+    "changedPathsSha256": "898ae4c6acffbe721da7e45777114e79cf758d5fa863c5880e8283c673e99b94"
   },
   "identityDeclarationPath": "packages/runtime/src/release-product-identity.ts",
   "identityDeclarationSha256": "5a8dada43a7d464d3de4e65cc7c556def3391ef59f674cdb6949a1ce5362b62d",
-  "fileCount": 1675,
-  "totalBytes": 12649143,
+  "fileCount": 1679,
+  "totalBytes": 12656102,
   "files": [
     {
       "path": "apps/server/package.json",
@@ -690,8 +690,8 @@
     },
     {
       "path": "apps/web/src/App.tsx",
-      "bytes": 4495,
-      "sha256": "edc44b249dd726250044178be89c0bfde70a86814441dad87f054b7117f29511"
+      "bytes": 4182,
+      "sha256": "69dee93e1a0976f6184986b45b01f933ee36f7906e088a9073e5305ec1ea23ba"
     },
     {
       "path": "apps/web/src/AppInitialStates.tsx",
@@ -1004,6 +1004,11 @@
       "sha256": "30313d033e42188d139510b4a079b471af035fb006dd8de6fa37bae8fdafd925"
     },
     {
+      "path": "apps/web/src/ConversationFollowButton.tsx",
+      "bytes": 1076,
+      "sha256": "2f8673d94c60523afe8dabe70cf62a37d37e4743503dde2d7b8fe9b815ff0c84"
+    },
+    {
       "path": "apps/web/src/ConversationLedger.tsx",
       "bytes": 6463,
       "sha256": "e4f04d180a198c2e56cd72b0b9df13609de0cb4ba7f9766a6319a736815f5084"
@@ -1040,8 +1045,8 @@
     },
     {
       "path": "apps/web/src/ConversationWorkspace.tsx",
-      "bytes": 1776,
-      "sha256": "f1d6f4e911b0d3523aa2f62a181fd33fa88a3675cf9d35eb85de5af8634a4a38"
+      "bytes": 2285,
+      "sha256": "9073014d7d43ed6bd1ef55632435884cafe4f04c5b4daf6dc68f8ecb2c7f1489"
     },
     {
       "path": "apps/web/src/CredentialCard.tsx",
@@ -2000,13 +2005,13 @@
     },
     {
       "path": "apps/web/src/advanced-surface-copy.ts",
-      "bytes": 7282,
-      "sha256": "608cc9695534d8e17ac9831050e364b2ca4059e423026fecc864064dbe7f3ab7"
+      "bytes": 7374,
+      "sha256": "e2a036db108b65bcff08326a1f28e38f3c4e696a0117f955114d5339942c9637"
     },
     {
       "path": "apps/web/src/advanced-surface-copy.zh.ts",
-      "bytes": 6988,
-      "sha256": "73626b9281da5b8a5e7309ae128499c5cdd8821e11cd4d9f6aeef6d0b7483893"
+      "bytes": 7075,
+      "sha256": "01903dc640cfae42ee5c856558d8f5a1325eb617ae02cc963087cae38107e23a"
     },
     {
       "path": "apps/web/src/agent-capability-api.ts",
@@ -2589,6 +2594,16 @@
       "sha256": "2132bcd5cf9e46d2bbd3c5aca68955ed6ca145c2d0fed0c62987224498f51b6d"
     },
     {
+      "path": "apps/web/src/conversation-follow-model.ts",
+      "bytes": 2004,
+      "sha256": "a9403abd1d4daaf803e853a9726fc51366d503d73be05b687bf242dda0a4e377"
+    },
+    {
+      "path": "apps/web/src/conversation-follow.css",
+      "bytes": 1903,
+      "sha256": "560395471903056176fb1f40408893ecbfd6b3f3cdf53574b70afeb7b4bc2653"
+    },
+    {
       "path": "apps/web/src/conversation-messages-protocol.ts",
       "bytes": 947,
       "sha256": "2c4e0ef184a4b59d100b06331b533612179517558e9c9da60a2f31d8b0871168"
@@ -2607,6 +2622,11 @@
       "path": "apps/web/src/conversation-plans-protocol.ts",
       "bytes": 3366,
       "sha256": "c4e69e81fd763bb9b2d837b160bff3ca273fea13d048e52b334f85dffe1e2664"
+    },
+    {
+      "path": "apps/web/src/conversation-proximity.ts",
+      "bytes": 574,
+      "sha256": "f1bb5cd24ae39e394114e83aa8da801701e777f14781903a499ae8c00b0415f1"
     },
     {
       "path": "apps/web/src/conversation-recoveries-protocol.ts",
@@ -3859,9 +3879,9 @@
       "sha256": "06b8d76b152ccf090435dc0f12c3a39d39263b9ca76461b64a7e4fc6554481e3"
     },
     {
-      "path": "apps/web/src/use-conversation-auto-scroll.ts",
-      "bytes": 1453,
-      "sha256": "acee068b043194b7771af06318aedb3cce1edce412917dac81567f7c2ddf7a96"
+      "path": "apps/web/src/use-conversation-follow.ts",
+      "bytes": 2480,
+      "sha256": "ee13159036738e70063ced1cebad7dbd4268ef88f74183db96344a9126e60531"
     },
     {
       "path": "apps/web/src/use-dead-letter-history-preload.ts",
@@ -8389,5 +8409,5 @@
       "sha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c"
     }
   ],
-  "contentSha256": "a77424623ea4b53d54aa496908b9ae463a710e5dcd337949fbceee5596535899"
+  "contentSha256": "c8eddc29f167e3f3bd989ab8efa1a6433d247e59721e7f13dbfef96a00c91a88"
 }

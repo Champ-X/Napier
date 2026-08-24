@@ -20,6 +20,10 @@ export const advancedSurfaceCopyZh: LocaleOverride<
     useDefault: "使用默认设置",
     agentSettings: "智能体设置",
   },
+  conversationFollow: {
+    newActivity: "新活动",
+    resume: "回到最新",
+  },
   navigation: {
     task: "任务",
     inspect: "检查",
