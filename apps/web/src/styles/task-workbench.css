@@ -555,6 +555,10 @@
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
+  /* Reserve the composer's live measured height (useComposerHeight) so
+     auto-scroll and scrollIntoView never park the last turn behind the
+     floating input (design §7.1). */
+  scroll-padding-block-end: var(--composer-height);
   scrollbar-width: thin;
   scrollbar-color: var(--rule-strong) transparent;
 }

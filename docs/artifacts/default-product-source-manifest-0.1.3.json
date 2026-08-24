@@ -5,13 +5,13 @@
   "predecessor": {
     "productVersion": "0.1.2",
     "commit": "45c736f0b426db5d03f88adbb17acb8df32e7703",
-    "changedPathCount": 750,
-    "changedPathsSha256": "dea8737c7f3018620bda1b47fd30af3eed2b330cffe30b019b79aa3066c022c1"
+    "changedPathCount": 751,
+    "changedPathsSha256": "b9e958b212d2c544aa2f2b6e68bd9fd221902e08aab249c52af31cfc13042f34"
   },
   "identityDeclarationPath": "packages/runtime/src/release-product-identity.ts",
   "identityDeclarationSha256": "5a8dada43a7d464d3de4e65cc7c556def3391ef59f674cdb6949a1ce5362b62d",
-  "fileCount": 1671,
-  "totalBytes": 12638630,
+  "fileCount": 1672,
+  "totalBytes": 12641466,
   "files": [
     {
       "path": "apps/server/package.json",
@@ -875,8 +875,8 @@
     },
     {
       "path": "apps/web/src/Composer.tsx",
-      "bytes": 9072,
-      "sha256": "427d8688b3ca6d57f11f05abd842637002799e11a75e5d83e931cb141f3c180a"
+      "bytes": 9250,
+      "sha256": "42857539f994386c723e11b5fba62781c2cfe24d22d0734633d5c0998dad8610"
     },
     {
       "path": "apps/web/src/ComposerCapabilityControl.tsx",
@@ -3460,8 +3460,8 @@
     },
     {
       "path": "apps/web/src/styles/conversation.css",
-      "bytes": 21342,
-      "sha256": "03b3e60b22a3f153dcff5f1fc67ca727c60f83475fe7ad8836cd39ea016b2079"
+      "bytes": 21457,
+      "sha256": "fbf0a2281317e097b23babdbeb8f494e19acec18ebeecef5cf88027f36815b90"
     },
     {
       "path": "apps/web/src/styles/evaluation.css",
@@ -3475,8 +3475,8 @@
     },
     {
       "path": "apps/web/src/styles/global.css",
-      "bytes": 2980,
-      "sha256": "214f13a28484dd1ab829251b6ca29f98232beb0e27e1b77a979ef81bceeed85e"
+      "bytes": 3519,
+      "sha256": "2bb00ee50c10b95e3dde1047303c72cd15d1d7a215b2288bf4bece3f19f22f79"
     },
     {
       "path": "apps/web/src/styles/goals-memory.css",
@@ -3510,8 +3510,8 @@
     },
     {
       "path": "apps/web/src/styles/task-workbench.css",
-      "bytes": 10683,
-      "sha256": "b4ed662186b0eefcd102fb4f59a0e93a2b316a4b51c414f6ad98b8504b6c2b94"
+      "bytes": 10918,
+      "sha256": "440ff9aef6ef3959052df9c1ff0f6486b62f2e3ce6792af3fe90d71c363cbc56"
     },
     {
       "path": "apps/web/src/styles/tokens.css",
@@ -3802,6 +3802,11 @@
       "path": "apps/web/src/use-browser-task-runner.ts",
       "bytes": 9495,
       "sha256": "4791aff0d69028570492203d10aff547fc1ea31bed18d55057193479b4640ffb"
+    },
+    {
+      "path": "apps/web/src/use-composer-height.ts",
+      "bytes": 1769,
+      "sha256": "74a12903090e188a24b081b5815a923f3a556fa0b57aa23e13feaf42809c70cf"
     },
     {
       "path": "apps/web/src/use-context-agent-profile-controller.ts",
@@ -8369,5 +8374,5 @@
       "sha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c"
     }
   ],
-  "contentSha256": "1a4980cdaeee9d8782142437f1a89b4df92a317d0a8327c19350a41a046dc6a3"
+  "contentSha256": "87e1607c105a98ea380ca7735c1bdc329173bddacd495b452567096135cc87bf"
 }

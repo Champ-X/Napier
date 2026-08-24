@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from "react";
-import { lazy, Suspense, useCallback, useState } from "react";
+import { lazy, Suspense, useCallback, useRef, useState } from "react";
 import {
   Command,
   FolderTree,
@@ -17,6 +17,7 @@ import {
   type ComposerRunReadiness,
 } from "./composer-readiness-types";
 import type { SelectedModelAvailability } from "./model-selection-view-model";
+import { useComposerHeight } from "./use-composer-height";
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
 
 const LazyComposerCapabilityControl = lazy(
@@ -69,6 +70,8 @@ export function Composer({
     initialComposerRunReadiness,
   );
   const [pickerOpen, setPickerOpen] = useState(false);
+  const composerRef = useRef<HTMLFormElement>(null);
+  useComposerHeight(composerRef);
   const readinessPending = composerReadinessPending(runReadiness);
   const canSubmit = canStartRun && runReadiness.canRun;
   const submit = useCallback(() => {
@@ -76,6 +79,7 @@ export function Composer({
   }, [canSubmit, vm]);
   return (
     <form
+      ref={composerRef}
       className="composer"
       data-run-readiness={readinessPending ? "checking" : runReadiness.level}
       onSubmit={(event) => {

@@ -1,6 +1,6 @@
 /* Conversation feed, task decisions, and composer. */
 .message-ledger {
-  width: min(var(--layout-reading-max), calc(100% - var(--space-12)));
+  width: var(--content-axis);
   min-height: 100%;
   margin: 0 auto;
   padding: var(--space-8) 0 var(--space-16);
@@ -65,6 +65,10 @@
 }
 
 .role-user .message-content {
+  /* Design §7.3: user messages cap at 82% of the content axis and sit at the
+     trailing edge; assistant results stay full-width with no outer bubble. */
+  max-width: 82%;
+  margin-left: auto;
   padding: var(--inset-md);
   background: var(--color-execution-spine-subtle);
   border: 0;
@@ -831,7 +835,7 @@
   position: relative;
   z-index: 3;
   min-width: 0;
-  width: min(var(--layout-reading-max), calc(100% - var(--space-12)));
+  width: var(--content-axis);
   grid-area: composer;
   margin: 0 auto var(--space-4);
   padding: var(--space-2) var(--space-3);
