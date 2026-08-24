@@ -1,27 +1,31 @@
 import type {
-  JsonValue,
   RunEvent,
-  WorkspaceProcessInputReceipt,
   WorkspaceProcessRollbackAttempt,
   WorkspaceProcessRollbackResult,
   WorkspaceProcessSession,
 } from "@napier/contracts";
 
-import { canonicalJson, sha256 } from "./ed25519.js";
-import type { WorkspaceProcessSessionInput } from "./workspace-process-event-model.js";
+import {
+  applyWorkspaceProcessInputReceipt,
+  createWorkspaceProcessSession,
+  parseWorkspaceProcessInputReceipt,
+  parseWorkspaceProcessSession,
+} from "./workspace-process-event-parsing.js";
+import { EMPTY_SHA256 } from "./workspace-process-session-validation.js";
 import {
   applyWorkspaceProcessResizeReceipt,
   parseWorkspaceProcessResizeReceipt,
-  validWorkspaceProcessTerminalFields,
-  WORKSPACE_PROCESS_TERMINAL_FIELDS,
 } from "./workspace-process-resize-events.js";
 import { projectWorkspaceProcessRollbackHistory } from "./workspace-process-rollback-events.js";
-import {
-  validWorkspaceProcessSessionBase,
-  workspaceProcessStatus,
-} from "./workspace-process-session-base-validation.js";
-export { workspaceProcessSessionWithRuntimeState } from "./workspace-process-runtime-session.js";
 export type { WorkspaceProcessSessionInput } from "./workspace-process-event-model.js";
+export {
+  createWorkspaceProcessInputReceipt,
+  createWorkspaceProcessSession,
+  parseWorkspaceProcessInputReceipt,
+  workspaceProcessInputReceiptPayload,
+  workspaceProcessSessionPayload,
+  workspaceProcessStableSessionInput,
+} from "./workspace-process-event-parsing.js";
 export {
   parseWorkspaceProcessRollbackAttempt,
   parseWorkspaceProcessRollbackResult,
@@ -30,6 +34,7 @@ export {
   workspaceProcessRollbackAttemptPayload,
   workspaceProcessRollbackResultPayload,
 } from "./workspace-process-rollback-events.js";
+export { workspaceProcessSessionWithRuntimeState } from "./workspace-process-runtime-session.js";
 
 export const WORKSPACE_PROCESS_STARTED_EVENT = "workspace.process.started";
 export const WORKSPACE_PROCESS_INPUT_EVENT = "workspace.process.input";
@@ -37,93 +42,6 @@ export const WORKSPACE_PROCESS_RESIZED_EVENT = "workspace.process.resized";
 export const WORKSPACE_PROCESS_SETTLED_EVENT = "workspace.process.settled";
 export const WORKSPACE_PROCESS_INTERRUPTED_EVENT =
   "workspace.process.interrupted";
-
-const PROCESS_ID = /^process_[a-z0-9]{8,80}$/;
-const RESOURCE_ID = /^[a-z][a-z0-9_]{2,80}$/;
-const SHA256 = /^[a-f0-9]{64}$/;
-const EMPTY_SHA256 = sha256("");
-
-export function createWorkspaceProcessSession(
-  input: WorkspaceProcessSessionInput,
-): WorkspaceProcessSession {
-  const { schemaVersion = 4, ...session } = input;
-  const base = {
-    kind: "napier.workspace-process-session" as const,
-    ...session,
-    ...(schemaVersion >= 4 && session.ioMode === undefined
-      ? { ioMode: "pipe" as const }
-      : {}),
-    outputAvailable: false,
-  };
-  const content = {
-    ...base,
-    schemaVersion,
-    ...(schemaVersion >= 2 ? { workspaceDeltaAvailable: false } : {}),
-    ...(schemaVersion >= 6 && session.workspaceAccess === "scoped_write"
-      ? { workspaceRollbackAvailable: false }
-      : {}),
-  };
-  return {
-    ...content,
-    contentSha256: sha256(canonicalJson(content)),
-  };
-}
-
-export function workspaceProcessSessionPayload(
-  session: WorkspaceProcessSession,
-): JsonValue {
-  return JSON.parse(JSON.stringify(session)) as JsonValue;
-}
-
-export function workspaceProcessStableSessionInput(
-  session: WorkspaceProcessSession,
-): Omit<
-  WorkspaceProcessSession,
-  | "kind"
-  | "schemaVersion"
-  | "status"
-  | "outputAvailable"
-  | "workspaceDeltaAvailable"
-  | "workspaceRollbackAvailable"
-  | "workspaceCompensationStatus"
-  | "contentSha256"
-> {
-  const {
-    kind: _kind,
-    schemaVersion: _schemaVersion,
-    status: _status,
-    outputAvailable: _outputAvailable,
-    workspaceDeltaAvailable: _workspaceDeltaAvailable,
-    workspaceRollbackAvailable: _workspaceRollbackAvailable,
-    workspaceCompensationStatus: _workspaceCompensationStatus,
-    contentSha256: _contentSha256,
-    ...input
-  } = session;
-  return input;
-}
-
-export function createWorkspaceProcessInputReceipt(
-  input: Omit<
-    WorkspaceProcessInputReceipt,
-    "kind" | "schemaVersion" | "contentSha256"
-  >,
-): WorkspaceProcessInputReceipt {
-  const content = {
-    kind: "napier.workspace-process-input" as const,
-    schemaVersion: 1 as const,
-    ...input,
-  };
-  return {
-    ...content,
-    contentSha256: sha256(canonicalJson(content)),
-  };
-}
-
-export function workspaceProcessInputReceiptPayload(
-  receipt: WorkspaceProcessInputReceipt,
-): JsonValue {
-  return JSON.parse(JSON.stringify(receipt)) as JsonValue;
-}
 
 export function projectWorkspaceProcessSessions(
   events: RunEvent[],
@@ -220,341 +138,4 @@ export function projectWorkspaceProcessRollbackAttempts(
     events,
     parseWorkspaceProcessSession,
   ).attempts;
-}
-
-export function parseWorkspaceProcessInputReceipt(
-  value: unknown,
-): WorkspaceProcessInputReceipt | undefined {
-  if (!record(value)) return undefined;
-  if (
-    value["kind"] !== "napier.workspace-process-input" ||
-    value["schemaVersion"] !== 1 ||
-    typeof value["id"] !== "string" ||
-    !RESOURCE_ID.test(value["id"]) ||
-    typeof value["threadId"] !== "string" ||
-    !RESOURCE_ID.test(value["threadId"]) ||
-    typeof value["runId"] !== "string" ||
-    !RESOURCE_ID.test(value["runId"]) ||
-    typeof value["processId"] !== "string" ||
-    !PROCESS_ID.test(value["processId"]) ||
-    (value["initiatedBy"] !== "agent" && value["initiatedBy"] !== "operator") ||
-    !boundedInteger(value["sequence"], 1, 64) ||
-    !boundedInteger(value["inputBytes"], 0, 32 * 1024) ||
-    !hash(value["inputSha256"]) ||
-    !boundedInteger(value["totalInputBytes"], 0, 256 * 1024) ||
-    !hash(value["cumulativeInputSha256"]) ||
-    typeof value["stdinClosed"] !== "boolean" ||
-    !isoDate(value["writtenAt"]) ||
-    !hash(value["sessionSha256"]) ||
-    !hash(value["contentSha256"]) ||
-    Number(value["totalInputBytes"]) < Number(value["inputBytes"]) ||
-    (value["inputBytes"] === 0 &&
-      (value["stdinClosed"] !== true || value["inputSha256"] !== EMPTY_SHA256))
-  ) {
-    return undefined;
-  }
-  const { contentSha256, ...content } = value;
-  if (sha256(canonicalJson(content as JsonValue)) !== contentSha256) {
-    return undefined;
-  }
-  return structuredClone(value) as unknown as WorkspaceProcessInputReceipt;
-}
-
-function parseWorkspaceProcessSession(
-  value: unknown,
-): WorkspaceProcessSession | undefined {
-  if (!record(value)) return undefined;
-  const status = workspaceProcessStatus(value["status"]);
-  if (!status || !validWorkspaceProcessSessionBase(value, status))
-    return undefined;
-  const schemaVersion = Number(value["schemaVersion"]);
-  const workspaceFields = [
-    "workspaceBeforeSha256",
-    "workspaceBeforeTruncated",
-    "workspaceAfterSha256",
-    "workspaceAfterTruncated",
-    "workspaceDeltaStatus",
-    "workspaceChangedFileCount",
-    "workspaceChangedPathSetSha256",
-    "workspaceDeltaAvailable",
-  ] as const;
-  const stdinFields = [
-    "stdinMode",
-    "stdinOpen",
-    "stdinWriteCount",
-    "stdinBytes",
-    "stdinSha256",
-  ] as const;
-  const writeFields = [
-    "writePreviewSha256",
-    "writeScopeCount",
-    "writeScopeSetSha256",
-    "workspaceWriteScopeStatus",
-  ] as const;
-  const recoveryFields = [
-    "recoverySnapshotSha256",
-    "recoveryScopeCount",
-    "recoveryFileCount",
-    "recoveryDirectoryCount",
-    "recoveryBytes",
-    "workspaceRollbackAvailable",
-  ] as const;
-  const compensationFields = [
-    "failureRecovery",
-    "workspaceCompensationStatus",
-  ] as const;
-  if (schemaVersion === 1) {
-    if (
-      workspaceFields.some((field) => value[field] !== undefined) ||
-      stdinFields.some((field) => value[field] !== undefined) ||
-      writeFields.some((field) => value[field] !== undefined) ||
-      recoveryFields.some((field) => value[field] !== undefined) ||
-      compensationFields.some((field) => value[field] !== undefined) ||
-      WORKSPACE_PROCESS_TERMINAL_FIELDS.some(
-        (field) => value[field] !== undefined,
-      )
-    ) {
-      return undefined;
-    }
-  } else if (
-    !hash(value["workspaceBeforeSha256"]) ||
-    typeof value["workspaceBeforeTruncated"] !== "boolean" ||
-    value["workspaceDeltaAvailable"] !== false
-  ) {
-    return undefined;
-  }
-  if (
-    (schemaVersion === 2 &&
-      (stdinFields.some((field) => value[field] !== undefined) ||
-        WORKSPACE_PROCESS_TERMINAL_FIELDS.some(
-          (field) => value[field] !== undefined,
-        ))) ||
-    (schemaVersion === 3 &&
-      WORKSPACE_PROCESS_TERMINAL_FIELDS.some(
-        (field) => value[field] !== undefined,
-      )) ||
-    (schemaVersion >= 3 &&
-      ((value["stdinMode"] !== "closed" &&
-        value["stdinMode"] !== "interactive") ||
-        typeof value["stdinOpen"] !== "boolean" ||
-        !boundedInteger(value["stdinWriteCount"], 0, 64) ||
-        !boundedInteger(value["stdinBytes"], 0, 256 * 1024) ||
-        !hash(value["stdinSha256"])))
-  ) {
-    return undefined;
-  }
-  if (
-    schemaVersion >= 3 &&
-    ((value["stdinMode"] === "closed" &&
-      (value["stdinOpen"] !== false ||
-        value["stdinWriteCount"] !== 0 ||
-        value["stdinBytes"] !== 0 ||
-        value["stdinSha256"] !== EMPTY_SHA256)) ||
-      (value["stdinWriteCount"] === 0 &&
-        (value["stdinBytes"] !== 0 || value["stdinSha256"] !== EMPTY_SHA256)) ||
-      (value["stdinBytes"] === 0 && value["stdinSha256"] !== EMPTY_SHA256) ||
-      (value["stdinBytes"] !== 0 && value["stdinSha256"] === EMPTY_SHA256) ||
-      (status !== "running" && value["stdinOpen"] !== false))
-  ) {
-    return undefined;
-  }
-  if (schemaVersion >= 4 && !validWorkspaceProcessTerminalFields(value)) {
-    return undefined;
-  }
-  if (
-    ((schemaVersion < 5 || schemaVersion === 8) &&
-      (value["workspaceAccess"] !== "read_only" ||
-        writeFields.some((field) => value[field] !== undefined) ||
-        recoveryFields.some((field) => value[field] !== undefined) ||
-        compensationFields.some((field) => value[field] !== undefined))) ||
-    (schemaVersion >= 5 &&
-      schemaVersion <= 7 &&
-      (value["workspaceAccess"] !== "scoped_write" ||
-        !hash(value["writePreviewSha256"]) ||
-        !boundedInteger(value["writeScopeCount"], 1, 8) ||
-        !hash(value["writeScopeSetSha256"]) ||
-        (status === "running"
-          ? value["workspaceWriteScopeStatus"] !== undefined
-          : value["workspaceWriteScopeStatus"] !== undefined &&
-            value["workspaceWriteScopeStatus"] !== "within_scope" &&
-            value["workspaceWriteScopeStatus"] !== "outside_scope" &&
-            value["workspaceWriteScopeStatus"] !== "indeterminate")))
-  ) {
-    return undefined;
-  }
-  if (
-    (schemaVersion === 5 &&
-      (recoveryFields.some((field) => value[field] !== undefined) ||
-        compensationFields.some((field) => value[field] !== undefined))) ||
-    ((schemaVersion === 6 || schemaVersion === 7) &&
-      (!hash(value["recoverySnapshotSha256"]) ||
-        !boundedInteger(value["recoveryScopeCount"], 1, 8) ||
-        !boundedInteger(value["recoveryFileCount"], 0, 10_000) ||
-        !boundedInteger(value["recoveryDirectoryCount"], 0, 10_000) ||
-        Number(value["recoveryFileCount"]) +
-          Number(value["recoveryDirectoryCount"]) >
-          10_000 ||
-        !boundedInteger(value["recoveryBytes"], 0, 64 * 1024 * 1024) ||
-        value["workspaceRollbackAvailable"] !== false)) ||
-    (schemaVersion === 6 &&
-      compensationFields.some((field) => value[field] !== undefined)) ||
-    (schemaVersion === 7 &&
-      (value["failureRecovery"] !== "restore_scopes" ||
-        value["workspaceCompensationStatus"] !== undefined))
-  ) {
-    return undefined;
-  }
-  if (
-    (value["settledAt"] !== undefined && !isoDate(value["settledAt"])) ||
-    (value["durationMs"] !== undefined &&
-      !nonNegativeInteger(value["durationMs"])) ||
-    (value["exitCode"] !== undefined &&
-      value["exitCode"] !== null &&
-      !Number.isSafeInteger(value["exitCode"])) ||
-    (value["signal"] !== undefined &&
-      value["signal"] !== null &&
-      typeof value["signal"] !== "string") ||
-    (value["stdoutSha256"] !== undefined && !hash(value["stdoutSha256"])) ||
-    (value["stderrSha256"] !== undefined && !hash(value["stderrSha256"])) ||
-    (value["workspaceAfterSha256"] !== undefined &&
-      !hash(value["workspaceAfterSha256"])) ||
-    (value["workspaceAfterTruncated"] !== undefined &&
-      typeof value["workspaceAfterTruncated"] !== "boolean") ||
-    (value["workspaceDeltaStatus"] !== undefined &&
-      value["workspaceDeltaStatus"] !== "unchanged" &&
-      value["workspaceDeltaStatus"] !== "changed" &&
-      value["workspaceDeltaStatus"] !== "indeterminate") ||
-    (value["workspaceChangedFileCount"] !== undefined &&
-      !nonNegativeInteger(value["workspaceChangedFileCount"])) ||
-    (value["workspaceChangedPathSetSha256"] !== undefined &&
-      !hash(value["workspaceChangedPathSetSha256"])) ||
-    (value["interruptionReason"] !== undefined &&
-      typeof value["interruptionReason"] !== "string")
-  ) {
-    return undefined;
-  }
-  const hasWorkspaceDelta =
-    value["workspaceAfterSha256"] !== undefined ||
-    value["workspaceAfterTruncated"] !== undefined ||
-    value["workspaceDeltaStatus"] !== undefined ||
-    value["workspaceChangedFileCount"] !== undefined ||
-    value["workspaceChangedPathSetSha256"] !== undefined;
-  if (
-    hasWorkspaceDelta &&
-    (value["workspaceAfterSha256"] === undefined ||
-      value["workspaceAfterTruncated"] === undefined ||
-      value["workspaceDeltaStatus"] === undefined ||
-      value["workspaceChangedFileCount"] === undefined ||
-      value["workspaceChangedPathSetSha256"] === undefined)
-  ) {
-    return undefined;
-  }
-  if (
-    schemaVersion >= 2 &&
-    ((status === "running" && hasWorkspaceDelta) ||
-      (status !== "running" && status !== "interrupted" && !hasWorkspaceDelta))
-  ) {
-    return undefined;
-  }
-  if (
-    schemaVersion >= 5 &&
-    schemaVersion <= 7 &&
-    status !== "running" &&
-    status !== "interrupted" &&
-    value["workspaceWriteScopeStatus"] === undefined
-  ) {
-    return undefined;
-  }
-  if (
-    hasWorkspaceDelta &&
-    ((value["workspaceDeltaStatus"] === "unchanged" &&
-      value["workspaceChangedFileCount"] !== 0) ||
-      (value["workspaceDeltaStatus"] === "changed" &&
-        value["workspaceChangedFileCount"] === 0) ||
-      (value["workspaceDeltaStatus"] !== "indeterminate" &&
-        (value["workspaceBeforeTruncated"] === true ||
-          value["workspaceAfterTruncated"] === true)) ||
-      (value["workspaceDeltaStatus"] === "indeterminate" &&
-        value["workspaceBeforeTruncated"] !== true &&
-        value["workspaceAfterTruncated"] !== true))
-  ) {
-    return undefined;
-  }
-  const { contentSha256, ...content } = value;
-  if (sha256(canonicalJson(content as JsonValue)) !== contentSha256) {
-    return undefined;
-  }
-  return structuredClone(value) as unknown as WorkspaceProcessSession;
-}
-
-function applyWorkspaceProcessInputReceipt(
-  session: WorkspaceProcessSession,
-  receipt: WorkspaceProcessInputReceipt,
-): WorkspaceProcessSession | undefined {
-  if (
-    session.schemaVersion < 3 ||
-    session.status !== "running" ||
-    session.stdinMode !== "interactive" ||
-    session.stdinOpen !== true ||
-    receipt.threadId !== session.threadId ||
-    receipt.runId !== session.runId ||
-    receipt.processId !== session.id ||
-    receipt.sequence !== (session.stdinWriteCount ?? 0) + 1 ||
-    receipt.totalInputBytes !==
-      (session.stdinBytes ?? 0) + receipt.inputBytes ||
-    (receipt.inputBytes === 0 &&
-      (receipt.inputSha256 !== EMPTY_SHA256 ||
-        receipt.cumulativeInputSha256 !== session.stdinSha256))
-  ) {
-    return undefined;
-  }
-  const {
-    kind: _kind,
-    schemaVersion: _schemaVersion,
-    outputAvailable: _outputAvailable,
-    workspaceDeltaAvailable: _workspaceDeltaAvailable,
-    contentSha256: _contentSha256,
-    ...input
-  } = session;
-  const updated = createWorkspaceProcessSession({
-    ...input,
-    schemaVersion: session.schemaVersion,
-    stdinOpen: !receipt.stdinClosed,
-    stdinWriteCount: receipt.sequence,
-    stdinBytes: receipt.totalInputBytes,
-    stdinSha256: receipt.cumulativeInputSha256,
-  });
-  return updated.contentSha256 === receipt.sessionSha256 ? updated : undefined;
-}
-
-function record(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-function hash(value: unknown): value is string {
-  return typeof value === "string" && SHA256.test(value);
-}
-
-function isoDate(value: unknown): value is string {
-  return (
-    typeof value === "string" &&
-    !Number.isNaN(Date.parse(value)) &&
-    new Date(value).toISOString() === value
-  );
-}
-
-function nonNegativeInteger(value: unknown): value is number {
-  return Number.isSafeInteger(value) && Number(value) >= 0;
-}
-
-function boundedInteger(
-  value: unknown,
-  minimum: number,
-  maximum: number,
-): value is number {
-  return (
-    Number.isSafeInteger(value) &&
-    Number(value) >= minimum &&
-    Number(value) <= maximum
-  );
 }

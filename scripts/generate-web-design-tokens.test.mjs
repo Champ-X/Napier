@@ -20,6 +20,9 @@ describe("Napier Web design tokens", () => {
     expect(css).toContain("--color-accent: #3A58EC;");
     expect(css).toContain("--color-focus-ring: #4D6BFE;");
     expect(css).toContain("--layout-reading-target: 800px;");
+    expect(css).toContain("--layout-sidebar-expanded: 240px;");
+    expect(css).toContain("--composer-radius: 14px;");
+    expect(css).toContain("--trajectory-preview-lines: 16;");
     expect(css).not.toContain("--color-brand-600");
   });
 
@@ -46,7 +49,7 @@ describe("Napier Web design tokens", () => {
 
     expect(result).toMatchObject({ ok: true, errors: [] });
     expect(result.definedVariableCount).toBeGreaterThan(100);
-    expect(result.literalColorDebt.total).toBe(860);
+    expect(result.literalColorDebt.total).toBe(841);
     expect(result.subTwelveTextDebt.total).toBe(0);
   });
 });

@@ -29,6 +29,14 @@ export interface TuiToolCard {
   status: "running" | "completed" | "failed";
 }
 
+export interface TuiRouteStatus {
+  model: string;
+  attempt: number;
+  status: "running" | "success" | "retryable" | "terminal";
+  fallbackReason?: string;
+  failureClass?: string;
+}
+
 export interface TuiStateSnapshot {
   threadId?: string;
   nextTitle?: string;
@@ -45,6 +53,7 @@ export interface TuiStateSnapshot {
   browserInteractionConfirmation?: BrowserInteractionConfirmation;
   transcript: TuiTranscriptEntry[];
   tools: TuiToolCard[];
+  route?: TuiRouteStatus;
 }
 
 export class TuiSessionState {
@@ -66,6 +75,7 @@ export class TuiSessionState {
   private nextEntryId = 1;
   private transcript: TuiTranscriptEntry[] = [];
   private tools: TuiToolCard[] = [];
+  private route: TuiRouteStatus | undefined;
   private currentAssistantId: number | undefined;
 
   constructor(input: {
@@ -107,6 +117,7 @@ export class TuiSessionState {
         : {}),
       transcript: this.transcript.map((entry) => ({ ...entry })),
       tools: this.tools.map((tool) => ({ ...tool })),
+      ...(this.route ? { route: { ...this.route } } : {}),
     };
   }
 
@@ -131,6 +142,7 @@ export class TuiSessionState {
     this.scrollOffset = 0;
     this.currentAssistantId = undefined;
     this.tools = [];
+    this.route = undefined;
     this.appendEntry("user", prompt, false);
   }
 
@@ -143,6 +155,7 @@ export class TuiSessionState {
     this.scrollOffset = 0;
     this.currentAssistantId = undefined;
     this.tools = [];
+    this.route = undefined;
     this.appendEntry("system", "Resuming interrupted Run", false);
   }
 
@@ -151,6 +164,17 @@ export class TuiSessionState {
       const delta = field(event.payload, "delta");
       if (delta === undefined) return false;
       this.appendAssistantDelta(delta);
+      return true;
+    }
+    if (event.type === "route_attempt_started") {
+      this.route = routeStatus(event, "running");
+      return true;
+    }
+    if (event.type === "route_attempt_ended") {
+      this.route = routeStatus(
+        event,
+        routeOutcome(event.payload) ?? "terminal",
+      );
       return true;
     }
     if (event.type === "tool.started") {
@@ -241,6 +265,7 @@ export class TuiSessionState {
     this.waiting = false;
     this.browserInteractionConfirmation = undefined;
     this.tools = [];
+    this.route = undefined;
     this.notice = `Thread: ${threadId}`;
     this.scrollOffset = 0;
   }
@@ -252,6 +277,7 @@ export class TuiSessionState {
     this.waiting = false;
     this.browserInteractionConfirmation = undefined;
     this.tools = [];
+    this.route = undefined;
     this.notice = `Thread: new${title ? ` (${title})` : ""}`;
     this.scrollOffset = 0;
   }
@@ -373,6 +399,43 @@ function field(input: unknown, name: string): string | undefined {
   }
   const value = (input as Record<string, unknown>)[name];
   return typeof value === "string" ? value : undefined;
+}
+
+function routeStatus(
+  event: RunEvent,
+  status: TuiRouteStatus["status"],
+): TuiRouteStatus {
+  const provider = displayId(field(event.payload, "providerId") ?? "unknown");
+  const model = displayId(field(event.payload, "modelId") ?? "unknown");
+  const rawAttempt = numericField(event.payload, "attempt");
+  const fallbackReason = field(event.payload, "fallbackReason");
+  const failureClass = field(event.payload, "failureClass");
+  return {
+    model: `${provider}/${model}`,
+    attempt: rawAttempt ?? 0,
+    status,
+    ...(fallbackReason ? { fallbackReason: displayId(fallbackReason) } : {}),
+    ...(failureClass ? { failureClass: displayId(failureClass) } : {}),
+  };
+}
+
+function routeOutcome(input: unknown): TuiRouteStatus["status"] | undefined {
+  const outcome = field(input, "outcome");
+  return outcome === "success" ||
+    outcome === "retryable" ||
+    outcome === "terminal"
+    ? outcome
+    : undefined;
+}
+
+function numericField(input: unknown, name: string): number | undefined {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return undefined;
+  }
+  const value = (input as Record<string, unknown>)[name];
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0
+    ? value
+    : undefined;
 }
 
 function displayId(value: string): string {

@@ -23,6 +23,8 @@ import { verifyWebDistReceipt } from "./check-web-dist.mjs";
 import { verifyProductPerformanceReportFile } from "./product-performance-report.mjs";
 import { verifyCodingExecutorComparison } from "./check-coding-executor-comparison.mjs";
 import { parseControlledHarnessEvidence } from "../packages/runtime/dist/controlled-harness-evidence.js";
+import { validateAgentHarnessAcceptanceEvidence } from "../packages/runtime/dist/agent-harness-acceptance.js";
+import { validateHarnessExperimentReleaseEvidence } from "../packages/runtime/dist/harness-experiments.js";
 import { loadOpenWebComparisonAttemptReceipt } from "./open-web-comparison-attempt-artifacts.mjs";
 import { loadOpenWebComparisonCampaignArtifacts } from "./open-web-comparison-campaign-artifacts.mjs";
 import { verifyOpenWebComparisonCampaign } from "./open-web-comparison-campaign.mjs";
@@ -115,6 +117,10 @@ const defaultCodingExecutorComparisonPath =
   "docs/artifacts/benchmarks/napier-omp-coding-comparison-seed-20260806.json";
 const defaultControlledHarnessEvidencePath =
   "docs/artifacts/controlled-harness-evidence-0.1.2.json";
+const defaultHarnessExperimentReleaseEvidencePath =
+  "docs/artifacts/harness-experiment-release-evidence-0.1.3.json";
+const defaultAgentHarnessAcceptanceEvidencePath =
+  "docs/artifacts/agent-harness-acceptance-evidence-0.1.3.json";
 const defaultDefaultProductConsolidatedPath =
   "docs/artifacts/default-product-consolidated-m4-0.1.2.json";
 const defaultDefaultProductBreadthPath =
@@ -239,6 +245,12 @@ export async function auditReleaseArtifacts(options = {}) {
   const controlledHarnessEvidencePath =
     options.controlledHarnessEvidencePath ??
     defaultControlledHarnessEvidencePath;
+  const harnessExperimentReleaseEvidencePath =
+    options.harnessExperimentReleaseEvidencePath ??
+    defaultHarnessExperimentReleaseEvidencePath;
+  const agentHarnessAcceptanceEvidencePath =
+    options.agentHarnessAcceptanceEvidencePath ??
+    defaultAgentHarnessAcceptanceEvidencePath;
   const defaultProductConsolidatedPath =
     options.defaultProductConsolidatedPath ??
     defaultDefaultProductConsolidatedPath;
@@ -825,6 +837,50 @@ export async function auditReleaseArtifacts(options = {}) {
   if (!controlledHarnessEvidence) {
     errors.push("controlled harness evidence: artifact_invalid");
   }
+  const harnessExperimentReleaseArtifact = await readArtifactEvidence(
+    repoRoot,
+    harnessExperimentReleaseEvidencePath,
+    errors,
+  );
+  let harnessExperimentReleaseEvidence;
+  try {
+    harnessExperimentReleaseEvidence = validateHarnessExperimentReleaseEvidence(
+      await readJsonArtifact(
+        repoRoot,
+        harnessExperimentReleaseEvidencePath,
+        errors,
+      ),
+    );
+    if (!harnessExperimentReleaseEvidence.promotionReady) {
+      errors.push(
+        `harness experiment release evidence: ${harnessExperimentReleaseEvidence.blockers.join(",")}`,
+      );
+    }
+  } catch {
+    errors.push("harness experiment release evidence: artifact_invalid");
+  }
+  const agentHarnessAcceptanceArtifact = await readArtifactEvidence(
+    repoRoot,
+    agentHarnessAcceptanceEvidencePath,
+    errors,
+  );
+  let agentHarnessAcceptanceEvidence;
+  try {
+    agentHarnessAcceptanceEvidence = validateAgentHarnessAcceptanceEvidence(
+      await readJsonArtifact(
+        repoRoot,
+        agentHarnessAcceptanceEvidencePath,
+        errors,
+      ),
+    );
+    if (!agentHarnessAcceptanceEvidence.acceptanceReady) {
+      errors.push(
+        `agent harness acceptance evidence: ${agentHarnessAcceptanceEvidence.blockers.join(",")}`,
+      );
+    }
+  } catch {
+    errors.push("agent harness acceptance evidence: artifact_invalid");
+  }
   const productSourceBoundSmokeArtifact = await readArtifactEvidence(
     repoRoot,
     productSourceBoundSmokePath,
@@ -853,14 +909,16 @@ export async function auditReleaseArtifacts(options = {}) {
     errors,
   );
   let releaseProductSourceManifestValid = false;
+  let releaseProductSourceManifest;
   try {
-    await verifyReleaseProductSourceManifestArtifact(
-      resolveRepoRelativePath(
-        repoRoot,
-        releaseProductSourceManifestPath,
-        "releaseProductSourceManifestPath",
-      ),
-    );
+    releaseProductSourceManifest =
+      await verifyReleaseProductSourceManifestArtifact(
+        resolveRepoRelativePath(
+          repoRoot,
+          releaseProductSourceManifestPath,
+          "releaseProductSourceManifestPath",
+        ),
+      );
     releaseProductSourceManifestValid = true;
   } catch (error) {
     errors.push(
@@ -868,6 +926,43 @@ export async function auditReleaseArtifacts(options = {}) {
         error instanceof Error ? error.message : String(error)
       }`,
     );
+  }
+  const latestExperimentBinding =
+    harnessExperimentReleaseEvidence?.bindings.at(-1);
+  if (
+    releaseProductSourceManifest &&
+    latestExperimentBinding?.sourceManifestSha256 !==
+      releaseProductSourceManifest.contentSha256
+  ) {
+    errors.push("harness experiment release evidence: source_manifest_drift");
+  }
+  if (
+    releaseProductSourceManifest &&
+    harnessExperimentReleaseEvidence?.productVersion !==
+      releaseProductSourceManifest.productVersion
+  ) {
+    errors.push("harness experiment release evidence: product_version_drift");
+  }
+  if (
+    releaseProductSourceManifest &&
+    agentHarnessAcceptanceEvidence?.sourceManifestSha256 !==
+      releaseProductSourceManifest.contentSha256
+  ) {
+    errors.push("agent harness acceptance evidence: source_manifest_drift");
+  }
+  if (
+    harnessExperimentReleaseEvidence &&
+    agentHarnessAcceptanceEvidence?.harnessExperimentEvidenceSha256 !==
+      harnessExperimentReleaseEvidence.contentSha256
+  ) {
+    errors.push("agent harness acceptance evidence: experiment_drift");
+  }
+  if (
+    releaseProductSourceManifest &&
+    agentHarnessAcceptanceEvidence?.productVersion !==
+      releaseProductSourceManifest.productVersion
+  ) {
+    errors.push("agent harness acceptance evidence: product_version_drift");
   }
   const defaultProductConsolidatedArtifact = await readArtifactEvidence(
     repoRoot,
@@ -1129,6 +1224,32 @@ export async function auditReleaseArtifacts(options = {}) {
       valid:
         controlledHarnessEvidenceArtifact.readable &&
         Boolean(controlledHarnessEvidence),
+    },
+    {
+      kind: "harness-experiment-release-evidence",
+      path: harnessExperimentReleaseArtifact.path,
+      sha256: harnessExperimentReleaseArtifact.sha256,
+      valid:
+        harnessExperimentReleaseArtifact.readable &&
+        Boolean(harnessExperimentReleaseEvidence?.promotionReady) &&
+        latestExperimentBinding?.sourceManifestSha256 ===
+          releaseProductSourceManifest?.contentSha256 &&
+        harnessExperimentReleaseEvidence?.productVersion ===
+          releaseProductSourceManifest?.productVersion,
+    },
+    {
+      kind: "agent-harness-acceptance-evidence",
+      path: agentHarnessAcceptanceArtifact.path,
+      sha256: agentHarnessAcceptanceArtifact.sha256,
+      valid:
+        agentHarnessAcceptanceArtifact.readable &&
+        Boolean(agentHarnessAcceptanceEvidence?.acceptanceReady) &&
+        agentHarnessAcceptanceEvidence?.sourceManifestSha256 ===
+          releaseProductSourceManifest?.contentSha256 &&
+        agentHarnessAcceptanceEvidence?.harnessExperimentEvidenceSha256 ===
+          harnessExperimentReleaseEvidence?.contentSha256 &&
+        agentHarnessAcceptanceEvidence?.productVersion ===
+          releaseProductSourceManifest?.productVersion,
     },
     {
       kind: "default-product-source-bound-smoke",
@@ -1459,6 +1580,24 @@ function parseCliOptions(args) {
     }
     if (arg === "--controlled-harness-evidence-path") {
       options.controlledHarnessEvidencePath = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--harness-experiment-release-evidence-path") {
+      options.harnessExperimentReleaseEvidencePath = readCliValue(
+        args,
+        index,
+        arg,
+      );
+      index += 1;
+      continue;
+    }
+    if (arg === "--agent-harness-acceptance-evidence-path") {
+      options.agentHarnessAcceptanceEvidencePath = readCliValue(
+        args,
+        index,
+        arg,
+      );
       index += 1;
       continue;
     }

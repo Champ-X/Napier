@@ -16,6 +16,7 @@ import {
   MAX_PYTHON_KERNEL_EVALUATION_TIMEOUT_MS,
   PYTHON_KERNEL_WORKER_SHA256,
 } from "./python-kernel-worker.js";
+import type { PythonKernelCodeBridgeDispatcher } from "./python-kernel-code-bridge.js";
 
 export const MAX_PYTHON_KERNEL_TOOL_OUTPUT_BYTES = 32 * 1024;
 
@@ -53,6 +54,7 @@ const pythonKernelSchema = Type.Union([
           maximum: MAX_PYTHON_KERNEL_EVALUATION_TIMEOUT_MS,
         }),
       ),
+      bridge: Type.Optional(Type.Literal(true)),
     },
     { additionalProperties: false },
   ),
@@ -92,12 +94,13 @@ export interface PythonKernelToolDetails {
 export function createPythonKernelTool(
   manager: PythonKernelManager,
   context: { threadId: string; runId: string },
+  codeBridge?: PythonKernelCodeBridgeDispatcher,
 ): AgentTool<typeof pythonKernelSchema, PythonKernelToolDetails> {
   return {
     name: "python_kernel",
     label: "Python kernel",
     description:
-      "Start/evaluate/cancel persistent restricted synchronous Python in a read-only offline OS Sandbox. start: workspace-relative cwd + total sessionTimeoutMs; evaluate: processId, code, timeoutMs. State persists across this Run. imports, classes, async/yield, private/dunder access, dynamic compilation, file APIs, subprocesses, workspace writes, network, and inherited env are unavailable. Timeout or uncertain outcome terminates the kernel.",
+      "Persistent restricted Python in a read-only offline OS Sandbox. start: workspace-relative cwd, sessionTimeoutMs. evaluate: processId, code, timeoutMs; bridge=true enables governed napier.call. State persists for this Run. imports, async, private/dynamic code, file/process/network/env access and writes are unavailable. Timeout or uncertainty terminates the kernel.",
     parameters: pythonKernelSchema,
     async execute(_toolCallId, input, signal) {
       if (input.action === "start") {
@@ -149,6 +152,7 @@ export function createPythonKernelTool(
           timeoutMs:
             input.timeoutMs ?? DEFAULT_PYTHON_KERNEL_EVALUATION_TIMEOUT_MS,
           ...(signal ? { signal } : {}),
+          ...(input.bridge === true && codeBridge ? { codeBridge } : {}),
         });
         return evaluationResult(evaluation);
       }
@@ -216,6 +220,7 @@ export function pythonKernelToolCallArgumentsLedgerProjection(
             typeof value["timeoutMs"] === "number"
               ? value["timeoutMs"]
               : DEFAULT_PYTHON_KERNEL_EVALUATION_TIMEOUT_MS,
+          bridge: value["bridge"] === true,
         }
       : {}),
     ...(action === "start"

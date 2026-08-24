@@ -1,7 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-import { App } from "./App";
 import { applyDocumentLocale } from "./locale";
 import "./styles/tokens.css";
 import "./styles.css";
@@ -12,8 +11,12 @@ applyDocumentLocale();
 const root = document.getElementById("root");
 if (!root) throw new Error("Root element is missing");
 
-createRoot(root).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+// Load the workspace shell as a dynamic import so the bootstrap entry stays
+// within the main-entry budget; App and its dependencies form a separate chunk.
+void import("./App").then(({ App }) => {
+  createRoot(root).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
+});

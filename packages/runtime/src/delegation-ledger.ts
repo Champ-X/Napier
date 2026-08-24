@@ -91,16 +91,47 @@ export function findReusableDelegation(
   tasks: SubagentTask[],
   role: SubagentRole,
   prompt: string,
+  options: { failureContextSha256?: string } = {},
 ): SubagentTask | undefined {
   const intentSha256 = delegationIntentSha256(role, prompt);
   const matching = tasks.filter(
     (task) =>
-      REUSABLE_STATUSES.has(task.status) &&
-      delegationIntentSha256(task.role, task.prompt) === intentSha256,
+      delegationIntentSha256(task.role, task.prompt) === intentSha256 &&
+      (REUSABLE_STATUSES.has(task.status) ||
+        isUnchangedNonRetryableFailure(task, options.failureContextSha256)),
   );
   return (
     matching.findLast((task) => ACTIVE_STATUSES.has(task.status)) ??
     matching.at(-1)
+  );
+}
+
+export function delegationFailureContextSha256(input: {
+  role: SubagentRole;
+  model: SubagentTask["model"];
+  toolSchemaSha256?: string;
+}): string {
+  return sha256(canonicalJson(input));
+}
+
+function isUnchangedNonRetryableFailure(
+  task: SubagentTask,
+  failureContextSha256: string | undefined,
+): boolean {
+  return (
+    task.status === "failed" &&
+    Boolean(failureContextSha256) &&
+    task.failureContextSha256 === failureContextSha256 &&
+    isProviderToolConfigurationError(task.error)
+  );
+}
+
+function isProviderToolConfigurationError(error: string | undefined): boolean {
+  if (!error) return false;
+  return (
+    /invalid schema for (?:function|tool)/iu.test(error) ||
+    (/invalid_request_error/iu.test(error) &&
+      /(?:function|tool).*schema|schema.*(?:function|tool)/iu.test(error))
   );
 }
 

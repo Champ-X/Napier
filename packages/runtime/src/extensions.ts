@@ -4,7 +4,6 @@ import path from "node:path";
 import type {
   CreateMcpExtensionRequest,
   ExtensionCapability,
-  ExtensionConnection,
   ExtensionRecord,
   JsonValue,
   McpToolEffect,
@@ -13,8 +12,18 @@ import type {
   ReviewMcpToolRequest,
 } from "@napier/contracts";
 
-import { createId, nowIso } from "./ids.js";
 import { EXTENSION_CAPABILITIES } from "./extension-capabilities.js";
+import {
+  normalizeMcpName,
+  normalizeText,
+  sanitizeUntrustedText,
+} from "./extension-record-primitives.js";
+import { createId, nowIso } from "./ids.js";
+export {
+  normalizeMcpName,
+  sanitizeUntrustedText,
+  updateExtensionConnection,
+} from "./extension-record-primitives.js";
 
 const CAPABILITIES: ReadonlySet<ExtensionCapability> = EXTENSION_CAPABILITIES;
 const HEADER_NAME = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]{1,128}$/;
@@ -317,41 +326,6 @@ export function reviewMcpToolRecord(
   };
 }
 
-export function updateExtensionConnection(
-  current: ExtensionRecord,
-  connection: ExtensionConnection,
-): ExtensionRecord {
-  return {
-    ...current,
-    connection,
-    updatedAt: nowIso(),
-    revision: current.revision + 1,
-  };
-}
-
-export function normalizeMcpName(value: string, maxLength = 28): string {
-  const normalized = value
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]+/g, "_")
-    .replace(/^[_-]+|[_-]+$/g, "")
-    .replace(/_{2,}/g, "_")
-    .slice(0, maxLength);
-  if (!normalized) throw new Error("Name must contain letters or numbers");
-  return normalized;
-}
-
-export function sanitizeUntrustedText(
-  value: string,
-  maxLength: number,
-): string {
-  return normalizeText(
-    value
-      .replace(/[\u0000-\u001f\u007f]/g, " ")
-      .replace(/[<>]/g, (character) => (character === "<" ? "[" : "]")),
-    maxLength,
-  );
-}
-
 function normalizeReviewedRoutingHint(value: string): string {
   const hint = normalizeText(value.replace(/\s+/g, " "), 500);
   if (!hint) throw new Error("Reviewed routing hint must not be empty");
@@ -484,10 +458,6 @@ function normalizeRequiredText(
   const normalized = normalizeText(value, maxLength);
   if (!normalized) throw new Error(`${label} is required`);
   return normalized;
-}
-
-function normalizeText(value: string, maxLength: number): string {
-  return value.replace(/\s+/g, " ").trim().slice(0, maxLength);
 }
 
 function normalizeProcessValue(

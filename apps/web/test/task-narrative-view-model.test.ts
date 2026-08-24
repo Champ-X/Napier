@@ -29,7 +29,8 @@ describe("Task narrative", () => {
         phase: "waiting",
         phaseLabel: "Waiting",
         currentAction: "Approve deployment",
-        blocker: "Operator input is required before the run can continue.",
+        blocker:
+          "The run has ended. Record an answer to unlock a linked continuation.",
       }),
     );
   });

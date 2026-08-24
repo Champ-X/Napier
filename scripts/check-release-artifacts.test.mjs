@@ -14,6 +14,11 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import { canonicalJson } from "../packages/runtime/dist/index.js";
+import { NAPIER_RELEASE_IDENTITY_SHA256 } from "../packages/runtime/dist/release-product-identity.js";
+import {
+  hashReleaseProductTrial,
+  projectReleaseProductGate,
+} from "../packages/runtime/dist/release-product-gate.js";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -24,6 +29,7 @@ import {
 } from "./check-release-artifacts.mjs";
 import { linuxHostProductAcceptanceImplementation } from "./linux-host-product-acceptance-artifact.mjs";
 import { profileUpgradeImplementation } from "./profile-upgrade-artifact.mjs";
+import { sandboxProductAcceptanceImplementation } from "./sandbox-product-acceptance-artifact.mjs";
 import { collectS1ShellSandboxReadiness } from "./check-s1-shell-sandbox-completion.mjs";
 import {
   applySandboxExternalReleasePromotion,
@@ -56,8 +62,8 @@ describe("release artifacts audit", () => {
 
     const result = await auditReleaseArtifacts({ repoRoot: root });
 
-    expect(result.ok).toBe(true);
     expect(result.errors).toEqual([]);
+    expect(result.ok).toBe(true);
     expect(result.artifacts.map((artifact) => artifact.kind)).toEqual([
       "package-lock-audit",
       "runtime-environment-audit",
@@ -83,6 +89,8 @@ describe("release artifacts audit", () => {
       "management-openapi-compatibility",
       "coding-executor-comparison",
       "controlled-harness-evidence",
+      "harness-experiment-release-evidence",
+      "agent-harness-acceptance-evidence",
       "default-product-source-bound-smoke",
       "default-product-source-manifest",
       "default-product-consolidated-m4",
@@ -611,7 +619,7 @@ describe("release artifacts audit", () => {
       "sandbox-external-publication-retained",
       "sandbox-external-publication-authority-retained",
     ]);
-    expect(result.artifacts).toHaveLength(169);
+    expect(result.artifacts).toHaveLength(171);
   });
 
   it("fails when the product performance baseline is tampered", async () => {
@@ -695,6 +703,24 @@ describe("release artifacts audit", () => {
     expect(result.ok).toBe(false);
     expect(result.errors).toContain(
       "controlled harness evidence: artifact_invalid",
+    );
+  });
+
+  it("fails when the Agent Harness acceptance evidence is tampered", async () => {
+    const { root } = await createFixture();
+    const evidencePath = path.join(
+      root,
+      "docs/artifacts/agent-harness-acceptance-evidence-0.1.3.json",
+    );
+    const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
+    evidence.summary.routeRecoveryRate = 0;
+    await writeJson(evidencePath, evidence);
+
+    const result = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain(
+      "agent harness acceptance evidence: artifact_invalid",
     );
   });
 
@@ -1463,6 +1489,8 @@ async function createFixture() {
     "sandbox-acquisition-stage20.json",
     "profile-upgrade-stage21.json",
     "controlled-harness-evidence-0.1.2.json",
+    "harness-experiment-release-evidence-0.1.3.json",
+    "agent-harness-acceptance-evidence-0.1.3.json",
     "default-product-source-bound-smoke-m4-0.1.3.json",
     "default-product-source-manifest-0.1.3.json",
     "default-product-consolidated-m4-0.1.2.json",
@@ -1707,6 +1735,8 @@ async function createFixture() {
     path.join(root, "benchmarks/security/open-web-prompt-injection-v1"),
     { recursive: true },
   );
+  await rebindSandboxProductAcceptanceFixture(root);
+  await rebindSourceBoundSmokeFixture(root);
   await rebindLinuxHostProductAcceptanceFixture(root);
   await rebindProfileUpgradeFixture(root);
   await writeJson(
@@ -1735,6 +1765,44 @@ async function createFixture() {
     "docs/artifacts/web-dist-audit-0.1.0.json",
   ]);
   return { root };
+}
+
+async function rebindSandboxProductAcceptanceFixture(root) {
+  const artifactPath = path.join(
+    root,
+    "docs/artifacts/sandbox-product-acceptance-stage13.json",
+  );
+  const value = JSON.parse(await readFile(artifactPath, "utf8"));
+  value.implementation = await sandboxProductAcceptanceImplementation(root);
+  const { contentSha256: _contentSha256, ...content } = value;
+  value.contentSha256 = sha256(Buffer.from(canonicalJson(content), "utf8"));
+  await writeJson(artifactPath, value);
+}
+
+async function rebindSourceBoundSmokeFixture(root) {
+  const artifactPath = path.join(
+    root,
+    "docs/artifacts/default-product-source-bound-smoke-m4-0.1.3.json",
+  );
+  const value = JSON.parse(await readFile(artifactPath, "utf8"));
+  const trials = value.trials.map((trial) => {
+    const rebound = {
+      ...trial,
+      releaseIdentitySha256: NAPIER_RELEASE_IDENTITY_SHA256,
+    };
+    rebound.contentSha256 = hashReleaseProductTrial(rebound);
+    return rebound;
+  });
+  await writeJson(
+    artifactPath,
+    projectReleaseProductGate(
+      { id: value.casebookId, templateId: value.templateId },
+      trials,
+      value.currentProductVersion,
+      [],
+      NAPIER_RELEASE_IDENTITY_SHA256,
+    ),
+  );
 }
 
 async function rebindLinuxHostProductAcceptanceFixture(root) {

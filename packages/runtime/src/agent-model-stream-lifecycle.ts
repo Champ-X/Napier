@@ -19,6 +19,7 @@ import {
 import type { ModelThinkingLoopEvidence } from "./model-thinking-loop-policy.js";
 import { captureCompiledModelInvocation } from "./model-invocation-capture.js";
 import type { ModelInvocationCapsuleStore } from "./model-invocation-capsule-store.js";
+import type { ModelRouteSession } from "./model-route.js";
 import type { ModelRegistry } from "./models.js";
 import { modelStream, streamCtx } from "./model-stream-cancellation.js";
 import type { CompiledPromptArtifact } from "./prompt-compiler.js";
@@ -28,6 +29,7 @@ import { canonicalJson, sha256 } from "./ed25519.js";
 import { recoverModelContextOverflow } from "./model-context-overflow-recovery.js";
 import { mapModelUsage } from "./agent-model-projection.js";
 import { createUsageAccounting } from "./token-accounting.js";
+import type { ModelHarnessExperimentProfile } from "./model-harness-experiment-profile.js";
 
 export interface AgentModelCallPreparation {
   run: RunRecord;
@@ -35,6 +37,7 @@ export interface AgentModelCallPreparation {
   model: Model<Api>;
   context: Context;
   options: SimpleStreamOptions;
+  harnessExperimentProfile?: ModelHarnessExperimentProfile | undefined;
   onEvent?: EventSink;
 }
 
@@ -56,6 +59,8 @@ export interface AgentModelStreamLifecycleInput {
   };
   budget: RunBudgetTracker;
   run: RunRecord;
+  harnessExperimentProfile?: ModelHarnessExperimentProfile | undefined;
+  modelRoute?: ModelRouteSession;
   buildCompiledPrompt(
     model: Model<Api>,
     options: SimpleStreamOptions | undefined,
@@ -90,6 +95,7 @@ export function agentModelStreamLife(
   );
   return (model, context, options) => {
     let currentEnvelope: ModelContextEnvelopeReceipt | undefined;
+    let currentServingModel = model;
     const rootSignal = options?.signal ?? new AbortController().signal;
     return guardModelThinkingLoop({
       model,
@@ -116,109 +122,141 @@ export function agentModelStreamLife(
                 ...shortThinkingLoopRetryOptions(model, attemptOptions),
                 signal,
               };
-        const preparedCall = input.prepareCall
-          ? await input.prepareCall({
-              run: input.run,
-              attempt,
-              model,
-              context: nextContext,
-              options: nextOptions,
-              ...(input.onEvent ? { onEvent: input.onEvent } : {}),
-            })
-          : { context: nextContext, options: nextOptions };
-        const createInvocation = async (
-          recoveryAttempt: 0 | 1,
-          baseContext = preparedCall.context,
-        ) => {
-          const compiledPrompt = input.buildCompiledPrompt(
-            model,
-            preparedCall.options,
-            baseContext,
-          );
-          const finalizedCall = input.finalizeCall
-            ? await input.finalizeCall({
+        const createCandidateSource = async (candidate: Model<Api>) => {
+          currentServingModel = candidate;
+          const preparedCall = input.prepareCall
+            ? await input.prepareCall({
                 run: input.run,
                 attempt,
-                model,
-                context: baseContext,
-                options: preparedCall.options,
-                compiledPrompt,
-                recoveryAttempt,
+                model: candidate,
+                context: nextContext,
+                options: nextOptions,
+                ...(input.harnessExperimentProfile
+                  ? { harnessExperimentProfile: input.harnessExperimentProfile }
+                  : {}),
                 ...(input.onEvent ? { onEvent: input.onEvent } : {}),
               })
-            : preparedCall;
-          const captured = await captureCompiledModelInvocation({
-            store: input.host.store,
-            capsules: input.host.modelInvocationCapsules,
-            run: input.run,
-            model,
-            context: finalizedCall.context,
-            options: finalizedCall.options,
-            turnIndex: input.nextTurnIndex(),
-            purpose: "agent_turn",
-            compiledPrompt,
-            ...(input.onEvent ? { onEvent: input.onEvent } : {}),
-          });
-          currentEnvelope = captured.envelope;
-          input.onEnvelope(captured.envelope);
-          const call = {
-            run: input.run,
-            attempt,
-            model,
-            context: captured.context,
-            options: finalizedCall.options,
-            compiledPrompt,
-            envelope: captured.envelope,
-            ...(input.onEvent ? { onEvent: input.onEvent } : {}),
-          };
-          return {
-            context: captured.context,
-            options: finalizedCall.options,
-            envelope: captured.envelope,
-            source: input.invokeCall
-              ? input.invokeCall(call, () =>
-                  modelStream(
+            : { context: nextContext, options: nextOptions };
+          const createInvocation = async (
+            recoveryAttempt: 0 | 1,
+            baseContext = preparedCall.context,
+          ) => {
+            const compiledPrompt = input.buildCompiledPrompt(
+              candidate,
+              preparedCall.options,
+              baseContext,
+            );
+            const finalizedCall = input.finalizeCall
+              ? await input.finalizeCall({
+                  run: input.run,
+                  attempt,
+                  model: candidate,
+                  context: baseContext,
+                  options: preparedCall.options,
+                  compiledPrompt,
+                  recoveryAttempt,
+                  ...(input.harnessExperimentProfile
+                    ? {
+                        harnessExperimentProfile:
+                          input.harnessExperimentProfile,
+                      }
+                    : {}),
+                  ...(input.onEvent ? { onEvent: input.onEvent } : {}),
+                })
+              : preparedCall;
+            const captured = await captureCompiledModelInvocation({
+              store: input.host.store,
+              capsules: input.host.modelInvocationCapsules,
+              run: input.run,
+              model: candidate,
+              context: finalizedCall.context,
+              options: finalizedCall.options,
+              turnIndex: input.nextTurnIndex(),
+              purpose: "agent_turn",
+              compiledPrompt,
+              ...(input.onEvent ? { onEvent: input.onEvent } : {}),
+            });
+            currentEnvelope = captured.envelope;
+            input.onEnvelope(captured.envelope);
+            const call = {
+              run: input.run,
+              attempt,
+              model: candidate,
+              context: captured.context,
+              options: finalizedCall.options,
+              compiledPrompt,
+              envelope: captured.envelope,
+              ...(input.onEvent ? { onEvent: input.onEvent } : {}),
+            };
+            return {
+              context: captured.context,
+              options: finalizedCall.options,
+              envelope: captured.envelope,
+              source: input.invokeCall
+                ? input.invokeCall(call, () =>
+                    modelStream(
+                      cancellation,
+                      candidate,
+                      captured.context,
+                      finalizedCall.options,
+                    ),
+                  )
+                : modelStream(
                     cancellation,
-                    model,
+                    candidate,
                     captured.context,
                     finalizedCall.options,
                   ),
-                )
-              : modelStream(
-                  cancellation,
-                  model,
-                  captured.context,
-                  finalizedCall.options,
-                ),
+            };
+          };
+          const first = await createInvocation(0);
+          return {
+            context: first.context,
+            options: first.options,
+            source: recoverModelContextOverflow({
+              source: first.source,
+              signal,
+              recover: async (error) => {
+                const action = await recordContextOverflow(
+                  input,
+                  candidate,
+                  error,
+                  first.envelope,
+                );
+                currentEnvelope = undefined;
+                input.onEnvelope(undefined);
+                if (action !== "retry") {
+                  input.budget.throwIfExhausted();
+                  throw new Error(
+                    "Model context overflow recovery unavailable",
+                  );
+                }
+                return (await createInvocation(1, first.context)).source;
+              },
+            }),
           };
         };
-        const first = await createInvocation(0);
-        return {
-          context: first.context,
-          options: first.options,
-          source: recoverModelContextOverflow({
-            source: first.source,
-            signal,
-            recover: async (error) => {
-              const action = await recordContextOverflow(
-                input,
-                model,
-                error,
-                first.envelope,
-              );
-              currentEnvelope = undefined;
-              input.onEnvelope(undefined);
-              if (action !== "retry") {
-                input.budget.throwIfExhausted();
-                throw new Error("Model context overflow recovery unavailable");
-              }
-              return (await createInvocation(1, first.context)).source;
-            },
-          }),
-        };
+        if (input.modelRoute) {
+          return {
+            context: nextContext,
+            options: nextOptions,
+            source: input.modelRoute.stream({
+              signal,
+              invoke: async (candidate) =>
+                (await createCandidateSource(candidate)).source,
+            }),
+          };
+        }
+        return createCandidateSource(model);
       },
       onDetected: (evidence, action) =>
-        recordDetection(input, model, evidence, action, currentEnvelope),
+        recordDetection(
+          input,
+          currentServingModel,
+          evidence,
+          action,
+          currentEnvelope,
+        ),
     });
   };
 }

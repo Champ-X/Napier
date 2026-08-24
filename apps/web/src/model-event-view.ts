@@ -1,5 +1,6 @@
 import type { RunEvent } from "@napier/contracts";
 import { modelStreamEventTraceSummary } from "./model-stream-event-view";
+import { modelRouteEventTraceSummary } from "./model-route-event-view";
 
 export interface ModelEventTraceView {
   action: string;
@@ -91,6 +92,9 @@ export function modelEventTraceView(
 }
 
 export function modelEventTraceSummary(event: RunEvent): string | undefined {
+  if (event.type.startsWith("route_")) {
+    return modelRouteEventTraceSummary(event);
+  }
   if (event.type.startsWith("model.stream.")) {
     return modelStreamEventTraceSummary(event);
   }

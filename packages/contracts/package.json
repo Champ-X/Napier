@@ -68,6 +68,26 @@
       "types": "./dist/provider-setup.d.ts",
       "import": "./dist/provider-setup.js"
     },
+    "./model-route": {
+      "types": "./dist/model-route.d.ts",
+      "import": "./dist/model-route.js"
+    },
+    "./harness-experiments": {
+      "types": "./dist/harness-experiments.d.ts",
+      "import": "./dist/harness-experiments.js"
+    },
+    "./agent-harness-acceptance": {
+      "types": "./dist/agent-harness-acceptance.d.ts",
+      "import": "./dist/agent-harness-acceptance.js"
+    },
+    "./tool-protocol": {
+      "types": "./dist/tool-protocol.d.ts",
+      "import": "./dist/tool-protocol.js"
+    },
+    "./subagent-supervisor": {
+      "types": "./dist/subagent-supervisor.d.ts",
+      "import": "./dist/subagent-supervisor.js"
+    },
     "./sandbox-setup": {
       "types": "./dist/sandbox-setup.d.ts",
       "import": "./dist/sandbox-setup.js"

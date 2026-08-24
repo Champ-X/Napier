@@ -21,6 +21,19 @@ export const desktopWorkbenchCopy = {
       saveGoal: "Save goal",
       clearGoal: "Clear goal",
       continue: "Continue task",
+      decisionEyebrow: "WAITING FOR INPUT",
+      decisionNext:
+        "The previous run is complete. Record an answer, then start the linked continuation.",
+      reviewDecision: "Review decision",
+      stepStatus: {
+        pending: "Pending",
+        ready: "Ready",
+        running: "Running",
+        partial: "Partial",
+        completed: "Completed",
+        blocked: "Blocked",
+        skipped: "Skipped",
+      },
     },
     changes: {
       title: "Changes and outputs",

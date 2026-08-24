@@ -151,6 +151,9 @@ function cssVariableName(tokenPath) {
   if (group === "semantic" && subgroup === "color") {
     return `--color-${rest.join("-")}`;
   }
+  if (group === "component") {
+    return `--${subgroup}-${rest.join("-")}`;
+  }
   const prefixes = {
     control: "control",
     duration: "duration",

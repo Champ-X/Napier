@@ -290,6 +290,34 @@ describe("Subagent worktree mutation manager", () => {
     const tools = manager.createCoderTools(worktree);
     const patch = tools.find((tool) => tool.name === "apply_patch")!;
     const candidateFile = tools.find((tool) => tool.name === "candidate_file")!;
+    expect(candidateFile.parameters).toEqual(
+      expect.objectContaining({
+        type: "object",
+        additionalProperties: false,
+        required: ["operation"],
+      }),
+    );
+    expect(candidateFile.parameters).not.toHaveProperty("anyOf");
+    await expect(
+      candidateFile.execute("mixed-file-operation", {
+        operation: "delete",
+        path: "src/delete.ts",
+        expectedSha256: sha256(deleted),
+        sourcePath: "src/source.ts",
+      }),
+    ).rejects.toThrow(
+      "Candidate file delete requires only path and expectedSha256",
+    );
+    await expect(
+      candidateFile.execute("incomplete-move", {
+        operation: "move",
+        sourcePath: "src/source.ts",
+        destinationPath: "src/renamed.ts",
+        expectedSourceSha256: sha256(moved),
+      }),
+    ).rejects.toThrow(
+      "Candidate file move requires only sourcePath, destinationPath, expectedSourceSha256, and a null expectedDestinationSha256",
+    );
 
     await patch.execute("create-addition", {
       operation: "create",

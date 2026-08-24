@@ -304,18 +304,26 @@ export async function verifyWebUiArtifactNavigation(browser, origin, expected) {
   );
   try {
     await page.waitForFunction(
-      ({ title, count }) =>
+      (title) =>
         document.querySelector(".thread-heading h1")?.textContent?.trim() ===
           title &&
+        document.querySelector(".task-narrative-completed") instanceof
+          HTMLElement,
+      expected.title,
+      { timeout: WEB_UI_START_TIMEOUT_MS },
+    );
+    await page.locator(".task-completion-toggle").click();
+    await page.waitForFunction(
+      (count) =>
         document.querySelectorAll(".task-narrative-completed nav button")
           .length === count,
-      { title: expected.title, count: expected.paths.length },
+      expected.paths.length,
       { timeout: WEB_UI_START_TIMEOUT_MS },
     );
     const previews = [];
     for (const path of expected.paths) {
       await page
-        .locator(`.task-narrative-completed button[title="Open ${path}"]`)
+        .locator(`.task-narrative-completed nav button[title="Open ${path}"]`)
         .click();
       await page.waitForFunction(
         (targetPath) =>

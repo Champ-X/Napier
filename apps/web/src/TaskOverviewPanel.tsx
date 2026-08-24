@@ -1,6 +1,6 @@
-import { ArrowRight, Check, Circle, Target } from "lucide-react";
+import { ArrowRight, Check, Circle, CircleHelp, Target } from "lucide-react";
 
-import type { GoalState, ThreadDetail } from "@napier/contracts";
+import type { GoalState, OperatorDecision, ThreadDetail } from "@napier/contracts";
 import { copy } from "./copy";
 
 type OverviewDetail = Pick<
@@ -13,19 +13,23 @@ export function TaskOverviewPanel({
   goal,
   goalDraft,
   modelConfigured,
+  decision,
   onGoalDraft,
   onGoalSave,
   onGoalClear,
   onContinue,
+  onReviewDecision,
 }: {
   detail: OverviewDetail | undefined;
   goal: GoalState | undefined;
   goalDraft: string;
   modelConfigured: boolean;
+  decision: OperatorDecision | undefined;
   onGoalDraft(value: string): void;
   onGoalSave(): void;
   onGoalClear(): void;
   onContinue(): void;
+  onReviewDecision(): void;
 }) {
   const plan =
     detail?.plans.findLast(
@@ -45,7 +49,7 @@ export function TaskOverviewPanel({
           <span>{copy.taskView.eyebrow}</span>
           <h2 id="task-overview-title">{copy.taskView.overview.title}</h2>
         </div>
-        {progress?.nextStep ? (
+        {progress?.nextStep && !decision ? (
           <button
             className="task-primary-action"
             type="button"
@@ -58,6 +62,22 @@ export function TaskOverviewPanel({
           </button>
         ) : null}
       </header>
+
+      {decision ? (
+        <section className="task-decision-blocker" aria-labelledby="task-decision-title">
+          <CircleHelp size={18} aria-hidden="true" />
+          <div>
+            <span>{copy.taskView.overview.decisionEyebrow}</span>
+            <h3 id="task-decision-title">{decision.header}</h3>
+            <p>{decision.question}</p>
+            <small>{copy.taskView.overview.decisionNext}</small>
+          </div>
+          <button className="task-primary-action" type="button" onClick={onReviewDecision}>
+            {copy.taskView.overview.reviewDecision}
+            <ArrowRight size={15} aria-hidden="true" />
+          </button>
+        </section>
+      ) : null}
 
       <div className="task-overview-summary">
         <article className="task-objective-card">
@@ -101,7 +121,7 @@ export function TaskOverviewPanel({
                 <strong>{step.title}</strong>
                 <p>{step.description}</p>
               </div>
-              <small>{step.status.replaceAll("_", " ")}</small>
+              <small>{copy.taskView.overview.stepStatus[step.status]}</small>
             </li>
           ))}
         </ol>

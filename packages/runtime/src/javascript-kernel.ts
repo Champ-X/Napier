@@ -6,6 +6,11 @@ import type {
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
 import {
+  formatJavascriptKernelCodeBridgeResponse,
+  parseJavascriptKernelCodeBridgeRequest,
+  type JavascriptKernelCodeBridgeDispatcher,
+} from "./javascript-kernel-code-bridge.js";
+import {
   parseJavascriptKernelResult,
   type JavascriptKernelProtocolResult,
   type JavascriptKernelValueType,
@@ -96,6 +101,7 @@ export class JavascriptKernelManager {
     code: string;
     timeoutMs?: number;
     signal?: AbortSignal;
+    codeBridge?: JavascriptKernelCodeBridgeDispatcher;
   }): Promise<JavascriptKernelEvaluation> {
     const timeoutMs =
       request.timeoutMs ?? DEFAULT_JAVASCRIPT_KERNEL_EVALUATION_TIMEOUT_MS;
@@ -119,6 +125,7 @@ export class JavascriptKernelManager {
       id: requestId,
       codeBase64: Buffer.from(request.code, "utf8").toString("base64"),
       timeoutMs,
+      bridge: Boolean(request.codeBridge),
     };
     const requestSha256 = sha256(canonicalJson(input));
     let written = false;
@@ -139,6 +146,8 @@ export class JavascriptKernelManager {
         requestId,
         afterCursor: session.nextCursor,
         timeoutMs,
+        runId: request.runId,
+        ...(request.codeBridge ? { codeBridge: request.codeBridge } : {}),
         ...(request.signal ? { signal: request.signal } : {}),
       });
       let processStatus: WorkspaceProcessStatus = "running";
@@ -251,14 +260,19 @@ export class JavascriptKernelManager {
     threadId: string;
     processId: string;
     requestId: string;
+    runId: string;
     afterCursor: number;
     timeoutMs: number;
     signal?: AbortSignal;
+    codeBridge?: JavascriptKernelCodeBridgeDispatcher;
   }): Promise<JavascriptKernelProtocolResult> {
     const deadline = Date.now() + request.timeoutMs + 1_000;
     let cursor = request.afterCursor;
     let buffer = "";
+    const bridgeCalls = new Set<Promise<void>>();
+    let bridgeFailure: unknown;
     while (Date.now() < deadline) {
+      if (bridgeFailure) throw bridgeFailure;
       const remaining = deadline - Date.now();
       const output = await this.processes.outputPrivateProtocol(
         request.threadId,
@@ -286,7 +300,24 @@ export class JavascriptKernelManager {
           const line = buffer.slice(0, newline);
           buffer = buffer.slice(newline + 1);
           const result = parseJavascriptKernelResult(line, request.requestId);
-          if (result) return result;
+          if (result) {
+            await Promise.all(bridgeCalls);
+            return result;
+          }
+          const codeBridgeRequest = parseJavascriptKernelCodeBridgeRequest(
+            line,
+            request.requestId,
+          );
+          if (codeBridgeRequest) {
+            const pending = this.respondToCodeBridgeCall(
+              request, codeBridgeRequest,
+            )
+              .catch((error: unknown) => {
+                bridgeFailure = error;
+              })
+              .finally(() => bridgeCalls.delete(pending));
+            bridgeCalls.add(pending);
+          }
           newline = buffer.indexOf("\n");
         }
       }
@@ -296,7 +327,48 @@ export class JavascriptKernelManager {
         );
       }
     }
+    if (bridgeFailure) throw bridgeFailure;
     throw new Error("JavaScript kernel evaluation timed out");
+  }
+
+  private async respondToCodeBridgeCall(
+    request: {
+      threadId: string;
+      runId: string;
+      processId: string;
+      requestId: string;
+      signal?: AbortSignal;
+      codeBridge?: JavascriptKernelCodeBridgeDispatcher;
+    },
+    call: Parameters<JavascriptKernelCodeBridgeDispatcher>[0],
+  ): Promise<void> {
+    let response: string;
+    try {
+      if (!request.codeBridge) {
+        throw new Error("JavaScript Code Bridge is unavailable");
+      }
+      const result = await request.codeBridge(call, request.signal);
+      response = formatJavascriptKernelCodeBridgeResponse({
+        evaluationId: request.requestId,
+        callId: call.callId,
+        result,
+      });
+    } catch (error) {
+      response = formatJavascriptKernelCodeBridgeResponse({
+        evaluationId: request.requestId,
+        callId: call.callId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+    await this.processes.writePrivateProtocolInput({
+      threadId: request.threadId,
+      runId: request.runId,
+      processId: request.processId,
+      text: response,
+      appendNewline: true,
+      initiatedBy: "agent",
+      ...(request.signal ? { signal: request.signal } : {}),
+    });
   }
 }
 

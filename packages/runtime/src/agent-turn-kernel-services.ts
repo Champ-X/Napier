@@ -1,4 +1,6 @@
 import type { AgentRuntime } from "./agent-runtime.js";
+import type { AgentLifecyclePipelineHost } from "./lifecycle-extension-pipeline.js";
+export { KERNEL_LIFECYCLE_PIPELINES } from "./agent-lifecycle-kernel-service.js";
 import {
   AgentTurnPipeline,
   DEFAULT_AGENT_TURN_POLICY_ADAPTER,
@@ -71,14 +73,23 @@ export function attachAgentRuntimePipelines(
   runtime: AgentRuntime,
   turnPipeline: AgentTurnPipeline,
   modelCalls: AgentTurnModelCallPipeline,
+  lifecyclePipelines: AgentLifecyclePipelineHost,
 ): () => void {
   const detachTurnPipeline = runtime.attachKernelTurnPipeline(turnPipeline);
   try {
     const detachModelCalls = runtime.attachKernelModelCallPipeline(modelCalls);
-    return () => {
+    try {
+      const detachLifecycles =
+        runtime.attachKernelLifecyclePipelines(lifecyclePipelines);
+      return () => {
+        detachLifecycles();
+        detachModelCalls();
+        detachTurnPipeline();
+      };
+    } catch (error) {
       detachModelCalls();
-      detachTurnPipeline();
-    };
+      throw error;
+    }
   } catch (error) {
     detachTurnPipeline();
     throw error;

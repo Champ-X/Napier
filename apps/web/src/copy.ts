@@ -18,7 +18,7 @@ export const en = {
   branch: "Branch here",
   stop: "Stop run",
   running: "Running",
-  waiting: "Interrupted",
+  waiting: "Waiting",
   idle: "Ready",
   failed: "Needs review",
   composerPlaceholder: "Give Napier a task, question, or durable goal...",

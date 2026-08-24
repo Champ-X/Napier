@@ -6,22 +6,31 @@ import type {
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import {
+  MAX_TOOL_LOOP_GUARD_EXEMPT_TOOLS,
+  MAX_TOOL_LOOP_GUARD_THRESHOLD,
+  MIN_TOOL_LOOP_GUARD_THRESHOLD,
+  TOOL_NAME,
+  hashValue,
+  parseToolLoopGuardContextReceipt,
+  parseToolLoopGuardTriggerReceipt,
+  record,
+} from "./tool-loop-guard-receipts.js";
 
 export const TOOL_LOOP_GUARD_CONTEXT_EVENT = "context.tool_loop_guard";
 export const TOOL_LOOP_GUARD_TRIGGERED_EVENT = "model.tool_loop.detected";
 export const TOOL_LOOP_GUARD_POLICY_REASON = "tool_loop_guard";
-export const MIN_TOOL_LOOP_GUARD_THRESHOLD = 2;
-export const MAX_TOOL_LOOP_GUARD_THRESHOLD = 8;
-export const MAX_TOOL_LOOP_GUARD_EXEMPT_TOOLS = 32;
+export {
+  MAX_TOOL_LOOP_GUARD_EXEMPT_TOOLS,
+  MAX_TOOL_LOOP_GUARD_THRESHOLD,
+  MIN_TOOL_LOOP_GUARD_THRESHOLD,
+} from "./tool-loop-guard-receipts.js";
 
 export const DEFAULT_TOOL_LOOP_GUARD_POLICY: Readonly<ToolLoopGuardPolicy> = {
   enabled: true,
   threshold: 3,
   exemptTools: [],
 };
-
-const SHA256 = /^[a-f0-9]{64}$/u;
-const TOOL_NAME = /^[A-Za-z_][A-Za-z0-9_.:-]{0,127}$/u;
 
 interface ToolLoopTurn {
   responseSeq: number;
@@ -367,7 +376,7 @@ function toolCallSha256FromLedger(
     args["schemaVersion"] === 1 &&
     args["redacted"] === true &&
     typeof args["inputSha256"] === "string" &&
-    SHA256.test(args["inputSha256"])
+    hashValue(args["inputSha256"]) !== undefined
   ) {
     return args["inputSha256"];
   }
@@ -379,7 +388,7 @@ function toolResultSha256FromLedger(
 ): string | undefined {
   if (
     typeof payload["resultSha256"] === "string" &&
-    SHA256.test(payload["resultSha256"])
+    hashValue(payload["resultSha256"]) !== undefined
   ) {
     return payload["resultSha256"];
   }
@@ -387,165 +396,7 @@ function toolResultSha256FromLedger(
     return sha256(payload["output"]);
   }
   return typeof payload["outputSha256"] === "string" &&
-    SHA256.test(payload["outputSha256"])
+    hashValue(payload["outputSha256"]) !== undefined
     ? payload["outputSha256"]
     : undefined;
-}
-
-function parseToolLoopGuardContextReceipt(
-  input: unknown,
-): ToolLoopGuardContextReceipt | undefined {
-  if (!record(input)) return undefined;
-  const keys = [
-    "kind",
-    "schemaVersion",
-    "enabled",
-    "threshold",
-    "exemptToolCount",
-    "exemptToolSetSha256",
-    "policySha256",
-    "contentSha256",
-  ];
-  if (
-    Object.keys(input).length !== keys.length ||
-    keys.some((key) => !(key in input)) ||
-    input["kind"] !== "napier.tool-loop-guard-context" ||
-    input["schemaVersion"] !== 1 ||
-    typeof input["enabled"] !== "boolean"
-  ) {
-    return undefined;
-  }
-  const threshold = boundedInteger(
-    input["threshold"],
-    MIN_TOOL_LOOP_GUARD_THRESHOLD,
-    MAX_TOOL_LOOP_GUARD_THRESHOLD,
-  );
-  const exemptToolCount = boundedInteger(
-    input["exemptToolCount"],
-    0,
-    MAX_TOOL_LOOP_GUARD_EXEMPT_TOOLS,
-  );
-  const enabled = input["enabled"];
-  const exemptToolSetSha256 = hashValue(input["exemptToolSetSha256"]);
-  const policySha256 = hashValue(input["policySha256"]);
-  const contentSha256 = hashValue(input["contentSha256"]);
-  if (
-    threshold === undefined ||
-    exemptToolCount === undefined ||
-    typeof enabled !== "boolean" ||
-    exemptToolSetSha256 === undefined ||
-    policySha256 === undefined ||
-    contentSha256 === undefined
-  ) {
-    return undefined;
-  }
-  const content = {
-    kind: "napier.tool-loop-guard-context" as const,
-    schemaVersion: 1 as const,
-    enabled,
-    threshold,
-    exemptToolCount,
-    exemptToolSetSha256,
-    policySha256,
-  };
-  return sha256(canonicalJson(content)) === contentSha256
-    ? { ...content, contentSha256 }
-    : undefined;
-}
-
-function parseToolLoopGuardTriggerReceipt(
-  input: unknown,
-): ToolLoopGuardTriggerReceipt | undefined {
-  if (!record(input)) return undefined;
-  const keys = [
-    "kind",
-    "schemaVersion",
-    "toolName",
-    "threshold",
-    "attemptCount",
-    "fromSeq",
-    "toSeq",
-    "callSha256",
-    "resultSha256",
-    "attemptSetSha256",
-    "policySha256",
-    "contentSha256",
-  ];
-  if (
-    Object.keys(input).length !== keys.length ||
-    keys.some((key) => !(key in input)) ||
-    input["kind"] !== "napier.tool-loop-guard-trigger" ||
-    input["schemaVersion"] !== 1 ||
-    typeof input["toolName"] !== "string" ||
-    !TOOL_NAME.test(input["toolName"])
-  ) {
-    return undefined;
-  }
-  const threshold = boundedInteger(
-    input["threshold"],
-    MIN_TOOL_LOOP_GUARD_THRESHOLD,
-    MAX_TOOL_LOOP_GUARD_THRESHOLD,
-  );
-  const attemptCount = boundedInteger(
-    input["attemptCount"],
-    MIN_TOOL_LOOP_GUARD_THRESHOLD,
-    MAX_TOOL_LOOP_GUARD_THRESHOLD,
-  );
-  const fromSeq = boundedInteger(input["fromSeq"], 1, Number.MAX_SAFE_INTEGER);
-  const toSeq = boundedInteger(input["toSeq"], 1, Number.MAX_SAFE_INTEGER);
-  const callSha256 = hashValue(input["callSha256"]);
-  const resultSha256 = hashValue(input["resultSha256"]);
-  const attemptSetSha256 = hashValue(input["attemptSetSha256"]);
-  const policySha256 = hashValue(input["policySha256"]);
-  const contentSha256 = hashValue(input["contentSha256"]);
-  if (
-    threshold === undefined ||
-    attemptCount !== threshold ||
-    fromSeq === undefined ||
-    toSeq === undefined ||
-    fromSeq > toSeq ||
-    callSha256 === undefined ||
-    resultSha256 === undefined ||
-    attemptSetSha256 === undefined ||
-    policySha256 === undefined ||
-    contentSha256 === undefined
-  ) {
-    return undefined;
-  }
-  const content = {
-    kind: "napier.tool-loop-guard-trigger" as const,
-    schemaVersion: 1 as const,
-    toolName: input["toolName"],
-    threshold,
-    attemptCount,
-    fromSeq,
-    toSeq,
-    callSha256,
-    resultSha256,
-    attemptSetSha256,
-    policySha256,
-  };
-  return sha256(canonicalJson(content)) === contentSha256
-    ? { ...content, contentSha256 }
-    : undefined;
-}
-
-function hashValue(input: unknown): string | undefined {
-  return typeof input === "string" && SHA256.test(input) ? input : undefined;
-}
-
-function boundedInteger(
-  input: unknown,
-  minimum: number,
-  maximum: number,
-): number | undefined {
-  return Number.isSafeInteger(input) &&
-    Number(input) >= minimum &&
-    Number(input) <= maximum
-    ? Number(input)
-    : undefined;
-}
-
-function record(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }

@@ -8,6 +8,12 @@ import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
 import { MAX_PYTHON_KERNEL_INPUT_BYTES } from "./python-kernel-json-worker.js";
 import {
+  formatPythonKernelCodeBridgeResponse,
+  parsePythonKernelCodeBridgeRequest,
+  type PythonKernelCodeBridgeDispatcher,
+} from "./python-kernel-code-bridge.js";
+import { MAX_PYTHON_KERNEL_BRIDGE_RESPONSE_CHARS } from "./python-kernel-code-bridge-worker.js";
+import {
   parsePythonKernelResult,
   type PythonKernelProtocolResult,
   type PythonKernelValueType,
@@ -30,8 +36,8 @@ import {
 export const DEFAULT_PYTHON_KERNEL_SESSION_TIMEOUT_MS = 120_000;
 export const MIN_PYTHON_KERNEL_SESSION_TIMEOUT_MS = 10_000;
 export const MAX_PYTHON_KERNEL_SESSION_TIMEOUT_MS = 120_000;
-export const PYTHON_KERNEL_PROTOCOL_RESULT_GRACE_MS = 5_000;
-
+const PYTHON_KERNEL_PROTOCOL_RESULT_GRACE_MS = 5_000;
+const PYTHON_KERNEL_CODE_BRIDGE_RESULT_GRACE_MS = 30_000;
 const MAX_PYTHON_KERNEL_PROTOCOL_CHARS = MAX_PYTHON_KERNEL_PROTOCOL_TOTAL_CHARS;
 const MAX_PYTHON_KERNEL_STDERR_MARKER_CHARS =
   Math.max(
@@ -123,6 +129,7 @@ export class PythonKernelManager {
     resultMode?: PythonKernelResultMode;
     timeoutMs?: number;
     signal?: AbortSignal;
+    codeBridge?: PythonKernelCodeBridgeDispatcher;
   }): Promise<PythonKernelEvaluation> {
     const timeoutMs =
       request.timeoutMs ?? DEFAULT_PYTHON_KERNEL_EVALUATION_TIMEOUT_MS;
@@ -157,6 +164,7 @@ export class PythonKernelManager {
           }
         : {}),
       ...(resultMode !== "standard" ? { resultMode } : {}),
+      bridge: Boolean(request.codeBridge),
     };
     const requestSha256 = sha256(canonicalJson(input));
     let written = false;
@@ -177,6 +185,8 @@ export class PythonKernelManager {
         requestId,
         afterCursor: session.nextCursor,
         timeoutMs,
+        runId: request.runId,
+        ...(request.codeBridge ? { codeBridge: request.codeBridge } : {}),
         ...(request.signal ? { signal: request.signal } : {}),
       });
       let processStatus: WorkspaceProcessStatus = "running";
@@ -320,10 +330,16 @@ export class PythonKernelManager {
     requestId: string;
     afterCursor: number;
     timeoutMs: number;
+    runId: string;
     signal?: AbortSignal;
+    codeBridge?: PythonKernelCodeBridgeDispatcher;
   }): Promise<PythonKernelProtocolResult> {
     const deadline =
-      Date.now() + request.timeoutMs + PYTHON_KERNEL_PROTOCOL_RESULT_GRACE_MS;
+      Date.now() +
+      request.timeoutMs +
+      (request.codeBridge
+        ? PYTHON_KERNEL_CODE_BRIDGE_RESULT_GRACE_MS
+        : PYTHON_KERNEL_PROTOCOL_RESULT_GRACE_MS);
     let cursor = request.afterCursor;
     let buffer = "";
     let stderrBuffer = "";
@@ -365,6 +381,13 @@ export class PythonKernelManager {
           buffer = buffer.slice(newline + 1);
           const result = parsePythonKernelResult(line, request.requestId);
           if (result) return result;
+          const codeBridgeRequest = parsePythonKernelCodeBridgeRequest(
+            line,
+            request.requestId,
+          );
+          if (codeBridgeRequest) {
+            await this.respondToCodeBridgeCall(request, codeBridgeRequest);
+          }
           newline = buffer.indexOf("\n");
         }
       }
@@ -375,6 +398,49 @@ export class PythonKernelManager {
       }
     }
     throw new Error("Python kernel evaluation timed out");
+  }
+
+  private async respondToCodeBridgeCall(
+    request: {
+      threadId: string;
+      runId: string;
+      processId: string;
+      requestId: string;
+      signal?: AbortSignal;
+      codeBridge?: PythonKernelCodeBridgeDispatcher;
+    },
+    call: Parameters<PythonKernelCodeBridgeDispatcher>[0],
+  ): Promise<void> {
+    let response: string;
+    try {
+      if (!request.codeBridge) {
+        throw new Error("Python Code Bridge is unavailable");
+      }
+      const result = await request.codeBridge(call, request.signal);
+      response = formatPythonKernelCodeBridgeResponse({
+        evaluationId: request.requestId,
+        callId: call.callId,
+        result,
+      });
+    } catch (error) {
+      response = formatPythonKernelCodeBridgeResponse({
+        evaluationId: request.requestId,
+        callId: call.callId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+    if (response.length > MAX_PYTHON_KERNEL_BRIDGE_RESPONSE_CHARS) {
+      throw new Error("Python Code Bridge response exceeded its limit");
+    }
+    await this.processes.writePrivateProtocolInput({
+      threadId: request.threadId,
+      runId: request.runId,
+      processId: request.processId,
+      text: response,
+      appendNewline: true,
+      initiatedBy: "agent",
+      ...(request.signal ? { signal: request.signal } : {}),
+    });
   }
 }
 

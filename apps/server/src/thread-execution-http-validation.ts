@@ -1,4 +1,10 @@
 import type { PromptRequest, ResumeRunRequest } from "@napier/contracts";
+import type {
+  ModelRoleRouteBinding,
+  ModelRole,
+  ModelRouteRequest,
+} from "@napier/contracts/model-route";
+import type { SubagentRole } from "@napier/contracts";
 import {
   AGENT_CAPABILITY_PRESET_IDS,
   type AgentCapabilityPresetId,
@@ -32,6 +38,7 @@ export function parsePromptRequest(input: unknown): PromptRequest | undefined {
   const record = requestRecord(input, [
     "text",
     "model",
+    "modelRoute",
     "capabilityPreset",
     "sourceContinuityRunId",
   ]);
@@ -48,6 +55,11 @@ export function parsePromptRequest(input: unknown): PromptRequest | undefined {
   const model =
     record["model"] === undefined ? undefined : parseModelRef(record["model"]);
   if (record["model"] !== undefined && !model) return undefined;
+  const modelRoute =
+    record["modelRoute"] === undefined
+      ? undefined
+      : parseModelRouteRequest(record["modelRoute"]);
+  if (record["modelRoute"] !== undefined && !modelRoute) return undefined;
   const capabilityPreset = record["capabilityPreset"];
   if (
     capabilityPreset !== undefined &&
@@ -69,6 +81,7 @@ export function parsePromptRequest(input: unknown): PromptRequest | undefined {
   return {
     text,
     ...(model ? { model } : {}),
+    ...(modelRoute ? { modelRoute } : {}),
     ...(typeof capabilityPreset === "string"
       ? { capabilityPreset: capabilityPreset as AgentCapabilityPresetId }
       : {}),
@@ -76,4 +89,109 @@ export function parsePromptRequest(input: unknown): PromptRequest | undefined {
       ? { sourceContinuityRunId }
       : {}),
   };
+}
+
+const MODEL_ROLES = new Set<ModelRole>([
+  "default",
+  "fast",
+  "reasoning",
+  "vision",
+  "subagent",
+]);
+
+export function parseModelRouteRequest(
+  input: unknown,
+): ModelRouteRequest | undefined {
+  const record = requestRecord(input, [
+    "role",
+    "fallbackModels",
+    "subagentRoles",
+  ]);
+  if (!record) return undefined;
+  const role = record["role"];
+  if (
+    role !== undefined &&
+    (typeof role !== "string" || !MODEL_ROLES.has(role as ModelRole))
+  ) {
+    return undefined;
+  }
+  const rawFallbacks = record["fallbackModels"];
+  if (
+    rawFallbacks !== undefined &&
+    (!Array.isArray(rawFallbacks) || rawFallbacks.length > 4)
+  ) {
+    return undefined;
+  }
+  const fallbackModels = rawFallbacks?.map(parseModelRef);
+  if (fallbackModels?.some((candidate) => candidate === undefined)) {
+    return undefined;
+  }
+  const normalizedFallbacks = fallbackModels as
+    | NonNullable<ModelRouteRequest["fallbackModels"]>
+    | undefined;
+  if (
+    normalizedFallbacks &&
+    new Set(
+      normalizedFallbacks.map(
+        (candidate) => `${candidate.provider}/${candidate.id}`,
+      ),
+    ).size !== normalizedFallbacks.length
+  ) {
+    return undefined;
+  }
+  const subagentRoles = parseSubagentRoleRoutes(record["subagentRoles"]);
+  if (record["subagentRoles"] !== undefined && !subagentRoles) {
+    return undefined;
+  }
+  return {
+    ...(typeof role === "string" ? { role: role as ModelRole } : {}),
+    ...(normalizedFallbacks ? { fallbackModels: normalizedFallbacks } : {}),
+    ...(subagentRoles ? { subagentRoles } : {}),
+  };
+}
+
+const SUBAGENT_ROLES = [
+  "researcher",
+  "reviewer",
+  "general",
+  "coder",
+] as const satisfies readonly SubagentRole[];
+
+function parseSubagentRoleRoutes(
+  input: unknown,
+): ModelRouteRequest["subagentRoles"] | undefined {
+  if (input === undefined) return undefined;
+  const roles = requestRecord(input, SUBAGENT_ROLES);
+  if (!roles || Object.keys(roles).length === 0) return undefined;
+  const parsed: Partial<Record<SubagentRole, ModelRoleRouteBinding>> = {};
+  for (const [role, inputBinding] of Object.entries(roles)) {
+    const binding = requestRecord(inputBinding, ["model", "fallbackModels"]);
+    const model = parseModelRef(binding?.["model"]);
+    const rawFallbacks = binding?.["fallbackModels"];
+    if (
+      !binding ||
+      !model ||
+      (rawFallbacks !== undefined &&
+        (!Array.isArray(rawFallbacks) || rawFallbacks.length > 4))
+    ) {
+      return undefined;
+    }
+    const fallbackModels = rawFallbacks?.map(parseModelRef);
+    if (fallbackModels?.some((candidate) => candidate === undefined)) {
+      return undefined;
+    }
+    const normalized = fallbackModels as ModelRoleRouteBinding["fallbackModels"];
+    const keys = [
+      `${model.provider}/${model.id}`,
+      ...(normalized ?? []).map(
+        (candidate) => `${candidate.provider}/${candidate.id}`,
+      ),
+    ];
+    if (new Set(keys).size !== keys.length) return undefined;
+    parsed[role as SubagentRole] = {
+      model,
+      ...(normalized ? { fallbackModels: normalized } : {}),
+    };
+  }
+  return parsed;
 }

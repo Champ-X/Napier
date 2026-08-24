@@ -44,6 +44,7 @@ describe("thread title", () => {
   });
 
   it("recognizes the default title", () => {
+    expect(isDefaultThreadTitle("新会话")).toBe(true);
     expect(isDefaultThreadTitle("Untitled ledger")).toBe(true);
     expect(isDefaultThreadTitle("挂谷猜想")).toBe(false);
   });

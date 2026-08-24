@@ -1,7 +1,7 @@
 {
   "kind": "napier.s1-shell-sandbox-readiness-stage22",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-21T05:11:22.624Z",
+  "generatedAt": "2026-08-23T21:41:19.832Z",
   "implementation": {
     "modelSha256": "5adf9c20cd914638326e744b7a90ab9d9e956240fa24adb3b34994401d46691d",
     "checkerSha256": "174fb44f4e628224815d34d92e06407f8aa6831d89dd8d7ac8cefd6c65c0d065",
@@ -70,7 +70,7 @@
         {
           "kind": "sandbox-product-acceptance-stage13",
           "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-          "sha256": "aa9466edf9e9d7fd47a2e9503fb3df5255219bbd70730fde9dd279f7028e5bea",
+          "sha256": "3afbb19af0ba14886b7a04fe54497a17b087caac700a2d5ee3a803a28a05a4eb",
           "verifierSha256": "0ab91832a93c9a7bbddc676d8d516c9fa5923f1666a5742b59a1da3d29bc892e"
         },
         {
@@ -86,7 +86,7 @@
           "verifierSha256": "e1272cfa34b7bc00913198faf222007b9403b3ce799d9cfd918b68920bcab386"
         }
       ],
-      "evidenceSetSha256": "5c9c58dd9b3abd548df380686ce66769d1e62896e4977de968d485876ab68a9c"
+      "evidenceSetSha256": "4d9eb4bdb1b6c7eb5971add4341b067fa7aee0fb98dd20551e114b630f54f819"
     },
     {
       "id": "daemon_execution_recovery",
@@ -95,7 +95,7 @@
         {
           "kind": "sandbox-product-acceptance-stage13",
           "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-          "sha256": "aa9466edf9e9d7fd47a2e9503fb3df5255219bbd70730fde9dd279f7028e5bea",
+          "sha256": "3afbb19af0ba14886b7a04fe54497a17b087caac700a2d5ee3a803a28a05a4eb",
           "verifierSha256": "0ab91832a93c9a7bbddc676d8d516c9fa5923f1666a5742b59a1da3d29bc892e"
         },
         {
@@ -129,7 +129,7 @@
           "verifierSha256": "e1272cfa34b7bc00913198faf222007b9403b3ce799d9cfd918b68920bcab386"
         }
       ],
-      "evidenceSetSha256": "1db7add723dda623ee627dfc0009efaf27536d293ab1c0a7dbd09004a8b8768d"
+      "evidenceSetSha256": "407a39a682e3066d448b7fc8d734bda3c39e364561dd7a85597d3471a2dca1dc"
     },
     {
       "id": "isolation_and_fail_closed_limits",
@@ -156,7 +156,7 @@
         {
           "kind": "sandbox-product-acceptance-stage13",
           "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-          "sha256": "aa9466edf9e9d7fd47a2e9503fb3df5255219bbd70730fde9dd279f7028e5bea",
+          "sha256": "3afbb19af0ba14886b7a04fe54497a17b087caac700a2d5ee3a803a28a05a4eb",
           "verifierSha256": "0ab91832a93c9a7bbddc676d8d516c9fa5923f1666a5742b59a1da3d29bc892e"
         },
         {
@@ -166,7 +166,7 @@
           "verifierSha256": "d733b13f7da23d1397d236cdb55ffcca108b7a696e5b89d94f2f94a1fc503946"
         }
       ],
-      "evidenceSetSha256": "9258a4aee304b63831dcde2a87068881ae4736d71c4f5a16fe240cecb29ad3f5"
+      "evidenceSetSha256": "0c903eb63379dc8dfe65b6c481812f5046e47e1203580c113f0263310dd97a03"
     },
     {
       "id": "run_scoped_mode_and_profile_upgrade",
@@ -175,14 +175,14 @@
         {
           "kind": "profile-upgrade-stage21",
           "path": "docs/artifacts/profile-upgrade-stage21.json",
-          "sha256": "f2d1bdac348221b613563358e07219ed96d343fd2c0f17d37607e2a7782a0263",
+          "sha256": "b6e50e18865f39fb47eb1bb0cc1d5f0986742efd9bb0d2d88e631ea210613d13",
           "verifierSha256": "fa2ee85bfb674ee0bc27af7ec1f98395af42bd266d39a2cd4d4de25b0802d9bb"
         }
       ],
-      "evidenceSetSha256": "136925e76c086272f2d81929a0877922b3584a81951964a00144717e1e888c9f"
+      "evidenceSetSha256": "a6858bc018a0611b379039ab1f95c411e70e36767660dee52c68a8629458b61e"
     }
   ],
-  "requirementSetSha256": "4b5fe0720f66d12e59d3a16c7c2a504aae406370af05f33c4f310ef3be54da8e",
+  "requirementSetSha256": "481e66e5271205fc2f2f76d6f7921322f97bd52b06d82675088af7c94507ade3",
   "externalRequirements": [
     {
       "id": "public_signed_external_release",
@@ -222,5 +222,5 @@
       "windows_host_product_acceptance"
     ]
   },
-  "contentSha256": "8bfe669866854bcbef37c3f42d084430134e3bded750de1b7594b88dd0293f2d"
+  "contentSha256": "f83525fad4c46e5bedcfe29d813e6ba54089dfae070cbb39016b6d52cf2f98e6"
 }

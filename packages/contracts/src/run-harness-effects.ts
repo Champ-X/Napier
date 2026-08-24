@@ -26,6 +26,10 @@ export interface RunHarnessContextTokenMetrics {
   activeEstimatedTotalTokens?: number;
   systemPromptTokenShare?: number;
   toolDefinitionTokenShare?: number;
+  calibrationObservationCount?: number;
+  calibratedObservationCount?: number;
+  calibrationUnavailableCount?: number;
+  p95InputUnderestimateRatio?: number;
 }
 
 export interface RunHarnessOverflowMetrics {

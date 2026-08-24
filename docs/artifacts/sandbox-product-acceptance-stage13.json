@@ -1,7 +1,7 @@
 {
   "kind": "napier.sandbox-product-acceptance-stage13",
   "schemaVersion": 5,
-  "generatedAt": "2026-08-21T05:11:20.178Z",
+  "generatedAt": "2026-08-23T21:40:47.602Z",
   "image": {
     "id": "sha256:aac9f04b81bf3994d8c4629381ff11eb728094c7a2facd452d7ff99e224ec662",
     "platform": "linux/arm64",
@@ -31,8 +31,8 @@
     "cliReadinessSha256": "b767d0e60f06a3cbd427b92e7518c8cc52635e704d9d2c3c9cdc42e0b2efe8e1",
     "cliPublicErrorSha256": "09241dab238e3d4011e88ca14da98f5225ea41977300ebfb7416b3eb329c0ed8",
     "capabilityPresetsSha256": "9f4a572d3f1db22d57956d57da2dbd00058d0e8162432c72b50e0622924c9133",
-    "agentRuntimeSha256": "8d0838f2c999784390d8448810bb49584eec895c694052295a30f573d6899a26",
-    "agentCapabilityRuntimeSha256": "135b5286c8c4f75052182a683079a417bc386d97d3426f37aa11cb166e385854",
+    "agentRuntimeSha256": "e6217fce48e3eda5953182d0c9879622a03920b49fc1a76241c596a4960b17e8",
+    "agentCapabilityRuntimeSha256": "55d9d9eecba855895befa3c3d5a5cd0e3f77ca339e64a6cc2be6a22e4f39397d",
     "processRunReadinessSha256": "e0499064247ae768059a9374b4f70cf6e59da89aba7987d4272fc6f5f9837662",
     "serverRunReadinessSha256": "24fbb7d63f8dce57f5dda22f8071e0995351d2be1ced233fc4f59cb98f51e86e",
     "webComposerModeSha256": "6be6cef0a1f278e47e070829f73aa25335dc936b30e2e196189ae8c28c12df75",
@@ -66,8 +66,8 @@
       "dap_ready",
       "service_ready"
     ],
-    "installationSha256": "4a216a41882228c59f06787c9f03df631e53b1154c05e6447ec5cbf277c65fd8",
-    "resultSha256": "477573609c1c18578ed8e99b8f7d3d272eb4eb7ef6e799f0683b00c27c4efca4"
+    "installationSha256": "57243835df48bca3533ffbb50118fc5a496e2d71dd49f8e8f99c9ead3913c85c",
+    "resultSha256": "96a17d34e74f39f631b2b140e9a74e1f46d75de1377b224f5c040ca26fd52d93"
   },
   "doctor": {
     "status": "degraded",
@@ -78,7 +78,7 @@
     "browserUseLocalCode": "browser_use_local_missing",
     "sandboxCode": "sandbox_ready",
     "verificationCode": "verification_ready",
-    "reportSha256": "5dad9ab98d3791461ad342d6c91f0b5672161b198085b7e8e53cbd8e85fbfe86"
+    "reportSha256": "680855fd9855d64110cec98f8ced1aa1b0e9ec66c088ffd356fa3b18a11829a6"
   },
   "verification": {
     "sandbox": "oci-container",
@@ -87,14 +87,14 @@
       "verifierVersion": "5.9.3",
       "verifierSha256": "39c8059ac5a45bf7332a67d8e074d21c98df1df9eaad232d8175b74f527e6479",
       "runtimeIdentitySha256": "da20244a53af45d4db9594cc7e40c3afa787f2b3415244e4468e56658ea9af45",
-      "resultSha256": "4f3db19499d6640d0dec1aef3532fb0202bc2232b4072bdb3965cfa6cd1ea773"
+      "resultSha256": "e0717a94a935c484b8bffee6e8cf6b17e0d3aed79e8bcdf49c7fc2c6c2d8c82a"
     },
     "test": {
       "status": "passed",
       "verifierVersion": "4.1.9",
       "verifierSha256": "e72480c6b780df9df05557be9f2ee3aac4952202c409196bbbaf5a914d66da4d",
       "runtimeIdentitySha256": "da20244a53af45d4db9594cc7e40c3afa787f2b3415244e4468e56658ea9af45",
-      "resultSha256": "cd9605aeea0edf59461ad20dd578567a586ee045f8fddeef836409ae6b290bda"
+      "resultSha256": "19a63961128adc39b944fdb4222be73476c92a12b8ac73ba2c8c129233fad076"
     }
   },
   "service": {
@@ -102,24 +102,24 @@
     "healthChecked": true,
     "cancelled": true,
     "endpointClosed": true,
-    "identitySha256": "78fd688e846f89969125a6861f3424dd2e4300b92e7db10196da25d8a4496a5c",
-    "endpointSha256": "104c4867db0c964e2c4ccd2903ca1708afd97785a1e37755cf22d851d049d640"
+    "identitySha256": "14af0c8354edfaf5c60528b149639368f93f671d40e40f4d3f842e087a4c54db",
+    "endpointSha256": "35d3866a17a612818c525d1db79ab2b43644f12a83c36086ac81177e60aed46d"
   },
   "restart": {
     "preRestartStatus": "running",
     "reopenedStatus": "interrupted",
     "unknownOutcome": true,
     "staleOutputExposed": false,
-    "processSha256": "1806e0b6ce45b857129cc3ce00f08af0f6ebb9568e362127b46354f1891ce079"
+    "processSha256": "c467dfc8c9370a2268ae4f4e4ceaccafff087dc4f1daa2a73372e9df224d4b1a"
   },
   "uninstall": {
     "previewStatus": "installed",
     "active": true,
-    "previewSha256": "5dcc98c46c15a73e76ff255a29d778171bacaae4759569a02f0449645ad8acfc",
+    "previewSha256": "58b48d4b7cffa9f627b9400673518f4f0be303198d2b2bd75d1beb741128ce88",
     "status": "removed",
     "imageRetained": true,
     "bindingRemoved": true,
-    "resultSha256": "20fefdfb4466fab69ded665975b8a7e7c6208934d54f62460058eea0cc03d6ac"
+    "resultSha256": "547b6fa2648c9f49cbce761f62248ffd8956ab983e40f5b5baab86a28f6ed74c"
   },
   "firstUse": {
     "freshWorkspace": true,
@@ -143,15 +143,15 @@
         "dap_ready",
         "service_ready"
       ],
-      "installationSha256": "98f24dea64a18f4f91a006db2bf9e056c5e667da804788d667768eb21c51a204",
-      "resultSha256": "c17ba068ef611af2550a82bc72f98f108605617524d56a346b625de2ba47d7c8"
+      "installationSha256": "3bb52315ba05f970d95ebcf32851dbf748a56395ce148aeae4aee71dda3d3974",
+      "resultSha256": "8e0685e5c645c7659780b454ea5c88db7119964d19d79bbba3b401b8c94bdb93"
     },
     "profile": {
       "agentRevision": 1,
-      "profileSha256Before": "d5862a4abfe6055e27ca310927dee7504d6bb8860b5d36e043c76ac9d006a1ac",
-      "profileSha256After": "d5862a4abfe6055e27ca310927dee7504d6bb8860b5d36e043c76ac9d006a1ac",
-      "revisionSetSha256Before": "9082284ae074239d56da8abceca6ff460a43c98bdf5607a521215205ede0e438",
-      "revisionSetSha256After": "9082284ae074239d56da8abceca6ff460a43c98bdf5607a521215205ede0e438",
+      "profileSha256Before": "adfd252b7939ed2a1ee837e46bb6bec35b5ffa31db231572b6bb5bfa2f2bd599",
+      "profileSha256After": "adfd252b7939ed2a1ee837e46bb6bec35b5ffa31db231572b6bb5bfa2f2bd599",
+      "revisionSetSha256Before": "fc1792b36f8b23a6080c027fdaa25b0b5901f310d15d4b5e65cd24a396b2dcd6",
+      "revisionSetSha256After": "fc1792b36f8b23a6080c027fdaa25b0b5901f310d15d4b5e65cd24a396b2dcd6",
       "revisionCountBefore": 1,
       "revisionCountAfter": 1,
       "credentialCountBefore": 0,
@@ -169,13 +169,13 @@
       "toolPolicy": "workspace",
       "workspaceWrite": true,
       "processExecution": true,
-      "configurationSha256": "e31010f110178899b118f0b5b0314d2eb04d663a04c969d410f7d98c86c4bf71",
+      "configurationSha256": "3c343326bc49be71bc82812201ab8e1533f744b04a7d6cf8564d781cd3bdb9cb",
       "promptSha256": "59e9b2729b82482e38781de64646721738437fbb39326496ce7ce39f737f13c2",
       "frameCount": 17,
       "stdoutBytes": 27777,
-      "stdoutSha256": "8af15adfcdc1fe14de7bed012a584662cbb5d45806f8bb75daac8aef1eb54817",
-      "threadIdSha256": "f665927d441257af0cc0f26e8a2416871b69da1bc3a42f1483bfafd6211e6115",
-      "runIdSha256": "34e3dcc462985fd39e47a183c84b0e4ade8a8bb57f5373f3641cfde49b44fe4f"
+      "stdoutSha256": "8cb16fef9a73519d3e7013cda305c5a8da5c716e158866e9498858b6b7bb9191",
+      "threadIdSha256": "9f37424e0520fe59c23879023688006e302cae57ac384bef09a5108116b293d7",
+      "runIdSha256": "e4e9b775e8cc7f6fba4f032f65f03b9f795a297cbe67b8b341f3923d1d71742a"
     },
     "doctor": {
       "status": "degraded",
@@ -193,17 +193,17 @@
       "dapCode": "dap_ready",
       "verificationCode": "verification_ready",
       "serviceCode": "service_ready",
-      "reportSha256": "adc5990c11e2100bd475e45d48d0a3b506ed48a3a53132165b7196e5d3220f02"
+      "reportSha256": "8cbf1615436c6d2393eeb9847256069f9ca18f2c04d7c192fcdc62b37635e35a"
     },
     "uninstall": {
       "previewStatus": "installed",
       "active": true,
-      "previewSha256": "85a895154a9bfcf4ac6b66d9f5fdc2e8ff87ba9bc106cee0b6e082d2d598c239",
+      "previewSha256": "52c3eb4ebeca7b3b5e2da00b8fd9cb5f5cdacdd9fee4392053371fb7e7b117d4",
       "status": "removed",
       "imageRetained": true,
       "bindingRemoved": true,
       "finalStatus": "not_installed",
-      "resultSha256": "c80382427ae02760e32806bca1438155a973136fc4e5fa7ca1b10074dc7f03bf"
+      "resultSha256": "039f60f6307e94896bb23ee2903a2e5a33b44d2a7aa03c1b37f612d99780d252"
     },
     "resourceClosure": {
       "exactBaselineRestored": true,
@@ -220,12 +220,12 @@
       "invalidCode": "sandbox_configured_invalid",
       "remediationId": "repair_invalid_sandbox",
       "exactUninstallGuidance": true,
-      "invalidReportSha256": "2d576fcca13c84de82f4899e2a3402c0ebaff52abe82b87ed9a8fe6dd848fc9d",
+      "invalidReportSha256": "49368ae642f270e6f8af5f684337adf9b339a25d86a93912cda5bdf7d1bec38c",
       "repairedPassedCount": 11,
       "repairedWarningCount": 1,
       "repairedSkippedCount": 3,
       "repairedBrowserUseLocalCode": "browser_use_local_missing",
-      "repairedReportSha256": "a00617d9add0c05f547af0b5b3b25599b93f393eeebea65c0963fb0ee3a502fd"
+      "repairedReportSha256": "f6e86d9770785e1539d80f81ccdf547ad833b85145d1463fb0b701c51971ba21"
     },
     "blockedRun": {
       "status": "blocked",
@@ -262,14 +262,14 @@
         "dap_ready",
         "service_ready"
       ],
-      "installationSha256": "f19262ce0a276bd66a181cb8c072d92a23f77f5584ddfcef7fe2a0479e83678e",
-      "resultSha256": "7412f253302a5fb82b03e70859599e67404a1dd4a3b22ee5d73763c153c34d73"
+      "installationSha256": "bbf6ade242367070ea3d1aeb9d77fbca07036042dc1efc8d187ecac2c5686fa5",
+      "resultSha256": "3fca966b8f2c324cd1c740e7d14cc74ad40d23924dad7e8c9e3909369933839b"
     },
     "profile": {
-      "profileSha256Before": "b43a84be911e272221083123295c7bcfcb3850f1da4f1758891109efc5e61daf",
-      "profileSha256After": "b43a84be911e272221083123295c7bcfcb3850f1da4f1758891109efc5e61daf",
-      "revisionSetSha256Before": "ab166e3ff903bc3d56b9324edd85c5e28ed3d7b90c51293719fd03732ded4974",
-      "revisionSetSha256After": "ab166e3ff903bc3d56b9324edd85c5e28ed3d7b90c51293719fd03732ded4974",
+      "profileSha256Before": "df038678374f9cd8f0e4913cf56c98b77712bd3a3994760258dd2280d7f1d24c",
+      "profileSha256After": "df038678374f9cd8f0e4913cf56c98b77712bd3a3994760258dd2280d7f1d24c",
+      "revisionSetSha256Before": "7d2b9642ab062fb54e3a2e58608889147c0e910eceb130b3a71bc65f282f1ca8",
+      "revisionSetSha256After": "7d2b9642ab062fb54e3a2e58608889147c0e910eceb130b3a71bc65f282f1ca8",
       "revisionCountBefore": 2,
       "revisionCountAfter": 2,
       "credentialCountBefore": 0,
@@ -280,10 +280,10 @@
       "capabilityPreset": "coding",
       "toolPolicy": "workspace",
       "processExecution": true,
-      "configurationSha256": "692efef71e6c054c958f3f4eaf601f078875b548950d6828825efe8bfd46013f",
+      "configurationSha256": "d498f10db81de53ba0b733284d0bdf42985d391ea054b32afeab944c7bf0a382",
       "promptSha256": "335b1f498345fc41f0356e9574fc1856ba8f6148e8432634ee4827c1fd464f21",
-      "runIdSha256": "4d456f59f8db8b7c5fd2c1ca00619e20adfc54d302b4aaf770034cbdd1ec647b",
-      "threadIdSha256": "20ac30f8af857c5c38ede6f6a7f65d93e57e03fd21cbf6ec6013372f1f9eb18e"
+      "runIdSha256": "65b4b3f7c3a1411c499d4f92d4b1dc1d24c0b054198ba7a0481dd2f53e7d019b",
+      "threadIdSha256": "a0848b00055751ebe4efb52926740345ebcbbc26bf0911c0a67e17ee448cda16"
     },
     "resourceClosure": {
       "exactBaselineRestored": true,
@@ -297,7 +297,7 @@
     "preview": {
       "status": "ready",
       "staticLabelAccepted": true,
-      "previewSha256": "d9f781a0fb93b66fd1b37ab3e3ad2fc191273fb065a049dc77e7b6f24bd4afac"
+      "previewSha256": "43fe6af06978de1ccf35286a87a4e1590a0da4577940951594bc4e1a222c7a50"
     },
     "repair": {
       "trigger": "image_toolchain_identity",
@@ -315,14 +315,14 @@
         "dap_ready",
         "service_ready"
       ],
-      "installationSha256": "daa4ab064faa9cc84ad3fedb6342e83a047b8559972b5569d70a082a2844f877",
-      "resultSha256": "4f7f26bf313fe86bb53a719bfed792e231110fe469a4bf4a98cb61347161e47f"
+      "installationSha256": "309b64182364c68b909a64dac13fc07348eb0663ca7c6f88a41c0d724a9c15ef",
+      "resultSha256": "1f75be7b0bebb01a6215db3abcf2cf392bf4016f2a4410c32309e2d84c0500df"
     },
     "uninstall": {
       "status": "removed",
       "imageRetained": true,
       "bindingRemoved": true,
-      "resultSha256": "2be5ce3db5516ae1ff99bfcec1ca74a215e07bec1b2482a75df80e443447f26c"
+      "resultSha256": "d8b890ad3893250a26362615964ada1aa6f33c3745f6be175cd3d473a19efaef"
     },
     "resourceClosure": {
       "exactBaselineRestored": true,
@@ -361,5 +361,5 @@
       "Windows and Linux host product acceptance"
     ]
   },
-  "contentSha256": "48c0af6991501305de7f7076ac11be322fb5bc1741fb117f0d0d75806684090f"
+  "contentSha256": "976639b817f71dc8203fe1ab28d868330e91c49537476b289424c45bf620f2c1"
 }

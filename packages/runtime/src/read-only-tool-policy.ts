@@ -7,6 +7,7 @@ import { CORE_STATELESS_READ_TOOL_NAMES } from "./read-only-tool-names.js";
 
 const READ_ONLY_TOOLS = new Set([
   ...CORE_STATELESS_READ_TOOL_NAMES,
+  "capability",
   "web_fetch",
   "web_search",
 ]);

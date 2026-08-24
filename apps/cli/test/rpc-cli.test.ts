@@ -1,9 +1,7 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { once } from "node:events";
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { rm } from "node:fs/promises";
 import path from "node:path";
-import { createInterface } from "node:readline";
 
 import {
   exportThreadReplayBundle,
@@ -13,7 +11,13 @@ import {
 } from "@napier/runtime";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { parseCliArgs } from "../src/cli-options.js";
+import {
+  createFixture,
+  minimalEnv,
+  record,
+  RpcChild,
+  rpcCliTemporaryRoots,
+} from "./rpc-cli-fixture.js";
 import {
   defineRpcBlockedWorkflowManifest,
   defineRpcExperimentWorkflowManifest,
@@ -21,7 +25,6 @@ import {
   defineRpcWorkflowManifest,
 } from "./rpc-workflow-fixture.js";
 
-const temporaryRoots: string[] = [];
 const openChildren = new Set<ChildProcessWithoutNullStreams>();
 
 afterEach(async () => {
@@ -35,29 +38,13 @@ afterEach(async () => {
   );
   openChildren.clear();
   await Promise.all(
-    temporaryRoots
+    rpcCliTemporaryRoots
       .splice(0)
       .map((root) => rm(root, { recursive: true, force: true })),
   );
 });
 
 describe("Napier RPC CLI", () => {
-  it("parses the dedicated long-lived RPC command", () => {
-    expect(
-      parseCliArgs(["rpc", "--workspace", ".", "--data-root", ".napier-rpc"]),
-    ).toEqual({
-      kind: "rpc",
-      options: {
-        workspace: ".",
-        dataRoot: ".napier-rpc",
-      },
-    });
-    expect(() => parseCliArgs(["rpc", "--workspace", ".", "--jsonl"])).toThrow(
-      "--jsonl cannot",
-    );
-    expect(() => parseCliArgs(["rpc"])).toThrow("--workspace is required");
-  });
-
   it("runs and continues a real Agent through the built stdio process", async () => {
     const fixture = await createFixture();
     const child = spawn(
@@ -998,68 +985,3 @@ describe("Napier RPC CLI", () => {
     store.close();
   }, 30_000);
 });
-
-class RpcChild {
-  private readonly received: Array<Record<string, unknown>> = [];
-  private readonly stderrChunks: string[] = [];
-
-  constructor(private readonly child: ChildProcessWithoutNullStreams) {
-    createInterface({ input: child.stdout }).on("line", (line) => {
-      this.received.push(JSON.parse(line) as Record<string, unknown>);
-    });
-    child.stderr.on("data", (chunk: Buffer) => {
-      this.stderrChunks.push(chunk.toString("utf8"));
-    });
-  }
-
-  send(value: unknown): void {
-    this.child.stdin.write(`${JSON.stringify(value)}\n`);
-  }
-
-  messages(): Array<Record<string, unknown>> {
-    return [...this.received];
-  }
-
-  stderr(): string {
-    return this.stderrChunks.join("");
-  }
-
-  async waitForId(
-    id: string | number | null,
-  ): Promise<Record<string, unknown>> {
-    const deadline = Date.now() + 10_000;
-    while (Date.now() < deadline) {
-      const message = this.received.find((candidate) => candidate["id"] === id);
-      if (message) return message;
-      if (this.child.exitCode !== null) {
-        throw new Error(`RPC child exited early: ${this.stderr()}`);
-      }
-      await new Promise((resolve) => setTimeout(resolve, 10));
-    }
-    throw new Error(`Timed out waiting for RPC response ${String(id)}`);
-  }
-}
-
-async function createFixture() {
-  const root = await mkdtemp(path.join(tmpdir(), "napier-rpc-cli-"));
-  temporaryRoots.push(root);
-  const workspaceRoot = path.join(root, "workspace");
-  const dataRoot = path.join(root, "data");
-  await mkdir(workspaceRoot);
-  return { root, workspaceRoot, dataRoot };
-}
-
-function minimalEnv(): NodeJS.ProcessEnv {
-  return {
-    PATH: process.env.PATH,
-    TMPDIR: process.env.TMPDIR,
-    TMP: process.env.TMP,
-    TEMP: process.env.TEMP,
-  };
-}
-
-function record(value: unknown): Record<string, unknown> | undefined {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : undefined;
-}

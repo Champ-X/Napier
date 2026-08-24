@@ -9,9 +9,11 @@ import type {
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
   measureModelContext,
+  measureModelContextWithProvider,
   type ModelContextTokenMeasurement,
 } from "./model-context-token-meter.js";
 import type { CompiledPromptArtifact } from "./prompt-compiler.js";
+import type { TokenMeterRegistry } from "./token-meter-provider.js";
 
 export interface ModelContextTokenPressureReceipt {
   kind: "napier.model-context-token-pressure";
@@ -23,8 +25,14 @@ export interface ModelContextTokenPressureReceipt {
   recoveryAttempt: 0 | 1;
   meterVersion: string;
   estimateMethod: string;
+  meterProviderId: string;
+  contentClass: "text" | "structured" | "multimodal";
+  fallbackApplied: boolean;
   calibrationId: string;
   calibrationBytesPerTokenMilli: number;
+  calibrationSampleCount: number;
+  calibrationSafetyFactorPpm: number;
+  calibrationP95UnderestimateRatio: number;
   contextWindowTokens: number;
   systemPromptEstimatedTokens: number;
   toolDefinitionEstimatedTokens: number;
@@ -35,6 +43,8 @@ export interface ModelContextTokenPressureReceipt {
   safetyReserveTokens: number;
   originalEstimatedTotalTokens: number;
   activeEstimatedTotalTokens: number;
+  originalBaseEstimatedInputTokens: number;
+  activeBaseEstimatedInputTokens: number;
   originalMessageCount: number;
   activeMessageCount: number;
   removedMessageCount: number;
@@ -129,6 +139,74 @@ export function projectModelContextTokenPressure(input: {
   };
 }
 
+export async function projectModelContextTokenPressureWithProvider(
+  input: {
+    model: Model<Api>;
+    context: Context;
+    options: SimpleStreamOptions;
+    compiledPrompt: CompiledPromptArtifact;
+    modelAttempt: number;
+    recoveryAttempt: 0 | 1;
+  },
+  registry: TokenMeterRegistry,
+): Promise<ModelContextTokenPressureProjection> {
+  const original = await measureModelContextWithProvider(input, registry);
+  if (
+    input.recoveryAttempt === 0 &&
+    original.estimatedTotalTokens <= original.contextWindowTokens
+  ) {
+    return {
+      context: input.context,
+      receipt: receipt(input, original, original, 0, 0, "within_budget"),
+    };
+  }
+  const units = completeMessageUnits(input.context.messages);
+  const protectedUnitIndex = latestUserUnitIndex(units);
+  let removedUnitCount = 0;
+  let removedMessageCount = 0;
+  let active = original;
+  while (
+    (active.estimatedTotalTokens > active.contextWindowTokens ||
+      (input.recoveryAttempt === 1 && removedUnitCount === 0)) &&
+    removedUnitCount < protectedUnitIndex
+  ) {
+    removedMessageCount += units[removedUnitCount]!.length;
+    removedUnitCount += 1;
+    active = await measureModelContextWithProvider(
+      {
+        ...input,
+        context: {
+          ...input.context,
+          messages: input.context.messages.slice(removedMessageCount),
+        },
+      },
+      registry,
+    );
+  }
+  const status =
+    active.estimatedTotalTokens <= active.contextWindowTokens &&
+    (input.recoveryAttempt === 0 || removedUnitCount > 0)
+      ? "projected"
+      : "unavailable";
+  return {
+    context:
+      removedMessageCount > 0
+        ? {
+            ...input.context,
+            messages: input.context.messages.slice(removedMessageCount),
+          }
+        : input.context,
+    receipt: receipt(
+      input,
+      original,
+      active,
+      removedUnitCount,
+      removedMessageCount,
+      status,
+    ),
+  };
+}
+
 function receipt(
   input: { model: Model<Api>; modelAttempt: number; recoveryAttempt: 0 | 1 },
   original: ModelContextTokenMeasurement,
@@ -146,9 +224,15 @@ function receipt(
     modelAttempt: input.modelAttempt,
     recoveryAttempt: input.recoveryAttempt,
     meterVersion: original.meterVersion,
-    estimateMethod: original.estimateMethod,
+    estimateMethod: active.estimateMethod,
+    meterProviderId: active.meterProviderId,
+    contentClass: active.contentClass,
+    fallbackApplied: active.fallbackApplied,
     calibrationId: original.calibration.id,
     calibrationBytesPerTokenMilli: original.calibration.bytesPerTokenMilli,
+    calibrationSampleCount: active.calibrationSampleCount,
+    calibrationSafetyFactorPpm: active.calibrationSafetyFactorPpm,
+    calibrationP95UnderestimateRatio: active.calibrationP95UnderestimateRatio,
     contextWindowTokens: original.contextWindowTokens,
     systemPromptEstimatedTokens: original.systemPrompt.estimatedTokens,
     toolDefinitionEstimatedTokens: original.tools.estimatedTokens,
@@ -159,6 +243,8 @@ function receipt(
     safetyReserveTokens: original.safetyReserveTokens,
     originalEstimatedTotalTokens: original.estimatedTotalTokens,
     activeEstimatedTotalTokens: active.estimatedTotalTokens,
+    originalBaseEstimatedInputTokens: original.baseEstimatedInputTokens,
+    activeBaseEstimatedInputTokens: active.baseEstimatedInputTokens,
     originalMessageCount: original.messages.count,
     activeMessageCount: active.messages.count,
     removedMessageCount,

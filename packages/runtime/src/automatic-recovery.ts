@@ -50,7 +50,7 @@ const UNSAFE_TOOLS = new Set([
   "create_plan",
   "update_plan_step",
   "update_plan_artifact",
-  "delegate_task",
+  ..."delegate_task subagent_start subagent_send subagent_inspect subagent_cancel subagent_collect".split(" "),
 ]);
 const BLOCK_REASON_ORDER: readonly AutomaticRecoveryBlockReason[] = [
   "configuration_missing",

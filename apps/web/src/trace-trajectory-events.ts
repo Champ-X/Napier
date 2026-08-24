@@ -11,6 +11,7 @@ export function traceTrajectoryIsKeyEvent(
   const type = event.event.type;
   if (type === "message.user" || type === "message.assistant") return true;
   if (type === "model.response") return true;
+  if (type.startsWith("route_")) return true;
   if (
     type === "tool.completed" ||
     type === "tool.failed" ||
@@ -67,6 +68,13 @@ export function attachTraceTrajectoryEventDurations<
 
 export function traceTrajectoryCallKey(event: RunEvent): string | undefined {
   const payload = record(event.payload);
+  if (
+    (event.type === "route_attempt_started" ||
+      event.type === "route_attempt_ended") &&
+    typeof payload?.["attemptId"] === "string"
+  ) {
+    return `route:${event.runId}:${payload["attemptId"]}`;
+  }
   if (typeof payload?.["callId"] === "string") {
     return `tool:${event.runId}:${payload["callId"]}`;
   }
@@ -81,7 +89,9 @@ export function traceTrajectoryCallKey(event: RunEvent): string | undefined {
 
 export function traceTrajectoryStartEvent(event: RunEvent): boolean {
   return (
-    event.type === "tool.started" || event.type === "context.model_envelope"
+    event.type === "tool.started" ||
+    event.type === "context.model_envelope" ||
+    event.type === "route_attempt_started"
   );
 }
 
@@ -90,6 +100,7 @@ export function traceTrajectoryTerminalEvent(event: RunEvent): boolean {
     event.type === "tool.completed" ||
     event.type === "tool.failed" ||
     event.type === "tool.blocked" ||
+    event.type === "route_attempt_ended" ||
     event.type === "model.response"
   );
 }

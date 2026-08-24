@@ -1,6 +1,5 @@
 import { deepMergeCopy, getLocale } from "./locale";
 import { contextZh } from "./context-copy.zh";
-
 export const contextCopyEn = {
   eyebrow: "RUNTIME ASSEMBLY",
   title: "Agent context",
@@ -199,6 +198,7 @@ export const contextCopyEn = {
     browser: "Browser Session",
     research_source: "Research Source",
     skill_load: "Load Project Skill",
+    capability: "Capability Catalog",
     verify_workspace: "Sandbox verify",
   },
   skills: "Available skills",

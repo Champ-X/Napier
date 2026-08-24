@@ -14,6 +14,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ModelRegistry } from "../src/models.js";
 import { LocalStore } from "../src/store.js";
 import { SubagentCoordinator } from "../src/subagents.js";
+import { coderFailureContextSha256 } from "../src/subagents.js";
 
 const temporaryRoots: string[] = [];
 
@@ -110,6 +111,60 @@ function sha256(value: string): string {
 }
 
 describe("SubagentCoordinator", () => {
+  it("exposes async supervisor tools with durable steering and collection", async () => {
+    const { coordinator, faux, store, thread } = await createHarness();
+    faux.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("list_files", { path: ".", depth: 0 }),
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        expect(JSON.stringify(context.messages)).toContain(
+          "Prioritize the runtime boundary.",
+        );
+        return fauxAssistantMessage(typedResult("Steered evidence collected."));
+      },
+    ]);
+    const tools = Object.fromEntries(
+      coordinator.createSupervisorTools().map((tool) => [tool.name, tool]),
+    );
+
+    const started = await tools["subagent_start"]!.execute("start-1", {
+      ...delegatedTask,
+    });
+    const handle = started.details as { taskId: string; executionId: string };
+    await tools["subagent_send"]!.execute("send-1", {
+      ...handle,
+      text: "Prioritize the runtime boundary.",
+    });
+    const inspected = await tools["subagent_inspect"]!.execute(
+      "inspect-1",
+      handle,
+    );
+    const collected = await tools["subagent_collect"]!.execute(
+      "collect-1",
+      handle,
+    );
+
+    expect(inspected.details).toEqual(
+      expect.objectContaining({
+        handle: expect.objectContaining(handle),
+        mailbox: expect.objectContaining({ acceptedCount: 1 }),
+      }),
+    );
+    expect(collected.details).toEqual(
+      expect.objectContaining({ status: "completed" }),
+    );
+    expect(
+      (await store.listEvents(thread.id)).map((event) => event.type),
+    ).toEqual(
+      expect.arrayContaining([
+        "subagent.message.accepted",
+        "subagent.message.delivered",
+      ]),
+    );
+  });
+
   it("keeps the delegate tool definition within one KiB", async () => {
     const { coordinator } = await createHarness(
       {},
@@ -329,6 +384,51 @@ describe("SubagentCoordinator", () => {
     expect(retried.details.status).toBe("completed");
     expect(store.listSubagentTasks(thread.id)).toHaveLength(3);
     expect(faux.state.callCount).toBe(3);
+  });
+
+  it("does not recreate a coder task after the same provider schema failure", async () => {
+    const harness = await createHarness(
+      { maxTotal: 3 },
+      {
+        enabledSubagents: ["coder"],
+        enabledTools: ["apply_patch", "lsp_diagnostics"],
+        toolPolicy: "workspace",
+      },
+    );
+    const prompt = "Implement the approved interface changes.";
+    const failed = await harness.store.createSubagentTask({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      role: "coder",
+      description: "Initial implementation",
+      prompt,
+      model: {
+        provider: harness.model.provider,
+        id: harness.model.id,
+      },
+      failureContextSha256: coderFailureContextSha256(harness.profile, {
+        provider: harness.model.provider,
+        id: harness.model.id,
+      }),
+    });
+    await harness.store.startSubagentTask(failed.id);
+    await harness.store.finishSubagentTask(failed.id, {
+      status: "failed",
+      stopReason: "error",
+      error:
+        "400 invalid_request_error: Invalid schema for function 'candidate_file': schema must be a JSON Schema of type object",
+    });
+
+    await expect(
+      harness.coordinator.createTool().execute("delegate-duplicate-failure", {
+        role: "coder",
+        description: "Repeat implementation",
+        task: prompt,
+        writePaths: ["src/value.ts"],
+      }),
+    ).rejects.toThrow(/durable failed task task[_-]/);
+    expect(harness.store.listSubagentTasks(harness.thread.id)).toHaveLength(1);
+    expect(harness.faux.state.callCount).toBe(0);
   });
 
   it("restores the per-run total budget from durable tasks", async () => {

@@ -1,8 +1,6 @@
 import type {
   ExecutionPlan,
-  ExecutionPlanWorkflowExperimentArtifactSummary,
   ExecutionPlanWorkflowExperimentComparison,
-  ExecutionPlanWorkflowExperimentEvaluationSummary,
   ExecutionPlanWorkflowExperimentNodeComparison,
   ExecutionPlanWorkflowExperimentNodeObservation,
   ExecutionPlanWorkflowExperimentPreview,
@@ -16,6 +14,8 @@ import type {
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { deriveRunMetrics } from "./run-replay.js";
+import type { LocalStore } from "./store.js";
 import {
   canonicalWorkflowExperimentStrings,
   subtractWorkflowExperimentMetrics,
@@ -25,8 +25,10 @@ import {
   workflowExperimentValueChange,
 } from "./workflow-experiment-comparison-model.js";
 import { validateExecutionPlanWorkflowExperimentComparison } from "./workflow-experiment-comparison-protocol.js";
-import { deriveRunMetrics } from "./run-replay.js";
-import type { LocalStore } from "./store.js";
+import {
+  artifactSummary,
+  evaluationSummary,
+} from "./workflow-experiment-comparison-summary.js";
 
 const HASH = /^[a-f0-9]{64}$/u;
 const RUN_ID = /^run_[a-z0-9]{8,80}$/u;
@@ -428,53 +430,6 @@ function compareNode(
     ),
     addedToolNames: target.toolNames.filter((name) => !sourceTools.has(name)),
     removedToolNames: source.toolNames.filter((name) => !targetTools.has(name)),
-  };
-}
-
-function evaluationSummary(
-  evaluations: RunEvaluationRecord[],
-  runIds: string[],
-): ExecutionPlanWorkflowExperimentEvaluationSummary {
-  const selected = evaluations.filter(
-    (evaluation) =>
-      runIds.includes(evaluation.leftRunId) ||
-      runIds.includes(evaluation.rightRunId),
-  );
-  return {
-    total: selected.length,
-    leftBetter: selected.filter(
-      (evaluation) => evaluation.verdict === "left_better",
-    ).length,
-    rightBetter: selected.filter(
-      (evaluation) => evaluation.verdict === "right_better",
-    ).length,
-    tie: selected.filter((evaluation) => evaluation.verdict === "tie").length,
-    inconclusive: selected.filter(
-      (evaluation) => evaluation.verdict === "inconclusive",
-    ).length,
-  };
-}
-
-function artifactSummary(
-  plan: ExecutionPlan,
-): ExecutionPlanWorkflowExperimentArtifactSummary {
-  const projection = plan.artifacts
-    .map((artifact) => ({
-      id: artifact.id,
-      status: artifact.status,
-      sha256: artifact.sha256 ?? "",
-      sizeBytes: artifact.sizeBytes ?? 0,
-    }))
-    .sort((left, right) => left.id.localeCompare(right.id));
-  return {
-    total: projection.length,
-    produced: projection.filter((artifact) => artifact.status === "produced")
-      .length,
-    verified: projection.filter((artifact) => artifact.status === "verified")
-      .length,
-    missing: projection.filter((artifact) => artifact.status === "missing")
-      .length,
-    setSha256: sha256(canonicalJson(projection)),
   };
 }
 

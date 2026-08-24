@@ -353,7 +353,7 @@ async function verifyTrajectoryScenario(browser, origin, expected) {
   try {
     await waitForWorkbench(page);
     await page.locator("#workspace-view-trajectory").click();
-    await page.locator("#trace-title").waitFor({
+    await page.locator("#trajectory-title").waitFor({
       state: "visible",
       timeout: WEB_UI_START_TIMEOUT_MS,
     });
@@ -382,7 +382,8 @@ async function verifyTrajectoryScenario(browser, origin, expected) {
       )?.textContent;
       return {
         title:
-          document.querySelector("#trace-title")?.textContent?.trim() ?? "",
+          document.querySelector("#trajectory-title")?.textContent?.trim() ??
+          "",
         eventCount: Number(allCount ?? 0),
         mountedEventRows: document.querySelectorAll(".trace-turn li").length,
         runCount: document.querySelectorAll(".trace-run").length,
@@ -444,7 +445,7 @@ async function verifySettingsScenario(browser, origin, expected) {
       state: "visible",
       timeout: WEB_UI_START_TIMEOUT_MS,
     });
-    await page.waitForTimeout(160);
+    await settleVisuals(page);
 
     await page.locator(".agent-history-register").waitFor({
       state: "visible",
@@ -630,6 +631,10 @@ async function verifyChineseCoreLocale(browser, origin, expected) {
       (await page.locator(".composer textarea").getAttribute("placeholder")) ??
       "";
     await page.locator("#workspace-view-task").click();
+    await page.locator("#task-section-overview").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
     const taskSections = await page
       .locator(".task-section-navigation button")
       .allTextContents();
@@ -783,7 +788,7 @@ async function readSettingsContract(page, initiallyHidden) {
     state: "visible",
     timeout: WEB_UI_START_TIMEOUT_MS,
   });
-  await page.waitForTimeout(160);
+  await settleVisuals(page);
   const contract = await page.evaluate((hidden) => {
     const surface = document.querySelector(".workspace-settings-surface");
     const sections = [

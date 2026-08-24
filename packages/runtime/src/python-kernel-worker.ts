@@ -1,5 +1,6 @@
 import { sha256 } from "./ed25519.js";
 import { PYTHON_KERNEL_JSON_WORKER_SOURCE } from "./python-kernel-json-worker.js";
+import { PYTHON_KERNEL_CODE_BRIDGE_WORKER_SOURCE } from "./python-kernel-code-bridge-worker.js";
 import { deflateSync } from "node:zlib";
 
 export const PYTHON_KERNEL_PROTOCOL_PREFIX = "NAPIER_PY_RESULT ";
@@ -71,8 +72,11 @@ STATE = {"__builtins__": SAFE_BUILTINS}
 INPUT_BOUND = False
 PROTOCOL_STDOUT = sys.stdout
 PROTOCOL_STDERR = sys.stderr
+PROTOCOL_STDIN = sys.stdin
 OUTPUT_CHARS = 0
 tracemalloc.start()
+
+${PYTHON_KERNEL_CODE_BRIDGE_WORKER_SOURCE}
 
 FORBIDDEN_NODES = (
     ast.AsyncFor,
@@ -139,13 +143,11 @@ def validate_tree(tree):
             )
         if isinstance(node, ast.Name) and node.id.startswith("_"):
             raise ValueError("Python kernel private names are unavailable")
-        if (
-            INPUT_BOUND
-            and isinstance(node, ast.Name)
-            and node.id == "input"
-            and isinstance(node.ctx, (ast.Store, ast.Del))
-        ):
-            raise ValueError("Python kernel input binding is read-only")
+        if isinstance(node, ast.Name) and isinstance(node.ctx, (ast.Store, ast.Del)):
+            if node.id == "napier":
+                raise ValueError("Python kernel napier binding is read-only")
+            if INPUT_BOUND and node.id == "input":
+                raise ValueError("Python kernel input binding is read-only")
         if isinstance(node, ast.Attribute) and node.attr.startswith("_"):
             raise ValueError("Python kernel private attributes are unavailable")
         if isinstance(node, ast.Attribute) and node.attr in FORBIDDEN_ATTRIBUTES:
@@ -322,7 +324,7 @@ def handle(line):
         base_keys = {
             "kind", "schemaVersion", "id", "codeBase64", "timeoutMs"
         }
-        optional_keys = {"inputJsonBase64", "resultMode"}
+        optional_keys = {"inputJsonBase64", "resultMode", "bridge"}
         if (
             not isinstance(request, dict)
             or not base_keys.issubset(request_keys)
@@ -337,6 +339,7 @@ def handle(line):
             or isinstance(request["timeoutMs"], bool)
             or request["timeoutMs"] < 1
             or request["timeoutMs"] > MAX_TIMEOUT_MS
+            or not isinstance(request.get("bridge", False), bool)
             or (
                 "inputJsonBase64" in request
                 and not isinstance(request["inputJsonBase64"], str)
@@ -364,6 +367,7 @@ def handle(line):
     terminal = False
     value = None
     tracemalloc.reset_peak()
+    begin_bridge(request["id"], request.get("bridge", False))
     try:
         sys.stdout = capture
         sys.stderr = capture
@@ -386,6 +390,7 @@ def handle(line):
         sys.settrace(None)
         sys.stdout = previous_stdout
         sys.stderr = previous_stderr
+        end_bridge()
         capture.finish()
 
     memory_peak_bytes = tracemalloc.get_traced_memory()[1]

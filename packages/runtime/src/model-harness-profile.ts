@@ -13,6 +13,10 @@ import {
   type ModelHarnessTaskPhase,
 } from "./model-harness-resolution.js";
 import type { ModelHarnessResolutionReceipt } from "./model-harness-receipt.js";
+import {
+  applyModelHarnessExperimentProfile,
+  type ModelHarnessExperimentProfile,
+} from "./model-harness-experiment-profile.js";
 export { parseModelHarnessResolutionReceipt } from "./model-harness-receipt.js";
 export type {
   ModelHarnessIntent,
@@ -47,6 +51,7 @@ const CONTROL_TOOLS = [
   "record_run_milestone",
   "skill_load",
   "skill_resource",
+  "capability",
   "mcp_schema_search",
   "delegate_task",
   "candidate_file",
@@ -144,23 +149,32 @@ export function prepareModelHarnessCall(input: {
   context: Context;
   options: SimpleStreamOptions;
   attempt: number;
+  harnessExperimentProfile?: ModelHarnessExperimentProfile | undefined;
 }): PreparedModelHarnessCall {
   const configuredTools = input.context.tools ?? [];
-  const initialResolution = resolveModelHarnessResolution({
-    model: input.model,
-    messages: input.context.messages,
-    tools: configuredTools,
-  });
+  const initialResolution = applyModelHarnessExperimentProfile(
+    input.model,
+    resolveModelHarnessResolution({
+      model: input.model,
+      messages: input.context.messages,
+      tools: configuredTools,
+    }),
+    input.harnessExperimentProfile,
+  );
   const tools = selectTools(
     configuredTools,
     initialResolution,
     input.context.messages,
   );
-  const resolution = resolveModelHarnessResolution({
-    model: input.model,
-    messages: input.context.messages,
-    tools: tools.active,
-  });
+  const resolution = applyModelHarnessExperimentProfile(
+    input.model,
+    resolveModelHarnessResolution({
+      model: input.model,
+      messages: input.context.messages,
+      tools: tools.active,
+    }),
+    input.harnessExperimentProfile,
+  );
   const maxRetriesSource: ModelHarnessResolutionReceipt["maxRetriesSource"] =
     input.options.maxRetries === undefined ? "harness" : "caller";
   const maxRetryDelayMsSource: ModelHarnessResolutionReceipt["maxRetryDelayMsSource"] =
@@ -257,7 +271,8 @@ function selectTools(
 function usedToolNames(messages: Context["messages"]): string[] {
   return unique(
     messages.flatMap((message) => {
-      if (message.role === "toolResult") return [message.toolName];
+      if (message.role === "toolResult")
+        return [message.toolName, ...(message.addedToolNames ?? [])];
       if (message.role !== "assistant") return [];
       return message.content
         .filter((item) => item.type === "toolCall")

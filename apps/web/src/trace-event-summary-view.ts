@@ -232,7 +232,7 @@ export function traceEventSummaryView(event: RunEvent): TraceEventSummaryView {
       "fixed",
     );
   }
-  if (event.type.startsWith("model.")) {
+  if (event.type.startsWith("model.") || event.type.startsWith("route_")) {
     return classifiedSummary(event, modelEventTraceSummary(event), "fixed");
   }
   return traceSummaryBoundarySource(event) === "dedicated"

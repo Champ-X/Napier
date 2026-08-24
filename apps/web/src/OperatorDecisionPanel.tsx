@@ -80,11 +80,14 @@ export default function OperatorDecisionPanel({
         <fieldset disabled={Boolean(busy) || answered}>
           <legend id={`operator-decision-${decision.id}`}>
             <span>{decision.header}</span>
-            {decision.question}
+            <strong>{decision.question}</strong>
           </legend>
-          <p className="operator-decision-mode">
-            {decision.multiSelect ? copy.multiSelect : copy.singleSelect}
-          </p>
+          <div className="operator-decision-context">
+            <p>{copy.runSettled}</p>
+            <span>
+              {decision.multiSelect ? copy.multiSelect : copy.singleSelect}
+            </span>
+          </div>
           <div className="operator-decision-options">
             {decision.options.map((option, index) => (
               <label
@@ -108,16 +111,19 @@ export default function OperatorDecisionPanel({
               </label>
             ))}
           </div>
-          <label className="operator-decision-custom">
-            <span>{copy.customAnswer}</span>
+          <details className="operator-decision-custom">
+            <summary>
+              {copy.customAnswer} <small>{copy.optional}</small>
+            </summary>
             <textarea
+              aria-label={copy.customAnswer}
               rows={2}
               maxLength={4096}
               value={customText}
               placeholder={copy.customPlaceholder}
               onChange={(event) => setCustomText(event.target.value)}
             />
-          </label>
+          </details>
         </fieldset>
 
         <footer>

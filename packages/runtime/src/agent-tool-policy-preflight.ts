@@ -54,7 +54,6 @@ export async function preflightAgentToolPolicy(input: {
   signal?: AbortSignal;
   onEvent?: EventSink;
 }): Promise<BeforeToolCallResult | undefined> {
-  if (input.toolCall.name === "delegate_task") return undefined;
   if (input.toolCall.name === "browser") {
     await input.browserPauses.waitIfPaused(
       { threadId: input.run.threadId, runId: input.run.id },

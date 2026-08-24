@@ -9,6 +9,7 @@ import { createSqliteQueryTool } from "../src/sqlite-query-tool.js";
 import { createTypescriptAstTools } from "../src/typescript-ast-tool.js";
 import { createWorkspaceFilePreviewTool } from "../src/workspace-file-tools.js";
 import { createWorkspaceProcessTool } from "../src/workspace-process-tool.js";
+import { createSubagentWorktreeFileTool } from "../src/subagent-worktree-file-tool.js";
 import { createSkillLoadTool } from "../src/skill-load-tool.js";
 import { createSkillAccessState } from "../src/skill-access-state.js";
 import { createSkillResourceTool } from "../src/skill-resource-tool.js";
@@ -77,12 +78,26 @@ describe("Provider tool schema compatibility", () => {
       astEdit,
       createWorkspaceFilePreviewTool(undefined as never, owner),
       createWorkspaceProcessTool(undefined as never, owner),
+      createSubagentWorktreeFileTool(
+        {
+          taskId: "task_schema123",
+          root: "/workspace/candidate",
+          sourceRoot: "/workspace",
+          sourceSnapshotSha256: "0".repeat(64),
+          sourceFileCount: 0,
+          sourceBytes: 0,
+          writePaths: ["src/value.ts"],
+          writeScopeSetSha256: "1".repeat(64),
+        },
+        (operation) => operation(),
+      ),
     ];
 
     const compactObjectTools = new Set([
       "sqlite_query",
       "ast_edit_preview",
       "workspace_file_preview",
+      "candidate_file",
     ]);
     for (const tool of tools) {
       const schema = tool.parameters as Record<string, unknown>;

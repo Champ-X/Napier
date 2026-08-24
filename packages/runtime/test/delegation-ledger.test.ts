@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   createDelegationLedgerProjection,
+  delegationFailureContextSha256,
   delegationIntentSha256,
   findReusableDelegation,
   formatDelegationLedgerProjection,
@@ -147,6 +148,45 @@ describe("delegation ledger projection", () => {
         [completed],
         "reviewer",
         "Inspect packages/runtime and report evidence.",
+      ),
+    ).toBeUndefined();
+  });
+
+  it("blocks unchanged provider schema failures without blocking repaired configurations", () => {
+    const currentContext = delegationFailureContextSha256({
+      role: "coder",
+      model: { provider: "deepseek", id: "deepseek-chat" },
+      toolSchemaSha256: "1".repeat(64),
+    });
+    const failed = task(3, "failed", {
+      role: "coder",
+      prompt: "Implement the approved UI change.",
+      model: { provider: "deepseek", id: "deepseek-chat" },
+      error:
+        "400 invalid_request_error: Invalid schema for function 'candidate_file': schema must be a JSON Schema of type object",
+      failureContextSha256: currentContext,
+    });
+
+    expect(
+      findReusableDelegation(
+        [failed],
+        "coder",
+        "Implement the approved UI change.",
+        { failureContextSha256: currentContext },
+      )?.id,
+    ).toBe(failed.id);
+    expect(
+      findReusableDelegation(
+        [failed],
+        "coder",
+        "Implement the approved UI change.",
+        {
+          failureContextSha256: delegationFailureContextSha256({
+            role: "coder",
+            model: { provider: "deepseek", id: "deepseek-chat" },
+            toolSchemaSha256: "2".repeat(64),
+          }),
+        },
       ),
     ).toBeUndefined();
   });

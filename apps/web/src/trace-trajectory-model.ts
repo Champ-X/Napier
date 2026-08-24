@@ -349,6 +349,8 @@ function overviewEvent(event: RunEvent): boolean {
     event.type === "message.user" ||
     event.type === "message.assistant" ||
     event.type === "context.model_envelope" ||
+    event.type === "route_plan_created" ||
+    event.type === "route_attempt_started" ||
     event.type === "model.response" ||
     event.type === "tool.started" ||
     traceTrajectoryTerminalEvent(event)
@@ -368,7 +370,8 @@ function eventLane(event: RunEvent): TraceTrajectoryLane {
   if (
     event.category === "model" ||
     event.type === "message.assistant" ||
-    event.type.startsWith("model.")
+    event.type.startsWith("model.") ||
+    event.type.startsWith("route_")
   ) {
     return "model";
   }
@@ -381,6 +384,7 @@ function eventRole(event: RunEvent): string {
   if (event.type.startsWith("context.")) return "CONTEXT";
   if (event.type.startsWith("tool.")) return "TOOL";
   if (event.type.startsWith("model.")) return "MODEL";
+  if (event.type.startsWith("route_")) return "ROUTE";
   if (event.type.startsWith("run.") || event.type.startsWith("turn.")) {
     return "RUN";
   }
@@ -397,6 +401,14 @@ function eventLabel(event: RunEvent): string {
   }
   if (event.type === "message.user") return "User message";
   if (event.type === "message.assistant") return "Assistant result";
+  if (event.type.startsWith("route_attempt_")) {
+    const model =
+      typeof payload?.["providerId"] === "string" &&
+      typeof payload["modelId"] === "string"
+        ? `${payload["providerId"]}/${payload["modelId"]}`
+        : "model";
+    return `${model} · ${event.type === "route_attempt_started" ? "attempt" : "result"}`;
+  }
   return event.type
     .split(/[._]/u)
     .map((part) => part.charAt(0).toLocaleUpperCase() + part.slice(1))
@@ -404,6 +416,10 @@ function eventLabel(event: RunEvent): string {
 }
 
 function segmentStatus(event: RunEvent): TraceTrajectoryStatus {
+  const payload = record(event.payload);
+  if (event.type === "route_attempt_ended") {
+    return payload?.["outcome"] === "terminal" ? "failed" : "completed";
+  }
   if (
     event.type.includes("failed") ||
     event.type.includes("blocked") ||

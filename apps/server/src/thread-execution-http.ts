@@ -182,6 +182,20 @@ function registerPromptHttp(
       }
     }
     try {
+      const subagentModels = Object.values(
+        body.modelRoute?.subagentRoles ?? {},
+      ).flatMap((binding) =>
+        binding ? [binding.model, ...(binding.fallbackModels ?? [])] : [],
+      );
+      await Promise.all(
+        [...(body.modelRoute?.fallbackModels ?? []), ...subagentModels].map((candidate) =>
+          assertAvailableModel(services, candidate),
+        ),
+      );
+    } catch (error) {
+      return jsonError(context, errorMessage(error), 400);
+    }
+    try {
       const readiness = await inspectThreadPromptReadiness({
         store: services.store,
         agentCapabilities: services.agentCapabilities,
@@ -218,6 +232,7 @@ function registerPromptHttp(
         threadId,
         text: body.text,
         ...(body.model ? { model: body.model } : {}),
+        ...(body.modelRoute ? { modelRoute: body.modelRoute } : {}),
         ...(body.capabilityPreset
           ? { capabilityPreset: body.capabilityPreset }
           : {}),

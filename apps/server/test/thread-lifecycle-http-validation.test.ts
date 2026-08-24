@@ -9,7 +9,7 @@ import {
 
 describe("Thread lifecycle HTTP validation", () => {
   it("preserves normalized titles and legacy Agent ID syntax", () => {
-    expect(normalizeThreadTitle()).toBe("Untitled ledger");
+    expect(normalizeThreadTitle()).toBe("新会话");
     expect(normalizeThreadTitle("  reviewed   thread  ")).toBe(
       "reviewed thread",
     );

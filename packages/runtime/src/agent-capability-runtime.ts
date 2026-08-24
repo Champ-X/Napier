@@ -39,6 +39,7 @@ import type { SkillSnapshot } from "./standard-skill-snapshot.js";
 import { createSkillLoadTool } from "./skill-load-tool.js";
 import { createSkillAccessState } from "./skill-access-state.js";
 import { createSkillResourceTool } from "./skill-resource-tool.js";
+import type { GovernedCodeBridgeDispatcher } from "./governed-code-bridge-model.js";
 
 interface AgentCapabilityOwner {
   threadId: string;
@@ -52,6 +53,7 @@ export interface CreateAgentCapabilityToolsOptions extends AgentCapabilityOwner 
   browserInteractionConfirmationAllowed?: boolean;
   restrictedReadOnlyExecution?: boolean;
   advisorCorrection?: boolean;
+  codeBridge?: GovernedCodeBridgeDispatcher;
 }
 
 export interface AgentNetworkCapabilities {
@@ -225,6 +227,7 @@ export class AgentCapabilityRuntime {
         ...this.sessions.createProcessTools(
           options.profile.enabledTools,
           owner,
+          options.codeBridge,
         ),
       );
     }

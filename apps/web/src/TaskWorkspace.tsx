@@ -32,11 +32,13 @@ export function TaskWorkspace({
   section,
   activeModel,
   onSection,
+  onOpenConversation,
 }: {
   vm: WorkspaceViewModel;
   section: TaskSection;
   activeModel: WorkspaceViewModel["selectedModel"];
   onSection(section: TaskSection): void;
+  onOpenConversation(): void;
 }) {
   const availability = taskRuntimeAvailability(
     vm.detail?.events ?? [],
@@ -97,10 +99,12 @@ export function TaskWorkspace({
             goal={vm.activeGoal}
             goalDraft={vm.goalDraft}
             modelConfigured={activeModel.configured}
+            decision={vm.openOperatorDecision}
             onGoalDraft={vm.setGoalDraft}
             onGoalSave={() => void vm.saveGoal()}
             onGoalClear={() => void vm.removeGoal()}
             onContinue={() => void vm.submit(copy.planNextPrompt)}
+            onReviewDecision={onOpenConversation}
           />
         ) : null}
         {section === "changes" ? <TaskChangesPanel detail={vm.detail} /> : null}

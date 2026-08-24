@@ -2,7 +2,7 @@ import { link, lstat, readFile, realpath, unlink } from "node:fs/promises";
 import path from "node:path";
 
 import type { AgentTool } from "@earendil-works/pi-agent-core";
-import { Type } from "typebox";
+import { Type, type Static } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
@@ -13,26 +13,40 @@ import {
 
 const SHA256_PATTERN = "^[a-f0-9]{64}$";
 
-const candidateFileSchema = Type.Union([
-  Type.Object(
-    {
-      operation: Type.Literal("delete"),
-      path: Type.String({ minLength: 1, maxLength: 500 }),
-      expectedSha256: Type.String({ pattern: SHA256_PATTERN }),
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      operation: Type.Literal("move"),
-      sourcePath: Type.String({ minLength: 1, maxLength: 500 }),
-      destinationPath: Type.String({ minLength: 1, maxLength: 500 }),
-      expectedSourceSha256: Type.String({ pattern: SHA256_PATTERN }),
-      expectedDestinationSha256: Type.Null(),
-    },
-    { additionalProperties: false },
-  ),
-]);
+const candidateFileSchema = Type.Object(
+  {
+    operation: Type.Union([Type.Literal("delete"), Type.Literal("move")]),
+    path: Type.Optional(Type.String({ minLength: 1, maxLength: 500 })),
+    expectedSha256: Type.Optional(
+      Type.String({ pattern: SHA256_PATTERN }),
+    ),
+    sourcePath: Type.Optional(Type.String({ minLength: 1, maxLength: 500 })),
+    destinationPath: Type.Optional(
+      Type.String({ minLength: 1, maxLength: 500 }),
+    ),
+    expectedSourceSha256: Type.Optional(
+      Type.String({ pattern: SHA256_PATTERN }),
+    ),
+    expectedDestinationSha256: Type.Optional(Type.Null()),
+  },
+  { additionalProperties: false },
+);
+
+export const SUBAGENT_WORKTREE_FILE_TOOL_SCHEMA_SHA256 = sha256(
+  canonicalJson(candidateFileSchema),
+);
+
+type CandidateFileSchemaInput = Static<typeof candidateFileSchema>;
+
+type CandidateFileInput =
+  | { operation: "delete"; path: string; expectedSha256: string }
+  | {
+      operation: "move";
+      sourcePath: string;
+      destinationPath: string;
+      expectedSourceSha256: string;
+      expectedDestinationSha256: null;
+    };
 
 export interface SubagentWorktreeFileDetails {
   operation: "delete" | "move";
@@ -63,9 +77,10 @@ export function createSubagentWorktreeFileTool(
     description:
       "Delete or move one explicitly authorized UTF-8 file inside this private candidate. Both move paths require delegation grants and hash/non-existence preconditions. This never mutates the parent workspace.",
     parameters: candidateFileSchema,
-    execute: async (_toolCallId, input, signal) =>
+    execute: async (_toolCallId, rawInput, signal) =>
       runMutation(async () => {
         signal?.throwIfAborted();
+        const input = parseCandidateFileInput(rawInput);
         return input.operation === "delete"
           ? deleteCandidateFile(
               session,
@@ -75,6 +90,49 @@ export function createSubagentWorktreeFileTool(
             )
           : moveCandidateFile(session, input, linkFile, unlinkFile);
       }),
+  };
+}
+
+function parseCandidateFileInput(
+  input: CandidateFileSchemaInput,
+): CandidateFileInput {
+  if (input.operation === "delete") {
+    if (
+      typeof input.path !== "string" ||
+      typeof input.expectedSha256 !== "string" ||
+      input.sourcePath !== undefined ||
+      input.destinationPath !== undefined ||
+      input.expectedSourceSha256 !== undefined ||
+      input.expectedDestinationSha256 !== undefined
+    ) {
+      throw new Error(
+        "Candidate file delete requires only path and expectedSha256",
+      );
+    }
+    return {
+      operation: "delete",
+      path: input.path,
+      expectedSha256: input.expectedSha256,
+    };
+  }
+  if (
+    typeof input.sourcePath !== "string" ||
+    typeof input.destinationPath !== "string" ||
+    typeof input.expectedSourceSha256 !== "string" ||
+    input.expectedDestinationSha256 !== null ||
+    input.path !== undefined ||
+    input.expectedSha256 !== undefined
+  ) {
+    throw new Error(
+      "Candidate file move requires only sourcePath, destinationPath, expectedSourceSha256, and a null expectedDestinationSha256",
+    );
+  }
+  return {
+    operation: "move",
+    sourcePath: input.sourcePath,
+    destinationPath: input.destinationPath,
+    expectedSourceSha256: input.expectedSourceSha256,
+    expectedDestinationSha256: input.expectedDestinationSha256,
   };
 }
 

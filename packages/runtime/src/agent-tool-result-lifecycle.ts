@@ -32,6 +32,7 @@ export interface AgentToolResultLifecycleOptions {
   store: LocalStore;
   run: RunRecord;
   tools: AgentTool[];
+  definitions: AgentTool[];
   invocationCapsules: ToolInvocationCapsuleStore;
   resultCapsules: ToolInvocationResultCapsuleStore;
   budget: RunBudgetTracker;
@@ -48,13 +49,13 @@ export function toolLife(
     toolInvocationCapsules: ToolInvocationCapsuleStore;
     toolInvocationResultCapsules: ToolInvocationResultCapsuleStore;
   },
-  values: [RunBudgetTracker, RunRecord, AgentTool[], AgentTool[]],
+  values: [RunBudgetTracker, RunRecord, AgentTool[], AgentTool[], AgentTool[]],
   optional: [
     FrozenToolResultReplayController | undefined,
     ((event: RunEvent) => Promise<void> | void) | undefined,
   ],
 ): AgentToolResultLifecycle {
-  const [budget, run, tools, deferredTools] = values;
+  const [budget, run, tools, deferredTools, definitions] = values;
   const [replay, onEvent] = optional;
   return new AgentToolResultLifecycle({
     store: host.store,
@@ -64,6 +65,7 @@ export function toolLife(
     budget,
     run,
     tools,
+    definitions,
     deferredTools,
     ...(replay ? { replay } : {}),
     ...(onEvent ? { onEvent } : {}),
@@ -76,7 +78,9 @@ export class AgentToolResultLifecycle {
   readonly deadlines: ToolDeadlineManager;
 
   constructor(private readonly options: AgentToolResultLifecycleOptions) {
-    this.definitions = new Map(options.tools.map((tool) => [tool.name, tool]));
+    this.definitions = new Map(
+      options.definitions.map((tool) => [tool.name, tool]),
+    );
     this.deadlines = wrapToolsWithDeadlines({
       budget: options.budget,
       deferredTools: options.deferredTools,

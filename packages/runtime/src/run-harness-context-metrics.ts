@@ -25,6 +25,11 @@ interface TokenPressureEvidence {
   activeMessageSetSha256: string;
 }
 
+interface TokenCalibrationEvidence {
+  status: "calibrated" | "unavailable";
+  underestimateRatio: number;
+}
+
 export function projectRunHarnessContextMetrics(events: readonly RunEvent[]): {
   contextTokens: RunHarnessContextTokenMetrics;
   overflow: RunHarnessOverflowMetrics;
@@ -36,12 +41,70 @@ export function projectRunHarnessContextMetrics(events: readonly RunEvent[]): {
     const pressure = parseTokenPressure(event);
     return pressure ? [pressure] : [];
   });
+  const calibrationEvents = events.filter(
+    (event) => event.type === "model.context.token_calibration",
+  );
+  const calibrations = calibrationEvents.flatMap((event) => {
+    const calibration = parseTokenCalibration(event);
+    return calibration ? [calibration] : [];
+  });
+  const contextTokens =
+    pressureEvents.length > 0 && pressures.length === pressureEvents.length
+      ? aggregateTokenPressure(pressures)
+      : unavailableTokenPressure();
   return {
-    contextTokens:
-      pressureEvents.length > 0 && pressures.length === pressureEvents.length
-        ? aggregateTokenPressure(pressures)
-        : unavailableTokenPressure(),
+    contextTokens: aggregateTokenCalibration(
+      contextTokens,
+      calibrationEvents,
+      calibrations,
+    ),
     overflow: projectOverflow(events, pressures),
+  };
+}
+
+function aggregateTokenCalibration(
+  contextTokens: RunHarnessContextTokenMetrics,
+  events: readonly RunEvent[],
+  calibrations: readonly TokenCalibrationEvidence[],
+): RunHarnessContextTokenMetrics {
+  if (events.length === 0) return contextTokens;
+  const usable = calibrations.filter(
+    (calibration) => calibration.status === "calibrated",
+  );
+  return {
+    ...contextTokens,
+    calibrationObservationCount: events.length,
+    calibratedObservationCount: usable.length,
+    calibrationUnavailableCount: events.length - usable.length,
+    ...(calibrations.length === events.length && usable.length > 0
+      ? {
+          p95InputUnderestimateRatio: percentile95(
+            usable.map((calibration) => calibration.underestimateRatio),
+          ),
+        }
+      : {}),
+  };
+}
+
+function parseTokenCalibration(
+  event: RunEvent,
+): TokenCalibrationEvidence | undefined {
+  const payload = record(event.payload);
+  if (
+    !payload ||
+    payload["kind"] !== "napier.model-context-token-calibration" ||
+    payload["schemaVersion"] !== 1 ||
+    !validHashedRecord(payload) ||
+    !oneOf(payload["status"], ["calibrated", "unavailable"]) ||
+    typeof payload["underestimateRatio"] !== "number" ||
+    payload["underestimateRatio"] < 0 ||
+    payload["underestimateRatio"] > 1
+  ) {
+    return undefined;
+  }
+  return {
+    status: payload["status"] as TokenCalibrationEvidence["status"],
+    underestimateRatio: payload["underestimateRatio"],
   };
 }
 
@@ -318,6 +381,11 @@ function sum(
 
 function safeRate(numerator: number, denominator: number): number {
   return denominator === 0 ? 0 : numerator / denominator;
+}
+
+function percentile95(values: readonly number[]): number {
+  const ordered = [...values].sort((left, right) => left - right);
+  return ordered[Math.max(0, Math.ceil(ordered.length * 0.95) - 1)] ?? 0;
 }
 
 function nonNegativeInteger(value: unknown): boolean {

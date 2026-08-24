@@ -4,12 +4,13 @@ import type {
   SetGoalRequest,
   ThreadReplayBundle,
 } from "@napier/contracts";
+const DEFAULT_THREAD_TITLE = "新会话";
 
 import { requestRecord } from "./http-request-validation.js";
 
 export function normalizeThreadTitle(title?: string): string {
   const normalized = title?.replace(/\s+/g, " ").trim();
-  return normalized ? normalized.slice(0, 100) : "Untitled ledger";
+  return normalized ? normalized.slice(0, 100) : DEFAULT_THREAD_TITLE;
 }
 
 export function parseImportThreadReplayBundleRequest(

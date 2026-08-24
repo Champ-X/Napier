@@ -52,6 +52,113 @@ describe("Thread execution HTTP validation", () => {
     ).toBeUndefined();
   });
 
+  it("normalizes an explicit bounded Model route", () => {
+    expect(
+      parsePromptRequest({
+        text: "Use safe fallback.",
+        modelRoute: {
+          role: "reasoning",
+          fallbackModels: [
+            { provider: " OpenAI ", id: " gpt-5.4 " },
+            { provider: "Anthropic", id: "claude-sonnet-4-6" },
+          ],
+        },
+      }),
+    ).toEqual({
+      text: "Use safe fallback.",
+      modelRoute: {
+        role: "reasoning",
+        fallbackModels: [
+          { provider: "openai", id: "gpt-5.4" },
+          { provider: "anthropic", id: "claude-sonnet-4-6" },
+        ],
+      },
+    });
+    expect(
+      parsePromptRequest({
+        text: "Reject unknown roles.",
+        modelRoute: { role: "creative" },
+      }),
+    ).toBeUndefined();
+    expect(
+      parsePromptRequest({
+        text: "Reject duplicate fallbacks.",
+        modelRoute: {
+          fallbackModels: [
+            { provider: "openai", id: "gpt-5.4" },
+            { provider: "OPENAI", id: "gpt-5.4" },
+          ],
+        },
+      }),
+    ).toBeUndefined();
+    expect(
+      parsePromptRequest({
+        text: "Reject too many fallbacks.",
+        modelRoute: {
+          fallbackModels: Array.from({ length: 5 }, (_, index) => ({
+            provider: "openai",
+            id: `gpt-${String(index)}`,
+          })),
+        },
+      }),
+    ).toBeUndefined();
+  });
+
+  it("normalizes bounded role-specific Subagent routes", () => {
+    expect(
+      parsePromptRequest({
+        text: "Route child roles independently.",
+        modelRoute: {
+          subagentRoles: {
+            researcher: {
+              model: { provider: " OpenAI ", id: " gpt-5.4 " },
+              fallbackModels: [
+                { provider: "Anthropic", id: "claude-sonnet-4-6" },
+              ],
+            },
+          },
+        },
+      }),
+    ).toEqual({
+      text: "Route child roles independently.",
+      modelRoute: {
+        subagentRoles: {
+          researcher: {
+            model: { provider: "openai", id: "gpt-5.4" },
+            fallbackModels: [
+              { provider: "anthropic", id: "claude-sonnet-4-6" },
+            ],
+          },
+        },
+      },
+    });
+    expect(
+      parsePromptRequest({
+        text: "Reject unknown child roles.",
+        modelRoute: {
+          subagentRoles: {
+            planner: { model: { provider: "openai", id: "gpt-5.4" } },
+          },
+        },
+      }),
+    ).toBeUndefined();
+    expect(
+      parsePromptRequest({
+        text: "Reject child primary duplication.",
+        modelRoute: {
+          subagentRoles: {
+            reviewer: {
+              model: { provider: "openai", id: "gpt-5.4" },
+              fallbackModels: [
+                { provider: "OPENAI", id: "gpt-5.4" },
+              ],
+            },
+          },
+        },
+      }),
+    ).toBeUndefined();
+  });
+
   it("accepts only an exact optional Source continuity Run ID", () => {
     expect(
       parsePromptRequest({

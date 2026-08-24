@@ -64,7 +64,8 @@ export function taskNarrativeView(
       currentAction: openDecision.header,
       completedItems,
       metricRunId: openDecision.runId,
-      blocker: "Operator input is required before the run can continue.",
+      blocker:
+        "The run has ended. Record an answer to unlock a linked continuation.",
       ...(nextStep ? { nextStep: nextStep.title } : {}),
     };
   }

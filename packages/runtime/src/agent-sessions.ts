@@ -25,6 +25,7 @@ import type { WorkspaceProcessManager } from "./workspace-processes.js";
 import type { ResearchSourceCapsuleStore } from "./research-source-capsule-store.js";
 import type { RunBoundFileArtifactStore } from "./run-bound-file-artifact.js";
 import type { LocalStore } from "./store.js";
+import type { GovernedCodeBridgeDispatcher } from "./governed-code-bridge-model.js";
 
 export class AgentSessionRuntime {
   private readonly kernels: AgentKernelRuntime;
@@ -76,6 +77,7 @@ export class AgentSessionRuntime {
   createProcessTools(
     enabledTools: readonly string[],
     context: { threadId: string; runId: string },
+    codeBridge?: GovernedCodeBridgeDispatcher,
   ): Array<
     | ReturnType<AgentKernelRuntime["createTools"]>[number]
     | ReturnType<typeof createNodeDebuggerTool>
@@ -83,7 +85,7 @@ export class AgentSessionRuntime {
     const tools: Array<
       | ReturnType<AgentKernelRuntime["createTools"]>[number]
       | ReturnType<typeof createNodeDebuggerTool>
-    > = [...this.kernels.createTools(enabledTools, context)];
+    > = [...this.kernels.createTools(enabledTools, context, codeBridge)];
     if (enabledTools.includes("node_debugger") && this.debuggerManager) {
       tools.push(createNodeDebuggerTool(this.debuggerManager, context));
     }

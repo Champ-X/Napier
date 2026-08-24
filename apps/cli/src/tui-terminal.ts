@@ -147,7 +147,11 @@ function renderFrame(
   const tools = state.tools.slice(
     -Math.min(4, Math.max(0, rows - 9 - visibleConfirmations.length)),
   );
-  const fixedRows = 6 + tools.length + visibleConfirmations.length;
+  const fixedRows =
+    6 +
+    tools.length +
+    visibleConfirmations.length +
+    (state.route ? 1 : 0);
   const bodyRows = Math.max(1, rows - fixedRows);
   const lines = [
     headerLine(state, columns),
@@ -155,6 +159,7 @@ function renderFrame(
     divider(columns),
     ...transcriptLines(state, columns, bodyRows),
     ...toolLines(tools, columns),
+    ...(state.route ? [routeLine(state.route, columns)] : []),
     ...confirmationLines(visibleConfirmations, columns),
     noticeLine(state, columns),
     inputLine(input, columns),
@@ -284,6 +289,21 @@ function toolLines(tools: TuiToolCard[], columns: number): string[] {
       columns,
     )}${STYLE_RESET}`;
   });
+}
+
+function routeLine(
+  route: NonNullable<TuiStateSnapshot["route"]>,
+  columns: number,
+): string {
+  const detail = route.fallbackReason
+    ? `fallback ${route.fallbackReason}`
+    : route.failureClass
+      ? `failure ${route.failureClass}`
+      : "direct";
+  return `${route.status === "terminal" ? STYLE_FAILED : STYLE_RUNNING}${truncateTerminalText(
+    `route ${route.model} · attempt ${String(route.attempt)} · ${route.status} · ${detail}`,
+    columns,
+  )}${STYLE_RESET}`;
 }
 
 function confirmationLines(lines: string[], columns: number): string[] {

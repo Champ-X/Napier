@@ -8,22 +8,32 @@ import type {
   SubagentRole,
   SubagentTask,
 } from "@napier/contracts";
+import type { ModelRouteRequest } from "@napier/contracts/model-route";
 import { Type } from "typebox";
 
 import { DEFAULT_SUBAGENT_LIMITS, normalizeSubagentLimits } from "./agents.js";
 import {
+  delegationFailureContextSha256,
   delegationIntentSha256,
   findReusableDelegation,
 } from "./delegation-ledger.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
 import type { LocalStore } from "./store.js";
+import { InProcessSubagentProvider } from "./in-process-subagent-provider.js";
+import { ModelRouter } from "./model-route.js";
 import type { DelegationDetails } from "./subagent-task-evidence.js";
-import { SubagentTaskRunner } from "./subagent-task-runner.js";
+import { SubagentSupervisor } from "./subagent-supervisor.js";
+import {
+  createSubagentSupervisorTools,
+  subagentRequestFromToolInput,
+  type SubagentStartToolInput,
+} from "./subagent-supervisor-tools.js";
 import {
   createSubagentWorktreeApplyTool,
   SubagentWorktreeMutationManager,
 } from "./subagent-worktree-mutation.js";
 import { MAX_SUBAGENT_WORKTREE_WRITE_FILES } from "./subagent-worktree-files.js";
+import { SUBAGENT_WORKTREE_FILE_TOOL_SCHEMA_SHA256 } from "./subagent-worktree-file-tool.js";
 import { isSubagentSemanticLspToolName } from "./subagent-worktree-lsp-tools.js";
 import { WriteLinkedTestVerificationRunner } from "./write-linked-test-verification.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
@@ -58,6 +68,7 @@ const delegateTaskSchema = Type.Object({
       { minItems: 1, maxItems: MAX_SUBAGENT_WORKTREE_WRITE_FILES },
     ),
   ),
+  outputSchema: Type.Optional(Type.Unknown()),
 });
 
 const DEFAULT_ROLES: SubagentRole[] = ["researcher", "reviewer", "general"];
@@ -68,6 +79,8 @@ export interface SubagentCoordinatorOptions {
   store: LocalStore;
   models: MutableModels;
   model: Model<Api>;
+  modelRouter?: ModelRouter;
+  modelRouteRequest?: ModelRouteRequest;
   run: RunRecord;
   profile: AgentProfile;
   sandbox: OsSandboxAdapter;
@@ -102,7 +115,7 @@ export class SubagentCoordinator {
   private readonly enabledRoles: Set<SubagentRole>;
   private readonly semaphore: Semaphore;
   private readonly worktrees?: SubagentWorktreeMutationManager;
-  private readonly runner: SubagentTaskRunner;
+  private readonly supervisor: SubagentSupervisor;
   private readonly reservedIntentSha256 = new Set<string>();
   private totalDelegations: number;
 
@@ -152,17 +165,21 @@ export class SubagentCoordinator {
         ...(tests ? { tests } : {}),
       });
     }
-    this.runner = new SubagentTaskRunner({
-      store: options.store,
-      models: options.models,
-      model: options.model,
-      run: options.run,
-      limits: this.limits,
-      parentSignal: options.parentSignal,
-      ...(this.worktrees ? { worktrees: this.worktrees } : {}),
-      ...(options.onEvent ? { onEvent: options.onEvent } : {}),
-    });
     this.semaphore = new Semaphore(this.limits.maxConcurrent);
+    this.supervisor = new SubagentSupervisor(
+      new InProcessSubagentProvider({
+        store: options.store,
+        models: options.models,
+        ...(options.modelRouter ? { modelRouter: options.modelRouter } : {}),
+        defaultModel: options.model,
+        run: options.run,
+        limits: this.limits,
+        parentSignal: options.parentSignal,
+        schedule: (operation) => this.semaphore.run(operation),
+        ...(this.worktrees ? { worktrees: this.worktrees } : {}),
+        ...(options.onEvent ? { onEvent: options.onEvent } : {}),
+      }),
+    );
     this.totalDelegations = options.store.listSubagentTasks(
       options.run.threadId,
       options.run.id,
@@ -182,113 +199,179 @@ export class SubagentCoordinator {
     ];
   }
 
+  createSupervisorTools(): AgentTool[] {
+    return createSubagentSupervisorTools({
+        providerId: "in_process",
+        supervisor: this.supervisor,
+        start: (request, signal) => this.startTask(request, signal),
+        collectResult: collectedSupervisorToolResult,
+      });
+  }
+
   createTool(): AgentTool<typeof delegateTaskSchema, DelegationDetails> {
     return {
       name: "delegate_task",
       label: "Delegate task",
       description: [
-        "Delegate substantial independent investigation, review, or scoped coding; never trivial or parent-context-dependent work.",
+        "Delegate substantial independent research, review, or scoped coding.",
         `Roles: ${[...this.enabledRoles].join(", ")}.`,
         `Run budget: at most ${this.limits.maxTotal} total and ${this.limits.maxConcurrent} concurrent delegations.`,
         "description is a short ledger label; task must be self-contained with paths, constraints, and evidence.",
         "Only coder uses writePaths listing every created, changed, deleted, or moved endpoint; returns an isolated unmerged one-use worktree preview.",
       ].join(" "),
       parameters: delegateTaskSchema,
-      execute: async (_toolCallId, input, signal) => {
-        if (!this.enabledRoles.has(input.role)) {
-          throw new Error(`Subagent role is disabled: ${input.role}`);
-        }
-        if (
-          (input.role === "coder" && !input.writePaths) ||
-          (input.role !== "coder" && input.writePaths !== undefined)
-        ) {
-          throw new Error("Only coder Subagents require explicit writePaths");
-        }
-        const prompt = input.task.trim();
-        const reusable = findReusableDelegation(
-          this.options.store.listSubagentTasks(this.options.run.threadId),
-          input.role,
-          prompt,
-        );
-        if (reusable) {
-          throw new Error(
-            `Delegation intent already has durable ${reusable.status} task ${reusable.id}; reuse it instead of delegating again`,
-          );
-        }
-        const intentSha256 = delegationIntentSha256(input.role, prompt);
-        if (this.reservedIntentSha256.has(intentSha256)) {
-          throw new Error(
-            "Delegation intent is already being created; reuse the durable task instead",
-          );
-        }
-        if (this.totalDelegations >= this.limits.maxTotal) {
-          throw new Error(
-            `Subagent total budget exhausted (${this.limits.maxTotal})`,
-          );
-        }
-        this.totalDelegations += 1;
-        this.reservedIntentSha256.add(intentSha256);
-        let task: SubagentTask;
-        try {
-          task = await this.options.store.createSubagentTask({
-            threadId: this.options.run.threadId,
-            runId: this.options.run.id,
-            role: input.role,
-            description: input.description.trim(),
-            prompt,
-            model: {
-              provider: this.options.model.provider,
-              id: this.options.model.id,
-            },
-          });
-        } catch (error) {
-          this.totalDelegations -= 1;
-          throw error;
-        } finally {
-          this.reservedIntentSha256.delete(intentSha256);
-        }
-        await this.emit("subagent.queued", task, {
-          taskId: task.id,
-          role: task.role,
-          description: task.description,
-          status: task.status,
-        });
-        return this.semaphore.run(() =>
-          this.runner.execute(task, task.prompt, signal, input.writePaths),
-        );
-      },
+      execute: async (_toolCallId, input, signal) =>
+        collectedToolResult(
+          await this.supervisor.collect(await this.startTask(input, signal)),
+        ),
     };
   }
 
-  private async emit(
-    type: string,
-    task: SubagentTask,
-    payload: unknown,
-  ): Promise<void> {
-    const event = await this.options.store.appendEvent({
-      threadId: task.threadId,
-      runId: task.runId,
-      type,
-      category: "subagent",
-      visibility: "user",
-      payload: toJsonValue(payload),
-    });
-    if (this.options.onEvent) {
-      try {
-        await this.options.onEvent(event);
-      } catch {
-        // Delegation persists even when the live stream disconnects.
-      }
+  private async startTask(
+    input: SubagentStartToolInput,
+    signal?: AbortSignal,
+  ) {
+    if (!this.enabledRoles.has(input.role)) {
+      throw new Error(`Subagent role is disabled: ${input.role}`);
+    }
+    if (
+      (input.role === "coder" && !input.writePaths) ||
+      (input.role !== "coder" && input.writePaths !== undefined)
+    ) {
+      throw new Error("Only coder Subagents require explicit writePaths");
+    }
+    const prompt = input.task.trim();
+    const failureContextSha256 =
+      input.role === "coder"
+        ? coderFailureContextSha256(this.options.profile, {
+            provider:
+              this.options.modelRouteRequest?.subagentRoles?.coder?.model
+                .provider ?? this.options.model.provider,
+            id:
+              this.options.modelRouteRequest?.subagentRoles?.coder?.model.id ??
+              this.options.model.id,
+          })
+        : undefined;
+    const reusable = input.revivedFromTaskId
+      ? undefined
+      : findReusableDelegation(
+          this.options.store.listSubagentTasks(this.options.run.threadId),
+          input.role,
+          prompt,
+          ...(failureContextSha256 ? [{ failureContextSha256 }] : []),
+        );
+    if (reusable) {
+      throw new Error(
+        `Delegation intent already has durable ${reusable.status} task ${reusable.id}; reuse it instead of delegating again`,
+      );
+    }
+    const intentSha256 = delegationIntentSha256(input.role, prompt);
+    if (this.reservedIntentSha256.has(intentSha256)) {
+      throw new Error(
+        "Delegation intent is already being created; reuse the durable task instead",
+      );
+    }
+    if (this.totalDelegations >= this.limits.maxTotal) {
+      throw new Error(
+        `Subagent total budget exhausted (${this.limits.maxTotal})`,
+      );
+    }
+    this.totalDelegations += 1;
+    this.reservedIntentSha256.add(intentSha256);
+    try {
+      const request = subagentRequestFromToolInput(input, {
+        threadId: this.options.run.threadId,
+        runId: this.options.run.id,
+        ...(this.options.modelRouteRequest
+          ? { modelRoute: this.options.modelRouteRequest }
+          : {}),
+      });
+      return await this.supervisor.start(request, {
+        ...(signal ? { signal } : {}),
+        ...(failureContextSha256 ? { failureContextSha256 } : {}),
+      });
+    } catch (error) {
+      this.totalDelegations -= 1;
+      throw error;
+    } finally {
+      this.reservedIntentSha256.delete(intentSha256);
     }
   }
 }
 
-function toJsonValue(value: unknown): import("@napier/contracts").JsonValue {
-  try {
-    return JSON.parse(
-      JSON.stringify(value),
-    ) as import("@napier/contracts").JsonValue;
-  } catch {
-    return String(value);
+export function coderFailureContextSha256(
+  profile: Pick<AgentProfile, "enabledTools" | "toolPolicy">,
+  model: SubagentTask["model"],
+): string {
+  return delegationFailureContextSha256({
+    role: "coder",
+    model,
+    toolSchemaSha256: delegationIntentSha256(
+      "coder",
+      JSON.stringify({
+        candidateFileSchemaSha256: SUBAGENT_WORKTREE_FILE_TOOL_SCHEMA_SHA256,
+        enabledTools: profile.enabledTools.slice().sort(),
+        toolPolicy: profile.toolPolicy,
+      }),
+    ),
+  });
+}
+
+function collectedToolResult(
+  collected: Awaited<ReturnType<SubagentSupervisor["collect"]>>,
+): {
+  content: Array<{ type: "text"; text: string }>;
+  details: DelegationDetails;
+} {
+  if (collected.status !== "completed") {
+    if (
+      collected.task.stopReason === "cancelled" &&
+      collected.task.startedAt === undefined
+    ) {
+      throw new Error("Subagent task cancelled before start");
+    }
+    throw new Error(
+      `Delegation ${collected.task.id} ${collected.status}: ${collected.task.error ?? "Subagent did not complete"}`,
+    );
   }
+  const value = collected.providerResult;
+  if (!value || Array.isArray(value) || typeof value !== "object") {
+    throw new Error("Subagent provider result is unavailable");
+  }
+  return value as unknown as {
+    content: Array<{ type: "text"; text: string }>;
+    details: DelegationDetails;
+  };
+}
+
+function collectedSupervisorToolResult(
+  collected: Awaited<ReturnType<SubagentSupervisor["collect"]>>,
+) {
+  const task = collected.task;
+  return {
+    content: [
+      {
+        type: "text" as const,
+        text:
+          collected.status === "completed"
+            ? `Subagent ${task.id} completed; inspect structured details for its output.`
+            : `Subagent ${task.id} ended ${collected.status}: ${task.error ?? "no diagnostic"}`,
+      },
+    ],
+    details: {
+      kind: collected.kind,
+      schemaVersion: collected.schemaVersion,
+      handle: collected.handle,
+      status: collected.status,
+      taskId: task.id,
+      role: task.role,
+      stopReason: task.stopReason ?? null,
+      ...(task.error ? { error: task.error } : {}),
+      ...(collected.outcome ? { outcome: collected.outcome } : {}),
+      ...(collected.output !== undefined ? { output: collected.output } : {}),
+      ...(collected.outputSchemaSha256
+        ? { outputSchemaSha256: collected.outputSchemaSha256 }
+        : {}),
+    },
+  };
 }

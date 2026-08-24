@@ -3,6 +3,7 @@ import { createJavascriptKernelTool } from "./javascript-kernel-tool.js";
 import { PythonKernelManager } from "./python-kernel.js";
 import { createPythonKernelTool } from "./python-kernel-tool.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
+import type { GovernedCodeBridgeDispatcher } from "./governed-code-bridge-model.js";
 
 export class AgentKernelRuntime {
   private readonly javascript: JavascriptKernelManager | undefined;
@@ -18,6 +19,7 @@ export class AgentKernelRuntime {
   createTools(
     enabledTools: readonly string[],
     context: { threadId: string; runId: string },
+    codeBridge?: GovernedCodeBridgeDispatcher,
   ): Array<
     | ReturnType<typeof createJavascriptKernelTool>
     | ReturnType<typeof createPythonKernelTool>
@@ -27,10 +29,12 @@ export class AgentKernelRuntime {
       | ReturnType<typeof createPythonKernelTool>
     > = [];
     if (enabledTools.includes("javascript_kernel") && this.javascript) {
-      tools.push(createJavascriptKernelTool(this.javascript, context));
+      tools.push(
+        createJavascriptKernelTool(this.javascript, context, codeBridge),
+      );
     }
     if (enabledTools.includes("python_kernel") && this.python) {
-      tools.push(createPythonKernelTool(this.python, context));
+      tools.push(createPythonKernelTool(this.python, context, codeBridge));
     }
     return tools;
   }

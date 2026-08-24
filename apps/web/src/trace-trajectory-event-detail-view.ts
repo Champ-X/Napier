@@ -3,6 +3,7 @@ import type { RunEvent } from "@napier/contracts";
 import { messageEventTraceView } from "./message-event-view";
 import { modelEventTraceView } from "./model-event-view";
 import { modelResponseTraceView } from "./model-response-view";
+import { modelRouteEventTraceView } from "./model-route-event-view";
 import { toolEventTraceView } from "./tool-event-view";
 import type { TraceTrajectoryEvent } from "./trace-trajectory-model";
 
@@ -117,6 +118,7 @@ function timingFields(
 function dedicatedEvidenceProjection(event: RunEvent): object | undefined {
   if (event.type.startsWith("tool.")) return toolEventTraceView(event);
   if (event.type === "model.response") return modelResponseTraceView(event);
+  if (event.type.startsWith("route_")) return modelRouteEventTraceView(event);
   if (event.type.startsWith("message.") || event.type.startsWith("system.")) {
     return messageEventTraceView(event);
   }
@@ -151,6 +153,12 @@ function safeEvidenceValue(
       "toolName",
       "status",
       "effect",
+      "role",
+      "servingModel",
+      "outcome",
+      "failureClass",
+      "fallbackReason",
+      "sideEffectState",
     ].includes(key) &&
     typeof value === "string" &&
     SAFE_TOKEN.test(value)

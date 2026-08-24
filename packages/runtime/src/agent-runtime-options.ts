@@ -7,8 +7,10 @@ import type {
   RunRecord,
 } from "@napier/contracts";
 import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
+import type { ModelRouteRequest } from "@napier/contracts/model-route";
 
 import type { EventSink } from "./event-sink.js";
+import type { ModelHarnessExperimentProfile } from "./model-harness-experiment-profile.js";
 import {
   AGENT_MESSAGE_EXPERIMENT_EXECUTION,
   type AgentMessageExperimentExecution,
@@ -30,6 +32,8 @@ export interface RunPromptOptions {
   threadId: string;
   text: string;
   model?: ModelRef;
+  modelRoute?: ModelRouteRequest;
+  harnessExperimentProfile?: ModelHarnessExperimentProfile;
   agentRevision?: number;
   capabilityPreset?: AgentCapabilityPresetId | undefined;
   sourceContinuityRunId?: string;

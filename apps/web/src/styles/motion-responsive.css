@@ -183,7 +183,7 @@
   }
 
   .run-decision-dockets {
-    max-height: 130px;
+    max-height: min(62vh, 560px);
     padding-right: 12px;
     padding-left: 41px;
   }
@@ -195,6 +195,12 @@
 
   .operator-decision-options {
     grid-template-columns: 1fr;
+  }
+
+  .operator-decision-context {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
   }
 
   .operator-decision footer {

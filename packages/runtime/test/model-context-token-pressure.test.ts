@@ -14,7 +14,10 @@ import {
   modelContextTokenCalibration,
 } from "../src/model-context-token-meter.js";
 import { projectModelContextTokenPressure } from "../src/model-context-token-pressure.js";
+import { projectModelContextTokenPressureWithProvider } from "../src/model-context-token-pressure.js";
 import { compileAuxiliaryPrompt } from "../src/agent-prompt-layers.js";
+import { TokenMeterRegistry } from "../src/token-meter-provider.js";
+import { RollingTokenCalibrationRegistry } from "../src/token-meter-calibration.js";
 
 describe("model context token pressure", () => {
   it("meters every context component with provider calibration and reserves", () => {
@@ -141,6 +144,126 @@ describe("model context token pressure", () => {
 
     expect(() => project(model, context)).toThrow(
       "tool exchange is incomplete",
+    );
+  });
+
+  it("uses a provider estimator without allowing it below the conservative fallback", async () => {
+    const model = fixtureModel();
+    const context: Context = { messages: [user("provider estimate")] };
+    const registry = new TokenMeterRegistry();
+    registry.register({
+      id: "test.official-tokenizer",
+      supports: () => true,
+      measure: () => ({ estimatedTokens: 1, method: "test.native-v1" }),
+    });
+
+    const projection = await projectModelContextTokenPressureWithProvider(
+      {
+        model,
+        context,
+        options: { maxTokens: 700 },
+        compiledPrompt: compiled(model, "System prompt"),
+        modelAttempt: 1,
+        recoveryAttempt: 0,
+      },
+      registry,
+    );
+
+    expect(projection.receipt).toEqual(
+      expect.objectContaining({
+        meterProviderId: "test.official-tokenizer",
+        estimateMethod: "test.native-v1",
+        fallbackApplied: true,
+      }),
+    );
+    expect(projection.receipt.activeMessageEstimatedTokens).toBeGreaterThan(1);
+  });
+
+  it("falls back after provider failure and never serializes image bytes as text tokens", async () => {
+    const model = fixtureModel({ input: ["text", "image"] });
+    const registry = new TokenMeterRegistry();
+    registry.register({
+      id: "test.broken-tokenizer",
+      supports: () => true,
+      measure: () => {
+        throw new Error("offline");
+      },
+    });
+    const data = "a".repeat(20_000);
+    const projection = await projectModelContextTokenPressureWithProvider(
+      {
+        model,
+        context: {
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: "inspect" },
+                { type: "image", mimeType: "image/png", data },
+              ],
+              timestamp: 1,
+            },
+          ],
+        },
+        options: { maxTokens: 700 },
+        compiledPrompt: compiled(model, "System prompt"),
+        modelAttempt: 1,
+        recoveryAttempt: 0,
+      },
+      registry,
+    );
+
+    expect(projection.receipt).toEqual(
+      expect.objectContaining({
+        meterProviderId: "napier.conservative-heuristic",
+        contentClass: "multimodal",
+        fallbackApplied: true,
+      }),
+    );
+    expect(projection.receipt.activeMessageEstimatedTokens).toBeGreaterThan(
+      4_000,
+    );
+    expect(projection.receipt.activeMessageEstimatedTokens).toBeLessThan(5_000);
+  });
+
+  it("uses bounded P95 underestimation samples and never lowers estimates", () => {
+    const registry = new RollingTokenCalibrationRegistry(3);
+    const identity = {
+      provider: "openai",
+      model: "gpt-test",
+      contentClass: "text" as const,
+    };
+    registry.observe({
+      ...identity,
+      baseEstimatedInputTokens: 100,
+      estimatedInputTokens: 100,
+      actualInputTokens: 120,
+    });
+    registry.observe({
+      ...identity,
+      baseEstimatedInputTokens: 100,
+      estimatedInputTokens: 120,
+      actualInputTokens: 80,
+    });
+    registry.observe({
+      ...identity,
+      baseEstimatedInputTokens: 100,
+      estimatedInputTokens: 120,
+      actualInputTokens: 150,
+    });
+    registry.observe({
+      ...identity,
+      baseEstimatedInputTokens: 100,
+      estimatedInputTokens: 150,
+      actualInputTokens: 110,
+    });
+
+    expect(registry.snapshot(identity)).toEqual(
+      expect.objectContaining({
+        sampleCount: 3,
+        safetyFactorPpm: 1_500_000,
+        p95UnderestimateRatio: 0.2,
+      }),
     );
   });
 });

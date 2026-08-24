@@ -47,7 +47,8 @@ export const WEB_UI_NARRATIVE_EXPECTATION = Object.freeze({
   phase: "Waiting",
   currentAction: "Approval",
   completedItem: "Inspect source evidence",
-  blocker: "Operator input is required before the run can continue.",
+  blocker:
+    "The run has ended. Record an answer to unlock a linked continuation.",
   nextStep: "Approve final delivery",
   harness: "Generic · Focused · 18 / 42 tools",
   artifactPath: "artifacts/research-brief.md",

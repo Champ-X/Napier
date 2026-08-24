@@ -7,6 +7,10 @@ import {
   formatModelHarnessPrompt,
   resolveModelHarnessResolution,
 } from "./model-harness-resolution.js";
+import {
+  applyModelHarnessExperimentProfile,
+  type ModelHarnessExperimentProfile,
+} from "./model-harness-experiment-profile.js";
 
 export interface EffectiveCapabilitiesPromptBuilderInput {
   requestedTools: readonly string[];
@@ -18,6 +22,7 @@ export interface EffectiveCapabilitiesPromptBuilderInput {
   browserInteractionConfirmationAvailable: boolean;
   model: Pick<Model<Api>, "api" | "provider" | "id">;
   messages: readonly Message[];
+  harnessExperimentProfile?: ModelHarnessExperimentProfile | undefined;
 }
 
 export function createEffectiveCapabilitiesPromptBuilder(
@@ -34,11 +39,15 @@ export function createEffectiveCapabilitiesPromptBuilder(
     return [
       formatEffectiveCapabilitiesPrompt({ ...input, activeTools }),
       formatModelHarnessPrompt(
-        resolveModelHarnessResolution({
-          model: input.model,
-          messages,
-          tools: activeTools.map((name) => ({ name })),
-        }),
+        applyModelHarnessExperimentProfile(
+          input.model,
+          resolveModelHarnessResolution({
+            model: input.model,
+            messages,
+            tools: activeTools.map((name) => ({ name })),
+          }),
+          input.harnessExperimentProfile,
+        ),
       ),
     ].join("\n\n");
   };

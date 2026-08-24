@@ -1,5 +1,8 @@
+import type { RunEvent, ThreadRecord } from "@napier/contracts";
+
 const TITLE_MAX_LENGTH = 40;
-const DEFAULT_THREAD_TITLE = "Untitled ledger";
+export const DEFAULT_THREAD_TITLE = "新会话";
+const LEGACY_DEFAULT_THREAD_TITLES = new Set(["Untitled ledger"]);
 
 export interface ThreadTitleMessages {
   system: string;
@@ -66,5 +69,32 @@ export function deriveThreadTitleFromPrompt(
 }
 
 export function isDefaultThreadTitle(title: string): boolean {
-  return title.trim() === DEFAULT_THREAD_TITLE;
+  const normalized = title.trim();
+  return (
+    normalized === DEFAULT_THREAD_TITLE ||
+    LEGACY_DEFAULT_THREAD_TITLES.has(normalized)
+  );
+}
+
+export function migrateDefaultThreadTitles(
+  threads: ThreadRecord[],
+  listEvents: (threadId: string) => RunEvent[],
+): boolean {
+  let changed = false;
+  for (const thread of threads) {
+    if (!isDefaultThreadTitle(thread.title)) continue;
+    const payload = listEvents(thread.id).find(
+      (event) => event.type === "message.user",
+    )?.payload;
+    const text =
+      payload && typeof payload === "object" && !Array.isArray(payload)
+        ? payload["text"]
+        : undefined;
+    const title =
+      typeof text === "string" ? deriveThreadTitleFromPrompt(text) : undefined;
+    if (!title || title === thread.title) continue;
+    thread.title = title;
+    changed = true;
+  }
+  return changed;
 }

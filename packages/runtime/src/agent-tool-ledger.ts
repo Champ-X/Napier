@@ -87,6 +87,11 @@ import {
   delegateTaskOutputLedgerProjection,
 } from "./subagents.js";
 import {
+  isSubagentSupervisorToolName,
+  subagentSupervisorToolInputProjection,
+  subagentSupervisorToolOutputProjection,
+} from "./subagent-supervisor-tools.js";
+import {
   subagentWorktreeToolCallArgumentsLedgerProjection,
   subagentWorktreeToolInputLedgerProjection,
   subagentWorktreeToolOutputLedgerProjection,
@@ -178,6 +183,9 @@ export function agentToolCallArgumentsLedgerProjection(
   if (toolName === "delegate_task") {
     return delegateTaskCallArgumentsLedgerProjection(args);
   }
+  if (isSubagentSupervisorToolName(toolName)) {
+    return subagentSupervisorToolInputProjection(toolName, args);
+  }
   if (toolName === "subagent_worktree_apply") {
     return subagentWorktreeToolCallArgumentsLedgerProjection(args);
   }
@@ -246,6 +254,9 @@ export function agentToolInputLedgerProjection(
   }
   if (toolName === "delegate_task") {
     return delegateTaskInputLedgerProjection(args);
+  }
+  if (isSubagentSupervisorToolName(toolName)) {
+    return subagentSupervisorToolInputProjection(toolName, args);
   }
   if (toolName === "subagent_worktree_apply") {
     return subagentWorktreeToolInputLedgerProjection(args);
@@ -324,6 +335,9 @@ export function agentToolOutputLedgerProjection(
   }
   if (toolName === "delegate_task") {
     return delegateTaskOutputLedgerProjection(output, result);
+  }
+  if (isSubagentSupervisorToolName(toolName)) {
+    return subagentSupervisorToolOutputProjection(output, result);
   }
   if (toolName === "subagent_worktree_apply") {
     return subagentWorktreeToolOutputLedgerProjection(output, result);

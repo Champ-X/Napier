@@ -2059,7 +2059,7 @@ describe("AgentRuntime demo path", () => {
     await store.initialize();
     const agent = store.listAgents()[0]!;
     const thread = await store.createThread({
-      title: "Operator decision continuation",
+      title: "Untitled ledger",
       agentId: agent.id,
     });
     const faux = fauxProvider({ provider: "faux-operator-decision" });
@@ -2105,7 +2105,7 @@ describe("AgentRuntime demo path", () => {
 
     expect(originRun.status).toBe("completed");
     expect(faux.state.callCount).toBe(1);
-    expect(store.getThread(thread.id).status).toBe("waiting");
+    expect(store.getThread(thread.id).status).toBe("waiting"); expect(store.getThread(thread.id).title).toBe("Implement the next product slice.");
     const pending = (await store.listOperatorDecisions(thread.id))[0]!;
     expect(pending).toEqual(
       expect.objectContaining({
@@ -3942,7 +3942,7 @@ describe("AgentRuntime demo path", () => {
     const events = await store.listEvents(thread.id);
     expect(events.find((event) => event.type === "context.prepared")?.payload).toEqual(
       expect.objectContaining({
-        deferredToolCount: 1,
+        deferredToolCount: 6,
       }),
     );
     expect(

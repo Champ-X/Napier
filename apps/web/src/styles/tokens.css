@@ -1,7 +1,10 @@
 /* Generated from DESIGN.md. Do not edit by hand. */
-/* source-sha256: b133bb16e9a3d663787f22ebe1420e9691375d4d73e236b9bbcc63329b3988ea */
+/* source-sha256: cc4f9e7ae6d327de30d18884912d5539a5a30a76988bff5f62ecfca2d07562a0 */
 :root {
   color-scheme: light;
+  --button-height: 32px;
+  --button-height-primary: 40px;
+  --button-radius: 6px;
   --color-accent: #3A58EC;
   --color-accent-active: #3048C8;
   --color-accent-hover: #3A54E0;
@@ -39,10 +42,14 @@
   --color-warning-border: #97731D;
   --color-warning-solid: #C2891A;
   --color-warning-surface: #F3E8C8;
+  --composer-radius: 14px;
+  --composer-shadow: 0 1px 2px rgb(23 33 60 / 6%), 0 8px 24px rgb(23 33 60 / 8%);
   --control-focus-offset: 2px;
   --control-focus-width: 3px;
   --control-target: 32px;
   --control-target-primary: 40px;
+  --disclosure-radius: 6px;
+  --disclosure-row-height: 32px;
   --duration-base: 160ms;
   --duration-fast: 120ms;
   --duration-slow: 220ms;
@@ -65,20 +72,30 @@
   --inset-sm: 12px;
   --inset-xl: 32px;
   --inset-xs: 8px;
-  --layout-composer-max: 240px;
-  --layout-composer-min: 48px;
-  --layout-evidence-rail: 320px;
-  --layout-reading-max: 840px;
-  --layout-reading-min: 760px;
+  --inspector-radius: 10px;
+  --inspector-width: 340px;
+  --layout-center-min: 640px;
+  --layout-composer-expanded-max: 240px;
+  --layout-composer-max: 160px;
+  --layout-composer-min: 56px;
+  --layout-composer-rest-max: 88px;
+  --layout-evidence-rail: 340px;
+  --layout-evidence-rail-max: 400px;
+  --layout-evidence-rail-min: 320px;
+  --layout-reading-max: 880px;
+  --layout-reading-min: 640px;
   --layout-reading-target: 800px;
   --layout-settings-form: 800px;
-  --layout-sidebar-compact: 68px;
-  --layout-sidebar-expanded: 272px;
-  --layout-status-bar: 44px;
+  --layout-sidebar-compact: 56px;
+  --layout-sidebar-expanded: 240px;
+  --layout-sidebar-expanded-max: 280px;
+  --layout-sidebar-expanded-min: 224px;
+  --layout-status-bar: 40px;
+  --layout-topbar: 50px;
   --leading-body: 1.7;
   --leading-compact: 1.45;
   --leading-heading: 1.3;
-  --radius-full: 18px;
+  --radius-full: 999px;
   --radius-lg: 14px;
   --radius-md: 10px;
   --radius-sm: 6px;
@@ -106,12 +123,15 @@
   --text-2xl: 30px;
   --text-3xl: 32px;
   --text-4xl: 40px;
-  --text-annotation: 11px;
+  --text-annotation: 12px;
   --text-base: 15px;
   --text-lg: 16px;
   --text-sm: 13px;
   --text-xl: 22px;
   --text-xs: 12px;
+  --trajectory-preview-lines: 16;
+  --trajectory-row-height: 30px;
+  --trajectory-row-height-expanded: 44px;
 }
 
 @media (prefers-contrast: more) {

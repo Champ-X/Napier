@@ -7,6 +7,13 @@ import {
 } from "./kernel-plugin-manifest.js";
 import type { KernelServiceRegistration } from "./kernel-service-registry.js";
 import type { AgentModelCallExtension } from "./kernel-model-call-pipeline.js";
+import type {
+  AgentCompletionLifecycleContext,
+  AgentStepLifecycleContext,
+  AgentToolLifecycleContext,
+  LifecycleExtension,
+  LifecycleExtensionEffect,
+} from "./lifecycle-extension-pipeline.js";
 
 export interface KernelPluginScope {
   register<T>(registration: KernelServiceRegistration<T>): void;
@@ -15,6 +22,15 @@ export interface KernelPluginScope {
     handler: KernelHookHandler<Name>,
   ): () => void;
   interceptModelCall(extension: AgentModelCallExtension): () => void;
+  interceptStep(
+    extension: LifecycleExtension<AgentStepLifecycleContext>,
+  ): LifecycleExtensionEffect;
+  interceptTool(
+    extension: LifecycleExtension<AgentToolLifecycleContext>,
+  ): LifecycleExtensionEffect;
+  interceptCompletion(
+    extension: LifecycleExtension<AgentCompletionLifecycleContext>,
+  ): LifecycleExtensionEffect;
   resolve(): Promise<void>;
   dispose(): Promise<void>;
 }

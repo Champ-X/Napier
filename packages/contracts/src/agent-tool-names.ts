@@ -1,4 +1,5 @@
 export const AGENT_TOOL_NAMES = [
+  "capability",
   "list_files",
   "read_file",
   "search_files",

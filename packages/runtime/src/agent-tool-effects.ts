@@ -2,6 +2,7 @@ import { CORE_STATELESS_READ_TOOL_NAMES } from "./read-only-tool-names.js";
 
 const READ_ONLY_TOOLS = new Set([
   ...CORE_STATELESS_READ_TOOL_NAMES,
+  "capability",
   "lsp_diagnostics",
   "lsp_symbols",
   "lsp_definition",
@@ -36,8 +37,13 @@ const WRITE_TOOLS = new Set([
   "update_plan_step",
   "update_plan_artifact",
   "delegate_task",
+  "subagent_start",
+  "subagent_send",
+  "subagent_cancel",
   "subagent_worktree_apply",
 ]);
+READ_ONLY_TOOLS.add("subagent_inspect");
+READ_ONLY_TOOLS.add("subagent_collect");
 const VERIFY_TOOLS = new Set([
   "verify_workspace",
   "lsp_diagnostics",

@@ -10,46 +10,46 @@
       "layout": "desktop",
       "regions": {
         "workbench": {
-          "x": 248,
+          "x": 240,
           "y": 0,
-          "width": 1032,
+          "width": 1040,
           "height": 900
         },
         "header": {
-          "x": 248,
+          "x": 240,
           "y": 0,
-          "width": 1032,
-          "height": 52
+          "width": 1040,
+          "height": 50
         },
         "status": {
-          "x": 248,
-          "y": 52,
-          "width": 1032,
-          "height": 45
+          "x": 240,
+          "y": 50,
+          "width": 1040,
+          "height": 41
         },
         "conversation": {
-          "x": 248,
-          "y": 97,
-          "width": 1032,
-          "height": 351
+          "x": 240,
+          "y": 91,
+          "width": 1040,
+          "height": 182
         },
         "composer": {
-          "x": 364,
+          "x": 360,
           "y": 668,
           "width": 800,
           "height": 210
         },
         "views": {
-          "x": 515,
-          "y": 10,
-          "width": 372,
+          "x": 520,
+          "y": 9,
+          "width": 374,
           "height": 32
         },
         "primary": {
-          "x": 248,
-          "y": 52,
-          "width": 1032,
-          "height": 848
+          "x": 240,
+          "y": 50,
+          "width": 1040,
+          "height": 850
         }
       }
     },
@@ -59,46 +59,46 @@
       "layout": "desktop",
       "regions": {
         "workbench": {
-          "x": 248,
+          "x": 240,
           "y": 0,
-          "width": 1192,
+          "width": 1200,
           "height": 900
         },
         "header": {
-          "x": 248,
+          "x": 240,
           "y": 0,
-          "width": 1192,
-          "height": 52
+          "width": 1200,
+          "height": 50
         },
         "status": {
-          "x": 248,
-          "y": 52,
-          "width": 1192,
-          "height": 45
+          "x": 240,
+          "y": 50,
+          "width": 1200,
+          "height": 41
         },
         "conversation": {
-          "x": 248,
-          "y": 97,
-          "width": 1192,
-          "height": 351
+          "x": 240,
+          "y": 91,
+          "width": 1200,
+          "height": 182
         },
         "composer": {
-          "x": 444,
+          "x": 440,
           "y": 668,
           "width": 800,
           "height": 210
         },
         "views": {
-          "x": 568,
-          "y": 10,
+          "x": 574,
+          "y": 9,
           "width": 374,
           "height": 32
         },
         "primary": {
-          "x": 248,
-          "y": 52,
-          "width": 1192,
-          "height": 848
+          "x": 240,
+          "y": 50,
+          "width": 1200,
+          "height": 850
         }
       }
     },
@@ -108,46 +108,46 @@
       "layout": "desktop",
       "regions": {
         "workbench": {
-          "x": 248,
+          "x": 240,
           "y": 0,
-          "width": 1672,
+          "width": 1680,
           "height": 1080
         },
         "header": {
-          "x": 248,
+          "x": 240,
           "y": 0,
-          "width": 1672,
-          "height": 52
+          "width": 1680,
+          "height": 50
         },
         "status": {
-          "x": 248,
-          "y": 52,
-          "width": 1672,
-          "height": 45
+          "x": 240,
+          "y": 50,
+          "width": 1680,
+          "height": 41
         },
         "conversation": {
-          "x": 248,
-          "y": 97,
-          "width": 1672,
-          "height": 531
+          "x": 240,
+          "y": 91,
+          "width": 1680,
+          "height": 362
         },
         "composer": {
-          "x": 684,
+          "x": 680,
           "y": 848,
           "width": 800,
           "height": 210
         },
         "views": {
-          "x": 728,
-          "y": 10,
+          "x": 734,
+          "y": 9,
           "width": 374,
           "height": 32
         },
         "primary": {
-          "x": 248,
-          "y": 52,
-          "width": 1672,
-          "height": 1028
+          "x": 240,
+          "y": 50,
+          "width": 1680,
+          "height": 1030
         }
       }
     }

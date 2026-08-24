@@ -1,44 +1,34 @@
 import { Agent } from "@earendil-works/pi-agent-core";
-import {
-  type Api,
-  contentText,
-  type Model,
-  type MutableModels,
-} from "@earendil-works/pi-ai";
+import type { Api, Model, MutableModels } from "@earendil-works/pi-ai";
 import {
   emptyUsage,
   type RunEvent,
   type RunRecord,
   type SubagentLimits,
-  type SubagentOutcome,
   type SubagentTask,
 } from "@napier/contracts";
 
-import { canonicalJson, sha256 } from "./ed25519.js";
+import type { ModelRouteSession } from "./model-route.js";
 import type { LocalStore } from "./store.js";
-import { createSubagentOutcomeRepairOutcome } from "./subagent-outcome-repair.js";
-import { runSubagentOutcomeRepair } from "./subagent-outcome-repair-runtime.js";
+import type { SubagentExecutionControl } from "./subagent-execution-control.js";
+import { createSubagentStream } from "./subagent-model-stream.js";
+import { settleSubagentOutcome } from "./subagent-outcome-settlement.js";
 import {
-  createGroundedSubagentOutcome,
-  formatSubagentOutcome,
-  isRepairableSubagentOutcomeResult,
-} from "./subagent-outcomes.js";
-import { subagentRoleInstructions } from "./subagent-role-instructions.js";
+  subagentRoleInstructions,
+  subagentRoleInstructionsForSchema,
+} from "./subagent-role-instructions.js";
 import {
-  addSubagentUsage,
-  formatDelegationResult,
   MAX_SUBAGENT_RESULT_CHARS,
-  MAX_SUBAGENT_STEP_CHARS,
-  subagentTaskDetails,
   subagentTaskPayload,
-  subagentToolResultText,
   subagentJsonValue,
   truncateSubagentText,
   type DelegationDetails,
 } from "./subagent-task-evidence.js";
+import { SubagentTaskObserver } from "./subagent-task-observer.js";
+import { settleSubagentTypedOutput } from "./subagent-typed-output-runtime.js";
+import { finishSubagentTypedOutput } from "./subagent-typed-output-settlement.js";
 import type {
   SubagentWorktreeMutationManager,
-  SubagentWorktreePreview,
 } from "./subagent-worktree-mutation.js";
 import type { SubagentWorktreeSession } from "./subagent-worktree-files.js";
 import { createWorkspaceTools } from "./tools.js";
@@ -51,10 +41,12 @@ export class SubagentTaskRunner {
       store: LocalStore;
       models: MutableModels;
       model: Model<Api>;
+      modelRoute?: ModelRouteSession;
       run: RunRecord;
       limits: SubagentLimits;
       parentSignal: AbortSignal;
       worktrees?: SubagentWorktreeMutationManager;
+      control?: SubagentExecutionControl;
       onEvent?: EventSink;
     },
   ) {}
@@ -131,9 +123,12 @@ export class SubagentTaskRunner {
     });
 
     let turnCapped = false;
+    let observer: SubagentTaskObserver;
     const agent = new Agent({
       initialState: {
-        systemPrompt: subagentRoleInstructions(task.role),
+        systemPrompt: task.outputSchema
+          ? subagentRoleInstructionsForSchema(task.role, task.outputSchema)
+          : subagentRoleInstructions(task.role),
         model: this.options.model,
         thinkingLevel: this.options.model.reasoning ? "medium" : "off",
         tools: worktree
@@ -141,84 +136,27 @@ export class SubagentTaskRunner {
           : createWorkspaceTools(this.options.store.workspaceRoot),
         messages: [],
       },
-      streamFn: this.options.models.streamSimple.bind(this.options.models),
+      streamFn: createSubagentStream(
+        this.options.models,
+        this.options.modelRoute,
+      ),
       sessionId: `${this.options.run.id}:${task.id}`,
       toolExecution: "parallel",
-      afterToolCall: async () => (turnCapped ? { terminate: true } : undefined),
+      afterToolCall: async () =>
+        observer?.turnCapped ? { terminate: true } : undefined,
     });
 
-    let finalText = "";
-    let lastError = "";
     let timedOut = false;
     let usage = emptyUsage();
-    let stepIndex = 0;
     let outcomeRejected = false;
-    agent.subscribe(async (event) => {
-      if (event.type === "message_end" && event.message.role === "assistant") {
-        task = await this.options.store.recordSubagentProgress(task.id, {
-          turnDelta: 1,
-        });
-        if (
-          task.turnCount >= this.options.limits.maxTurns &&
-          event.message.stopReason === "toolUse"
-        ) {
-          turnCapped = true;
-        }
-        const text = contentText(event.message.content);
-        if (text) finalText = text;
-        if (event.message.errorMessage) lastError = event.message.errorMessage;
-        usage = addSubagentUsage(usage, event.message.usage);
-        stepIndex += 1;
-        task = await this.options.store.recordSubagentProgress(task.id, {
-          stepDelta: 1,
-          usage,
-        });
-        const candidateOutput =
-          event.message.stopReason !== "toolUse" || task.role === "coder";
-        await this.emit("subagent.step", task, {
-          taskId: task.id,
-          messageIndex: stepIndex,
-          kind: "assistant",
-          ...(candidateOutput
-            ? {
-                textSha256: sha256(text),
-                textBytes: Buffer.byteLength(text, "utf8"),
-                contentRedacted: true,
-              }
-            : {
-                text: truncateSubagentText(text, MAX_SUBAGENT_STEP_CHARS),
-              }),
-          toolCalls: event.message.content
-            .filter((block) => block.type === "toolCall")
-            .map((block) => ({
-              name: block.name,
-              argumentsSha256: sha256(canonicalJson(block.arguments)),
-              argumentsBytes: Buffer.byteLength(
-                canonicalJson(block.arguments),
-                "utf8",
-              ),
-              argumentsRedacted: true,
-            })),
-        });
-      }
-      if (event.type === "tool_execution_end") {
-        stepIndex += 1;
-        task = await this.options.store.recordSubagentProgress(task.id, {
-          stepDelta: 1,
-        });
-        const text = subagentToolResultText(event);
-        await this.emit("subagent.step", task, {
-          taskId: task.id,
-          messageIndex: stepIndex,
-          kind: "tool",
-          toolName: event.toolName,
-          isError: event.isError,
-          textSha256: sha256(text),
-          textBytes: Buffer.byteLength(text, "utf8"),
-          contentRedacted: true,
-        });
-      }
-    });
+    observer = new SubagentTaskObserver(
+      this.options.store,
+      task,
+      usage,
+      this.options.limits,
+      (type, currentTask, payload) => this.emit(type, currentTask, payload),
+    );
+    agent.subscribe((event) => observer.observe(event));
 
     let abortActiveAgent = (): void => agent.abort();
     const abort = (): void => abortActiveAgent();
@@ -233,13 +171,18 @@ export class SubagentTaskRunner {
       timedOut = true;
       abortActiveAgent();
     }, this.options.limits.timeoutMs);
-    let preview: SubagentWorktreePreview | undefined;
-
     try {
       if (signals.some((signal) => signal.aborted)) {
         throw new Error("Subagent task cancelled");
       }
+      await this.options.control?.activate(agent);
       await agent.prompt(prompt);
+      this.options.control?.deactivate(agent);
+      task = observer.task;
+      usage = observer.usage;
+      turnCapped = observer.turnCapped;
+      let finalText = observer.finalText;
+      const lastError = observer.lastError;
       if (timedOut) throw new Error("Subagent task timed out");
       if (signals.some((signal) => signal.aborted)) {
         throw new Error("Subagent task cancelled");
@@ -250,139 +193,76 @@ export class SubagentTaskRunner {
         );
       }
       if (lastError) throw new Error(lastError);
-      let outcome: SubagentOutcome;
-      try {
-        outcome = await this.groundOutcome(task, finalText, worktree);
-      } catch (initialError) {
-        const initialMessage =
-          initialError instanceof Error
-            ? initialError.message
-            : "Unknown outcome error";
-        const canRepair =
-          isRepairableSubagentOutcomeResult(finalText) &&
-          task.turnCount < this.options.limits.maxTurns &&
-          !timedOut &&
-          !signals.some((signal) => signal.aborted);
-        if (!canRepair) {
-          outcomeRejected = true;
-          await this.recordOutcomeRejection(task, finalText, initialMessage);
-          throw initialError;
-        }
-        outcomeRejected = true;
-        const repair = await runSubagentOutcomeRepair({
+      task = await this.options.store.setSubagentSupervisorStatus(
+        task.id,
+        "reviewing",
+      );
+      if (task.outputSchema) {
+        const settled = await settleSubagentTypedOutput({
           store: this.options.store,
           models: this.options.models,
           model: this.options.model,
           runId: this.options.run.id,
           limits: this.options.limits,
           task,
-          predecessorResult: finalText,
-          diagnostic: initialMessage,
+          resultText: finalText,
+          outputSchema: task.outputSchema,
           usage,
           activateAgent,
           emit: (type, currentTask, payload) =>
             this.emit(type, currentTask, payload),
         });
-        task = repair.task;
-        usage = repair.usage;
-        const interruptedMessage = timedOut
-          ? "Subagent outcome repair timed out"
-          : signals.some((signal) => signal.aborted)
-            ? "Subagent outcome repair cancelled"
-            : undefined;
-        if (interruptedMessage || repair.error) {
-          const message =
-            interruptedMessage ??
-            repair.error ??
-            "Subagent outcome repair failed";
-          await this.emit(
-            "subagent.outcome.repair.outcome",
-            task,
-            createSubagentOutcomeRepairOutcome({
-              request: repair.request.payload,
-              status: "error",
-              ...(repair.resultText ? { resultText: repair.resultText } : {}),
-              diagnostic: message,
-            }),
-          );
-          await this.recordOutcomeRejection(task, repair.resultText, message);
-          throw new Error(message);
-        }
-        finalText = repair.resultText;
-        try {
-          outcome = await this.groundOutcome(task, finalText, worktree);
-        } catch (repairError) {
-          const message =
-            repairError instanceof Error
-              ? repairError.message
-              : "Unknown repaired outcome error";
-          await this.emit(
-            "subagent.outcome.repair.outcome",
-            task,
-            createSubagentOutcomeRepairOutcome({
-              request: repair.request.payload,
-              status: "rejected",
-              resultText: finalText,
-              diagnostic: message,
-            }),
-          );
-          await this.recordOutcomeRejection(task, finalText, message);
-          throw repairError;
-        }
-        await this.emit(
-          "subagent.outcome.repair.outcome",
+        task = settled.task;
+        usage = settled.usage;
+        finalText = settled.resultText;
+        const terminal = await finishSubagentTypedOutput({
+          store: this.options.store,
+          ...(this.options.worktrees ? { worktrees: this.options.worktrees } : {}),
           task,
-          createSubagentOutcomeRepairOutcome({
-            request: repair.request.payload,
-            status: "accepted",
-            resultText: finalText,
-            outcomeSha256: outcome.contentSha256,
-          }),
-        );
+          resultText: finalText,
+          output: settled.output,
+          usage,
+          ...(worktree ? { worktree } : {}),
+          ...(toolSignal ? { toolSignal } : {}),
+          emit: (type, currentTask, payload) =>
+            this.emit(type, currentTask, payload),
+        });
+        if (terminal.preview) worktree = undefined;
+        return terminal.result;
       }
-      if (worktree) {
-        preview = await this.options.worktrees!.storePreview(
-          worktree,
-          outcome.contentSha256,
-          toolSignal,
-        );
-        worktree = undefined;
-      }
-      const result = truncateSubagentText(
-        formatSubagentOutcome(outcome),
-        MAX_SUBAGENT_RESULT_CHARS,
-      );
-      task = await this.options.store.finishSubagentTask(task.id, {
-        status: "completed",
-        stopReason: "completed",
-        result,
-        outcome,
-        usage,
-      });
-      await this.emit("subagent.outcome.accepted", task, {
-        taskId: task.id,
-        role: task.role,
-        status: "accepted",
-        outcomeSha256: outcome.contentSha256,
-        resultSha256: outcome.resultSha256,
-        itemSetSha256: outcome.itemSetSha256,
-        itemCount: outcome.itemCount,
-        unknownCount: outcome.unknownCount,
-        evidenceSetSha256: outcome.evidenceSetSha256,
-        evidenceCount: outcome.evidenceCount,
-      });
-      await this.emit(
-        "subagent.completed",
+      const terminal = await settleSubagentOutcome({
+        store: this.options.store,
+        models: this.options.models,
+        model: this.options.model,
+        runId: this.options.run.id,
+        limits: this.options.limits,
         task,
-        subagentTaskPayload(task, preview),
-      );
-      return {
-        content: [
-          { type: "text", text: formatDelegationResult(task, result, preview) },
-        ],
-        details: subagentTaskDetails(task, preview),
-      };
+        resultText: finalText,
+        usage,
+        timedOut,
+        aborted: () => signals.some((signal) => signal.aborted),
+        activateAgent,
+        markOutcomeRejected: () => {
+          outcomeRejected = true;
+        },
+        emit: (type, currentTask, payload) =>
+          this.emit(type, currentTask, payload),
+        ...(this.options.worktrees ? { worktrees: this.options.worktrees } : {}),
+        ...(worktree ? { worktree } : {}),
+        ...(toolSignal ? { toolSignal } : {}),
+      });
+      if (terminal.preview) worktree = undefined;
+      return terminal.result;
     } catch (error) {
+      const finalText = observer.finalText;
+      const durableTask = this.options.store
+        .listSubagentTasks(task.threadId, task.runId)
+        .find((candidate) => candidate.id === task.id);
+      if (durableTask) {
+        task = durableTask;
+        usage = durableTask.usage;
+      }
+      turnCapped ||= observer.turnCapped;
       const message = turnCapped
         ? `Subagent turn budget exhausted (${this.options.limits.maxTurns})`
         : error instanceof Error
@@ -417,41 +297,13 @@ export class SubagentTaskRunner {
       await this.emit(`subagent.${status}`, task, subagentTaskPayload(task));
       throw new Error(`Delegation ${task.id} ${status}: ${message}`);
     } finally {
+      this.options.control?.deactivate(agent);
       clearTimeout(timeout);
       signals.forEach((signal) => signal.removeEventListener("abort", abort));
       if (worktree) {
         await this.options.worktrees?.cleanup(worktree).catch(() => undefined);
       }
     }
-  }
-
-  private groundOutcome(
-    task: SubagentTask,
-    resultText: string,
-    worktree?: SubagentWorktreeSession,
-  ): Promise<SubagentOutcome> {
-    return createGroundedSubagentOutcome({
-      taskId: task.id,
-      role: task.role,
-      model: task.model,
-      prompt: task.prompt,
-      resultText,
-      workspaceRoot: worktree?.root ?? this.options.store.workspaceRoot,
-    });
-  }
-
-  private async recordOutcomeRejection(
-    task: SubagentTask,
-    resultText: string,
-    message: string,
-  ): Promise<void> {
-    await this.emit("subagent.outcome.rejected", task, {
-      taskId: task.id,
-      role: task.role,
-      status: "rejected",
-      resultSha256: sha256(resultText),
-      diagnosticSha256: sha256(canonicalJson({ message })),
-    });
   }
 
   private async finishAborted(

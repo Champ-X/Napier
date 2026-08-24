@@ -1,34 +1,31 @@
 import { createHash } from "node:crypto";
 
 import type {
-  CreateMemoryRequest,
-  MemoryCategory,
-  MemoryFact,
-  MemorySource,
-  ReviewMemoryRequest,
+CreateMemoryRequest,
+MemoryCategory,
+MemoryFact,
+MemorySource,
+ReviewMemoryRequest,
 } from "@napier/contracts";
 
-import { createId, nowIso } from "./ids.js";
+import { createId,nowIso } from "./ids.js";
+import {
+clampConfidence,
+normalizeMemoryConsolidationIds,
+normalizeMemoryId
+} from "./memory-proposal-parser.js";
 
-const MEMORY_CATEGORIES = new Set<MemoryCategory>([
-  "preference",
-  "context",
-  "goal",
-  "constraint",
-  "decision",
-  "identity",
-  "behavior",
-  "correction",
-  "other",
-]);
+export {
+memoryReplacementTargetIds,
+normalizeMemoryConsolidationIds,
+parseMemoryProposalResponse
+} from "./memory-proposal-parser.js";
+
 export const DEFAULT_MEMORY_REVIEW_INTERVAL_DAYS = 90;
 const MIN_MEMORY_REVIEW_INTERVAL_DAYS = 1;
 const MAX_MEMORY_REVIEW_INTERVAL_DAYS = 3_650;
 const MAX_MEMORY_CORRECTION_CANDIDATES = 40;
 const MAX_MEMORY_CORRECTION_INVENTORY_CHARACTERS = 6_000;
-const MIN_MEMORY_CONSOLIDATION_TARGETS = 2;
-const MAX_MEMORY_CONSOLIDATION_TARGETS = 8;
-const MEMORY_ID = /^memory_[a-z0-9]{8,80}$/;
 
 export function createMemoryFact(
   input: CreateMemoryRequest,
@@ -212,21 +209,6 @@ export function supersedeMemoryFact(
   };
 }
 
-export function memoryReplacementTargetIds(
-  fact: Pick<MemoryFact, "supersedesMemoryId" | "consolidatesMemoryIds">,
-): string[] {
-  if (fact.supersedesMemoryId && fact.consolidatesMemoryIds) {
-    throw new Error(
-      `Memory replacement cannot have correction and consolidation targets`,
-    );
-  }
-  return fact.supersedesMemoryId
-    ? [normalizeMemoryId(fact.supersedesMemoryId)]
-    : fact.consolidatesMemoryIds
-      ? normalizeMemoryConsolidationIds(fact.consolidatesMemoryIds)
-      : [];
-}
-
 export function formatMemoryContext(
   facts: readonly MemoryFact[],
   agentId: string,
@@ -268,126 +250,6 @@ export function formatMemoryContext(
     factIds,
     truncated,
   };
-}
-
-export function parseMemoryProposalResponse(
-  text: string,
-  allowedReplacementMemoryIds: readonly string[] = [],
-): CreateMemoryRequest[] {
-  const withoutThinking = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-  const unfenced = withoutThinking
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/i, "");
-  const start = unfenced.indexOf("{");
-  const end = unfenced.lastIndexOf("}");
-  if (start < 0 || end <= start) {
-    throw new Error("Memory extractor response did not contain a JSON object");
-  }
-  const payload = JSON.parse(unfenced.slice(start, end + 1)) as {
-    facts?: unknown;
-  };
-  if (!Array.isArray(payload.facts)) {
-    throw new Error("Memory extractor response must contain a facts array");
-  }
-  const allowedTargets = new Set(allowedReplacementMemoryIds);
-  const proposals = payload.facts.slice(0, 5).flatMap((candidate) => {
-    if (!candidate || Array.isArray(candidate) || typeof candidate !== "object")
-      return [];
-    const record = candidate as Record<string, unknown>;
-    if (typeof record["content"] !== "string") return [];
-    const content = record["content"].replace(/\s+/g, " ").trim();
-    if (!content) return [];
-    const rawCategory = record["category"];
-    const category =
-      typeof rawCategory === "string" &&
-      MEMORY_CATEGORIES.has(rawCategory as MemoryCategory)
-        ? (rawCategory as MemoryCategory)
-        : "other";
-    const confidence =
-      typeof record["confidence"] === "number"
-        ? clampConfidence(record["confidence"])
-        : 0.7;
-    const rawSupersedesMemoryId = record["supersedesMemoryId"];
-    const rawConsolidatesMemoryIds = record["consolidatesMemoryIds"];
-    if (
-      rawSupersedesMemoryId !== undefined &&
-      typeof rawSupersedesMemoryId !== "string"
-    ) {
-      throw new Error(
-        "Memory extractor supersedesMemoryId must be a string when present",
-      );
-    }
-    if (
-      rawConsolidatesMemoryIds !== undefined &&
-      !Array.isArray(rawConsolidatesMemoryIds)
-    ) {
-      throw new Error(
-        "Memory extractor consolidatesMemoryIds must be an array when present",
-      );
-    }
-    if (
-      rawSupersedesMemoryId !== undefined &&
-      rawConsolidatesMemoryIds !== undefined
-    ) {
-      throw new Error(
-        "Memory extractor fact cannot correct and consolidate at the same time",
-      );
-    }
-    const supersedesMemoryId = rawSupersedesMemoryId
-      ? normalizeMemoryId(rawSupersedesMemoryId)
-      : undefined;
-    if (supersedesMemoryId && !allowedTargets.has(supersedesMemoryId)) {
-      throw new Error(
-        `Memory extractor referenced unavailable correction target: ${supersedesMemoryId}`,
-      );
-    }
-    const consolidatesMemoryIds = rawConsolidatesMemoryIds
-      ? normalizeMemoryConsolidationIds(
-          rawConsolidatesMemoryIds.map((value) => {
-            if (typeof value !== "string") {
-              throw new Error(
-                "Memory extractor consolidation target IDs must be strings",
-              );
-            }
-            return value;
-          }),
-        )
-      : undefined;
-    for (const targetId of consolidatesMemoryIds ?? []) {
-      if (!allowedTargets.has(targetId)) {
-        throw new Error(
-          `Memory extractor referenced unavailable consolidation target: ${targetId}`,
-        );
-      }
-    }
-    const normalizedCategory = supersedesMemoryId
-      ? "correction"
-      : consolidatesMemoryIds && category === "correction"
-        ? "context"
-        : category;
-    return [
-      {
-        content,
-        category: normalizedCategory,
-        confidence,
-        scope: "workspace" as const,
-        ...(supersedesMemoryId ? { supersedesMemoryId } : {}),
-        ...(consolidatesMemoryIds ? { consolidatesMemoryIds } : {}),
-      },
-    ];
-  });
-  const replacementTargets = new Set<string>();
-  for (const proposal of proposals) {
-    for (const targetId of memoryReplacementTargetIds(proposal)) {
-      if (replacementTargets.has(targetId)) {
-        throw new Error(
-          `Memory extractor repeated replacement target: ${targetId}`,
-        );
-      }
-      replacementTargets.add(targetId);
-    }
-  }
-  return proposals;
 }
 
 export function buildMemoryExtractorMessages(
@@ -521,33 +383,4 @@ function normalizeMemoryContent(value: string): string {
   if (content.length > 2_000)
     throw new Error("Memory content must be at most 2,000 characters");
   return content;
-}
-
-function normalizeMemoryId(value: string): string {
-  const normalized = value.trim();
-  if (!MEMORY_ID.test(normalized)) {
-    throw new Error(`Invalid memory ID: ${value}`);
-  }
-  return normalized;
-}
-
-export function normalizeMemoryConsolidationIds(
-  values: readonly string[],
-): string[] {
-  const normalized = [...new Set(values.map(normalizeMemoryId))].sort();
-  if (
-    normalized.length < MIN_MEMORY_CONSOLIDATION_TARGETS ||
-    normalized.length > MAX_MEMORY_CONSOLIDATION_TARGETS ||
-    normalized.length !== values.length
-  ) {
-    throw new Error(
-      `Memory consolidation requires ${MIN_MEMORY_CONSOLIDATION_TARGETS}-${MAX_MEMORY_CONSOLIDATION_TARGETS} unique targets`,
-    );
-  }
-  return normalized;
-}
-
-function clampConfidence(value: number): number {
-  if (!Number.isFinite(value)) return 0.5;
-  return Math.max(0, Math.min(1, value));
 }

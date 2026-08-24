@@ -34,6 +34,29 @@ export class InteractiveEventRenderer {
         }
         return;
       }
+      if (event.type === "route_attempt_started") {
+        const model = routeModel(event);
+        const attempt = numberField(event.payload, "attempt");
+        const fallbackReason = stringField(event.payload, "fallbackReason");
+        await writeLine(
+          this.stderr,
+          `[route] ${model} attempt ${attempt ?? "?"}${
+            fallbackReason ? ` (fallback: ${displayId(fallbackReason)})` : ""
+          }`,
+        );
+        return;
+      }
+      if (event.type === "route_attempt_ended") {
+        const outcome = displayId(stringField(event.payload, "outcome"));
+        const failure = stringField(event.payload, "failureClass");
+        await writeLine(
+          this.stderr,
+          `[route] ${routeModel(event)} ${outcome}${
+            failure ? ` (${displayId(failure)})` : ""
+          }`,
+        );
+        return;
+      }
       if (event.type === "tool.started") {
         const toolName = displayId(stringField(event.payload, "toolName"));
         const effect = stringField(event.payload, "effect");
@@ -99,6 +122,22 @@ function stringField(input: unknown, field: string): string | undefined {
   }
   const value = (input as Record<string, unknown>)[field];
   return typeof value === "string" ? value : undefined;
+}
+
+function numberField(input: unknown, field: string): number | undefined {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return undefined;
+  }
+  const value = (input as Record<string, unknown>)[field];
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0
+    ? value
+    : undefined;
+}
+
+function routeModel(event: RunEvent): string {
+  return `${displayId(stringField(event.payload, "providerId"))}/${displayId(
+    stringField(event.payload, "modelId"),
+  )}`;
 }
 
 function displayId(value: string | undefined): string {

@@ -1681,8 +1681,9 @@ describe("LocalStore", () => {
     expect(detail.subagents).toEqual([
       expect.objectContaining({
         id: task.id,
-        status: "cancelled",
-        stopReason: "cancelled",
+        status: "failed",
+        stopReason: "error",
+        supervisorStatus: "orphaned",
         error: "Parent run was interrupted by a runtime restart.",
       }),
     ]);
@@ -1718,9 +1719,7 @@ describe("LocalStore", () => {
     expect(
       detail.events.filter((event) => event.type === "run.interrupted"),
     ).toHaveLength(1);
-    expect(
-      detail.events.filter((event) => event.type === "subagent.cancelled"),
-    ).toHaveLength(1);
+    expect(detail.events.filter((event) => event.type === "subagent.orphaned")).toHaveLength(1);
     expect(
       detail.events.filter((event) => event.type === "plan.step.blocked"),
     ).toHaveLength(1);
@@ -1737,7 +1736,7 @@ describe("LocalStore", () => {
       events.filter((event) => event.type === "run.interrupted"),
     ).toHaveLength(1);
     expect(
-      events.filter((event) => event.type === "subagent.cancelled"),
+      events.filter((event) => event.type === "subagent.orphaned"),
     ).toHaveLength(1);
     expect(
       events.filter((event) => event.type === "plan.step.blocked"),

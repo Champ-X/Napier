@@ -164,6 +164,7 @@ describe("Agent Kernel", () => {
         "active",
       );
       const modelCallPhases: string[] = [];
+      const lifecyclePhases: string[] = [];
       plugin.interceptModelCall({
         id: "test.context-marker",
         prepare: (call) => {
@@ -185,6 +186,35 @@ describe("Agent Kernel", () => {
         around: (_call, next) => {
           modelCallPhases.push("around");
           return next();
+        },
+      });
+      plugin.interceptStep({
+        id: "test.step-observer",
+        around: async (context, next) => {
+          lifecyclePhases.push(
+            `step:${context.stepIndex}:enter:${context.capabilityView.activeToolNames().includes("read_file")}`,
+          );
+          const result = await next();
+          lifecyclePhases.push(`step:${context.stepIndex}:exit`);
+          return result;
+        },
+      });
+      plugin.interceptTool({
+        id: "test.tool-observer",
+        around: async (context, next) => {
+          lifecyclePhases.push(`tool:${context.toolCall.name}:enter`);
+          const result = await next();
+          lifecyclePhases.push(`tool:${context.toolCall.name}:exit`);
+          return result;
+        },
+      });
+      plugin.interceptCompletion({
+        id: "test.completion-observer",
+        around: async (context, next) => {
+          lifecyclePhases.push(`completion:${context.status}:enter`);
+          const result = await next();
+          lifecyclePhases.push(`completion:${context.status}:exit`);
+          return result;
         },
       });
 
@@ -211,6 +241,16 @@ describe("Agent Kernel", () => {
         "around",
         "prepare:1",
         "around",
+      ]);
+      expect(lifecyclePhases).toEqual([
+        "step:1:enter:true",
+        "step:1:exit",
+        "tool:read_file:enter",
+        "tool:read_file:exit",
+        "step:2:enter:true",
+        "step:2:exit",
+        "completion:completed:enter",
+        "completion:completed:exit",
       ]);
       const inspection = services.kernel.inspect();
       expect(inspection.profile.id).toBe("cli");
@@ -301,6 +341,29 @@ describe("Agent Kernel", () => {
           }),
         ]),
       );
+      expect(inspection.lifecyclePipelines).toEqual({
+        step: [
+          expect.objectContaining({
+            id: "test.step-observer",
+            owner: "plugin.fixture",
+            boundary: "external",
+          }),
+        ],
+        tool: [
+          expect.objectContaining({
+            id: "test.tool-observer",
+            owner: "plugin.fixture",
+            boundary: "external",
+          }),
+        ],
+        completion: [
+          expect.objectContaining({
+            id: "test.completion-observer",
+            owner: "plugin.fixture",
+            boundary: "external",
+          }),
+        ],
+      });
       expect(inspection.completionControl).toEqual(
         expect.objectContaining({
           total: 1,
@@ -373,6 +436,11 @@ describe("Agent Kernel", () => {
           order: 10_000,
         }),
       ]);
+      expect(services.kernel.inspect().lifecyclePipelines).toEqual({
+        step: [],
+        tool: [],
+        completion: [],
+      });
       const harnessEvents = (await services.store.listEvents(thread.id)).filter(
         (event) => event.type === "model.harness.resolved",
       );
@@ -451,6 +519,57 @@ describe("Agent Kernel", () => {
           text: "Replacement provider implementation.",
         }),
       );
+      expect(lifecyclePhases).toHaveLength(8);
+
+      const narrowedProvider = fauxProvider({ provider: "faux-narrowed" });
+      narrowedProvider.setResponses([
+        (context) => {
+          expect(context.tools?.map((tool) => tool.name)).not.toContain(
+            "read_file",
+          );
+          return fauxAssistantMessage(
+            fauxToolCall("read_file", { path: "evidence.txt" }),
+            { stopReason: "toolUse" },
+          );
+        },
+        (context) => {
+          expect(JSON.stringify(context.messages)).toContain(
+            "Tool read_file is not active for this step",
+          );
+          expect(JSON.stringify(context.messages)).not.toContain(
+            "kernel evidence",
+          );
+          return fauxAssistantMessage("Narrowed capability was enforced.");
+        },
+        fauxAssistantMessage('{"facts":[]}'),
+      ]);
+      services.models.registerProvider(narrowedProvider.provider);
+      const narrowing = services.kernel.scope("plugin.narrowing-fixture");
+      narrowing.interceptStep({
+        id: "test.remove-read",
+        prepare: (context) => context.capabilityView.restrictTo([]),
+      });
+      const narrowedThread = await services.store.createThread({
+        title: "Kernel lifecycle capability narrowing",
+        agentId: agent.id,
+      });
+      const narrowedRun = await services.kernel.runPrompt({
+        threadId: narrowedThread.id,
+        text: "Attempt the hidden read tool.",
+        model: { provider: "faux-narrowed", id: "faux-1" },
+      });
+      expect(narrowedRun.status).toBe("completed");
+      expect(
+        (await services.store.listEvents(narrowedThread.id)).filter(
+          (event) => event.type === "tool.completed",
+        ),
+      ).toHaveLength(0);
+      expect(
+        (await services.store.listEvents(narrowedThread.id)).find(
+          (event) => event.type === "tool.failed",
+        )?.payload,
+      ).toEqual(expect.objectContaining({ toolName: "read_file" }));
+      await narrowing.dispose();
 
       const legacyThread = await services.store.createThread({
         title: "Legacy runtime compatibility",

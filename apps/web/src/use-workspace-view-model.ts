@@ -78,7 +78,7 @@ import {
   verifyThreadReplayBundle as verifyThreadReplayBundleApi,
   type WebThreadDetail,
 } from "./api";
-import { getBootstrap } from "./bootstrap-api";
+import { getBootstrap, getBootstrapRestoringWorkspace } from "./bootstrap-api";
 import { contextCheckpointPayload } from "./context-checkpoint-payload";
 import { copy } from "./copy";
 import { extensionCopy } from "./extension-copy";
@@ -318,7 +318,7 @@ export function useWorkspaceViewModel() {
     setIsLoading(true);
     setError(undefined);
     try {
-      const result = await getBootstrap(threadId);
+      const result = await getBootstrapRestoringWorkspace(threadId);
       if (result.activeThread) {
         threadDetailCacheRef.current.set(result.activeThread.thread.id, result.activeThread);
       }

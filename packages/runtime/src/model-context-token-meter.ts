@@ -3,17 +3,32 @@ import type {
   Context,
   Model,
   SimpleStreamOptions,
-  Tool,
 } from "@earendil-works/pi-ai";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { modelAdapterReceipt } from "./model-adapters.js";
 import type { CompiledPromptArtifact } from "./prompt-compiler.js";
+import {
+  modelContextContentClass,
+  modelContextMessageSetSha256,
+  modelContextToolDefinitionSetSha256,
+  tokenMeterToolProjection,
+  visualSafeSerialized,
+} from "./token-meter-content.js";
+import {
+  TOKEN_METER_FALLBACK_PROVIDER_ID,
+  type TokenMeterBatchMeasurement,
+  type TokenMeterContentClass,
+  type TokenMeterProviderInput,
+  type TokenMeterRegistry,
+  type TokenMeterVisualItem,
+} from "./token-meter-provider.js";
 
 export const MODEL_CONTEXT_TOKEN_METER_VERSION =
-  "napier.context-token-meter.v1" as const;
+  "napier.context-token-meter.v2" as const;
 export const MODEL_CONTEXT_TOKEN_ESTIMATE_METHOD =
   "calibrated_utf8_bytes_plus_framing_v1" as const;
+export const MODEL_CONTEXT_VISUAL_FALLBACK_TOKENS = 4_096 as const;
 
 export interface ModelContextTokenCalibration {
   id: string;
@@ -26,12 +41,19 @@ export interface TokenMeasuredItem {
   bytes: number;
   estimatedTokens: number;
   contentSha256: string;
+  visualItemCount: number;
 }
 
 export interface ModelContextTokenMeasurement {
   meterVersion: typeof MODEL_CONTEXT_TOKEN_METER_VERSION;
-  estimateMethod: typeof MODEL_CONTEXT_TOKEN_ESTIMATE_METHOD;
+  estimateMethod: string;
+  meterProviderId: string;
+  contentClass: TokenMeterContentClass;
   calibration: ModelContextTokenCalibration;
+  calibrationSampleCount: number;
+  calibrationSafetyFactorPpm: number;
+  calibrationP95UnderestimateRatio: number;
+  fallbackApplied: boolean;
   contextWindowTokens: number;
   systemPrompt: TokenMeasuredItem;
   tools: TokenMeasuredItem & { count: number; setSha256: string };
@@ -43,8 +65,21 @@ export interface ModelContextTokenMeasurement {
   outputReserveTokens: number;
   reasoningReserveTokens: number;
   safetyReserveTokens: number;
+  baseEstimatedInputTokens: number;
   estimatedInputTokens: number;
   estimatedTotalTokens: number;
+}
+
+interface PreparedTokenItem {
+  measured: TokenMeasuredItem;
+  providerInput: TokenMeterProviderInput;
+}
+
+interface PreparedModelContext {
+  contentClass: TokenMeterContentClass;
+  systemPrompt: PreparedTokenItem;
+  tools: PreparedTokenItem[];
+  messages: PreparedTokenItem[];
 }
 
 export function measureModelContext(input: {
@@ -55,62 +90,48 @@ export function measureModelContext(input: {
   recoveryAttempt: 0 | 1;
 }): ModelContextTokenMeasurement {
   const calibration = modelContextTokenCalibration(input.model);
-  const systemPrompt = measureText(
-    input.compiledPrompt.systemPrompt,
+  const prepared = prepareModelContext(input, calibration);
+  return createMeasurement(
+    input,
     calibration,
-    0,
+    prepared,
+    fallbackBatch(prepared),
   );
-  const toolItems = (input.context.tools ?? []).map((tool) =>
-    measureSerialized(
-      toolProjection(tool),
-      calibration,
-      calibration.toolFramingTokens,
-    ),
+}
+
+export async function measureModelContextWithProvider(
+  input: {
+    model: Model<Api>;
+    compiledPrompt: CompiledPromptArtifact;
+    context: Context;
+    options: SimpleStreamOptions;
+    recoveryAttempt: 0 | 1;
+  },
+  registry: TokenMeterRegistry,
+): Promise<ModelContextTokenMeasurement> {
+  const calibration = modelContextTokenCalibration(input.model);
+  const prepared = prepareModelContext(input, calibration);
+  const items = [
+    prepared.systemPrompt.providerInput,
+    ...prepared.tools.map((item) => item.providerInput),
+    ...prepared.messages.map((item) => item.providerInput),
+  ];
+  const batch = await registry.measure(
+    {
+      provider: input.model.provider,
+      model: input.model.id,
+      contentClass: prepared.contentClass,
+    },
+    items,
   );
-  const messageItems = input.context.messages.map((message) =>
-    measureSerialized(message, calibration, calibration.messageFramingTokens),
-  );
-  const tools = measuredSet(toolItems);
-  const messages = measuredSet(messageItems);
-  const outputReserveTokens = modelAdapterReceipt(
-    input.model,
-    input.options,
-  ).streamOptionMaxTokens;
-  const reasoningReserveTokens = reasoningReserve(input.model);
-  const safetyReserveTokens = safetyReserve(
-    input.model.contextWindow,
-    input.recoveryAttempt,
-  );
-  const estimatedInputTokens =
-    systemPrompt.estimatedTokens +
-    tools.estimatedTokens +
-    messages.estimatedTokens;
-  return {
-    meterVersion: MODEL_CONTEXT_TOKEN_METER_VERSION,
-    estimateMethod: MODEL_CONTEXT_TOKEN_ESTIMATE_METHOD,
-    calibration,
-    contextWindowTokens: input.model.contextWindow,
-    systemPrompt,
-    tools: { ...tools, count: toolItems.length },
-    messages: { ...messages, count: messageItems.length, items: messageItems },
-    outputReserveTokens,
-    reasoningReserveTokens,
-    safetyReserveTokens,
-    estimatedInputTokens,
-    estimatedTotalTokens:
-      estimatedInputTokens +
-      outputReserveTokens +
-      reasoningReserveTokens +
-      safetyReserveTokens,
-  };
+  return createMeasurement(input, calibration, prepared, batch);
 }
 
 export function estimateModelTextTokens(
   model: Pick<Model<Api>, "api" | "id" | "provider">,
   text: string,
 ): number {
-  return measureText(text, modelContextTokenCalibration(model), 0)
-    .estimatedTokens;
+  return fallbackTextTokens(text, modelContextTokenCalibration(model), 0);
 }
 
 export function contextHistoryTokenBudget(model: Model<Api>): number {
@@ -149,6 +170,223 @@ export function modelContextTokenCalibration(
   return calibration("conservative_generic.v1", 2_800, 6, 14);
 }
 
+function prepareModelContext(
+  input: {
+    model: Model<Api>;
+    compiledPrompt: CompiledPromptArtifact;
+    context: Context;
+  },
+  calibration: ModelContextTokenCalibration,
+): PreparedModelContext {
+  const contentClass = modelContextContentClass(input.context);
+  return {
+    contentClass,
+    systemPrompt: prepareText(
+      input.model,
+      input.compiledPrompt.systemPrompt,
+      contentClass,
+      "system_prompt",
+      calibration,
+      0,
+    ),
+    tools: (input.context.tools ?? []).map((tool) =>
+      prepareSerialized(
+        input.model,
+        tokenMeterToolProjection(tool),
+        contentClass,
+        "tool_definition",
+        calibration,
+        calibration.toolFramingTokens,
+      ),
+    ),
+    messages: input.context.messages.map((message) =>
+      prepareSerialized(
+        input.model,
+        message,
+        contentClass,
+        "message",
+        calibration,
+        calibration.messageFramingTokens,
+      ),
+    ),
+  };
+}
+
+function prepareText(
+  model: Pick<Model<Api>, "api" | "id" | "provider">,
+  text: string,
+  contentClass: TokenMeterContentClass,
+  itemKind: TokenMeterProviderInput["itemKind"],
+  calibration: ModelContextTokenCalibration,
+  framingTokens: number,
+  visualItems: readonly TokenMeterVisualItem[] = [],
+  contentSha256 = sha256(text),
+): PreparedTokenItem {
+  const bytes = Buffer.byteLength(text, "utf8");
+  const conservativeFallbackTokens =
+    fallbackTextTokens(text, calibration, framingTokens) +
+    visualItems.length * MODEL_CONTEXT_VISUAL_FALLBACK_TOKENS;
+  return {
+    measured: {
+      bytes,
+      estimatedTokens: conservativeFallbackTokens,
+      contentSha256,
+      visualItemCount: visualItems.length,
+    },
+    providerInput: {
+      model,
+      contentClass,
+      itemKind,
+      text,
+      visualItems,
+      conservativeFallbackTokens,
+    },
+  };
+}
+
+function prepareSerialized(
+  model: Pick<Model<Api>, "api" | "id" | "provider">,
+  value: unknown,
+  contentClass: TokenMeterContentClass,
+  itemKind: TokenMeterProviderInput["itemKind"],
+  calibration: ModelContextTokenCalibration,
+  framingTokens: number,
+): PreparedTokenItem {
+  const { text, contentSha256, visualItems } = visualSafeSerialized(value);
+  return prepareText(
+    model,
+    text,
+    contentClass,
+    itemKind,
+    calibration,
+    framingTokens,
+    visualItems,
+    contentSha256,
+  );
+}
+
+function createMeasurement(
+  input: {
+    model: Model<Api>;
+    context: Context;
+    options: SimpleStreamOptions;
+    recoveryAttempt: 0 | 1;
+  },
+  calibration: ModelContextTokenCalibration,
+  prepared: PreparedModelContext,
+  batch: TokenMeterBatchMeasurement,
+): ModelContextTokenMeasurement {
+  const measuredItems = applyBatch(prepared, batch.estimatedTokens);
+  const baseEstimatedInputTokens = batch.baseEstimatedTokens.reduce(
+    (total, tokens) => total + tokens,
+    0,
+  );
+  const systemPrompt = measuredItems[0]!;
+  const toolItems = measuredItems.slice(1, 1 + prepared.tools.length);
+  const messageItems = measuredItems.slice(1 + prepared.tools.length);
+  const tools = measuredSet(
+    toolItems,
+    modelContextToolDefinitionSetSha256(input.context.tools ?? []),
+  );
+  const messages = measuredSet(
+    messageItems,
+    modelContextMessageSetSha256(input.context.messages),
+  );
+  const outputReserveTokens = modelAdapterReceipt(
+    input.model,
+    input.options,
+  ).streamOptionMaxTokens;
+  const reasoningReserveTokens = reasoningReserve(input.model);
+  const safetyReserveTokens = safetyReserve(
+    input.model.contextWindow,
+    input.recoveryAttempt,
+  );
+  const estimatedInputTokens =
+    systemPrompt.estimatedTokens +
+    tools.estimatedTokens +
+    messages.estimatedTokens;
+  return {
+    meterVersion: MODEL_CONTEXT_TOKEN_METER_VERSION,
+    estimateMethod: batch.method,
+    meterProviderId: batch.providerId,
+    contentClass: batch.contentClass,
+    calibration,
+    calibrationSampleCount: batch.calibration.sampleCount,
+    calibrationSafetyFactorPpm: batch.calibration.safetyFactorPpm,
+    calibrationP95UnderestimateRatio: batch.calibration.p95UnderestimateRatio,
+    fallbackApplied: batch.fallbackApplied,
+    contextWindowTokens: input.model.contextWindow,
+    systemPrompt,
+    tools: { ...tools, count: toolItems.length },
+    messages: { ...messages, count: messageItems.length, items: messageItems },
+    outputReserveTokens,
+    reasoningReserveTokens,
+    safetyReserveTokens,
+    baseEstimatedInputTokens,
+    estimatedInputTokens,
+    estimatedTotalTokens:
+      estimatedInputTokens +
+      outputReserveTokens +
+      reasoningReserveTokens +
+      safetyReserveTokens,
+  };
+}
+
+function fallbackBatch(
+  prepared: PreparedModelContext,
+): TokenMeterBatchMeasurement {
+  const baseEstimatedTokens = preparedItems(prepared).map(
+    (item) => item.providerInput.conservativeFallbackTokens,
+  );
+  return {
+    providerId: TOKEN_METER_FALLBACK_PROVIDER_ID,
+    method: MODEL_CONTEXT_TOKEN_ESTIMATE_METHOD,
+    contentClass: prepared.contentClass,
+    baseEstimatedTokens,
+    estimatedTokens: baseEstimatedTokens,
+    calibration: {
+      provider: prepared.systemPrompt.providerInput.model.provider,
+      model: prepared.systemPrompt.providerInput.model.id,
+      contentClass: prepared.contentClass,
+      sampleCount: 0,
+      safetyFactorPpm: 1_000_000,
+      p95UnderestimateRatio: 0,
+    },
+    fallbackApplied: true,
+  };
+}
+
+function applyBatch(
+  prepared: PreparedModelContext,
+  tokens: readonly number[],
+): TokenMeasuredItem[] {
+  const items = preparedItems(prepared);
+  if (items.length !== tokens.length) {
+    throw new Error("Token meter provider returned an invalid batch");
+  }
+  return items.map((item, index) => ({
+    ...item.measured,
+    estimatedTokens: tokens[index]!,
+  }));
+}
+
+function preparedItems(prepared: PreparedModelContext): PreparedTokenItem[] {
+  return [prepared.systemPrompt, ...prepared.tools, ...prepared.messages];
+}
+
+function fallbackTextTokens(
+  text: string,
+  calibration: ModelContextTokenCalibration,
+  framingTokens: number,
+): number {
+  return (
+    Math.ceil(
+      (Buffer.byteLength(text, "utf8") * 1_000) /
+        calibration.bytesPerTokenMilli,
+    ) + framingTokens
+  );
+}
+
 function calibration(
   id: string,
   bytesPerTokenMilli: number,
@@ -158,30 +396,10 @@ function calibration(
   return { id, bytesPerTokenMilli, messageFramingTokens, toolFramingTokens };
 }
 
-function measureText(
-  text: string,
-  calibration: ModelContextTokenCalibration,
-  framingTokens: number,
-): TokenMeasuredItem {
-  const bytes = Buffer.byteLength(text, "utf8");
-  return {
-    bytes,
-    estimatedTokens:
-      Math.ceil((bytes * 1_000) / calibration.bytesPerTokenMilli) +
-      framingTokens,
-    contentSha256: sha256(text),
-  };
-}
-
-function measureSerialized(
-  value: unknown,
-  calibration: ModelContextTokenCalibration,
-  framingTokens: number,
-): TokenMeasuredItem {
-  return measureText(canonicalJson(value), calibration, framingTokens);
-}
-
-function measuredSet(items: readonly TokenMeasuredItem[]): TokenMeasuredItem & {
+function measuredSet(
+  items: readonly TokenMeasuredItem[],
+  setSha256: string,
+): TokenMeasuredItem & {
   setSha256: string;
 } {
   return {
@@ -190,17 +408,12 @@ function measuredSet(items: readonly TokenMeasuredItem[]): TokenMeasuredItem & {
       (total, item) => total + item.estimatedTokens,
       0,
     ),
+    visualItemCount: items.reduce(
+      (total, item) => total + item.visualItemCount,
+      0,
+    ),
     contentSha256: sha256(canonicalJson(items)),
-    setSha256: sha256(canonicalJson(items.map((item) => item.contentSha256))),
-  };
-}
-
-function toolProjection(tool: Tool): unknown {
-  return {
-    name: tool.name,
-    description: tool.description ?? null,
-    parameters: tool.parameters ?? null,
-    constrainedSampling: tool.constrainedSampling ?? null,
+    setSha256,
   };
 }
 

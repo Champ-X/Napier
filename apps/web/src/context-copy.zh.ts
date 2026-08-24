@@ -196,6 +196,7 @@ export const contextZh: LocaleOverride<typeof contextCopyEn> = {
     browser: "浏览器会话",
     research_source: "研究来源",
     skill_load: "加载项目技能",
+    capability: "能力目录",
     verify_workspace: "沙箱验证",
   },
   skills: "可用技能",

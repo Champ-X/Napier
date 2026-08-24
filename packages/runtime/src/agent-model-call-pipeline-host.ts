@@ -4,6 +4,12 @@ import {
 } from "./kernel-model-call-pipeline.js";
 import { installBuiltinModelCallExtensions } from "./builtin-model-call-extensions.js";
 import type { LocalStore } from "./store.js";
+import type { TokenMeterRegistry } from "./token-meter-provider.js";
+
+interface ModelCallPipelineHostRuntime {
+  store: LocalStore;
+  tokenMeters: TokenMeterRegistry;
+}
 
 export class AgentModelCallPipelineHost {
   private standalone: ComposableAgentModelCallPipeline | undefined;
@@ -22,11 +28,11 @@ export class AgentModelCallPipelineHost {
     };
   };
 
-  current(store: LocalStore): AgentTurnModelCallPipeline {
+  current(runtime: ModelCallPipelineHostRuntime): AgentTurnModelCallPipeline {
     if (this.attached) return this.attached;
     if (!this.standalone) {
       this.standalone = new ComposableAgentModelCallPipeline();
-      installBuiltinModelCallExtensions(this.standalone, store);
+      installBuiltinModelCallExtensions(this.standalone, runtime);
     }
     return this.standalone;
   }

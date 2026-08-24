@@ -5,9 +5,11 @@ import type {
 } from "./kernel-model-call-pipeline.js";
 import {
   ModelContextWindowBudgetError,
-  projectModelContextTokenPressure,
+  projectModelContextTokenPressureWithProvider,
 } from "./model-context-token-pressure.js";
 import { toJsonValue } from "./agent-runtime-utils.js";
+import { hydrateTokenCalibrationRegistry } from "./model-context-token-calibration.js";
+import type { TokenMeterRegistry } from "./token-meter-provider.js";
 
 export const MODEL_CONTEXT_TOKEN_EXTENSION_ID =
   "napier.model-context-token-governor";
@@ -16,19 +18,24 @@ export const MODEL_CONTEXT_TOKEN_EXTENSION_OWNER = "kernel.context";
 export function installModelContextTokenExtension(
   pipeline: ComposableAgentModelCallPipeline,
   store: LocalStore,
+  tokenMeters: TokenMeterRegistry,
 ): () => void {
   const extension: AgentModelCallExtension = {
     id: MODEL_CONTEXT_TOKEN_EXTENSION_ID,
     order: 10_000,
     finalize: async (call) => {
-      const projection = projectModelContextTokenPressure({
-        model: call.model,
-        context: call.context,
-        options: call.options,
-        compiledPrompt: call.compiledPrompt,
-        modelAttempt: call.attempt,
-        recoveryAttempt: call.recoveryAttempt,
-      });
+      await hydrateTokenCalibrationRegistry(store, tokenMeters);
+      const projection = await projectModelContextTokenPressureWithProvider(
+        {
+          model: call.model,
+          context: call.context,
+          options: call.options,
+          compiledPrompt: call.compiledPrompt,
+          modelAttempt: call.attempt,
+          recoveryAttempt: call.recoveryAttempt,
+        },
+        tokenMeters,
+      );
       const event = await store.appendEvent({
         threadId: call.run.threadId,
         runId: call.run.id,

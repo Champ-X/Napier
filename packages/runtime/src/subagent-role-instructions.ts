@@ -1,4 +1,7 @@
 import type { SubagentRole } from "@napier/contracts";
+import type { WorkflowValueSchema } from "@napier/contracts";
+
+import { formatSubagentOutputSchemaInstructions } from "./subagent-output-schema.js";
 
 // Schema-1 receipts depend on these exact bytes; change them only with a schema bump.
 const OUTCOME_INSTRUCTIONS = [
@@ -52,6 +55,17 @@ export function isSubagentRole(value: unknown): value is SubagentRole {
 export function subagentRoleInstructions(role: SubagentRole): string {
   if (!isSubagentRole(role)) throw new Error("Subagent role is invalid");
   return [...ROLE_INSTRUCTIONS[role], OUTCOME_INSTRUCTIONS].join("\n");
+}
+
+export function subagentRoleInstructionsForSchema(
+  role: SubagentRole,
+  schema: WorkflowValueSchema,
+): string {
+  if (!isSubagentRole(role)) throw new Error("Subagent role is invalid");
+  return [
+    ...ROLE_INSTRUCTIONS[role],
+    formatSubagentOutputSchemaInstructions(schema),
+  ].join("\n");
 }
 
 export function subagentOutcomeContractInstructions(): string {

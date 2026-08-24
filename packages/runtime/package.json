@@ -115,6 +115,30 @@
     "./agent-capability-store-mutations": {
       "types": "./dist/agent-capability-store-mutations.d.ts",
       "import": "./dist/agent-capability-store-mutations.js"
+    },
+    "./subagent-provider": {
+      "types": "./dist/subagent-provider.d.ts",
+      "import": "./dist/subagent-provider.js"
+    },
+    "./subagent-supervisor": {
+      "types": "./dist/subagent-supervisor.d.ts",
+      "import": "./dist/subagent-supervisor.js"
+    },
+    "./in-process-subagent-provider": {
+      "types": "./dist/in-process-subagent-provider.d.ts",
+      "import": "./dist/in-process-subagent-provider.js"
+    },
+    "./token-meter-provider": {
+      "types": "./dist/token-meter-provider.d.ts",
+      "import": "./dist/token-meter-provider.js"
+    },
+    "./agent-harness-acceptance": {
+      "types": "./dist/agent-harness-acceptance.d.ts",
+      "import": "./dist/agent-harness-acceptance.js"
+    },
+    "./subagent-repository": {
+      "types": "./dist/subagent-repository.d.ts",
+      "import": "./dist/subagent-repository.js"
     }
   },
   "files": [

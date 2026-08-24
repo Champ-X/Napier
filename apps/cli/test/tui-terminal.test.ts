@@ -58,6 +58,15 @@ describe("TUI terminal projection", () => {
       }),
     );
     state.applyEvent(
+      event("route_attempt_started", {
+        providerId: "anthropic",
+        modelId: "claude-sonnet-4-6",
+        attempt: 2,
+        fallbackReason: "rate_limited",
+        credentialSecret: "PRIVATE_ROUTE_CREDENTIAL",
+      }),
+    );
+    state.applyEvent(
       event("tool.started", {
         callId: "call_2",
         toolName: "web_search",
@@ -83,11 +92,15 @@ describe("TUI terminal projection", () => {
     expect(rendered).toContain("\\u001b]52;c;PRIVATE\\u0007\\u202e");
     expect(rendered).toContain("tool read_file · running · read");
     expect(rendered).toContain("tool web_search · running · read");
+    expect(rendered).toContain(
+      "route anthropic/claude-sonnet-4-6 · attempt 2 · running · fallback rate…",
+    );
     expect(rendered).toContain("preset Browser");
     expect(rendered).not.toContain("PRIVATE_TOOL_ARGUMENT");
     expect(rendered).not.toContain("PRIVATE_TOOL_OUTPUT");
     expect(rendered).not.toContain("PRIVATE_SEARCH_QUERY");
     expect(rendered).not.toContain("PRIVATE_SEARCH_RESULT");
+    expect(rendered).not.toContain("PRIVATE_ROUTE_CREDENTIAL");
     expect(rendered).toContain("\u001b[?2004l");
     expect(rendered).toContain("\u001b[?1049l");
 
@@ -96,6 +109,20 @@ describe("TUI terminal projection", () => {
     expect(withoutFixedCsi).not.toContain("\u0007");
     expect(withoutFixedCsi).not.toContain("\t");
     expect(withoutFixedCsi).not.toContain("\u202e");
+
+    const wideOutput = new TerminalCapture(120, 18);
+    const wideTerminal = new TuiTerminal(wideOutput);
+    await wideTerminal.enter();
+    await wideTerminal.render(state.snapshot(), {
+      text: "",
+      cursor: 0,
+      byteLength: 0,
+      pasting: false,
+    });
+    await wideTerminal.restore();
+    expect(wideOutput.text()).toContain(
+      "route anthropic/claude-sonnet-4-6 · attempt 2 · running · fallback rate_limited",
+    );
   });
 
   it("bounds terminal dimensions and resets waiting state on Thread changes", async () => {

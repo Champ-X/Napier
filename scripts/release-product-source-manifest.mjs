@@ -33,7 +33,15 @@ const FILES = [
   "packages/contracts/tsconfig.json",
   "packages/runtime/package.json",
   "packages/runtime/tsconfig.json",
+  "scripts/agent-harness-acceptance-bridge.mjs",
+  "scripts/agent-harness-acceptance-evidence-support.mjs",
+  "scripts/agent-harness-acceptance-route-tools.mjs",
+  "scripts/agent-harness-acceptance-subagents.mjs",
+  "scripts/agent-harness-acceptance-token.mjs",
+  "scripts/check-release-artifacts.mjs",
   "scripts/copy-sandbox-image.mjs",
+  "scripts/create-agent-harness-acceptance-evidence.mjs",
+  "scripts/create-harness-experiment-release-evidence.mjs",
   "scripts/release-product-source-manifest.mjs",
   "tsconfig.base.json",
 ];
@@ -81,7 +89,8 @@ export async function verifyReleaseProductSourceManifest(
 ) {
   const observed = JSON.parse(await readFile(path.resolve(ROOT, file), "utf8"));
   const repositoryMetadataAvailable =
-    options.sourceArchive !== true && (await exists(path.resolve(ROOT, ".git")));
+    options.sourceArchive !== true &&
+    (await exists(path.resolve(ROOT, ".git")));
   const expected = await createReleaseProductSourceManifest({
     predecessor: repositoryMetadataAvailable ? undefined : observed.predecessor,
   });

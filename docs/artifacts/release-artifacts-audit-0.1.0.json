@@ -6,18 +6,18 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "fb4073ba7293156fb43640773bd920a0d910e9c47802589bc8c22553d94fd68e",
+  "artifactSetSha256": "50ef409255950cbb2a497b22cdfb86efb100b8623ac097a464304645e86eb88a",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "472f09217a3ca2b497372a56e2d1285f57a342bc99af8923f524a5f84e83e81f",
+      "sha256": "7bb2161d800250bc98308ef4833c85f9f90964c4370c975d4197cdfdf35600d9",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "8a0ae0b326a5a5729755ab515ecb2220e3a4ca639d084079a4b2f86e66ca3ed2",
+      "sha256": "1307002b22f89baf748c98bdab44f28a5981f143ecd2521f9f8aa7087d1d0d67",
       "valid": true
     },
     {
@@ -53,7 +53,7 @@
     {
       "kind": "sandbox-product-acceptance-stage13",
       "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-      "sha256": "aa9466edf9e9d7fd47a2e9503fb3df5255219bbd70730fde9dd279f7028e5bea",
+      "sha256": "3afbb19af0ba14886b7a04fe54497a17b087caac700a2d5ee3a803a28a05a4eb",
       "valid": true
     },
     {
@@ -101,13 +101,13 @@
     {
       "kind": "profile-upgrade-stage21",
       "path": "docs/artifacts/profile-upgrade-stage21.json",
-      "sha256": "f2d1bdac348221b613563358e07219ed96d343fd2c0f17d37607e2a7782a0263",
+      "sha256": "b6e50e18865f39fb47eb1bb0cc1d5f0986742efd9bb0d2d88e631ea210613d13",
       "valid": true
     },
     {
       "kind": "s1-shell-sandbox-readiness-stage22",
       "path": "docs/artifacts/s1-shell-sandbox-readiness-stage22.json",
-      "sha256": "7f351144be1e2b6f09b9b80b54d61be78b7d15e5f6a9df53ffeef0eff8300331",
+      "sha256": "8f0207e5e2986f54265e2ced63447f31e3c33e4701de5e67fa298bebba85a93d",
       "valid": true
     },
     {
@@ -119,19 +119,19 @@
     {
       "kind": "web-dist-audit",
       "path": "docs/artifacts/web-dist-audit-0.1.0.json",
-      "sha256": "45319d4f3f20431b451304a2c2d340139f18e47d49f9c58ea455c49262e23186",
+      "sha256": "dec53be65f72cad1b4b0638828af212d51d2e34b1bb970c725cd14321f838a2f",
       "valid": true
     },
     {
       "kind": "web-dist-manifest",
       "path": "docs/artifacts/web-dist-0.1.0.sha256",
-      "sha256": "bd5395f95123eb189d39ff11714e9b6b47c433452c328578bf8023e4a1eb5cdc",
+      "sha256": "921ba47b9c838de1082294ff2dfd833b7725766439489640b7bb5c22beb4ac11",
       "valid": true
     },
     {
       "kind": "management-openapi",
       "path": "docs/artifacts/management-openapi-0.1.0.json",
-      "sha256": "97d1f3fc1996d2a2c44fbe98e4928509a388ec9b06d395318a5b040ecd547961",
+      "sha256": "68f94a5357a19be1e81c4ea89eff1767477f1cc519cb5ce0567b22d4b81fbcfc",
       "valid": true
     },
     {
@@ -153,15 +153,27 @@
       "valid": true
     },
     {
+      "kind": "harness-experiment-release-evidence",
+      "path": "docs/artifacts/harness-experiment-release-evidence-0.1.3.json",
+      "sha256": "21d5f86754070654d62f6a0bc0180b349360a5851cbe1b2a097d39d74595a4ba",
+      "valid": true
+    },
+    {
+      "kind": "agent-harness-acceptance-evidence",
+      "path": "docs/artifacts/agent-harness-acceptance-evidence-0.1.3.json",
+      "sha256": "92bcddd3a6f14dab5ba75a28f012bf1bd979830feb6c8e1bb75679ef756459a4",
+      "valid": true
+    },
+    {
       "kind": "default-product-source-bound-smoke",
       "path": "docs/artifacts/default-product-source-bound-smoke-m4-0.1.3.json",
-      "sha256": "64c3b5b06782399ca3f107a0dd2b7728ef061b65de3c14d4f816b2c4a389a88e",
+      "sha256": "8f56532718a8e669301eace5e5b7bb3fec62903b6d5815c6425ab48067a509a6",
       "valid": true
     },
     {
       "kind": "default-product-source-manifest",
       "path": "docs/artifacts/default-product-source-manifest-0.1.3.json",
-      "sha256": "a9afb800bd4f066d668b228149a2dad548a9b743fd00c4cba43dbca4a50dac60",
+      "sha256": "6b9056cb7a589730ce2625ce01d13abef35382b9de6f47cd68cc7cd413336671",
       "valid": true
     },
     {

@@ -7,21 +7,31 @@ import {
   type RunEvent,
 } from "@napier/contracts";
 
-import { canonicalJson, sha256 } from "./ed25519.js";
-import {
-  assertPlanArtifactEventBindings,
-  refreshPlanProjection,
-} from "./plans.js";
-import { PLAN_STEP_STATUSES } from "./plan-step-transition.js";
 import {
   assertArtifactReceiptEventBoundary,
   isArtifactReceiptEvent,
 } from "./artifact-receipts.js";
+import { canonicalJson, sha256 } from "./ed25519.js";
+import {
+  arrayField,
+  assertIsoString,
+  assertSha256,
+  boundedString,
+  executionPlanArchiveDiagnostic,
+  isSha256,
+  recordField,
+  stringArrayField,
+  stringField,
+} from "./plan-archive-fields.js";
+import { PLAN_STEP_STATUSES } from "./plan-step-transition.js";
+import {
+  assertPlanArtifactEventBindings,
+  refreshPlanProjection,
+} from "./plans.js";
 import { hashEventStream } from "./run-replay.js";
 import type { PlanArchiveStorePort } from "./store-port.js";
 
 export const MAX_EXECUTION_PLAN_ARCHIVE_BYTES = 10 * 1024 * 1024;
-const SHA256 = /^[a-f0-9]{64}$/;
 const RESOURCE_ID = /^[a-z][a-z0-9_-]{0,80}$/;
 const MAX_ARCHIVE_PLAN_EVENTS = 10_000;
 const PLAN_STATUSES = new Set<string>([
@@ -278,7 +288,7 @@ function assertArchivePlan(
     const recommendationSha256 = recommendationRecord["recommendationSha256"];
     if (
       typeof recommendationSha256 !== "string" ||
-      !SHA256.test(recommendationSha256)
+      !isSha256(recommendationSha256)
     ) {
       throw new Error("Execution plan archive recommendation is invalid");
     }
@@ -484,88 +494,4 @@ function eventPlanId(event: RunEvent): string | undefined {
   }
   const planId = (event.payload as Record<string, unknown>)["planId"];
   return typeof planId === "string" ? planId : undefined;
-}
-
-function executionPlanArchiveDiagnostic(error: unknown): string {
-  const message = error instanceof Error ? error.message : "";
-  if (message.includes("exceeds")) return "too_large";
-  if (message.includes("missing field")) return "missing_field";
-  if (message.includes("unsupported field")) return "unsupported_field";
-  if (message.includes("kind is invalid")) return "invalid_kind";
-  if (message.includes("schemaVersion")) return "unsupported_schema_version";
-  if (message.includes("API version")) return "unsupported_api_version";
-  if (message.includes("ownership")) return "ownership_mismatch";
-  if (message.includes("duplicate")) return "duplicate_resource_id";
-  if (message.includes("event stream hash mismatch")) return "hash_mismatch";
-  if (message.includes("content hash mismatch")) return "hash_mismatch";
-  if (message.includes("event binding mismatch")) {
-    return "event_binding_mismatch";
-  }
-  if (message.includes("invalid")) return "invalid_shape";
-  return "invalid_archive";
-}
-
-function recordField(
-  record: Record<string, unknown>,
-  field: string,
-): Record<string, unknown> {
-  const value = record[field];
-  if (!value || Array.isArray(value) || typeof value !== "object") {
-    throw new Error(`Execution plan archive ${field} is invalid`);
-  }
-  return value as Record<string, unknown>;
-}
-
-function arrayField(record: Record<string, unknown>, field: string): unknown[] {
-  const value = record[field];
-  if (!Array.isArray(value)) {
-    throw new Error(`Execution plan archive ${field} is invalid`);
-  }
-  return value;
-}
-
-function stringArrayField(
-  record: Record<string, unknown>,
-  field: string,
-): string[] {
-  const values = arrayField(record, field);
-  if (
-    values.length > 30 ||
-    !values.every((value) => typeof value === "string" && value.length > 0)
-  ) {
-    throw new Error(`Execution plan archive ${field} is invalid`);
-  }
-  return values as string[];
-}
-
-function stringField(record: Record<string, unknown>, field: string): string {
-  const value = record[field];
-  if (typeof value !== "string" || value.length === 0) {
-    throw new Error(`Execution plan archive ${field} is invalid`);
-  }
-  return value;
-}
-
-function assertSha256(value: string, field: string): void {
-  if (!SHA256.test(value)) {
-    throw new Error(`Execution plan archive ${field} hash is invalid`);
-  }
-}
-
-function assertIsoString(value: unknown, field: string): void {
-  if (typeof value !== "string" || Number.isNaN(Date.parse(value))) {
-    throw new Error(`Execution plan archive ${field} is invalid`);
-  }
-}
-
-function boundedString(
-  value: unknown,
-  minLength: number,
-  maxLength: number,
-): value is string {
-  return (
-    typeof value === "string" &&
-    value.length >= minLength &&
-    value.length <= maxLength
-  );
 }

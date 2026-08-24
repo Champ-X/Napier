@@ -16,6 +16,7 @@ import {
   MAX_JAVASCRIPT_KERNEL_CODE_BYTES,
   MAX_JAVASCRIPT_KERNEL_EVALUATION_TIMEOUT_MS,
 } from "./javascript-kernel-worker.js";
+import type { JavascriptKernelCodeBridgeDispatcher } from "./javascript-kernel-code-bridge.js";
 
 export const MAX_JAVASCRIPT_KERNEL_TOOL_OUTPUT_BYTES = 32 * 1024;
 
@@ -53,6 +54,7 @@ const javascriptKernelSchema = Type.Union([
           maximum: MAX_JAVASCRIPT_KERNEL_EVALUATION_TIMEOUT_MS,
         }),
       ),
+      bridge: Type.Optional(Type.Literal(true)),
     },
     { additionalProperties: false },
   ),
@@ -87,6 +89,7 @@ export interface JavascriptKernelToolDetails {
 export function createJavascriptKernelTool(
   manager: JavascriptKernelManager,
   context: { threadId: string; runId: string },
+  codeBridge?: JavascriptKernelCodeBridgeDispatcher,
 ): AgentTool<typeof javascriptKernelSchema, JavascriptKernelToolDetails> {
   return {
     name: "javascript_kernel",
@@ -139,6 +142,7 @@ export function createJavascriptKernelTool(
           timeoutMs:
             input.timeoutMs ?? DEFAULT_JAVASCRIPT_KERNEL_EVALUATION_TIMEOUT_MS,
           ...(signal ? { signal } : {}),
+          ...(input.bridge === true && codeBridge ? { codeBridge } : {}),
         });
         return evaluationResult(evaluation);
       }
@@ -202,6 +206,7 @@ export function javascriptKernelToolCallArgumentsLedgerProjection(
             typeof value["timeoutMs"] === "number"
               ? value["timeoutMs"]
               : DEFAULT_JAVASCRIPT_KERNEL_EVALUATION_TIMEOUT_MS,
+          bridge: value["bridge"] === true,
         }
       : {}),
     ...(action === "start"

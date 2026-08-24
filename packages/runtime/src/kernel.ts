@@ -3,6 +3,7 @@ export * from "./agent-kernel-scope.js";
 export * from "./agent-kernels.js";
 export * from "./kernel-hooks.js";
 export * from "./kernel-model-call-pipeline.js";
+export * from "./lifecycle-extension-pipeline.js";
 export * from "./agent-turn-pipeline.js";
 export * from "./agent-turn-kernel-services.js";
 export * from "./model-harness-profile.js";

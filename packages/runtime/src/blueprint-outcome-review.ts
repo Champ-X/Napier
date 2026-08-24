@@ -11,14 +11,16 @@ import type {
   ReviewExecutionPlanBlueprintRecordOutcomesRequest,
 } from "@napier/contracts";
 
-import { canonicalJson, sha256 } from "./ed25519.js";
-import { nowIso } from "./ids.js";
-import { createModelContextEnvelopeReceipt } from "./model-context-envelope.js";
-import type { ModelRegistry } from "./models.js";
+import { DEFAULT_BLUEPRINT_OUTCOME_REVIEW_CRITERIA } from "./blueprint-outcome-review-criteria.js";
 import type {
   BlueprintOutcomeQualification,
   BlueprintOutcomeReviewStorePort,
 } from "./blueprint-outcome-review-store-port.js";
+import { canonicalJson, sha256 } from "./ed25519.js";
+import { nowIso } from "./ids.js";
+import { createModelContextEnvelopeReceipt } from "./model-context-envelope.js";
+import type { ModelRegistry } from "./models.js";
+export { DEFAULT_BLUEPRINT_OUTCOME_REVIEW_CRITERIA } from "./blueprint-outcome-review-criteria.js";
 
 const BLUEPRINT_OUTCOME_REVIEW_POLICY_ID = "napier.blueprint-outcome-review.v1";
 const BLUEPRINT_OUTCOME_REVIEW_KIND =
@@ -43,37 +45,6 @@ const REVIEW_SCHEMA = {
   scores:
     "array with one item per criterion: {criterionId, score integer 0-100, reason <= 300 characters}",
 } as const;
-
-export const DEFAULT_BLUEPRINT_OUTCOME_REVIEW_CRITERIA: ExecutionPlanBlueprintOutcomeReviewCriteria =
-  {
-    name: "Reusable workflow delivery",
-    criteria: [
-      {
-        id: "completion",
-        name: "Completion",
-        description:
-          "Replay outcomes should show completed plans without active, blocked, missing, or identity-mismatched delivery.",
-      },
-      {
-        id: "stability",
-        name: "Stability",
-        description:
-          "The template should have enough replay evidence to avoid promoting a one-off lucky result.",
-      },
-      {
-        id: "auditability",
-        name: "Auditability",
-        description:
-          "Outcome, replay-history, baseline, and Plan projection hashes should be present and current.",
-      },
-      {
-        id: "reuse_risk",
-        name: "Reuse risk",
-        description:
-          "The template should be safe to recommend for future Threads without hiding delivery drift or unresolved work.",
-      },
-    ],
-  };
 
 export async function reviewExecutionPlanBlueprintRecordOutcomes(
   store: BlueprintOutcomeReviewStorePort,

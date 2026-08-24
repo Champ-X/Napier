@@ -81,6 +81,7 @@ import {
 } from "./tool-loop-guard.js";
 import { assertSubagentOutcomeBinding } from "./subagent-outcomes.js";
 import { subagentRoleInstructions } from "./subagent-role-instructions.js";
+import { validateSubagentSupervisorReplayTask } from "./subagent-replay-validation.js";
 import {
   subagentOutcomeRepairInstructions,
   validateSubagentOutcomeRepairOutcome,
@@ -1368,6 +1369,7 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
       );
     }
     assertModel(task["model"], `subagents[${index}].model`);
+    validateSubagentSupervisorReplayTask(task, index);
     assertString(
       task["description"],
       `subagents[${index}].description`,
@@ -1390,9 +1392,7 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
         prompt: task["prompt"] as string,
       });
     }
-    if (task["error"] !== undefined) {
-      assertText(task["error"], `subagents[${index}].error`, 200_000);
-    }
+    if (task["error"] !== undefined) assertText(task["error"], `subagents[${index}].error`, 200_000);
     assertNonNegativeInteger(
       task["stepCount"],
       `subagents[${index}].stepCount`,

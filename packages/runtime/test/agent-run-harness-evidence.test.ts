@@ -95,6 +95,36 @@ describe("Agent Run Harness evidence", () => {
     expect(metrics.firstAction.verify.status).toBe("available");
     expect(metrics.firstAction.write.status).toBe("unavailable");
     expect(metrics.contextTokens.status).toBe("available");
+    const calibrations = events.filter(
+      (event) => event.type === "model.context.token_calibration",
+    );
+    expect(metrics.contextTokens.calibrationObservationCount).toBeGreaterThan(
+      0,
+    );
+    expect(metrics.contextTokens.calibratedObservationCount).toBeGreaterThan(0);
+    expect(metrics.contextTokens.p95InputUnderestimateRatio).toEqual(
+      expect.any(Number),
+    );
+    expect(calibrations.length).toBeGreaterThan(0);
+    expect(calibrations[0]?.payload).toEqual(
+      expect.objectContaining({
+        kind: "napier.model-context-token-calibration",
+        status: "calibrated",
+        pressureContentSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        modelContextEnvelopeSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    expect(
+      events
+        .filter((event) => event.type === "model.context.token_pressure")
+        .some(
+          (event) =>
+            typeof event.payload === "object" &&
+            event.payload !== null &&
+            !Array.isArray(event.payload) &&
+            Number(event.payload["calibrationSampleCount"]) > 0,
+        ),
+    ).toBe(true);
     expect(metrics.harnessResolution).toEqual(
       expect.objectContaining({
         status: "available",

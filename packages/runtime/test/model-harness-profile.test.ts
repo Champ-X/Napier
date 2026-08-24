@@ -23,6 +23,7 @@ const TOOL_NAMES = [
   "update_plan_step",
   "record_run_milestone",
   "skill_load",
+  "capability",
   "mcp_schema_search",
   "delegate_task",
   "list_files",
@@ -193,6 +194,35 @@ describe("model-aware Harness profile", () => {
       "mcp__evidence_service__lookup",
     );
     expect(prepared.receipt.activeToolNames).toContain("mcp_schema_search");
+  });
+
+  it("keeps a first-party tool activated by the Capability Catalog", () => {
+    const prepared = prepareModelHarnessCall({
+      model: fauxProvider({ provider: "generic" }).getModel(),
+      context: {
+        messages: [
+          { role: "user", content: "Continue.", timestamp: 1 },
+          {
+            role: "toolResult",
+            toolCallId: "call_catalog",
+            toolName: "capability",
+            content: [{ type: "text", text: "Activated a capability." }],
+            addedToolNames: ["git_commit_apply"],
+            isError: false,
+            timestamp: 2,
+          },
+        ],
+        tools: tools(),
+      },
+      options: {},
+      attempt: 1,
+    });
+
+    expect(prepared.receipt.activeToolCount).toBe(20);
+    expect(prepared.receipt.activeToolNames).toContain("capability");
+    expect(prepared.receipt.activeToolNames).toContain(
+      "git_commit_apply",
+    );
   });
 
   it.each([

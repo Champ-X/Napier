@@ -11,6 +11,14 @@ import {
   type AgentModelCallExtension,
   ComposableAgentModelCallPipeline,
 } from "./kernel-model-call-pipeline.js";
+import {
+  type AgentCompletionLifecycleContext,
+  type AgentStepLifecycleContext,
+  type AgentToolLifecycleContext,
+  AgentLifecyclePipelineHost,
+  type LifecycleExtension,
+  type LifecycleExtensionEffect,
+} from "./lifecycle-extension-pipeline.js";
 
 export class AgentKernelScope {
   readonly services;
@@ -21,6 +29,7 @@ export class AgentKernelScope {
     registry: KernelServiceRegistry,
     hookRegistry: KernelHookRegistry,
     private readonly modelCalls: ComposableAgentModelCallPipeline,
+    private readonly lifecycles: AgentLifecyclePipelineHost,
     readonly owner: string,
   ) {
     this.services = registry.scope(owner);
@@ -45,6 +54,27 @@ export class AgentKernelScope {
     return this.modelCalls.use(extension, this.owner);
   }
 
+  interceptStep(
+    extension: LifecycleExtension<AgentStepLifecycleContext>,
+  ): LifecycleExtensionEffect {
+    this.assertActive();
+    return this.lifecycles.step.use(extension, this.owner);
+  }
+
+  interceptTool(
+    extension: LifecycleExtension<AgentToolLifecycleContext>,
+  ): LifecycleExtensionEffect {
+    this.assertActive();
+    return this.lifecycles.tool.use(extension, this.owner);
+  }
+
+  interceptCompletion(
+    extension: LifecycleExtension<AgentCompletionLifecycleContext>,
+  ): LifecycleExtensionEffect {
+    this.assertActive();
+    return this.lifecycles.completion.use(extension, this.owner);
+  }
+
   resolve(): Promise<void> {
     this.assertActive();
     return this.services.resolve();
@@ -54,8 +84,16 @@ export class AgentKernelScope {
     if (this.disposed) return;
     this.hooks.dispose();
     this.modelCalls.disposeOwner(this.owner);
-    await this.services.dispose();
     this.disposed = true;
+    const settlements = await Promise.allSettled([
+      this.lifecycles.disposeOwner(this.owner),
+      this.services.dispose(),
+    ]);
+    const failure = settlements.find(
+      (settlement): settlement is PromiseRejectedResult =>
+        settlement.status === "rejected",
+    );
+    if (failure) throw failure.reason;
   }
 
   private assertActive(): void {

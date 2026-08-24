@@ -200,6 +200,71 @@ describe("persistent Python kernel", () => {
     expect(durable).not.toContain("REBOUND");
   }, 20_000);
 
+  it("routes synchronous napier.call through the host bridge only when enabled", async () => {
+    const fixture = await createFixture();
+    const kernel = await fixture.kernels.start({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      timeoutMs: 20_000,
+    });
+    const calls: Array<{ toolId: string; input: unknown }> = [];
+    const disabled = await fixture.kernels.evaluate({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      processId: kernel.id,
+      code: 'napier.call("read_file", {"path": "evidence.txt"})',
+    });
+    const bridged = await fixture.kernels.evaluate({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      processId: kernel.id,
+      code: [
+        'first = napier.call("read_file", {"path": "evidence.txt"})',
+        'second = napier.capability("commit")',
+        '{"text": first["content"][0]["text"], "tool": second[0]["toolId"]}',
+      ].join("\n"),
+      codeBridge: async (request) => {
+        calls.push({ toolId: request.toolId, input: request.input });
+        if (request.toolId === "capability") {
+          return {
+            content: [],
+            details: { descriptors: [{ toolId: "git_commit_apply" }] },
+            isError: false,
+          };
+        }
+        return {
+          content: [{ type: "text", text: "PYTHON_BRIDGE_EVIDENCE" }],
+          details: {},
+          isError: false,
+        };
+      },
+    });
+
+    expect(disabled).toEqual(
+      expect.objectContaining({
+        status: "error",
+        terminal: false,
+        preview: expect.stringContaining(
+          "napier.call is not enabled for this evaluation",
+        ),
+      }),
+    );
+    expect(bridged).toEqual(
+      expect.objectContaining({
+        status: "ok",
+        terminal: false,
+        jsonValue: {
+          text: "PYTHON_BRIDGE_EVIDENCE",
+          tool: "git_commit_apply",
+        },
+      }),
+    );
+    expect(calls).toEqual([
+      { toolId: "read_file", input: { path: "evidence.txt" } },
+      { toolId: "capability", input: { query: "commit" } },
+    ]);
+  }, 20_000);
+
   it("terminates the complete kernel on evaluation timeout", async () => {
     const fixture = await createFixture();
     const kernel = await fixture.kernels.start({

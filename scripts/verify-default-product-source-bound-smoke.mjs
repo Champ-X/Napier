@@ -4,6 +4,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { parseDirectReleaseProductGate } from "../packages/runtime/dist/release-product-gate.js";
+import { NAPIER_RELEASE_IDENTITY_SHA256 } from "../packages/runtime/dist/release-product-identity.js";
 
 const EXPECTED_CASES = [
   "settings",
@@ -13,8 +14,7 @@ const EXPECTED_CASES = [
   "coding-verification",
   "shell-sandbox",
 ];
-const RELEASE_IDENTITY =
-  "54d9a6fe29409620239fdd85fee14f32232c610e698610ddddfffbefa2355865";
+const RELEASE_IDENTITY = NAPIER_RELEASE_IDENTITY_SHA256;
 const FORBIDDEN_KEYS = new Set([
   "answer",
   "credential",
@@ -53,35 +53,40 @@ export async function verifyDefaultProductSourceBoundSmoke(file) {
     ),
     true,
   );
-  assert.deepEqual(gate.versions, [
-    {
-      productVersion: "0.1.3",
-      caseCount: 10,
-      coveredCaseCount: 6,
-      trialCount: 6,
-      passedCount: 6,
-      failedCount: 0,
-      inconclusiveCount: 0,
-      successRate: 1,
-      minimumSuccessRate: 0.9,
-      meanUxScore: 4.17,
-      configurationInterventions: 3,
-      humanInterventions: 2,
-      recoveryEvents: 0,
-      criticalCaseIds: [
-        "settings",
-        "high-risk-confirmation",
-        "shell-sandbox",
-        "coding-verification",
-        "long-task-recovery",
-      ],
-      failedCriticalCaseIds: ["high-risk-confirmation", "long-task-recovery"],
-      releaseIdentitySha256: RELEASE_IDENTITY,
-      status: "incomplete",
-      firstRecordedAt: "2026-08-16T17:13:19.571Z",
-      lastRecordedAt: "2026-08-16T17:23:26.808Z",
-    },
-  ]);
+  assert.equal(gate.versions.length, 1);
+  const version = gate.versions[0];
+  assert.ok(version);
+  const { firstRecordedAt, lastRecordedAt, ...versionSummary } = version;
+  assert.deepEqual(versionSummary, {
+    productVersion: "0.1.3",
+    caseCount: 10,
+    coveredCaseCount: 6,
+    trialCount: 6,
+    passedCount: 6,
+    failedCount: 0,
+    inconclusiveCount: 0,
+    successRate: 1,
+    minimumSuccessRate: 0.9,
+    meanUxScore: 4.17,
+    configurationInterventions: 3,
+    humanInterventions: 2,
+    recoveryEvents: 0,
+    criticalCaseIds: [
+      "settings",
+      "high-risk-confirmation",
+      "shell-sandbox",
+      "coding-verification",
+      "long-task-recovery",
+    ],
+    failedCriticalCaseIds: ["high-risk-confirmation", "long-task-recovery"],
+    releaseIdentitySha256: RELEASE_IDENTITY,
+    status: "incomplete",
+  });
+  assert.equal(firstRecordedAt, gate.trials[0]?.recordedAt);
+  assert.equal(lastRecordedAt, gate.trials.at(-1)?.recordedAt);
+  assert.equal(Number.isNaN(Date.parse(firstRecordedAt)), false);
+  assert.equal(Number.isNaN(Date.parse(lastRecordedAt)), false);
+  assert.equal(firstRecordedAt <= lastRecordedAt, true);
   assert.equal(findForbiddenKey(gate), undefined);
   return gate;
 }

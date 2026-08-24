@@ -37,6 +37,12 @@ const INTERNAL_LEDGER_TOOLS = new Set([
   "replan_plan",
   "record_run_milestone",
   "request_operator_decision",
+  "delegate_task",
+  "subagent_start",
+  "subagent_send",
+  "subagent_inspect",
+  "subagent_cancel",
+  "subagent_collect",
 ]);
 const BLOCKED_COMMAND_PATTERNS: ReadonlyArray<{
   pattern: RegExp;

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { lazy, Suspense, useRef } from "react";
 import { FatalState, LoadingShell } from "./AppInitialStates";
 import { AppLedgerNavigation } from "./AppLedgerNavigation";
 import { AppWorkbenchHeader } from "./AppWorkbenchHeader";
@@ -6,15 +6,31 @@ import { composerCanStartRun } from "./composer-run-availability";
 import { Composer } from "./Composer";
 import { ConversationWorkspace } from "./ConversationWorkspace";
 import { copy } from "./copy";
-import { TaskWorkspace } from "./TaskWorkspace";
 import { TaskNarrativeBoundary } from "./TaskNarrativeBoundary";
-import { TraceWorkspace } from "./TraceWorkspace";
 import { useConversationAutoScroll } from "./use-conversation-auto-scroll";
 import { useTaskControlNavigation } from "./use-task-control-navigation";
 import { useWorkspaceShell } from "./use-workspace-shell";
 import { useWorkspaceViewModel } from "./use-workspace-view-model";
-import { WorkbenchDeferredDecisions, WorkbenchDeferredNotices } from "./WorkbenchDeferredPanels";
-import { WorkspaceSettingsSurface } from "./WorkspaceSettingsSurface";
+import {
+  WorkbenchDeferredDecisions,
+  WorkbenchDeferredNotices,
+} from "./WorkbenchDeferredPanels";
+
+const LazyTaskWorkspace = lazy(() =>
+  import("./TaskWorkspace").then(({ TaskWorkspace }) => ({
+    default: TaskWorkspace,
+  })),
+);
+const LazyTraceWorkspace = lazy(() =>
+  import("./TraceWorkspace").then(({ TraceWorkspace }) => ({
+    default: TraceWorkspace,
+  })),
+);
+const LazyWorkspaceSettingsSurface = lazy(() =>
+  import("./WorkspaceSettingsSurface").then(({ WorkspaceSettingsSurface }) => ({
+    default: WorkspaceSettingsSurface,
+  })),
+);
 export function App() {
   const vm = useWorkspaceViewModel(),
     conversationEnd = useRef<HTMLDivElement>(null),
@@ -37,7 +53,8 @@ export function App() {
   if (!vm.bootstrap) {
     return <FatalState message={vm.error ?? copy.notices.disconnected} />;
   }
-  const activeAgent = vm.detail?.agent ?? vm.bootstrap.agents[0], activeModel = vm.selectedModel;
+  const activeAgent = vm.detail?.agent ?? vm.bootstrap.agents[0],
+    activeModel = vm.selectedModel;
   const canStartRun = composerCanStartRun({
     text: vm.composer,
     hasThread: Boolean(vm.detail),
@@ -87,7 +104,9 @@ export function App() {
             </section>
           ) : null}
           {shell.workspaceView === "trajectory" ? (
-            <TraceWorkspace vm={vm} activeModel={activeModel} />
+            <Suspense fallback={null}>
+              <LazyTraceWorkspace vm={vm} activeModel={activeModel} />
+            </Suspense>
           ) : null}
           {shell.workspaceView === "task" ? (
             <section
@@ -96,29 +115,36 @@ export function App() {
               role="tabpanel"
               aria-labelledby="workspace-view-task"
             >
-              <TaskWorkspace
-                vm={vm}
-                section={shell.taskSection}
-                activeModel={activeModel}
-                onSection={shell.setTaskSection}
-              />
+              <Suspense fallback={null}>
+                <LazyTaskWorkspace
+                  vm={vm}
+                  section={shell.taskSection}
+                  activeModel={activeModel}
+                  onSection={shell.setTaskSection}
+                  onOpenConversation={() =>
+                    shell.setWorkspaceView("conversation")
+                  }
+                />
+              </Suspense>
             </section>
           ) : null}
         </div>
       </main>
       {shell.settingsOpen ? (
-        <WorkspaceSettingsSurface
-          vm={vm}
-          activeAgent={activeAgent}
-          section={shell.settingsSection}
-          onSection={shell.setSettingsSection}
-          onClose={shell.closeSettings}
-          onWorkspaceSwitch={vm.switchWorkspaceRoot}
-          onConversation={() => {
-            shell.closeSettings();
-            shell.setWorkspaceView("conversation");
-          }}
-        />
+        <Suspense fallback={null}>
+          <LazyWorkspaceSettingsSurface
+            vm={vm}
+            activeAgent={activeAgent}
+            section={shell.settingsSection}
+            onSection={shell.setSettingsSection}
+            onClose={shell.closeSettings}
+            onWorkspaceSwitch={vm.switchWorkspaceRoot}
+            onConversation={() => {
+              shell.closeSettings();
+              shell.setWorkspaceView("conversation");
+            }}
+          />
+        </Suspense>
       ) : null}
     </div>
   );
