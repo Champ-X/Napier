@@ -1,8 +1,8 @@
-import { useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Settings2 } from "lucide-react";
 
 import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
 import { copy } from "./copy";
+import { useWorkspaceLayout } from "./use-workspace-layout";
 import { WorkspaceTree } from "./WorkspaceTree";
 import type { TrashedThreadReceipt } from "./use-thread-trash";
 
@@ -31,9 +31,7 @@ export function LedgerNavigation({
   onOpenWorkspaceSettings(): void;
   onOpenSettings(): void;
 }) {
-  const [collapsed, setCollapsed] = useState(
-    () => typeof window !== "undefined" && window.innerWidth <= 1320,
-  );
+  const { collapsed, toggleSidebar } = useWorkspaceLayout();
   return (
     <nav
       className={`ledger-nav${collapsed ? " is-collapsed" : ""}`}
@@ -52,7 +50,7 @@ export function LedgerNavigation({
           type="button"
           aria-label={collapsed ? "展开会话导航" : "收起会话导航"}
           aria-pressed={collapsed}
-          onClick={() => setCollapsed((current) => !current)}
+          onClick={toggleSidebar}
         >
           {collapsed ? (
             <ChevronRight size={14} aria-hidden="true" />

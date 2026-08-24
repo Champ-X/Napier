@@ -5,13 +5,13 @@
   "predecessor": {
     "productVersion": "0.1.2",
     "commit": "45c736f0b426db5d03f88adbb17acb8df32e7703",
-    "changedPathCount": 749,
-    "changedPathsSha256": "f79886b92e3ef2dc5d13956c66d00c24149ae871da711aeaf17b3e885d714edc"
+    "changedPathCount": 750,
+    "changedPathsSha256": "dea8737c7f3018620bda1b47fd30af3eed2b330cffe30b019b79aa3066c022c1"
   },
   "identityDeclarationPath": "packages/runtime/src/release-product-identity.ts",
   "identityDeclarationSha256": "5a8dada43a7d464d3de4e65cc7c556def3391ef59f674cdb6949a1ce5362b62d",
-  "fileCount": 1670,
-  "totalBytes": 12636274,
+  "fileCount": 1671,
+  "totalBytes": 12638630,
   "files": [
     {
       "path": "apps/server/package.json",
@@ -1295,8 +1295,8 @@
     },
     {
       "path": "apps/web/src/LedgerNavigation.tsx",
-      "bytes": 2911,
-      "sha256": "28916ff9f7a3783aabc7063ccfddfe7d35d6d43123f367cc22009f4447d98ce1"
+      "bytes": 2850,
+      "sha256": "0f1bb2f2a2b9d83c357ec82f1c295d1715b53be0b0af3d261f08d538bfa7a724"
     },
     {
       "path": "apps/web/src/MemoryCards.tsx",
@@ -3962,6 +3962,11 @@
       "path": "apps/web/src/use-workflow-experiment-desk.ts",
       "bytes": 9667,
       "sha256": "c80b1eabed68602127580539d1efa915610e3241cd8052dac48d035656bcda13"
+    },
+    {
+      "path": "apps/web/src/use-workspace-layout.ts",
+      "bytes": 2417,
+      "sha256": "5c9fd3e64fbb1b15ddfbe1c63c0aeeb0e88e6b64304455f45e34b2c559455304"
     },
     {
       "path": "apps/web/src/use-workspace-shell.ts",
@@ -8364,5 +8369,5 @@
       "sha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c"
     }
   ],
-  "contentSha256": "6e62a9ffb72ff488d2d613ebcbd997f5b0cf9570c20144ccac046162384703e7"
+  "contentSha256": "1a4980cdaeee9d8782142437f1a89b4df92a317d0a8327c19350a41a046dc6a3"
 }

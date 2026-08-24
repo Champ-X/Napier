@@ -3,8 +3,12 @@ import { describe, expect, it } from "vitest";
 
 describe("Ledger navigation", () => {
   it("collapses at the compact desktop breakpoint without hiding the thread list", async () => {
-    const [source, tree, styles] = await Promise.all([
+    const [source, layout, tree, styles] = await Promise.all([
       readFile(new URL("../src/LedgerNavigation.tsx", import.meta.url), "utf8"),
+      readFile(
+        new URL("../src/use-workspace-layout.ts", import.meta.url),
+        "utf8",
+      ),
       readFile(new URL("../src/WorkspaceTree.tsx", import.meta.url), "utf8"),
       readFile(
         new URL("../src/styles/shell-navigation.css", import.meta.url),
@@ -12,16 +16,22 @@ describe("Ledger navigation", () => {
       ),
     ]);
 
-    expect(source).toContain('typeof window !== "undefined"');
-    expect(source).toContain("window.innerWidth <= 1320");
+    // The compact-rail decision now lives in the solver-backed hook rather
+    // than a hand-guessed media-query breakpoint inside the navigation.
+    expect(source).toContain("useWorkspaceLayout()");
     expect(source).toContain(
       'className={`ledger-nav${collapsed ? " is-collapsed" : ""}`}',
     );
     expect(source).toContain("aria-pressed={collapsed}");
+    expect(source).toContain("onClick={toggleSidebar}");
     expect(source).toContain("展开会话导航");
     expect(source).toContain("收起会话导航");
     expect(source).toContain("aria-label={copy.newThread}");
     expect(source).toContain("aria-label={copy.settings}");
+    // The hook is SSR-safe and drives collapse from the resolved layout.
+    expect(layout).toContain('typeof window === "undefined"');
+    expect(layout).toContain("resolveWorkspaceLayout");
+    expect(layout).toContain('addEventListener("resize"');
     // Sessions now nest under the workspace folder in WorkspaceTree; the
     // navigation shell renders the merged tree instead of a bare thread list.
     expect(source).toContain("<WorkspaceTree");
