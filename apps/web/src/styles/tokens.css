@@ -49,6 +49,18 @@
   --color-warning-border: #97731D;
   --color-warning-solid: #C2891A;
   --color-warning-surface: #F3E8C8;
+  --component-button-height: 32px;
+  --component-button-height-primary: 40px;
+  --component-button-radius: 6px;
+  --component-composer-radius: 14px;
+  --component-composer-shadow: 0 1px 2px rgb(23 33 60 / 6%), 0 8px 24px rgb(23 33 60 / 8%);
+  --component-disclosure-radius: 6px;
+  --component-disclosure-row-height: 32px;
+  --component-inspector-radius: 10px;
+  --component-inspector-width: 340px;
+  --component-trajectory-preview-lines: 16;
+  --component-trajectory-row-height: 30px;
+  --component-trajectory-row-height-expanded: 44px;
   --control-focus-offset: 2px;
   --control-focus-width: 3px;
   --control-target: 32px;

@@ -24,6 +24,9 @@ describe("Napier Web design tokens", () => {
     expect(css).toContain("--layout-command-bar: 58px;");
     expect(css).toContain("--layout-composer-shell: 72px;");
     expect(css).toContain("--layout-reading-target: 800px;");
+    expect(css).toContain("--component-disclosure-row-height: 32px;");
+    expect(css).toContain("--component-inspector-width: 340px;");
+    expect(css).toContain("--component-trajectory-preview-lines: 16;");
     expect(css).not.toContain("--color-brand-600");
   });
 

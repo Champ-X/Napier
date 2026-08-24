@@ -152,6 +152,7 @@ function cssVariableName(tokenPath) {
     return `--color-${rest.join("-")}`;
   }
   const prefixes = {
+    component: "component",
     control: "control",
     duration: "duration",
     ease: "ease",
