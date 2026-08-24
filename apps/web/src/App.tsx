@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { FatalState, LoadingShell } from "./AppInitialStates";
 import { AppLedgerNavigation } from "./AppLedgerNavigation";
+import { AppSettingsOverlay } from "./AppSettingsOverlay";
 import { AppWorkbenchHeader } from "./AppWorkbenchHeader";
 import { composerCanStartRun } from "./composer-run-availability";
 import { Composer } from "./Composer";
@@ -16,7 +17,6 @@ import {
   WorkbenchDeferredDecisions,
   WorkbenchDeferredNotices,
 } from "./WorkbenchDeferredPanels";
-import { WorkspaceSettingsSurface } from "./WorkspaceSettingsSurface";
 export function App() {
   const vm = useWorkspaceViewModel(),
     conversationEnd = useRef<HTMLDivElement>(null),
@@ -109,20 +109,7 @@ export function App() {
           ) : null}
         </div>
       </main>
-      {shell.settingsOpen ? (
-        <WorkspaceSettingsSurface
-          vm={vm}
-          activeAgent={activeAgent}
-          section={shell.settingsSection}
-          onSection={shell.setSettingsSection}
-          onClose={shell.closeSettings}
-          onWorkspaceSwitch={vm.switchWorkspaceRoot}
-          onConversation={() => {
-            shell.closeSettings();
-            shell.setWorkspaceView("conversation");
-          }}
-        />
-      ) : null}
+      <AppSettingsOverlay vm={vm} shell={shell} activeAgent={activeAgent} />
     </div>
   );
 }

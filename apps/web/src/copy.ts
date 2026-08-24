@@ -1,5 +1,6 @@
 import { deepMergeCopy, getLocale } from "./locale";
 import { zh } from "./copy.zh";
+import { narrativeCopy } from "./copy-narrative";
 import { desktopWorkbenchCopy } from "./desktop-workbench-copy";
 import { goalCopyEn } from "./goal-copy";
 import { recoveryCopy } from "./recovery-copy";
@@ -876,31 +877,8 @@ export const en = {
     english: "English",
     current: "Current language",
   },
-  narrative: {
-    blockedBy: "Blocked by",
-    next: "Next",
-    currentAction: "Current action",
-    elapsed: "Elapsed",
-    details: "Details",
-    runMetrics: "Run metrics",
-    harness: "Run mode",
-    harnessFocused: "Focused",
-    harnessFull: "Full",
-    harnessTools: "tools",
-    environmentFallback: "Read-only environment fallback",
-    environmentFallbackBody:
-      "Sandbox is unavailable. Safe inspection can continue; edits and process-backed capabilities remain withheld.",
-    environmentToolsActive: "tools active",
-    environmentRepair: "Run options → Sandbox setup",
-    browserControls: "Browser controls",
-    stop: "Stop",
-    emptyAction: "Choose or create a ledger",
-  },
-  projects: {
-    heading: "Projects",
-    switching: "Switching workspace...",
-    current: "Current",
-  },
+  narrative: narrativeCopy.narrative,
+  projects: narrativeCopy.projects,
 } as const;
 
 export type Copy = typeof en;
