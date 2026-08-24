@@ -5,13 +5,13 @@
   "predecessor": {
     "productVersion": "0.1.2",
     "commit": "45c736f0b426db5d03f88adbb17acb8df32e7703",
-    "changedPathCount": 751,
-    "changedPathsSha256": "b9e958b212d2c544aa2f2b6e68bd9fd221902e08aab249c52af31cfc13042f34"
+    "changedPathCount": 754,
+    "changedPathsSha256": "9b52e0dc5455bbf708648cd12c3ede5289f86223a8defe52049043825af3360a"
   },
   "identityDeclarationPath": "packages/runtime/src/release-product-identity.ts",
   "identityDeclarationSha256": "5a8dada43a7d464d3de4e65cc7c556def3391ef59f674cdb6949a1ce5362b62d",
-  "fileCount": 1672,
-  "totalBytes": 12642003,
+  "fileCount": 1675,
+  "totalBytes": 12649143,
   "files": [
     {
       "path": "apps/server/package.json",
@@ -3712,6 +3712,21 @@
       "path": "apps/web/src/typescript-ast-event-view.ts",
       "bytes": 8717,
       "sha256": "64d3f77bc14dd3856dd47f755f3f09cde34c97f51bec25666d82aa64646c75d8"
+    },
+    {
+      "path": "apps/web/src/ui/primitives/DisclosureRow/DisclosureRow.css",
+      "bytes": 3890,
+      "sha256": "f9f6e97bc67cf0af868e08dbd3df909f96794f7f5e7de86e66e6542a7d76612b"
+    },
+    {
+      "path": "apps/web/src/ui/primitives/DisclosureRow/DisclosureRow.tsx",
+      "bytes": 3143,
+      "sha256": "e4624355641a6d019f8f49fb3fca9c653a030cd10c52774754f4f64a2aebbe7b"
+    },
+    {
+      "path": "apps/web/src/ui/primitives/DisclosureRow/index.ts",
+      "bytes": 107,
+      "sha256": "f06c3e0f908ede25be48a4f0623ef76d46b303493819c4f6a542017e23283fa9"
     },
     {
       "path": "apps/web/src/use-active-channel-delivery-polling.ts",
@@ -8374,5 +8389,5 @@
       "sha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c"
     }
   ],
-  "contentSha256": "18d1444ae2715758d46fd9ad78c8aea3ddfc6dbc4667db2b019889eb4d270ffb"
+  "contentSha256": "a77424623ea4b53d54aa496908b9ae463a710e5dcd337949fbceee5596535899"
 }

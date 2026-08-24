@@ -1,0 +1,166 @@
+/* DisclosureRow primitive (design §10.2). Progressive-disclosure row with an
+   icon, title, summary, status, and trailing meta. Uses component and semantic
+   tokens only; the status accent lives on the inline-start rail. */
+.disclosure-row {
+  --disclosure-rail: var(--color-border-strong);
+  color: var(--color-fg-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-inline-start: 2px solid var(--disclosure-rail);
+  border-radius: var(--component-disclosure-radius);
+}
+
+.disclosure-row.status-running {
+  --disclosure-rail: var(--color-accent);
+}
+
+.disclosure-row.status-success {
+  --disclosure-rail: var(--color-success-border);
+}
+
+.disclosure-row.status-warning {
+  --disclosure-rail: var(--color-warning-border);
+}
+
+.disclosure-row.status-danger {
+  --disclosure-rail: var(--color-danger-border);
+}
+
+.disclosure-row-summary {
+  display: grid;
+  width: 100%;
+  min-height: var(--component-disclosure-row-height);
+  grid-template-columns: 14px auto minmax(0, 1fr) auto auto;
+  gap: var(--space-2);
+  align-items: center;
+  padding-block: var(--space-1);
+  padding-inline: var(--space-2);
+  text-align: start;
+  cursor: pointer;
+  background: none;
+  border: none;
+  border-radius: inherit;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.disclosure-row-summary:hover:not(:disabled) {
+  color: var(--color-fg);
+  background: var(--color-surface-muted);
+}
+
+.disclosure-row-summary:active:not(:disabled) {
+  background: var(--color-accent-subtle);
+}
+
+.disclosure-row-summary:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 var(--control-focus-offset) var(--color-surface),
+    0 0 0 calc(var(--control-focus-offset) + var(--control-focus-width))
+      var(--color-focus-ring);
+}
+
+.disclosure-row-summary:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.disclosure-row-caret {
+  color: var(--color-fg-subtle);
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+.disclosure-row[data-open="true"] .disclosure-row-caret {
+  transform: rotate(90deg);
+}
+
+.disclosure-row-caret-placeholder {
+  width: 14px;
+  height: 14px;
+}
+
+.disclosure-row-icon {
+  display: inline-flex;
+  color: var(--color-fg-subtle);
+}
+
+.disclosure-row-title {
+  overflow: hidden;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-fg);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.disclosure-row-secondary {
+  overflow: hidden;
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.disclosure-row-status,
+.disclosure-row-meta {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.disclosure-row-status {
+  color: var(--color-fg-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.disclosure-row.status-running .disclosure-row-status {
+  color: var(--color-accent-active);
+}
+
+.disclosure-row.status-success .disclosure-row-status {
+  color: var(--color-success);
+}
+
+.disclosure-row.status-warning .disclosure-row-status {
+  color: var(--color-warning);
+}
+
+.disclosure-row.status-danger .disclosure-row-status {
+  color: var(--color-danger-fg);
+}
+
+.disclosure-row-meta {
+  color: var(--color-fg-subtle);
+}
+
+.disclosure-row-region {
+  padding-block: var(--space-2);
+  padding-inline: var(--space-3);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.disclosure-row-region[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .disclosure-row-summary,
+  .disclosure-row-caret {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .disclosure-row {
+    border-inline-start-color: ButtonText;
+  }
+
+  .disclosure-row-summary:focus-visible {
+    outline: var(--control-focus-width) solid Highlight;
+    outline-offset: var(--control-focus-offset);
+    box-shadow: none;
+  }
+}
