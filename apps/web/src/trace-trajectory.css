@@ -1068,6 +1068,61 @@
   box-shadow: var(--shadow-none);
 }
 
+/* Embedded inside the unified ContextInspector: the shared column owns the
+   frame, scroll and title, so the detail flattens to plain content (§9.6). */
+.trace-event-detail.is-embedded {
+  position: static;
+  height: auto;
+  max-height: none;
+  overflow: visible;
+  background: transparent;
+}
+
+.trace-event-detail-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.trace-event-detail-meta > span {
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: var(--text-annotation);
+  color: var(--ink-faint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trace-event-detail-meta > i {
+  flex: 0 0 auto;
+  padding: 3px 5px;
+  font-family: var(--mono);
+  font-size: var(--text-annotation);
+  font-style: normal;
+  color: var(--ink-faint);
+  background: var(--paper-deep);
+  border-radius: 3px;
+}
+
+.trace-event-detail-meta > i.status-completed {
+  color: var(--ledger);
+  background: var(--color-success-surface);
+}
+
+.trace-event-detail-meta > i.status-failed {
+  color: var(--vermilion);
+  background: var(--color-danger-surface);
+}
+
+.trace-event-detail.is-embedded .trace-event-detail-panel {
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+}
+
 .trace-event-detail-heading {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
@@ -1372,9 +1427,15 @@
     grid-template-columns: 1fr;
   }
 
-  .trace-event-detail {
+  .trace-event-detail,
+  .trace-event-workspace.has-detail .context-inspector {
     position: static;
     grid-row: 1;
+  }
+
+  .trace-event-workspace.has-detail .context-inspector {
+    height: auto;
+    max-height: none;
   }
 }
 

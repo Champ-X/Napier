@@ -5,13 +5,13 @@
   "predecessor": {
     "productVersion": "0.1.2",
     "commit": "45c736f0b426db5d03f88adbb17acb8df32e7703",
-    "changedPathCount": 762,
-    "changedPathsSha256": "b5322ed0efcce48a72b5b7360124c1d94fb6cef0677fa88a42d26b7de317cd27"
+    "changedPathCount": 765,
+    "changedPathsSha256": "54e727fc7f9c6f413eaa42c98fd4469b4dfcceb54f5a11d95e8a2d326ae81a32"
   },
   "identityDeclarationPath": "packages/runtime/src/release-product-identity.ts",
   "identityDeclarationSha256": "5a8dada43a7d464d3de4e65cc7c556def3391ef59f674cdb6949a1ce5362b62d",
-  "fileCount": 1682,
-  "totalBytes": 12680563,
+  "fileCount": 1685,
+  "totalBytes": 12690171,
   "files": [
     {
       "path": "apps/server/package.json",
@@ -912,6 +912,11 @@
       "path": "apps/web/src/ContextCheckpointContinuityLedger.tsx",
       "bytes": 3807,
       "sha256": "a2d64defd4da90e37cd7dbd29575ec65de0fee7ecf0bfb83bc934ddde2142438"
+    },
+    {
+      "path": "apps/web/src/ContextInspector.tsx",
+      "bytes": 3778,
+      "sha256": "41dd3b0fe5f39c2172d293dbdc46312dc6ba661316ffa40d6c606ff0e7e748a9"
     },
     {
       "path": "apps/web/src/ContextLedgerRow.tsx",
@@ -1825,8 +1830,8 @@
     },
     {
       "path": "apps/web/src/TraceTrajectory.tsx",
-      "bytes": 4651,
-      "sha256": "8ed46178d25a7e7db7e57994e4cf78abb2fc55a6789a5dec378db36a4ea57d34"
+      "bytes": 5063,
+      "sha256": "67f2ed70e30418696838e24bf877ce77ca1b15ddb413b1bbfd34b436eac7854c"
     },
     {
       "path": "apps/web/src/TraceTrajectoryControls.tsx",
@@ -1835,8 +1840,8 @@
     },
     {
       "path": "apps/web/src/TraceTrajectoryEventDetail.tsx",
-      "bytes": 3812,
-      "sha256": "94cdfad89a4e4a9001155412250dc05252a98048148cfe7063a54095a468bbb4"
+      "bytes": 4498,
+      "sha256": "48589f950341ec5798c50c786d6ccd4226cc20f60318e009d742d3688cde41b7"
     },
     {
       "path": "apps/web/src/TraceTrajectoryLedger.tsx",
@@ -2467,6 +2472,11 @@
       "path": "apps/web/src/context-evidence-card.css",
       "bytes": 4428,
       "sha256": "2f4e71c4feb553d659aa697612a992392f00428e147091891a866e3cf8284657"
+    },
+    {
+      "path": "apps/web/src/context-inspector-copy.ts",
+      "bytes": 762,
+      "sha256": "99b725f57c865b588c5299870483517bd21aa167d31398269f667e3bf874a348"
     },
     {
       "path": "apps/web/src/context-panel-helpers.ts",
@@ -3475,13 +3485,18 @@
     },
     {
       "path": "apps/web/src/styles.css",
-      "bytes": 462,
-      "sha256": "d438240e9a76214aac0de7d6cc913dba7c26d2011eb1c7fbf9f559bf8e6d998f"
+      "bytes": 504,
+      "sha256": "ca63236f2b357e95a7f5d19c17872c32465b2cf65fc065140af889594e49bd6c"
     },
     {
       "path": "apps/web/src/styles/automation.css",
       "bytes": 20926,
       "sha256": "45bd8346f8bf24c12a894e2baa7e27ed96af9cca50a87b318347b12f5ea49216"
+    },
+    {
+      "path": "apps/web/src/styles/context-inspector.css",
+      "bytes": 2502,
+      "sha256": "46af75802bb28b1fa77bc454d11d9affd903be72573aeae20970069f6ed29beb"
     },
     {
       "path": "apps/web/src/styles/conversation.css",
@@ -3740,8 +3755,8 @@
     },
     {
       "path": "apps/web/src/trace-trajectory.css",
-      "bytes": 29027,
-      "sha256": "cb8fe85a08f1f6fd0378bb55053da1bbbfed5cdf2742d1cfcaba25faf4738c97"
+      "bytes": 30453,
+      "sha256": "f5950aeee2e7eb45fbe567249c0fd853b071a8a8d1447c2c9c6a40b8f141467e"
     },
     {
       "path": "apps/web/src/typescript-ast-event-view.ts",
@@ -8424,5 +8439,5 @@
       "sha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c"
     }
   ],
-  "contentSha256": "fd57a4cb9e6d790e3fe43d9ab7ebc757e1150b1e53a8b80788676b87b74df514"
+  "contentSha256": "6db46b3cfead4a157c08d7c1f8df3c98008516b66db19d7dac5068632d68b562"
 }
