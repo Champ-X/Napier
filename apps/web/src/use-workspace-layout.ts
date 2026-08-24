@@ -17,11 +17,12 @@ import {
  * the sidebar re-expands on its own once the window grows back and never
  * fights an operator who deliberately collapsed it.
  *
- * The inspector remains an independently owned fixed overlay, so it is modelled
- * as closed here and does not consume the shell grid's center width; it joins
- * the solved geometry with the ContentAxis migration (WEB-UI-002). Until the
- * single-column overlay lands (WEB-UI-009), the compact icon rail also serves
- * as the fallback below the single-column breakpoint.
+ * Below the single-column breakpoint (design §13) the sidebar leaves the shell
+ * grid entirely and becomes a fixed overlay drawer over one center column. The
+ * hook then exposes `overlay` plus the drawer's `navOpen` state and a
+ * `closeNav` control; `toggleSidebar` opens or closes the drawer instead of
+ * switching the inline preference. The drawer auto-closes when the viewport
+ * grows back past the breakpoint so it never lingers over the restored grid.
  */
 
 const SSR_FALLBACK_WIDTH = 1440;
@@ -34,13 +35,23 @@ export interface WorkspaceLayoutControls {
   layout: WorkspaceLayout;
   /** Whether the sidebar should render as the compact icon rail. */
   collapsed: boolean;
+  /**
+   * Whether the sidebar is a fixed overlay drawer over one center column
+   * (design §13, single-column mode) rather than an inline shell column.
+   */
+  overlay: boolean;
+  /** Overlay drawer open state; always false in inline mode. */
+  navOpen: boolean;
   toggleSidebar(): void;
+  /** Close the overlay drawer (backdrop, escape, or navigation). */
+  closeNav(): void;
 }
 
 export function useWorkspaceLayout(): WorkspaceLayoutControls {
   const [viewportWidth, setViewportWidth] = useState(readViewportWidth);
   const [sidebarPreference, setSidebarPreference] =
     useState<SidebarPreference>("expanded");
+  const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -55,12 +66,31 @@ export function useWorkspaceLayout(): WorkspaceLayoutControls {
     sidebarPreference,
     inspectorPreference: "closed",
   });
-  const collapsed =
-    layout.mode === "single-column" || layout.sidebar.collapsed;
+  const overlay = layout.mode === "single-column";
+  // In overlay mode the drawer shows the full-width rail, not the compact icons.
+  const collapsed = overlay ? false : layout.sidebar.collapsed;
+
+  // Never leave the drawer open once the grid is restored above the breakpoint.
+  useEffect(() => {
+    if (!overlay && navOpen) setNavOpen(false);
+  }, [overlay, navOpen]);
 
   const toggleSidebar = useCallback(() => {
+    if (overlay) {
+      setNavOpen((open) => !open);
+      return;
+    }
     setSidebarPreference(collapsed ? "expanded" : "collapsed");
-  }, [collapsed]);
+  }, [overlay, collapsed]);
 
-  return { layout, collapsed, toggleSidebar };
+  const closeNav = useCallback(() => setNavOpen(false), []);
+
+  return {
+    layout,
+    collapsed,
+    overlay,
+    navOpen: overlay && navOpen,
+    toggleSidebar,
+    closeNav,
+  };
 }

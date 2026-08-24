@@ -62,67 +62,12 @@
 }
 
 @media (max-width: 780px) {
-  .app-shell {
-    grid-template-columns: 68px minmax(0, 1fr);
-  }
-
-  .app-shell:has(.ledger-nav.is-collapsed) {
-    grid-template-columns: 68px minmax(0, 1fr);
-  }
-
-  .ledger-nav {
-    padding: 18px 8px 12px;
-  }
-
-  .ledger-nav::before,
-  .brand-lockup > div:last-child,
-  .new-ledger-button kbd,
-  .new-ledger-button {
-    font-size: 0;
-  }
-
-  .brand-lockup {
-    justify-content: center;
-    padding-inline: 0;
-  }
-
-  .ledger-collapse-button {
-    display: none;
-  }
-
-  .new-ledger-button {
-    justify-content: center;
-    min-width: 38px;
-    margin-inline: 7px;
-    padding: 0;
-  }
-
-  .new-ledger-button svg {
-    width: 17px;
-    height: 17px;
-  }
-
-  .nav-section-heading,
-  .thread-copy,
-  .thread-row .status-dot {
-    display: none;
-  }
-
-  .thread-row {
-    display: grid;
-    width: 42px;
-    height: 38px;
-    grid-template-columns: 1fr;
-    place-items: center;
-    margin: 3px auto;
-    padding: 0;
-  }
-
-  .thread-index {
-    padding: 0;
-    font-size: var(--text-xs);
-  }
-
+  /*
+   * Sidebar collapsing below this width is fully owned by the solver-backed
+   * hook: 720–880px auto-collapses to the compact `.is-collapsed` rail and
+   * below 720px the sidebar becomes the `.is-overlay` drawer (design §13).
+   * This block therefore only reflows the center content, never the rail.
+   */
   .workbench {
     background: var(--paper-bright);
   }

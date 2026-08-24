@@ -61,11 +61,37 @@ describe("useWorkspaceLayout", () => {
     expect(probe.read().collapsed).toBe(false);
   });
 
-  it("treats the compact rail as the fallback below the single-column breakpoint", async () => {
+  it("becomes a closed overlay drawer below the single-column breakpoint", async () => {
     const probe = mountProbe(M.singleColumnBreakpoint - 1);
 
     expect(probe.read().mode).toBe("single-column");
-    expect(probe.read().collapsed).toBe(true);
+    // The drawer shows the full-width rail (not the compact icons) and starts
+    // closed; `overlay` signals the shell to drop the sidebar grid column.
+    expect(probe.read().overlay).toBe(true);
+    expect(probe.read().collapsed).toBe(false);
+    expect(probe.read().navOpen).toBe(false);
+  });
+
+  it("toggles the overlay drawer open and closed without changing inline preference", async () => {
+    const probe = mountProbe(M.singleColumnBreakpoint - 1);
+    expect(probe.read().navOpen).toBe(false);
+
+    await probe.toggle();
+    expect(probe.read().navOpen).toBe(true);
+
+    await probe.toggle();
+    expect(probe.read().navOpen).toBe(false);
+  });
+
+  it("auto-dismisses the overlay drawer when the viewport is restored", async () => {
+    const probe = mountProbe(M.singleColumnBreakpoint - 1);
+    await probe.toggle();
+    expect(probe.read().navOpen).toBe(true);
+
+    await probe.resizeTo(1920);
+
+    expect(probe.read().overlay).toBe(false);
+    expect(probe.read().navOpen).toBe(false);
   });
 });
 
@@ -74,6 +100,8 @@ interface ProbeReading {
   mode: string;
   sidebarWidth: number;
   autoCollapsed: boolean;
+  overlay: boolean;
+  navOpen: boolean;
 }
 
 function mountProbe(initialWidth: number) {
@@ -91,6 +119,8 @@ function mountProbe(initialWidth: number) {
         data-mode={controls.layout.mode}
         data-sidebar-width={String(controls.layout.sidebar.width)}
         data-auto-collapsed={String(controls.layout.sidebar.autoCollapsed)}
+        data-overlay={String(controls.overlay)}
+        data-nav-open={String(controls.navOpen)}
       />
     );
   }
@@ -108,6 +138,8 @@ function mountProbe(initialWidth: number) {
         mode: node.getAttribute("data-mode") ?? "",
         sidebarWidth: Number(node.getAttribute("data-sidebar-width")),
         autoCollapsed: node.getAttribute("data-auto-collapsed") === "true",
+        overlay: node.getAttribute("data-overlay") === "true",
+        navOpen: node.getAttribute("data-nav-open") === "true",
       };
     },
     async resizeTo(width: number) {

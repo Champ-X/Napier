@@ -11,7 +11,7 @@
   "identityDeclarationPath": "packages/runtime/src/release-product-identity.ts",
   "identityDeclarationSha256": "5a8dada43a7d464d3de4e65cc7c556def3391ef59f674cdb6949a1ce5362b62d",
   "fileCount": 1682,
-  "totalBytes": 12676412,
+  "totalBytes": 12680563,
   "files": [
     {
       "path": "apps/server/package.json",
@@ -1300,8 +1300,8 @@
     },
     {
       "path": "apps/web/src/LedgerNavigation.tsx",
-      "bytes": 2850,
-      "sha256": "0f1bb2f2a2b9d83c357ec82f1c295d1715b53be0b0af3d261f08d538bfa7a724"
+      "bytes": 5283,
+      "sha256": "a9caa8f1b1f2bd08dbdfbf17169cd16d2f89c6cfd27f45fc05fa8f9b42f22986"
     },
     {
       "path": "apps/web/src/MemoryCards.tsx",
@@ -3520,8 +3520,8 @@
     },
     {
       "path": "apps/web/src/styles/motion-responsive.css",
-      "bytes": 6395,
-      "sha256": "4eab13b607624595a478e21fdbbc48aa5efc725f99ae6f83ac6411e988b9015a"
+      "bytes": 5725,
+      "sha256": "2156264eb7d3833e5ce9164b540b3a4f511ef0fc1f9f33e2d70639d836fa4821"
     },
     {
       "path": "apps/web/src/styles/planning.css",
@@ -3530,8 +3530,8 @@
     },
     {
       "path": "apps/web/src/styles/shell-navigation.css",
-      "bytes": 12080,
-      "sha256": "3caac77e7a12d74fd21f43180cf173a0ebf82bff6a331d7458bc59ae9cfb64f5"
+      "bytes": 13464,
+      "sha256": "fd0cbf4a55efd6c843dfd6842404a178b94f69a73b1f21b4b25cf711536af7b7"
     },
     {
       "path": "apps/web/src/styles/task-workbench.css",
@@ -4020,8 +4020,8 @@
     },
     {
       "path": "apps/web/src/use-workspace-layout.ts",
-      "bytes": 2417,
-      "sha256": "5c9fd3e64fbb1b15ddfbe1c63c0aeeb0e88e6b64304455f45e34b2c559455304"
+      "bytes": 3421,
+      "sha256": "ab8f0843949336b3042c0e0e9b04c1783722ffe586494918e7d3fd7566e2ff79"
     },
     {
       "path": "apps/web/src/use-workspace-shell.ts",
@@ -8424,5 +8424,5 @@
       "sha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c"
     }
   ],
-  "contentSha256": "7666b7ab9f2d2c57371bd60f6e032cb8b2acb5741489d9ca7fc128da239861ef"
+  "contentSha256": "fd57a4cb9e6d790e3fe43d9ab7ebc757e1150b1e53a8b80788676b87b74df514"
 }
