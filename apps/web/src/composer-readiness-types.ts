@@ -1,3 +1,5 @@
+import { composerCopy } from "./composer-copy";
+
 export type ComposerReadinessState = "ready" | "warn" | "blocked" | "inactive";
 
 export interface ComposerReadinessItem {
@@ -6,6 +8,12 @@ export interface ComposerReadinessItem {
   value: string;
   state: ComposerReadinessState;
   detail: string;
+  /**
+   * Marks the item as an unresolved placeholder while effective readiness is
+   * still loading. Pending detection reads this flag instead of matching the
+   * localized `value`, so the "checking" state survives translation.
+   */
+  pending?: boolean;
 }
 
 export interface ComposerRunReadiness {
@@ -16,16 +24,16 @@ export interface ComposerRunReadiness {
 }
 
 export function initialComposerRunReadiness(): ComposerRunReadiness {
+  const { labels } = composerCopy;
   return {
     canRun: false,
     level: "blocked",
-    message:
-      "Checking effective Network, Sandbox, Browser, and permission readiness before sending.",
+    message: composerCopy.messages.checking,
     items: [
-      pendingItem("network", "Network"),
-      pendingItem("sandbox", "Sandbox"),
-      pendingItem("browser", "Browser"),
-      pendingItem("permission", "Permission"),
+      pendingItem("network", labels.network),
+      pendingItem("sandbox", labels.sandbox),
+      pendingItem("browser", labels.browser),
+      pendingItem("permission", labels.permission),
     ],
   };
 }
@@ -37,8 +45,9 @@ function pendingItem(
   return {
     id,
     label,
-    value: "Checking",
+    value: composerCopy.values.checking,
     state: "blocked",
-    detail: "Effective capability readiness has not loaded.",
+    detail: composerCopy.details.pending,
+    pending: true,
   };
 }

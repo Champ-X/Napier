@@ -5,13 +5,13 @@
   "predecessor": {
     "productVersion": "0.1.2",
     "commit": "45c736f0b426db5d03f88adbb17acb8df32e7703",
-    "changedPathCount": 746,
-    "changedPathsSha256": "786c168ae08dc6d122911baed039dccdf869ddb5a772e3f08d863c48258f35b8"
+    "changedPathCount": 748,
+    "changedPathsSha256": "187f4afd2ecba12b3ac112975fecc40530cf76623ed5ce689d5967e9abb83204"
   },
   "identityDeclarationPath": "packages/runtime/src/release-product-identity.ts",
   "identityDeclarationSha256": "5a8dada43a7d464d3de4e65cc7c556def3391ef59f674cdb6949a1ce5362b62d",
-  "fileCount": 1668,
-  "totalBytes": 12623783,
+  "fileCount": 1669,
+  "totalBytes": 12630809,
   "files": [
     {
       "path": "apps/server/package.json",
@@ -875,13 +875,13 @@
     },
     {
       "path": "apps/web/src/Composer.tsx",
-      "bytes": 9076,
-      "sha256": "b5f06a1aca88c688ecf38a6ad5545da5d072315ae1c453890b6d09f5eb9c470b"
+      "bytes": 9072,
+      "sha256": "427d8688b3ca6d57f11f05abd842637002799e11a75e5d83e931cb141f3c180a"
     },
     {
       "path": "apps/web/src/ComposerCapabilityControl.tsx",
-      "bytes": 6396,
-      "sha256": "4cf558a09becafc96051b0864c53973b4a8218fce003c76c143717305c7641af"
+      "bytes": 6570,
+      "sha256": "a3970cddea99263c5871aab4ab3f8c2ec5103d228fe3daa7e37e62dea90f6d80"
     },
     {
       "path": "apps/web/src/ContextAgentIdentityFields.tsx",
@@ -2020,8 +2020,8 @@
     },
     {
       "path": "apps/web/src/agent-capability-composer.css",
-      "bytes": 5076,
-      "sha256": "14663e758db35d7830883898eb41a396df2330aab29a5bfff5191338f449c40a"
+      "bytes": 5047,
+      "sha256": "d29fac074e8b4a958b6956d0d7433535937a408594cce2f0269ea3ce49b5402d"
     },
     {
       "path": "apps/web/src/agent-capability-contract.css",
@@ -2389,19 +2389,24 @@
       "sha256": "5f6c943867fb263b09d55002f8e735e137b87e990903fe7d249acd7ffed5cf0d"
     },
     {
+      "path": "apps/web/src/composer-copy.ts",
+      "bytes": 6802,
+      "sha256": "e6a5289736069f66c2761927393f4e355aa7b0938157d4aee614e5cfd29c5421"
+    },
+    {
       "path": "apps/web/src/composer-mode-view-model.ts",
-      "bytes": 3380,
-      "sha256": "6be6cef0a1f278e47e070829f73aa25335dc936b30e2e196189ae8c28c12df75"
+      "bytes": 3140,
+      "sha256": "fa0d23553a561c5a06b918ecf5bf171a8c489067357ad3fe8a721a6f3a5a3f01"
     },
     {
       "path": "apps/web/src/composer-readiness-types.ts",
-      "bytes": 1094,
-      "sha256": "1e09ca7cdeba2d8392c1eedb3dc74f624b97cfcebc723362701de49289c84de9"
+      "bytes": 1410,
+      "sha256": "2b3871796d6b605d1e26125a7ff8e6e469f4c70e7aa0b096c7bdef85c3bacb7c"
     },
     {
       "path": "apps/web/src/composer-readiness-view-model.ts",
-      "bytes": 8703,
-      "sha256": "bd6fd165dcf058a212e7b69509add95897dc3301ab7fbb5934fcc3e0fa8605cb"
+      "bytes": 8710,
+      "sha256": "0f251be54f249e558585cd9431730ff63d3245e8cd3a53f49d31dfa167b1e7af"
     },
     {
       "path": "apps/web/src/composer-run-availability.ts",
@@ -8354,5 +8359,5 @@
       "sha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c"
     }
   ],
-  "contentSha256": "7991bbf595ef46d14433038c17000bb6f7cc45acd05f778205ba958e2f8294ff"
+  "contentSha256": "091024ff61c8adc002a1d34de930d71642be3fd46cc79308403bb91e2c66f175"
 }

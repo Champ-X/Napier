@@ -273,7 +273,7 @@ function handleComposerKeys(
 }
 
 function composerReadinessPending(readiness: ComposerRunReadiness): boolean {
-  return readiness.items.every((item) => item.value === "Checking");
+  return readiness.items.every((item) => item.pending === true);
 }
 
 function shortWorkspacePath(value: string): string {
