@@ -12,6 +12,7 @@ import {
   TRACE_TRAJECTORY_LANES,
   type TraceTrajectoryViewMode,
 } from "./trace-trajectory-copy";
+import { motionScrollBehavior } from "./reduced-motion";
 
 export function useTraceTrajectoryController(
   events: RunEvent[],
@@ -139,17 +140,9 @@ function useSelectedEventScroll(
     // Honor reduced-motion: never drive a JS smooth scroll (design §9.4).
     node.scrollIntoView({
       block: "nearest",
-      behavior: prefersReducedMotion() ? "auto" : "smooth",
+      behavior: motionScrollBehavior(),
     });
   }, [selectedEventId, visibleEventIds]);
-}
-
-function prefersReducedMotion(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    typeof window.matchMedia === "function" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
 }
 
 function useTrajectorySearchShortcut(

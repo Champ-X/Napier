@@ -2,6 +2,7 @@ import type { RunEvent } from "@napier/contracts";
 import { useCallback } from "react";
 
 import { browserLiveViewExpected } from "./browser-live-view-state";
+import { motionScrollBehavior } from "./reduced-motion";
 import type { InspectorTab } from "./use-workspace-view-model";
 
 export function useTaskControlNavigation({
@@ -25,7 +26,7 @@ export function useTaskControlNavigation({
   const openBrowserControls = useCallback(() => {
     const target = document.querySelector<HTMLElement>(".browser-live-view");
     if (target) {
-      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      target.scrollIntoView({ behavior: motionScrollBehavior(), block: "center" });
       target.focus({ preventScroll: true });
       return;
     }
@@ -39,7 +40,7 @@ export function useTaskControlNavigation({
         ),
       ].find((candidate) => candidate.dataset["artifactPath"] === path);
       if (target) {
-        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        target.scrollIntoView({ behavior: motionScrollBehavior(), block: "center" });
         target.focus({ preventScroll: true });
         return;
       }
@@ -51,7 +52,10 @@ export function useTaskControlNavigation({
               ".task-artifact-card[data-artifact-path]",
             ),
           ].find((candidate) => candidate.dataset["artifactPath"] === path);
-          taskArtifact?.scrollIntoView({ behavior: "smooth", block: "center" });
+          taskArtifact?.scrollIntoView({
+            behavior: motionScrollBehavior(),
+            block: "center",
+          });
           taskArtifact?.focus({ preventScroll: true });
         }),
       );

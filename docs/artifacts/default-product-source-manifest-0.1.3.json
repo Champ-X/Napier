@@ -5,13 +5,13 @@
   "predecessor": {
     "productVersion": "0.1.2",
     "commit": "45c736f0b426db5d03f88adbb17acb8df32e7703",
-    "changedPathCount": 760,
-    "changedPathsSha256": "0637796b6953420bb9f2ce76ad6a0f871b83eac37cd430b05af5a15a7e5bc72b"
+    "changedPathCount": 762,
+    "changedPathsSha256": "b5322ed0efcce48a72b5b7360124c1d94fb6cef0677fa88a42d26b7de317cd27"
   },
   "identityDeclarationPath": "packages/runtime/src/release-product-identity.ts",
   "identityDeclarationSha256": "5a8dada43a7d464d3de4e65cc7c556def3391ef59f674cdb6949a1ce5362b62d",
-  "fileCount": 1681,
-  "totalBytes": 12673135,
+  "fileCount": 1682,
+  "totalBytes": 12674520,
   "files": [
     {
       "path": "apps/server/package.json",
@@ -785,8 +785,8 @@
     },
     {
       "path": "apps/web/src/BrowserInspectorPanel.tsx",
-      "bytes": 2312,
-      "sha256": "d799b4dce09eb6d581b96c7f8ca42cb842af3188c64c69d08a00eec077222c53"
+      "bytes": 2383,
+      "sha256": "f3798d266f818b9aab45db7740ae755ab5d29f65dd3ffe032674cb07cce8ddd4"
     },
     {
       "path": "apps/web/src/BrowserInteractionConfirmationPanel.tsx",
@@ -2020,8 +2020,8 @@
     },
     {
       "path": "apps/web/src/agent-capability-composer-summary.ts",
-      "bytes": 1733,
-      "sha256": "05422b6b9220d1b08119d8173a5970260b678a8c162fccc2e34850946860ae73"
+      "bytes": 1805,
+      "sha256": "87c2d59253ae69da98d5ee861ea883a351f2d20e4c917a71167eb28b686f0a12"
     },
     {
       "path": "apps/web/src/agent-capability-composer.css",
@@ -3324,6 +3324,11 @@
       "sha256": "42b9f29510ac69d55a10c81c14ac7933b0361a1a72a96a2a1e9438cc356be5b9"
     },
     {
+      "path": "apps/web/src/reduced-motion.ts",
+      "bytes": 1283,
+      "sha256": "0221719b903be08d362d057a9a9b7b4127fdaf3a90a6ce11f96a99e64c8985f0"
+    },
+    {
       "path": "apps/web/src/release-product-trial-api.ts",
       "bytes": 850,
       "sha256": "5c0bfb6be100864d7f80134a9dfc1bd8572e4b32f370f63acab2a37e1b1bc51d"
@@ -3990,8 +3995,8 @@
     },
     {
       "path": "apps/web/src/use-task-control-navigation.ts",
-      "bytes": 2118,
-      "sha256": "cf53a7ad251a357ea1758c00853898998881915de5c9ee49ed77c91a0e8f849e"
+      "bytes": 2252,
+      "sha256": "e71d9211a665ba45169470f84d86a16ce21ff842c6c47e7242f4afc1b42bcb35"
     },
     {
       "path": "apps/web/src/use-thread-navigation.ts",
@@ -4005,8 +4010,8 @@
     },
     {
       "path": "apps/web/src/use-trace-trajectory-controller.ts",
-      "bytes": 5503,
-      "sha256": "bea4c394f32d1ed05a8dcc5dac00560e34917ff5b0d3652e049ae30d777c7595"
+      "bytes": 5328,
+      "sha256": "e764c0a0be1da53424788ee270e63e76b0524a98ca6d310798cdcadb96cd62fa"
     },
     {
       "path": "apps/web/src/use-workflow-experiment-desk.ts",
@@ -8419,5 +8424,5 @@
       "sha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c"
     }
   ],
-  "contentSha256": "dac379d5c882737d1bc4570bd5fe93aa48c94dfea3c5f227911f3f507dee2c22"
+  "contentSha256": "e0003ff63f0f87baf20de98ff56b309abe4154a77e0c79aa50ebe87d48ea0b06"
 }
