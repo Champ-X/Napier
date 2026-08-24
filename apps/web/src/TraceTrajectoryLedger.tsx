@@ -1,16 +1,20 @@
 import { useEffect, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Layers } from "lucide-react";
 
 import type {
   TraceTrajectoryEvent,
+  TraceTrajectoryLane,
   TraceTrajectoryRun,
 } from "./trace-trajectory-model";
 import { copy } from "./copy";
 import { getLocale } from "./locale";
 import { traceTrajectoryCopy } from "./trace-trajectory-copy";
 import { traceTrajectorySummarySegments } from "./trace-trajectory-presentation";
-
-const TRACE_EVENT_WINDOW = 180;
+import {
+  buildTraceRunSemanticView,
+  TRACE_SEMANTIC_ROW_BUDGET,
+  type TraceSemanticFoldRow,
+} from "./trace-semantic-rows";
 
 export interface TraceTrajectoryRunSectionProps {
   run: TraceTrajectoryRun;
@@ -32,7 +36,7 @@ export function TraceTrajectoryRunSection({
   const [collapsed, setCollapsed] = useState(
     !latest && run.status !== "running",
   );
-  const [eventLimit, setEventLimit] = useState(TRACE_EVENT_WINDOW);
+  const [rowLimit, setRowLimit] = useState(TRACE_SEMANTIC_ROW_BUDGET);
   const matchingTurns = run.turns
     .map((turn) => ({
       ...turn,
@@ -41,12 +45,10 @@ export function TraceTrajectoryRunSection({
       ),
     }))
     .filter((turn) => turn.events.length > 0);
-  const matchingEventCount = matchingTurns.reduce(
-    (total, turn) => total + turn.events.length,
-    0,
-  );
-  const visibleTurns = traceTurnWindow(matchingTurns, eventLimit);
-  const hiddenEventCount = Math.max(0, matchingEventCount - eventLimit);
+  const view = buildTraceRunSemanticView(matchingTurns, {
+    maxRows: rowLimit,
+    selectedEventId,
+  });
   const open = forceOpen ? true : !collapsed;
   const selectedInRun = Boolean(
     selectedEventId &&
@@ -54,10 +56,10 @@ export function TraceTrajectoryRunSection({
       turn.events.some((event) => event.event.id === selectedEventId),
     ),
   );
-  useEffect(() => setEventLimit(TRACE_EVENT_WINDOW), [run.id]);
+  useEffect(() => setRowLimit(TRACE_SEMANTIC_ROW_BUDGET), [run.id]);
   useEffect(() => {
-    if (selectedInRun) setEventLimit(matchingEventCount);
-  }, [matchingEventCount, selectedInRun]);
+    if (selectedInRun) setRowLimit(view.totalRowCount);
+  }, [selectedInRun, view.totalRowCount]);
   if (matchingTurns.length === 0) return null;
   return (
     <article className={`trace-run status-${run.status}`}>
@@ -83,20 +85,25 @@ export function TraceTrajectoryRunSection({
         <ChevronDown size={13} aria-hidden="true" />
       </button>
       {open ? (
-        <div className="trace-run-turns">
-          {hiddenEventCount > 0 ? (
+        <div
+          className="trace-run-turns"
+          role="table"
+          aria-label={traceTrajectoryCopy.rows}
+          aria-rowcount={view.totalRowCount}
+        >
+          {view.hiddenRowCount > 0 ? (
             <button
               className="trace-show-earlier"
               type="button"
               onClick={() =>
-                setEventLimit((current) => current + TRACE_EVENT_WINDOW)
+                setRowLimit((current) => current + TRACE_SEMANTIC_ROW_BUDGET)
               }
             >
-              {copy.trace.showEarlier} · {hiddenEventCount}
+              {copy.trace.showEarlier} · {formatNumber(view.hiddenEventCount)}
             </button>
           ) : null}
-          {visibleTurns.map((turn) => (
-            <section className="trace-turn" key={turn.index}>
+          {view.turns.map((turn) => (
+            <section className="trace-turn" role="presentation" key={turn.index}>
               <header>
                 <span>
                   {turn.index === 0
@@ -104,19 +111,31 @@ export function TraceTrajectoryRunSection({
                     : `${traceTrajectoryCopy.turn} ${formatNumber(turn.index)}`}
                 </span>
                 <small>
-                  {formatNumber(turn.events.length)}{" "}
+                  {formatNumber(turn.eventCount)}{" "}
                   {traceTrajectoryCopy.events}
                 </small>
               </header>
-              <ol>
-                {turn.events.map((event) => (
-                  <TraceTrajectoryEventRow
-                    key={event.event.id}
-                    event={event}
-                    selected={event.event.id === selectedEventId}
-                    onSelect={onSelect}
-                  />
-                ))}
+              <ol
+                role="rowgroup"
+                aria-label={
+                  turn.index === 0
+                    ? traceTrajectoryCopy.setup
+                    : `${traceTrajectoryCopy.turn} ${formatNumber(turn.index)}`
+                }
+              >
+                {turn.rows.map((row) =>
+                  row.kind === "fold" ? (
+                    <TraceTrajectoryFoldRow key={row.key} row={row} />
+                  ) : (
+                    <TraceTrajectoryEventRow
+                      key={row.key}
+                      rowIndex={row.rowIndex}
+                      event={row.event}
+                      selected={row.event.event.id === selectedEventId}
+                      onSelect={onSelect}
+                    />
+                  ),
+                )}
               </ol>
             </section>
           ))}
@@ -126,26 +145,52 @@ export function TraceTrajectoryRunSection({
   );
 }
 
-export function traceTurnWindow(
-  turns: TraceTrajectoryRun["turns"],
-  limit: number,
-): TraceTrajectoryRun["turns"] {
-  const visible: TraceTrajectoryRun["turns"] = [];
-  let remaining = Math.max(0, limit);
-  for (let index = turns.length - 1; index >= 0 && remaining > 0; index -= 1) {
-    const turn = turns[index]!;
-    const events = turn.events.slice(-remaining);
-    if (events.length > 0) visible.unshift({ ...turn, events });
-    remaining -= events.length;
-  }
-  return visible;
+function TraceTrajectoryFoldRow({ row }: { row: TraceSemanticFoldRow }) {
+  const lanes = (Object.entries(row.laneCounts) as [
+    TraceTrajectoryLane,
+    number,
+  ][]).filter(([, count]) => count > 0);
+  return (
+    <li
+      className="trace-fold-row"
+      role="row"
+      aria-rowindex={row.rowIndex}
+    >
+      <span className="trace-fold-icon" role="cell">
+        <Layers size={13} aria-hidden="true" />
+      </span>
+      <span className="trace-fold-copy" role="cell">
+        <strong>
+          {formatNumber(row.count)} {traceTrajectoryCopy.fold.events}
+        </strong>
+        <small>
+          {lanes.map(([lane, count]) => (
+            <span key={lane}>
+              {traceTrajectoryCopy.lanes[lane]} {formatNumber(count)}
+            </span>
+          ))}
+        </small>
+      </span>
+      <span className="trace-fold-range" role="cell">
+        <time dateTime={new Date(row.startMs).toISOString()}>
+          {formatClock(row.startMs)}
+        </time>
+        <i aria-hidden="true">–</i>
+        <time dateTime={new Date(row.endMs).toISOString()}>
+          {formatClock(row.endMs)}
+        </time>
+      </span>
+    </li>
+  );
 }
 
 function TraceTrajectoryEventRow({
+  rowIndex,
   event,
   selected,
   onSelect,
 }: {
+  rowIndex: number;
   event: TraceTrajectoryEvent;
   selected: boolean;
   onSelect: (eventId: string) => void;
@@ -154,18 +199,23 @@ function TraceTrajectoryEventRow({
   return (
     <li
       id={`trace-event-${event.event.id}`}
-      className={[`lane-${event.lane}`, selected ? "is-selected" : ""].join(
-        " ",
-      )}
+      role="row"
+      aria-rowindex={rowIndex}
+      aria-selected={selected}
+      className={[
+        `lane-${event.lane}`,
+        event.status === "failed" ? "is-exception" : "",
+        selected ? "is-selected" : "",
+      ].join(" ")}
     >
       <button type="button" onClick={() => onSelect(event.event.id)}>
-        <span className="trace-event-identity">
+        <span className="trace-event-identity" role="cell">
           <span className="trace-event-role">{event.role}</span>
           <span className="trace-event-sequence">
             <i />#{String(event.event.seq).padStart(3, "0")}
           </span>
         </span>
-        <span className="trace-event-copy">
+        <span className="trace-event-copy" role="cell">
           <span className="trace-event-title">
             <strong>{event.label}</strong>
             <i className={`status-${event.status}`}>
@@ -178,7 +228,7 @@ function TraceTrajectoryEventRow({
             ))}
           </small>
         </span>
-        <span className="trace-event-meta">
+        <span className="trace-event-meta" role="cell">
           {event.durationMs !== undefined ? (
             <strong>{formatTraceDuration(event.durationMs)}</strong>
           ) : null}
@@ -226,6 +276,14 @@ function formatTimestamp(value: string): string {
     minute: "2-digit",
     second: "2-digit",
   }).format(new Date(value));
+}
+
+function formatClock(milliseconds: number): string {
+  return new Intl.DateTimeFormat(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(new Date(milliseconds));
 }
 
 function shortRunId(runId: string): string {

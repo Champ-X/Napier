@@ -838,6 +838,57 @@
   box-shadow: inset 3px 0 var(--color-execution-spine);
 }
 
+.trace-fold-row {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  min-height: 30px;
+  padding: 4px var(--space-4) 4px 0;
+  margin: 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.trace-fold-icon {
+  justify-content: center;
+  color: var(--ink-faint);
+}
+
+.trace-fold-copy {
+  min-width: 0;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.trace-fold-copy strong {
+  font-family: var(--mono);
+  font-size: var(--text-annotation);
+  font-weight: 650;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.trace-fold-copy small {
+  display: flex;
+  min-width: 0;
+  gap: 10px;
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: var(--text-annotation);
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.trace-fold-range {
+  justify-content: flex-end;
+  gap: 4px;
+  font-family: var(--mono);
+  font-size: var(--text-annotation);
+  color: var(--ink-faint);
+}
+
 .trace-event-identity {
   display: grid;
   min-width: 0;

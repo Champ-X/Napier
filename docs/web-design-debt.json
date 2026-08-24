@@ -22,7 +22,7 @@
     "apps/web/src/styles/task-workbench.css": 25,
     "apps/web/src/styles/trajectory.css": 78,
     "apps/web/src/tool-invocation-experiment.css": 13,
-    "apps/web/src/trace-trajectory.css": 38,
+    "apps/web/src/trace-trajectory.css": 18,
     "apps/web/src/workflow-breakpoint.css": 24,
     "apps/web/src/workflow-experiment.css": 25,
     "apps/web/src/workflow-workbench.css": 3,

@@ -134,10 +134,22 @@ function useSelectedEventScroll(
 ): void {
   useEffect(() => {
     if (!selectedEventId) return;
-    document
-      .getElementById(`trace-event-${selectedEventId}`)
-      ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    const node = document.getElementById(`trace-event-${selectedEventId}`);
+    if (!node) return;
+    // Honor reduced-motion: never drive a JS smooth scroll (design §9.4).
+    node.scrollIntoView({
+      block: "nearest",
+      behavior: prefersReducedMotion() ? "auto" : "smooth",
+    });
   }, [selectedEventId, visibleEventIds]);
+}
+
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
 }
 
 function useTrajectorySearchShortcut(

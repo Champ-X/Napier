@@ -5,13 +5,13 @@
   "predecessor": {
     "productVersion": "0.1.2",
     "commit": "45c736f0b426db5d03f88adbb17acb8df32e7703",
-    "changedPathCount": 759,
-    "changedPathsSha256": "f00927751a3426c50e204abdc506329fa1cd8a7e125fa66f6ec94000ab8c222a"
+    "changedPathCount": 760,
+    "changedPathsSha256": "0637796b6953420bb9f2ce76ad6a0f871b83eac37cd430b05af5a15a7e5bc72b"
   },
   "identityDeclarationPath": "packages/runtime/src/release-product-identity.ts",
   "identityDeclarationSha256": "5a8dada43a7d464d3de4e65cc7c556def3391ef59f674cdb6949a1ce5362b62d",
-  "fileCount": 1680,
-  "totalBytes": 12663693,
+  "fileCount": 1681,
+  "totalBytes": 12673135,
   "files": [
     {
       "path": "apps/server/package.json",
@@ -1840,8 +1840,8 @@
     },
     {
       "path": "apps/web/src/TraceTrajectoryLedger.tsx",
-      "bytes": 7459,
-      "sha256": "8066cf6b89d132eafa3aa759318104fa1b8d3a0be4c936f1c03ad2ef29659559"
+      "bytes": 9176,
+      "sha256": "330fecbd29ca69844d60f603305d8e46ce32993a65b1c6054b4ab15661c0229a"
     },
     {
       "path": "apps/web/src/TraceTrajectoryOverview.tsx",
@@ -3699,9 +3699,14 @@
       "sha256": "938968ae1dafae1de546d90da9e736446a8f85289f68f8b5001486237b3b40f1"
     },
     {
+      "path": "apps/web/src/trace-semantic-rows.ts",
+      "bytes": 6157,
+      "sha256": "c22f4e67daad97175eefe66f75f3688b0f5b1189b8dff23d405663036fe0389f"
+    },
+    {
       "path": "apps/web/src/trace-trajectory-copy.ts",
-      "bytes": 7865,
-      "sha256": "4f7b4e7f7a43a9f2e1fa4293dab89bbb4ce4352ef7b070a511182cf140a0b30f"
+      "bytes": 8087,
+      "sha256": "3a4134bab3cfe84cbb444036ee0716569173178060b7c84db78e263102d17123"
     },
     {
       "path": "apps/web/src/trace-trajectory-event-detail-view.ts",
@@ -3730,8 +3735,8 @@
     },
     {
       "path": "apps/web/src/trace-trajectory.css",
-      "bytes": 28051,
-      "sha256": "d4cab95585f280702e9b28361ccc9b48c508361ac9513a9f9c26f55f72a538da"
+      "bytes": 29027,
+      "sha256": "cb8fe85a08f1f6fd0378bb55053da1bbbfed5cdf2742d1cfcaba25faf4738c97"
     },
     {
       "path": "apps/web/src/typescript-ast-event-view.ts",
@@ -4000,8 +4005,8 @@
     },
     {
       "path": "apps/web/src/use-trace-trajectory-controller.ts",
-      "bytes": 5133,
-      "sha256": "19f8ca88ceddb5a4b536c5f4be40c702bb4009f96cae20349a18de8a636ca55a"
+      "bytes": 5503,
+      "sha256": "bea4c394f32d1ed05a8dcc5dac00560e34917ff5b0d3652e049ae30d777c7595"
     },
     {
       "path": "apps/web/src/use-workflow-experiment-desk.ts",
@@ -8414,5 +8419,5 @@
       "sha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c"
     }
   ],
-  "contentSha256": "6b88ac56691a72ef7e23995e400413ff6a7445f1f9089b1424baf82966ce7451"
+  "contentSha256": "dac379d5c882737d1bc4570bd5fe93aa48c94dfea3c5f227911f3f507dee2c22"
 }
