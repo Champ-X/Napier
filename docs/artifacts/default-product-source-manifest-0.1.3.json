@@ -5,13 +5,13 @@
   "predecessor": {
     "productVersion": "0.1.2",
     "commit": "45c736f0b426db5d03f88adbb17acb8df32e7703",
-    "changedPathCount": 748,
-    "changedPathsSha256": "187f4afd2ecba12b3ac112975fecc40530cf76623ed5ce689d5967e9abb83204"
+    "changedPathCount": 749,
+    "changedPathsSha256": "f79886b92e3ef2dc5d13956c66d00c24149ae871da711aeaf17b3e885d714edc"
   },
   "identityDeclarationPath": "packages/runtime/src/release-product-identity.ts",
   "identityDeclarationSha256": "5a8dada43a7d464d3de4e65cc7c556def3391ef59f674cdb6949a1ce5362b62d",
-  "fileCount": 1669,
-  "totalBytes": 12630809,
+  "fileCount": 1670,
+  "totalBytes": 12636274,
   "files": [
     {
       "path": "apps/server/package.json",
@@ -4122,6 +4122,11 @@
       "path": "apps/web/src/workspace-file-view-model.ts",
       "bytes": 1024,
       "sha256": "df31b39a613e81302ef4d05c49bd369900afd4e9c6b427f2630556d0f2442e6d"
+    },
+    {
+      "path": "apps/web/src/workspace-layout-solver.ts",
+      "bytes": 5465,
+      "sha256": "f3a18f9d5ff058eb3ff7db224219b7b330e7adcde0da1b0685a70b3fc7ff7ca8"
     },
     {
       "path": "apps/web/src/workspace-process-api.ts",
@@ -8359,5 +8364,5 @@
       "sha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c"
     }
   ],
-  "contentSha256": "091024ff61c8adc002a1d34de930d71642be3fd46cc79308403bb91e2c66f175"
+  "contentSha256": "6e62a9ffb72ff488d2d613ebcbd997f5b0cf9570c20144ccac046162384703e7"
 }
