@@ -1,9 +1,4 @@
-import {
-  FlaskConical,
-  GitCompareArrows,
-  RotateCcw,
-  ShieldCheck,
-} from "lucide-react";
+import { FlaskConical } from "lucide-react";
 
 import type {
   AgentMessageExperimentPreview,
@@ -11,6 +6,10 @@ import type {
 } from "@napier/contracts";
 
 import { agentMessageExperimentCopy as copy } from "./agent-message-experiment-copy";
+import {
+  ExperimentDeskStatus,
+  ExperimentDeskTitleActions,
+} from "./ExperimentDeskPrimitives";
 import {
   agentMessageCheckpoints,
   projectAgentMessageExperimentComparison,
@@ -136,39 +135,23 @@ export function AgentMessageExperimentView(
             </strong>
           </span>
         </label>
-        <label className="agent-experiment-title-field">
-          <span>{copy.titleLabel}</span>
-          <input
-            type="text"
-            value={props.title}
-            maxLength={100}
-            placeholder={copy.titlePlaceholder}
-            disabled={disabled}
-            onChange={(event) => {
-              props.onTitle(event.target.value);
-              props.onInvalidate();
-            }}
-          />
-        </label>
-        <div className="agent-experiment-actions">
-          <button
-            type="button"
-            disabled={!props.checkpoint || props.running || disabled}
-            onClick={props.onPreview}
-          >
-            <GitCompareArrows size={12} aria-hidden="true" />
-            {props.busy === "preview" ? copy.previewing : copy.preview}
-          </button>
-          <button
-            type="button"
-            className="is-secondary"
-            disabled={disabled || (!props.preview && !props.result)}
-            onClick={props.onReset}
-          >
-            <RotateCcw size={12} aria-hidden="true" />
-            {copy.reset}
-          </button>
-        </div>
+        <ExperimentDeskTitleActions
+          title={props.title}
+          titleLabel={copy.titleLabel}
+          titlePlaceholder={copy.titlePlaceholder}
+          previewLabel={copy.preview}
+          previewingLabel={copy.previewing}
+          resetLabel={copy.reset}
+          checkpointAvailable={Boolean(props.checkpoint)}
+          previewAvailable={Boolean(props.preview)}
+          resultAvailable={Boolean(props.result)}
+          busy={props.busy}
+          running={props.running}
+          onTitle={props.onTitle}
+          onInvalidate={props.onInvalidate}
+          onPreview={props.onPreview}
+          onReset={props.onReset}
+        />
       </div>
       {!props.checkpoint && !props.preview && !props.result ? (
         <p className="agent-experiment-empty">{copy.empty}</p>
@@ -191,15 +174,7 @@ export function AgentMessageExperimentView(
           onDownload={props.onDownload}
         />
       ) : null}
-      {props.error ? (
-        <p className="agent-experiment-error" role="alert">
-          {props.error}
-        </p>
-      ) : null}
-      <p className="agent-experiment-safety">
-        <ShieldCheck size={12} aria-hidden="true" />
-        {copy.safety}
-      </p>
+      <ExperimentDeskStatus error={props.error} safety={copy.safety} />
     </article>
   );
 }

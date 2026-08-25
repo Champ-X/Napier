@@ -1,4 +1,4 @@
-import { GitCompareArrows, RotateCcw, ShieldCheck, Wrench } from "lucide-react";
+import { Wrench } from "lucide-react";
 
 import type {
   ToolInvocationExperimentPreview,
@@ -6,6 +6,10 @@ import type {
 } from "@napier/contracts";
 
 import { toolInvocationExperimentCopy as copy } from "./tool-invocation-experiment-copy";
+import {
+  ExperimentDeskStatus,
+  ExperimentDeskTitleActions,
+} from "./ExperimentDeskPrimitives";
 import {
   projectToolInvocationExperimentComparison,
   toolInvocationCheckpoints,
@@ -106,39 +110,23 @@ export function ToolInvocationExperimentView({
             ))}
           </select>
         </label>
-        <label className="agent-experiment-title-field">
-          <span>{copy.titleLabel}</span>
-          <input
-            type="text"
-            value={title}
-            maxLength={100}
-            placeholder={copy.titlePlaceholder}
-            disabled={disabled}
-            onChange={(event) => {
-              onTitle(event.target.value);
-              onInvalidate();
-            }}
-          />
-        </label>
-        <div className="agent-experiment-actions">
-          <button
-            type="button"
-            disabled={!checkpoint || running || disabled}
-            onClick={onPreview}
-          >
-            <GitCompareArrows size={12} aria-hidden="true" />
-            {busy === "preview" ? copy.previewing : copy.preview}
-          </button>
-          <button
-            type="button"
-            className="is-secondary"
-            disabled={disabled || (!preview && !result)}
-            onClick={onReset}
-          >
-            <RotateCcw size={12} aria-hidden="true" />
-            {copy.reset}
-          </button>
-        </div>
+        <ExperimentDeskTitleActions
+          title={title}
+          titleLabel={copy.titleLabel}
+          titlePlaceholder={copy.titlePlaceholder}
+          previewLabel={copy.preview}
+          previewingLabel={copy.previewing}
+          resetLabel={copy.reset}
+          checkpointAvailable={Boolean(checkpoint)}
+          previewAvailable={Boolean(preview)}
+          resultAvailable={Boolean(result)}
+          busy={busy}
+          running={running}
+          onTitle={onTitle}
+          onInvalidate={onInvalidate}
+          onPreview={onPreview}
+          onReset={onReset}
+        />
       </div>
       {!checkpoint && !preview && !result ? (
         <p className="agent-experiment-empty">{copy.empty}</p>
@@ -161,15 +149,7 @@ export function ToolInvocationExperimentView({
           onDownload={onDownload}
         />
       ) : null}
-      {error ? (
-        <p className="agent-experiment-error" role="alert">
-          {error}
-        </p>
-      ) : null}
-      <p className="agent-experiment-safety">
-        <ShieldCheck size={12} aria-hidden="true" />
-        {copy.safety}
-      </p>
+      <ExperimentDeskStatus error={error} safety={copy.safety} />
     </article>
   );
 }

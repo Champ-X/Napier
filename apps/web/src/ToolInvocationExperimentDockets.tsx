@@ -1,10 +1,4 @@
-import {
-  Download,
-  ExternalLink,
-  GitCompareArrows,
-  ShieldCheck,
-  Wrench,
-} from "lucide-react";
+import { GitCompareArrows, ShieldCheck, Wrench } from "lucide-react";
 
 import type {
   ToolInvocationExperimentPreview,
@@ -13,6 +7,12 @@ import type {
 
 import { toolInvocationExperimentCopy as copy } from "./tool-invocation-experiment-copy";
 import type { ToolInvocationExperimentComparisonView } from "./tool-invocation-experiment-view-model";
+import {
+  ExperimentEvidenceReceipt,
+  ExperimentMetric,
+  ExperimentPreviewFooter,
+  ExperimentResultFooter,
+} from "./ExperimentDeskPrimitives";
 
 export function ToolInvocationExperimentPreviewDocket({
   preview,
@@ -60,56 +60,49 @@ export function ToolInvocationExperimentPreviewDocket({
       </div>
 
       <dl className="agent-experiment-register model-experiment-register">
-        <EvidenceReceipt
+        <ExperimentEvidenceReceipt
           label={copy.definition}
           hash={preview.sourceToolDefinitionSha256}
         />
-        <EvidenceReceipt
+        <ExperimentEvidenceReceipt
           label={copy.arguments}
           hash={preview.sourceArgumentsSha256}
         />
-        <EvidenceReceipt
+        <ExperimentEvidenceReceipt
           label={copy.workspace}
           value={`${preview.candidateWorkspaceFileCount} files / ${preview.candidateWorkspaceBytes} bytes`}
           hash={preview.candidateWorkspaceSnapshotSha256}
         />
-        <EvidenceReceipt
+        <ExperimentEvidenceReceipt
           label={copy.capsule}
           value={`${preview.sourceCapsuleBytes} bytes`}
           hash={preview.sourceCapsuleSha256}
         />
-        <EvidenceReceipt
+        <ExperimentEvidenceReceipt
           label={copy.sourceOutput}
           value={`${preview.sourceOutputBytes} bytes`}
           hash={preview.sourceOutputSha256}
         />
-        <EvidenceReceipt
+        <ExperimentEvidenceReceipt
           label={copy.sourceDuration}
           value={`${preview.sourceDurationMs} ms`}
           hash={preview.previewSha256}
         />
       </dl>
 
-      <footer>
-        <code title={preview.previewSha256}>
-          {copy.previewBinding} {preview.previewSha256.slice(0, 12)}
-        </code>
-        {streamedFrameCount > 0 ? (
-          <span>
-            {streamedFrameCount} {copy.frames}
-          </span>
-        ) : null}
-        {busy ? (
-          <button type="button" className="is-secondary" onClick={onCancel}>
-            {copy.cancel}
-          </button>
-        ) : (
-          <button type="button" disabled={running} onClick={onExecute}>
-            <Wrench size={12} aria-hidden="true" />
-            {copy.execute}
-          </button>
-        )}
-      </footer>
+      <ExperimentPreviewFooter
+        previewSha256={preview.previewSha256}
+        previewBindingLabel={copy.previewBinding}
+        streamedFrameCount={streamedFrameCount}
+        framesLabel={copy.frames}
+        busy={busy}
+        running={running}
+        cancelLabel={copy.cancel}
+        executeLabel={copy.execute}
+        executeIcon={<Wrench size={12} aria-hidden="true" />}
+        onCancel={onCancel}
+        onExecute={onExecute}
+      />
     </section>
   );
 }
@@ -143,19 +136,19 @@ export function ToolInvocationExperimentComparisonDocket({
       </header>
 
       <div className="agent-experiment-metrics tool-experiment-metrics">
-        <Metric
+        <ExperimentMetric
           label={copy.duration}
           value={signed(comparison.durationMsDelta, "ms")}
         />
-        <Metric
+        <ExperimentMetric
           label={copy.bytes}
           value={signed(comparison.outputBytesDelta, " B")}
         />
-        <Metric
+        <ExperimentMetric
           label={copy.sourceBytes}
           value={`${comparison.sourceOutputBytes} B`}
         />
-        <Metric
+        <ExperimentMetric
           label={copy.targetBytes}
           value={`${comparison.targetOutputBytes} B`}
         />
@@ -166,19 +159,13 @@ export function ToolInvocationExperimentComparisonDocket({
         <span>{comparison.toolName}</span>
       </div>
 
-      <footer>
-        <code title={result.contentSha256}>
-          {result.contentSha256.slice(0, 12)}
-        </code>
-        <button type="button" onClick={onOpenThread}>
-          <ExternalLink size={12} aria-hidden="true" />
-          {copy.openTarget}
-        </button>
-        <button type="button" className="is-secondary" onClick={onDownload}>
-          <Download size={12} aria-hidden="true" />
-          {copy.download}
-        </button>
-      </footer>
+      <ExperimentResultFooter
+        contentSha256={result.contentSha256}
+        openLabel={copy.openTarget}
+        downloadLabel={copy.download}
+        onOpenThread={onOpenThread}
+        onDownload={onDownload}
+      />
     </section>
   );
 }
@@ -197,33 +184,6 @@ function CallSide({
       <span>{label}</span>
       <strong>{status}</strong>
       <small>{detail}</small>
-    </div>
-  );
-}
-
-function EvidenceReceipt({
-  label,
-  value,
-  hash,
-}: {
-  label: string;
-  value?: string;
-  hash: string;
-}) {
-  return (
-    <div>
-      <dt>{label}</dt>
-      <dd>{value ?? hash.slice(0, 12)}</dd>
-      {value ? <code title={hash}>{hash.slice(0, 12)}</code> : null}
-    </div>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <span>{label}</span>
-      <strong>{value}</strong>
     </div>
   );
 }

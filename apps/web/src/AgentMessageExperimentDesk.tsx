@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type {
   AgentMessageExperimentPreview,
@@ -18,16 +18,10 @@ import {
   parseAgentExperimentModelKey,
   projectAgentMessageExperimentComparison,
 } from "./agent-message-experiment-view-model";
-import { formatApiErrorMessage } from "./api-error";
 import type { WebThreadDetail } from "./api";
 import { downloadJsonArtifact } from "./download-json-artifact";
+import { useExperimentDeskLifecycle } from "./use-experiment-desk-lifecycle";
 import "./agent-message-experiment.css";
-
-interface PreviewState {
-  preview: AgentMessageExperimentPreview;
-  request: AgentMessageExperimentWebRequest;
-  checkpointKey: string;
-}
 
 export default function AgentMessageExperimentDesk({
   detail,
@@ -46,206 +40,68 @@ export default function AgentMessageExperimentDesk({
     () => agentMessageCheckpoints(detail.runs, detail.events),
     [detail.runs, detail.events],
   );
-  const [checkpointKey, setCheckpointKey] = useState(
-    checkpoints.at(-1)?.key ?? "",
-  );
   const [replaceModel, setReplaceModel] = useState(false);
   const [reuseToolResults, setReuseToolResults] = useState(false);
   const [title, setTitle] = useState("");
-  const [previewState, setPreviewState] = useState<PreviewState>();
-  const [result, setResult] = useState<AgentMessageExperimentResultFrame>();
-  const [busy, setBusy] = useState<"preview" | "execute">();
-  const [streamedFrameCount, setStreamedFrameCount] = useState(0);
-  const [error, setError] = useState<string>();
-  const activeRequest = useRef<AbortController | undefined>(undefined);
-  const operationGeneration = useRef(0);
-  const checkpoint = checkpoints.find(
-    (candidate) => candidate.key === checkpointKey,
-  );
+  const lifecycle = useExperimentDeskLifecycle<
+    (typeof checkpoints)[number],
+    AgentMessageExperimentWebRequest,
+    AgentMessageExperimentPreview,
+    AgentMessageExperimentResultFrame
+  >({
+    threadId: detail.thread.id,
+    checkpoints,
+    running,
+    sourceRunningError: copy.sourceRunning,
+    previewRequiredError: copy.errors.previewRequired,
+    buildRequest: (checkpoint) => {
+      if (replaceModel && !selectedModelConfigured) {
+        throw new Error(copy.errors.candidateUnavailable);
+      }
+      const normalizedTitle = title.replace(/\s+/gu, " ").trim();
+      return {
+        sourceRunId: checkpoint.runId,
+        sourceMessageSeq: checkpoint.messageSeq,
+        ...(replaceModel
+          ? { model: parseAgentExperimentModelKey(selectedModelKey) }
+          : {}),
+        ...(reuseToolResults
+          ? { toolResultMode: "reuse_source" as const }
+          : {}),
+        ...(normalizedTitle ? { title: normalizedTitle } : {}),
+      };
+    },
+    previewRequest: (request, signal) =>
+      previewAgentMessageExperiment(detail.thread.id, request, signal),
+    executeRequest: (request, preview, onFrame, signal) =>
+      executeAgentMessageExperiment(
+        detail.thread.id,
+        { ...request, expectedPreviewSha256: preview.previewSha256 },
+        preview,
+        onFrame,
+        signal,
+      ),
+  });
+  const { checkpoint, checkpointKey, result } = lifecycle;
   const comparison = result
     ? projectAgentMessageExperimentComparison(result.experiment.comparison)
     : undefined;
 
   useEffect(() => {
-    activeRequest.current?.abort();
-    activeRequest.current = undefined;
-    operationGeneration.current += 1;
-    setCheckpointKey(checkpoints.at(-1)?.key ?? "");
     setReplaceModel(false);
     setReuseToolResults(false);
     setTitle("");
-    setPreviewState(undefined);
-    setResult(undefined);
-    setBusy(undefined);
-    setStreamedFrameCount(0);
-    setError(undefined);
-    return () => {
-      activeRequest.current?.abort();
-      activeRequest.current = undefined;
-      operationGeneration.current += 1;
-    };
   }, [detail.thread.id]);
 
   useEffect(() => {
-    if (
-      checkpointKey &&
-      !checkpoints.some((candidate) => candidate.key === checkpointKey)
-    ) {
-      setCheckpointKey(checkpoints.at(-1)?.key ?? "");
-      invalidatePreview();
-    }
-  }, [checkpoints, checkpointKey]);
-
-  useEffect(() => {
-    if (replaceModel) invalidatePreview();
+    if (replaceModel) lifecycle.invalidatePreview();
   }, [selectedModelKey, selectedModelConfigured]);
 
-  const startOperation = () => {
-    activeRequest.current?.abort();
-    const controller = new AbortController();
-    const generation = operationGeneration.current + 1;
-    operationGeneration.current = generation;
-    activeRequest.current = controller;
-    return { controller, generation };
-  };
-
-  const isCurrentOperation = (
-    controller: AbortController,
-    generation: number,
-  ): boolean =>
-    !controller.signal.aborted &&
-    activeRequest.current === controller &&
-    operationGeneration.current === generation;
-
-  const finishOperation = (
-    controller: AbortController,
-    generation: number,
-  ): void => {
-    if (!isCurrentOperation(controller, generation)) return;
-    activeRequest.current = undefined;
-    setBusy(undefined);
-  };
-
-  const clearResult = (): void => {
-    setPreviewState(undefined);
-    setResult(undefined);
-    setStreamedFrameCount(0);
-  };
-
-  function invalidatePreview(): void {
-    activeRequest.current?.abort();
-    activeRequest.current = undefined;
-    operationGeneration.current += 1;
-    clearResult();
-    setBusy(undefined);
-  }
-
-  const buildRequest = (): AgentMessageExperimentWebRequest => {
-    if (!checkpoint) throw new Error(copy.errors.checkpointRequired);
-    if (replaceModel && !selectedModelConfigured) {
-      throw new Error(copy.errors.candidateUnavailable);
-    }
-    const normalizedTitle = title.replace(/\s+/gu, " ").trim();
-    return {
-      sourceRunId: checkpoint.runId,
-      sourceMessageSeq: checkpoint.messageSeq,
-      ...(replaceModel
-        ? { model: parseAgentExperimentModelKey(selectedModelKey) }
-        : {}),
-      ...(reuseToolResults ? { toolResultMode: "reuse_source" as const } : {}),
-      ...(normalizedTitle ? { title: normalizedTitle } : {}),
-    };
-  };
-
-  const preview = async (): Promise<void> => {
-    if (!checkpoint || busy || running) return;
-    const operation = startOperation();
-    setBusy("preview");
-    setError(undefined);
-    clearResult();
-    try {
-      const request = buildRequest();
-      const projected = await previewAgentMessageExperiment(
-        detail.thread.id,
-        request,
-        operation.controller.signal,
-      );
-      if (!isCurrentOperation(operation.controller, operation.generation)) {
-        return;
-      }
-      setPreviewState({
-        preview: projected,
-        request,
-        checkpointKey: checkpoint.key,
-      });
-    } catch (previewError) {
-      if (!isCurrentOperation(operation.controller, operation.generation)) {
-        return;
-      }
-      setError(formatApiErrorMessage(previewError));
-    } finally {
-      finishOperation(operation.controller, operation.generation);
-    }
-  };
-
-  const execute = async (): Promise<void> => {
-    if (running) {
-      setError(copy.sourceRunning);
-      return;
-    }
-    if (!previewState || previewState.checkpointKey !== checkpointKey || busy) {
-      setError(copy.errors.previewRequired);
-      return;
-    }
-    const operation = startOperation();
-    setBusy("execute");
-    setError(undefined);
-    setResult(undefined);
-    setStreamedFrameCount(0);
-    try {
-      const frame = await executeAgentMessageExperiment(
-        detail.thread.id,
-        {
-          ...previewState.request,
-          expectedPreviewSha256: previewState.preview.previewSha256,
-        },
-        previewState.preview,
-        () => {
-          if (isCurrentOperation(operation.controller, operation.generation)) {
-            setStreamedFrameCount((count) => count + 1);
-          }
-        },
-        operation.controller.signal,
-      );
-      if (!isCurrentOperation(operation.controller, operation.generation)) {
-        return;
-      }
-      setResult(frame);
-    } catch (executeError) {
-      if (!isCurrentOperation(operation.controller, operation.generation)) {
-        return;
-      }
-      setError(formatApiErrorMessage(executeError));
-    } finally {
-      finishOperation(operation.controller, operation.generation);
-    }
-  };
-
   const reset = (): void => {
-    invalidatePreview();
+    lifecycle.reset();
     setReplaceModel(false);
     setReuseToolResults(false);
     setTitle("");
-    setError(undefined);
-  };
-
-  const cancel = (): void => {
-    activeRequest.current?.abort();
-    activeRequest.current = undefined;
-    operationGeneration.current += 1;
-    setBusy(undefined);
-    setStreamedFrameCount(0);
-    setError(undefined);
   };
 
   const download = (): void => {
@@ -263,22 +119,22 @@ export default function AgentMessageExperimentDesk({
       title={title}
       selectedModelKey={selectedModelKey}
       selectedModelConfigured={selectedModelConfigured}
-      preview={previewState?.preview}
+      preview={lifecycle.preview}
       result={result}
       comparison={comparison}
-      busy={busy}
+      busy={lifecycle.busy}
       running={running}
-      streamedFrameCount={streamedFrameCount}
-      error={error}
-      onCheckpointKey={setCheckpointKey}
+      streamedFrameCount={lifecycle.streamedFrameCount}
+      error={lifecycle.error}
+      onCheckpointKey={lifecycle.setCheckpointKey}
       onReplaceModel={setReplaceModel}
       onReuseToolResults={setReuseToolResults}
       onTitle={setTitle}
-      onInvalidate={invalidatePreview}
-      onPreview={() => void preview()}
+      onInvalidate={lifecycle.invalidatePreview}
+      onPreview={() => void lifecycle.previewExperiment()}
       onReset={reset}
-      onCancel={cancel}
-      onExecute={() => void execute()}
+      onCancel={lifecycle.cancel}
+      onExecute={() => void lifecycle.executeExperiment()}
       onOpenThread={() => result && void onOpenThread(result.targetThreadId)}
       onDownload={download}
     />

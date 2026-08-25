@@ -1,10 +1,4 @@
-import {
-  Download,
-  ExternalLink,
-  GitCompareArrows,
-  RadioTower,
-  ShieldCheck,
-} from "lucide-react";
+import { GitCompareArrows, RadioTower, ShieldCheck } from "lucide-react";
 
 import type {
   ModelInvocationExperimentPreview,
@@ -13,6 +7,12 @@ import type {
 
 import { modelInvocationExperimentCopy as copy } from "./model-invocation-experiment-copy";
 import type { ModelInvocationExperimentComparisonView } from "./model-invocation-experiment-view-model";
+import {
+  ExperimentEvidenceReceipt,
+  ExperimentMetric,
+  ExperimentPreviewFooter,
+  ExperimentResultFooter,
+} from "./ExperimentDeskPrimitives";
 
 export function ModelInvocationExperimentPreviewDocket({
   preview,
@@ -63,55 +63,48 @@ export function ModelInvocationExperimentPreviewDocket({
       </div>
 
       <dl className="agent-experiment-register model-experiment-register">
-        <EvidenceReceipt
+        <ExperimentEvidenceReceipt
           label={copy.messages}
           value={String(preview.sourceMessageCount)}
           hash={preview.sourceContextEnvelopeSha256}
         />
-        <EvidenceReceipt
+        <ExperimentEvidenceReceipt
           label={copy.toolDefinitions}
           value={String(preview.sourceToolCount)}
           hash={preview.sourceContextEnvelopeSha256}
         />
-        <EvidenceReceipt
+        <ExperimentEvidenceReceipt
           label={copy.contextEnvelope}
           hash={preview.sourceContextEnvelopeSha256}
         />
-        <EvidenceReceipt
+        <ExperimentEvidenceReceipt
           label={copy.context}
           hash={preview.sourceContextSha256}
         />
-        <EvidenceReceipt
+        <ExperimentEvidenceReceipt
           label={copy.capsule}
           value={`${preview.sourceCapsuleBytes} ${copy.capsuleSize.toLowerCase()}`}
           hash={preview.sourceCapsuleSha256}
         />
-        <EvidenceReceipt
+        <ExperimentEvidenceReceipt
           label={copy.sourceOutput}
           hash={preview.sourceOutputSha256}
         />
       </dl>
 
-      <footer>
-        <code title={preview.previewSha256}>
-          {copy.previewBinding} {preview.previewSha256.slice(0, 12)}
-        </code>
-        {streamedFrameCount > 0 ? (
-          <span>
-            {streamedFrameCount} {copy.frames}
-          </span>
-        ) : null}
-        {busy ? (
-          <button type="button" className="is-secondary" onClick={onCancel}>
-            {copy.cancel}
-          </button>
-        ) : (
-          <button type="button" disabled={running} onClick={onExecute}>
-            <RadioTower size={12} aria-hidden="true" />
-            {copy.execute}
-          </button>
-        )}
-      </footer>
+      <ExperimentPreviewFooter
+        previewSha256={preview.previewSha256}
+        previewBindingLabel={copy.previewBinding}
+        streamedFrameCount={streamedFrameCount}
+        framesLabel={copy.frames}
+        busy={busy}
+        running={running}
+        cancelLabel={copy.cancel}
+        executeLabel={copy.execute}
+        executeIcon={<RadioTower size={12} aria-hidden="true" />}
+        onCancel={onCancel}
+        onExecute={onExecute}
+      />
     </section>
   );
 }
@@ -145,13 +138,19 @@ export function ModelInvocationExperimentComparisonDocket({
       </header>
 
       <div className="agent-experiment-metrics">
-        <Metric
+        <ExperimentMetric
           label={copy.duration}
           value={signed(comparison.durationMsDelta, "ms")}
         />
-        <Metric label={copy.tokens} value={signed(comparison.tokenDelta)} />
-        <Metric label={copy.tools} value={signed(comparison.toolCallDelta)} />
-        <Metric
+        <ExperimentMetric
+          label={copy.tokens}
+          value={signed(comparison.tokenDelta)}
+        />
+        <ExperimentMetric
+          label={copy.tools}
+          value={signed(comparison.toolCallDelta)}
+        />
+        <ExperimentMetric
           label={copy.cost}
           value={`${signed(comparison.costUsdDelta, undefined, 6)} USD`}
         />
@@ -188,19 +187,13 @@ export function ModelInvocationExperimentComparisonDocket({
         />
       </div>
 
-      <footer>
-        <code title={result.contentSha256}>
-          {result.contentSha256.slice(0, 12)}
-        </code>
-        <button type="button" onClick={onOpenThread}>
-          <ExternalLink size={12} aria-hidden="true" />
-          {copy.openTarget}
-        </button>
-        <button type="button" className="is-secondary" onClick={onDownload}>
-          <Download size={12} aria-hidden="true" />
-          {copy.download}
-        </button>
-      </footer>
+      <ExperimentResultFooter
+        contentSha256={result.contentSha256}
+        openLabel={copy.openTarget}
+        downloadLabel={copy.download}
+        onOpenThread={onOpenThread}
+        onDownload={onDownload}
+      />
     </section>
   );
 }
@@ -239,33 +232,6 @@ function CallDelta({
       <small>
         {copy.stopReason}: {stopReason}
       </small>
-    </div>
-  );
-}
-
-function EvidenceReceipt({
-  label,
-  value,
-  hash,
-}: {
-  label: string;
-  value?: string;
-  hash: string;
-}) {
-  return (
-    <div>
-      <dt>{label}</dt>
-      <dd>{value ?? hash.slice(0, 12)}</dd>
-      {value ? <code title={hash}>{hash.slice(0, 12)}</code> : null}
-    </div>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <span>{label}</span>
-      <strong>{value}</strong>
     </div>
   );
 }

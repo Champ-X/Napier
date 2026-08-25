@@ -1,10 +1,4 @@
-import {
-  Download,
-  ExternalLink,
-  FlaskConical,
-  GitCompareArrows,
-  LockKeyhole,
-} from "lucide-react";
+import { FlaskConical, GitCompareArrows, LockKeyhole } from "lucide-react";
 
 import type {
   AgentMessageExperimentPreview,
@@ -13,6 +7,12 @@ import type {
 
 import { agentMessageExperimentCopy as copy } from "./agent-message-experiment-copy";
 import type { AgentMessageExperimentComparisonView } from "./agent-message-experiment-view-model";
+import {
+  ExperimentEvidenceReceipt,
+  ExperimentMetric,
+  ExperimentPreviewFooter,
+  ExperimentResultFooter,
+} from "./ExperimentDeskPrimitives";
 
 export function AgentMessageExperimentPreviewDocket({
   preview,
@@ -63,58 +63,51 @@ export function AgentMessageExperimentPreviewDocket({
         />
       </div>
       <dl className="agent-experiment-register">
-        <EvidenceReceipt
+        <ExperimentEvidenceReceipt
           label={copy.history}
           value={String(preview.sourceHistoryMessageCount)}
           hash={preview.sourceHistorySha256}
         />
-        <EvidenceReceipt
+        <ExperimentEvidenceReceipt
           label={copy.workspace}
           value={`${preview.candidateWorkspaceFileCount} ${copy.workspaceFiles} / ${preview.candidateWorkspaceBytes} ${copy.workspaceBytes}`}
           hash={preview.candidateWorkspaceSnapshotSha256}
         />
-        <EvidenceReceipt
+        <ExperimentEvidenceReceipt
           label={copy.promptBinding}
           hash={preview.sourcePromptSha256}
         />
-        <EvidenceReceipt
+        <ExperimentEvidenceReceipt
           label={copy.memoryBinding}
           hash={preview.sourceMemoryContextSha256}
         />
-        <EvidenceReceipt
+        <ExperimentEvidenceReceipt
           label={copy.skillBinding}
           hash={preview.sourceSkillCatalogSha256}
         />
-        <EvidenceReceipt
+        <ExperimentEvidenceReceipt
           label={copy.configurationBinding}
           hash={preview.sourceRunConfigurationSha256}
         />
-        <EvidenceReceipt
+        <ExperimentEvidenceReceipt
           label={copy.toolResultBinding}
           value={`${preview.toolResultMode} / ${preview.sourceReusableToolResultCount} ${copy.reusableResults}`}
           hash={preview.sourceToolResultSetSha256}
         />
       </dl>
-      <footer>
-        <code title={preview.previewSha256}>
-          {copy.previewBinding} {preview.previewSha256.slice(0, 12)}
-        </code>
-        {streamedFrameCount > 0 ? (
-          <span>
-            {streamedFrameCount} {copy.frames}
-          </span>
-        ) : null}
-        {busy ? (
-          <button type="button" className="is-secondary" onClick={onCancel}>
-            {copy.cancel}
-          </button>
-        ) : (
-          <button type="button" disabled={running} onClick={onExecute}>
-            <FlaskConical size={12} aria-hidden="true" />
-            {copy.execute}
-          </button>
-        )}
-      </footer>
+      <ExperimentPreviewFooter
+        previewSha256={preview.previewSha256}
+        previewBindingLabel={copy.previewBinding}
+        streamedFrameCount={streamedFrameCount}
+        framesLabel={copy.frames}
+        busy={busy}
+        running={running}
+        cancelLabel={copy.cancel}
+        executeLabel={copy.execute}
+        executeIcon={<FlaskConical size={12} aria-hidden="true" />}
+        onCancel={onCancel}
+        onExecute={onExecute}
+      />
     </section>
   );
 }
@@ -147,17 +140,23 @@ export function AgentMessageExperimentComparisonDocket({
         </span>
       </header>
       <div className="agent-experiment-metrics">
-        <Metric
+        <ExperimentMetric
           label={copy.duration}
           value={signed(comparison.durationMsDelta, "ms")}
         />
-        <Metric label={copy.tokens} value={signed(comparison.tokenDelta)} />
-        <Metric label={copy.tools} value={signed(comparison.toolCallDelta)} />
-        <Metric
+        <ExperimentMetric
+          label={copy.tokens}
+          value={signed(comparison.tokenDelta)}
+        />
+        <ExperimentMetric
+          label={copy.tools}
+          value={signed(comparison.toolCallDelta)}
+        />
+        <ExperimentMetric
           label={copy.cost}
           value={`${signed(comparison.costUsdDelta, undefined, 6)} USD`}
         />
-        <Metric
+        <ExperimentMetric
           label={copy.reusedResults}
           value={`${result.experiment.toolResultReuse.reusedResultCount}/${result.experiment.toolResultReuse.sourceResultCount} / ${result.experiment.toolResultReuse.divergenceCount} ${copy.divergence}`}
         />
@@ -190,19 +189,13 @@ export function AgentMessageExperimentComparisonDocket({
           empty={copy.none}
         />
       </div>
-      <footer>
-        <code title={result.contentSha256}>
-          {result.contentSha256.slice(0, 12)}
-        </code>
-        <button type="button" onClick={onOpenThread}>
-          <ExternalLink size={12} aria-hidden="true" />
-          {copy.openTarget}
-        </button>
-        <button type="button" className="is-secondary" onClick={onDownload}>
-          <Download size={12} aria-hidden="true" />
-          {copy.download}
-        </button>
-      </footer>
+      <ExperimentResultFooter
+        contentSha256={result.contentSha256}
+        openLabel={copy.openTarget}
+        downloadLabel={copy.download}
+        onOpenThread={onOpenThread}
+        onDownload={onDownload}
+      />
     </section>
   );
 }
@@ -221,33 +214,6 @@ function EvidenceSide({
       <span>{label}</span>
       <strong>{model}</strong>
       <small>{tools.length > 0 ? tools.join(" / ") : copy.noTools}</small>
-    </div>
-  );
-}
-
-function EvidenceReceipt({
-  label,
-  value,
-  hash,
-}: {
-  label: string;
-  value?: string;
-  hash: string;
-}) {
-  return (
-    <div>
-      <dt>{label}</dt>
-      <dd>{value ?? hash.slice(0, 12)}</dd>
-      {value ? <code title={hash}>{hash.slice(0, 12)}</code> : null}
-    </div>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <span>{label}</span>
-      <strong>{value}</strong>
     </div>
   );
 }
