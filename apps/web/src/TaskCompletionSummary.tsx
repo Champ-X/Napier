@@ -1,12 +1,12 @@
 import { useId, useState } from "react";
 import { CheckCircle2, ChevronDown, FolderOpen } from "lucide-react";
 
-import type { ExecutionPlan } from "@napier/contracts";
 import { taskSurfaceCopy } from "./task-surface-copy";
+import { taskArtifactPaths } from "./task-completion-output-paths";
 
 export interface TaskCompletionSummaryProps {
   completedItems: string[];
-  plans: ExecutionPlan[];
+  plans: Parameters<typeof taskArtifactPaths>[0];
   activePlan?:
     | Pick<
         NonNullable<import("@napier/contracts").ThreadDetail["activePlan"]>,
@@ -59,7 +59,9 @@ export default function TaskCompletionSummary({
             onClick={() => onOpenArtifact(paths[0]!)}
           >
             <FolderOpen size={14} aria-hidden="true" />
-            {fileName(paths[0])}
+            <span className="task-completion-output-label">
+              {fileName(paths[0])}
+            </span>
           </button>
         ) : null}
         <button
@@ -85,26 +87,38 @@ export default function TaskCompletionSummary({
       {expanded ? (
         <div className="task-completion-details" id={detailsId}>
           {completedItems.length > 0 ? (
-            <ul>
-              {completedItems.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
+            <section className="task-completion-section">
+              <span className="task-completion-section-label">
+                {taskSurfaceCopy.completion.completedLabel}
+              </span>
+              <ul>
+                {completedItems.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </section>
           ) : null}
           {paths.length > 0 ? (
-            <nav aria-label={taskSurfaceCopy.completion.outputs}>
-              {paths.map((path) => (
-                <button
-                  key={path}
-                  type="button"
-                  title={`${taskSurfaceCopy.completion.open} ${path}`}
-                  onClick={() => onOpenArtifact(path)}
-                >
-                  <FolderOpen size={14} aria-hidden="true" />
-                  {taskSurfaceCopy.completion.output} · {path}
-                </button>
-              ))}
-            </nav>
+            <section className="task-completion-section">
+              <span className="task-completion-section-label">
+                {taskSurfaceCopy.completion.outputsLabel}
+              </span>
+              <nav aria-label={taskSurfaceCopy.completion.outputs}>
+                {paths.map((path) => (
+                  <button
+                    key={path}
+                    type="button"
+                    title={`${taskSurfaceCopy.completion.open} ${path}`}
+                    onClick={() => onOpenArtifact(path)}
+                  >
+                    <FolderOpen size={14} aria-hidden="true" />
+                    <span className="task-completion-output-label">
+                      {fileName(path)}
+                    </span>
+                  </button>
+                ))}
+              </nav>
+            </section>
           ) : null}
         </div>
       ) : null}
@@ -114,27 +128,4 @@ export default function TaskCompletionSummary({
 
 function fileName(path: string): string {
   return path.split(/[\\/]/u).filter(Boolean).at(-1) ?? path;
-}
-
-export function taskArtifactPaths(
-  plans: readonly ExecutionPlan[],
-  activePlan?: Pick<
-    NonNullable<import("@napier/contracts").ThreadDetail["activePlan"]>,
-    "outputPaths"
-  >,
-): string[] {
-  if (activePlan) return activePlan.outputPaths;
-  const plan =
-    plans.findLast(
-      (candidate) =>
-        candidate.status === "active" || candidate.status === "blocked",
-    ) ?? plans.findLast((candidate) => candidate.status === "completed");
-  return (plan?.artifacts ?? [])
-    .filter(
-      (artifact) =>
-        artifact.status === "produced" || artifact.status === "verified",
-    )
-    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
-    .slice(0, 2)
-    .map((artifact) => artifact.path);
 }

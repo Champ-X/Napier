@@ -1,7 +1,7 @@
 import type { ExecutionPlan } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
 
-import { taskArtifactPaths } from "../src/TaskCompletionSummary";
+import { taskArtifactPaths } from "../src/task-completion-output-paths";
 
 describe("Task completion summary", () => {
   it("shows recent authoritative outputs without missing artifacts", () => {

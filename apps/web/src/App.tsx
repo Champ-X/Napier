@@ -37,7 +37,6 @@ export function App() {
           vm={vm}
           shell={shell}
           browserControlsAvailable={taskControls.browserControlsAvailable}
-          onOpenArtifact={taskControls.openArtifact}
           onOpenBrowserControls={taskControls.openBrowserControls}
           onStop={() => void vm.stop()}
         />

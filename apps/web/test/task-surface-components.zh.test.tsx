@@ -78,8 +78,9 @@ describe("ordinary task surface Chinese copy", () => {
     const expandedMarkup = container.textContent ?? "";
     expect(container.innerHTML).toContain('aria-label="任务输出"');
     expect(container.innerHTML).toContain('aria-expanded="true"');
+    expect(expandedMarkup).toContain("完成事项");
     expect(expandedMarkup).toContain("已生成预览");
-    expect(expandedMarkup).toContain("输出 · artifacts/report.md");
+    expect(expandedMarkup).toContain("report.md");
     expect(expandedMarkup).not.toContain("Task result");
   });
 });

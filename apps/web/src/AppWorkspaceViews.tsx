@@ -9,6 +9,7 @@ import type { useWorkspaceViewModel } from "./use-workspace-view-model";
 import {
   WorkbenchDeferredDecisions,
   WorkbenchDeferredNotices,
+  WorkbenchDeferredTaskResult,
 } from "./WorkbenchDeferredPanels";
 
 const LazyTaskWorkspace = lazy(() =>
@@ -60,6 +61,10 @@ export function AppWorkspaceViews({
             vm={vm}
             endRef={conversationEnd}
             viewportRef={conversationViewport}
+          />
+          <WorkbenchDeferredTaskResult
+            vm={vm}
+            onOpenArtifact={taskControls.openArtifact}
           />
           <WorkbenchDeferredDecisions
             vm={vm}

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -15,8 +15,6 @@ import { EnvironmentDegradationNotice } from "./EnvironmentDegradationNotice";
 import { taskNarrative } from "./task-narrative-view-model";
 import { shellCopy } from "./shell-copy";
 
-const LazyTaskCompletionSummary = lazy(() => import("./TaskCompletionSummary"));
-
 export interface TaskNarrativeBarProps {
   detail:
     | Pick<
@@ -28,11 +26,9 @@ export interface TaskNarrativeBarProps {
         | "operatorDecisions"
         | "automaticRecoveryAssessments"
         | "automaticRecoveryAttempts"
-        | "activePlan"
       >
     | undefined;
   browserControlsAvailable: boolean;
-  onOpenArtifact(path: string): void;
   onOpenBrowserControls(): void;
   onStop(): void;
 }
@@ -41,7 +37,6 @@ export interface TaskNarrativeBarProps {
 export function TaskNarrativeBar({
   detail,
   browserControlsAvailable,
-  onOpenArtifact,
   onOpenBrowserControls,
   onStop,
 }: TaskNarrativeBarProps) {
@@ -157,18 +152,6 @@ export function TaskNarrativeBar({
           </div>
         ) : null}
       </div>
-      {narrative.phase === "completed" ? (
-        <div className="task-result-summary">
-          <Suspense fallback={null}>
-            <LazyTaskCompletionSummary
-              completedItems={narrative.completedItems}
-              plans={detail?.plans ?? []}
-              activePlan={detail?.activePlan}
-              onOpenArtifact={onOpenArtifact}
-            />
-          </Suspense>
-        </div>
-      ) : null}
     </section>
   );
 }

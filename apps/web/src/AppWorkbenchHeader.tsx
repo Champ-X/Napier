@@ -11,14 +11,12 @@ export function AppWorkbenchHeader({
   vm,
   shell,
   browserControlsAvailable,
-  onOpenArtifact,
   onOpenBrowserControls,
   onStop,
 }: {
   vm: ReturnType<typeof useWorkspaceViewModel>;
   shell: ReturnType<typeof useWorkspaceShell>;
   browserControlsAvailable: boolean;
-  onOpenArtifact(path: string): void;
   onOpenBrowserControls(): void;
   onStop(): void;
 }) {
@@ -40,7 +38,6 @@ export function AppWorkbenchHeader({
         <TaskNarrativeBoundary
           detail={vm.detail}
           browserControlsAvailable={browserControlsAvailable}
-          onOpenArtifact={onOpenArtifact}
           onOpenBrowserControls={onOpenBrowserControls}
           onStop={onStop}
         />

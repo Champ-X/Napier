@@ -9,7 +9,6 @@ const LazyTaskNarrativeBar = lazy(() => import("./TaskNarrativeBar"));
 export interface TaskNarrativeBoundaryProps {
   detail: ThreadDetail | undefined;
   browserControlsAvailable: boolean;
-  onOpenArtifact(path: string): void;
   onOpenBrowserControls(): void;
   onStop(): void;
 }
@@ -17,7 +16,6 @@ export interface TaskNarrativeBoundaryProps {
 export function TaskNarrativeBoundary({
   detail,
   browserControlsAvailable,
-  onOpenArtifact,
   onOpenBrowserControls,
   onStop,
 }: TaskNarrativeBoundaryProps) {
@@ -36,7 +34,6 @@ export function TaskNarrativeBoundary({
       <LazyTaskNarrativeBar
         detail={detail}
         browserControlsAvailable={browserControlsAvailable}
-        onOpenArtifact={onOpenArtifact}
         onOpenBrowserControls={onOpenBrowserControls}
         onStop={onStop}
       />

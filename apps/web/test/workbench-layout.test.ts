@@ -12,10 +12,10 @@ describe("Workbench layout", () => {
       'grid-template-areas:\n    "header"\n    "content"',
     );
     expect(styles).toContain(
-      '"notices"\n    "conversation"\n    "decisions"\n    "composer"',
+      '"notices"\n    "conversation"\n    "results"\n    "decisions"\n    "composer"',
     );
     expect(styles).toContain(
-      "grid-template-rows: auto minmax(0, 1fr) auto auto;",
+      "grid-template-rows: auto minmax(0, 1fr) auto auto auto;",
     );
     expect(styles).toContain(".workspace-primary-surface");
     expect(styles).toContain(".conversation-workspace-view");
@@ -47,14 +47,14 @@ describe("Workbench layout", () => {
     expect(featureStyles).toContain(".task-completion-strip");
     expect(featureStyles).toContain(".task-completion-toggle[aria-expanded");
     expect(featureStyles).toContain(".task-result-summary");
-    expect(featureStyles).toContain("z-index: 30");
+    expect(featureStyles).toContain("grid-area: results");
     expect(featureStyles).toContain("@media (forced-colors: active)");
     expect(globalStyles).not.toContain(".task-narrative {");
   });
 
   it("opens produced outputs through the Task Changes surface", async () => {
     const [app, navigation, summary, task, shell] = await Promise.all([
-      readFile(new URL("../src/App.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../src/AppWorkspaceViews.tsx", import.meta.url), "utf8"),
       readFile(
         new URL("../src/use-task-control-navigation.ts", import.meta.url),
         "utf8",
