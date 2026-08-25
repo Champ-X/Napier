@@ -14,7 +14,7 @@ import {
 } from "@napier/runtime";
 
 import { writeBenchmarkCasFile } from "./benchmark-artifact-file.js";
-import { CLI_VERSION } from "./cli-options.js";
+import { CLI_VERSION } from "@napier/cli/runner";
 import { loadWorkflowBenchmarkCase } from "./workflow-benchmark-case.js";
 import {
   createWorkflowBenchmarkEvaluation,

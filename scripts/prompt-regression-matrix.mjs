@@ -16,12 +16,12 @@ export const PROMPT_REGRESSION_DIMENSIONS = [
 export const PROMPT_REGRESSION_CASES = [
   promptCase(
     "network",
-    "apps/cli/test/open-web-research-benchmark.test.ts",
+    "packages/benchmark-kit/test/open-web-research-benchmark.test.ts",
     "executes default Search, Fetch, Browser, capture, and citation semantics",
   ),
   promptCase(
     "coding",
-    "apps/cli/test/coding-benchmark.test.ts",
+    "packages/benchmark-kit/test/coding-benchmark.test.ts",
     "scores a real Agent edit and emits self-verifying CAS artifacts",
   ),
   promptCase(
@@ -31,7 +31,7 @@ export const PROMPT_REGRESSION_CASES = [
   ),
   promptCase(
     "long_task",
-    "apps/cli/test/workflow-benchmark-long-horizon.test.ts",
+    "packages/benchmark-kit/test/workflow-benchmark-long-horizon.test.ts",
     "recovers the persisted Approval answer after a second Runtime restart",
   ),
   promptCase(

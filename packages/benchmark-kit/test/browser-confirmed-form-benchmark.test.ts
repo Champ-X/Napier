@@ -43,7 +43,7 @@ import type {
   BrowserConfirmedFormBenchmarkResult,
 } from "../src/browser-confirmed-form-benchmark-types.js";
 import { runBrowserConfirmedFormBenchmark } from "../src/browser-confirmed-form-benchmark.js";
-import { runCli } from "../src/cli.js";
+import { runCli } from "@napier/cli/runner";
 
 const CASE_ROOT = path.resolve(
   import.meta.dirname,

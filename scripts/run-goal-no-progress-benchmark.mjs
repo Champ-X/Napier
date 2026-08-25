@@ -1,8 +1,8 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { runGoalNoProgressBenchmarkSeries } from "../apps/cli/dist/goal-no-progress-benchmark-series.js";
-import { runGoalNoProgressBenchmark } from "../apps/cli/dist/goal-no-progress-benchmark.js";
+import { runGoalNoProgressBenchmarkSeries } from "../packages/benchmark-kit/dist/goal-no-progress-benchmark-series.js";
+import { runGoalNoProgressBenchmark } from "../packages/benchmark-kit/dist/goal-no-progress-benchmark.js";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),

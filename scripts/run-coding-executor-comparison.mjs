@@ -12,8 +12,8 @@ import {
   codingBenchmarkTargetEvidence,
   copyCodingBenchmarkFixture,
   loadCodingBenchmarkCase,
-} from "../apps/cli/dist/coding-benchmark-case.js";
-import { runCodingBenchmark } from "../apps/cli/dist/coding-benchmark.js";
+} from "../packages/benchmark-kit/dist/coding-benchmark-case.js";
+import { runCodingBenchmark } from "../packages/benchmark-kit/dist/coding-benchmark.js";
 import {
   calculateCodingExecutorComparisonSummary,
   verifyCodingExecutorComparison,

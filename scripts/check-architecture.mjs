@@ -34,6 +34,11 @@ const defaultWorkspaceImports = {
   "@napier/runtime": ["@napier/contracts"],
   "@napier/sdk": ["@napier/contracts", "@napier/runtime"],
   "@napier/cli": ["@napier/contracts", "@napier/runtime"],
+  "@napier/benchmark-kit": [
+    "@napier/cli",
+    "@napier/contracts",
+    "@napier/runtime",
+  ],
   "@napier/server": ["@napier/contracts", "@napier/runtime"],
   "@napier/web": ["@napier/contracts"],
 };

@@ -3,15 +3,15 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { loadOpenWebResearchBenchmarkCase } from "../apps/cli/dist/open-web-research-benchmark-case.js";
+import { loadOpenWebResearchBenchmarkCase } from "../packages/benchmark-kit/dist/open-web-research-benchmark-case.js";
 import {
   loadOpenWebResearchFreshnessCampaignArtifacts,
   loadOpenWebResearchFreshnessObservation,
-} from "../apps/cli/dist/open-web-research-freshness-artifacts.js";
+} from "../packages/benchmark-kit/dist/open-web-research-freshness-artifacts.js";
 import {
   verifyOpenWebResearchFreshnessCampaign,
   writeOpenWebResearchFreshnessCampaign,
-} from "../apps/cli/dist/open-web-research-freshness-campaign.js";
+} from "../packages/benchmark-kit/dist/open-web-research-freshness-campaign.js";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),

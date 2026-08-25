@@ -10,7 +10,7 @@ import {
 import {
   codingBenchmarkAstSha256,
   loadCodingBenchmarkCase,
-} from "../apps/cli/dist/coding-benchmark-case.js";
+} from "../packages/benchmark-kit/dist/coding-benchmark-case.js";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),

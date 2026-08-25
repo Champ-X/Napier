@@ -12,7 +12,9 @@
     "scripts/run-standard-skill-directory-dogfood.mjs",
     "scripts/windows-host-product-acceptance-live.mjs"
   ],
-  "project": ["scripts/**/*.{mjs,ts}"],
+  "project": [
+    "scripts/**/*.{mjs,ts}"
+  ],
   "ignore": [
     "benchmark-results/**",
     "benchmarks/**/expected/**",
@@ -21,16 +23,43 @@
     "examples/**",
     "packages/runtime/test/fixtures/**"
   ],
-  "ignoreDependencies": ["preact"],
-  "ignoreBinaries": ["docker.exe"],
+  "ignoreDependencies": [
+    "preact"
+  ],
+  "ignoreBinaries": [
+    "docker.exe"
+  ],
   "workspaces": {
     "apps/cli": {
-      "entry": ["src/index.ts!", "test/**/*.test.ts"],
-      "project": ["src/**/*.ts!", "test/**/*.ts"]
+      "entry": [
+        "src/index.ts!",
+        "test/**/*.test.ts"
+      ],
+      "project": [
+        "src/**/*.ts!",
+        "test/**/*.ts"
+      ]
+    },
+    "packages/benchmark-kit": {
+      "entry": [
+        "src/*benchmark*.ts!",
+        "src/open-web-research-*.ts!",
+        "test/**/*.test.ts"
+      ],
+      "project": [
+        "src/**/*.ts!",
+        "test/**/*.ts"
+      ]
     },
     "apps/server": {
-      "entry": ["src/index.ts!", "test/**/*.test.ts"],
-      "project": ["src/**/*.ts!", "test/**/*.ts"]
+      "entry": [
+        "src/index.ts!",
+        "test/**/*.test.ts"
+      ],
+      "project": [
+        "src/**/*.ts!",
+        "test/**/*.ts"
+      ]
     },
     "apps/web": {
       "entry": [
@@ -39,11 +68,21 @@
         "src/*.zh.ts!",
         "test/**/*.test.{ts,tsx}"
       ],
-      "project": ["src/**/*.{ts,tsx}!", "test/**/*.{ts,tsx}"]
+      "project": [
+        "src/**/*.{ts,tsx}!",
+        "test/**/*.{ts,tsx}"
+      ]
     },
     "packages/contracts": {
-      "entry": ["src/index.ts!", "src/*.ts!", "test/**/*.test.ts"],
-      "project": ["src/**/*.ts!", "test/**/*.ts"]
+      "entry": [
+        "src/index.ts!",
+        "src/*.ts!",
+        "test/**/*.test.ts"
+      ],
+      "project": [
+        "src/**/*.ts!",
+        "test/**/*.ts"
+      ]
     },
     "packages/runtime": {
       "entry": [
@@ -51,7 +90,10 @@
         "src/browser-runtime-installer-child.ts!",
         "test/**/*.test.ts"
       ],
-      "project": ["src/**/*.ts!", "test/**/*.ts"]
+      "project": [
+        "src/**/*.ts!",
+        "test/**/*.ts"
+      ]
     },
     "packages/sdk": {
       "entry": [
@@ -60,7 +102,11 @@
         "examples/*.mjs",
         "test/**/*.test.ts"
       ],
-      "project": ["src/**/*.ts!", "examples/*.mjs", "test/**/*.ts"]
+      "project": [
+        "src/**/*.ts!",
+        "examples/*.mjs",
+        "test/**/*.ts"
+      ]
     }
   }
 }

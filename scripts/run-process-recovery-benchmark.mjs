@@ -1,9 +1,9 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { createTrustedOuterProcessBenchmarkSandbox } from "../apps/cli/dist/process-recovery-benchmark-sandbox.js";
-import { runProcessRecoveryBenchmarkSeries } from "../apps/cli/dist/process-recovery-benchmark-series.js";
-import { runProcessRecoveryBenchmark } from "../apps/cli/dist/process-recovery-benchmark.js";
+import { createTrustedOuterProcessBenchmarkSandbox } from "../packages/benchmark-kit/dist/process-recovery-benchmark-sandbox.js";
+import { runProcessRecoveryBenchmarkSeries } from "../packages/benchmark-kit/dist/process-recovery-benchmark-series.js";
+import { runProcessRecoveryBenchmark } from "../packages/benchmark-kit/dist/process-recovery-benchmark.js";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),

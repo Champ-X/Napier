@@ -19,7 +19,7 @@ import {
 } from "@napier/runtime";
 
 import { writeBenchmarkCasFile } from "./benchmark-artifact-file.js";
-import { CLI_VERSION } from "./cli-options.js";
+import { CLI_VERSION } from "@napier/cli/runner";
 import { loadUxBenchmarkCase } from "./ux-benchmark-case.js";
 import {
   executeUxBenchmarkCliSubprocess,

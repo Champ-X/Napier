@@ -2,13 +2,13 @@ import { lstat, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { runCodingBenchmark } from "../apps/cli/dist/coding-benchmark.js";
-import { verifyCodingBenchmarkArtifacts } from "../apps/cli/dist/coding-benchmark-contract.js";
+import { runCodingBenchmark } from "../packages/benchmark-kit/dist/coding-benchmark.js";
+import { verifyCodingBenchmarkArtifacts } from "../packages/benchmark-kit/dist/coding-benchmark-contract.js";
 import {
   codingBenchmarkSeriesArtifactReferences,
   verifyCodingBenchmarkSeries,
-} from "../apps/cli/dist/coding-benchmark-series-contract.js";
-import { runCodingBenchmarkSeries } from "../apps/cli/dist/coding-benchmark-series.js";
+} from "../packages/benchmark-kit/dist/coding-benchmark-series-contract.js";
+import { runCodingBenchmarkSeries } from "../packages/benchmark-kit/dist/coding-benchmark-series.js";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),

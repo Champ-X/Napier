@@ -31,35 +31,35 @@ import { verifyOpenWebComparisonCampaign } from "./open-web-comparison-campaign.
 import {
   verifyWorkflowBenchmarkSeries,
   workflowBenchmarkSeriesArtifactReferences,
-} from "../apps/cli/dist/workflow-benchmark-series.js";
+} from "../packages/benchmark-kit/dist/workflow-benchmark-series.js";
 import {
   researchBenchmarkSeriesArtifactReferences,
   verifyResearchBenchmarkSeries,
-} from "../apps/cli/dist/research-benchmark-series.js";
+} from "../packages/benchmark-kit/dist/research-benchmark-series.js";
 import {
   uxBenchmarkSeriesArtifactReferences,
   verifyUxBenchmarkSeries,
-} from "../apps/cli/dist/ux-benchmark-series.js";
+} from "../packages/benchmark-kit/dist/ux-benchmark-series.js";
 import {
   browserConfirmedFormSeriesArtifactReferences,
   verifyBrowserConfirmedFormBenchmarkSeries,
-} from "../apps/cli/dist/browser-confirmed-form-benchmark-series.js";
+} from "../packages/benchmark-kit/dist/browser-confirmed-form-benchmark-series.js";
 import {
   goalNoProgressSeriesArtifactReferences,
   verifyGoalNoProgressBenchmarkSeries,
-} from "../apps/cli/dist/goal-no-progress-benchmark-series.js";
+} from "../packages/benchmark-kit/dist/goal-no-progress-benchmark-series.js";
 import {
   processRecoverySeriesArtifactReferences,
   verifyProcessRecoveryBenchmarkSeries,
-} from "../apps/cli/dist/process-recovery-benchmark-series.js";
-import { loadOpenWebResearchBenchmarkCase } from "../apps/cli/dist/open-web-research-benchmark-case.js";
-import { loadOpenWebResearchFreshnessCampaignArtifacts } from "../apps/cli/dist/open-web-research-freshness-artifacts.js";
-import { verifyOpenWebResearchFreshnessCampaign } from "../apps/cli/dist/open-web-research-freshness-campaign.js";
+} from "../packages/benchmark-kit/dist/process-recovery-benchmark-series.js";
+import { loadOpenWebResearchBenchmarkCase } from "../packages/benchmark-kit/dist/open-web-research-benchmark-case.js";
+import { loadOpenWebResearchFreshnessCampaignArtifacts } from "../packages/benchmark-kit/dist/open-web-research-freshness-artifacts.js";
+import { verifyOpenWebResearchFreshnessCampaign } from "../packages/benchmark-kit/dist/open-web-research-freshness-campaign.js";
 import { OCI_PROCESS_RESOURCE_POLICY_SHA256 } from "../packages/runtime/dist/sandbox-container-policy.js";
 import {
   openWebResearchSecuritySeriesArtifactReferences,
   verifyOpenWebResearchSecuritySeries,
-} from "../apps/cli/dist/open-web-research-security-series.js";
+} from "../packages/benchmark-kit/dist/open-web-research-security-series.js";
 import { verifyDefaultProductBreadthArtifact } from "./verify-default-product-breadth.mjs";
 import { verifyDefaultProductCodingRerunArtifact } from "./verify-default-product-coding-rerun.mjs";
 import { verifyDefaultProductConsolidatedArtifact } from "./verify-default-product-consolidated.mjs";

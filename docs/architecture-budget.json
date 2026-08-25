@@ -70,9 +70,9 @@
   "complexityOverrides": {
     "apps/cli/src/cli-workflow-options.ts": 67,
     "apps/cli/src/cli.ts": 37,
-    "apps/cli/src/coding-benchmark-contract.ts": 36,
-    "apps/cli/src/coding-benchmark-evaluation-shape.ts": 76,
-    "apps/cli/src/coding-benchmark-ledger.ts": 33,
+    "packages/benchmark-kit/src/coding-benchmark-contract.ts": 36,
+    "packages/benchmark-kit/src/coding-benchmark-evaluation-shape.ts": 76,
+    "packages/benchmark-kit/src/coding-benchmark-ledger.ts": 33,
     "apps/cli/src/interactive-cli.ts": 35,
     "apps/cli/src/rpc-server.ts": 26,
     "apps/cli/src/tui-input.ts": 32,
@@ -191,6 +191,11 @@
   "allowedCycles": [],
   "allowedWorkspaceImports": {
     "@napier/cli": [
+      "@napier/contracts",
+      "@napier/runtime"
+    ],
+    "@napier/benchmark-kit": [
+      "@napier/cli",
       "@napier/contracts",
       "@napier/runtime"
     ],

@@ -17,7 +17,11 @@ import {
   streamSnapshotFrame,
 } from "@napier/runtime";
 
-import { CLI_VERSION, runCli, type RunCliDependencies } from "./cli.js";
+import {
+  CLI_VERSION,
+  runCli,
+  type RunCliDependencies,
+} from "@napier/cli/runner";
 import {
   codingBenchmarkTargetEvidence,
   copyCodingBenchmarkFixture,

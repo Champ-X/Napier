@@ -38,7 +38,7 @@ import type {
   BrowserConfirmedFormBenchmarkArtifacts,
   BrowserConfirmedFormBenchmarkResult,
 } from "./browser-confirmed-form-benchmark-types.js";
-import { CLI_VERSION } from "./cli-options.js";
+import { CLI_VERSION } from "@napier/cli/runner";
 
 const MAX_STATE_SCAN_BYTES = 32 * 1024 * 1024;
 

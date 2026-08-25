@@ -4,13 +4,13 @@ import { lstat, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { verifyUxBenchmarkArtifacts } from "../apps/cli/dist/ux-benchmark-contract.js";
+import { verifyUxBenchmarkArtifacts } from "../packages/benchmark-kit/dist/ux-benchmark-contract.js";
 import {
   runUxBenchmarkSeries,
   uxBenchmarkSeriesArtifactReferences,
   verifyUxBenchmarkSeries,
-} from "../apps/cli/dist/ux-benchmark-series.js";
-import { runUxBenchmark } from "../apps/cli/dist/ux-benchmark.js";
+} from "../packages/benchmark-kit/dist/ux-benchmark-series.js";
+import { runUxBenchmark } from "../packages/benchmark-kit/dist/ux-benchmark.js";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),

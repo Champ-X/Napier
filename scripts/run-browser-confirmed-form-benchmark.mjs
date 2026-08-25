@@ -4,13 +4,13 @@ import { lstat, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { verifyBrowserConfirmedFormBenchmarkArtifacts } from "../apps/cli/dist/browser-confirmed-form-benchmark-contract.js";
+import { verifyBrowserConfirmedFormBenchmarkArtifacts } from "../packages/benchmark-kit/dist/browser-confirmed-form-benchmark-contract.js";
 import {
   browserConfirmedFormSeriesArtifactReferences,
   runBrowserConfirmedFormBenchmarkSeries,
   verifyBrowserConfirmedFormBenchmarkSeries,
-} from "../apps/cli/dist/browser-confirmed-form-benchmark-series.js";
-import { runBrowserConfirmedFormBenchmark } from "../apps/cli/dist/browser-confirmed-form-benchmark.js";
+} from "../packages/benchmark-kit/dist/browser-confirmed-form-benchmark-series.js";
+import { runBrowserConfirmedFormBenchmark } from "../packages/benchmark-kit/dist/browser-confirmed-form-benchmark.js";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),

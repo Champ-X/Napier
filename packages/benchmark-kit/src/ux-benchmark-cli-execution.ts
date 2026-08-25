@@ -1,5 +1,4 @@
 import { spawn } from "node:child_process";
-import path from "node:path";
 import { performance } from "node:perf_hooks";
 import { Writable } from "node:stream";
 
@@ -8,7 +7,7 @@ import type {
   LocalAgentRuntimeServices,
 } from "@napier/runtime";
 
-import { runCli } from "./cli.js";
+import { compiledCliEntry, runCli } from "@napier/cli/runner";
 
 export interface UxBenchmarkCliRequest {
   args: string[];
@@ -104,12 +103,6 @@ export async function executeUxBenchmarkCliInProcess(
       : totalDurationMs,
     totalDurationMs,
   };
-}
-
-function compiledCliEntry(): string {
-  return path.basename(import.meta.dirname) === "src"
-    ? path.resolve(import.meta.dirname, "../dist/index.js")
-    : path.join(import.meta.dirname, "index.js");
 }
 
 function elapsedMs(startedAt: number): number {

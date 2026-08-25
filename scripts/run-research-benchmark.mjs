@@ -4,13 +4,13 @@ import { lstat, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { verifyResearchBenchmarkArtifacts } from "../apps/cli/dist/research-benchmark-contract.js";
+import { verifyResearchBenchmarkArtifacts } from "../packages/benchmark-kit/dist/research-benchmark-contract.js";
 import {
   researchBenchmarkSeriesArtifactReferences,
   runResearchBenchmarkSeries,
   verifyResearchBenchmarkSeries,
-} from "../apps/cli/dist/research-benchmark-series.js";
-import { runResearchBenchmark } from "../apps/cli/dist/research-benchmark.js";
+} from "../packages/benchmark-kit/dist/research-benchmark-series.js";
+import { runResearchBenchmark } from "../packages/benchmark-kit/dist/research-benchmark.js";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),

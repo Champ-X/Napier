@@ -2,13 +2,13 @@ import { lstat, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { verifyWorkflowBenchmarkArtifacts } from "../apps/cli/dist/workflow-benchmark-contract.js";
+import { verifyWorkflowBenchmarkArtifacts } from "../packages/benchmark-kit/dist/workflow-benchmark-contract.js";
 import {
   runWorkflowBenchmarkSeries,
   verifyWorkflowBenchmarkSeries,
   workflowBenchmarkSeriesArtifactReferences,
-} from "../apps/cli/dist/workflow-benchmark-series.js";
-import { runWorkflowBenchmark } from "../apps/cli/dist/workflow-benchmark.js";
+} from "../packages/benchmark-kit/dist/workflow-benchmark-series.js";
+import { runWorkflowBenchmark } from "../packages/benchmark-kit/dist/workflow-benchmark.js";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),

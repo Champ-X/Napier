@@ -13,6 +13,7 @@ const IDENTITY_PATH = "packages/runtime/src/release-product-identity.ts";
 const DIRECTORIES = [
   "apps/server/src",
   "apps/web/src",
+  "packages/benchmark-kit/src",
   "packages/contracts/src",
   "packages/runtime/src",
   "skills",
@@ -29,6 +30,8 @@ const FILES = [
   "docker/napier-sandbox/package.json",
   "package-lock.json",
   "package.json",
+  "packages/benchmark-kit/package.json",
+  "packages/benchmark-kit/tsconfig.json",
   "packages/contracts/package.json",
   "packages/contracts/tsconfig.json",
   "packages/runtime/package.json",

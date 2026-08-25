@@ -1,8 +1,8 @@
-import path from "node:path";
 import { performance } from "node:perf_hooks";
 
 import type { BrowserInteractionAction } from "@napier/contracts/browser-interaction-confirmation";
 import { sha256 } from "@napier/runtime";
+import { compiledCliEntry } from "@napier/cli/runner";
 import { spawn } from "@lydell/node-pty";
 
 import type { BrowserConfirmedFormBenchmarkExecution } from "./browser-confirmed-form-benchmark-types.js";
@@ -116,12 +116,6 @@ function pendingConfirmationActions(
     actions.push(match[1] as BrowserInteractionAction);
   }
   return actions;
-}
-
-function compiledCliEntry(): string {
-  return path.basename(import.meta.dirname) === "src"
-    ? path.resolve(import.meta.dirname, "../dist/index.js")
-    : path.join(import.meta.dirname, "index.js");
 }
 
 function stringEnvironment(

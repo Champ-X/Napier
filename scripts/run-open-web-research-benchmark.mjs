@@ -4,22 +4,22 @@ import { lstat, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { loadOpenWebResearchBenchmarkCase } from "../apps/cli/dist/open-web-research-benchmark-case.js";
-import { runOpenWebResearchBenchmark } from "../apps/cli/dist/open-web-research-benchmark.js";
+import { loadOpenWebResearchBenchmarkCase } from "../packages/benchmark-kit/dist/open-web-research-benchmark-case.js";
+import { runOpenWebResearchBenchmark } from "../packages/benchmark-kit/dist/open-web-research-benchmark.js";
 import {
   openWebResearchSeriesArtifactReferences,
   runOpenWebResearchSeries,
   verifyOpenWebResearchSeries,
-} from "../apps/cli/dist/open-web-research-series.js";
+} from "../packages/benchmark-kit/dist/open-web-research-series.js";
 import {
   openWebResearchSecuritySeriesArtifactReferences,
   runOpenWebResearchSecuritySeries,
   verifyOpenWebResearchSecuritySeries,
-} from "../apps/cli/dist/open-web-research-security-series.js";
+} from "../packages/benchmark-kit/dist/open-web-research-security-series.js";
 import {
   verifyOpenWebResearchBenchmarkAgainstCase,
   verifyOpenWebResearchBenchmarkResult,
-} from "../apps/cli/dist/open-web-research-benchmark-verifier.js";
+} from "../packages/benchmark-kit/dist/open-web-research-benchmark-verifier.js";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),

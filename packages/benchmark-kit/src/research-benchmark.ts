@@ -13,7 +13,7 @@ import {
 } from "@napier/runtime";
 
 import { writeBenchmarkCasFile } from "./benchmark-artifact-file.js";
-import { CLI_VERSION } from "./cli-options.js";
+import { CLI_VERSION } from "@napier/cli/runner";
 import { loadResearchBenchmarkCase } from "./research-benchmark-case.js";
 import { createResearchBenchmarkCaptureProvider } from "./research-benchmark-captures.js";
 import {
