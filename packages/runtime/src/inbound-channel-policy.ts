@@ -5,8 +5,10 @@ import {
   type InboundRetryPolicy,
   type InboundSignaturePolicy,
 } from "@napier/contracts";
-import { randomBytes, timingSafeEqual } from "node:crypto";
-import { storeSha256 as sha256 } from "./store-hashing.js";
+export {
+  assertRepositoryLeaseToken as assertHashedToken,
+  createRepositoryLeaseToken as createLeaseToken,
+} from "./repository-lease.js";
 
 export const DEFAULT_INBOUND_RETRY_POLICY: Readonly<InboundRetryPolicy> = {
   maxAttempts: 3,
@@ -80,23 +82,6 @@ export const MAX_INBOUND_RETRY_BASE_MS = 60_000;
 export const MIN_INBOUND_SIGNATURE_TOLERANCE_SECONDS = 30;
 
 export const MAX_INBOUND_SIGNATURE_TOLERANCE_SECONDS = 900;
-
-export function createLeaseToken(): string {
-  return randomBytes(32).toString("base64url");
-}
-
-export function assertHashedToken(
-  expectedSha256: string | undefined,
-  token: string | undefined,
-  label: string,
-): void {
-  if (!expectedSha256 || !token) throw new Error(`${label} is required`);
-  const expected = Buffer.from(expectedSha256, "hex");
-  const actual = Buffer.from(sha256(token), "hex");
-  if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) {
-    throw new Error(`${label} is invalid`);
-  }
-}
 
 export function normalizeChannelName(value: string): string {
   const normalized = value.replace(/\s+/g, " ").trim();

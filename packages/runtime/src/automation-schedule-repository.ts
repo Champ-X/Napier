@@ -4,8 +4,12 @@ import {
   type ScheduleClaim,
   type UpdateAutomationScheduleRequest,
 } from "@napier/contracts";
-import { randomBytes, timingSafeEqual } from "node:crypto";
 import { nowIso } from "./ids.js";
+import {
+  assertRepositoryLeaseToken as assertLeaseToken,
+  createRepositoryLeaseToken as createLeaseToken,
+  validateRepositoryLeaseTtl as validateLeaseTtl,
+} from "./repository-lease.js";
 import { normalizeLeaseOwner } from "./run-lease-renewal.js";
 import {
   advanceSchedule,
@@ -39,37 +43,6 @@ function stripScheduleSecrets(
   const output = structuredClone(schedule);
   delete output.claimTokenSha256;
   return output;
-}
-
-function createLeaseToken(): string {
-  return randomBytes(32).toString("base64url");
-}
-
-function assertLeaseToken(
-  expectedSha256: string | undefined,
-  token: string | undefined,
-): void {
-  assertHashedToken(expectedSha256, token, "Lease token");
-}
-
-function assertHashedToken(
-  expectedSha256: string | undefined,
-  token: string | undefined,
-  label: string,
-): void {
-  if (!expectedSha256 || !token) throw new Error(`${label} is required`);
-  const expected = Buffer.from(expectedSha256, "hex");
-  const actual = Buffer.from(sha256(token), "hex");
-  if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) {
-    throw new Error(`${label} is invalid`);
-  }
-}
-
-function validateLeaseTtl(value: number): number {
-  if (!Number.isInteger(value) || value < 5_000 || value > 10 * 60_000) {
-    throw new Error("Lease TTL must be an integer from 5000 to 600000 ms");
-  }
-  return value;
 }
 
 export class AutomationScheduleRepository {
