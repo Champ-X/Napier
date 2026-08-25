@@ -73,6 +73,14 @@ Principles:
       "700": { "$type": "color", "$value": "#3A54E0" },
       "800": { "$type": "color", "$value": "#3048C8" }
     },
+    "ink": {
+      "100": { "$type": "color", "$value": "#E7ECF2" },
+      "300": { "$type": "color", "$value": "#AEB9C7" },
+      "700": { "$type": "color", "$value": "#2B3442" },
+      "800": { "$type": "color", "$value": "#202733" },
+      "900": { "$type": "color", "$value": "#171C25" },
+      "950": { "$type": "color", "$value": "#10141B" }
+    },
     "success": {
       "100": { "$type": "color", "$value": "#DFE9E0" },
       "600": { "$type": "color", "$value": "#456B5B" },
@@ -108,6 +116,8 @@ Principles:
       "surface-raised": { "$type": "color", "$value": "{color.neutral.50}" },
       "surface-muted": { "$type": "color", "$value": "{color.neutral.150}" },
       "surface-selected": { "$type": "color", "$value": "{color.brand.50}" },
+      "canvas": { "$type": "color", "$value": "{color.neutral.100}" },
+      "paper": { "$type": "color", "$value": "{color.neutral.0}" },
       "fg": { "$type": "color", "$value": "{color.neutral.900}" },
       "fg-muted": { "$type": "color", "$value": "{color.neutral.700}" },
       "fg-subtle": { "$type": "color", "$value": "{color.neutral.600}" },
@@ -121,6 +131,14 @@ Principles:
       "accent-active": { "$type": "color", "$value": "{color.brand.800}" },
       "accent-subtle": { "$type": "color", "$value": "{color.brand.50}" },
       "focus-ring": { "$type": "color", "$value": "{color.brand.500}" },
+      "navigation-bg": { "$type": "color", "$value": "{color.ink.950}" },
+      "navigation-surface": { "$type": "color", "$value": "{color.ink.900}" },
+      "navigation-surface-hover": { "$type": "color", "$value": "{color.ink.800}" },
+      "navigation-border": { "$type": "color", "$value": "{color.ink.700}" },
+      "navigation-fg": { "$type": "color", "$value": "{color.neutral.0}" },
+      "navigation-fg-muted": { "$type": "color", "$value": "{color.ink.300}" },
+      "execution-spine": { "$type": "color", "$value": "{color.brand.500}" },
+      "execution-spine-subtle": { "$type": "color", "$value": "{color.brand.50}" },
       "success": { "$type": "color", "$value": "{color.success.700}" },
       "success-surface": { "$type": "color", "$value": "{color.success.100}" },
       "success-border": { "$type": "color", "$value": "{color.success.600}" },
@@ -138,7 +156,84 @@ Principles:
       "trajectory-model-surface": { "$type": "color", "$value": "{color.trajectory.model-surface}" },
       "trajectory-model-fg": { "$type": "color", "$value": "{color.trajectory.model-fg}" },
       "trajectory-tool-surface": { "$type": "color", "$value": "{color.trajectory.tool-surface}" },
-      "trajectory-tool-fg": { "$type": "color", "$value": "{color.trajectory.tool-fg}" }
+      "trajectory-tool-fg": { "$type": "color", "$value": "{color.trajectory.tool-fg}" },
+      "blue-11": { "$type": "color", "$value": "#131823" },
+      "blue-15": { "$type": "color", "$value": "#25262A" },
+      "blue-16": { "$type": "color", "$value": "#17213C" },
+      "blue-22": { "$type": "color", "$value": "#33363C" },
+      "blue-29": { "$type": "color", "$value": "#304F63" },
+      "blue-31": { "$type": "color", "$value": "#374B68" },
+      "blue-37": { "$type": "color", "$value": "#4B5674" },
+      "blue-42": { "$type": "color", "$value": "#5A647B" },
+      "blue-49": { "$type": "color", "$value": "#747B86" },
+      "blue-50": { "$type": "color", "$value": "#697694" },
+      "blue-60": { "$type": "color", "$value": "#9198A2" },
+      "blue-67": { "$type": "color", "$value": "#A2A9B3" },
+      "blue-72": { "$type": "color", "$value": "#6F86FF" },
+      "blue-74": { "$type": "color", "$value": "#B7BCC4" },
+      "blue-75": { "$type": "color", "$value": "#D7A7BC" },
+      "blue-77": { "$type": "color", "$value": "#B8BFD2" },
+      "blue-82": { "$type": "color", "$value": "#C8CEDC" },
+      "blue-90": { "$type": "color", "$value": "#DEE3EB" },
+      "gold-25": { "$type": "color", "$value": "#6C4B16" },
+      "gold-26": { "$type": "color", "$value": "#604C25" },
+      "gold-30": { "$type": "color", "$value": "#78601F" },
+      "gold-32": { "$type": "color", "$value": "#79602C" },
+      "gold-33": { "$type": "color", "$value": "#896821" },
+      "gold-35": { "$type": "color", "$value": "#7E5835" },
+      "gold-36": { "$type": "color", "$value": "#9A5D1C" },
+      "gold-38": { "$type": "color", "$value": "#6B6256" },
+      "gold-39": { "$type": "color", "$value": "#A17720" },
+      "gold-43": { "$type": "color", "$value": "#91794B" },
+      "gold-44": { "$type": "color", "$value": "#A4833E" },
+      "gold-45": { "$type": "color", "$value": "#BC8929" },
+      "gold-46": { "$type": "color", "$value": "#B38835" },
+      "gold-63": { "$type": "color", "$value": "#CF9A74" },
+      "gold-64": { "$type": "color", "$value": "#E4B35F" },
+      "gold-68": { "$type": "color", "$value": "#B9CF8B" },
+      "gold-69": { "$type": "color", "$value": "#D8C188" },
+      "gold-77": { "$type": "color", "$value": "#C7C8C0" },
+      "gold-84": { "$type": "color", "$value": "#EEE0BD" },
+      "gold-91": { "$type": "color", "$value": "#F2E6DC" },
+      "gray-30": { "$type": "color", "$value": "#474A50" },
+      "gray-52": { "$type": "color", "$value": "#7E8B82" },
+      "green-19": { "$type": "color", "$value": "#1F4035" },
+      "green-25": { "$type": "color", "$value": "#1E614B" },
+      "green-26": { "$type": "color", "$value": "#2D5547" },
+      "green-28": { "$type": "color", "$value": "#315F43" },
+      "green-33": { "$type": "color", "$value": "#317950" },
+      "green-85": { "$type": "color", "$value": "#CAE7D7" },
+      "red-32": { "$type": "color", "$value": "#744331" },
+      "red-34": { "$type": "color", "$value": "#80362F" },
+      "red-35": { "$type": "color", "$value": "#8A4D28" },
+      "red-40": { "$type": "color", "$value": "#A43A26" },
+      "red-41": { "$type": "color", "$value": "#9E5634" },
+      "red-43": { "$type": "color", "$value": "#9A5A3F" },
+      "red-44": { "$type": "color", "$value": "#A44B38" },
+      "red-46": { "$type": "color", "$value": "#B74A34" },
+      "red-59": { "$type": "color", "$value": "#E5484D" },
+      "red-67": { "$type": "color", "$value": "#D0A085" },
+      "red-72": { "$type": "color", "$value": "#D9A698" },
+      "red-76": { "$type": "color", "$value": "#D6B4AF" },
+      "red-77": { "$type": "color", "$value": "#DFB8A8" },
+      "red-85": { "$type": "color", "$value": "#F0C9C0" },
+      "sage-11": { "$type": "color", "$value": "#18201C" },
+      "sage-17": { "$type": "color", "$value": "#25342D" },
+      "sage-24": { "$type": "color", "$value": "#38443E" },
+      "sage-31": { "$type": "color", "$value": "#47584E" },
+      "sage-36": { "$type": "color", "$value": "#52675D" },
+      "sage-39": { "$type": "color", "$value": "#4F765D" },
+      "sage-40": { "$type": "color", "$value": "#617657" },
+      "sage-41": { "$type": "color", "$value": "#5C7665" },
+      "sage-53": { "$type": "color", "$value": "#769880" },
+      "sage-59": { "$type": "color", "$value": "#8F9D95" },
+      "sage-61": { "$type": "color", "$value": "#8CA99A" },
+      "sage-67": { "$type": "color", "$value": "#9FB8A8" },
+      "sage-71": { "$type": "color", "$value": "#A9C3BD" },
+      "sage-76": { "$type": "color", "$value": "#B9CDBF" },
+      "sage-91": { "$type": "color", "$value": "#E4ECE8" },
+      "shadow": { "$type": "color", "$value": "#000000" },
+      "teal-28": { "$type": "color", "$value": "#315D5C" }
     }
   },
   "font": {
@@ -241,12 +336,15 @@ Principles:
     "evidence-rail": { "$type": "dimension", "$value": { "value": 340, "unit": "px" } },
     "evidence-rail-max": { "$type": "dimension", "$value": { "value": 400, "unit": "px" } },
     "topbar": { "$type": "dimension", "$value": { "value": 50, "unit": "px" } },
+    "command-bar": { "$type": "dimension", "$value": { "value": 58, "unit": "px" } },
     "status-bar": { "$type": "dimension", "$value": { "value": 40, "unit": "px" } },
     "settings-form": { "$type": "dimension", "$value": { "value": 800, "unit": "px" } },
     "composer-min": { "$type": "dimension", "$value": { "value": 56, "unit": "px" } },
     "composer-rest-max": { "$type": "dimension", "$value": { "value": 88, "unit": "px" } },
+    "composer-shell": { "$type": "dimension", "$value": { "value": 72, "unit": "px" } },
     "composer-max": { "$type": "dimension", "$value": { "value": 160, "unit": "px" } },
-    "composer-expanded-max": { "$type": "dimension", "$value": { "value": 240, "unit": "px" } }
+    "composer-expanded-max": { "$type": "dimension", "$value": { "value": 240, "unit": "px" } },
+    "execution-gutter": { "$type": "dimension", "$value": { "value": 40, "unit": "px" } }
   },
   "control": {
     "target": { "$type": "dimension", "$value": { "value": 32, "unit": "px" } },
@@ -308,6 +406,15 @@ contrast. `check:web-design` rejects any drift between the two representations.
 - 600 (color): #3A58EC
 - 700 (color): #3A54E0
 - 800 (color): #3048C8
+```
+
+```tokens color.ink
+- 100 (color): #E7ECF2
+- 300 (color): #AEB9C7
+- 700 (color): #2B3442
+- 800 (color): #202733
+- 900 (color): #171C25
+- 950 (color): #10141B
 ```
 
 ```tokens color.status
@@ -473,6 +580,26 @@ The layout concession order is deterministic:
 Tables, timelines, code, terminal output, and diffs may scroll horizontally
 inside their own bounded surfaces. Ordinary text, navigation, forms, and the
 application shell may not.
+
+### 9.1 Retained V2 shell tokens
+
+The following tokens are generated for the current V2 workbench shell and remain
+available to feature CSS during the v1.1 migration window. They are retained,
+not new surface area, and may be deprecated once the AppFrame solver and unified
+ContentAxis fully own these values:
+
+- `--color-navigation-bg`, `--color-navigation-surface`,
+  `--color-navigation-surface-hover`, `--color-navigation-border`,
+  `--color-navigation-fg`, and `--color-navigation-fg-muted` describe the single
+  persistent dark project navigator. No other product surface uses the ink ramp.
+- `--color-execution-spine` and `--color-execution-spine-subtle` express causal
+  continuity shared by conversation, task, and trajectory. Trajectory
+  input/model/tool colors classify data and never replace the spine.
+- `--color-canvas` is the main workspace background; `--color-paper` is the
+  bounded reading surface inside it.
+- `--layout-command-bar` (58px) is the combined identity, view, status, model,
+  and settings row. `--layout-composer-shell` (72px) is the composer at rest.
+  `--layout-execution-gutter` (40px) is the shared spine gutter.
 
 ## 10. Agent Prompt Guide
 

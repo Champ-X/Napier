@@ -5,6 +5,7 @@ import {
 } from "@napier/contracts/agent-capabilities";
 import type { AgentProfile } from "@napier/contracts";
 import type { EffectiveAgentCapabilityProjectionV1 } from "@napier/contracts/agent-capability-contract";
+import { composerCopy } from "./composer-copy";
 
 export interface ComposerMode {
   id: AgentCapabilityPresetId;
@@ -67,8 +68,7 @@ export function composerModeDependency(
   if (!projection) {
     return {
       level: "warn",
-      message:
-        "Sandbox readiness is not loaded yet; process tools may fail closed.",
+      message: composerCopy.mode.sandboxNotLoaded,
     };
   }
   const sandbox = projection.readiness.find((item) =>
@@ -79,8 +79,8 @@ export function composerModeDependency(
     return {
       level: "warn",
       message: invalid
-        ? "The saved Sandbox binding is invalid. This task can start with safe reads only; remove that exact binding, then activate Sandbox before editing or running commands."
-        : "Sandbox is unavailable. This task can start with safe reads and static network access; editing, commands, Browser sessions, Extensions, and Subagents stay unavailable until Sandbox is ready.",
+        ? composerCopy.mode.sandboxInvalid
+        : composerCopy.mode.sandboxUnavailable,
     };
   }
   return { level: "ready", message: "" };
@@ -98,8 +98,8 @@ export function composerModePolicyLabel(
 ): string {
   const preset = agentCapabilityPreset(modeId);
   return preset.toolPolicy === "observe"
-    ? "Read only"
+    ? composerCopy.mode.policyReadOnly
     : preset.toolPolicy === "workspace"
-      ? "Workspace changes"
-      : "External interaction";
+      ? composerCopy.mode.policyWorkspace
+      : composerCopy.mode.policyExternal;
 }

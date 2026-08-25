@@ -3,8 +3,8 @@ import { lstat, readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { parseDirectReleaseProductGate } from "../packages/runtime/dist/release-product-gate.js";
 import { NAPIER_RELEASE_IDENTITY_SHA256 } from "../packages/runtime/dist/release-product-identity.js";
+import { parseHistoricalDirectReleaseProductGate } from "../packages/runtime/dist/release-product-gate.js";
 
 const EXPECTED_CASES = [
   "settings",
@@ -33,7 +33,10 @@ export async function verifyDefaultProductSourceBoundSmoke(file) {
   assert.equal(info.isSymbolicLink(), false);
   assert.equal(info.size <= 256 * 1024, true);
   const artifact = JSON.parse(await readFile(target, "utf8"));
-  const gate = parseDirectReleaseProductGate(artifact);
+  const gate = parseHistoricalDirectReleaseProductGate(
+    artifact,
+    RELEASE_IDENTITY,
+  );
   assert.ok(gate, "Source-bound Default Product Gate is invalid");
   assert.equal(gate.currentProductVersion, "0.1.3");
   assert.equal(gate.currentReleaseIdentitySha256, RELEASE_IDENTITY);

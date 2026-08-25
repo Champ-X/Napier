@@ -34,7 +34,15 @@ export function WorkspaceRootPanel({
   };
 
   return (
-    <div className="workspace-root-panel">
+    <section
+      className="workspace-root-panel"
+      aria-labelledby="workspace-root-panel-title"
+    >
+      <header className="settings-inline-heading">
+        <span>{c.section}</span>
+        <h2 id="workspace-root-panel-title">{c.section}</h2>
+        <p>{c.sectionDescription}</p>
+      </header>
       <dl className="workspace-root-facts">
         <div>
           <dt>{c.currentRoot}</dt>
@@ -78,7 +86,7 @@ export function WorkspaceRootPanel({
           {error}
         </p>
       ) : null}
-    </div>
+    </section>
   );
 }
 

@@ -1,20 +1,20 @@
 .model-experiment-desk {
-  --call-ink: rgb(48 79 99);
-  --call-ink-soft: rgb(48 79 99 / 10%);
+  --call-ink: var(--color-blue-29);
+  --call-ink-soft: color-mix(in srgb, var(--color-blue-29) 10%, transparent);
 
   box-shadow:
-    3px 4px 0 rgb(51 54 60 / 7%),
-    inset 5px 0 0 rgb(48 79 99 / 76%);
+    3px 4px 0 color-mix(in srgb, var(--color-blue-22) 7%, transparent),
+    inset 5px 0 0 color-mix(in srgb, var(--color-blue-29) 76%, transparent);
 }
 
 .model-experiment-desk::before {
-  background: rgb(48 79 99 / 22%);
+  background: color-mix(in srgb, var(--color-blue-29) 22%, transparent);
 }
 
 .model-experiment-seal {
   color: var(--call-ink);
   background: var(--call-ink-soft);
-  border-color: rgb(48 79 99 / 35%);
+  border-color: color-mix(in srgb, var(--color-blue-29) 35%, transparent);
   border-radius: 3px;
   transform: rotate(-3deg);
 }
@@ -26,7 +26,7 @@
 
 .model-experiment-folio {
   background: var(--call-ink-soft);
-  border-color: rgb(48 79 99 / 24%);
+  border-color: color-mix(in srgb, var(--color-blue-29) 24%, transparent);
 }
 
 .model-experiment-call-strip {
@@ -40,9 +40,9 @@
     repeating-linear-gradient(
       90deg,
       transparent 0 31px,
-      rgb(48 79 99 / 5%) 31px 32px
+      color-mix(in srgb, var(--color-blue-29) 5%, transparent) 31px 32px
     ),
-    rgb(240 245 253 / 94%);
+    color-mix(in srgb, var(--color-surface-muted) 94%, transparent);
   border: 1px solid var(--rule);
 }
 
@@ -86,7 +86,7 @@
 .model-experiment-preview .agent-experiment-readonly {
   color: var(--call-ink) !important;
   background: var(--call-ink-soft);
-  border-color: rgb(48 79 99 / 28%);
+  border-color: color-mix(in srgb, var(--color-blue-29) 28%, transparent);
 }
 
 .model-experiment-comparison .agent-experiment-metrics strong {
@@ -108,7 +108,7 @@
 .model-experiment-change-grid > div {
   min-width: 0;
   padding: 7px;
-  border-left: 2px solid rgb(48 79 99 / 28%);
+  border-left: 2px solid color-mix(in srgb, var(--color-blue-29) 28%, transparent);
 }
 
 .model-experiment-change-grid ul {

@@ -2,7 +2,7 @@
   "kind": "napier.release-product-gate",
   "schemaVersion": 1,
   "currentProductVersion": "0.1.3",
-  "currentReleaseIdentitySha256": "f79504c9ae122a9e1c77fb2ad765b762a5fe3620aa4c8d501faeb72e8090169b",
+  "currentReleaseIdentitySha256": "7282780e2e597d3445aba56097ef3b479981215a0009b719bc455e292ee6c671",
   "casebookId": "casebook_c8e8e98d15fb46b5a9e0",
   "templateId": "release-product-v1",
   "templateVersion": 1,
@@ -34,7 +34,7 @@
         "high-risk-confirmation",
         "long-task-recovery"
       ],
-      "releaseIdentitySha256": "f79504c9ae122a9e1c77fb2ad765b762a5fe3620aa4c8d501faeb72e8090169b",
+      "releaseIdentitySha256": "7282780e2e597d3445aba56097ef3b479981215a0009b719bc455e292ee6c671",
       "status": "incomplete",
       "firstRecordedAt": "2026-08-24T07:58:44.715Z",
       "lastRecordedAt": "2026-08-24T07:58:49.304Z"
@@ -55,14 +55,14 @@
       "runStartedAt": "2026-08-24T07:58:44.194Z",
       "runFinishedAt": "2026-08-24T07:58:44.694Z",
       "productVersion": "0.1.3",
-      "releaseIdentitySha256": "f79504c9ae122a9e1c77fb2ad765b762a5fe3620aa4c8d501faeb72e8090169b",
+      "releaseIdentitySha256": "7282780e2e597d3445aba56097ef3b479981215a0009b719bc455e292ee6c671",
       "status": "passed",
       "configurationInterventions": 1,
       "humanInterventions": 1,
       "recoveryEvents": 0,
       "uxScore": 3,
       "recordedAt": "2026-08-24T07:58:44.715Z",
-      "contentSha256": "0b7c8b4456f3763fa57232ca77386c4bd733219434c2c6097550dec83c646ad6"
+      "contentSha256": "c4f80847ff16f0fcc0f67dc9ef8a4c0a9da395a9eba1d5e293ea72c8ba06c9e3"
     },
     {
       "id": "release_trial_0b3c5e345baa4c11a723",
@@ -76,14 +76,14 @@
       "runStartedAt": "2026-08-24T07:58:45.086Z",
       "runFinishedAt": "2026-08-24T07:58:45.600Z",
       "productVersion": "0.1.3",
-      "releaseIdentitySha256": "f79504c9ae122a9e1c77fb2ad765b762a5fe3620aa4c8d501faeb72e8090169b",
+      "releaseIdentitySha256": "7282780e2e597d3445aba56097ef3b479981215a0009b719bc455e292ee6c671",
       "status": "passed",
       "configurationInterventions": 0,
       "humanInterventions": 0,
       "recoveryEvents": 0,
       "uxScore": 5,
       "recordedAt": "2026-08-24T07:58:45.625Z",
-      "contentSha256": "8ac3e5cd1495770b032a354d3d4f68da1414282f3a4709ece3b8cd9f745094b3"
+      "contentSha256": "6c270139d23d37ea33413994e99c652767da0523dcac19aee20d68f382821aeb"
     },
     {
       "id": "release_trial_68fb00d661b54c518c9f",
@@ -97,14 +97,14 @@
       "runStartedAt": "2026-08-24T07:58:45.986Z",
       "runFinishedAt": "2026-08-24T07:58:46.509Z",
       "productVersion": "0.1.3",
-      "releaseIdentitySha256": "f79504c9ae122a9e1c77fb2ad765b762a5fe3620aa4c8d501faeb72e8090169b",
+      "releaseIdentitySha256": "7282780e2e597d3445aba56097ef3b479981215a0009b719bc455e292ee6c671",
       "status": "passed",
       "configurationInterventions": 0,
       "humanInterventions": 0,
       "recoveryEvents": 0,
       "uxScore": 5,
       "recordedAt": "2026-08-24T07:58:46.534Z",
-      "contentSha256": "3edda767a470435fac3d5ade9e8ed597ff9c1d8df21c255659eecfe5c735a53b"
+      "contentSha256": "c5e1509b0612c72a1001fbe2705e8b956eb7947f8d4c53ea341ff3ff22cd0fd3"
     },
     {
       "id": "release_trial_297a2e21be55420196be",
@@ -118,14 +118,14 @@
       "runStartedAt": "2026-08-24T07:58:46.900Z",
       "runFinishedAt": "2026-08-24T07:58:47.422Z",
       "productVersion": "0.1.3",
-      "releaseIdentitySha256": "f79504c9ae122a9e1c77fb2ad765b762a5fe3620aa4c8d501faeb72e8090169b",
+      "releaseIdentitySha256": "7282780e2e597d3445aba56097ef3b479981215a0009b719bc455e292ee6c671",
       "status": "passed",
       "configurationInterventions": 0,
       "humanInterventions": 0,
       "recoveryEvents": 0,
       "uxScore": 5,
       "recordedAt": "2026-08-24T07:58:47.449Z",
-      "contentSha256": "501b094fe17bc7c3754b0fa674d5f728b1a02803eb37948d8e3c873269589003"
+      "contentSha256": "bbf3a1dfb948da378dbbd3908ad9691fa439d81f34bb777617de8a975da85e75"
     },
     {
       "id": "release_trial_ba312add3bf542218d86",
@@ -139,14 +139,14 @@
       "runStartedAt": "2026-08-24T07:58:47.837Z",
       "runFinishedAt": "2026-08-24T07:58:48.361Z",
       "productVersion": "0.1.3",
-      "releaseIdentitySha256": "f79504c9ae122a9e1c77fb2ad765b762a5fe3620aa4c8d501faeb72e8090169b",
+      "releaseIdentitySha256": "7282780e2e597d3445aba56097ef3b479981215a0009b719bc455e292ee6c671",
       "status": "passed",
       "configurationInterventions": 1,
       "humanInterventions": 0,
       "recoveryEvents": 0,
       "uxScore": 4,
       "recordedAt": "2026-08-24T07:58:48.391Z",
-      "contentSha256": "0873e6d6f0dd4b7220466cd2480fe504bed9e100003fb8c1751ba21bd0dbc583"
+      "contentSha256": "6090497137850c47cdae00862e77415379204cf726ff6eeb018483f7bbdc3077"
     },
     {
       "id": "release_trial_dad98b843c1e421a95ce",
@@ -160,15 +160,15 @@
       "runStartedAt": "2026-08-24T07:58:48.759Z",
       "runFinishedAt": "2026-08-24T07:58:49.275Z",
       "productVersion": "0.1.3",
-      "releaseIdentitySha256": "f79504c9ae122a9e1c77fb2ad765b762a5fe3620aa4c8d501faeb72e8090169b",
+      "releaseIdentitySha256": "7282780e2e597d3445aba56097ef3b479981215a0009b719bc455e292ee6c671",
       "status": "passed",
       "configurationInterventions": 1,
       "humanInterventions": 1,
       "recoveryEvents": 0,
       "uxScore": 3,
       "recordedAt": "2026-08-24T07:58:49.304Z",
-      "contentSha256": "ba00b29f5f7d3b8be15486b9ee5ad43f2581b7d65c301e6cf302568329a01cd1"
+      "contentSha256": "918d8cb1a5c263fbf30f8182dd9754bdaa6a25cd9d686358f0ee0b47ec7eb358"
     }
   ],
-  "contentSha256": "fd93ff0ef44b14f29fcf41daf88e8b4bc8df7c74de296d0cee40df57893ed2d2"
+  "contentSha256": "8c163ab8feb4abc02611468503ceb92ffb5a54e17b4874b20df859706926652c"
 }

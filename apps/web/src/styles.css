@@ -3,6 +3,7 @@
 @import "./styles/task-workbench.css";
 @import "./styles/conversation.css";
 @import "./styles/inspector.css";
+@import "./styles/context-inspector.css";
 @import "./styles/lab.css";
 @import "./styles/evaluation.css";
 @import "./styles/planning.css";

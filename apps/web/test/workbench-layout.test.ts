@@ -12,10 +12,10 @@ describe("Workbench layout", () => {
       'grid-template-areas:\n    "header"\n    "content"',
     );
     expect(styles).toContain(
-      '"narrative"\n    "notices"\n    "conversation"\n    "decisions"',
+      '"notices"\n    "conversation"\n    "decisions"\n    "composer"',
     );
     expect(styles).toContain(
-      "grid-template-rows: auto auto minmax(0, 1fr) auto auto;",
+      "grid-template-rows: auto minmax(0, 1fr) auto auto;",
     );
     expect(styles).toContain(".workspace-primary-surface");
     expect(styles).toContain(".conversation-workspace-view");
@@ -46,6 +46,8 @@ describe("Workbench layout", () => {
     );
     expect(featureStyles).toContain(".task-completion-strip");
     expect(featureStyles).toContain(".task-completion-toggle[aria-expanded");
+    expect(featureStyles).toContain(".task-result-summary");
+    expect(featureStyles).toContain("z-index: 30");
     expect(featureStyles).toContain("@media (forced-colors: active)");
     expect(globalStyles).not.toContain(".task-narrative {");
   });
@@ -430,5 +432,51 @@ describe("Workbench layout", () => {
     expect(styles).toContain("@media (prefers-reduced-motion: reduce)");
     expect(styles).toContain("@media (forced-colors: active)");
     expect(styles).not.toMatch(/#[0-9a-f]{3,8}\b/iu);
+  });
+
+  it("reflows the shell to a single column without page-level horizontal scroll below 720px", async () => {
+    const [motion, global, markdown, trajectory] = await Promise.all([
+      readFile(
+        new URL("../src/styles/motion-responsive.css", import.meta.url),
+        "utf8",
+      ),
+      readFile(new URL("../src/styles/global.css", import.meta.url), "utf8"),
+      readFile(new URL("../src/message-markdown.css", import.meta.url), "utf8"),
+      readFile(new URL("../src/trace-trajectory.css", import.meta.url), "utf8"),
+    ]);
+
+    // Design §18.1: the page floor is 320px and the body itself never scrolls
+    // horizontally — only inner containers may.
+    expect(global).toContain("min-width: 320px;");
+    expect(global).toContain("overflow: hidden;");
+
+    // Design §13 narrow ladder introduces finer breakpoints than the 780px rail.
+    expect(motion).toContain("@media (max-width: 720px)");
+    expect(motion).toContain("@media (max-width: 560px)");
+    expect(motion).toContain("@media (max-width: 390px)");
+
+    // §13: 序号轨道隐藏 — the execution number spine collapses to one column.
+    const narrow = motion.slice(motion.indexOf("@media (max-width: 560px)"));
+    expect(narrow).toContain(".message-gutter {\n    display: none;");
+    expect(narrow).toContain(
+      ".message-card {\n    grid-template-columns: minmax(0, 1fr);",
+    );
+    // The content axis and composer stop reserving the desktop reading cap so
+    //普通文本 fills the narrow viewport instead of overflowing it.
+    expect(narrow).toContain(".message-ledger,\n  .composer {\n    width: auto;");
+    // §13: 任务步骤单列。
+    expect(narrow).toContain(
+      ".task-artifact-grid {\n    grid-template-columns: minmax(0, 1fr);",
+    );
+
+    // §18.1: 图表、表格、diff、代码 keep their own overflow:auto containers.
+    expect(markdown).toContain(".message-code-block {");
+    expect(markdown).toMatch(/\.message-code-block \{[^}]*overflow: auto;/su);
+    expect(markdown).toMatch(/\.message-table-wrap \{[^}]*overflow: auto;/su);
+    expect(trajectory).toContain("container-type: inline-size");
+
+    // The reflow rules must remain literal-color free (motion-responsive.css is
+    // implicitly ceilinged at zero by check-web-design.mjs).
+    expect(narrow).not.toMatch(/#[0-9a-f]{3,8}\b|rgba?\([^)]*\)|hsla?\([^)]*\)/iu);
   });
 });

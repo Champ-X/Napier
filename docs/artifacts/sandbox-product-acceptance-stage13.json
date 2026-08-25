@@ -35,8 +35,8 @@
     "agentCapabilityRuntimeSha256": "55d9d9eecba855895befa3c3d5a5cd0e3f77ca339e64a6cc2be6a22e4f39397d",
     "processRunReadinessSha256": "e0499064247ae768059a9374b4f70cf6e59da89aba7987d4272fc6f5f9837662",
     "serverRunReadinessSha256": "24fbb7d63f8dce57f5dda22f8071e0995351d2be1ced233fc4f59cb98f51e86e",
-    "webComposerModeSha256": "6be6cef0a1f278e47e070829f73aa25335dc936b30e2e196189ae8c28c12df75",
-    "webComposerControlSha256": "4cf558a09becafc96051b0864c53973b4a8218fce003c76c143717305c7641af",
+    "webComposerModeSha256": "fa0d23553a561c5a06b918ecf5bf171a8c489067357ad3fe8a721a6f3a5a3f01",
+    "webComposerControlSha256": "a3970cddea99263c5871aab4ab3f8c2ec5103d228fe3daa7e37e62dea90f6d80",
     "webSandboxSetupCardSha256": "9228fcbc9b4526ddbcfae702641fe28c5c5464a3d232f6e465d6b3a5c98ed98f",
     "checkScriptSha256": "0ab91832a93c9a7bbddc676d8d516c9fa5923f1666a5742b59a1da3d29bc892e",
     "artifactVerifierSha256": "4fd177a2f9bceca49f57ffa9d20592f6c2675e76d3fe91cdc5f603ed1e08fb15",
@@ -78,7 +78,8 @@
     "browserUseLocalCode": "browser_use_local_missing",
     "sandboxCode": "sandbox_ready",
     "verificationCode": "verification_ready",
-    "reportSha256": "680855fd9855d64110cec98f8ced1aa1b0e9ec66c088ffd356fa3b18a11829a6"
+    "reportSha256": "680855fd9855d64110cec98f8ced1aa1b0e9ec66c088ffd356fa3b18a11829a6",
+    "failedCount": 0
   },
   "verification": {
     "sandbox": "oci-container",
@@ -361,5 +362,5 @@
       "Windows and Linux host product acceptance"
     ]
   },
-  "contentSha256": "976639b817f71dc8203fe1ab28d868330e91c49537476b289424c45bf620f2c1"
+  "contentSha256": "e6eed3d9311eabea1e7ab1c486ca78bed955bb42be44e53dd9faca49bf8f55d9"
 }

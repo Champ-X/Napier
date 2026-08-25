@@ -7,6 +7,7 @@ import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabiliti
 import { agentCapabilityBadgeText } from "./agent-capability-view-model";
 import { focusCapabilityContract } from "./agent-capability-composer-summary";
 import { advancedSurfaceCopy } from "./advanced-surface-copy";
+import { composerCopy } from "./composer-copy";
 import {
   composerModeDependency,
   composerModes,
@@ -72,6 +73,9 @@ export function ComposerCapabilityControl({
       aria-label={accessibilityCopy.nextRunCapabilities}
       data-scope="next-run-only"
     >
+      <span className="agent-capability-composer-badge" aria-hidden="true">
+        {composerCopy.nextRunBadge}
+      </span>
       <div
         className="composer-mode-row"
         role="group"

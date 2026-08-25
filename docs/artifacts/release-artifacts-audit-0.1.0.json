@@ -6,7 +6,7 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "50ef409255950cbb2a497b22cdfb86efb100b8623ac097a464304645e86eb88a",
+  "artifactSetSha256": "ac82961e89cc49ccfc178d638e2b7ca98e17162b530de9711a47b1ccd6602d66",
   "artifacts": [
     {
       "kind": "package-lock-audit",
@@ -53,7 +53,7 @@
     {
       "kind": "sandbox-product-acceptance-stage13",
       "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-      "sha256": "3afbb19af0ba14886b7a04fe54497a17b087caac700a2d5ee3a803a28a05a4eb",
+      "sha256": "136d0b2428c6b7e4aee645c60e68519a5671d2eab4ecd22b2b36f5d0354ba514",
       "valid": true
     },
     {
@@ -107,7 +107,7 @@
     {
       "kind": "s1-shell-sandbox-readiness-stage22",
       "path": "docs/artifacts/s1-shell-sandbox-readiness-stage22.json",
-      "sha256": "8f0207e5e2986f54265e2ced63447f31e3c33e4701de5e67fa298bebba85a93d",
+      "sha256": "377e81074560db4524c5ae1c9f00afa723cb85fc7157fd57f9c5351d1552de7a",
       "valid": true
     },
     {
@@ -119,13 +119,13 @@
     {
       "kind": "web-dist-audit",
       "path": "docs/artifacts/web-dist-audit-0.1.0.json",
-      "sha256": "dec53be65f72cad1b4b0638828af212d51d2e34b1bb970c725cd14321f838a2f",
+      "sha256": "c56339766a9036fef938e18359336cee71f4b38966dc2f17b6620c449f3efa07",
       "valid": true
     },
     {
       "kind": "web-dist-manifest",
       "path": "docs/artifacts/web-dist-0.1.0.sha256",
-      "sha256": "921ba47b9c838de1082294ff2dfd833b7725766439489640b7bb5c22beb4ac11",
+      "sha256": "3d3e0d1581b5eafd2b76d04694cdee96efc7daec49941b81f92fc96360272d1f",
       "valid": true
     },
     {
@@ -155,25 +155,25 @@
     {
       "kind": "harness-experiment-release-evidence",
       "path": "docs/artifacts/harness-experiment-release-evidence-0.1.3.json",
-      "sha256": "21d5f86754070654d62f6a0bc0180b349360a5851cbe1b2a097d39d74595a4ba",
+      "sha256": "d2d9937ac4ea5a0f8327c9c7dff73d0f722cd7b5bc8119484a1451ba539d73f7",
       "valid": true
     },
     {
       "kind": "agent-harness-acceptance-evidence",
       "path": "docs/artifacts/agent-harness-acceptance-evidence-0.1.3.json",
-      "sha256": "92bcddd3a6f14dab5ba75a28f012bf1bd979830feb6c8e1bb75679ef756459a4",
+      "sha256": "9493acb0834f78e21d1c48a73c6b0559e1ee9a8257c56161f1e0394d427d4118",
       "valid": true
     },
     {
       "kind": "default-product-source-bound-smoke",
       "path": "docs/artifacts/default-product-source-bound-smoke-m4-0.1.3.json",
-      "sha256": "8f56532718a8e669301eace5e5b7bb3fec62903b6d5815c6425ab48067a509a6",
+      "sha256": "f50dc68356d4a811e9a43486013af2ca834dcc5f548fd2243c675543cbbbe4ac",
       "valid": true
     },
     {
       "kind": "default-product-source-manifest",
       "path": "docs/artifacts/default-product-source-manifest-0.1.3.json",
-      "sha256": "6b9056cb7a589730ce2625ce01d13abef35382b9de6f47cd68cc7cd413336671",
+      "sha256": "0b47fa1440aa196a720a4cb970347bf92c778fa9cffef15e3023ab045b5a0cc0",
       "valid": true
     },
     {

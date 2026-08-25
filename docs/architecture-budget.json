@@ -16,7 +16,7 @@
     "apps/server/test/workflow.test.ts": 1408,
     "apps/web/src/api-error.ts": 986,
     "apps/web/src/api.ts": 1204,
-    "apps/web/src/copy.ts": 900,
+    "apps/web/src/copy.ts": 886,
     "apps/web/src/plan-blueprint-library-view-model.ts": 1058,
     "apps/web/src/tool-event-view.ts": 678,
     "apps/web/src/trace-event-summary-view.ts": 754,
@@ -83,11 +83,8 @@
     "apps/web/src/agent-message-experiment-api.ts": 31,
     "apps/web/src/agent-message-experiment-event-view.ts": 34,
     "apps/web/src/api-error.ts": 40,
-    "apps/web/src/api.ts": 6,
-    "apps/web/src/App.tsx": 10,
     "apps/web/src/artifact-event-view.ts": 35,
     "apps/web/src/artifact-manifest-view-model.ts": 29,
-    "apps/web/src/AutomationPanel.tsx": 2,
     "apps/web/src/context-event-view.ts": 53,
     "apps/web/src/javascript-kernel-event-view.ts": 33,
     "apps/web/src/lsp-code-actions-event-view.ts": 72,
@@ -98,9 +95,7 @@
     "apps/web/src/model-invocation-experiment-api.ts": 29,
     "apps/web/src/model-invocation-experiment-web-protocol.ts": 27,
     "apps/web/src/node-debugger-event-view.ts": 68,
-    "apps/web/src/PlanPanel.tsx": 10,
     "apps/web/src/python-kernel-event-view.ts": 38,
-    "apps/web/src/ReceiptTrustPanel.tsx": 2,
     "apps/web/src/research-source-event-view.ts": 39,
     "apps/web/src/sqlite-query-event-view.ts": 32,
     "apps/web/src/subagent-event-view.ts": 56,
@@ -178,7 +173,6 @@
     "packages/runtime/src/workspace-process-rollback-events.ts": 54,
     "packages/runtime/src/workspace-process-tool-result.ts": 53,
     "packages/runtime/src/workspace-process-tool.ts": 31,
-    "packages/runtime/src/workspace-tool-guidance.ts": 22,
     "packages/runtime/src/write-linked-resolution-config.ts": 42
   },
   "publicExports": {
@@ -196,11 +190,24 @@
   },
   "allowedCycles": [],
   "allowedWorkspaceImports": {
-    "@napier/cli": ["@napier/contracts", "@napier/runtime"],
+    "@napier/cli": [
+      "@napier/contracts",
+      "@napier/runtime"
+    ],
     "@napier/contracts": [],
-    "@napier/runtime": ["@napier/contracts"],
-    "@napier/sdk": ["@napier/contracts", "@napier/runtime"],
-    "@napier/server": ["@napier/contracts", "@napier/runtime"],
-    "@napier/web": ["@napier/contracts"]
+    "@napier/runtime": [
+      "@napier/contracts"
+    ],
+    "@napier/sdk": [
+      "@napier/contracts",
+      "@napier/runtime"
+    ],
+    "@napier/server": [
+      "@napier/contracts",
+      "@napier/runtime"
+    ],
+    "@napier/web": [
+      "@napier/contracts"
+    ]
   }
 }

@@ -152,9 +152,10 @@ function cssVariableName(tokenPath) {
     return `--color-${rest.join("-")}`;
   }
   if (group === "component") {
-    return `--${subgroup}-${rest.join("-")}`;
+    return `--component-${subgroup}-${rest.join("-")}`;
   }
   const prefixes = {
+    component: "component",
     control: "control",
     duration: "duration",
     ease: "ease",

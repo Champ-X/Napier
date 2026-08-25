@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ChevronDown, ShieldCheck } from "lucide-react";
 
 import type {
   AgentMilestone,
@@ -151,34 +152,48 @@ export default function TracePanel({
         </span>
       </div>
       <TraceTrajectory events={events} runs={runs} running={running} />
-      <TraceOtelExportCard
-        runs={runs}
-        exportRunId={exportRunId}
-        exportBusy={exportBusy}
-        exportReceipt={exportReceipt}
-        verifyBusy={verifyBusy}
-        verificationReceipt={verificationReceipt}
-        onExportRunId={setExportRunId}
-        onExport={onExport}
-        onVerify={onVerify}
-      />
-      <TraceSummaryCoverageCard
-        coverage={summaryCoverage}
-        receipt={summaryCoverageReceipt}
-        verification={summaryCoverageVerification}
-      />
-      <AgentMilestoneLedger
-        milestones={milestones}
-        unavailable={milestonesUnavailable}
-      />
-      <ModelPromptTraceLedgers events={events} />
-      <IndependentAdvisorLedger reviews={advisorReviews} />
-      <ToolLoopGuardLedger triggers={loopGuardTriggers} />
-      <DelegationLedger
-        tasks={subagents}
-        reviewerModel={reviewerModel}
-        reviewerModelConfigured={reviewerModelConfigured}
-      />
+      <details className="trace-evidence-stack">
+        <summary>
+          <span className="trace-evidence-glyph" aria-hidden="true">
+            <ShieldCheck size={16} />
+          </span>
+          <span>
+            <strong>{copy.trace.evidenceTitle}</strong>
+            <small>{copy.trace.evidenceBody}</small>
+          </span>
+          <ChevronDown size={16} aria-hidden="true" />
+        </summary>
+        <div className="trace-evidence-content">
+          <TraceOtelExportCard
+            runs={runs}
+            exportRunId={exportRunId}
+            exportBusy={exportBusy}
+            exportReceipt={exportReceipt}
+            verifyBusy={verifyBusy}
+            verificationReceipt={verificationReceipt}
+            onExportRunId={setExportRunId}
+            onExport={onExport}
+            onVerify={onVerify}
+          />
+          <TraceSummaryCoverageCard
+            coverage={summaryCoverage}
+            receipt={summaryCoverageReceipt}
+            verification={summaryCoverageVerification}
+          />
+          <AgentMilestoneLedger
+            milestones={milestones}
+            unavailable={milestonesUnavailable}
+          />
+          <ModelPromptTraceLedgers events={events} />
+          <IndependentAdvisorLedger reviews={advisorReviews} />
+          <ToolLoopGuardLedger triggers={loopGuardTriggers} />
+          <DelegationLedger
+            tasks={subagents}
+            reviewerModel={reviewerModel}
+            reviewerModelConfigured={reviewerModelConfigured}
+          />
+        </div>
+      </details>
     </section>
   );
 }

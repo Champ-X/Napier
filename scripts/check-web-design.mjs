@@ -25,9 +25,10 @@ export async function auditWebDesign(options = {}) {
   auditContrast(source, errors);
 
   const expectedCss = generateWebDesignCss(markdown);
-  const currentCss = await readFile(path.join(repoRoot, tokenCssPath), "utf8").catch(
-    () => "",
-  );
+  const currentCss = await readFile(
+    path.join(repoRoot, tokenCssPath),
+    "utf8",
+  ).catch(() => "");
   if (currentCss !== expectedCss) {
     errors.push(`${tokenCssPath} is stale; run npm run generate:web-design`);
   }
@@ -44,7 +45,9 @@ export async function auditWebDesign(options = {}) {
   );
   auditCssVariables(cssSources, errors);
 
-  const debt = JSON.parse(await readFile(path.join(repoRoot, debtPath), "utf8"));
+  const debt = JSON.parse(
+    await readFile(path.join(repoRoot, debtPath), "utf8"),
+  );
   const literalColors = auditDebt(
     cssSources,
     debt.literalColors,
@@ -87,7 +90,8 @@ function auditRequiredSections(markdown, errors) {
     "## 9. Layout",
     "## 10. Agent",
   ]) {
-    if (!markdown.includes(section)) errors.push(`DESIGN.md is missing ${section}`);
+    if (!markdown.includes(section))
+      errors.push(`DESIGN.md is missing ${section}`);
   }
   for (const term of [
     "focus-visible",
@@ -115,7 +119,7 @@ function auditMirroredColors(markdown, source, errors) {
     }
   }
   const expected = new Map();
-  for (const group of ["neutral", "brand", "trajectory"]) {
+  for (const group of ["neutral", "brand", "ink", "trajectory"]) {
     for (const [name, token] of Object.entries(source.color?.[group] ?? {})) {
       expected.set(`${group}.${name}`, token.$value);
     }
@@ -147,6 +151,9 @@ function auditContrast(source, errors) {
     ["semantic.color.fg-on-accent", "semantic.color.accent", 4.5],
     ["semantic.color.focus-ring", "semantic.color.surface", 3],
     ["semantic.color.border-strong", "semantic.color.surface", 3],
+    ["semantic.color.navigation-fg", "semantic.color.navigation-bg", 4.5],
+    ["semantic.color.navigation-fg-muted", "semantic.color.navigation-bg", 4.5],
+    ["semantic.color.execution-spine", "semantic.color.paper", 3],
   ];
   for (const [fgPath, bgPath, minimum] of pairs) {
     const fg = resolveAlias(fgPath, tokens);
@@ -173,7 +180,8 @@ function auditCssVariables(cssSources, errors) {
     }
   }
   for (const variable of [...uses].sort()) {
-    if (!definitions.has(variable)) errors.push(`undefined CSS variable ${variable}`);
+    if (!definitions.has(variable))
+      errors.push(`undefined CSS variable ${variable}`);
   }
 }
 
@@ -182,12 +190,16 @@ function auditDebt(sources, baseline, pattern, excluded, label, errors) {
   let total = 0;
   for (const [file, source] of sources) {
     if (file === excluded) continue;
-    const count = [...source.matchAll(new RegExp(pattern.source, pattern.flags))].length;
+    const count = [
+      ...source.matchAll(new RegExp(pattern.source, pattern.flags)),
+    ].length;
     if (count > 0) counts[file] = count;
     total += count;
     const maximum = baseline?.[file] ?? 0;
     if (count > maximum) {
-      errors.push(`${file} has ${count} ${label} occurrences; baseline allows ${maximum}`);
+      errors.push(
+        `${file} has ${count} ${label} occurrences; baseline allows ${maximum}`,
+      );
     }
   }
   return { total, files: counts };
@@ -226,8 +238,11 @@ function contrastRatio(foreground, background) {
 
 function luminance(hex) {
   const value = hex.replace("#", "");
-  if (!/^[0-9a-f]{6}$/i.test(value)) throw new Error(`unsupported color ${hex}`);
-  const channels = [0, 2, 4].map((offset) => parseInt(value.slice(offset, offset + 2), 16));
+  if (!/^[0-9a-f]{6}$/i.test(value))
+    throw new Error(`unsupported color ${hex}`);
+  const channels = [0, 2, 4].map((offset) =>
+    parseInt(value.slice(offset, offset + 2), 16),
+  );
   const linear = channels.map((channel) => {
     const normalized = channel / 255;
     return normalized <= 0.03928
@@ -238,7 +253,8 @@ function luminance(hex) {
 }
 
 function countCssVariables(sources, kind) {
-  const pattern = kind === "definitions" ? /(--[\w-]+)\s*:/g : /var\((--[\w-]+)/g;
+  const pattern =
+    kind === "definitions" ? /(--[\w-]+)\s*:/g : /var\((--[\w-]+)/g;
   const values = new Set();
   for (const source of sources.values()) {
     for (const match of source.matchAll(pattern)) values.add(match[1]);

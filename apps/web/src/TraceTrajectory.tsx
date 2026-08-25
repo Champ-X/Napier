@@ -1,6 +1,7 @@
 import { Activity } from "lucide-react";
 
 import type { RunEvent, RunRecord } from "@napier/contracts";
+import { ContextInspector } from "./ContextInspector";
 import { copy } from "./copy";
 import { getLocale } from "./locale";
 import { traceTrajectoryCopy } from "./trace-trajectory-copy";
@@ -88,12 +89,24 @@ export function TraceTrajectory({
             )
           }
         />
-        {state.selectedEvent ? (
-          <TraceTrajectoryEventDetail
-            event={state.selectedEvent}
-            onClose={() => state.setSelectedEventId(undefined)}
-          />
-        ) : null}
+        <ContextInspector
+          object={
+            state.selectedEvent
+              ? {
+                  id: state.selectedEvent.event.id,
+                  type: "event",
+                  title: state.selectedEvent.label,
+                  content: (
+                    <TraceTrajectoryEventDetail
+                      event={state.selectedEvent}
+                      embedded
+                    />
+                  ),
+                }
+              : undefined
+          }
+          onClose={() => state.setSelectedEventId(undefined)}
+        />
       </div>
     </section>
   );

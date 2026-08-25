@@ -57,7 +57,7 @@
   padding: 8px 12px;
   font-size: 0.92em;
   color: var(--ink-soft);
-  background: rgb(45 85 71 / 5%);
+  background: color-mix(in srgb, var(--color-green-26) 5%, transparent);
   border-left: 3px solid var(--ledger);
 }
 
@@ -65,7 +65,7 @@
   padding: 1px 4px;
   font-family: var(--mono);
   font-size: 0.82em;
-  color: #7a3e31;
+  color: var(--color-red-32);
   background: var(--vermilion-soft);
   border-radius: 2px;
 }
@@ -113,9 +113,9 @@
   margin: 13px 0 17px;
   padding: 27px 14px 14px;
   overflow: auto;
-  color: #e6ece7;
-  background: #202824;
-  border: 1px solid #111713;
+  color: var(--color-success-surface);
+  background: var(--color-sage-11);
+  border: 1px solid var(--color-sage-11);
   border-radius: 3px;
   box-shadow: inset 3px 0 0 var(--ledger);
 }
@@ -126,7 +126,7 @@
   left: 14px;
   font-family: var(--mono);
   font-size: var(--text-xs);
-  color: #94a49b;
+  color: var(--color-sage-61);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -145,29 +145,29 @@
 }
 
 .message-code-token.is-comment {
-  color: #7f9589;
+  color: var(--color-gray-52);
   font-style: italic;
 }
 
 .message-code-token.is-keyword {
-  color: #e4b35f;
+  color: var(--color-gold-64);
 }
 
 .message-code-token.is-literal,
 .message-code-token.is-number {
-  color: #d99978;
+  color: var(--color-gold-63);
 }
 
 .message-code-token.is-property {
-  color: #9ec7bd;
+  color: var(--color-sage-71);
 }
 
 .message-code-token.is-string {
-  color: #b9cf8b;
+  color: var(--color-gold-68);
 }
 
 .message-code-token.is-tag {
-  color: #d7a7bc;
+  color: var(--color-blue-75);
 }
 
 .message-diff-line {
@@ -178,22 +178,22 @@
 }
 
 .message-diff-line.is-addition {
-  color: #cae7d7;
-  background: rgb(49 121 80 / 22%);
+  color: var(--color-green-85);
+  background: color-mix(in srgb, var(--color-green-33) 22%, transparent);
 }
 
 .message-diff-line.is-deletion {
-  color: #f0c9c0;
-  background: rgb(167 64 45 / 22%);
+  color: var(--color-red-85);
+  background: color-mix(in srgb, var(--color-red-40) 22%, transparent);
 }
 
 .message-diff-line.is-hunk {
-  color: #d9c98c;
-  background: rgb(174 137 42 / 15%);
+  color: var(--color-gold-69);
+  background: color-mix(in srgb, var(--color-gold-46) 15%, transparent);
 }
 
 .message-diff-line.is-metadata {
-  color: #98b8ac;
+  color: var(--color-sage-67);
 }
 
 .message-table-wrap {

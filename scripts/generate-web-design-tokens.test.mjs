@@ -19,10 +19,15 @@ describe("Napier Web design tokens", () => {
     expect(source.semantic.color.accent.$value).toBe("{color.brand.600}");
     expect(css).toContain("--color-accent: #3A58EC;");
     expect(css).toContain("--color-focus-ring: #4D6BFE;");
+    expect(css).toContain("--color-navigation-bg: #10141B;");
+    expect(css).toContain("--color-execution-spine: #4D6BFE;");
+    expect(css).toContain("--layout-command-bar: 58px;");
+    expect(css).toContain("--layout-composer-shell: 72px;");
     expect(css).toContain("--layout-reading-target: 800px;");
     expect(css).toContain("--layout-sidebar-expanded: 240px;");
-    expect(css).toContain("--composer-radius: 14px;");
-    expect(css).toContain("--trajectory-preview-lines: 16;");
+    expect(css).toContain("--component-disclosure-row-height: 32px;");
+    expect(css).toContain("--component-inspector-width: 340px;");
+    expect(css).toContain("--component-trajectory-preview-lines: 16;");
     expect(css).not.toContain("--color-brand-600");
   });
 
@@ -49,7 +54,7 @@ describe("Napier Web design tokens", () => {
 
     expect(result).toMatchObject({ ok: true, errors: [] });
     expect(result.definedVariableCount).toBeGreaterThan(100);
-    expect(result.literalColorDebt.total).toBe(841);
+    expect(result.literalColorDebt.total).toBe(0);
     expect(result.subTwelveTextDebt.total).toBe(0);
   });
 });

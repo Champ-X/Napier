@@ -1,7 +1,11 @@
 import type { RunEvent, ThreadDetail } from "@napier/contracts";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { taskNarrative } from "../src/task-narrative-view-model";
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("Task narrative", () => {
   it("prioritizes operator waiting over run activity", () => {
@@ -344,6 +348,51 @@ describe("Task narrative", () => {
         currentAction: "Projected by Kernel",
         completedItems: ["Read 2 files"],
         metrics: expect.stringContaining("5s"),
+      }),
+    );
+  });
+
+  it("localizes fixed server narrative copy without rewriting task content", () => {
+    vi.stubGlobal("window", {
+      localStorage: { getItem: () => "zh" },
+    });
+    const detail = fixture();
+    detail.taskNarrative = {
+      phase: "completed",
+      phaseLabel: "Settled",
+      currentAction: "Latest run completed",
+      completedItems: ["Run verification"],
+      nextStep: "Start a follow-up task or inspect the evidence.",
+    };
+
+    expect(taskNarrative(detail)).toEqual(
+      expect.objectContaining({
+        phaseLabel: "已结算",
+        currentAction: "最近一次运行已完成",
+        completedItems: ["Run verification"],
+        nextStep: "发起后续任务，或查看相关证据。",
+      }),
+    );
+  });
+
+  it("preserves custom projected actions in the Chinese interface", () => {
+    vi.stubGlobal("window", {
+      localStorage: { getItem: () => "zh" },
+    });
+    const detail = fixture();
+    detail.taskNarrative = {
+      phase: "working",
+      phaseLabel: "Working",
+      currentAction: "Review checkout migration",
+      completedItems: [],
+      nextStep: "Approve checkout migration",
+    };
+
+    expect(taskNarrative(detail)).toEqual(
+      expect.objectContaining({
+        phaseLabel: "运行中",
+        currentAction: "Review checkout migration",
+        nextStep: "Approve checkout migration",
       }),
     );
   });
