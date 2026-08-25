@@ -4,6 +4,7 @@ import type { JsonValue } from "@napier/contracts";
 import { canonicalJson, sha256 } from "@napier/runtime/core";
 
 import { writeBenchmarkCasFile } from "./benchmark-artifact-file.js";
+import { BenchmarkCampaignRunner } from "./benchmark-campaign-runner.js";
 import {
   researchBenchmarkLedgerFileName,
   researchBenchmarkResultFileName,
@@ -32,19 +33,17 @@ export async function runResearchBenchmarkSeries(
   options: RunResearchBenchmarkSeriesOptions,
   dependencies?: ResearchBenchmarkDependencies,
 ): Promise<ResearchBenchmarkSeriesArtifacts> {
-  if (
-    !Number.isSafeInteger(options.trialCount) ||
-    options.trialCount < 2 ||
-    options.trialCount > 10
-  ) {
-    throw new Error("Research benchmark trial count must be 2-10");
-  }
-  const trials: ResearchBenchmarkArtifacts[] = [];
-  for (let index = 0; index < options.trialCount; index += 1) {
-    options.signal?.throwIfAborted();
-    trials.push(await runResearchBenchmark(options, dependencies));
-    if (options.signal?.aborted) break;
-  }
+  const trials = await new BenchmarkCampaignRunner(
+    options.outputDir,
+  ).runTrials<ResearchBenchmarkArtifacts>({
+    trialCount: options.trialCount,
+    minimum: 2,
+    maximum: 10,
+    invalidCountMessage: "Research benchmark trial count must be 2-10",
+    beforeTrial: () => options.signal?.throwIfAborted(),
+    runTrial: () => runResearchBenchmark(options, dependencies),
+    shouldStop: () => options.signal?.aborted === true,
+  });
   const now = dependencies?.now ?? (() => new Date());
   const series = createResearchBenchmarkSeries({
     generatedAt: now().toISOString(),

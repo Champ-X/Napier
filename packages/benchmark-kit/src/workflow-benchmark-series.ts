@@ -3,6 +3,7 @@ import path from "node:path";
 import { canonicalJson, sha256 } from "@napier/runtime/core";
 
 import { writeBenchmarkCasFile } from "./benchmark-artifact-file.js";
+import { BenchmarkCampaignRunner } from "./benchmark-campaign-runner.js";
 import {
   verifyWorkflowBenchmarkArtifacts,
   workflowBenchmarkLedgerFileName,
@@ -45,19 +46,17 @@ export async function runWorkflowBenchmarkSeries(
   options: RunWorkflowBenchmarkSeriesOptions,
   dependencies?: WorkflowBenchmarkDependencies,
 ): Promise<WorkflowBenchmarkSeriesArtifacts> {
-  if (
-    !Number.isSafeInteger(options.trialCount) ||
-    options.trialCount < 2 ||
-    options.trialCount > 10
-  ) {
-    throw new Error("Workflow benchmark --trials must be 2-10");
-  }
   const { trialCount, ...benchmarkOptions } = options;
-  const trials: WorkflowBenchmarkArtifacts[] = [];
-  for (let index = 0; index < trialCount; index += 1) {
-    trials.push(await runWorkflowBenchmark(benchmarkOptions, dependencies));
-    if (options.signal?.aborted) break;
-  }
+  const trials = await new BenchmarkCampaignRunner(
+    options.outputDir,
+  ).runTrials<WorkflowBenchmarkArtifacts>({
+    trialCount,
+    minimum: 2,
+    maximum: 10,
+    invalidCountMessage: "Workflow benchmark --trials must be 2-10",
+    runTrial: () => runWorkflowBenchmark(benchmarkOptions, dependencies),
+    shouldStop: () => options.signal?.aborted === true,
+  });
   const series = createWorkflowBenchmarkSeries({
     generatedAt: (dependencies?.now() ?? new Date()).toISOString(),
     requestedTrialCount: trialCount,

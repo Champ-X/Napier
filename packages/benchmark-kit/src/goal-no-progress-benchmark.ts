@@ -1,17 +1,10 @@
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import path from "node:path";
-
 import type {
   GoalState,
   JsonValue,
   ModelRef,
   RunEvent,
 } from "@napier/contracts";
-import {
-  canonicalJson,
-  sha256,
-} from "@napier/runtime/core";
+import { canonicalJson, sha256 } from "@napier/runtime/core";
 import {
   createGoal,
   createLocalAgentRuntime,
@@ -21,7 +14,7 @@ import {
   type LocalAgentRuntimeServices,
 } from "@napier/runtime/agent";
 
-import { writeBenchmarkCasFile } from "./benchmark-artifact-file.js";
+import { BenchmarkCampaignRunner } from "./benchmark-campaign-runner.js";
 import { CLI_VERSION } from "@napier/cli/runner";
 import { loadGoalNoProgressBenchmarkCase } from "./goal-no-progress-benchmark-case.js";
 import { verifyGoalNoProgressBenchmarkArtifacts } from "./goal-no-progress-benchmark-contract.js";
@@ -65,169 +58,163 @@ export async function runGoalNoProgressBenchmark(
 ): Promise<GoalNoProgressBenchmarkArtifacts> {
   const benchmarkCase = await loadGoalNoProgressBenchmarkCase(options.caseRoot);
   const credential = benchmarkCredential(options);
-  const temporaryRoot = await mkdtemp(
-    path.join(tmpdir(), "napier-goal-no-progress-"),
+  return new BenchmarkCampaignRunner(options.outputDir).withWorkspace(
+    "napier-goal-no-progress-",
+    async ({ workspaceRoot, dataRoot }) => {
+      const runtimeOptions = { workspaceRoot, dataRoot, env: options.env };
+      let runtime: LocalAgentRuntimeServices | undefined;
+      try {
+        runtime = await dependencies.createRuntime(runtimeOptions);
+        await configureCredential(runtime, options.model, credential);
+        if (!(await runtime.models.isConfigured(options.model))) {
+          throw new Error("Goal no-progress benchmark model is not configured");
+        }
+        const sourceAgent = runtime.store.listAgents()[0]!;
+        const agent = await runtime.store.updateAgent(sourceAgent.id, {
+          systemPrompt: benchmarkCase.systemPrompt,
+          enabledTools: [],
+          runLimits: {
+            maxTurns: 8,
+            maxTotalTokens: 250_000,
+            maxCostUsd: 10,
+            timeoutMs: benchmarkCase.timeoutMs,
+          },
+        });
+        const thread = await runtime.store.createThread({
+          title: benchmarkCase.title,
+          agentId: agent.id,
+        });
+        await runtime.store.setGoal(
+          thread.id,
+          createGoal(benchmarkCase.objective),
+        );
+        const timeoutSignal = AbortSignal.timeout(benchmarkCase.timeoutMs);
+        const signal = options.signal
+          ? AbortSignal.any([options.signal, timeoutSignal])
+          : timeoutSignal;
+        const run = await runtime.kernel.runPrompt({
+          threadId: thread.id,
+          text: benchmarkCase.prompt,
+          model: options.model,
+          signal,
+        });
+        const runId = run.id;
+        await runtime.shutdown();
+        runtime = undefined;
+        runtime = await dependencies.createRuntime(runtimeOptions);
+        const recoveredGoal = runtime.store.getThread(thread.id).goal;
+        const events = await runtime.store.listEvents(thread.id);
+        const replay = await exportThreadReplayBundle(runtime.store, thread.id);
+        const modelObservationEvent = await appendGoalModelObservation({
+          store: runtime.store,
+          threadId: thread.id,
+          runId,
+          events,
+          sourceReplaySha256: replay.contentSha256,
+        });
+        const evaluation = createEvaluation({
+          benchmarkCase,
+          runStatus: run.status,
+          runId,
+          recoveredGoal,
+          events,
+          modelObservationEvent,
+          replayValid: verifyThreadReplayBundle(replay).status === "valid",
+          credentialLeakDetected:
+            credential !== undefined &&
+            JSON.stringify({ run, recoveredGoal, events, replay }).includes(
+              credential.value,
+            ),
+        });
+        const evaluationEvent = await runtime.store.appendEvent({
+          threadId: thread.id,
+          runId,
+          type: "benchmark.goal.no-progress.evaluated",
+          category: "evaluation",
+          visibility: "user",
+          payload: evaluation as unknown as JsonValue,
+        });
+        const finalReplay = await exportThreadReplayBundle(
+          runtime.store,
+          thread.id,
+        );
+        const terminalEvent = finalReplay.events.find(
+          (event) =>
+            event.runId === runId &&
+            (event.type === "run.completed" ||
+              event.type === "run.failed" ||
+              event.type === "run.cancelled"),
+        );
+        if (!terminalEvent || !recoveredGoal) {
+          throw new Error("Goal no-progress terminal evidence is unavailable");
+        }
+        const generatedAt = dependencies.now().toISOString();
+        const bundle = createGoalNoProgressLedger({
+          generatedAt,
+          caseId: benchmarkCase.id,
+          caseSha256: benchmarkCase.contentSha256,
+          threadId: thread.id,
+          runId,
+          goal: recoveredGoal,
+          events: finalReplay.events,
+          replaySha256: finalReplay.contentSha256,
+          modelObservationEvent,
+          evaluationEvent,
+          terminalEvent,
+        });
+        const ledgerFileName = goalNoProgressLedgerFileName(
+          benchmarkCase.id,
+          bundle.contentSha256,
+        );
+        const durationMs =
+          run.finishedAt === undefined
+            ? 0
+            : Math.max(
+                0,
+                Date.parse(run.finishedAt) - Date.parse(run.startedAt),
+              );
+        return new BenchmarkCampaignRunner(options.outputDir).persistArtifacts<
+          typeof bundle,
+          ReturnType<typeof createGoalNoProgressResult>
+        >({
+          bundle,
+          ledgerFileName,
+          createResult: (binding) =>
+            createGoalNoProgressResult({
+              kind: "napier.goal-no-progress-benchmark-result",
+              schemaVersion: 1,
+              generatedAt,
+              caseId: benchmarkCase.id,
+              caseSha256: benchmarkCase.contentSha256,
+              status: evaluation.status,
+              model: structuredClone(options.model),
+              environment: {
+                nodeVersion: process.versions.node,
+                platform: process.platform,
+                arch: process.arch,
+                cliVersion: CLI_VERSION,
+              },
+              run: {
+                threadId: thread.id,
+                runId,
+                status: run.status,
+                durationMs,
+                usage: structuredClone(run.usage),
+              },
+              evaluation,
+              ledger: binding,
+            }),
+          resultFileName: (result) =>
+            goalNoProgressResultFileName(result.caseId, result.contentSha256),
+          verify: verifyGoalNoProgressBenchmarkArtifacts,
+          verificationError:
+            "Goal no-progress artifacts failed self-verification",
+        });
+      } finally {
+        await runtime?.shutdown().catch(() => undefined);
+      }
+    },
   );
-  const workspaceRoot = path.join(temporaryRoot, "workspace");
-  const dataRoot = path.join(temporaryRoot, "state");
-  await mkdir(workspaceRoot);
-  const runtimeOptions = { workspaceRoot, dataRoot, env: options.env };
-  let runtime: LocalAgentRuntimeServices | undefined;
-  try {
-    runtime = await dependencies.createRuntime(runtimeOptions);
-    await configureCredential(runtime, options.model, credential);
-    if (!(await runtime.models.isConfigured(options.model))) {
-      throw new Error("Goal no-progress benchmark model is not configured");
-    }
-    const sourceAgent = runtime.store.listAgents()[0]!;
-    const agent = await runtime.store.updateAgent(sourceAgent.id, {
-      systemPrompt: benchmarkCase.systemPrompt,
-      enabledTools: [],
-      runLimits: {
-        maxTurns: 8,
-        maxTotalTokens: 250_000,
-        maxCostUsd: 10,
-        timeoutMs: benchmarkCase.timeoutMs,
-      },
-    });
-    const thread = await runtime.store.createThread({
-      title: benchmarkCase.title,
-      agentId: agent.id,
-    });
-    await runtime.store.setGoal(thread.id, createGoal(benchmarkCase.objective));
-    const timeoutSignal = AbortSignal.timeout(benchmarkCase.timeoutMs);
-    const signal = options.signal
-      ? AbortSignal.any([options.signal, timeoutSignal])
-      : timeoutSignal;
-    const run = await runtime.kernel.runPrompt({
-      threadId: thread.id,
-      text: benchmarkCase.prompt,
-      model: options.model,
-      signal,
-    });
-    const runId = run.id;
-    await runtime.shutdown();
-    runtime = undefined;
-    runtime = await dependencies.createRuntime(runtimeOptions);
-    const recoveredGoal = runtime.store.getThread(thread.id).goal;
-    const events = await runtime.store.listEvents(thread.id);
-    const replay = await exportThreadReplayBundle(runtime.store, thread.id);
-    const modelObservationEvent = await appendGoalModelObservation({
-      store: runtime.store,
-      threadId: thread.id,
-      runId,
-      events,
-      sourceReplaySha256: replay.contentSha256,
-    });
-    const evaluation = createEvaluation({
-      benchmarkCase,
-      runStatus: run.status,
-      runId,
-      recoveredGoal,
-      events,
-      modelObservationEvent,
-      replayValid: verifyThreadReplayBundle(replay).status === "valid",
-      credentialLeakDetected:
-        credential !== undefined &&
-        JSON.stringify({ run, recoveredGoal, events, replay }).includes(
-          credential.value,
-        ),
-    });
-    const evaluationEvent = await runtime.store.appendEvent({
-      threadId: thread.id,
-      runId,
-      type: "benchmark.goal.no-progress.evaluated",
-      category: "evaluation",
-      visibility: "user",
-      payload: evaluation as unknown as JsonValue,
-    });
-    const finalReplay = await exportThreadReplayBundle(
-      runtime.store,
-      thread.id,
-    );
-    const terminalEvent = finalReplay.events.find(
-      (event) =>
-        event.runId === runId &&
-        (event.type === "run.completed" ||
-          event.type === "run.failed" ||
-          event.type === "run.cancelled"),
-    );
-    if (!terminalEvent || !recoveredGoal) {
-      throw new Error("Goal no-progress terminal evidence is unavailable");
-    }
-    const generatedAt = dependencies.now().toISOString();
-    const bundle = createGoalNoProgressLedger({
-      generatedAt,
-      caseId: benchmarkCase.id,
-      caseSha256: benchmarkCase.contentSha256,
-      threadId: thread.id,
-      runId,
-      goal: recoveredGoal,
-      events: finalReplay.events,
-      replaySha256: finalReplay.contentSha256,
-      modelObservationEvent,
-      evaluationEvent,
-      terminalEvent,
-    });
-    const outputDir = path.resolve(options.outputDir);
-    const ledgerFileName = goalNoProgressLedgerFileName(
-      benchmarkCase.id,
-      bundle.contentSha256,
-    );
-    const ledgerPath = path.join(outputDir, ledgerFileName);
-    const serializedBundle = `${JSON.stringify(bundle, null, 2)}\n`;
-    await writeBenchmarkCasFile(ledgerPath, serializedBundle);
-    const durationMs =
-      run.finishedAt === undefined
-        ? 0
-        : Math.max(0, Date.parse(run.finishedAt) - Date.parse(run.startedAt));
-    const result = createGoalNoProgressResult({
-      kind: "napier.goal-no-progress-benchmark-result",
-      schemaVersion: 1,
-      generatedAt,
-      caseId: benchmarkCase.id,
-      caseSha256: benchmarkCase.contentSha256,
-      status: evaluation.status,
-      model: structuredClone(options.model),
-      environment: {
-        nodeVersion: process.versions.node,
-        platform: process.platform,
-        arch: process.arch,
-        cliVersion: CLI_VERSION,
-      },
-      run: {
-        threadId: thread.id,
-        runId,
-        status: run.status,
-        durationMs,
-        usage: structuredClone(run.usage),
-      },
-      evaluation,
-      ledger: {
-        bundleFileName: ledgerFileName,
-        bundleSha256: bundle.contentSha256,
-        bundleBytes: Buffer.byteLength(serializedBundle, "utf8"),
-      },
-    });
-    const resultPath = path.join(
-      outputDir,
-      goalNoProgressResultFileName(result.caseId, result.contentSha256),
-    );
-    await writeBenchmarkCasFile(
-      resultPath,
-      `${JSON.stringify(result, null, 2)}\n`,
-    );
-    const verification = verifyGoalNoProgressBenchmarkArtifacts(result, bundle);
-    if (!verification.valid) {
-      throw new Error(
-        `Goal no-progress artifacts failed self-verification: ${verification.diagnostics.join(",")}`,
-      );
-    }
-    return { result, bundle, resultPath, ledgerPath };
-  } finally {
-    await runtime?.shutdown().catch(() => undefined);
-    await rm(temporaryRoot, { recursive: true, force: true });
-  }
 }
 
 function createEvaluation(input: {

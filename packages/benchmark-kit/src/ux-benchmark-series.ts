@@ -4,6 +4,7 @@ import type { JsonValue } from "@napier/contracts";
 import { canonicalJson, sha256 } from "@napier/runtime/core";
 
 import { writeBenchmarkCasFile } from "./benchmark-artifact-file.js";
+import { BenchmarkCampaignRunner } from "./benchmark-campaign-runner.js";
 import {
   uxBenchmarkLedgerFileName,
   uxBenchmarkResultFileName,
@@ -33,19 +34,17 @@ export async function runUxBenchmarkSeries(
   options: RunUxBenchmarkSeriesOptions,
   dependencies?: UxBenchmarkDependencies,
 ): Promise<UxBenchmarkSeriesArtifacts> {
-  if (
-    !Number.isSafeInteger(options.trialCount) ||
-    options.trialCount < 2 ||
-    options.trialCount > 10
-  ) {
-    throw new Error("UX benchmark trial count must be 2-10");
-  }
-  const trials: UxBenchmarkArtifacts[] = [];
-  for (let index = 0; index < options.trialCount; index += 1) {
-    options.signal?.throwIfAborted();
-    trials.push(await runUxBenchmark(options, dependencies));
-    if (options.signal?.aborted) break;
-  }
+  const trials = await new BenchmarkCampaignRunner(
+    options.outputDir,
+  ).runTrials<UxBenchmarkArtifacts>({
+    trialCount: options.trialCount,
+    minimum: 2,
+    maximum: 10,
+    invalidCountMessage: "UX benchmark trial count must be 2-10",
+    beforeTrial: () => options.signal?.throwIfAborted(),
+    runTrial: () => runUxBenchmark(options, dependencies),
+    shouldStop: () => options.signal?.aborted === true,
+  });
   const now = dependencies?.now ?? (() => new Date());
   const series = createUxBenchmarkSeries({
     generatedAt: now().toISOString(),

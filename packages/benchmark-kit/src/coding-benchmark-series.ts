@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { createLocalAgentRuntime } from "@napier/runtime/agent";
 
+import { BenchmarkCampaignRunner } from "./benchmark-campaign-runner.js";
 import {
   runCodingBenchmark,
   type CodingBenchmarkArtifacts,
@@ -38,20 +39,17 @@ export async function runCodingBenchmarkSeries(
   options: RunCodingBenchmarkSeriesOptions,
   dependencies: CodingBenchmarkDependencies = DEFAULT_DEPENDENCIES,
 ): Promise<CodingBenchmarkSeriesArtifacts> {
-  if (
-    !Number.isSafeInteger(options.trialCount) ||
-    options.trialCount < 2 ||
-    options.trialCount > 10
-  ) {
-    throw new Error("Coding benchmark --trials must be 2-10");
-  }
   const { trialCount, ...benchmarkOptions } = options;
-  const trials: CodingBenchmarkArtifacts[] = [];
-  for (let index = 0; index < trialCount; index += 1) {
-    const trial = await runCodingBenchmark(benchmarkOptions, dependencies);
-    trials.push(trial);
-    if (options.signal?.aborted) break;
-  }
+  const trials = await new BenchmarkCampaignRunner(
+    options.outputDir,
+  ).runTrials<CodingBenchmarkArtifacts>({
+    trialCount,
+    minimum: 2,
+    maximum: 10,
+    invalidCountMessage: "Coding benchmark --trials must be 2-10",
+    runTrial: () => runCodingBenchmark(benchmarkOptions, dependencies),
+    shouldStop: () => options.signal?.aborted === true,
+  });
   const series = createCodingBenchmarkSeries({
     generatedAt: dependencies.now().toISOString(),
     requestedTrialCount: trialCount,

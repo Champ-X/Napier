@@ -1,5 +1,4 @@
-import { lstat, mkdir, mkdtemp, readFile, readdir, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { lstat, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
 import type { JsonValue, RunEvent, RunRecord } from "@napier/contracts";
@@ -10,11 +9,9 @@ import {
   type LocalAgentRuntimeOptions,
   type LocalAgentRuntimeServices,
 } from "@napier/runtime/agent";
-import {
-  sha256,
-} from "@napier/runtime/core";
+import { sha256 } from "@napier/runtime/core";
 
-import { writeBenchmarkCasFile } from "./benchmark-artifact-file.js";
+import { BenchmarkCampaignRunner } from "./benchmark-campaign-runner.js";
 import {
   loadBrowserConfirmedFormBenchmarkCase,
   validateBrowserConfirmedFormBenchmarkInputs,
@@ -85,216 +82,212 @@ export async function runBrowserConfirmedFormBenchmark(
     options.formValue,
   );
   const credential = options.env[options.credentialEnv]?.trim()!;
-  const temporaryRoot = await mkdtemp(
-    path.join(tmpdir(), "napier-browser-confirmed-form-"),
+  return new BenchmarkCampaignRunner(options.outputDir).withWorkspace(
+    "napier-browser-confirmed-form-",
+    async ({ temporaryRoot, workspaceRoot, dataRoot }) => {
+      let runtime: LocalAgentRuntimeServices | undefined;
+      try {
+        const timeoutSignal = AbortSignal.timeout(
+          benchmarkCase.timeoutMs + 10_000,
+        );
+        const signal = options.signal
+          ? AbortSignal.any([options.signal, timeoutSignal])
+          : timeoutSignal;
+        const prompt = benchmarkPrompt(
+          options.targetUrl,
+          options.formValue,
+          benchmarkCase.expectedAssistantText,
+        );
+        const execution = await dependencies.executeCli({
+          args: [
+            "run",
+            "--workspace",
+            workspaceRoot,
+            "--data-root",
+            dataRoot,
+            "--prompt",
+            prompt,
+            "--model",
+            `${options.model.provider}/${options.model.id}`,
+            "--credential-env",
+            options.credentialEnv,
+            "--preset",
+            "safe_automation",
+            "--timeout-ms",
+            String(benchmarkCase.timeoutMs),
+          ],
+          cwd: temporaryRoot,
+          env: options.env,
+          expectedActions: benchmarkCase.expectedConfirmationActions,
+          signal,
+        });
+        runtime = await dependencies.createRuntime({
+          workspaceRoot,
+          dataRoot,
+          env: options.env,
+        });
+        const thread = runtime.store
+          .listThreads()
+          .filter((candidate) => candidate.title === "CLI one-shot")
+          .at(-1);
+        if (!thread)
+          throw new Error("Browser confirmed form Thread is missing");
+        const run = runtime.store.listRuns(thread.id).at(-1);
+        if (!run) throw new Error("Browser confirmed form Run is missing");
+        const events = await runtime.store.listEvents(thread.id);
+        const replay = await exportThreadReplayBundle(runtime.store, thread.id);
+        const replayValid = verifyThreadReplayBundle(replay).status === "valid";
+        const assistantText = latestAssistantText(events, run.id);
+        const expectedAssistantSha256 = sha256(
+          benchmarkCase.expectedAssistantText,
+        );
+        const actualAssistantSha256 = assistantText
+          ? sha256(assistantText)
+          : undefined;
+        const references = runtime.store.listCredentialReferences();
+        const reference = references[0];
+        const evidence = browserConfirmedFormEvidence(events);
+        const stateCredentialLeakDetected = await scanRootsForCredential(
+          [workspaceRoot, dataRoot],
+          credential,
+        );
+        const evidenceText = JSON.stringify(
+          browserConfirmedFormEvidenceEvents(events),
+        );
+        const credentialLeakDetected =
+          execution.output.includes(credential) ||
+          evidenceText.includes(credential);
+        const privateValueLeakDetected =
+          execution.output.includes(options.targetUrl) ||
+          execution.output.includes(options.formValue) ||
+          evidenceText.includes(options.targetUrl) ||
+          evidenceText.includes(options.formValue);
+        const evaluation = createBrowserConfirmedFormBenchmarkEvaluation({
+          caseId: benchmarkCase.id,
+          caseSha256: benchmarkCase.contentSha256,
+          runStatus: run.status,
+          cliExitCode: execution.cliExitCode,
+          assistantOutputMatch:
+            actualAssistantSha256 === expectedAssistantSha256,
+          confirmationPromptCount: execution.confirmationPromptCount,
+          approvalInputCount: execution.approvalInputCount,
+          unexpectedConfirmationAction: execution.unexpectedConfirmationAction,
+          expectedConfirmationActions:
+            benchmarkCase.expectedConfirmationActions,
+          expectedConfirmationEffects:
+            benchmarkCase.expectedConfirmationEffects,
+          expectedOutcomeUrlSha256: benchmarkCase.expectedOutcomeUrlSha256,
+          expectedOutcomeTitleSha256: benchmarkCase.expectedOutcomeTitleSha256,
+          confirmations: evidence.confirmations,
+          browserOperations: evidence.browserOperations,
+          firstConfirmationMs: execution.firstConfirmationMs,
+          totalDurationMs: execution.totalDurationMs,
+          maxDurationMs: benchmarkCase.maxDurationMs,
+          credentialReferenceCount: references.length,
+          credentialProviderMatch:
+            reference?.providerId === options.model.provider,
+          credentialLocatorMatch:
+            reference?.source.type === "environment" &&
+            reference.source.variable === options.credentialEnv,
+          credentialAvailable: reference?.availability === "available",
+          replayValid,
+          credentialLeakDetected,
+          credentialPersistenceLeakDetected: stateCredentialLeakDetected,
+          privateValueLeakDetected,
+        });
+        const evaluationEvent = await runtime.store.appendEvent({
+          threadId: thread.id,
+          runId: run.id,
+          type: "benchmark.browser.confirmed_form.evaluated",
+          category: "evaluation",
+          visibility: "user",
+          payload: evaluation as unknown as JsonValue,
+        });
+        const finalReplay = await exportThreadReplayBundle(
+          runtime.store,
+          thread.id,
+        );
+        const terminalEvent = terminalRunEvent(finalReplay.events, run.id);
+        const generatedAt = dependencies.now().toISOString();
+        const runEvidence = createRunEvidence(thread.id, run);
+        const safeExecution = withoutOutput(execution);
+        const bundle = createBrowserConfirmedFormBenchmarkLedger({
+          generatedAt,
+          caseId: benchmarkCase.id,
+          caseSha256: benchmarkCase.contentSha256,
+          threadId: thread.id,
+          runId: run.id,
+          model: options.model,
+          expectedAssistantSha256,
+          ...(actualAssistantSha256 ? { actualAssistantSha256 } : {}),
+          expectedOutcomeUrlSha256: benchmarkCase.expectedOutcomeUrlSha256,
+          expectedOutcomeTitleSha256: benchmarkCase.expectedOutcomeTitleSha256,
+          expectedConfirmationActions:
+            benchmarkCase.expectedConfirmationActions,
+          expectedConfirmationEffects:
+            benchmarkCase.expectedConfirmationEffects,
+          maxDurationMs: benchmarkCase.maxDurationMs,
+          credentialVariableSha256: sha256(options.credentialEnv),
+          run: runEvidence,
+          execution: safeExecution,
+          events: finalReplay.events,
+          sourceEventStreamSha256: finalReplay.eventStreamSha256,
+          sourceReplaySha256: finalReplay.contentSha256,
+          replayValid,
+          credentialReferenceCount: references.length,
+          credentialProviderMatch: evaluation.credentialProviderMatch,
+          credentialLocatorMatch: evaluation.credentialLocatorMatch,
+          credentialAvailable: evaluation.credentialAvailable,
+          credentialLeakDetected,
+          credentialPersistenceLeakDetected: stateCredentialLeakDetected,
+          privateValueLeakDetected,
+          evaluationEvent,
+          terminalEvent,
+        });
+        const ledgerFileName = browserConfirmedFormLedgerFileName(
+          benchmarkCase.id,
+          bundle.contentSha256,
+        );
+        return new BenchmarkCampaignRunner(options.outputDir).persistArtifacts<
+          typeof bundle,
+          ReturnType<typeof createBrowserConfirmedFormBenchmarkResult>
+        >({
+          bundle,
+          ledgerFileName,
+          createResult: (binding) =>
+            createBrowserConfirmedFormBenchmarkResult({
+              kind: "napier.browser-confirmed-form-benchmark-result",
+              schemaVersion: 1,
+              generatedAt,
+              caseId: benchmarkCase.id,
+              caseSha256: benchmarkCase.contentSha256,
+              status: evaluation.status,
+              model: structuredClone(options.model),
+              environment: {
+                nodeVersion: process.versions.node,
+                platform: process.platform,
+                arch: process.arch,
+                cliVersion: CLI_VERSION,
+              },
+              run: runEvidence,
+              execution: safeExecution,
+              evaluation,
+              ledger: binding,
+            }),
+          resultFileName: (result) =>
+            browserConfirmedFormResultFileName(
+              benchmarkCase.id,
+              result.contentSha256,
+            ),
+          verify: verifyBrowserConfirmedFormBenchmarkArtifacts,
+          verificationError:
+            "Browser confirmed form artifacts failed self-verification",
+        });
+      } finally {
+        await runtime?.shutdown().catch(() => undefined);
+      }
+    },
   );
-  const workspaceRoot = path.join(temporaryRoot, "workspace");
-  const dataRoot = path.join(temporaryRoot, "state");
-  await mkdir(workspaceRoot);
-  let runtime: LocalAgentRuntimeServices | undefined;
-  try {
-    const timeoutSignal = AbortSignal.timeout(benchmarkCase.timeoutMs + 10_000);
-    const signal = options.signal
-      ? AbortSignal.any([options.signal, timeoutSignal])
-      : timeoutSignal;
-    const prompt = benchmarkPrompt(
-      options.targetUrl,
-      options.formValue,
-      benchmarkCase.expectedAssistantText,
-    );
-    const execution = await dependencies.executeCli({
-      args: [
-        "run",
-        "--workspace",
-        workspaceRoot,
-        "--data-root",
-        dataRoot,
-        "--prompt",
-        prompt,
-        "--model",
-        `${options.model.provider}/${options.model.id}`,
-        "--credential-env",
-        options.credentialEnv,
-        "--preset",
-        "safe_automation",
-        "--timeout-ms",
-        String(benchmarkCase.timeoutMs),
-      ],
-      cwd: temporaryRoot,
-      env: options.env,
-      expectedActions: benchmarkCase.expectedConfirmationActions,
-      signal,
-    });
-    runtime = await dependencies.createRuntime({
-      workspaceRoot,
-      dataRoot,
-      env: options.env,
-    });
-    const thread = runtime.store
-      .listThreads()
-      .filter((candidate) => candidate.title === "CLI one-shot")
-      .at(-1);
-    if (!thread) throw new Error("Browser confirmed form Thread is missing");
-    const run = runtime.store.listRuns(thread.id).at(-1);
-    if (!run) throw new Error("Browser confirmed form Run is missing");
-    const events = await runtime.store.listEvents(thread.id);
-    const replay = await exportThreadReplayBundle(runtime.store, thread.id);
-    const replayValid = verifyThreadReplayBundle(replay).status === "valid";
-    const assistantText = latestAssistantText(events, run.id);
-    const expectedAssistantSha256 = sha256(benchmarkCase.expectedAssistantText);
-    const actualAssistantSha256 = assistantText
-      ? sha256(assistantText)
-      : undefined;
-    const references = runtime.store.listCredentialReferences();
-    const reference = references[0];
-    const evidence = browserConfirmedFormEvidence(events);
-    const stateCredentialLeakDetected = await scanRootsForCredential(
-      [workspaceRoot, dataRoot],
-      credential,
-    );
-    const evidenceText = JSON.stringify(
-      browserConfirmedFormEvidenceEvents(events),
-    );
-    const credentialLeakDetected =
-      execution.output.includes(credential) ||
-      evidenceText.includes(credential);
-    const privateValueLeakDetected =
-      execution.output.includes(options.targetUrl) ||
-      execution.output.includes(options.formValue) ||
-      evidenceText.includes(options.targetUrl) ||
-      evidenceText.includes(options.formValue);
-    const evaluation = createBrowserConfirmedFormBenchmarkEvaluation({
-      caseId: benchmarkCase.id,
-      caseSha256: benchmarkCase.contentSha256,
-      runStatus: run.status,
-      cliExitCode: execution.cliExitCode,
-      assistantOutputMatch: actualAssistantSha256 === expectedAssistantSha256,
-      confirmationPromptCount: execution.confirmationPromptCount,
-      approvalInputCount: execution.approvalInputCount,
-      unexpectedConfirmationAction: execution.unexpectedConfirmationAction,
-      expectedConfirmationActions: benchmarkCase.expectedConfirmationActions,
-      expectedConfirmationEffects: benchmarkCase.expectedConfirmationEffects,
-      expectedOutcomeUrlSha256: benchmarkCase.expectedOutcomeUrlSha256,
-      expectedOutcomeTitleSha256: benchmarkCase.expectedOutcomeTitleSha256,
-      confirmations: evidence.confirmations,
-      browserOperations: evidence.browserOperations,
-      firstConfirmationMs: execution.firstConfirmationMs,
-      totalDurationMs: execution.totalDurationMs,
-      maxDurationMs: benchmarkCase.maxDurationMs,
-      credentialReferenceCount: references.length,
-      credentialProviderMatch: reference?.providerId === options.model.provider,
-      credentialLocatorMatch:
-        reference?.source.type === "environment" &&
-        reference.source.variable === options.credentialEnv,
-      credentialAvailable: reference?.availability === "available",
-      replayValid,
-      credentialLeakDetected,
-      credentialPersistenceLeakDetected: stateCredentialLeakDetected,
-      privateValueLeakDetected,
-    });
-    const evaluationEvent = await runtime.store.appendEvent({
-      threadId: thread.id,
-      runId: run.id,
-      type: "benchmark.browser.confirmed_form.evaluated",
-      category: "evaluation",
-      visibility: "user",
-      payload: evaluation as unknown as JsonValue,
-    });
-    const finalReplay = await exportThreadReplayBundle(
-      runtime.store,
-      thread.id,
-    );
-    const terminalEvent = terminalRunEvent(finalReplay.events, run.id);
-    const generatedAt = dependencies.now().toISOString();
-    const runEvidence = createRunEvidence(thread.id, run);
-    const safeExecution = withoutOutput(execution);
-    const bundle = createBrowserConfirmedFormBenchmarkLedger({
-      generatedAt,
-      caseId: benchmarkCase.id,
-      caseSha256: benchmarkCase.contentSha256,
-      threadId: thread.id,
-      runId: run.id,
-      model: options.model,
-      expectedAssistantSha256,
-      ...(actualAssistantSha256 ? { actualAssistantSha256 } : {}),
-      expectedOutcomeUrlSha256: benchmarkCase.expectedOutcomeUrlSha256,
-      expectedOutcomeTitleSha256: benchmarkCase.expectedOutcomeTitleSha256,
-      expectedConfirmationActions: benchmarkCase.expectedConfirmationActions,
-      expectedConfirmationEffects: benchmarkCase.expectedConfirmationEffects,
-      maxDurationMs: benchmarkCase.maxDurationMs,
-      credentialVariableSha256: sha256(options.credentialEnv),
-      run: runEvidence,
-      execution: safeExecution,
-      events: finalReplay.events,
-      sourceEventStreamSha256: finalReplay.eventStreamSha256,
-      sourceReplaySha256: finalReplay.contentSha256,
-      replayValid,
-      credentialReferenceCount: references.length,
-      credentialProviderMatch: evaluation.credentialProviderMatch,
-      credentialLocatorMatch: evaluation.credentialLocatorMatch,
-      credentialAvailable: evaluation.credentialAvailable,
-      credentialLeakDetected,
-      credentialPersistenceLeakDetected: stateCredentialLeakDetected,
-      privateValueLeakDetected,
-      evaluationEvent,
-      terminalEvent,
-    });
-    const serializedBundle = `${JSON.stringify(bundle, null, 2)}\n`;
-    const outputDir = path.resolve(options.outputDir);
-    const ledgerFileName = browserConfirmedFormLedgerFileName(
-      benchmarkCase.id,
-      bundle.contentSha256,
-    );
-    const ledgerPath = path.join(outputDir, ledgerFileName);
-    await writeBenchmarkCasFile(ledgerPath, serializedBundle);
-    const result = createBrowserConfirmedFormBenchmarkResult({
-      kind: "napier.browser-confirmed-form-benchmark-result",
-      schemaVersion: 1,
-      generatedAt,
-      caseId: benchmarkCase.id,
-      caseSha256: benchmarkCase.contentSha256,
-      status: evaluation.status,
-      model: structuredClone(options.model),
-      environment: {
-        nodeVersion: process.versions.node,
-        platform: process.platform,
-        arch: process.arch,
-        cliVersion: CLI_VERSION,
-      },
-      run: runEvidence,
-      execution: safeExecution,
-      evaluation,
-      ledger: {
-        bundleFileName: ledgerFileName,
-        bundleSha256: bundle.contentSha256,
-        bundleBytes: Buffer.byteLength(serializedBundle, "utf8"),
-      },
-    });
-    const resultPath = path.join(
-      outputDir,
-      browserConfirmedFormResultFileName(
-        benchmarkCase.id,
-        result.contentSha256,
-      ),
-    );
-    await writeBenchmarkCasFile(
-      resultPath,
-      `${JSON.stringify(result, null, 2)}\n`,
-    );
-    const verification = verifyBrowserConfirmedFormBenchmarkArtifacts(
-      result,
-      bundle,
-    );
-    if (!verification.valid) {
-      throw new Error(
-        `Browser confirmed form artifacts failed self-verification: ${verification.diagnostics.join(",")}`,
-      );
-    }
-    return { result, bundle, resultPath, ledgerPath };
-  } finally {
-    await runtime?.shutdown().catch(() => undefined);
-    await rm(temporaryRoot, { recursive: true, force: true });
-  }
 }
 
 function validateOptions(

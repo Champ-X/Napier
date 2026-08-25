@@ -1,5 +1,4 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import type {
@@ -7,10 +6,7 @@ import type {
   RunEvent,
   WorkspaceProcessSession,
 } from "@napier/contracts";
-import {
-  canonicalJson,
-  sha256,
-} from "@napier/runtime/core";
+import { canonicalJson, sha256 } from "@napier/runtime/core";
 import {
   createPlatformSandboxAdapter,
   WorkspaceProcessManager,
@@ -20,11 +16,9 @@ import {
   exportThreadReplayBundle,
   verifyThreadReplayBundle,
 } from "@napier/runtime/agent";
-import {
-  LocalStore,
-} from "@napier/runtime/store";
+import { LocalStore } from "@napier/runtime/store";
 
-import { writeBenchmarkCasFile } from "./benchmark-artifact-file.js";
+import { BenchmarkCampaignRunner } from "./benchmark-campaign-runner.js";
 import { CLI_VERSION } from "@napier/cli/runner";
 import { loadProcessRecoveryBenchmarkCase } from "./process-recovery-benchmark-case.js";
 import { verifyProcessRecoveryBenchmarkArtifacts } from "./process-recovery-benchmark-contract.js";
@@ -65,175 +59,161 @@ export async function runProcessRecoveryBenchmark(
   const benchmarkCase = await loadProcessRecoveryBenchmarkCase(
     options.caseRoot,
   );
-  const temporaryRoot = await mkdtemp(
-    path.join(tmpdir(), "napier-process-recovery-"),
-  );
-  const workspaceRoot = path.join(temporaryRoot, "workspace");
-  const dataRoot = path.join(temporaryRoot, "state");
-  const targetPath = path.join(workspaceRoot, benchmarkCase.targetPath);
-  const scopePath = path.join(workspaceRoot, benchmarkCase.writeScope);
-  let store: LocalStore | undefined;
-  let manager: WorkspaceProcessManager | undefined;
-  try {
-    await mkdir(scopePath, { recursive: true });
-    await writeFile(targetPath, benchmarkCase.initialText, "utf8");
-    const initialSha256 = sha256(benchmarkCase.initialText);
-    const mutatedSha256 = sha256(benchmarkCase.mutatedText);
-    const sandbox = dependencies.createSandbox();
-    const sandboxBoundary = processSandboxBoundary(sandbox.id);
-    store = new LocalStore({ workspaceRoot, dataRoot });
-    await store.initialize();
-    manager = new WorkspaceProcessManager({
-      store,
-      workspaceRoot,
-      dataRoot,
-      sandbox,
-    });
-    await manager.initialize();
-    const thread = store.listThreads()[0]!;
-    const run = store.listRuns(thread.id)[0]!;
-    const timeoutSignal = AbortSignal.timeout(benchmarkCase.timeoutMs);
-    const signal = options.signal
-      ? AbortSignal.any([options.signal, timeoutSignal])
-      : timeoutSignal;
-    const preview = await manager.previewWrite({
-      threadId: thread.id,
-      runId: run.id,
-      command: benchmarkCommand(benchmarkCase),
-      writePaths: [benchmarkCase.writeScope],
-      failureRecovery: "restore_scopes",
-      signal,
-    });
-    const started = await manager.startWrite({
-      threadId: thread.id,
-      runId: run.id,
-      previewId: preview.id,
-      signal,
-    });
-    const settled = await manager.waitForSettlement(thread.id, started.id);
-    signal.throwIfAborted();
-    const finalText = await readFile(targetPath, "utf8");
-    const finalSha256 = sha256(finalText);
-    const targetRestored = finalText === benchmarkCase.initialText;
-    await manager.shutdown();
-    manager = undefined;
-    store.close();
-    store = undefined;
+  return new BenchmarkCampaignRunner(options.outputDir).withWorkspace(
+    "napier-process-recovery-",
+    async ({ workspaceRoot, dataRoot }) => {
+      const targetPath = path.join(workspaceRoot, benchmarkCase.targetPath);
+      const scopePath = path.join(workspaceRoot, benchmarkCase.writeScope);
+      let store: LocalStore | undefined;
+      let manager: WorkspaceProcessManager | undefined;
+      try {
+        await mkdir(scopePath, { recursive: true });
+        await writeFile(targetPath, benchmarkCase.initialText, "utf8");
+        const initialSha256 = sha256(benchmarkCase.initialText);
+        const mutatedSha256 = sha256(benchmarkCase.mutatedText);
+        const sandbox = dependencies.createSandbox();
+        const sandboxBoundary = processSandboxBoundary(sandbox.id);
+        store = new LocalStore({ workspaceRoot, dataRoot });
+        await store.initialize();
+        manager = new WorkspaceProcessManager({
+          store,
+          workspaceRoot,
+          dataRoot,
+          sandbox,
+        });
+        await manager.initialize();
+        const thread = store.listThreads()[0]!;
+        const run = store.listRuns(thread.id)[0]!;
+        const timeoutSignal = AbortSignal.timeout(benchmarkCase.timeoutMs);
+        const signal = options.signal
+          ? AbortSignal.any([options.signal, timeoutSignal])
+          : timeoutSignal;
+        const preview = await manager.previewWrite({
+          threadId: thread.id,
+          runId: run.id,
+          command: benchmarkCommand(benchmarkCase),
+          writePaths: [benchmarkCase.writeScope],
+          failureRecovery: "restore_scopes",
+          signal,
+        });
+        const started = await manager.startWrite({
+          threadId: thread.id,
+          runId: run.id,
+          previewId: preview.id,
+          signal,
+        });
+        const settled = await manager.waitForSettlement(thread.id, started.id);
+        signal.throwIfAborted();
+        const finalText = await readFile(targetPath, "utf8");
+        const finalSha256 = sha256(finalText);
+        const targetRestored = finalText === benchmarkCase.initialText;
+        await manager.shutdown();
+        manager = undefined;
+        store.close();
+        store = undefined;
 
-    store = new LocalStore({ workspaceRoot, dataRoot });
-    await store.initialize();
-    manager = new WorkspaceProcessManager({
-      store,
-      workspaceRoot,
-      dataRoot,
-      sandbox: dependencies.createSandbox(),
-    });
-    await manager.initialize();
-    const recovered = (await manager.list(thread.id)).find(
-      (candidate) => candidate.id === settled.id,
-    );
-    const events = await store.listEvents(thread.id);
-    const replay = await exportThreadReplayBundle(store, thread.id);
-    const evaluation = createEvaluation({
-      benchmarkCase,
-      sandboxId: sandbox.id,
-      sandboxBoundary,
-      process: settled,
-      recovered,
-      targetRestored,
-      events,
-      replayValid: verifyThreadReplayBundle(replay).status === "valid",
-    });
-    const evaluationEvent = await store.appendEvent({
-      threadId: thread.id,
-      runId: run.id,
-      type: "benchmark.process.recovery.evaluated",
-      category: "evaluation",
-      visibility: "user",
-      payload: evaluation as unknown as JsonValue,
-    });
-    const finalReplay = await exportThreadReplayBundle(store, thread.id);
-    const generatedAt = dependencies.now().toISOString();
-    const bundle = createProcessRecoveryLedger({
-      generatedAt,
-      caseId: benchmarkCase.id,
-      caseSha256: benchmarkCase.contentSha256,
-      threadId: thread.id,
-      runId: run.id,
-      processId: settled.id,
-      preview,
-      process: recovered ?? settled,
-      initialSha256,
-      mutatedSha256,
-      finalSha256,
-      restored: targetRestored,
-      events: finalReplay.events,
-      replaySha256: finalReplay.contentSha256,
-      evaluationEvent,
-    });
-    const outputDir = path.resolve(options.outputDir);
-    const ledgerFileName = processRecoveryLedgerFileName(
-      benchmarkCase.id,
-      bundle.contentSha256,
-    );
-    const ledgerPath = path.join(outputDir, ledgerFileName);
-    const serializedBundle = `${JSON.stringify(bundle, null, 2)}\n`;
-    await writeBenchmarkCasFile(ledgerPath, serializedBundle);
-    const result = createProcessRecoveryResult({
-      kind: "napier.process-recovery-benchmark-result",
-      schemaVersion: 1,
-      generatedAt,
-      caseId: benchmarkCase.id,
-      caseSha256: benchmarkCase.contentSha256,
-      status: evaluation.status,
-      executor: {
-        kind: "napier",
-        capability: "workspace_process",
-        sandboxId: sandbox.id,
-        sandboxBoundary,
-      },
-      environment: {
-        nodeVersion: process.versions.node,
-        platform: process.platform,
-        arch: process.arch,
-        cliVersion: CLI_VERSION,
-      },
-      run: {
-        threadId: thread.id,
-        runId: run.id,
-        processId: settled.id,
-        durationMs: settled.durationMs ?? 0,
-      },
-      evaluation,
-      ledger: {
-        bundleFileName: ledgerFileName,
-        bundleSha256: bundle.contentSha256,
-        bundleBytes: Buffer.byteLength(serializedBundle, "utf8"),
-      },
-    });
-    const resultPath = path.join(
-      outputDir,
-      processRecoveryResultFileName(result.caseId, result.contentSha256),
-    );
-    await writeBenchmarkCasFile(
-      resultPath,
-      `${JSON.stringify(result, null, 2)}\n`,
-    );
-    const verification = verifyProcessRecoveryBenchmarkArtifacts(
-      result,
-      bundle,
-    );
-    if (!verification.valid) {
-      throw new Error(
-        `Process recovery artifacts failed self-verification: ${verification.diagnostics.join(",")}`,
-      );
-    }
-    return { result, bundle, resultPath, ledgerPath };
-  } finally {
-    await manager?.shutdown().catch(() => undefined);
-    store?.close();
-    await rm(temporaryRoot, { recursive: true, force: true });
-  }
+        store = new LocalStore({ workspaceRoot, dataRoot });
+        await store.initialize();
+        manager = new WorkspaceProcessManager({
+          store,
+          workspaceRoot,
+          dataRoot,
+          sandbox: dependencies.createSandbox(),
+        });
+        await manager.initialize();
+        const recovered = (await manager.list(thread.id)).find(
+          (candidate) => candidate.id === settled.id,
+        );
+        const events = await store.listEvents(thread.id);
+        const replay = await exportThreadReplayBundle(store, thread.id);
+        const evaluation = createEvaluation({
+          benchmarkCase,
+          sandboxId: sandbox.id,
+          sandboxBoundary,
+          process: settled,
+          recovered,
+          targetRestored,
+          events,
+          replayValid: verifyThreadReplayBundle(replay).status === "valid",
+        });
+        const evaluationEvent = await store.appendEvent({
+          threadId: thread.id,
+          runId: run.id,
+          type: "benchmark.process.recovery.evaluated",
+          category: "evaluation",
+          visibility: "user",
+          payload: evaluation as unknown as JsonValue,
+        });
+        const finalReplay = await exportThreadReplayBundle(store, thread.id);
+        const generatedAt = dependencies.now().toISOString();
+        const bundle = createProcessRecoveryLedger({
+          generatedAt,
+          caseId: benchmarkCase.id,
+          caseSha256: benchmarkCase.contentSha256,
+          threadId: thread.id,
+          runId: run.id,
+          processId: settled.id,
+          preview,
+          process: recovered ?? settled,
+          initialSha256,
+          mutatedSha256,
+          finalSha256,
+          restored: targetRestored,
+          events: finalReplay.events,
+          replaySha256: finalReplay.contentSha256,
+          evaluationEvent,
+        });
+        const ledgerFileName = processRecoveryLedgerFileName(
+          benchmarkCase.id,
+          bundle.contentSha256,
+        );
+        return new BenchmarkCampaignRunner(options.outputDir).persistArtifacts<
+          typeof bundle,
+          ReturnType<typeof createProcessRecoveryResult>
+        >({
+          bundle,
+          ledgerFileName,
+          createResult: (binding) =>
+            createProcessRecoveryResult({
+              kind: "napier.process-recovery-benchmark-result",
+              schemaVersion: 1,
+              generatedAt,
+              caseId: benchmarkCase.id,
+              caseSha256: benchmarkCase.contentSha256,
+              status: evaluation.status,
+              executor: {
+                kind: "napier",
+                capability: "workspace_process",
+                sandboxId: sandbox.id,
+                sandboxBoundary,
+              },
+              environment: {
+                nodeVersion: process.versions.node,
+                platform: process.platform,
+                arch: process.arch,
+                cliVersion: CLI_VERSION,
+              },
+              run: {
+                threadId: thread.id,
+                runId: run.id,
+                processId: settled.id,
+                durationMs: settled.durationMs ?? 0,
+              },
+              evaluation,
+              ledger: binding,
+            }),
+          resultFileName: (result) =>
+            processRecoveryResultFileName(result.caseId, result.contentSha256),
+          verify: verifyProcessRecoveryBenchmarkArtifacts,
+          verificationError:
+            "Process recovery artifacts failed self-verification",
+        });
+      } finally {
+        await manager?.shutdown().catch(() => undefined);
+        store?.close();
+      }
+    },
+  );
 }
 
 function benchmarkCommand(benchmarkCase: ProcessRecoveryBenchmarkCase) {

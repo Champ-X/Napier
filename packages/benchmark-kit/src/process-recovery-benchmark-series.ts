@@ -4,6 +4,7 @@ import type { JsonValue } from "@napier/contracts";
 import { canonicalJson, sha256 } from "@napier/runtime/core";
 
 import { writeBenchmarkCasFile } from "./benchmark-artifact-file.js";
+import { BenchmarkCampaignRunner } from "./benchmark-campaign-runner.js";
 import { verifyProcessRecoveryBenchmarkArtifacts } from "./process-recovery-benchmark-contract.js";
 import {
   runProcessRecoveryBenchmark,
@@ -25,19 +26,17 @@ export async function runProcessRecoveryBenchmarkSeries(
   options: RunProcessRecoveryBenchmarkSeriesOptions,
   dependencies?: ProcessRecoveryBenchmarkDependencies,
 ): Promise<ProcessRecoveryBenchmarkSeriesArtifacts> {
-  if (
-    !Number.isSafeInteger(options.trialCount) ||
-    options.trialCount < 2 ||
-    options.trialCount > 20
-  ) {
-    throw new Error("Process recovery benchmark trial count must be 2-20");
-  }
-  const trials: ProcessRecoveryBenchmarkArtifacts[] = [];
-  for (let index = 0; index < options.trialCount; index += 1) {
-    options.signal?.throwIfAborted();
-    trials.push(await runProcessRecoveryBenchmark(options, dependencies));
-    if (options.signal?.aborted) break;
-  }
+  const trials = await new BenchmarkCampaignRunner(
+    options.outputDir,
+  ).runTrials<ProcessRecoveryBenchmarkArtifacts>({
+    trialCount: options.trialCount,
+    minimum: 2,
+    maximum: 20,
+    invalidCountMessage: "Process recovery benchmark trial count must be 2-20",
+    beforeTrial: () => options.signal?.throwIfAborted(),
+    runTrial: () => runProcessRecoveryBenchmark(options, dependencies),
+    shouldStop: () => options.signal?.aborted === true,
+  });
   const series = createProcessRecoveryBenchmarkSeries({
     generatedAt: (dependencies?.now() ?? new Date()).toISOString(),
     requestedTrialCount: options.trialCount,

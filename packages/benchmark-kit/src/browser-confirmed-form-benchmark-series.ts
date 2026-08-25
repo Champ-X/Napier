@@ -4,6 +4,7 @@ import type { JsonValue } from "@napier/contracts";
 import { canonicalJson, sha256 } from "@napier/runtime/core";
 
 import { writeBenchmarkCasFile } from "./benchmark-artifact-file.js";
+import { BenchmarkCampaignRunner } from "./benchmark-campaign-runner.js";
 import { verifyBrowserConfirmedFormBenchmarkArtifacts } from "./browser-confirmed-form-benchmark-contract.js";
 import { browserConfirmedFormSeriesFileName } from "./browser-confirmed-form-benchmark-evidence.js";
 import {
@@ -27,19 +28,17 @@ export async function runBrowserConfirmedFormBenchmarkSeries(
   options: RunBrowserConfirmedFormBenchmarkSeriesOptions,
   dependencies?: BrowserConfirmedFormBenchmarkDependencies,
 ): Promise<BrowserConfirmedFormBenchmarkSeriesArtifacts> {
-  if (
-    !Number.isSafeInteger(options.trialCount) ||
-    options.trialCount < 2 ||
-    options.trialCount > 10
-  ) {
-    throw new Error("Browser confirmed form trial count must be 2-10");
-  }
-  const trials: BrowserConfirmedFormBenchmarkArtifacts[] = [];
-  for (let index = 0; index < options.trialCount; index += 1) {
-    options.signal?.throwIfAborted();
-    trials.push(await runBrowserConfirmedFormBenchmark(options, dependencies));
-    if (options.signal?.aborted) break;
-  }
+  const trials = await new BenchmarkCampaignRunner(
+    options.outputDir,
+  ).runTrials<BrowserConfirmedFormBenchmarkArtifacts>({
+    trialCount: options.trialCount,
+    minimum: 2,
+    maximum: 10,
+    invalidCountMessage: "Browser confirmed form trial count must be 2-10",
+    beforeTrial: () => options.signal?.throwIfAborted(),
+    runTrial: () => runBrowserConfirmedFormBenchmark(options, dependencies),
+    shouldStop: () => options.signal?.aborted === true,
+  });
   const series = createBrowserConfirmedFormBenchmarkSeries({
     generatedAt: (dependencies?.now() ?? new Date()).toISOString(),
     requestedTrialCount: options.trialCount,
