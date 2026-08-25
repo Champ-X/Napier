@@ -3,7 +3,6 @@ import { createRoot, type Root } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { WORKSPACE_LAYOUT_METRICS as M } from "../src/workspace-layout-solver";
 import { useWorkspaceLayout } from "../src/use-workspace-layout";
 
 const roots: Root[] = [];
@@ -14,94 +13,41 @@ afterEach(async () => {
 });
 
 describe("useWorkspaceLayout", () => {
-  it("expands the sidebar inline at a wide desktop width", async () => {
-    const probe = mountProbe(1920);
+  it.each([1280, 1440, 1920])(
+    "starts expanded at the supported %dpx desktop width",
+    (width) => {
+      const probe = mountProbe(width);
+      expect(probe.read().collapsed).toBe(false);
+    },
+  );
 
-    expect(probe.read().collapsed).toBe(false);
-    expect(probe.read().mode).toBe("regular");
-    expect(probe.read().sidebarWidth).toBe(M.sidebarExpanded);
-  });
-
-  it("collapses to the compact rail when the window is auto-narrowed", async () => {
-    const probe = mountProbe(1920);
-    expect(probe.read().collapsed).toBe(false);
-
-    await probe.resizeTo(820);
-
-    expect(probe.read().collapsed).toBe(true);
-    expect(probe.read().sidebarWidth).toBe(M.sidebarCompact);
-    expect(probe.read().autoCollapsed).toBe(true);
-  });
-
-  it("re-expands on its own after an auto-collapse when width returns", async () => {
-    const probe = mountProbe(820);
-    expect(probe.read().collapsed).toBe(true);
-    expect(probe.read().autoCollapsed).toBe(true);
-
-    await probe.resizeTo(1920);
-
-    expect(probe.read().collapsed).toBe(false);
-    expect(probe.read().autoCollapsed).toBe(false);
-  });
+  it.each([1280, 1440, 1920])(
+    "keeps the operator's sidebar choice at %dpx",
+    async (width) => {
+      const probe = mountProbe(width);
+      await probe.toggle();
+      expect(probe.read().collapsed).toBe(true);
+      await probe.resizeTo(width === 1920 ? 1280 : 1920);
+      expect(probe.read().collapsed).toBe(true);
+    },
+  );
 
   it("honors a manual collapse and never auto-reopens on minor width change", async () => {
     const probe = mountProbe(1920);
 
     await probe.toggle();
     expect(probe.read().collapsed).toBe(true);
-    expect(probe.read().autoCollapsed).toBe(false);
 
-    // A wider window still respects the operator's manual collapse.
-    await probe.resizeTo(2200);
+    await probe.resizeTo(1280);
     expect(probe.read().collapsed).toBe(true);
-    expect(probe.read().autoCollapsed).toBe(false);
 
-    // Toggling back returns to the expanded rail.
     await probe.toggle();
     expect(probe.read().collapsed).toBe(false);
-  });
-
-  it("becomes a closed overlay drawer below the single-column breakpoint", async () => {
-    const probe = mountProbe(M.singleColumnBreakpoint - 1);
-
-    expect(probe.read().mode).toBe("single-column");
-    // The drawer shows the full-width rail (not the compact icons) and starts
-    // closed; `overlay` signals the shell to drop the sidebar grid column.
-    expect(probe.read().overlay).toBe(true);
-    expect(probe.read().collapsed).toBe(false);
-    expect(probe.read().navOpen).toBe(false);
-  });
-
-  it("toggles the overlay drawer open and closed without changing inline preference", async () => {
-    const probe = mountProbe(M.singleColumnBreakpoint - 1);
-    expect(probe.read().navOpen).toBe(false);
-
-    await probe.toggle();
-    expect(probe.read().navOpen).toBe(true);
-
-    await probe.toggle();
-    expect(probe.read().navOpen).toBe(false);
-  });
-
-  it("auto-dismisses the overlay drawer when the viewport is restored", async () => {
-    const probe = mountProbe(M.singleColumnBreakpoint - 1);
-    await probe.toggle();
-    expect(probe.read().navOpen).toBe(true);
-
-    await probe.resizeTo(1920);
-
-    expect(probe.read().overlay).toBe(false);
-    expect(probe.read().navOpen).toBe(false);
   });
 });
 
 interface ProbeReading {
   collapsed: boolean;
-  mode: string;
-  sidebarWidth: number;
-  autoCollapsed: boolean;
-  overlay: boolean;
-  navOpen: boolean;
 }
 
 function mountProbe(initialWidth: number) {
@@ -113,16 +59,7 @@ function mountProbe(initialWidth: number) {
   function Probe() {
     const controls = useWorkspaceLayout();
     toggleSidebar = controls.toggleSidebar;
-    return (
-      <div
-        data-collapsed={String(controls.collapsed)}
-        data-mode={controls.layout.mode}
-        data-sidebar-width={String(controls.layout.sidebar.width)}
-        data-auto-collapsed={String(controls.layout.sidebar.autoCollapsed)}
-        data-overlay={String(controls.overlay)}
-        data-nav-open={String(controls.navOpen)}
-      />
-    );
+    return <div data-collapsed={String(controls.collapsed)} />;
   }
 
   const renderProbe = async () => {
@@ -135,11 +72,6 @@ function mountProbe(initialWidth: number) {
       const node = container.firstElementChild!;
       return {
         collapsed: node.getAttribute("data-collapsed") === "true",
-        mode: node.getAttribute("data-mode") ?? "",
-        sidebarWidth: Number(node.getAttribute("data-sidebar-width")),
-        autoCollapsed: node.getAttribute("data-auto-collapsed") === "true",
-        overlay: node.getAttribute("data-overlay") === "true",
-        navOpen: node.getAttribute("data-nav-open") === "true",
       };
     },
     async resizeTo(width: number) {

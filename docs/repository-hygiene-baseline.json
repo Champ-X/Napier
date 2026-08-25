@@ -15,7 +15,7 @@
     "mode": "strict"
   },
   "desktopScope": {
-    "maximumNarrowViewportMediaBlocks": 22,
+    "maximumNarrowViewportMediaBlocks": 0,
     "supportedViewports": [
       { "width": 1280, "height": 900 },
       { "width": 1440, "height": 900 },

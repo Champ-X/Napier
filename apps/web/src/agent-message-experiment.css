@@ -15,7 +15,6 @@
     inset 5px 0 0 color-mix(in srgb, var(--color-red-44) 78%, transparent);
   animation: entry-rise 240ms ease-out both;
 }
-
 .agent-experiment-desk::before {
   position: absolute;
   top: 0;
@@ -25,14 +24,12 @@
   content: "";
   background: color-mix(in srgb, var(--color-red-44) 22%, transparent);
 }
-
 .agent-experiment-heading {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 9px;
   align-items: start;
 }
-
 .agent-experiment-seal {
   display: grid;
   width: 32px;
@@ -44,12 +41,10 @@
   border-radius: 50%;
   transform: rotate(5deg);
 }
-
 .agent-experiment-heading > div:nth-child(2) {
   display: grid;
   gap: 2px;
 }
-
 .agent-experiment-heading span,
 .agent-experiment-controls > label > span,
 .agent-experiment-controls small,
@@ -352,7 +347,6 @@
   padding-top: 8px;
   border-top: 1px dotted var(--rule-strong);
 }
-
 .agent-experiment-preview footer code,
 .agent-experiment-comparison footer code {
   margin-right: auto;
@@ -460,25 +454,4 @@
   align-items: flex-start;
   padding-top: 8px;
   border-top: 1px dotted var(--rule-strong);
-}
-
-@media (max-width: 760px) {
-  .agent-experiment-controls,
-  .agent-experiment-sides,
-  .agent-experiment-change-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .agent-experiment-sides::after {
-    display: none;
-  }
-
-  .agent-experiment-sides > div:last-child,
-  .agent-experiment-model-delta > div:last-child {
-    text-align: left;
-  }
-
-  .agent-experiment-metrics {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }

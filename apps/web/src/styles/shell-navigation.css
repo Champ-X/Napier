@@ -11,65 +11,6 @@
   grid-template-columns: var(--shell-nav-compact-width) minmax(0, 1fr);
 }
 
-/*
- * Single-column overlay drawer (design §13). Below the solver's single-column
- * breakpoint the sidebar leaves the shell grid — the workbench spans the whole
- * width — and the rail slides in as a fixed drawer with a dismissable scrim.
- */
-.app-shell:has(.ledger-nav.is-overlay) {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.ledger-nav-trigger {
-  position: fixed;
-  z-index: 26;
-  top: 9px;
-  left: 10px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--control-target);
-  height: var(--control-target);
-  color: var(--color-fg);
-  cursor: pointer;
-  background: var(--color-paper);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-raised);
-}
-
-.ledger-nav-trigger[aria-expanded="true"] {
-  visibility: hidden;
-}
-
-.ledger-nav-backdrop {
-  position: fixed;
-  z-index: 27;
-  inset: 0;
-  display: block;
-  padding: 0;
-  cursor: pointer;
-  background: color-mix(in srgb, var(--color-navigation-bg) 55%, transparent);
-  border: 0;
-}
-
-.ledger-nav.is-overlay {
-  position: fixed;
-  z-index: 28;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: var(--shell-nav-width);
-  max-width: calc(100vw - var(--space-12));
-  transform: translateX(-102%);
-  box-shadow: var(--shadow-modal);
-  transition: transform 180ms var(--ease-out);
-}
-
-.ledger-nav.is-overlay.is-open {
-  transform: translateX(0);
-}
-
 .ledger-nav {
   position: relative;
   display: flex;

@@ -7,27 +7,22 @@
   border-left: 3px solid var(--ochre);
   border-radius: 2px;
 }
-
 .conversation-artifact.status-verified {
   border-left-color: var(--ledger);
 }
-
 .conversation-artifact.status-missing,
 .conversation-artifact.status-superseded {
   border-left-color: var(--vermilion);
 }
-
 .conversation-artifact > header {
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr) auto;
   gap: 8px;
   align-items: start;
 }
-
 .conversation-artifact > header svg {
   margin-top: 2px;
 }
-
 .conversation-artifact > header div {
   display: grid;
   min-width: 0;
@@ -59,7 +54,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .conversation-artifact > header time,
 .conversation-artifact dt {
   color: var(--ink-faint);
@@ -281,11 +275,6 @@
   outline-offset: 3px;
 }
 
-@media (max-width: 540px) {
-  .conversation-citation > dl {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
 
 .conversation-network-activity {
   margin: -11px 0 25px 37px;
@@ -393,11 +382,6 @@
   color: var(--ink-faint);
 }
 
-@media (max-width: 540px) {
-  .conversation-network-activity > dl {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
 
 .conversation-browser-activity {
   margin: -11px 0 25px 37px;
@@ -506,11 +490,6 @@
   color: var(--vermilion);
 }
 
-@media (max-width: 540px) {
-  .conversation-browser-activity > dl {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
 
 .conversation-plan {
   margin: -11px 0 25px 37px;
@@ -978,15 +957,6 @@
   white-space: nowrap;
 }
 
-@media (max-width: 540px) {
-  .conversation-subagent > dl {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .conversation-subagent-outcome li {
-    grid-template-columns: 1fr;
-  }
-}
 
 .conversation-recovery {
   margin: -11px 0 25px 37px;
@@ -1109,10 +1079,4 @@
   color: var(--ink);
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-@media (max-width: 540px) {
-  .conversation-recovery > dl {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }

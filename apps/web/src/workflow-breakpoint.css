@@ -20,7 +20,6 @@
     inset 4px 0 0 color-mix(in srgb, var(--color-red-44) 78%, transparent);
   animation: entry-rise 220ms ease-out both;
 }
-
 .workflow-breakpoint-desk::after {
   position: absolute;
   top: 0;
@@ -35,14 +34,12 @@
     transparent 3px 7px
   );
 }
-
 .workflow-breakpoint-heading {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 9px;
   align-items: start;
 }
-
 .workflow-breakpoint-seal {
   display: grid;
   width: 31px;
@@ -54,12 +51,10 @@
   border-radius: 50%;
   transform: rotate(-5deg);
 }
-
 .workflow-breakpoint-heading > div {
   display: grid;
   gap: 2px;
 }
-
 .workflow-breakpoint-heading > div > span,
 .workflow-breakpoint-heading > strong,
 .workflow-breakpoint-heading small,
@@ -277,14 +272,4 @@
   color: var(--color-red-34);
   background: color-mix(in srgb, var(--color-red-44) 8%, transparent);
   border-left: 2px solid var(--vermilion);
-}
-
-@media (max-width: 760px) {
-  .workflow-breakpoint-evidence {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .workflow-breakpoint-evidence > div:first-child {
-    grid-column: 1 / -1;
-  }
 }

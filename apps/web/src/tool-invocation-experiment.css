@@ -2,26 +2,21 @@
   --agent-experiment-accent: var(--color-sage-39);
   --agent-experiment-accent-soft: color-mix(in srgb, var(--color-sage-39) 12%, transparent);
 }
-
 .tool-experiment-seal {
   color: var(--color-green-28);
   background:
     linear-gradient(145deg, color-mix(in srgb, var(--color-paper) 72%, transparent), transparent), var(--color-success-surface);
   border-color: var(--color-sage-67);
 }
-
 .tool-experiment-controls {
   grid-template-columns: minmax(17rem, 1.8fr) minmax(13rem, 1fr) auto;
 }
-
 .tool-experiment-preview {
   border-top-color: var(--color-sage-53);
 }
-
 .tool-experiment-call-strip > svg {
   color: var(--color-sage-39);
 }
-
 .tool-experiment-comparison > header > span.is-changed {
   color: var(--color-red-35);
   background: var(--color-gold-91);
@@ -44,14 +39,4 @@
   letter-spacing: 0.04em;
   background: color-mix(in srgb, var(--color-sage-39) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-sage-39) 24%, transparent);
-}
-
-@media (max-width: 920px) {
-  .tool-experiment-controls {
-    grid-template-columns: 1fr;
-  }
-
-  .tool-experiment-metrics {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }

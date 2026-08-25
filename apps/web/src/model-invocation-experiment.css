@@ -6,11 +6,9 @@
     3px 4px 0 color-mix(in srgb, var(--color-blue-22) 7%, transparent),
     inset 5px 0 0 color-mix(in srgb, var(--color-blue-29) 76%, transparent);
 }
-
 .model-experiment-desk::before {
   background: color-mix(in srgb, var(--color-blue-29) 22%, transparent);
 }
-
 .model-experiment-seal {
   color: var(--call-ink);
   background: var(--call-ink-soft);
@@ -18,17 +16,14 @@
   border-radius: 3px;
   transform: rotate(-3deg);
 }
-
 .model-experiment-desk .agent-experiment-heading > div:nth-child(2) > span,
 .model-experiment-folio {
   color: var(--call-ink) !important;
 }
-
 .model-experiment-folio {
   background: var(--call-ink-soft);
   border-color: color-mix(in srgb, var(--color-blue-29) 24%, transparent);
 }
-
 .model-experiment-call-strip {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
@@ -78,7 +73,6 @@
   font-size: var(--text-xs);
   color: var(--call-ink);
 }
-
 .model-experiment-register {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -142,23 +136,4 @@
   font-family: var(--mono);
   font-size: var(--text-xs);
   color: var(--call-ink);
-}
-
-@media (max-width: 760px) {
-  .model-experiment-register,
-  .model-experiment-change-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .model-experiment-call-strip {
-    grid-template-columns: 1fr;
-  }
-
-  .model-experiment-call-strip > svg {
-    transform: rotate(90deg);
-  }
-
-  .model-experiment-call-strip > div:last-child {
-    text-align: left;
-  }
 }

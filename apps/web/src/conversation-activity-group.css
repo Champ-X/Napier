@@ -78,19 +78,6 @@
   margin-bottom: 0;
 }
 
-@media (max-width: 768px) {
-  .conversation-activity-group {
-    margin-inline-start: 0;
-  }
-
-  .conversation-activity-group > summary {
-    grid-template-columns: var(--space-4) minmax(0, 1fr) auto;
-  }
-
-  .conversation-activity-group > summary time {
-    display: none;
-  }
-}
 
 @media (forced-colors: active) {
   .conversation-activity-group,
