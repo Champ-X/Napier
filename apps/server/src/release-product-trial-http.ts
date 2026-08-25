@@ -6,7 +6,7 @@ import type {
   ReleaseProductGateProjection,
   ReleaseProductTrial,
 } from "@napier/contracts/release-product-trial";
-import type { LocalStore } from "@napier/runtime";
+import type { LocalStore } from "@napier/runtime/store";
 import {
   createReleaseProductTrial,
   NAPIER_PRODUCT_VERSION,

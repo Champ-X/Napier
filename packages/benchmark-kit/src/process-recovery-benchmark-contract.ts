@@ -7,12 +7,14 @@ import type {
 } from "@napier/contracts";
 import {
   canonicalJson,
+  sha256,
+} from "@napier/runtime/core";
+import {
   projectWorkspaceProcessRollbackAttempts,
   projectWorkspaceProcessRollbackResults,
   projectWorkspaceProcessSessions,
-  sha256,
   workspaceProcessSessionWithRuntimeState,
-} from "@napier/runtime";
+} from "@napier/runtime/code";
 
 import {
   processRecoveryLedgerFileName,

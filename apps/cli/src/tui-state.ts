@@ -1,7 +1,7 @@
 import type { ModelRef, RunEvent, RunRecord } from "@napier/contracts";
 import type { AgentCapabilityStatus } from "@napier/contracts/agent-capabilities";
 import type { BrowserInteractionConfirmation } from "@napier/contracts/browser-interaction-confirmation";
-import type { EmbeddedAgentExecution } from "@napier/runtime";
+import type { EmbeddedAgentExecution } from "@napier/runtime/subagents";
 
 import {
   interactiveModelLabel,

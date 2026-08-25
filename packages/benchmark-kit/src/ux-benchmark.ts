@@ -12,11 +12,13 @@ import type {
 import {
   createLocalAgentRuntime,
   exportThreadReplayBundle,
-  sha256,
   verifyThreadReplayBundle,
   type LocalAgentRuntimeOptions,
   type LocalAgentRuntimeServices,
-} from "@napier/runtime";
+} from "@napier/runtime/agent";
+import {
+  sha256,
+} from "@napier/runtime/core";
 
 import { writeBenchmarkCasFile } from "./benchmark-artifact-file.js";
 import { CLI_VERSION } from "@napier/cli/runner";

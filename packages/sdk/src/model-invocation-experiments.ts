@@ -4,7 +4,7 @@ import type {
   ModelRef,
   RunEvent,
 } from "@napier/contracts";
-import type { LocalAgentRuntimeServices } from "@napier/runtime";
+import type { LocalAgentRuntimeServices } from "@napier/runtime/agent";
 
 export interface PreviewNapierModelInvocationExperimentOptions {
   sourceThreadId: string;

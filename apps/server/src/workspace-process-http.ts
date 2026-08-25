@@ -1,4 +1,4 @@
-import type { WorkspaceProcessManager } from "@napier/runtime";
+import type { WorkspaceProcessManager } from "@napier/runtime/code";
 import type { Context, Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 

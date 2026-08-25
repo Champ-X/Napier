@@ -4,16 +4,20 @@ import type {
 } from "@napier/contracts";
 import {
   createExecutionPlanWorkflowResultFrame,
-  hashEventStream,
   MAX_EXECUTION_PLAN_WORKFLOW_REQUEST_BYTES,
+  validateExecuteExecutionPlanWorkflowRequest,
+  type ExecutionPlanWorkflowRuntime,
+} from "@napier/runtime/workflow";
+import {
+  hashEventStream,
   OrderedRunEventWriter,
   streamEventFrame,
   streamRunErrorFrame,
   streamSnapshotFrame,
-  validateExecuteExecutionPlanWorkflowRequest,
-  type ExecutionPlanWorkflowRuntime,
+} from "@napier/runtime/core";
+import {
   type AgentKernel,
-} from "@napier/runtime";
+} from "@napier/runtime/agent";
 import type { Context } from "hono";
 import { streamSSE } from "hono/streaming";
 

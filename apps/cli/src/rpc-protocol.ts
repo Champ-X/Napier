@@ -14,10 +14,12 @@ import {
 } from "@napier/contracts";
 import {
   sha256,
+} from "@napier/runtime/core";
+import {
   validateExecutionPlanWorkflowBreakpointNodeIds,
   validateExecutionPlanWorkflowManifest,
   validateRunEmbeddedWorkflowInput,
-} from "@napier/runtime";
+} from "@napier/runtime/workflow";
 
 export { NAPIER_RPC_PROTOCOL_VERSION };
 export const MAX_RPC_LINE_BYTES = 1024 * 1024;

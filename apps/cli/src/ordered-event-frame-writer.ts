@@ -2,7 +2,7 @@ import { once } from "node:events";
 import type { Writable } from "node:stream";
 
 import type { RunEvent } from "@napier/contracts";
-import { OrderedRunEventWriter, streamEventFrame } from "@napier/runtime";
+import { OrderedRunEventWriter, streamEventFrame } from "@napier/runtime/core";
 
 export class OrderedEventFrameWriter {
   private readonly writer: OrderedRunEventWriter;

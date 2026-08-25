@@ -5,13 +5,15 @@ import path from "node:path";
 import { type JsonValue, type ModelRef } from "@napier/contracts";
 import {
   canonicalJson,
+  sha256,
+} from "@napier/runtime/core";
+import {
   createLocalAgentRuntime,
   exportThreadReplayBundle,
-  sha256,
   verifyThreadReplayBundle,
   type LocalAgentRuntimeOptions,
   type LocalAgentRuntimeServices,
-} from "@napier/runtime";
+} from "@napier/runtime/agent";
 
 import { writeBenchmarkCasFile } from "./benchmark-artifact-file.js";
 import { CLI_VERSION } from "@napier/cli/runner";

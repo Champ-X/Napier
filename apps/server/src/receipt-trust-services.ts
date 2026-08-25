@@ -1,4 +1,4 @@
-import type { LocalStore } from "@napier/runtime";
+import type { LocalStore } from "@napier/runtime/store";
 
 import { ReceiptTrustAnchorDirectoryDiscoveryService } from "./receipt-trust-directory-discovery.js";
 import { ReceiptTrustAnchorDirectorySubscriptionService } from "./receipt-trust-directory-subscriptions.js";

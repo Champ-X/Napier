@@ -1,5 +1,5 @@
 import type { JsonValue, RunEvent, RunRecord } from "@napier/contracts";
-import { canonicalJson, sha256 } from "@napier/runtime";
+import { canonicalJson, sha256 } from "@napier/runtime/core";
 
 import type {
   WorkflowBenchmarkLedgerBundle,

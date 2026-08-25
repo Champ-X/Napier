@@ -1,11 +1,15 @@
 import {
   type AgentKernel,
   createGoal,
-  createId,
-  type LocalStore,
   MAX_THREAD_REPLAY_BUNDLE_BYTES,
   validateThreadReplayBundle,
-} from "@napier/runtime";
+} from "@napier/runtime/agent";
+import {
+  createId,
+} from "@napier/runtime/core";
+import {
+  type LocalStore,
+} from "@napier/runtime/store";
 import { Hono } from "hono";
 
 import { errorMessage, jsonError } from "./http-response-evidence.js";

@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { sha256 } from "@napier/runtime";
+import { sha256 } from "@napier/runtime/core";
 import {
   createConfiguredSandboxAdapter,
   createSandboxFallbackAdapter,

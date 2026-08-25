@@ -1,7 +1,9 @@
 import {
   type LocalStore,
+} from "@napier/runtime/store";
+import {
   MAX_EXECUTION_PLAN_BLUEPRINT_BYTES,
-} from "@napier/runtime";
+} from "@napier/runtime/workflow";
 import { Hono, type Context } from "hono";
 
 import { jsonError } from "./http-response-evidence.js";

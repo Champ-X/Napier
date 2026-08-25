@@ -2,7 +2,7 @@ import type {
   BrowserInteractionAction,
   BrowserInteractionEffect,
 } from "@napier/contracts/browser-interaction-confirmation";
-import { canonicalJson } from "@napier/runtime";
+import { canonicalJson } from "@napier/runtime/core";
 
 import type {
   BrowserConfirmedFormDiagnostic,

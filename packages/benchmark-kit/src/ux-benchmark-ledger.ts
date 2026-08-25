@@ -1,5 +1,5 @@
 import type { JsonValue, RunEvent } from "@napier/contracts";
-import { canonicalJson, sha256 } from "@napier/runtime";
+import { canonicalJson, sha256 } from "@napier/runtime/core";
 
 import { validUxBenchmarkLedgerShape } from "./ux-benchmark-ledger-shape.js";
 import type {

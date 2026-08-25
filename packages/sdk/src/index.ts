@@ -1,8 +1,10 @@
 import type { JsonValue } from "@napier/contracts";
 import {
   createLocalAgentRuntime,
+} from "@napier/runtime/agent";
+import {
   validateExecutionPlanWorkflowManifest,
-} from "@napier/runtime";
+} from "@napier/runtime/workflow";
 
 import type { NapierClient, NapierClientOptions } from "./client-types.js";
 import { LocalNapierClient, workflowHandle } from "./local-client.js";

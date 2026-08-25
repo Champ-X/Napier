@@ -1,4 +1,5 @@
-import { createId, previewWorkspaceDataArtifactProfile } from "@napier/runtime";
+import { createId } from "@napier/runtime/core";
+import { previewWorkspaceDataArtifactProfile } from "@napier/runtime/workflow";
 import { Hono } from "hono";
 
 import {

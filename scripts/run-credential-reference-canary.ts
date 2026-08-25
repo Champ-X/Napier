@@ -7,10 +7,12 @@ import { Writable } from "node:stream";
 import type { CredentialReference, ThreadDetail } from "@napier/contracts";
 import {
   createOpenTelemetryTraceArtifact,
-  exportThreadReplayBundle,
   verifyOpenTelemetryTraceArtifact,
+} from "@napier/runtime/core";
+import {
+  exportThreadReplayBundle,
   verifyThreadReplayBundle,
-} from "@napier/runtime";
+} from "@napier/runtime/agent";
 
 import { runCli } from "../apps/cli/src/cli.js";
 import { createApp, createServices } from "../apps/server/src/app.js";

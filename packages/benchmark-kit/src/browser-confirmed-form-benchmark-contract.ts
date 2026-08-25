@@ -4,7 +4,7 @@ import {
   type BrowserInteractionAction,
   type BrowserInteractionConfirmation,
 } from "@napier/contracts/browser-interaction-confirmation";
-import { canonicalJson, sha256 } from "@napier/runtime";
+import { canonicalJson, sha256 } from "@napier/runtime/core";
 
 import {
   browserConfirmedFormLedgerFileName,

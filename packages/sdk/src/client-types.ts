@@ -15,7 +15,7 @@ import type {
   ToolInvocationExperimentPreview,
   ToolInvocationExperimentResult,
 } from "@napier/contracts";
-import type { LocalAgentRuntimeOptions } from "@napier/runtime";
+import type { LocalAgentRuntimeOptions } from "@napier/runtime/agent";
 
 import type {
   PreviewNapierAgentMessageExperimentOptions,

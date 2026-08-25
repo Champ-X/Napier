@@ -2,17 +2,19 @@ import path from "node:path";
 
 import {
   canonicalJson,
+  sha256,
+} from "@napier/runtime/core";
+import {
   installBrowserUseLocalRuntime,
   inspectBrowserUseLocalRuntime,
-  sha256,
   type BrowserUseLocalInspection,
-} from "@napier/runtime";
+} from "@napier/runtime/browser";
 
 import type { CliSetupOptions } from "./cli-setup-options.js";
 import { shellArgument } from "./cli-option-values.js";
 import { writeJsonLine, writeLine } from "./cli-output.js";
 import type { CliIo } from "./cli-runtime.js";
-import type { BrowserUseLocalSetupDependencies } from "@napier/runtime";
+import type { BrowserUseLocalSetupDependencies } from "@napier/runtime/browser";
 import { canonicalWorkspace } from "./workspace-path.js";
 
 interface BrowserUseLocalSetupPreview {

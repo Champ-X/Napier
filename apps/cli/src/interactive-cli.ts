@@ -5,9 +5,13 @@ import type { Readable, Writable } from "node:stream";
 import type { RunRecord } from "@napier/contracts";
 import {
   streamRunErrorFrame,
+} from "@napier/runtime/core";
+import {
   type EmbeddedAgentExecution,
+} from "@napier/runtime/subagents";
+import {
   type LocalAgentRuntimeServices,
-} from "@napier/runtime";
+} from "@napier/runtime/agent";
 
 import type { CliChatOptions } from "./cli-chat-options.js";
 import { cliErrorFrame } from "./cli-public-error.js";

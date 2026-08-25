@@ -1,5 +1,5 @@
 import type { ExecutionPlan } from "@napier/contracts";
-import { canonicalJson } from "@napier/runtime";
+import { canonicalJson } from "@napier/runtime/core";
 
 import { sha256Json, sha256Text } from "./http-response-evidence.js";
 import {

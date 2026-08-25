@@ -1,5 +1,5 @@
 import type { ExecutionPlan } from "@napier/contracts";
-import type { LocalStore } from "@napier/runtime";
+import type { LocalStore } from "@napier/runtime/store";
 
 export type PlanArtifactHttpStore = Pick<
   LocalStore,

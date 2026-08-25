@@ -1,5 +1,5 @@
 import type { ModelRef } from "@napier/contracts";
-import type { ModelRegistry } from "@napier/runtime";
+import type { ModelRegistry } from "@napier/runtime/model";
 
 export interface ModelAvailabilityServices {
   models: Pick<ModelRegistry, "resolveConfigured">;

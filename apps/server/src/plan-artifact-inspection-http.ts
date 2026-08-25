@@ -1,8 +1,10 @@
 import {
   createId,
+} from "@napier/runtime/core";
+import {
   inspectWorkspaceArtifactDrift,
   previewWorkspaceTextArtifact,
-} from "@napier/runtime";
+} from "@napier/runtime/workflow";
 import { Hono } from "hono";
 
 import {

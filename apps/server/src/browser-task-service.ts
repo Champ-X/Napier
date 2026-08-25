@@ -13,7 +13,7 @@ import {
   type BrowserUseLocalObservation,
   type BrowserUseLocalTaskRequest,
   type BrowserUseLocalTaskResult,
-} from "@napier/runtime";
+} from "@napier/runtime/browser";
 
 import {
   browserTaskEnvironment,

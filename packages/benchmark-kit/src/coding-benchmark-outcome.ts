@@ -1,7 +1,8 @@
 import { rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { canonicalJson, CommandRunner, sha256 } from "@napier/runtime";
+import { canonicalJson, sha256 } from "@napier/runtime/core";
+import { CommandRunner } from "@napier/runtime/tools";
 
 import type { CodingBenchmarkRuntimeFactory } from "./coding-benchmark-session.js";
 import type { CodingBenchmarkOutcomeTestEvidence } from "./coding-benchmark-types.js";

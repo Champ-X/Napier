@@ -9,8 +9,10 @@ import { EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA } from "@napier/contract
 import {
   createExecutionPlanBlueprint,
   defineExecutionPlanWorkflow,
+} from "@napier/runtime/workflow";
+import {
   type LocalStore,
-} from "@napier/runtime";
+} from "@napier/runtime/store";
 
 import type {
   WorkflowBenchmarkCase,

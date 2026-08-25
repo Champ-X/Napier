@@ -5,7 +5,7 @@ import { Writable } from "node:stream";
 import type {
   LocalAgentRuntimeOptions,
   LocalAgentRuntimeServices,
-} from "@napier/runtime";
+} from "@napier/runtime/agent";
 
 import { compiledCliEntry, runCli } from "@napier/cli/runner";
 

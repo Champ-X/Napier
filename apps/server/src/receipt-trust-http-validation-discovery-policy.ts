@@ -2,7 +2,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy,
 } from "@napier/contracts";
-import { MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS } from "@napier/runtime";
+import { MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS } from "@napier/runtime/governance";
 
 import { requestRecord } from "./http-request-validation.js";
 import {

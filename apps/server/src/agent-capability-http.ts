@@ -6,7 +6,7 @@ import {
   AGENT_CAPABILITY_PRESET_IDS,
   type AgentCapabilityPresetId,
 } from "@napier/contracts/agent-capabilities";
-import type { LocalAgentRuntimeServices } from "@napier/runtime";
+import type { LocalAgentRuntimeServices } from "@napier/runtime/agent";
 import {
   CapabilityRestoreConflictError,
   CapabilityRestorePersistenceError,

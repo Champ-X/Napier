@@ -1,5 +1,5 @@
 import type { ThreadDetail } from "@napier/contracts";
-import type { AgentKernel } from "@napier/runtime";
+import type { AgentKernel } from "@napier/runtime/agent";
 
 export type KernelThreadProjectionServices = {
   conversationActivityCandidates: Pick<

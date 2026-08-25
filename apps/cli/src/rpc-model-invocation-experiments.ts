@@ -2,7 +2,7 @@ import type {
   NapierRpcModelInvocationExperimentPreviewParams,
   NapierRpcModelInvocationExperimentRunParams,
 } from "@napier/contracts";
-import { validateCreateModelInvocationExperimentRequest } from "@napier/runtime";
+import { validateCreateModelInvocationExperimentRequest } from "@napier/runtime/evaluation";
 
 import { invalidParams, resourceId } from "./rpc-protocol.js";
 

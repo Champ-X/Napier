@@ -6,9 +6,13 @@ import type { CliDoctorOptions } from "./cli-doctor-options.js";
 import type { CliIo } from "./cli-runtime.js";
 import {
   createPlatformSandboxAdapter,
+} from "@napier/runtime/code";
+import {
   CredentialReferenceStore,
+} from "@napier/runtime/governance";
+import {
   LocalStore,
-} from "@napier/runtime";
+} from "@napier/runtime/store";
 import { createConfiguredSandboxAdapter } from "@napier/runtime/sandbox-installation";
 import {
   createDoctorReport,

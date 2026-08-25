@@ -1,5 +1,5 @@
 import type { RunEvent } from "@napier/contracts";
-import { canonicalJson, hashEventStream, sha256 } from "@napier/runtime";
+import { canonicalJson, hashEventStream, sha256 } from "@napier/runtime/core";
 
 import {
   validCodingBenchmarkLedgerBundleShape,

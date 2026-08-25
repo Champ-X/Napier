@@ -1,10 +1,14 @@
 import {
   type ChannelService,
+} from "@napier/runtime/agent";
+import {
   createInboundDeadLetterRetryHistory,
-  type LocalStore,
   verifyInboundDeadLetterExportArtifact,
   verifyInboundDeadLetterRetryHistory,
-} from "@napier/runtime";
+} from "@napier/runtime/governance";
+import {
+  type LocalStore,
+} from "@napier/runtime/store";
 import { Hono } from "hono";
 
 import { errorMessage, jsonError } from "./http-response-evidence.js";

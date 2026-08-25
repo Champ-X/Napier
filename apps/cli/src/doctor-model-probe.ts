@@ -1,4 +1,5 @@
-import { ModelRegistry, sha256 } from "@napier/runtime";
+import { ModelRegistry } from "@napier/runtime/model";
+import { sha256 } from "@napier/runtime/core";
 
 import type { CliDoctorOptions } from "./cli-doctor-options.js";
 import type {

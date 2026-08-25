@@ -1,4 +1,5 @@
-import { type LocalStore, type ModelRegistry } from "@napier/runtime";
+import { type LocalStore } from "@napier/runtime/store";
+import { type ModelRegistry } from "@napier/runtime/model";
 import { Hono } from "hono";
 
 import { errorMessage, jsonError } from "./http-response-evidence.js";

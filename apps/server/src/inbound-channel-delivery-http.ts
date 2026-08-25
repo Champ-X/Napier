@@ -1,4 +1,5 @@
-import { type ChannelService, type LocalStore } from "@napier/runtime";
+import { type ChannelService } from "@napier/runtime/agent";
+import { type LocalStore } from "@napier/runtime/store";
 import { Hono } from "hono";
 
 import { jsonError } from "./http-response-evidence.js";

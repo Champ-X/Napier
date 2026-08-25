@@ -2,7 +2,7 @@ import type {
   CreateAutomationScheduleRequest,
   UpdateAutomationScheduleRequest,
 } from "@napier/contracts";
-import { normalizeScheduleTrigger } from "@napier/runtime";
+import { normalizeScheduleTrigger } from "@napier/runtime/agent";
 
 import {
   normalizeBoundedPrompt,

@@ -5,7 +5,7 @@ import type {
   BrowserInteractionAction,
   BrowserInteractionEffect,
 } from "@napier/contracts/browser-interaction-confirmation";
-import { canonicalJson, sha256 } from "@napier/runtime";
+import { canonicalJson, sha256 } from "@napier/runtime/core";
 
 import type { BrowserConfirmedFormBenchmarkCase } from "./browser-confirmed-form-benchmark-types.js";
 

@@ -1,11 +1,19 @@
 import type { CredentialReference } from "@napier/contracts";
 import {
   createId,
+} from "@napier/runtime/core";
+import {
   type CredentialReferenceStore,
+} from "@napier/runtime/governance";
+import {
   type LocalAgentRuntimeServices,
+} from "@napier/runtime/agent";
+import {
   type LocalStore,
+} from "@napier/runtime/store";
+import {
   type ModelRegistry,
-} from "@napier/runtime";
+} from "@napier/runtime/model";
 import type { ProviderSetupService } from "@napier/runtime/provider-setup";
 import { Hono, type Context } from "hono";
 

@@ -1,4 +1,4 @@
-import { validateCreateExecutionPlanWorkflowExperimentRequest } from "@napier/runtime";
+import { validateCreateExecutionPlanWorkflowExperimentRequest } from "@napier/runtime/workflow";
 
 import type { CliWorkflowOptions } from "./cli-options.js";
 

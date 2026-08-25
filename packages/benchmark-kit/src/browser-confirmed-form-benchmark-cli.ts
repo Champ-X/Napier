@@ -1,7 +1,7 @@
 import { performance } from "node:perf_hooks";
 
 import type { BrowserInteractionAction } from "@napier/contracts/browser-interaction-confirmation";
-import { sha256 } from "@napier/runtime";
+import { sha256 } from "@napier/runtime/core";
 import { compiledCliEntry } from "@napier/cli/runner";
 import { spawn } from "@lydell/node-pty";
 

@@ -5,7 +5,8 @@ import type {
   ControlledHarnessEvidence,
   ControlledHarnessGateProjection,
 } from "@napier/contracts/controlled-harness-evidence";
-import { createId, type LocalStore } from "@napier/runtime";
+import { createId } from "@napier/runtime/core";
+import { type LocalStore } from "@napier/runtime/store";
 import {
   CONTROLLED_HARNESS_EVIDENCE_EVENT_TYPE,
   parseControlledHarnessEvidence,

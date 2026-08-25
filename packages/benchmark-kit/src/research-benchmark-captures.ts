@@ -1,7 +1,7 @@
 import type {
   BrowserSessionOwner,
   BrowserSourceCaptureProvider,
-} from "@napier/runtime";
+} from "@napier/runtime/browser";
 
 import type { ResearchBenchmarkSources } from "./research-benchmark-types.js";
 

@@ -1,10 +1,14 @@
 import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
 import {
   type AgentKernel,
+} from "@napier/runtime/agent";
+import {
   builtinUsagePriceTableCatalog,
-  type LocalStore,
   type ModelRegistry,
-} from "@napier/runtime";
+} from "@napier/runtime/model";
+import {
+  type LocalStore,
+} from "@napier/runtime/store";
 import { inspectStandardSkillCatalog } from "@napier/runtime/standard-skill-catalog";
 import type { Context } from "hono";
 import { Hono } from "hono";

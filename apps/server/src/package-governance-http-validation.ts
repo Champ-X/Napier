@@ -1,7 +1,10 @@
 import { validAgentId } from "./app-http-response-core.js";
 import { requestRecord, validThreadId } from "./http-request-validation.js";
 import type { ApplyExtensionPackageDeploymentRequest, ApplyExtensionPackageRolloutChannelRequest, ApplyExtensionPackageUpdateRequest, ApplySkillContentRequest, CreateExtensionPublisherTrustAnchorRequest, ExportExtensionPackageLockfileRequest, ImportSignedExtensionPackageRequest, InstallSkillPackageRequest, PreviewExtensionPackageDeploymentRequest, PreviewExtensionPackageRolloutChannelRequest, PreviewExtensionPackageUpdateRequest, PreviewSkillContentRequest, PublishExtensionPackageRolloutChannelRequest, QualifyInspectorPackageRequest, QualifyPromptPackageRequest, QualifySkillPackageRequest, RevokeExtensionPublisherTrustAnchorRequest, SignExtensionPackageChannelIndexRequest, SignExtensionPackageRequest, SignInspectorPackageRequest, SignPromptPackageRequest, SignSkillPackageRequest, VerifyExtensionPackageChannelIndexRequest, VerifyExtensionPackageLockfileRequest, VerifyInspectorPackageRequest, VerifyPromptPackageRequest, VerifySignedExtensionPackageRequest, VerifySkillPackageRequest } from "@napier/contracts";
-import { MAX_EXTENSION_PACKAGE_DEPENDENCIES, MAX_EXTENSION_PACKAGE_DEPLOYMENT_CANDIDATES } from "@napier/runtime";
+import {
+  MAX_EXTENSION_PACKAGE_DEPENDENCIES,
+  MAX_EXTENSION_PACKAGE_DEPLOYMENT_CANDIDATES,
+} from "@napier/runtime/governance";
 
 export function parseCreateExtensionPublisherTrustAnchorRequest(input: unknown): CreateExtensionPublisherTrustAnchorRequest | undefined {
   const record = requestRecord(input, ["threadId", "label", "source"]);

@@ -8,9 +8,11 @@ import {
 import {
   canonicalJson,
   sha256,
+} from "@napier/runtime/core";
+import {
   type WorkspacePathSnapshot,
   type WorkspaceSnapshotDelta,
-} from "@napier/runtime";
+} from "@napier/runtime/code";
 
 import type {
   CodingBenchmarkCase,

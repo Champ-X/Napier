@@ -1,4 +1,4 @@
-import { createPlatformSandboxAdapter } from "@napier/runtime";
+import { createPlatformSandboxAdapter } from "@napier/runtime/code";
 import {
   probeGitRuntime,
   probeSandboxResourceRuntime,

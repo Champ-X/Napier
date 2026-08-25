@@ -9,14 +9,20 @@ import type {
 } from "@napier/contracts";
 import {
   canonicalJson,
-  createPlatformSandboxAdapter,
-  exportThreadReplayBundle,
-  LocalStore,
   sha256,
-  verifyThreadReplayBundle,
+} from "@napier/runtime/core";
+import {
+  createPlatformSandboxAdapter,
   WorkspaceProcessManager,
   type OsSandboxAdapter,
-} from "@napier/runtime";
+} from "@napier/runtime/code";
+import {
+  exportThreadReplayBundle,
+  verifyThreadReplayBundle,
+} from "@napier/runtime/agent";
+import {
+  LocalStore,
+} from "@napier/runtime/store";
 
 import { writeBenchmarkCasFile } from "./benchmark-artifact-file.js";
 import { CLI_VERSION } from "@napier/cli/runner";

@@ -1,11 +1,9 @@
 import path from "node:path";
 import type { Readable, Writable } from "node:stream";
 
-import {
-  streamRunErrorFrame,
-  type EmbeddedAgentExecution,
-  type LocalAgentRuntimeServices,
-} from "@napier/runtime";
+import { type LocalAgentRuntimeServices } from "@napier/runtime/agent";
+import { streamRunErrorFrame } from "@napier/runtime/core";
+import { type EmbeddedAgentExecution } from "@napier/runtime/subagents";
 
 import type { CliChatOptions } from "./cli-chat-options.js";
 import { cliErrorFrame } from "./cli-public-error.js";

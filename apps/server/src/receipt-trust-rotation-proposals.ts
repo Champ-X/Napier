@@ -20,18 +20,17 @@ import type {
   VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest,
 } from "@napier/contracts";
 import { NAPIER_API_VERSION } from "@napier/contracts";
+import { canonicalJson, sha256 } from "@napier/runtime/core";
+import { type LocalStore } from "@napier/runtime/store";
 import {
-  canonicalJson,
-  type LocalStore,
   normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicy,
   receiptTrustAnchorsFromDirectory,
-  sha256,
   validateApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyResult,
   validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview,
   validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay,
   validateTrustedReceiptEnvelope,
   verifyTrustedReceiptEnvelope,
-} from "@napier/runtime";
+} from "@napier/runtime/governance";
 
 import type { ReceiptTrustAnchorDirectoryHostedJsonSource } from "./receipt-trust-directory-discovery.js";
 

@@ -1,8 +1,8 @@
-import { sha256 } from "@napier/runtime";
+import { sha256 } from "@napier/runtime/core";
 import {
   createPlatformSandboxAdapter,
   type OsSandboxAdapter,
-} from "@napier/runtime";
+} from "@napier/runtime/code";
 import {
   probeDapRuntime,
   probeLspRuntime,

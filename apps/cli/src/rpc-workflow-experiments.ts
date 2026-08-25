@@ -2,7 +2,7 @@ import type {
   NapierRpcWorkflowExperimentPreviewParams,
   NapierRpcWorkflowExperimentRunParams,
 } from "@napier/contracts";
-import { validateCreateExecutionPlanWorkflowExperimentRequest } from "@napier/runtime";
+import { validateCreateExecutionPlanWorkflowExperimentRequest } from "@napier/runtime/workflow";
 
 import { invalidParams, resourceId } from "./rpc-protocol.js";
 

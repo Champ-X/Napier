@@ -2,7 +2,7 @@ import type { ModelRef } from "@napier/contracts";
 import type {
   LocalAgentRuntimeOptions,
   LocalAgentRuntimeServices,
-} from "@napier/runtime";
+} from "@napier/runtime/agent";
 
 import type { CodingBenchmarkCase } from "./coding-benchmark-contract.js";
 

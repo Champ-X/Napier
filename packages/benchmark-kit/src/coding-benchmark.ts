@@ -10,12 +10,16 @@ import type {
 } from "@napier/contracts";
 import {
   createLocalAgentRuntime,
+} from "@napier/runtime/agent";
+import {
   createWorkspacePathSnapshot,
   diffWorkspaceSnapshots,
+} from "@napier/runtime/code";
+import {
   hashEventStream,
   sha256,
   streamSnapshotFrame,
-} from "@napier/runtime";
+} from "@napier/runtime/core";
 
 import {
   CLI_VERSION,

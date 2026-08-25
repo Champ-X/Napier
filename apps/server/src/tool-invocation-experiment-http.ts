@@ -4,15 +4,17 @@ import type {
 } from "@napier/contracts";
 import {
   createToolInvocationExperimentResultFrame,
-  hashEventStream,
   MAX_TOOL_INVOCATION_EXPERIMENT_REQUEST_BYTES,
+  validateCreateToolInvocationExperimentRequest,
+  type ToolInvocationExperimentRuntime,
+} from "@napier/runtime/evaluation";
+import {
+  hashEventStream,
   OrderedRunEventWriter,
   streamEventFrame,
   streamRunErrorFrame,
   streamSnapshotFrame,
-  validateCreateToolInvocationExperimentRequest,
-  type ToolInvocationExperimentRuntime,
-} from "@napier/runtime";
+} from "@napier/runtime/core";
 import type { Context } from "hono";
 import { streamSSE } from "hono/streaming";
 

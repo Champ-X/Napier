@@ -2,12 +2,16 @@ import type { Writable } from "node:stream";
 
 import type {
   AgentMessageExperimentRuntime,
-  EmbeddedAgentService,
-  EmbeddedWorkflowService,
-  ExecutionPlanWorkflowExperimentRuntime,
   ModelInvocationExperimentRuntime,
   ToolInvocationExperimentRuntime,
-} from "@napier/runtime";
+} from "@napier/runtime/evaluation";
+import type {
+  EmbeddedAgentService,
+} from "@napier/runtime/subagents";
+import type {
+  EmbeddedWorkflowService,
+  ExecutionPlanWorkflowExperimentRuntime,
+} from "@napier/runtime/workflow";
 
 import {
   JsonRpcProtocolError,

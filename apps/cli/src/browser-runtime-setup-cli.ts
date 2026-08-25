@@ -6,9 +6,11 @@ import {
 } from "@napier/runtime/browser-runtime-setup";
 import {
   canonicalJson,
-  RunBrowserSessionManager,
   sha256,
-} from "@napier/runtime";
+} from "@napier/runtime/core";
+import {
+  RunBrowserSessionManager,
+} from "@napier/runtime/browser";
 
 import type { CliSetupOptions } from "./cli-setup-options.js";
 import { writeJsonLine, writeLine } from "./cli-output.js";

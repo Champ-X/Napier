@@ -3,14 +3,18 @@ import {
   createId,
   createOpenTelemetryTraceArtifact,
   createRunReplaySnapshot,
-  exportThreadReplayBundle,
-  type LocalStore,
-  MAX_THREAD_REPLAY_BUNDLE_BYTES,
   openTelemetryTraceArtifactEventAnchorSetSha256,
   verifyOpenTelemetryTraceArtifact,
+} from "@napier/runtime/core";
+import {
+  exportThreadReplayBundle,
+  MAX_THREAD_REPLAY_BUNDLE_BYTES,
   verifyRunReplaySnapshot,
   verifyThreadReplayBundle,
-} from "@napier/runtime";
+} from "@napier/runtime/agent";
+import {
+  type LocalStore,
+} from "@napier/runtime/store";
 import { Hono } from "hono";
 
 import { errorMessage, jsonError } from "./http-response-evidence.js";

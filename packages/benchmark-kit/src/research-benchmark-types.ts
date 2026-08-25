@@ -1,5 +1,5 @@
 import type { ModelRef, RunEvent, RunStatus, Usage } from "@napier/contracts";
-import type { BrowserPageSourceCapture } from "@napier/runtime";
+import type { BrowserPageSourceCapture } from "@napier/runtime/browser";
 
 export interface ResearchBenchmarkSourceFixture {
   id: string;

@@ -5,7 +5,7 @@ import type {
 } from "@napier/contracts";
 import type { DecideBrowserInteractionConfirmationRequest } from "@napier/contracts/browser-interaction-confirmation";
 import type { ResumeBrowserSessionRequest } from "@napier/contracts/browser-session-control";
-import { MAX_RUN_CONTROL_MESSAGE_BYTES } from "@napier/runtime";
+import { MAX_RUN_CONTROL_MESSAGE_BYTES } from "@napier/runtime/agent";
 
 import { requestRecord } from "./http-request-validation.js";
 

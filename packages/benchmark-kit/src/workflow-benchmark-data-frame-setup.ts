@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { sha256 } from "@napier/runtime";
+import { sha256 } from "@napier/runtime/core";
 
 import type { LoadedWorkflowBenchmarkCase } from "./workflow-benchmark-case.js";
 

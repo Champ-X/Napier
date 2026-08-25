@@ -3,9 +3,11 @@ import type { Readable, Writable } from "node:stream";
 
 import {
   streamRunErrorFrame,
+} from "@napier/runtime/core";
+import {
   type LocalAgentRuntimeOptions,
   type LocalAgentRuntimeServices,
-} from "@napier/runtime";
+} from "@napier/runtime/agent";
 
 import { CLI_VERSION, type CliRpcOptions } from "./cli-options.js";
 import { writeLine } from "./cli-output.js";

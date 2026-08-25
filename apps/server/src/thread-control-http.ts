@@ -1,10 +1,12 @@
 import {
   type AgentKernel,
   createThreadBranch,
-  type LocalStore,
   MAX_RUN_CONTROL_MESSAGE_BYTES,
   ThreadBranchRequestError,
-} from "@napier/runtime";
+} from "@napier/runtime/agent";
+import {
+  type LocalStore,
+} from "@napier/runtime/store";
 import { Hono } from "hono";
 
 import { registerBrowserInteractionConfirmationHttp } from "./browser-interaction-confirmation-http.js";

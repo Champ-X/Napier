@@ -1,7 +1,7 @@
 import { Writable } from "node:stream";
 
 import type { StreamFrame } from "@napier/contracts";
-import { hashEventStream, sha256 } from "@napier/runtime";
+import { hashEventStream, sha256 } from "@napier/runtime/core";
 
 const MAX_CAPTURE_BYTES = 16 * 1024 * 1024;
 

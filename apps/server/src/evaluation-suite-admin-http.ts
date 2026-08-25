@@ -3,10 +3,16 @@ import type { Context, Hono } from "hono";
 import type { EvaluationSuite, JsonValue } from "@napier/contracts";
 import {
   createId,
+} from "@napier/runtime/core";
+import {
   type EvaluationSuiteService,
+} from "@napier/runtime/evaluation";
+import {
   type LocalStore,
+} from "@napier/runtime/store";
+import {
   type ModelRegistry,
-} from "@napier/runtime";
+} from "@napier/runtime/model";
 
 import {
   setEvaluationSuiteExecutionHeaders,

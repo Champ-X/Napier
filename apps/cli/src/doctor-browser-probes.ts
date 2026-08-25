@@ -2,7 +2,7 @@ import {
   inspectBrowserUseLocalRuntime,
   resolveBrowserRuntime,
   RunBrowserSessionManager,
-} from "@napier/runtime";
+} from "@napier/runtime/browser";
 
 import type {
   DoctorCheck,

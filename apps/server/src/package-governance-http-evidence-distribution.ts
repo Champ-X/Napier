@@ -1,7 +1,7 @@
 import { setBodyContentSha256Header, setStableContentSha256Header, sha256Json, sha256Text } from "./http-response-evidence.js";
 import type { NapierServices } from "./server-composition-root.js";
 import type { ApplyExtensionPackageDeploymentResult, ApplyExtensionPackageRolloutChannelResult, ApplyExtensionPackageUpdateResult, ExtensionPackageChannelIndexVerification, ExtensionPackageDeploymentPreview, ExtensionPackageLockfile, ExtensionPackageLockfileVerification, ExtensionPackageRolloutChannel, ExtensionPackageRolloutPreview, ExtensionPackageUpdatePreview, ExtensionPackageVerification, InspectorPackageQualification, InspectorPackageVerification, JsonValue, SignedExtensionPackageChannelIndexEnvelope } from "@napier/contracts";
-import { createId } from "@napier/runtime";
+import { createId } from "@napier/runtime/core";
 import type { Context } from "hono";
 
 export function setInspectorPackageVerificationHeaders(context: Context, verification: InspectorPackageVerification): void {

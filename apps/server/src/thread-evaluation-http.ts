@@ -1,4 +1,4 @@
-import type { LocalStore } from "@napier/runtime";
+import type { LocalStore } from "@napier/runtime/store";
 import { Hono } from "hono";
 
 import {

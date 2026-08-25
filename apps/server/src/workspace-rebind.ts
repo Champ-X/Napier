@@ -1,7 +1,7 @@
 import { realpath, stat } from "node:fs/promises";
 import path from "node:path";
 
-import type { LocalStore } from "@napier/runtime";
+import type { LocalStore } from "@napier/runtime/store";
 
 export class WorkspaceRebindRequestError extends Error {
   constructor(

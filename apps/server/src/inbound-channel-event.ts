@@ -1,5 +1,6 @@
 import type { JsonValue } from "@napier/contracts";
-import { createId, type LocalStore } from "@napier/runtime";
+import { createId } from "@napier/runtime/core";
+import { type LocalStore } from "@napier/runtime/store";
 
 type InboundChannelEventStore = Pick<LocalStore, "appendEvent">;
 

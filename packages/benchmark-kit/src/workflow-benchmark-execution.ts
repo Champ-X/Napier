@@ -10,7 +10,7 @@ import {
   verifyThreadReplayBundle,
   type LocalAgentRuntimeOptions,
   type LocalAgentRuntimeServices,
-} from "@napier/runtime";
+} from "@napier/runtime/agent";
 
 import type { WorkflowBenchmarkCase } from "./workflow-benchmark-types.js";
 

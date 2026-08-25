@@ -3,7 +3,7 @@ import { requestRecord } from "./http-request-validation.js";
 import {
   MAX_RECEIPT_TRUST_ANCHORS,
   MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
-} from "@napier/runtime";
+} from "@napier/runtime/governance";
 import type {
   ReceiptTrustAnchorDirectoryVerificationPolicy,
 } from "@napier/contracts";

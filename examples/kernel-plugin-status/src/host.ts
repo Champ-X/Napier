@@ -8,7 +8,7 @@ import {
   type KernelPluginDefinition,
   type KernelProjectionDefinition,
   type KernelProjectionRegistry,
-} from "@napier/runtime";
+} from "@napier/runtime/agent";
 
 const manifest = validateKernelPluginManifest(manifestValue);
 const projection: KernelProjectionDefinition<

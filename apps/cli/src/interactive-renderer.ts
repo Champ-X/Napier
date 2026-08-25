@@ -1,7 +1,7 @@
 import type { Writable } from "node:stream";
 
 import type { RunEvent } from "@napier/contracts";
-import type { EmbeddedAgentExecution } from "@napier/runtime";
+import type { EmbeddedAgentExecution } from "@napier/runtime/subagents";
 
 import { writeLine, writeText } from "./cli-output.js";
 import { terminalSafeText } from "./terminal-safe-text.js";

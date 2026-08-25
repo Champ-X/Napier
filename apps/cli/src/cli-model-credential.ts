@@ -1,5 +1,5 @@
 import type { CredentialReference } from "@napier/contracts";
-import type { LocalAgentRuntimeServices } from "@napier/runtime";
+import type { LocalAgentRuntimeServices } from "@napier/runtime/agent";
 
 import type { CliCredentialBootstrapOptions } from "./cli-credential-options.js";
 import { CliPublicError } from "./cli-public-error.js";

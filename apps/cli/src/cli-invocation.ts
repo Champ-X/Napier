@@ -5,8 +5,10 @@ import {
   hashEventStream,
   streamRunDoneFrame,
   streamSnapshotFrame,
+} from "@napier/runtime/core";
+import {
   type LocalAgentRuntimeServices,
-} from "@napier/runtime";
+} from "@napier/runtime/agent";
 
 import type { CliExecutionOptions } from "./cli-execution-options.js";
 import { cliErrorFrame } from "./cli-public-error.js";

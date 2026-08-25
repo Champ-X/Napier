@@ -8,6 +8,50 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./agent": {
+      "types": "./dist/public/agent.d.ts",
+      "import": "./dist/public/agent.js"
+    },
+    "./browser": {
+      "types": "./dist/public/browser.d.ts",
+      "import": "./dist/public/browser.js"
+    },
+    "./code": {
+      "types": "./dist/public/code.d.ts",
+      "import": "./dist/public/code.js"
+    },
+    "./core": {
+      "types": "./dist/public/core.d.ts",
+      "import": "./dist/public/core.js"
+    },
+    "./evaluation": {
+      "types": "./dist/public/evaluation.d.ts",
+      "import": "./dist/public/evaluation.js"
+    },
+    "./governance": {
+      "types": "./dist/public/governance.d.ts",
+      "import": "./dist/public/governance.js"
+    },
+    "./model": {
+      "types": "./dist/public/model.d.ts",
+      "import": "./dist/public/model.js"
+    },
+    "./store": {
+      "types": "./dist/public/store.d.ts",
+      "import": "./dist/public/store.js"
+    },
+    "./subagents": {
+      "types": "./dist/public/subagents.d.ts",
+      "import": "./dist/public/subagents.js"
+    },
+    "./tools": {
+      "types": "./dist/public/tools.d.ts",
+      "import": "./dist/public/tools.js"
+    },
+    "./workflow": {
+      "types": "./dist/public/workflow.d.ts",
+      "import": "./dist/public/workflow.js"
+    },
     "./evaluation-casebook-templates": {
       "types": "./dist/evaluation-casebook-templates.d.ts",
       "import": "./dist/evaluation-casebook-templates.js"

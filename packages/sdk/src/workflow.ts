@@ -3,7 +3,7 @@ import type {
   JsonValue,
   WorkflowValueSchema,
 } from "@napier/contracts";
-import type { DefineEmbeddedWorkflowInput } from "@napier/runtime";
+import type { DefineEmbeddedWorkflowInput } from "@napier/runtime/workflow";
 
 declare const workflowInputType: unique symbol;
 declare const workflowOutputType: unique symbol;

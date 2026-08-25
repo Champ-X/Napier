@@ -4,7 +4,7 @@ import path from "node:path";
 import type {
   BrowserUseCloudObservation,
   BrowserUseLocalObservation,
-} from "@napier/runtime";
+} from "@napier/runtime/browser";
 
 import { BrowserTaskServiceError } from "./browser-task-error.js";
 import type { BrowserTaskEvent } from "./browser-task-types.js";

@@ -2,7 +2,7 @@ import type {
   OpenTelemetryTraceArtifact,
   OpenTelemetryTraceArtifactVerification,
 } from "@napier/contracts";
-import { openTelemetryTraceArtifactEventAnchorSetSha256 } from "@napier/runtime";
+import { openTelemetryTraceArtifactEventAnchorSetSha256 } from "@napier/runtime/core";
 import type { Context } from "hono";
 
 import {

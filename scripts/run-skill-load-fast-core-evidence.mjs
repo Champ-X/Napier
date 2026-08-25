@@ -16,9 +16,11 @@ import path from "node:path";
 import {
   createLocalAgentRuntime,
   createThreadReplayBundle,
-  ModelRegistry,
   verifyThreadReplayBundle,
-} from "@napier/runtime";
+} from "@napier/runtime/agent";
+import {
+  ModelRegistry,
+} from "@napier/runtime/model";
 
 import {
   assertSecretAbsent,

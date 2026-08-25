@@ -1,5 +1,5 @@
 import type { AgentProfile, ModelRef } from "@napier/contracts";
-import type { LocalAgentRuntimeServices } from "@napier/runtime";
+import type { LocalAgentRuntimeServices } from "@napier/runtime/agent";
 
 export function recommendedCliRunModel(
   services: LocalAgentRuntimeServices,

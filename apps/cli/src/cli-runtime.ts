@@ -3,11 +3,11 @@ import type { Readable, Writable } from "node:stream";
 import type {
   LocalAgentRuntimeOptions,
   LocalAgentRuntimeServices,
-} from "@napier/runtime";
+} from "@napier/runtime/agent";
 
 import type { DoctorProbeDependencies } from "./doctor-probes.js";
 import type { BrowserRuntimeSetupDependencies } from "./browser-runtime-setup-model.js";
-import type { BrowserUseLocalSetupDependencies } from "@napier/runtime";
+import type { BrowserUseLocalSetupDependencies } from "@napier/runtime/browser";
 import type { CliSandboxRuntimeSetupDependencies } from "./sandbox-runtime-setup-model.js";
 import type { CliRunReadinessDependencies } from "./cli-run-readiness.js";
 

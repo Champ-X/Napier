@@ -3,7 +3,8 @@ import type {
   MemoryFact,
   ReviewMemoryRequest,
 } from "@napier/contracts";
-import { createId, type LocalStore } from "@napier/runtime";
+import { createId } from "@napier/runtime/core";
+import { type LocalStore } from "@napier/runtime/store";
 import { Hono, type Context } from "hono";
 
 import {

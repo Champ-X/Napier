@@ -1,10 +1,16 @@
 import {
   reviewSubagentOutcome,
-  type LocalStore,
-  type ModelRegistry,
   verifySubagentOutcomeEvidence,
+} from "@napier/runtime/subagents";
+import {
+  type LocalStore,
+} from "@napier/runtime/store";
+import {
+  type ModelRegistry,
+} from "@napier/runtime/model";
+import {
   type WorkspaceFileMutationManager,
-} from "@napier/runtime";
+} from "@napier/runtime/code";
 import { Hono } from "hono";
 
 import { errorMessage, jsonError } from "./http-response-evidence.js";

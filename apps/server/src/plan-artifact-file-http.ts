@@ -1,5 +1,6 @@
 import type { ExecutionPlan } from "@napier/contracts";
-import { createId, exportWorkspaceFileArtifact } from "@napier/runtime";
+import { createId } from "@napier/runtime/core";
+import { exportWorkspaceFileArtifact } from "@napier/runtime/workflow";
 import { Hono } from "hono";
 
 import {

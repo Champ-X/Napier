@@ -7,8 +7,10 @@ import {
 } from "@napier/contracts";
 import {
   normalizePromptVariableDefinitions,
+} from "@napier/runtime/model";
+import {
   normalizeToolLoopGuardPolicy,
-} from "@napier/runtime";
+} from "@napier/runtime/tools";
 
 import {
   normalizeBoundedPrompt,

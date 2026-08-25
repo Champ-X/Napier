@@ -4,12 +4,14 @@ import {
   AutomationService,
   ChannelService,
   createLocalAgentRuntime,
-  EvaluationCasebookQualificationService,
-  EvaluationSuiteService,
   type LocalAgentRuntimeServices,
   RecoveryService,
+} from "@napier/runtime/agent";
+import {
+  EvaluationCasebookQualificationService,
+  EvaluationSuiteService,
   RunEvaluationService,
-} from "@napier/runtime";
+} from "@napier/runtime/evaluation";
 
 import { BrowserTasks } from "./browser-task-integration.js";
 import { ReceiptTrustAnchorDirectoryDiscoveryService } from "./receipt-trust-directory-discovery.js";

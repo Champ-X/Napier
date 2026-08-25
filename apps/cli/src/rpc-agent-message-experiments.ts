@@ -2,7 +2,7 @@ import type {
   NapierRpcAgentMessageExperimentPreviewParams,
   NapierRpcAgentMessageExperimentRunParams,
 } from "@napier/contracts";
-import { validateCreateAgentMessageExperimentRequest } from "@napier/runtime";
+import { validateCreateAgentMessageExperimentRequest } from "@napier/runtime/evaluation";
 
 import { invalidParams, resourceId } from "./rpc-protocol.js";
 

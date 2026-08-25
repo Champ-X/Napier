@@ -1,14 +1,20 @@
 import type { RunEvent, RunRecord, StreamFrame } from "@napier/contracts";
 import {
   type AgentKernel,
+} from "@napier/runtime/agent";
+import {
   hashEventStream,
-  type LocalStore,
-  type ModelRegistry,
   streamEventFrame,
   streamRunDoneFrame,
   streamRunErrorFrame,
   streamSnapshotFrame,
-} from "@napier/runtime";
+} from "@napier/runtime/core";
+import {
+  type LocalStore,
+} from "@napier/runtime/store";
+import {
+  type ModelRegistry,
+} from "@napier/runtime/model";
 import { Hono, type Context } from "hono";
 import { streamSSE } from "hono/streaming";
 
@@ -66,7 +72,7 @@ export interface ThreadExecutionHttpServices {
   >;
   models: ModelRegistry;
   agentCapabilities: Pick<
-    import("@napier/runtime").LocalAgentRuntimeServices["agentCapabilities"],
+    import("@napier/runtime/agent").LocalAgentRuntimeServices["agentCapabilities"],
     "blockedRunReadinessProjection"
   >;
 }

@@ -16,20 +16,28 @@ import type {
 } from "@napier/contracts";
 import type {
   EmbeddedAgentService,
+} from "@napier/runtime/subagents";
+import type {
   EmbeddedWorkflowService,
-  AgentMessageExperimentRuntime,
   ExecutionPlanWorkflowExperimentRuntime,
+} from "@napier/runtime/workflow";
+import type {
+  AgentMessageExperimentRuntime,
   ModelInvocationExperimentRuntime,
   ToolInvocationExperimentRuntime,
-} from "@napier/runtime";
+} from "@napier/runtime/evaluation";
 import {
   AgentMessageExperimentPreviewChangedError,
-  EmbeddedWorkflowApprovalError,
   ModelInvocationExperimentPreviewChangedError,
   ToolInvocationExperimentPreviewChangedError,
-  streamEventFrame,
+} from "@napier/runtime/evaluation";
+import {
+  EmbeddedWorkflowApprovalError,
   WorkflowExperimentConflictError,
-} from "@napier/runtime";
+} from "@napier/runtime/workflow";
+import {
+  streamEventFrame,
+} from "@napier/runtime/core";
 
 import {
   parseAgentMessageExperimentPreviewParams,

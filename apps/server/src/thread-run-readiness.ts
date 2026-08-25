@@ -1,5 +1,5 @@
 import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
-import type { LocalAgentRuntimeServices } from "@napier/runtime";
+import type { LocalAgentRuntimeServices } from "@napier/runtime/agent";
 import { processRunReadinessMessage } from "@napier/runtime/process-run-readiness";
 
 type ThreadRunReadinessStore = Pick<

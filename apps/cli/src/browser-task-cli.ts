@@ -5,12 +5,14 @@ import {
   BrowserUseCloudError,
   BrowserUseLocalBackend,
   BrowserUseLocalError,
-  sha256,
   type BrowserUseCloudObservation,
   type BrowserUseCloudTaskResult,
   type BrowserUseLocalObservation,
   type BrowserUseLocalTaskResult,
-} from "@napier/runtime";
+} from "@napier/runtime/browser";
+import {
+  sha256,
+} from "@napier/runtime/core";
 
 import type { CliBrowserTaskOptions } from "./cli-browser-task-options.js";
 import { subscribeBrowserTaskControls } from "./browser-task-control-cli.js";

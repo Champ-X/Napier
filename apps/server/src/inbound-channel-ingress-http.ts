@@ -4,9 +4,13 @@ import type {
 } from "@napier/contracts";
 import {
   type ChannelService,
+} from "@napier/runtime/agent";
+import {
   type LocalStore,
+} from "@napier/runtime/store";
+import {
   type ModelRegistry,
-} from "@napier/runtime";
+} from "@napier/runtime/model";
 import { Hono } from "hono";
 
 import {

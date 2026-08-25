@@ -1,5 +1,6 @@
 import type { GoalState, JsonValue, RunEvent } from "@napier/contracts";
-import { canonicalJson, sha256, type LocalStore } from "@napier/runtime";
+import { canonicalJson, sha256 } from "@napier/runtime/core";
+import { type LocalStore } from "@napier/runtime/store";
 
 import type {
   GoalNoProgressBenchmarkLedger,

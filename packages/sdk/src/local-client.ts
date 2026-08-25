@@ -13,7 +13,7 @@ import type {
   ToolInvocationExperimentPreview,
   ToolInvocationExperimentResult,
 } from "@napier/contracts";
-import type { LocalAgentRuntimeServices } from "@napier/runtime";
+import type { LocalAgentRuntimeServices } from "@napier/runtime/agent";
 
 import {
   previewNapierAgentMessageExperiment,

@@ -6,7 +6,7 @@ import {
   agentCapabilityStatus,
   type AgentCapabilityPresetId,
 } from "@napier/contracts/agent-capabilities";
-import type { LocalAgentRuntimeServices } from "@napier/runtime";
+import type { LocalAgentRuntimeServices } from "@napier/runtime/agent";
 import {
   probeShellRuntime,
   type RuntimeCapabilityProbe,

@@ -1,5 +1,5 @@
 import type { WorkspaceSummary } from "@napier/contracts";
-import type { LocalStore } from "@napier/runtime";
+import type { LocalStore } from "@napier/runtime/store";
 import { Hono } from "hono";
 
 import {

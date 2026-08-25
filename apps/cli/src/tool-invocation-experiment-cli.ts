@@ -4,13 +4,17 @@ import type { Writable } from "node:stream";
 import type { RunEvent } from "@napier/contracts";
 import {
   canonicalJson,
-  createToolInvocationExperimentResultFrame,
   hashEventStream,
   streamRunErrorFrame,
   streamSnapshotFrame,
+} from "@napier/runtime/core";
+import {
+  createToolInvocationExperimentResultFrame,
+} from "@napier/runtime/evaluation";
+import {
   type LocalAgentRuntimeOptions,
   type LocalAgentRuntimeServices,
-} from "@napier/runtime";
+} from "@napier/runtime/agent";
 
 import type { CliToolInvocationExperimentOptions } from "./cli-options.js";
 import { writeLine } from "./cli-output.js";

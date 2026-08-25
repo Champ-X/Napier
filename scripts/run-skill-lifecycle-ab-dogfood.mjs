@@ -15,7 +15,7 @@ import {
   createLocalAgentRuntime,
   createThreadReplayBundle,
   verifyThreadReplayBundle,
-} from "@napier/runtime";
+} from "@napier/runtime/agent";
 
 import {
   assertSecretAbsent,

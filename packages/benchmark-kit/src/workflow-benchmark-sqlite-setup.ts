@@ -2,7 +2,7 @@ import { mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { constants, DatabaseSync } from "node:sqlite";
 
-import { sha256 } from "@napier/runtime";
+import { sha256 } from "@napier/runtime/core";
 
 import type { LoadedWorkflowBenchmarkCase } from "./workflow-benchmark-case.js";
 

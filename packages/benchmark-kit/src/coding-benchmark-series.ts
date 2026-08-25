@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-import { createLocalAgentRuntime } from "@napier/runtime";
+import { createLocalAgentRuntime } from "@napier/runtime/agent";
 
 import {
   runCodingBenchmark,

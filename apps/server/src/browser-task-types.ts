@@ -5,7 +5,7 @@ import type {
   BrowserUseLocalObservation,
   BrowserUseLocalTaskRequest,
   BrowserUseLocalTaskResult,
-} from "@napier/runtime";
+} from "@napier/runtime/browser";
 
 export type BrowserTaskBackend = "browser_use_local" | "browser_use_cloud";
 

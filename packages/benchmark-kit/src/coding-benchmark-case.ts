@@ -5,9 +5,11 @@ import ts from "typescript";
 
 import {
   canonicalJson,
-  createWorkspacePathSnapshot,
   sha256,
-} from "@napier/runtime";
+} from "@napier/runtime/core";
+import {
+  createWorkspacePathSnapshot,
+} from "@napier/runtime/code";
 
 import {
   validateCodingBenchmarkCase,

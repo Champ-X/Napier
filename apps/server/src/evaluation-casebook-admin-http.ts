@@ -1,7 +1,10 @@
 import type { Context, Hono } from "hono";
 
 import type { EvaluationCasebook, JsonValue } from "@napier/contracts";
-import { createId, type EvaluationCasebookQualificationService, type LocalStore, type ModelRegistry } from "@napier/runtime";
+import { createId } from "@napier/runtime/core";
+import { type EvaluationCasebookQualificationService } from "@napier/runtime/evaluation";
+import { type LocalStore } from "@napier/runtime/store";
+import { type ModelRegistry } from "@napier/runtime/model";
 import { evaluationCasebookTemplates } from "@napier/runtime/evaluation-casebook-templates";
 
 import {

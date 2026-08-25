@@ -3,19 +3,25 @@ import path from "node:path";
 import type { RunEvent } from "@napier/contracts";
 import {
   canonicalJson,
-  createExecutionPlanWorkflowExperimentResultFrame,
-  createExecutionPlanWorkflowResultFrame,
-  createLocalAgentRuntime,
-  createThreadBranch,
   hashEventStream,
-  loadWorkspaceSourceFile,
-  MAX_EXECUTION_PLAN_WORKFLOW_MANIFEST_BYTES,
   streamRunDoneFrame,
   streamRunErrorFrame,
   streamSnapshotFrame,
+} from "@napier/runtime/core";
+import {
+  createExecutionPlanWorkflowExperimentResultFrame,
+  createExecutionPlanWorkflowResultFrame,
+  MAX_EXECUTION_PLAN_WORKFLOW_MANIFEST_BYTES,
   validateExecuteExecutionPlanWorkflowRequest,
+} from "@napier/runtime/workflow";
+import {
+  createLocalAgentRuntime,
+  createThreadBranch,
   type LocalAgentRuntimeServices,
-} from "@napier/runtime";
+} from "@napier/runtime/agent";
+import {
+  loadWorkspaceSourceFile,
+} from "@napier/runtime/code";
 
 import {
   CLI_HELP,

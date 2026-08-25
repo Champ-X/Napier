@@ -1,5 +1,5 @@
 import type { StreamFrame } from "@napier/contracts";
-import { streamRunErrorFrame } from "@napier/runtime";
+import { streamRunErrorFrame } from "@napier/runtime/core";
 
 const PUBLIC_MESSAGES = {
   credential_env_unavailable:

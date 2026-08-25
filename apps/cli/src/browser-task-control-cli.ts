@@ -3,7 +3,7 @@ import type { Readable } from "node:stream";
 import type {
   BrowserUseLocalBackend,
   BrowserUseLocalControlObservation,
-} from "@napier/runtime";
+} from "@napier/runtime/browser";
 
 export function subscribeBrowserTaskControls(input: {
   stdin?: Readable;

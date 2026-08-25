@@ -24,7 +24,7 @@
   },
   "publicApi": {
     "maximumRuntimeRootExports": 199,
-    "maximumInternalRuntimeRootImportFiles": 198,
+    "maximumInternalRuntimeRootImportFiles": 0,
     "maximumWebDuplicateDefaultExports": 0
   }
 }

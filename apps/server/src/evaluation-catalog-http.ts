@@ -3,8 +3,10 @@ import type { Context, Hono } from "hono";
 import {
   createEvaluationCasebookQualificationReceipt,
   createEvaluationSuiteGateReceipt,
+} from "@napier/runtime/evaluation";
+import {
   type LocalStore,
-} from "@napier/runtime";
+} from "@napier/runtime/store";
 
 export type EvaluationCatalogStore = Pick<
   LocalStore,

@@ -5,7 +5,7 @@ import type {
   OsSandboxAdapter,
   SandboxedProcess,
   SandboxLaunchRequest,
-} from "@napier/runtime";
+} from "@napier/runtime/code";
 
 export const TRUSTED_OUTER_PROCESS_BENCHMARK_SANDBOX_ID =
   "trusted-outer-process-benchmark";

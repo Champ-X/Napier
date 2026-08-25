@@ -3,8 +3,10 @@ import {
   BrowserUseLocalError,
   browserUseCloudRuntimeRoot,
   browserUseLocalRuntimeRoot,
+} from "@napier/runtime/browser";
+import {
   sha256,
-} from "@napier/runtime";
+} from "@napier/runtime/core";
 import path from "node:path";
 
 import type { BrowserTaskJournalRecord } from "./browser-task-journal.js";

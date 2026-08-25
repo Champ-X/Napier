@@ -6,10 +6,16 @@ import type {
 } from "@napier/contracts";
 import {
   changedAgentFields,
+} from "@napier/runtime/agent";
+import {
   createId,
+} from "@napier/runtime/core";
+import {
   type LocalStore,
+} from "@napier/runtime/store";
+import {
   type ModelRegistry,
-} from "@napier/runtime";
+} from "@napier/runtime/model";
 import { Hono, type Context } from "hono";
 
 import {
@@ -44,7 +50,7 @@ type AgentProfileHttpStore = Pick<
 export interface AgentProfileHttpServices {
   store: AgentProfileHttpStore;
   models: ModelRegistry;
-  agentCapabilities: import("@napier/runtime").LocalAgentRuntimeServices["agentCapabilities"];
+  agentCapabilities: import("@napier/runtime/agent").LocalAgentRuntimeServices["agentCapabilities"];
 }
 
 export function registerAgentProfileHttp(

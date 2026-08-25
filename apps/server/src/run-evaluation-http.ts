@@ -2,9 +2,13 @@ import type { Context, Hono } from "hono";
 
 import {
   type LocalStore,
+} from "@napier/runtime/store";
+import {
   type ModelRegistry,
+} from "@napier/runtime/model";
+import {
   type RunEvaluationService,
-} from "@napier/runtime";
+} from "@napier/runtime/evaluation";
 
 import { parseCreateRunEvaluationRequest } from "./evaluation-http-validation.js";
 import { assertAvailableModel } from "./model-http-availability.js";

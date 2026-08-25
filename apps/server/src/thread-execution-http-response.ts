@@ -2,7 +2,7 @@ import type { PromptRequest, ResumeRunRequest } from "@napier/contracts";
 import {
   RUN_STREAM_ERROR_CODE,
   RUN_STREAM_ERROR_MESSAGE,
-} from "@napier/runtime";
+} from "@napier/runtime/core";
 import type { Context } from "hono";
 
 import {

@@ -1,5 +1,5 @@
 import type { Hono } from "hono";
-import type { CredentialReferenceStore } from "@napier/runtime";
+import type { CredentialReferenceStore } from "@napier/runtime/governance";
 
 import { registerBrowserTaskHttp } from "./browser-task-http.js";
 import { BrowserTaskService } from "./browser-task-service.js";

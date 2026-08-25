@@ -7,10 +7,14 @@ import {
 } from "@napier/contracts";
 import {
   canonicalJson,
+} from "@napier/runtime/core";
+import {
   validateMcpEndpoint,
+} from "@napier/runtime/tools";
+import {
   validateReceiptTrustAnchorDirectory,
   verifyReceiptTrustAnchorDirectory,
-} from "@napier/runtime";
+} from "@napier/runtime/governance";
 
 export const MAX_RECEIPT_TRUST_DIRECTORY_RESPONSE_BYTES = 2 * 1024 * 1024;
 export const RECEIPT_TRUST_DIRECTORY_DISCOVERY_TIMEOUT_MS = 8_000;
