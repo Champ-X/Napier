@@ -5,8 +5,12 @@ import { browserLiveViewExpected } from "./browser-live-view-state";
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
 
 const LazyOperatorDecisionPanel = lazy(() => import("./OperatorDecisionPanel"));
-const LazyBrowserInteractionConfirmationPanel = lazy(
-  () => import("./BrowserInteractionConfirmationPanel"),
+const LazyBrowserInteractionConfirmationPanel = lazy(() =>
+  import("./BrowserInteractionConfirmationPanel").then(
+    ({ BrowserInteractionConfirmationPanel }) => ({
+      default: BrowserInteractionConfirmationPanel,
+    }),
+  ),
 );
 
 type WorkspaceViewModel = ReturnType<typeof useWorkspaceViewModel>;
@@ -78,5 +82,3 @@ export function RunDecisionDockets({
     </div>
   );
 }
-
-export default RunDecisionDockets;

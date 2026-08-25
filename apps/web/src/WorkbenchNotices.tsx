@@ -35,5 +35,3 @@ export function WorkbenchNotices({
     </div>
   );
 }
-
-export default WorkbenchNotices;

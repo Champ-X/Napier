@@ -6,8 +6,12 @@ import { PlanInspectorSurface } from "./PlanInspectorSurface";
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
 
 const LazyRunLabPanel = lazy(() => import("./RunLabPanel"));
-const LazyDefaultProductTrialRecorder = lazy(
-  () => import("./DefaultProductTrialRecorder"),
+const LazyDefaultProductTrialRecorder = lazy(() =>
+  import("./DefaultProductTrialRecorder").then(
+    ({ DefaultProductTrialRecorder }) => ({
+      default: DefaultProductTrialRecorder,
+    }),
+  ),
 );
 type WorkspaceViewModel = ReturnType<typeof useWorkspaceViewModel>;
 
@@ -21,10 +25,15 @@ export function DeveloperToolsPanel({
   onConversation(): void;
 }) {
   return (
-    <section className="developer-tools" aria-labelledby="developer-tools-title">
+    <section
+      className="developer-tools"
+      aria-labelledby="developer-tools-title"
+    >
       <header>
         <span>{copy.settingsSurface.developerSection}</span>
-        <h2 id="developer-tools-title">{copy.settingsSurface.developerSection}</h2>
+        <h2 id="developer-tools-title">
+          {copy.settingsSurface.developerSection}
+        </h2>
         <p>{copy.settingsSurface.developerIntro}</p>
       </header>
 
@@ -98,7 +107,9 @@ export function DeveloperToolsPanel({
             <Gauge size={16} aria-hidden="true" />
             {copy.settingsSurface.productTrial}
           </summary>
-          <Suspense fallback={<div className="context-loading" role="status" />}>
+          <Suspense
+            fallback={<div className="context-loading" role="status" />}
+          >
             <LazyDefaultProductTrialRecorder
               threadId={vm.detail.thread.id}
               runs={vm.detail.runs}

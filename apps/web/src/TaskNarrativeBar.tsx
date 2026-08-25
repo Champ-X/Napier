@@ -156,8 +156,6 @@ export function TaskNarrativeBar({
   );
 }
 
-export default TaskNarrativeBar;
-
 function harnessFamily(
   family: "anthropic" | "openai" | "google" | "generic",
 ): string {

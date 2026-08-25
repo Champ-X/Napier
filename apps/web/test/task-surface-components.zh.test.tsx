@@ -83,6 +83,33 @@ describe("ordinary task surface Chinese copy", () => {
     expect(expandedMarkup).toContain("report.md");
     expect(expandedMarkup).not.toContain("Task result");
   });
+
+  it("renders only measured task progress without inventing a percentage", async () => {
+    const container = installChineseDom();
+    const { TaskOverviewPanel } = await import("../src/TaskOverviewPanel");
+
+    render(
+      <TaskOverviewPanel
+        detail={taskOverviewDetail()}
+        goal={undefined}
+        goalDraft=""
+        modelConfigured
+        decision={undefined}
+        onGoalDraft={vi.fn()}
+        onGoalSave={vi.fn()}
+        onGoalClear={vi.fn()}
+        onContinue={vi.fn()}
+        onReviewDecision={vi.fn()}
+      />,
+      container,
+    );
+
+    const progress = container.querySelector(".task-overview-progress");
+    expect(progress?.textContent).toContain("3 / 5");
+    expect(progress?.textContent).toContain("3");
+    expect(progress?.textContent).not.toContain("%");
+    expect(container.innerHTML).not.toContain("width:");
+  });
 });
 
 function installChineseDom(): HTMLElement {
@@ -106,6 +133,42 @@ function installChineseDom(): HTMLElement {
 
 function click(element: Element): void {
   element.dispatchEvent(new Event("click", { bubbles: true }));
+}
+
+function taskOverviewDetail() {
+  return {
+    thread: { title: "交付版本" },
+    plans: [
+      {
+        id: "plan_1",
+        threadId: "thread_1",
+        objective: "交付版本",
+        status: "active",
+        steps: [],
+        artifacts: [],
+        replans: [],
+        replanRecommendation: null,
+        criticalPathStepIds: [],
+        readyStepIds: [],
+        blockedStepIds: [],
+        phaseWaves: [],
+        activePhaseIndex: null,
+        parallelReadyStepIds: [],
+        phaseProjectionSha256: "",
+        revision: 1,
+        createdAt: "2026-08-26T00:00:00.000Z",
+        updatedAt: "2026-08-26T00:00:00.000Z",
+      },
+    ],
+    activePlan: {
+      objective: "交付版本",
+      status: "active",
+      completedStepCount: 3,
+      stepCount: 5,
+      verifiedArtifactCount: 2,
+      producedArtifactCount: 1,
+    },
+  } as never;
 }
 
 function planItem(): ConversationPlan {

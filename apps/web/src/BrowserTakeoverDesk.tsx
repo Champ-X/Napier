@@ -109,5 +109,3 @@ export function BrowserTakeoverDesk({
     </section>
   );
 }
-
-export default BrowserTakeoverDesk;

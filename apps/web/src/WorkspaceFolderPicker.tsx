@@ -222,5 +222,3 @@ function FolderPickerEntries({
     </ul>
   );
 }
-
-export default WorkspaceFolderPicker;

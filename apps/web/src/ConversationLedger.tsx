@@ -89,8 +89,6 @@ export function ConversationLedger({
   );
 }
 
-export default ConversationLedger;
-
 function renderFeedItem(
   item: ConversationFeedEntry,
   projection: ReturnType<typeof conversationFeedProjection>,

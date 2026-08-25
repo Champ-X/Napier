@@ -19,7 +19,11 @@ import {
 import { useAgentCapabilityProjection } from "./use-agent-capability-projection";
 import "./agent-capability-composer.css";
 
-const LazySandboxSetupCard = lazy(() => import("./SandboxSetupCard"));
+const LazySandboxSetupCard = lazy(() =>
+  import("./SandboxSetupCard").then(({ SandboxSetupCard }) => ({
+    default: SandboxSetupCard,
+  })),
+);
 
 export interface ComposerCapabilityControlProps {
   agent: AgentProfile | undefined;
@@ -190,5 +194,3 @@ export function ComposerCapabilityControl({
     </div>
   );
 }
-
-export default ComposerCapabilityControl;

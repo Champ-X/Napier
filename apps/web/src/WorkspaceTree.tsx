@@ -16,8 +16,14 @@ import type { TrashedThreadReceipt } from "./use-thread-trash";
 import { listWorkspaceThreads } from "./workspace-tree-api";
 import { WorkspaceThreadPreviews } from "./WorkspaceThreadPreviews";
 
-const LazyThreadList = lazy(() => import("./ThreadList"));
-const LazyWorkspaceFolderPicker = lazy(() => import("./WorkspaceFolderPicker"));
+const LazyThreadList = lazy(() =>
+  import("./ThreadList").then(({ ThreadList }) => ({ default: ThreadList })),
+);
+const LazyWorkspaceFolderPicker = lazy(() =>
+  import("./WorkspaceFolderPicker").then(({ WorkspaceFolderPicker }) => ({
+    default: WorkspaceFolderPicker,
+  })),
+);
 
 interface RecentWorkspace {
   root: string;
@@ -275,5 +281,3 @@ function basename(root: string): string {
   const parts = root.split("/").filter(Boolean);
   return parts.at(-1) ?? root;
 }
-
-export default WorkspaceTree;

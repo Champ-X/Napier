@@ -161,5 +161,3 @@ export function BrowserInteractionConfirmationPanel({
     </section>
   );
 }
-
-export default BrowserInteractionConfirmationPanel;

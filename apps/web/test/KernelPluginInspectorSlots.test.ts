@@ -10,7 +10,8 @@ import {
 } from "../src/KernelPluginInspectorSlots";
 
 vi.mock("../src/BrowserInspectorPanel", () => ({
-  default: () => h("div", { "data-plugin-browser-slot": "mounted" }),
+  BrowserInspectorPanel: () =>
+    h("div", { "data-plugin-browser-slot": "mounted" }),
 }));
 
 const containers: HTMLElement[] = [];

@@ -35,5 +35,3 @@ export function EnvironmentDegradationNotice({
     </span>
   );
 }
-
-export default EnvironmentDegradationNotice;

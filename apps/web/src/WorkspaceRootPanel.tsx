@@ -89,5 +89,3 @@ export function WorkspaceRootPanel({
     </section>
   );
 }
-
-export default WorkspaceRootPanel;

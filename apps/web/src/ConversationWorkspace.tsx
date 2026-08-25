@@ -6,7 +6,11 @@ import { useConversationFollow } from "./use-conversation-follow";
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
 import { shouldShowWelcomePanel, WelcomePanel } from "./WelcomePanel";
 
-const LazyConversationLedger = lazy(() => import("./ConversationLedger"));
+const LazyConversationLedger = lazy(() =>
+  import("./ConversationLedger").then(({ ConversationLedger }) => ({
+    default: ConversationLedger,
+  })),
+);
 
 type WorkspaceViewModel = ReturnType<typeof useWorkspaceViewModel>;
 

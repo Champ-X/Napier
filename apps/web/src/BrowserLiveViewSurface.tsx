@@ -9,7 +9,11 @@ import { browserLiveCopy } from "./browser-live-copy";
 import { getLocale } from "./locale";
 import "./browser-live-view.css";
 
-const LazyBrowserTakeoverDesk = lazy(() => import("./BrowserTakeoverDesk"));
+const LazyBrowserTakeoverDesk = lazy(() =>
+  import("./BrowserTakeoverDesk").then(({ BrowserTakeoverDesk }) => ({
+    default: BrowserTakeoverDesk,
+  })),
+);
 
 export interface BrowserLiveViewSurfaceProps {
   threadId: string;

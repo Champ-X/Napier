@@ -70,5 +70,3 @@ export function focusBrowserLive(): void {
   target?.scrollIntoView({ behavior: motionScrollBehavior(), block: "center" });
   target?.focus({ preventScroll: true });
 }
-
-export default BrowserInspectorPanel;

@@ -277,5 +277,3 @@ export function SandboxSetupCard({
     </section>
   );
 }
-
-export default SandboxSetupCard;

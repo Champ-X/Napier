@@ -20,11 +20,23 @@ import type { SelectedModelAvailability } from "./model-selection-view-model";
 import { useComposerHeight } from "./use-composer-height";
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
 
-const LazyComposerCapabilityControl = lazy(
-  () => import("./ComposerCapabilityControl"),
+const LazyComposerCapabilityControl = lazy(() =>
+  import("./ComposerCapabilityControl").then(
+    ({ ComposerCapabilityControl }) => ({
+      default: ComposerCapabilityControl,
+    }),
+  ),
 );
-const LazyProviderSetupCard = lazy(() => import("./ProviderSetupCard"));
-const LazyWorkspaceFolderPicker = lazy(() => import("./WorkspaceFolderPicker"));
+const LazyProviderSetupCard = lazy(() =>
+  import("./ProviderSetupCard").then(({ ProviderSetupCard }) => ({
+    default: ProviderSetupCard,
+  })),
+);
+const LazyWorkspaceFolderPicker = lazy(() =>
+  import("./WorkspaceFolderPicker").then(({ WorkspaceFolderPicker }) => ({
+    default: WorkspaceFolderPicker,
+  })),
+);
 
 type WorkspaceViewModel = ReturnType<typeof useWorkspaceViewModel>;
 
@@ -296,5 +308,3 @@ function runButtonDescription(
       ? READINESS_WARNING_ID
       : undefined;
 }
-
-export default Composer;

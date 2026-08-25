@@ -1,188 +1,4 @@
-/* Progressive-disclosure inspector and process surfaces. */
-.inspector {
-  position: fixed;
-  z-index: 30;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  display: none;
-  width: min(var(--shell-drawer-width), calc(100vw - 32px));
-  min-width: 0;
-  min-height: 0;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: 48px auto minmax(0, 1fr);
-  background: var(--paper-deep);
-  border-left: 1px solid var(--rule-strong);
-  box-shadow: -18px 0 48px color-mix(in srgb, var(--color-blue-16) 12%, transparent);
-}
-
-.inspector.is-drawer-open {
-  display: grid;
-  animation: drawer-enter 180ms ease-out both;
-}
-
-.inspector-drawer-trigger {
-  position: fixed;
-  z-index: 20;
-  top: 86px;
-  right: 18px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 10px;
-  font-family: var(--mono);
-  font-size: var(--text-xs);
-  color: var(--color-paper);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  cursor: pointer;
-  background: var(--ledger);
-  border: 1px solid var(--ledger);
-  border-radius: 8px;
-  box-shadow: 0 8px 22px color-mix(in srgb, var(--color-focus-ring) 22%, transparent);
-}
-
-.inspector-drawer-backdrop {
-  position: fixed;
-  z-index: 25;
-  inset: 0;
-  display: block;
-  padding: 0;
-  cursor: pointer;
-  background: color-mix(in srgb, var(--color-blue-16) 28%, transparent);
-  border: 0;
-  backdrop-filter: blur(2px);
-}
-
-.inspector-drawer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 10px 0 14px;
-  background: var(--paper);
-  border-bottom: 1px solid var(--rule);
-}
-
-.inspector-drawer-header > span,
-.inspector-drawer-header > button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.inspector-drawer-header > span {
-  font-family: var(--mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.inspector-drawer-header > button {
-  padding: 6px;
-  cursor: pointer;
-  background: transparent;
-  border: 0;
-}
-
-.inspector-drawer-trigger[aria-expanded="true"] {
-  display: none;
-}
-
-.inspector-navigation {
-  background: var(--paper-deep);
-  border-bottom: 1px solid var(--rule);
-}
-
-.inspector-groups {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  padding: 7px 9px 0;
-}
-
-.inspector-groups button {
-  display: inline-flex;
-  min-height: 44px;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 5px;
-  font-family: var(--mono);
-  font-size: var(--text-xs);
-  color: var(--ink-faint);
-  cursor: pointer;
-  background: transparent;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-  text-transform: uppercase;
-}
-
-.inspector-groups button.is-active {
-  color: var(--ink);
-  border-bottom-color: var(--vermilion);
-}
-
-.inspector-tabs {
-  display: flex;
-  min-width: 0;
-  overflow: auto hidden;
-  padding: 4px 9px 0;
-  scrollbar-width: thin;
-  scrollbar-color: var(--rule-strong) transparent;
-}
-
-.inspector-tabs button {
-  position: relative;
-  display: flex;
-  min-width: 58px;
-  min-height: 44px;
-  flex: 1 0 58px;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 2px;
-  padding: 5px 2px 7px;
-  font-family: var(--mono);
-  font-size: var(--text-xs);
-  color: var(--ink-faint);
-  cursor: pointer;
-  background: transparent;
-  border: 0;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.inspector-tabs button svg {
-  width: 12px;
-  height: 12px;
-}
-
-.inspector-tabs button::after {
-  position: absolute;
-  right: 12px;
-  bottom: -1px;
-  left: 12px;
-  height: 2px;
-  content: "";
-  background: transparent;
-}
-
-.inspector-tabs button.is-active {
-  color: var(--ink);
-}
-
-.inspector-tabs button.is-active::after {
-  background: var(--vermilion);
-}
-
-.inspector-body {
-  min-height: 0;
-  min-width: 0;
-  overflow: hidden auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--rule-strong) transparent;
-}
+/* Plan and process surfaces. */
 
 .panel-section {
   padding: 25px 20px 35px;
@@ -309,8 +125,15 @@
   padding: 13px;
   overflow: hidden;
   background:
-    linear-gradient(color-mix(in srgb, var(--color-surface-muted) 94%, transparent), color-mix(in srgb, var(--color-surface-muted) 94%, transparent)),
-    repeating-linear-gradient(0deg, transparent 0 23px, color-mix(in srgb, var(--color-sage-31) 7%, transparent) 24px);
+    linear-gradient(
+      color-mix(in srgb, var(--color-surface-muted) 94%, transparent),
+      color-mix(in srgb, var(--color-surface-muted) 94%, transparent)
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 23px,
+      color-mix(in srgb, var(--color-sage-31) 7%, transparent) 24px
+    );
   border: 1px solid var(--rule-strong);
   border-top: 3px double var(--color-gray-52);
   box-shadow: 3px 4px 0 color-mix(in srgb, var(--color-gray-30) 6%, transparent);
@@ -396,15 +219,19 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   margin: 10px 0 0;
-  border-top: 1px solid color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
-  border-left: 1px solid color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
+  border-top: 1px solid
+    color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
+  border-left: 1px solid
+    color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
 }
 
 .process-card dl > div {
   min-width: 0;
   padding: 7px;
-  border-right: 1px solid color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
+  border-right: 1px solid
+    color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
 }
 
 .process-card dt {
@@ -639,14 +466,18 @@
   margin-top: 10px;
   color: var(--color-success-surface);
   background:
-    linear-gradient(color-mix(in srgb, var(--color-sage-17) 96%, transparent), color-mix(in srgb, var(--color-sage-17) 96%, transparent)),
+    linear-gradient(
+      color-mix(in srgb, var(--color-sage-17) 96%, transparent),
+      color-mix(in srgb, var(--color-sage-17) 96%, transparent)
+    ),
     repeating-linear-gradient(
       0deg,
       transparent 0 17px,
       color-mix(in srgb, var(--color-paper) 4%, transparent) 18px
     );
   border: 1px solid var(--color-sage-17);
-  box-shadow: inset 0 0 18px color-mix(in srgb, var(--color-shadow) 18%, transparent);
+  box-shadow: inset 0 0 18px
+    color-mix(in srgb, var(--color-shadow) 18%, transparent);
 }
 
 .process-output > strong {
@@ -704,8 +535,15 @@
   position: relative;
   padding: 13px;
   background:
-    linear-gradient(color-mix(in srgb, var(--color-surface-muted) 94%, transparent), color-mix(in srgb, var(--color-surface-muted) 94%, transparent)),
-    repeating-linear-gradient(0deg, transparent 0 23px, color-mix(in srgb, var(--color-sage-31) 7%, transparent) 24px);
+    linear-gradient(
+      color-mix(in srgb, var(--color-surface-muted) 94%, transparent),
+      color-mix(in srgb, var(--color-surface-muted) 94%, transparent)
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 23px,
+      color-mix(in srgb, var(--color-sage-31) 7%, transparent) 24px
+    );
   border: 1px solid var(--rule-strong);
   border-top: 3px double var(--color-gray-52);
   box-shadow: 3px 4px 0 color-mix(in srgb, var(--color-gray-30) 6%, transparent);
@@ -762,15 +600,19 @@
 .files-card dl {
   display: grid;
   margin: 10px 0;
-  border-top: 1px solid color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
-  border-left: 1px solid color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
+  border-top: 1px solid
+    color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
+  border-left: 1px solid
+    color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
 }
 
 .files-card dl > div {
   min-width: 0;
   padding: 7px;
-  border-right: 1px solid color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
+  border-right: 1px solid
+    color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
 }
 
 .files-card dt {
@@ -906,7 +748,6 @@
 }
 
 .live-index,
-.goal-state,
 .memory-count,
 .extension-count,
 .lab-count,
@@ -925,24 +766,6 @@
   background: var(--color-warning-surface);
   border-color: var(--color-gold-69);
   animation: breathe 1.4s ease-in-out infinite;
-}
-
-.goal-state.goal-active {
-  color: var(--ledger);
-  background: var(--ledger-soft);
-  border-color: var(--color-sage-76);
-}
-
-.goal-state.goal-completed {
-  color: var(--color-green-26);
-  background: var(--color-success-surface);
-  border-color: var(--color-sage-67);
-}
-
-.goal-state.goal-blocked {
-  color: var(--color-danger-fg);
-  background: var(--vermilion-soft);
-  border-color: var(--color-red-72);
 }
 
 .empty-panel {

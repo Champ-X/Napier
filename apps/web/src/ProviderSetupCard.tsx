@@ -169,8 +169,6 @@ export function ProviderSetupCard({
   );
 }
 
-export default ProviderSetupCard;
-
 function ProviderCandidate({
   candidate,
 }: {

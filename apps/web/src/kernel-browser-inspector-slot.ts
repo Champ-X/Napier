@@ -6,5 +6,8 @@ export const browserKernelInspectorSlot = {
   clientEntry: "@napier/web/kernel-browser-inspector-slot",
   slot: "inspector.panel",
   tab: "browser",
-  load: () => import("./BrowserInspectorPanel"),
+  load: () =>
+    import("./BrowserInspectorPanel").then(({ BrowserInspectorPanel }) => ({
+      default: BrowserInspectorPanel,
+    })),
 } as const;

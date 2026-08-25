@@ -186,5 +186,3 @@ function casesMissingFrom(
     (caseId) => !availableCaseIds.has(caseId),
   );
 }
-
-export default DefaultProductTrialRecorder;

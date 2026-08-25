@@ -83,27 +83,34 @@ function compactCount(value: number): string {
   return value > 999 ? `${(value / 1_000).toFixed(1)}k` : String(value);
 }
 
+export function adjacentWorkspaceView(
+  current: WorkspaceView,
+  key: string,
+): WorkspaceView | undefined {
+  const index = workspaceViews.findIndex((view) => view.id === current);
+  const next =
+    key === "ArrowRight" || key === "ArrowDown"
+      ? (index + 1) % workspaceViews.length
+      : key === "ArrowLeft" || key === "ArrowUp"
+        ? (index - 1 + workspaceViews.length) % workspaceViews.length
+        : key === "Home"
+          ? 0
+          : key === "End"
+            ? workspaceViews.length - 1
+            : undefined;
+  return next === undefined ? undefined : workspaceViews[next]?.id;
+}
+
 function moveWorkspaceView(
   event: KeyboardEvent<HTMLButtonElement>,
   current: WorkspaceView,
   onChange: (view: WorkspaceView) => void,
 ): void {
-  const index = workspaceViews.findIndex((view) => view.id === current);
-  const next =
-    event.key === "ArrowRight"
-      ? (index + 1) % workspaceViews.length
-      : event.key === "ArrowLeft"
-        ? (index - 1 + workspaceViews.length) % workspaceViews.length
-        : event.key === "Home"
-          ? 0
-          : event.key === "End"
-            ? workspaceViews.length - 1
-            : undefined;
-  if (next === undefined) return;
+  const next = adjacentWorkspaceView(current, event.key);
+  if (!next) return;
   event.preventDefault();
-  const view = workspaceViews[next]!;
-  onChange(view.id);
+  onChange(next);
   requestAnimationFrame(() =>
-    document.getElementById(`workspace-view-${view.id}`)?.focus(),
+    document.getElementById(`workspace-view-${next}`)?.focus(),
   );
 }

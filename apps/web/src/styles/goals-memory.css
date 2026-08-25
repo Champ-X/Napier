@@ -1,90 +1,4 @@
-/* Goal and memory surfaces. */
-.goal-card {
-  position: relative;
-  padding: 18px 16px 16px;
-  background: var(--color-surface-muted);
-  border: 1px solid var(--rule-strong);
-  box-shadow: 4px 5px 0 color-mix(in srgb, var(--color-fg-disabled) 7%, transparent);
-}
-
-.goal-card::before {
-  position: absolute;
-  top: -1px;
-  right: 18px;
-  left: 18px;
-  height: 2px;
-  content: "";
-  background: var(--vermilion);
-}
-
-.goal-card-completed::before {
-  background: var(--ledger);
-}
-
-.goal-pin {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  margin-bottom: 13px;
-  place-items: center;
-  color: var(--vermilion);
-  background: var(--vermilion-soft);
-  border-radius: 50%;
-}
-
-.goal-card > p {
-  margin: 0 0 18px;
-  font-family: var(--serif);
-  font-size: 16px;
-  line-height: 1.48;
-}
-
-.goal-card dl {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin: 15px 0 0;
-}
-
-.goal-card dl div {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.goal-card dt,
-.evidence-note > span {
-  font-family: var(--mono);
-  font-size: var(--text-xs);
-  color: var(--ink-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.goal-card dd {
-  margin: 0;
-  font-size: var(--text-xs);
-  color: var(--ink-soft);
-  text-transform: capitalize;
-}
-
-.evidence-note {
-  margin-top: 16px;
-  padding-top: 13px;
-  border-top: 1px solid var(--rule);
-}
-
-.evidence-note p {
-  display: -webkit-box;
-  margin: 6px 0 0;
-  overflow: hidden;
-  font-family: var(--serif);
-  font-size: var(--text-xs);
-  line-height: 1.5;
-  color: var(--ink-soft);
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4;
-}
+/* Shared goal actions and memory surfaces. */
 
 .text-button {
   padding: 0;
@@ -98,57 +12,6 @@
 
 .text-button.danger {
   color: var(--vermilion);
-}
-
-.goal-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 26px 0 10px;
-}
-
-.empty-orbit {
-  position: relative;
-  display: grid;
-  width: 58px;
-  height: 58px;
-  margin-bottom: 15px;
-  place-items: center;
-  color: var(--rule-strong);
-}
-
-.empty-orbit svg:last-child {
-  position: absolute;
-  color: var(--vermilion);
-}
-
-.goal-empty > p {
-  max-width: 220px;
-  margin: 0 0 17px;
-  font-family: var(--serif);
-  font-size: 13px;
-  font-style: italic;
-  line-height: 1.5;
-  color: var(--ink-soft);
-  text-align: center;
-}
-
-.goal-empty textarea {
-  width: 100%;
-  padding: 12px;
-  resize: vertical;
-  font-family: var(--serif);
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--ink);
-  background: var(--color-surface-muted);
-  border: 1px solid var(--rule-strong);
-  border-radius: 3px;
-}
-
-.goal-empty textarea::placeholder {
-  color: var(--ink-faint);
-  font-style: italic;
 }
 
 .primary-wide {
@@ -183,7 +46,8 @@
   background: var(--color-surface-muted);
   border: 1px solid var(--rule-strong);
   border-radius: 3px;
-  box-shadow: 3px 4px 0 color-mix(in srgb, var(--color-fg-disabled) 6%, transparent);
+  box-shadow: 3px 4px 0
+    color-mix(in srgb, var(--color-fg-disabled) 6%, transparent);
 }
 
 .memory-compose textarea {
@@ -301,7 +165,8 @@
   gap: 5px;
   align-items: start;
   padding-top: 4px;
-  border-top: 1px dotted color-mix(in srgb, var(--color-green-26) 22%, transparent);
+  border-top: 1px dotted
+    color-mix(in srgb, var(--color-green-26) 22%, transparent);
 }
 
 .memory-consolidation-ticket li p {
@@ -442,11 +307,19 @@
 }
 
 .memory-card.memory-review-due {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--color-gold-46) 5%, transparent), transparent 72%);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-gold-46) 5%, transparent),
+    transparent 72%
+  );
 }
 
 .memory-card.memory-consolidation-selected {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--color-green-26) 8%, transparent), transparent 78%);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-green-26) 8%, transparent),
+    transparent 78%
+  );
 }
 
 .memory-card.memory-consolidation-selected::before {

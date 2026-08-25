@@ -4,7 +4,11 @@ import type { ThreadDetail } from "@napier/contracts";
 import { shellCopy } from "./shell-copy";
 import "./task-narrative.css";
 
-const LazyTaskNarrativeBar = lazy(() => import("./TaskNarrativeBar"));
+const LazyTaskNarrativeBar = lazy(() =>
+  import("./TaskNarrativeBar").then(({ TaskNarrativeBar }) => ({
+    default: TaskNarrativeBar,
+  })),
+);
 
 export interface TaskNarrativeBoundaryProps {
   detail: ThreadDetail | undefined;

@@ -113,5 +113,3 @@ export function ThreadList({
     </>
   );
 }
-
-export default ThreadList;

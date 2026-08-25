@@ -4,8 +4,16 @@ import type { useWorkspaceViewModel } from "./use-workspace-view-model";
 import { taskNarrative } from "./task-narrative-view-model";
 import { taskArtifactPaths } from "./task-completion-output-paths";
 
-const LazyWorkbenchNotices = lazy(() => import("./WorkbenchNotices"));
-const LazyRunDecisionDockets = lazy(() => import("./RunDecisionDockets"));
+const LazyWorkbenchNotices = lazy(() =>
+  import("./WorkbenchNotices").then(({ WorkbenchNotices }) => ({
+    default: WorkbenchNotices,
+  })),
+);
+const LazyRunDecisionDockets = lazy(() =>
+  import("./RunDecisionDockets").then(({ RunDecisionDockets }) => ({
+    default: RunDecisionDockets,
+  })),
+);
 const LazyTaskCompletionSummary = lazy(() => import("./TaskCompletionSummary"));
 
 type WorkspaceViewModel = ReturnType<typeof useWorkspaceViewModel>;
