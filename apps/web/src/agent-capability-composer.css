@@ -4,7 +4,7 @@
   flex-direction: column;
   gap: 6px;
   padding: 6px 8px;
-  background: rgb(224 229 237 / 62%);
+  background: color-mix(in srgb, var(--color-border-subtle) 62%, transparent);
   border: 1px solid var(--rule);
   border-left: 3px solid var(--ledger);
 }
@@ -18,7 +18,7 @@
   font-size: var(--text-xs);
   color: var(--ledger);
   letter-spacing: 0.08em;
-  background: rgb(224 229 237 / 92%);
+  background: color-mix(in srgb, var(--color-border-subtle) 92%, transparent);
 }
 
 .agent-capability-composer.state-stale,
@@ -44,7 +44,7 @@
   font-size: var(--text-xs);
   color: var(--ink);
   cursor: pointer;
-  background: rgb(255 255 255 / 55%);
+  background: color-mix(in srgb, var(--color-paper) 55%, transparent);
   border: 1px solid var(--rule);
   border-radius: 999px;
 }
@@ -92,7 +92,7 @@
 }
 
 .composer-mode-dependency.dep-warn {
-  color: var(--ochre, #8a6d3b);
+  color: var(--ochre, var(--color-gold-32));
 }
 
 .composer-mode-dependency.dep-blocked,
@@ -118,7 +118,7 @@
   color: var(--ink);
   text-overflow: ellipsis;
   white-space: nowrap;
-  background: rgb(255 255 255 / 48%);
+  background: color-mix(in srgb, var(--color-paper) 48%, transparent);
   border: 1px solid var(--rule);
   border-left: 3px solid var(--ledger);
 }

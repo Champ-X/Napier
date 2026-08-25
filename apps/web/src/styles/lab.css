@@ -2,11 +2,11 @@
 .lab-count {
   max-width: 92px;
   overflow: hidden;
-  color: #4f5b74;
+  color: var(--color-blue-37);
   text-overflow: ellipsis;
   white-space: nowrap;
-  background: #e4e6ed;
-  border-color: #bdc2cf;
+  background: var(--color-border-subtle);
+  border-color: var(--color-blue-77);
 }
 
 .fixture-docket {
@@ -15,16 +15,16 @@
   margin-bottom: 22px;
   overflow: hidden;
   background:
-    linear-gradient(rgb(236 241 249 / 91%), rgb(236 241 249 / 91%)),
+    linear-gradient(color-mix(in srgb, var(--color-surface-muted) 91%, transparent), color-mix(in srgb, var(--color-surface-muted) 91%, transparent)),
     repeating-linear-gradient(
       0deg,
       transparent 0,
       transparent 19px,
-      rgb(99 106 116 / 10%) 20px
+      color-mix(in srgb, var(--color-fg-subtle) 10%, transparent) 20px
     );
   border: 1px solid var(--rule-strong);
   border-top: 3px double var(--rule-strong);
-  box-shadow: 3px 4px 0 rgb(71 74 80 / 5%);
+  box-shadow: 3px 4px 0 color-mix(in srgb, var(--color-gray-30) 5%, transparent);
 }
 
 .fixture-docket::before {
@@ -77,7 +77,7 @@
   padding: 5px;
   color: var(--ledger);
   background: var(--ledger-soft);
-  border: 1px solid #b9cdbf;
+  border: 1px solid var(--color-sage-76);
   box-sizing: content-box;
   transform: rotate(2deg);
 }
@@ -127,7 +127,7 @@
   gap: 8px;
   padding: 7px 8px;
   margin-top: 7px;
-  background: rgb(221 232 226 / 66%);
+  background: color-mix(in srgb, var(--color-success-surface) 66%, transparent);
   border-left: 2px solid var(--ledger);
 }
 
@@ -186,28 +186,28 @@
 }
 
 .fixture-actions .fixture-import {
-  color: #eef3fb;
+  color: var(--color-surface-muted);
   background: var(--ledger);
   border-color: var(--ledger);
 }
 
 .fixture-actions .fixture-verify {
-  color: #43464c;
-  background: #e8edf5;
-  border-color: #b2b7bf;
+  color: var(--color-gray-30);
+  background: var(--color-border-subtle);
+  border-color: var(--color-blue-74);
 }
 
 .fixture-actions .fixture-verify:hover:not(:disabled),
 .fixture-actions .fixture-verify:focus-visible {
-  color: #6c4b16;
-  border-color: #b48539;
+  color: var(--color-gold-25);
+  border-color: var(--color-gold-46);
 }
 
 .fixture-actions .fixture-import:hover:not(:disabled),
 .fixture-actions .fixture-import:focus-visible {
-  color: #fff;
-  background: #23483b;
-  border-color: #23483b;
+  color: var(--color-paper);
+  background: var(--color-green-26);
+  border-color: var(--color-green-26);
 }
 
 .fixture-actions button:disabled {
@@ -234,7 +234,7 @@
   gap: 6px;
   margin: 9px 0 0;
   font-size: var(--text-xs);
-  color: #59655e;
+  color: var(--color-sage-36);
 }
 
 .fixture-safety svg {
@@ -250,26 +250,26 @@
   align-items: center;
   padding: 7px 8px;
   margin-top: 8px;
-  background: #e4ebe5;
-  border: 1px solid #b8cbbd;
+  background: var(--color-success-surface);
+  border: 1px solid var(--color-sage-76);
 }
 
 .fixture-receipt.status-invalid {
-  background: #f1e3dc;
-  border-color: #d0a085;
+  background: var(--color-gold-91);
+  border-color: var(--color-red-67);
 }
 
 .fixture-receipt.status-invalid span,
 .fixture-receipt.status-invalid code {
-  color: #9a4f31;
+  color: var(--color-red-41);
 }
 
 .fixture-receipt span {
-  color: #315d4b;
+  color: var(--color-success);
 }
 
 .fixture-receipt small {
-  color: #52675d;
+  color: var(--color-sage-36);
 }
 
 .fixture-diagnostics {
@@ -302,7 +302,7 @@
   color: var(--ink-soft);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  background: rgb(245 250 255 / 58%);
+  background: color-mix(in srgb, var(--color-bg-subtle) 58%, transparent);
 }
 
 .blueprint-record-list {
@@ -315,13 +315,13 @@
   display: grid;
   gap: 7px;
   padding: 9px;
-  background: rgb(245 250 255 / 68%);
+  background: color-mix(in srgb, var(--color-bg-subtle) 68%, transparent);
   border: 1px solid var(--rule);
   border-left: 3px solid var(--ledger);
 }
 
 .blueprint-record-archived {
-  border-left-color: #a9aeb6;
+  border-left-color: var(--color-blue-67);
   opacity: 0.78;
 }
 
@@ -387,7 +387,7 @@
   gap: 3px;
   min-width: 0;
   padding: 6px;
-  background: rgb(236 241 249 / 72%);
+  background: color-mix(in srgb, var(--color-surface-muted) 72%, transparent);
 }
 
 .blueprint-record dd {
@@ -420,7 +420,7 @@
 }
 
 .blueprint-record-actions button:first-child {
-  color: #eef3fb;
+  color: var(--color-surface-muted);
   background: var(--ledger);
   border-color: var(--ledger);
 }
@@ -434,9 +434,9 @@
 
 .blueprint-record-actions button:first-child:hover:not(:disabled),
 .blueprint-record-actions button:first-child:focus-visible {
-  color: #fff;
-  background: #23483b;
-  border-color: #23483b;
+  color: var(--color-paper);
+  background: var(--color-green-26);
+  border-color: var(--color-green-26);
 }
 
 .blueprint-record-actions button:disabled {
@@ -470,9 +470,9 @@
   gap: 6px;
   padding: 12px 10px 10px;
   overflow: hidden;
-  background: #ecf1f9;
+  background: var(--color-surface-muted);
   border: 1px solid var(--rule-strong);
-  box-shadow: 3px 4px 0 rgb(71 74 80 / 5%);
+  box-shadow: 3px 4px 0 color-mix(in srgb, var(--color-gray-30) 5%, transparent);
 }
 
 .run-picker > span:not(.run-side) {
@@ -495,7 +495,7 @@
   font-family: var(--serif);
   font-size: var(--text-xs);
   font-weight: 600;
-  color: #ecf1f9;
+  color: var(--color-surface-muted);
   background: var(--ledger);
   border-radius: 50%;
 }
@@ -537,7 +537,7 @@
 .run-picker button:hover:not(:disabled) {
   color: var(--ledger);
   background: var(--ledger-soft);
-  border-color: #b9cdbf;
+  border-color: var(--color-sage-76);
 }
 
 .lab-actions {
@@ -559,15 +559,15 @@
 }
 
 .lab-actions .lab-evaluate {
-  color: #eef3fb;
+  color: var(--color-surface-muted);
   background: var(--ledger);
   border-color: var(--ledger);
 }
 
 .lab-actions .lab-evaluate:hover:not(:disabled) {
-  color: #fff;
-  background: #23483b;
-  border-color: #23483b;
+  color: var(--color-paper);
+  background: var(--color-green-26);
+  border-color: var(--color-green-26);
 }
 
 .lab-demo-note {
@@ -577,17 +577,17 @@
   font-size: var(--text-xs);
   font-style: italic;
   line-height: 1.4;
-  color: #5f6670;
-  background: #dfe4ec;
+  color: var(--color-fg-disabled);
+  background: var(--color-blue-90);
   border-left: 2px solid var(--ochre);
 }
 
 .comparison-sheet,
 .evaluation-sheet {
   margin-top: 22px;
-  background: #ecf1f9;
+  background: var(--color-surface-muted);
   border: 1px solid var(--rule-strong);
-  box-shadow: 3px 4px 0 rgb(71 74 80 / 5%);
+  box-shadow: 3px 4px 0 color-mix(in srgb, var(--color-gray-30) 5%, transparent);
 }
 
 .comparison-sheet > header,
@@ -637,13 +637,13 @@
   padding: 3px 5px;
   color: var(--ledger);
   background: var(--ledger-soft);
-  border: 1px solid #b9cdbf;
+  border: 1px solid var(--color-sage-76);
 }
 
 .output-change.is-changed {
-  color: #8b3f2f;
+  color: var(--color-danger-fg);
   background: var(--vermilion-soft);
-  border-color: #d9a698;
+  border-color: var(--color-red-72);
 }
 
 .comparison-metrics {
@@ -717,19 +717,19 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   background: var(--ledger-soft);
-  border: 1px solid #b9cdbf;
+  border: 1px solid var(--color-sage-76);
 }
 
 .configuration-drift.is-changed .configuration-drift-heading > strong {
-  color: #8b3f2f;
+  color: var(--color-danger-fg);
   background: var(--vermilion-soft);
-  border-color: #d9a698;
+  border-color: var(--color-red-72);
 }
 
 .configuration-drift.is-unavailable .configuration-drift-heading > strong {
-  color: #765814;
-  background: #f3e8c8;
-  border-color: #d8c188;
+  color: var(--color-warning);
+  background: var(--color-warning-surface);
+  border-color: var(--color-gold-69);
 }
 
 .configuration-drift ul {
@@ -746,7 +746,7 @@
   font-family: var(--mono);
   font-size: var(--text-xs);
   color: var(--ink-soft);
-  background: rgb(255 255 255 / 52%);
+  background: color-mix(in srgb, var(--color-paper) 52%, transparent);
   border: 1px solid var(--rule);
 }
 
@@ -772,11 +772,11 @@
 }
 
 .configuration-hashes .receipt-verification-pill.status-valid {
-  color: #315d5c;
+  color: var(--color-teal-28);
 }
 
 .configuration-hashes .receipt-verification-pill.status-invalid {
-  color: #9a4f31;
+  color: var(--color-red-41);
 }
 
 .event-delta {

@@ -205,7 +205,7 @@
 
 .trace-lane-tabs button:hover {
   color: var(--ink);
-  background: rgb(255 255 255 / 65%);
+  background: color-mix(in srgb, var(--color-paper) 65%, transparent);
 }
 
 .trace-lane-tabs button.is-active {
@@ -283,7 +283,7 @@
 }
 
 .trace-view-tabs button.is-active {
-  box-shadow: 0 1px 4px rgb(42 49 46 / 10%);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--color-sage-17) 10%, transparent);
 }
 .trace-view-tabs span {
   margin-left: 4px;
@@ -305,7 +305,7 @@
 .trace-trajectory-search:focus-within {
   color: var(--ledger);
   border-color: var(--ledger);
-  box-shadow: 0 0 0 3px rgb(45 85 71 / 10%);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-green-26) 10%, transparent);
 }
 
 .trace-trajectory-search input {
@@ -356,7 +356,7 @@
 .trace-overview-disclosure {
   margin: 0 0 var(--space-4);
   overflow: hidden;
-  background: #fff;
+  background: var(--color-paper);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
@@ -419,14 +419,14 @@
 }
 
 .trace-overview header span {
-  color: #aebbb5;
+  color: var(--color-sage-71);
 }
 
 .trace-overview header strong {
   font-family: var(--mono);
   font-size: var(--text-annotation);
   font-weight: 500;
-  color: #71837a;
+  color: var(--color-gray-52);
   text-transform: uppercase;
 }
 
@@ -443,7 +443,7 @@
   padding: 0 8px;
   font-family: var(--mono);
   font-size: var(--text-annotation);
-  color: #8b9099;
+  color: var(--color-blue-60);
   cursor: pointer;
   background: transparent;
   border: 0;
@@ -462,7 +462,7 @@
 }
 
 .trace-overview-axis small {
-  color: #75837d;
+  color: var(--color-gray-52);
   text-align: center;
   letter-spacing: 0;
   transform: translateX(-50%);
@@ -487,14 +487,14 @@
   gap: 0;
   font-family: var(--mono);
   font-size: var(--text-annotation);
-  color: #a2a7b0;
+  color: var(--color-blue-60);
   text-transform: uppercase;
 }
 
 .trace-lane-label small {
   margin-left: 4px;
   font-size: var(--text-annotation);
-  color: #747b86;
+  color: var(--color-blue-49);
 }
 
 .trace-lane-label i {
@@ -548,12 +548,12 @@
   background-image: repeating-linear-gradient(
     135deg,
     transparent 0 3px,
-    rgb(255 255 255 / 35%) 3px 5px
+    color-mix(in srgb, var(--color-paper) 35%, transparent) 3px 5px
   );
 }
 
 .trace-segment.status-failed {
-  background-color: #a64e42;
+  background-color: var(--color-red-44);
 }
 .trace-segment.is-muted {
   opacity: 0.22;
@@ -596,7 +596,7 @@
 .trace-overview footer strong {
   margin-left: auto;
   font-weight: 500;
-  color: #d3ddd7;
+  color: var(--color-sage-91);
 }
 
 .trace-run-index {
@@ -975,15 +975,15 @@
 
 .trace-event-title > i.status-completed {
   color: var(--ledger);
-  background: #e1ebe5;
+  background: var(--color-success-surface);
 }
 .trace-event-title > i.status-active {
-  color: #78601f;
-  background: #eee7cd;
+  color: var(--color-gold-30);
+  background: var(--color-gold-84);
 }
 .trace-event-title > i.status-failed {
   color: var(--vermilion);
-  background: #f2dfda;
+  background: var(--color-gold-91);
 }
 
 .trace-event-copy > small {
@@ -1335,7 +1335,7 @@
   min-width: 0;
   gap: 3px;
   padding: 8px 9px;
-  background: rgb(255 255 255 / 68%);
+  background: color-mix(in srgb, var(--color-paper) 68%, transparent);
 }
 
 .trace-event-audit small,

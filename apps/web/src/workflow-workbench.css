@@ -4,8 +4,8 @@
   font-family: var(--mono);
   font-size: var(--text-xs);
   line-height: 1.45;
-  color: #7d3025;
-  background: rgb(164 75 56 / 8%);
-  border: 1px solid rgb(164 75 56 / 28%);
+  color: var(--color-red-34);
+  background: color-mix(in srgb, var(--color-red-44) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-red-44) 28%, transparent);
   border-left: 3px solid var(--vermilion);
 }

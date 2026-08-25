@@ -2,18 +2,18 @@
 .plan-count {
   max-width: 78px;
   overflow: hidden;
-  color: #315d5c;
+  color: var(--color-teal-28);
   text-overflow: ellipsis;
   white-space: nowrap;
-  background: #dce8e5;
-  border-color: #a8c4bd;
+  background: var(--color-sage-91);
+  border-color: var(--color-sage-71);
 }
 
 .plan-sheet {
   position: relative;
-  background: #ecf1f9;
+  background: var(--color-surface-muted);
   border: 1px solid var(--rule-strong);
-  box-shadow: 3px 4px 0 rgb(71 74 80 / 5%);
+  box-shadow: 3px 4px 0 color-mix(in srgb, var(--color-gray-30) 5%, transparent);
 }
 
 .plan-sheet::before {
@@ -79,13 +79,13 @@
   text-transform: uppercase;
   letter-spacing: 0.07em;
   background: var(--ledger-soft);
-  border: 1px solid #b9cdbf;
+  border: 1px solid var(--color-sage-76);
 }
 
 .plan-blocked .plan-status {
-  color: #8b3f2f;
+  color: var(--color-danger-fg);
   background: var(--vermilion-soft);
-  border-color: #d9a698;
+  border-color: var(--color-red-72);
 }
 
 .plan-progress {
@@ -125,8 +125,8 @@
   gap: 4px;
   padding: 9px 12px;
   background:
-    linear-gradient(90deg, rgb(45 85 71 / 8%) 0 3px, transparent 3px),
-    rgb(255 255 255 / 22%);
+    linear-gradient(90deg, color-mix(in srgb, var(--color-green-26) 8%, transparent) 0 3px, transparent 3px),
+    color-mix(in srgb, var(--color-paper) 22%, transparent);
   border-bottom: 1px solid var(--rule);
 }
 
@@ -159,7 +159,7 @@
   display: grid;
   gap: 4px;
   padding: 9px 12px;
-  background: rgb(126 88 53 / 6%);
+  background: color-mix(in srgb, var(--color-gold-35) 6%, transparent);
   border-bottom: 1px solid var(--rule);
 }
 
@@ -176,15 +176,15 @@
   font-family: var(--mono);
   font-size: var(--text-xs);
   font-weight: 600;
-  color: #7e5835;
+  color: var(--color-gold-35);
 }
 
 .plan-replan-signal {
-  background: rgb(128 54 47 / 7%);
+  background: color-mix(in srgb, var(--color-red-34) 7%, transparent);
 }
 
 .plan-replan-signal strong {
-  color: #80362f;
+  color: var(--color-red-34);
 }
 
 .plan-replan-history ol {
@@ -199,8 +199,8 @@
   display: grid;
   gap: 2px;
   padding: 6px 7px;
-  background: rgb(255 255 255 / 42%);
-  border: 1px solid rgb(126 88 53 / 14%);
+  background: color-mix(in srgb, var(--color-paper) 42%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-gold-35) 14%, transparent);
   border-radius: 8px;
 }
 
@@ -219,12 +219,12 @@
   margin-top: 2px;
   font-family: var(--mono);
   font-size: var(--text-xs);
-  color: #80362f;
+  color: var(--color-red-34);
   text-transform: uppercase;
   letter-spacing: 0.07em;
   cursor: pointer;
-  background: rgb(255 255 255 / 55%);
-  border: 1px solid rgb(128 54 47 / 18%);
+  background: color-mix(in srgb, var(--color-paper) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-red-34) 18%, transparent);
   border-radius: 999px;
 }
 
@@ -235,7 +235,7 @@
 
 .plan-apply-action {
   color: var(--ledger);
-  border-color: rgb(45 85 71 / 18%);
+  border-color: color-mix(in srgb, var(--color-green-26) 18%, transparent);
 }
 
 .plan-replan-draft-summary,
@@ -245,25 +245,25 @@
   gap: 5px;
   padding: 8px;
   margin-top: 3px;
-  background: rgb(255 255 255 / 45%);
-  border: 1px solid rgb(128 54 47 / 14%);
+  background: color-mix(in srgb, var(--color-paper) 45%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-red-34) 14%, transparent);
   border-radius: 10px;
 }
 
 .plan-replan-record-summary {
-  border-color: rgb(126 88 53 / 14%);
+  border-color: color-mix(in srgb, var(--color-gold-35) 14%, transparent);
 }
 
 .plan-replan-recovery-progress {
-  border-color: rgb(45 85 71 / 16%);
+  border-color: color-mix(in srgb, var(--color-green-26) 16%, transparent);
 }
 
 .plan-replan-recovery-next {
   width: fit-content;
   padding: 3px 6px;
   color: var(--ink-soft);
-  background: rgb(255 255 255 / 48%);
-  border: 1px solid rgb(45 85 71 / 13%);
+  background: color-mix(in srgb, var(--color-paper) 48%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-green-26) 13%, transparent);
   border-radius: 999px;
 }
 
@@ -274,7 +274,7 @@
 
 .plan-replan-recovery-next--blocked {
   color: var(--danger);
-  border-color: rgb(128 54 47 / 16%);
+  border-color: color-mix(in srgb, var(--color-red-34) 16%, transparent);
 }
 
 .plan-replan-draft-summary dl,
@@ -313,8 +313,8 @@
   gap: 4px;
   padding: 8px;
   margin-top: 4px;
-  background: rgb(255 255 255 / 52%);
-  border: 1px solid rgb(128 54 47 / 16%);
+  background: color-mix(in srgb, var(--color-paper) 52%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-red-34) 16%, transparent);
   border-radius: 10px;
 }
 
@@ -331,7 +331,7 @@
 .plan-replan-review strong {
   font-family: var(--mono);
   font-size: var(--text-xs);
-  color: #80362f;
+  color: var(--color-red-34);
 }
 
 .plan-replan-review .plan-review-hashes {
@@ -362,7 +362,7 @@
 .plan-review-error {
   margin: 4px 0 0;
   font-size: var(--text-xs);
-  color: #80362f;
+  color: var(--color-red-34);
 }
 
 .plan-steps {
@@ -434,21 +434,21 @@
 
 .step-ready .plan-status-badge,
 .step-running .plan-status-badge {
-  color: #765814;
-  background: #f3e8c8;
-  border-color: #d8c188;
+  color: var(--color-warning);
+  background: var(--color-warning-surface);
+  border-color: var(--color-gold-69);
 }
 
 .step-completed .plan-status-badge {
-  color: #285241;
-  background: #dfe9e0;
-  border-color: #abc3b1;
+  color: var(--color-green-26);
+  background: var(--color-success-surface);
+  border-color: var(--color-sage-67);
 }
 
 .step-blocked .plan-status-badge {
-  color: #8b3f2f;
+  color: var(--color-danger-fg);
   background: var(--vermilion-soft);
-  border-color: #d9a698;
+  border-color: var(--color-red-72);
 }
 
 .plan-replan-entity-badges {
@@ -462,11 +462,11 @@
   padding: 2px 4px;
   font-family: var(--mono);
   font-size: var(--text-xs);
-  color: #7e5835;
+  color: var(--color-gold-35);
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  background: rgb(126 88 53 / 8%);
-  border: 1px solid rgb(126 88 53 / 18%);
+  background: color-mix(in srgb, var(--color-gold-35) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-gold-35) 18%, transparent);
   border-radius: 999px;
 }
 
@@ -531,7 +531,7 @@
 .artifact-manifest article {
   padding: 10px;
   margin-bottom: 7px;
-  background: #ecf1f9;
+  background: var(--color-surface-muted);
   border: 1px solid var(--rule);
 }
 
@@ -619,7 +619,7 @@
 }
 
 .artifact-actions button:first-child {
-  color: #eef3fb;
+  color: var(--color-surface-muted);
   background: var(--ledger);
   border-color: var(--ledger);
 }
@@ -633,9 +633,9 @@
 
 .artifact-actions button:first-child:hover:not(:disabled),
 .artifact-actions button:first-child:focus-visible {
-  color: #fff;
-  background: #23483b;
-  border-color: #23483b;
+  color: var(--color-paper);
+  background: var(--color-green-26);
+  border-color: var(--color-green-26);
 }
 
 .artifact-actions button:disabled {
@@ -648,7 +648,7 @@
   gap: 7px;
   padding: 9px;
   margin-top: 9px;
-  background: rgba(255, 255, 255, 0.42);
+  background: color-mix(in srgb, var(--color-paper) 42%, transparent);
   border: 1px solid var(--rule);
   border-radius: 3px;
 }
@@ -781,17 +781,17 @@
   display: grid;
   gap: 4px;
   padding: 7px;
-  background: rgba(255, 255, 255, 0.48);
+  background: color-mix(in srgb, var(--color-paper) 48%, transparent);
   border: 1px solid var(--rule);
   border-radius: 2px;
 }
 
 .artifact-data-profile-verification.status-valid {
-  border-color: rgba(30, 97, 75, 0.36);
+  border-color: color-mix(in srgb, var(--color-green-25) 36%, transparent);
 }
 
 .artifact-data-profile-verification.status-drifted {
-  border-color: rgba(154, 93, 28, 0.42);
+  border-color: color-mix(in srgb, var(--color-gold-36) 42%, transparent);
 }
 
 .artifact-data-profile-verification strong {
@@ -836,15 +836,15 @@
   gap: 5px;
   padding: 9px;
   margin-top: 9px;
-  background: rgba(255, 255, 255, 0.42);
+  background: color-mix(in srgb, var(--color-paper) 42%, transparent);
   border: 1px solid var(--rule);
   border-radius: 3px;
 }
 
 .artifact-drift-check--drifted,
 .artifact-drift-check--missing {
-  background: rgba(128, 54, 47, 0.06);
-  border-color: rgba(128, 54, 47, 0.35);
+  background: color-mix(in srgb, var(--color-red-34) 6%, transparent);
+  border-color: color-mix(in srgb, var(--color-red-34) 35%, transparent);
 }
 
 .artifact-drift-check strong {
@@ -879,7 +879,7 @@
 .artifact-error {
   margin: 8px 0 0;
   font-size: var(--text-xs);
-  color: #80362f;
+  color: var(--color-red-34);
 }
 
 .plan-continue {
@@ -892,7 +892,7 @@
   margin-top: 10px;
   font-family: var(--mono);
   font-size: var(--text-xs);
-  color: #fff;
+  color: var(--color-paper);
   cursor: pointer;
   background: var(--ledger);
   border: 1px solid var(--ledger);
@@ -900,7 +900,7 @@
 }
 
 .plan-continue:hover:not(:disabled) {
-  background: #23483b;
+  background: var(--color-green-26);
 }
 
 .delegation-ledger {
@@ -990,12 +990,12 @@
   background:
     repeating-linear-gradient(
       135deg,
-      rgb(170 119 42 / 4%) 0,
-      rgb(170 119 42 / 4%) 6px,
+      color-mix(in srgb, var(--color-gold-39) 4%, transparent) 0,
+      color-mix(in srgb, var(--color-gold-39) 4%, transparent) 6px,
       transparent 6px,
       transparent 12px
     ),
-    #ebf0f8;
+    var(--color-surface-muted);
   border: 1px solid var(--rule-strong);
   border-left: 3px solid var(--ochre);
 }
@@ -1059,7 +1059,7 @@
 
 .model-context-envelope-card {
   background:
-    linear-gradient(rgb(255 255 255 / 34%), rgb(255 255 255 / 34%)), #e8edf5;
+    linear-gradient(color-mix(in srgb, var(--color-paper) 34%, transparent), color-mix(in srgb, var(--color-paper) 34%, transparent)), var(--color-border-subtle);
   border-left-color: var(--ledger);
 }
 
@@ -1131,7 +1131,7 @@
   position: relative;
   padding: 10px 11px 9px 14px;
   overflow: hidden;
-  background: #eaeff7;
+  background: var(--color-surface-muted);
   border: 1px solid var(--rule-strong);
 }
 
@@ -1203,8 +1203,8 @@
   font-family: var(--mono);
   font-size: var(--text-xs);
   color: var(--ledger);
-  background: rgb(53 91 74 / 8%);
-  border: 1px solid rgb(53 91 74 / 18%);
+  background: color-mix(in srgb, var(--color-success) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success) 18%, transparent);
 }
 
 .independent-advisor-card > footer {

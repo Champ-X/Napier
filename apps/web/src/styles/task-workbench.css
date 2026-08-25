@@ -154,7 +154,7 @@
 
 .model-chip.is-unavailable .model-glyph {
   color: var(--danger);
-  background: #f5dfd8;
+  background: var(--color-gold-91);
 }
 
 .model-chip.is-unavailable small {
@@ -242,7 +242,7 @@
 .run-status > span {
   width: 6px;
   height: 6px;
-  background: #718078;
+  background: var(--color-gray-52);
   border-radius: 50%;
 }
 
@@ -255,9 +255,9 @@
   position: relative;
   grid-column: 1 / -1;
   min-width: 0;
-  background: rgb(240 244 237 / 98%);
-  border-top: 1px solid rgb(51 87 64 / 22%);
-  border-bottom: 1px solid rgb(51 87 64 / 22%);
+  background: color-mix(in srgb, var(--color-sage-91) 98%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--color-green-26) 22%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-green-26) 22%, transparent);
 }
 
 .default-product-trial::before {
@@ -302,7 +302,7 @@
 .default-product-trial > summary:hover,
 .default-product-trial > summary:focus-visible {
   color: var(--ink);
-  background: rgb(255 255 255 / 44%);
+  background: color-mix(in srgb, var(--color-paper) 44%, transparent);
   outline: none;
 }
 
@@ -310,7 +310,7 @@
   display: grid;
   gap: 8px;
   padding: 10px 13px 12px;
-  border-top: 1px dashed rgb(51 87 64 / 28%);
+  border-top: 1px dashed color-mix(in srgb, var(--color-green-26) 28%, transparent);
 }
 
 .default-product-trial > div > p {
@@ -344,7 +344,7 @@
   font-size: var(--text-xs);
   color: var(--ink);
   background: var(--paper-bright);
-  border: 1px solid rgb(51 87 64 / 32%);
+  border: 1px solid color-mix(in srgb, var(--color-green-26) 32%, transparent);
   border-radius: 2px;
 }
 
@@ -356,7 +356,7 @@
   font-size: var(--text-xs);
   color: var(--forest);
   background: var(--paper-bright);
-  border: 1px solid rgb(51 87 64 / 38%);
+  border: 1px solid color-mix(in srgb, var(--color-green-26) 38%, transparent);
   border-radius: 2px;
   cursor: pointer;
 }
@@ -434,9 +434,9 @@
   gap: 8px;
   padding: 9px 24px 9px 72px;
   font-size: var(--text-xs);
-  color: #793d2f;
+  color: var(--color-red-32);
   background: var(--vermilion-soft);
-  border-bottom: 1px solid #e1b9ad;
+  border-bottom: 1px solid var(--color-red-77);
 }
 
 .workbench-notices {
@@ -454,9 +454,9 @@
   gap: 10px;
   align-items: center;
   padding: 12px 24px 12px 72px;
-  color: #4a4d53;
-  background: #e1e6ee;
-  border-bottom: 1px solid #d8c38e;
+  color: var(--color-gray-30);
+  background: var(--color-border-subtle);
+  border-bottom: 1px solid var(--color-gold-69);
 }
 
 .recovery-mark {
@@ -464,9 +464,9 @@
   width: 30px;
   height: 30px;
   place-items: center;
-  color: #765814;
-  background: #eaeff7;
-  border: 1px solid #d8c38e;
+  color: var(--color-warning);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-gold-69);
   border-radius: 50%;
 }
 
@@ -494,13 +494,13 @@
   font-family: var(--serif);
   font-size: var(--text-xs);
   line-height: 1.4;
-  color: #5f6670;
+  color: var(--color-fg-disabled);
 }
 
 .recovery-banner code {
   display: block;
   overflow: hidden;
-  color: #91794b;
+  color: var(--color-gold-43);
   text-overflow: ellipsis;
   text-transform: none;
   white-space: nowrap;
@@ -528,17 +528,17 @@
   padding: 7px 9px;
   font-family: var(--mono);
   font-size: var(--text-xs);
-  color: #4a4d53;
+  color: var(--color-gray-30);
   cursor: pointer;
-  background: #eff4fc;
-  border: 1px solid #cdb67e;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-gold-69);
   border-radius: 2px;
 }
 
 .recovery-banner button:hover:not(:disabled) {
   color: var(--paper-bright);
-  background: #79602c;
-  border-color: #79602c;
+  background: var(--color-gold-32);
+  border-color: var(--color-gold-32);
 }
 
 .recovery-banner button:disabled {

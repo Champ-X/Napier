@@ -53,7 +53,7 @@ describe("Napier Web design tokens", () => {
 
     expect(result).toMatchObject({ ok: true, errors: [] });
     expect(result.definedVariableCount).toBeGreaterThan(100);
-    expect(result.literalColorDebt.total).toBe(825);
+    expect(result.literalColorDebt.total).toBe(0);
     expect(result.subTwelveTextDebt.total).toBe(0);
   });
 });
