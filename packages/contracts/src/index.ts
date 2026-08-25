@@ -30,7 +30,7 @@ export type * from "./thread-execution.js";
 export type * from "./execution-channels.js";
 export * from "./execution-runs.js";
 export * from "./execution-workflows.js";
-export * from "./execution-experiments.js";
+export * from "./experiment-protocol.js";
 export * from "./subagent-supervisor.js";
 export type * from "./model-context-envelope.js";
 export * from "./workflow-experiments.js";

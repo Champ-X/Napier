@@ -8,14 +8,14 @@ import type {
   ToolInvocationExperimentObservation,
   ToolInvocationExperimentPreview,
 } from "@napier/contracts";
+import {
+  validateCreateToolInvocationExperimentRequest,
+  validateToolInvocationExperimentPreview,
+} from "@napier/contracts";
 
 import type { AgentRuntime } from "./agent-runtime.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { observeSourceToolInvocation } from "./tool-invocation-experiment-model.js";
-import {
-  validateCreateToolInvocationExperimentRequest,
-  validateToolInvocationExperimentPreview,
-} from "./tool-invocation-experiment-protocol.js";
 import { resolveToolInvocationExperimentTool } from "./tool-invocation-experiment-tool.js";
 import {
   type ToolInvocationCapsule,

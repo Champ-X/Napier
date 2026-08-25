@@ -6,6 +6,10 @@ import type {
   ToolInvocationExperimentResult,
   ToolInvocationExperimentStatus,
 } from "@napier/contracts";
+import {
+  validateCreateToolInvocationExperimentRequest,
+  validateToolInvocationExperimentResult,
+} from "@napier/contracts";
 
 import type { EventSink } from "./event-sink.js";
 import type { AgentRuntime } from "./agent-runtime.js";
@@ -27,10 +31,6 @@ import {
   toolExperimentStartedPayload,
   toolResultDetails,
 } from "./tool-invocation-experiment-ledger.js";
-import {
-  validateCreateToolInvocationExperimentRequest,
-  validateToolInvocationExperimentResult,
-} from "./tool-invocation-experiment-protocol.js";
 import {
   TOOL_INVOCATION_EXPERIMENT_EXECUTION,
   type ToolInvocationExperimentExecution,

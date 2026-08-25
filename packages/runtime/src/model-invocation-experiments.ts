@@ -11,6 +11,10 @@ import type {
   RunEvent,
   ThreadRecord,
 } from "@napier/contracts";
+import {
+  validateCreateModelInvocationExperimentRequest,
+  validateModelInvocationExperimentResult,
+} from "@napier/contracts";
 
 import type { EventSink } from "./event-sink.js";
 import { sha256 } from "./ed25519.js";
@@ -24,10 +28,6 @@ import {
   createModelInvocationExperimentComparison,
   projectCandidateModelInvocation,
 } from "./model-invocation-experiment-model.js";
-import {
-  validateCreateModelInvocationExperimentRequest,
-  validateModelInvocationExperimentResult,
-} from "./model-invocation-experiment-protocol.js";
 import {
   projectModelInvocationExperimentSource,
   type ModelInvocationExperimentSource,

@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
 import type { ModelRef } from "@napier/contracts";
+import * as experimentProtocolValidators from "@napier/contracts";
 import {
   exportThreadReplayBundle,
   LocalStore,
@@ -15,6 +16,7 @@ import {
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createNapierClient } from "../src/index.js";
+import { assertExperimentProtocolRequestParity } from "../../../test/experiment-protocol-parity.js";
 
 const execFileAsync = promisify(execFile);
 const temporaryRoots: string[] = [];
@@ -28,6 +30,10 @@ afterEach(async () => {
 });
 
 describe("Napier TypeScript SDK Agents", () => {
+  it("keeps SDK request validation aligned with the shared protocol fixture", () => {
+    assertExperimentProtocolRequestParity(experimentProtocolValidators);
+  });
+
   it("runs and continues one Agent Thread through the shared Ledger", async () => {
     const fixture = await createFixture("run");
     const client = await createNapierClient({

@@ -6,6 +6,10 @@ import type {
   RunEvent,
   RunRecord,
 } from "@napier/contracts";
+import {
+  validateCreateModelInvocationExperimentRequest,
+  validateModelInvocationExperimentPreview,
+} from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { ModelInvocationCapsuleStore } from "./model-invocation-capsule-store.js";
@@ -14,10 +18,6 @@ import {
   validateModelInvocationCapsuleReceipt,
 } from "./model-invocation-capsule.js";
 import { observeSourceModelInvocation } from "./model-invocation-experiment-model.js";
-import {
-  validateCreateModelInvocationExperimentRequest,
-  validateModelInvocationExperimentPreview,
-} from "./model-invocation-experiment-protocol.js";
 import {
   MODEL_CONTEXT_ENVELOPE_EVENT,
   validateModelContextEnvelopeReceipt,

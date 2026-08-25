@@ -1,9 +1,9 @@
 import type {
   ToolInvocationExperimentComparison,
   ToolInvocationExperimentObservation,
-} from "@napier/contracts";
+} from "./execution-experiments.js";
 
-import { canonicalJson, sha256Text } from "./stable-digest";
+import { canonical as canonicalJson, sha256 } from "./skill-load-validation.js";
 
 const HASH = /^[a-f0-9]{64}$/u;
 const THREAD_ID = /^thread_[a-z0-9]{8,80}$/u;
@@ -11,9 +11,9 @@ const RUN_ID = /^run_[a-z0-9_-]{8,80}$/u;
 const TOOL_NAME = /^[A-Za-z][A-Za-z0-9_.:-]{0,127}$/u;
 const STATUSES = new Set(["completed", "failed", "cancelled"]);
 
-export async function validateToolInvocationExperimentComparison(
+export function validateToolInvocationExperimentComparison(
   input: unknown,
-): Promise<ToolInvocationExperimentComparison> {
+): ToolInvocationExperimentComparison {
   const value = record(input, "Tool invocation experiment comparison");
   exactKeys(value, [
     "kind",
@@ -45,7 +45,7 @@ export async function validateToolInvocationExperimentComparison(
     durationMsDelta: value["durationMsDelta"],
     outputChanged: value["outputChanged"],
   };
-  if ((await sha256Text(canonicalJson(content))) !== value["contentSha256"]) {
+  if (sha256(canonicalJson(content)) !== value["contentSha256"]) {
     throw new Error("Tool invocation experiment comparison hash is invalid");
   }
   return {

@@ -5,24 +5,24 @@ import type {
   ModelInvocationExperimentStatus,
   Usage,
 } from "@napier/contracts";
-import { describe, expect, it } from "vitest";
-
 import {
   validateModelInvocationExperimentPreview,
   validateModelInvocationExperimentResultFrame,
-} from "../src/model-invocation-experiment-web-protocol";
+} from "@napier/contracts";
+import { describe, expect, it } from "vitest";
+
 import { canonicalJson, sha256Text } from "../src/stable-digest";
 
 describe("Model invocation experiment Web protocol", () => {
   it("validates the complete preview, comparison, and result hash chain", async () => {
     const fixture = await experimentFixture();
 
-    await expect(
-      validateModelInvocationExperimentPreview(fixture.preview),
-    ).resolves.toEqual(fixture.preview);
-    await expect(
-      validateModelInvocationExperimentResultFrame(fixture.frame),
-    ).resolves.toEqual(fixture.frame);
+    expect(validateModelInvocationExperimentPreview(fixture.preview)).toEqual(
+      fixture.preview,
+    );
+    expect(validateModelInvocationExperimentResultFrame(fixture.frame)).toEqual(
+      fixture.frame,
+    );
   });
 
   it("rejects self-consistently rehashed metric and source-binding drift", async () => {
@@ -33,9 +33,9 @@ describe("Model invocation experiment Web protocol", () => {
       drifted.experiment.comparison,
     );
     drifted.contentSha256 = await frameHash(drifted);
-    await expect(
-      validateModelInvocationExperimentResultFrame(drifted),
-    ).rejects.toThrow("comparison is invalid");
+    expect(() => validateModelInvocationExperimentResultFrame(drifted)).toThrow(
+      "comparison is invalid",
+    );
 
     const modelDrift = structuredClone(fixture.frame);
     modelDrift.experiment.comparison.source.model = {
@@ -46,19 +46,19 @@ describe("Model invocation experiment Web protocol", () => {
       modelDrift.experiment.comparison,
     );
     modelDrift.contentSha256 = await frameHash(modelDrift);
-    await expect(
+    expect(() =>
       validateModelInvocationExperimentResultFrame(modelDrift),
-    ).rejects.toThrow("result binding is invalid");
+    ).toThrow("result binding is invalid");
   });
 
   it("fails closed for prompt-bearing fields and status/stop drift", async () => {
     const fixture = await experimentFixture();
-    await expect(
+    expect(() =>
       validateModelInvocationExperimentPreview({
         ...fixture.preview,
         context: "PRIVATE_PROVIDER_CONTEXT",
       }),
-    ).rejects.toThrow("fields are invalid");
+    ).toThrow("fields are invalid");
 
     const statusDrift = structuredClone(fixture.frame);
     statusDrift.experiment.comparison.source.stopReason = "error";
@@ -66,9 +66,9 @@ describe("Model invocation experiment Web protocol", () => {
       statusDrift.experiment.comparison,
     );
     statusDrift.contentSha256 = await frameHash(statusDrift);
-    await expect(
+    expect(() =>
       validateModelInvocationExperimentResultFrame(statusDrift),
-    ).rejects.toThrow("observation is invalid");
+    ).toThrow("observation is invalid");
   });
 });
 

@@ -7,6 +7,7 @@ import {
   fauxProvider,
   fauxToolCall,
 } from "@earendil-works/pi-ai";
+import * as experimentProtocolValidators from "@napier/contracts";
 import {
   validateAgentMessageExperimentResultFrame,
   verifyThreadReplayBundle,
@@ -19,6 +20,7 @@ import {
   executeAgentMessageExperiment,
   previewAgentMessageExperiment,
 } from "../../web/src/agent-message-experiment-api.js";
+import { assertExperimentProtocolRequestParity } from "../../../test/experiment-protocol-parity.js";
 
 const temporaryRoots: string[] = [];
 const openServices: Awaited<ReturnType<typeof createServices>>[] = [];
@@ -36,6 +38,10 @@ afterEach(async () => {
 });
 
 describe("Agent message experiment HTTP path", () => {
+  it("keeps Server request validation aligned with the shared protocol fixture", () => {
+    assertExperimentProtocolRequestParity(experimentProtocolValidators);
+  });
+
   it("previews and streams a real read-only message re-execution", async () => {
     const fixture = await createFixture();
     const app = createApp(fixture.services);

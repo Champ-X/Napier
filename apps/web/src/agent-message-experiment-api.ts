@@ -4,15 +4,15 @@ import type {
   CreateAgentMessageExperimentRequest,
   StreamFrame,
 } from "@napier/contracts";
+import {
+  validateAgentMessageExperimentPreview,
+  validateAgentMessageExperimentResultFrame,
+} from "@napier/contracts";
 
 import { validateStreamFrameRecord } from "./api";
 import { throwNapierApiError } from "./api-error";
 import { readSseJsonRecords } from "./sse-json";
 import { canonicalJson, sha256Text } from "./stable-digest";
-import {
-  validateAgentMessageExperimentPreview,
-  validateAgentMessageExperimentResultFrame,
-} from "./agent-message-experiment-web-protocol";
 
 const MAX_STREAM_DATA_BYTES = 12 * 1024 * 1024;
 const MAX_STREAM_RECORD_BYTES = 6 * 1024 * 1024;
@@ -30,7 +30,7 @@ export type AgentMessageExperimentWebFrame =
 export {
   validateAgentMessageExperimentPreview,
   validateAgentMessageExperimentResultFrame,
-} from "./agent-message-experiment-web-protocol";
+} from "@napier/contracts";
 
 export async function previewAgentMessageExperiment(
   threadId: string,

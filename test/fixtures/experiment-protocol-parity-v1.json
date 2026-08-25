@@ -1,0 +1,52 @@
+{
+  "kind": "napier.experiment-protocol-parity-fixture",
+  "schemaVersion": 1,
+  "agentMessage": {
+    "input": {
+      "sourceRunId": "run_source_12345678",
+      "sourceMessageSeq": 8,
+      "model": { "provider": "deepseek", "id": "deepseek-chat" },
+      "title": "  Agent   message parity  ",
+      "toolResultMode": "reuse_source",
+      "expectedPreviewSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "expected": {
+      "sourceRunId": "run_source_12345678",
+      "sourceMessageSeq": 8,
+      "model": { "provider": "deepseek", "id": "deepseek-chat" },
+      "title": "Agent message parity",
+      "toolResultMode": "reuse_source",
+      "expectedPreviewSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  "modelInvocation": {
+    "input": {
+      "sourceRunId": "run_source_12345678",
+      "sourceTurnIndex": 2,
+      "model": { "provider": "deepseek", "id": "deepseek-chat" },
+      "title": "  Model   invocation parity  ",
+      "expectedPreviewSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "expected": {
+      "sourceRunId": "run_source_12345678",
+      "sourceTurnIndex": 2,
+      "model": { "provider": "deepseek", "id": "deepseek-chat" },
+      "title": "Model invocation parity",
+      "expectedPreviewSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  },
+  "toolInvocation": {
+    "input": {
+      "sourceRunId": "run_source_12345678",
+      "sourceCallId": "call_source_12345678",
+      "title": "  Tool   invocation parity  ",
+      "expectedPreviewSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    },
+    "expected": {
+      "sourceRunId": "run_source_12345678",
+      "sourceCallId": "call_source_12345678",
+      "title": "Tool invocation parity",
+      "expectedPreviewSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
+  }
+}

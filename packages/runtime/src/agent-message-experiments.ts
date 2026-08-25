@@ -6,6 +6,11 @@ import type {
   RunRecord,
   ThreadRecord,
 } from "@napier/contracts";
+import {
+  validateAgentMessageExperimentPreview,
+  validateAgentMessageExperimentResult,
+  validateCreateAgentMessageExperimentRequest,
+} from "@napier/contracts";
 
 import type { AgentExecutionPort } from "./agent-execution.js";
 import type { EventSink } from "./event-sink.js";
@@ -19,11 +24,6 @@ import {
   agentMessageExperimentHistoryBinding,
   createAgentMessageExperimentComparison,
 } from "./agent-message-experiment-model.js";
-import {
-  validateAgentMessageExperimentPreview,
-  validateAgentMessageExperimentResult,
-  validateCreateAgentMessageExperimentRequest,
-} from "./agent-message-experiment-protocol.js";
 import {
   projectAgentMessageExperimentSource,
   type AgentMessageExperimentSource,

@@ -1,12 +1,11 @@
+import type { ModelRef, Usage } from "./execution-core.js";
 import type {
   ModelInvocationExperimentComparison,
   ModelInvocationExperimentMetricDelta,
   ModelInvocationExperimentObservation,
-  ModelRef,
-  Usage,
-} from "@napier/contracts";
+} from "./execution-experiments.js";
 
-import { canonicalJson, sha256Text } from "./stable-digest";
+import { canonical as canonicalJson, sha256 } from "./skill-load-validation.js";
 
 const HASH = /^[a-f0-9]{64}$/u;
 const THREAD_ID = /^thread_[a-z0-9]{8,80}$/u;
@@ -17,9 +16,9 @@ const TOOL_NAME = /^[A-Za-z][A-Za-z0-9_.:-]{0,127}$/u;
 const STATUSES = new Set(["completed", "failed", "cancelled"]);
 const STOP_REASONS = new Set(["stop", "length", "toolUse", "error", "aborted"]);
 
-export async function validateModelInvocationExperimentComparison(
+export function validateModelInvocationExperimentComparison(
   input: unknown,
-): Promise<ModelInvocationExperimentComparison> {
+): ModelInvocationExperimentComparison {
   const value = record(input, "Model invocation experiment comparison");
   exactKeys(value, [
     "kind",
@@ -80,13 +79,19 @@ export async function validateModelInvocationExperimentComparison(
     addedToolNames,
     removedToolNames,
   };
-  if ((await sha256Text(canonicalJson(content))) !== value["contentSha256"]) {
+  if (sha256(canonicalJson(content)) !== value["contentSha256"]) {
     throw new Error("Model invocation experiment comparison hash is invalid");
   }
   return {
     ...content,
     contentSha256: value["contentSha256"],
   } as ModelInvocationExperimentComparison;
+}
+
+export function validateModelInvocationExperimentObservation(
+  input: unknown,
+): ModelInvocationExperimentObservation {
+  return validateObservation(input);
 }
 
 export function validateModelInvocationExperimentNames(

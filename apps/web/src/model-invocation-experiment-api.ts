@@ -4,13 +4,13 @@ import type {
   ModelInvocationExperimentResultFrame,
   StreamFrame,
 } from "@napier/contracts";
-
-import { validateStreamFrameRecord } from "./api";
-import { throwNapierApiError } from "./api-error";
 import {
   validateModelInvocationExperimentPreview,
   validateModelInvocationExperimentResultFrame,
-} from "./model-invocation-experiment-web-protocol";
+} from "@napier/contracts";
+
+import { validateStreamFrameRecord } from "./api";
+import { throwNapierApiError } from "./api-error";
 import { readSseJsonRecords } from "./sse-json";
 import { canonicalJson, sha256Text } from "./stable-digest";
 
@@ -30,7 +30,7 @@ export type ModelInvocationExperimentWebFrame =
 export {
   validateModelInvocationExperimentPreview,
   validateModelInvocationExperimentResultFrame,
-} from "./model-invocation-experiment-web-protocol";
+} from "@napier/contracts";
 
 export async function previewModelInvocationExperiment(
   threadId: string,

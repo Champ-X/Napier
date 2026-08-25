@@ -6,13 +6,15 @@ import type {
   RunMetricDelta,
   RunMetrics,
 } from "@napier/contracts";
-import { describe, expect, it } from "vitest";
-
+import * as experimentProtocolValidators from "@napier/contracts";
 import {
   validateAgentMessageExperimentPreview,
   validateAgentMessageExperimentResultFrame,
-} from "../src/agent-message-experiment-web-protocol";
+} from "@napier/contracts";
+import { describe, expect, it } from "vitest";
+
 import { canonicalJson, sha256Text } from "../src/stable-digest";
+import { assertExperimentProtocolRequestParity } from "../../../test/experiment-protocol-parity";
 
 const METRIC_KEYS: Array<keyof RunMetricDelta> = [
   "durationMs",
@@ -36,15 +38,19 @@ const METRIC_KEYS: Array<keyof RunMetricDelta> = [
 ];
 
 describe("Agent message experiment Web protocol", () => {
+  it("keeps Web request validation aligned with the shared protocol fixture", () => {
+    assertExperimentProtocolRequestParity(experimentProtocolValidators);
+  });
+
   it("validates the complete preview, comparison, and result hash chain", async () => {
     const fixture = await experimentFixture();
 
-    await expect(
-      validateAgentMessageExperimentPreview(fixture.preview),
-    ).resolves.toEqual(fixture.preview);
-    await expect(
-      validateAgentMessageExperimentResultFrame(fixture.frame),
-    ).resolves.toEqual(fixture.frame);
+    expect(validateAgentMessageExperimentPreview(fixture.preview)).toEqual(
+      fixture.preview,
+    );
+    expect(validateAgentMessageExperimentResultFrame(fixture.frame)).toEqual(
+      fixture.frame,
+    );
   });
 
   it("rejects self-consistently rehashed metric and output tampering", async () => {
@@ -55,23 +61,23 @@ describe("Agent message experiment Web protocol", () => {
       drifted.experiment.comparison,
     );
     drifted.contentSha256 = await frameHash(drifted);
-    await expect(
-      validateAgentMessageExperimentResultFrame(drifted),
-    ).rejects.toThrow("projection is invalid");
+    expect(() => validateAgentMessageExperimentResultFrame(drifted)).toThrow(
+      "projection is invalid",
+    );
 
     const outputTampered = structuredClone(fixture.frame);
     outputTampered.experiment.assistantText = "FORGED_TARGET_BODY";
     outputTampered.contentSha256 = await frameHash(outputTampered);
-    await expect(
+    expect(() =>
       validateAgentMessageExperimentResultFrame(outputTampered),
-    ).rejects.toThrow("output hash is invalid");
+    ).toThrow("output hash is invalid");
 
     const reuseTampered = structuredClone(fixture.frame);
     reuseTampered.experiment.toolResultReuse.reusedResultCount = 1;
     reuseTampered.contentSha256 = await frameHash(reuseTampered);
-    await expect(
+    expect(() =>
       validateAgentMessageExperimentResultFrame(reuseTampered),
-    ).rejects.toThrow("tool result reuse is invalid");
+    ).toThrow("tool result reuse is invalid");
   });
 
   it("fails closed for unknown prompt-bearing fields and nonterminal observations", async () => {
@@ -80,7 +86,7 @@ describe("Agent message experiment Web protocol", () => {
       ...fixture.preview,
       prompt: "PRIVATE_SOURCE_PROMPT",
     };
-    await expect(validateAgentMessageExperimentPreview(leaked)).rejects.toThrow(
+    expect(() => validateAgentMessageExperimentPreview(leaked)).toThrow(
       "fields are invalid",
     );
 
@@ -97,9 +103,9 @@ describe("Agent message experiment Web protocol", () => {
       "contentSha256",
     );
     running["contentSha256"] = await hashWithout(running, "contentSha256");
-    await expect(
-      validateAgentMessageExperimentResultFrame(running),
-    ).rejects.toThrow("source is invalid");
+    expect(() => validateAgentMessageExperimentResultFrame(running)).toThrow(
+      "source is invalid",
+    );
   });
 });
 

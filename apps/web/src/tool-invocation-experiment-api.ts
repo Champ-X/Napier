@@ -4,15 +4,15 @@ import type {
   ToolInvocationExperimentPreview,
   ToolInvocationExperimentResultFrame,
 } from "@napier/contracts";
+import {
+  validateToolInvocationExperimentPreview,
+  validateToolInvocationExperimentResultFrame,
+} from "@napier/contracts";
 
 import { validateStreamFrameRecord } from "./api";
 import { throwNapierApiError } from "./api-error";
 import { readSseJsonRecords } from "./sse-json";
 import { sha256Text } from "./stable-digest";
-import {
-  validateToolInvocationExperimentPreview,
-  validateToolInvocationExperimentResultFrame,
-} from "./tool-invocation-experiment-web-protocol";
 
 const MAX_STREAM_DATA_BYTES = 8 * 1024 * 1024;
 const MAX_STREAM_RECORD_BYTES = 2 * 1024 * 1024;

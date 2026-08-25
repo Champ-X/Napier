@@ -3,23 +3,23 @@ import type {
   ToolInvocationExperimentPreview,
   ToolInvocationExperimentResultFrame,
 } from "@napier/contracts";
-import { describe, expect, it } from "vitest";
-
 import {
   validateToolInvocationExperimentPreview,
   validateToolInvocationExperimentResultFrame,
-} from "../src/tool-invocation-experiment-web-protocol";
+} from "@napier/contracts";
+import { describe, expect, it } from "vitest";
+
 import { canonicalJson, sha256Text } from "../src/stable-digest";
 
 describe("Tool invocation experiment Web protocol", () => {
   it("validates the complete preview, comparison, and result hash chain", async () => {
     const fixture = await experimentFixture();
-    await expect(
-      validateToolInvocationExperimentPreview(fixture.preview),
-    ).resolves.toEqual(fixture.preview);
-    await expect(
-      validateToolInvocationExperimentResultFrame(fixture.frame),
-    ).resolves.toEqual(fixture.frame);
+    expect(validateToolInvocationExperimentPreview(fixture.preview)).toEqual(
+      fixture.preview,
+    );
+    expect(validateToolInvocationExperimentResultFrame(fixture.frame)).toEqual(
+      fixture.frame,
+    );
   });
 
   it("rejects self-consistently rehashed delta and source drift", async () => {
@@ -30,9 +30,9 @@ describe("Tool invocation experiment Web protocol", () => {
       deltaDrift.experiment.comparison,
     );
     deltaDrift.contentSha256 = await frameHash(deltaDrift);
-    await expect(
+    expect(() =>
       validateToolInvocationExperimentResultFrame(deltaDrift),
-    ).rejects.toThrow("comparison is invalid");
+    ).toThrow("comparison is invalid");
 
     const sourceDrift = structuredClone(fixture.frame);
     sourceDrift.experiment.comparison.source.outputBytes += 1;
@@ -40,25 +40,25 @@ describe("Tool invocation experiment Web protocol", () => {
       sourceDrift.experiment.comparison,
     );
     sourceDrift.contentSha256 = await frameHash(sourceDrift);
-    await expect(
+    expect(() =>
       validateToolInvocationExperimentResultFrame(sourceDrift),
-    ).rejects.toThrow("result binding is invalid");
+    ).toThrow("result binding is invalid");
   });
 
   it("rejects argument/output-bearing preview fields", async () => {
     const fixture = await experimentFixture();
-    await expect(
+    expect(() =>
       validateToolInvocationExperimentPreview({
         ...fixture.preview,
         arguments: { path: "PRIVATE_PATH" },
       }),
-    ).rejects.toThrow("fields are invalid");
-    await expect(
+    ).toThrow("fields are invalid");
+    expect(() =>
       validateToolInvocationExperimentPreview({
         ...fixture.preview,
         candidateOutput: "PRIVATE_OUTPUT",
       }),
-    ).rejects.toThrow("fields are invalid");
+    ).toThrow("fields are invalid");
   });
 });
 

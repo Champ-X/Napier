@@ -1,15 +1,20 @@
+import type { ModelRef } from "./execution-core.js";
 import type {
   AgentMessageExperimentPreview,
   AgentMessageExperimentResult,
-  AgentMessageExperimentResultFrame,
-} from "@napier/contracts";
+  CreateAgentMessageExperimentRequest,
+} from "./execution-experiments.js";
+import type { AgentMessageExperimentResultFrame, StreamFrame } from "./stream-frame-v1.js";
 
 import {
   validateAgentMessageExperimentComparison,
   validateAgentMessageExperimentNames,
   validateAgentMessageExperimentToolEffects,
-} from "./agent-message-experiment-comparison-web-protocol";
-import { canonicalJson, sha256Text } from "./stable-digest";
+} from "./agent-message-experiment-comparison-validation.js";
+import { canonical as canonicalJson, sha256 } from "./skill-load-validation.js";
+
+export const MAX_AGENT_MESSAGE_EXPERIMENT_REQUEST_BYTES = 16 * 1024;
+export const MAX_AGENT_MESSAGE_EXPERIMENT_RESULT_BYTES = 512 * 1024;
 
 const HASH = /^[a-f0-9]{64}$/u;
 const THREAD_ID = /^thread_[a-z0-9]{8,80}$/u;
@@ -17,16 +22,78 @@ const RUN_ID = /^run_[a-z0-9_-]{8,80}$/u;
 const AGENT_ID = /^agent_[a-z0-9_]{2,80}$/u;
 const PROVIDER_ID = /^[a-z][a-z0-9_-]{0,63}$/u;
 const MODEL_ID = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$/u;
-const TERMINAL_STATUSES = new Set([
+const TERMINAL_RUN_STATUSES = new Set([
   "completed",
   "failed",
   "cancelled",
   "interrupted",
 ]);
 
-export async function validateAgentMessageExperimentPreview(
+export function validateCreateAgentMessageExperimentRequest(
   input: unknown,
-): Promise<AgentMessageExperimentPreview> {
+): CreateAgentMessageExperimentRequest {
+  assertBytes(
+    input,
+    MAX_AGENT_MESSAGE_EXPERIMENT_REQUEST_BYTES,
+    "Agent message experiment request",
+  );
+  const request = record(input, "Agent message experiment request");
+  exactKeys(
+    request,
+    [
+      "sourceRunId",
+      "sourceMessageSeq",
+      "model",
+      "title",
+      "toolResultMode",
+      "expectedPreviewSha256",
+    ],
+    new Set(["model", "title", "toolResultMode", "expectedPreviewSha256"]),
+  );
+  if (
+    typeof request["sourceRunId"] !== "string" ||
+    !RUN_ID.test(request["sourceRunId"]) ||
+    !positiveInteger(request["sourceMessageSeq"])
+  ) {
+    throw new Error("Agent message experiment source is invalid");
+  }
+  const model =
+    request["model"] === undefined
+      ? undefined
+      : validateModel(request["model"], "Agent message experiment model");
+  const title =
+    request["title"] === undefined ? undefined : boundedTitle(request["title"]);
+  const toolResultMode = request["toolResultMode"];
+  if (
+    toolResultMode !== undefined &&
+    toolResultMode !== "live" &&
+    toolResultMode !== "reuse_source"
+  ) {
+    throw new Error("Agent message experiment tool result mode is invalid");
+  }
+  const expectedPreviewSha256 = request["expectedPreviewSha256"];
+  if (
+    expectedPreviewSha256 !== undefined &&
+    (typeof expectedPreviewSha256 !== "string" ||
+      !HASH.test(expectedPreviewSha256))
+  ) {
+    throw new Error("Agent message experiment preview hash is invalid");
+  }
+  return {
+    sourceRunId: request["sourceRunId"],
+    sourceMessageSeq: Number(request["sourceMessageSeq"]),
+    ...(model ? { model } : {}),
+    ...(title ? { title } : {}),
+    ...(toolResultMode ? { toolResultMode } : {}),
+    ...(typeof expectedPreviewSha256 === "string"
+      ? { expectedPreviewSha256 }
+      : {}),
+  };
+}
+
+export function validateAgentMessageExperimentPreview(
+  input: unknown,
+): AgentMessageExperimentPreview {
   const preview = record(input, "Agent message experiment preview");
   exactKeys(preview, [
     "kind",
@@ -57,15 +124,6 @@ export async function validateAgentMessageExperimentPreview(
     "sourceToolResultSetSha256",
     "previewSha256",
   ]);
-  const sourceModel = validateModel(preview["sourceModel"], "source model");
-  const targetModel = validateModel(preview["targetModel"], "target model");
-  const targetToolNames = validateAgentMessageExperimentNames(
-    preview["targetToolNames"],
-    "targetToolNames",
-  );
-  const sourceToolEffects = validateAgentMessageExperimentToolEffects(
-    preview["sourceToolEffects"],
-  );
   if (
     preview["kind"] !== "napier.agent-message-experiment-preview" ||
     preview["schemaVersion"] !== 2 ||
@@ -78,7 +136,10 @@ export async function validateAgentMessageExperimentPreview(
     typeof preview["sourceAgentId"] !== "string" ||
     !AGENT_ID.test(preview["sourceAgentId"]) ||
     !positiveInteger(preview["sourceAgentRevision"]) ||
-    !isoTimestamp(preview["sourcePromptVariableResolvedAt"]) ||
+    typeof preview["sourcePromptVariableResolvedAt"] !== "string" ||
+    !Number.isFinite(Date.parse(preview["sourcePromptVariableResolvedAt"])) ||
+    new Date(preview["sourcePromptVariableResolvedAt"]).toISOString() !==
+      preview["sourcePromptVariableResolvedAt"] ||
     !hashFields(preview, [
       "sourceRunConfigurationSha256",
       "sourcePromptSha256",
@@ -101,22 +162,36 @@ export async function validateAgentMessageExperimentPreview(
   ) {
     throw new Error("Agent message experiment preview is invalid");
   }
+  validateModel(
+    preview["sourceModel"],
+    "Agent message experiment source model",
+  );
+  validateModel(
+    preview["targetModel"],
+    "Agent message experiment target model",
+  );
+  validateAgentMessageExperimentNames(
+    preview["targetToolNames"],
+    "targetToolNames",
+  );
+  validateAgentMessageExperimentToolEffects(preview["sourceToolEffects"]);
   const { previewSha256: _previewSha256, ...content } = preview;
-  if ((await sha256Text(canonicalJson(content))) !== preview["previewSha256"]) {
-    throw new Error("Agent message experiment preview hash is invalid");
+  if (sha256(canonicalJson(content)) !== preview["previewSha256"]) {
+    throw new Error(
+      "Agent message experiment preview hash mismatch: preview hash is invalid",
+    );
   }
-  return {
-    ...(structuredClone(preview) as unknown as AgentMessageExperimentPreview),
-    sourceModel,
-    targetModel,
-    targetToolNames,
-    sourceToolEffects,
-  };
+  return structuredClone(input) as AgentMessageExperimentPreview;
 }
 
-export async function validateAgentMessageExperimentResult(
+export function validateAgentMessageExperimentResult(
   input: unknown,
-): Promise<AgentMessageExperimentResult> {
+): AgentMessageExperimentResult {
+  assertBytes(
+    input,
+    MAX_AGENT_MESSAGE_EXPERIMENT_RESULT_BYTES,
+    "Agent message experiment result",
+  );
   const result = record(input, "Agent message experiment result");
   exactKeys(
     result,
@@ -133,24 +208,22 @@ export async function validateAgentMessageExperimentResult(
     ],
     new Set(["assistantText"]),
   );
-  const preview = await validateAgentMessageExperimentPreview(
-    result["preview"],
-  );
-  const comparison = await validateAgentMessageExperimentComparison(
+  const preview = validateAgentMessageExperimentPreview(result["preview"]);
+  const comparison = validateAgentMessageExperimentComparison(
     result["comparison"],
   );
   const toolResultReuse = validateToolResultReuse(result["toolResultReuse"]);
-  const assistantText = result["assistantText"];
   if (
     result["kind"] !== "napier.agent-message-experiment-result" ||
     result["schemaVersion"] !== 2 ||
     !threadId(result["targetThreadId"]) ||
     result["targetThreadId"] === preview.sourceThreadId ||
     !runId(result["targetRunId"]) ||
-    !TERMINAL_STATUSES.has(String(result["status"])) ||
-    (assistantText !== undefined &&
-      (typeof assistantText !== "string" ||
-        new TextEncoder().encode(assistantText).byteLength > 64 * 1024)) ||
+    !TERMINAL_RUN_STATUSES.has(String(result["status"])) ||
+    (result["assistantText"] !== undefined &&
+      (typeof result["assistantText"] !== "string" ||
+        new TextEncoder().encode(result["assistantText"]).byteLength >
+          64 * 1024)) ||
     comparison.source.threadId !== preview.sourceThreadId ||
     comparison.source.runId !== preview.sourceRunId ||
     comparison.target.threadId !== result["targetThreadId"] ||
@@ -166,18 +239,14 @@ export async function validateAgentMessageExperimentResult(
   ) {
     throw new Error("Agent message experiment result binding is invalid");
   }
-  const expectedAssistantSha256 = await sha256Text(
-    typeof assistantText === "string" ? assistantText : "",
-  );
   if (
-    comparison.target.metrics.assistantTextSha256 !== expectedAssistantSha256
+    comparison.target.metrics.assistantTextSha256 !==
+    sha256(typeof result["assistantText"] === "string" ? result["assistantText"] : "")
   ) {
     throw new Error("Agent message experiment result output hash is invalid");
   }
   return {
-    ...(structuredClone(result) as unknown as AgentMessageExperimentResult),
-    preview,
-    comparison,
+    ...(structuredClone(input) as AgentMessageExperimentResult),
     toolResultReuse,
   };
 }
@@ -220,9 +289,44 @@ function validateToolResultReuse(
   ) as unknown as AgentMessageExperimentResult["toolResultReuse"];
 }
 
-export async function validateAgentMessageExperimentResultFrame(
+export function createAgentMessageExperimentResultFrame(
+  experiment: AgentMessageExperimentResult,
+  snapshot: Extract<StreamFrame, { type: "snapshot" }>,
+  eventStreamSha256: string,
+): AgentMessageExperimentResultFrame {
+  const validated = validateAgentMessageExperimentResult(experiment);
+  if (
+    snapshot.detail.thread.id !== validated.targetThreadId ||
+    snapshot.detail.thread.eventCount !== snapshot.detail.events.length ||
+    !HASH.test(eventStreamSha256)
+  ) {
+    throw new Error("Agent message experiment snapshot binding is invalid");
+  }
+  const content = {
+    type: "agent_message_experiment_result" as const,
+    sourceThreadId: validated.preview.sourceThreadId,
+    sourceRunId: validated.preview.sourceRunId,
+    sourceMessageSeq: validated.preview.sourceMessageSeq,
+    targetThreadId: validated.targetThreadId,
+    targetRunId: validated.targetRunId,
+    status: validated.status,
+    previewSha256: validated.preview.previewSha256,
+    experiment: validated,
+    snapshotSha256: snapshot.detailSha256,
+    snapshotBytes: snapshot.detailBytes,
+    eventCount: snapshot.detail.thread.eventCount,
+    eventBytes: snapshot.eventBytes,
+    eventStreamSha256,
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+export function validateAgentMessageExperimentResultFrame(
   input: unknown,
-): Promise<AgentMessageExperimentResultFrame> {
+): AgentMessageExperimentResultFrame {
   const frame = record(input, "Agent message experiment result frame");
   exactKeys(frame, [
     "type",
@@ -241,9 +345,7 @@ export async function validateAgentMessageExperimentResultFrame(
     "eventStreamSha256",
     "contentSha256",
   ]);
-  const experiment = await validateAgentMessageExperimentResult(
-    frame["experiment"],
-  );
+  const experiment = validateAgentMessageExperimentResult(frame["experiment"]);
   if (
     frame["type"] !== "agent_message_experiment_result" ||
     frame["sourceThreadId"] !== experiment.preview.sourceThreadId ||
@@ -265,17 +367,16 @@ export async function validateAgentMessageExperimentResultFrame(
     throw new Error("Agent message experiment result frame is invalid");
   }
   const { contentSha256: _contentSha256, ...content } = frame;
-  if ((await sha256Text(canonicalJson(content))) !== frame["contentSha256"]) {
-    throw new Error("Agent message experiment result frame hash is invalid");
+  if (sha256(canonicalJson(content)) !== frame["contentSha256"]) {
+    throw new Error(
+      "Agent message experiment result frame hash mismatch: frame hash is invalid",
+    );
   }
-  return {
-    ...(structuredClone(frame) as unknown as AgentMessageExperimentResultFrame),
-    experiment,
-  };
+  return structuredClone(input) as AgentMessageExperimentResultFrame;
 }
 
-function validateModel(input: unknown, label: string) {
-  const model = record(input, `Agent message experiment ${label}`);
+function validateModel(input: unknown, label: string): ModelRef {
+  const model = record(input, label);
   exactKeys(model, ["provider", "id"]);
   if (
     typeof model["provider"] !== "string" ||
@@ -283,9 +384,20 @@ function validateModel(input: unknown, label: string) {
     typeof model["id"] !== "string" ||
     !MODEL_ID.test(model["id"])
   ) {
-    throw new Error(`Agent message experiment ${label} is invalid`);
+    throw new Error(`${label} is invalid`);
   }
   return { provider: model["provider"], id: model["id"] };
+}
+
+function boundedTitle(input: unknown): string {
+  if (typeof input !== "string") {
+    throw new Error("Agent message experiment title is invalid");
+  }
+  const title = input.replace(/\s+/gu, " ").trim();
+  if (!title || title.length > 100 || /[\u0000-\u001f\u007f<>]/u.test(title)) {
+    throw new Error("Agent message experiment title is invalid");
+  }
+  return title;
 }
 
 function exactKeys(
@@ -309,6 +421,16 @@ function record(value: unknown, label: string): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
+function hashFields(value: Record<string, unknown>, fields: string[]): boolean {
+  return fields.every(
+    (field) => typeof value[field] === "string" && HASH.test(value[field]),
+  );
+}
+
+function hash(value: unknown): value is string {
+  return typeof value === "string" && HASH.test(value);
+}
+
 function threadId(value: unknown): value is string {
   return typeof value === "string" && THREAD_ID.test(value);
 }
@@ -325,21 +447,8 @@ function nonNegativeInteger(value: unknown): boolean {
   return Number.isSafeInteger(value) && Number(value) >= 0;
 }
 
-function hashFields(
-  value: Record<string, unknown>,
-  fields: readonly string[],
-): boolean {
-  return fields.every((field) => hash(value[field]));
-}
-
-function hash(value: unknown): value is string {
-  return typeof value === "string" && HASH.test(value);
-}
-
-function isoTimestamp(value: unknown): boolean {
-  return (
-    typeof value === "string" &&
-    Number.isFinite(Date.parse(value)) &&
-    new Date(value).toISOString() === value
-  );
+function assertBytes(value: unknown, maximum: number, label: string): void {
+  if (new TextEncoder().encode(canonicalJson(value)).byteLength > maximum) {
+    throw new Error(`${label} exceeds its byte limit`);
+  }
 }
