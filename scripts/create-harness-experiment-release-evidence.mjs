@@ -15,7 +15,7 @@ import {
   createHarnessExperimentReleaseEvidence,
   executeHarnessExperiment,
   validateHarnessExperimentReleaseEvidence,
-} from "../packages/runtime/dist/harness-experiments.js";
+} from "../packages/harness-eval/dist/harness-experiments.js";
 import { ModelRegistry } from "../packages/runtime/dist/models.js";
 import { LocalStore } from "../packages/runtime/dist/store.js";
 import { createReleaseProductSourceManifest } from "./release-product-source-manifest.mjs";

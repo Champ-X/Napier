@@ -144,6 +144,7 @@ export async function collectDuplicateStatistics(repoRoot = process.cwd()) {
         "apps/web/src",
         "packages/benchmark-kit/src",
         "packages/contracts/src",
+        "packages/harness-eval/src",
         "packages/runtime/src",
         "packages/sdk/src",
         "scripts",

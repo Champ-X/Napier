@@ -136,6 +136,10 @@
       "types": "./dist/agent-harness-acceptance.d.ts",
       "import": "./dist/agent-harness-acceptance.js"
     },
+    "./harness-eval-support": {
+      "types": "./dist/harness-eval-support.d.ts",
+      "import": "./dist/harness-eval-support.js"
+    },
     "./subagent-repository": {
       "types": "./dist/subagent-repository.d.ts",
       "import": "./dist/subagent-repository.js"
@@ -145,7 +149,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "node ../../scripts/release-product-source-manifest.mjs && tsc -p tsconfig.json && node ../../scripts/copy-sandbox-image.mjs",
+    "build": "node ../../scripts/release-product-source-manifest.mjs && node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.json && node ../../scripts/copy-sandbox-image.mjs",
     "test": "vitest run --maxWorkers=2 --testTimeout=30000",
     "test:live-browser": "NAPIER_LIVE_BROWSER_SMOKE=1 vitest run test/live-browser-smoke.test.ts --testTimeout=60000",
     "test:live-coder": "NAPIER_LIVE_CODER_SUBAGENT_SMOKE=1 vitest run test/live-coder-subagent-smoke.test.ts --testTimeout=120000",

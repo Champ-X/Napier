@@ -190,29 +190,17 @@
   },
   "allowedCycles": [],
   "allowedWorkspaceImports": {
-    "@napier/cli": [
-      "@napier/contracts",
-      "@napier/runtime"
-    ],
+    "@napier/cli": ["@napier/contracts", "@napier/runtime"],
     "@napier/benchmark-kit": [
       "@napier/cli",
       "@napier/contracts",
       "@napier/runtime"
     ],
     "@napier/contracts": [],
-    "@napier/runtime": [
-      "@napier/contracts"
-    ],
-    "@napier/sdk": [
-      "@napier/contracts",
-      "@napier/runtime"
-    ],
-    "@napier/server": [
-      "@napier/contracts",
-      "@napier/runtime"
-    ],
-    "@napier/web": [
-      "@napier/contracts"
-    ]
+    "@napier/harness-eval": ["@napier/contracts", "@napier/runtime"],
+    "@napier/runtime": ["@napier/contracts"],
+    "@napier/sdk": ["@napier/contracts", "@napier/runtime"],
+    "@napier/server": ["@napier/contracts", "@napier/runtime"],
+    "@napier/web": ["@napier/contracts"]
   }
 }

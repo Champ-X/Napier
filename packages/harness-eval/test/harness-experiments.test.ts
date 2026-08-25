@@ -1,10 +1,21 @@
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { PassThrough } from "node:stream";
 
 import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai";
 import { afterEach, describe, expect, it } from "vitest";
 
+import {
+  AgentRuntime,
+  canonicalJson,
+  ModelRegistry,
+  LocalStore,
+  sha256,
+  type OsSandboxAdapter,
+  type SandboxedProcess,
+  type SandboxLaunchRequest,
+} from "@napier/runtime";
 import {
   createHarnessExperiment,
   createHarnessExperimentReleaseEvidence,
@@ -16,10 +27,6 @@ import {
   validateHarnessExperimentExecution,
   validateHarnessExperimentReleaseEvidence,
 } from "../src/harness-experiments.js";
-import { canonicalJson, sha256 } from "../src/ed25519.js";
-import { ModelRegistry } from "../src/models.js";
-import { LocalStore } from "../src/store.js";
-import { processReadyAgentRuntime } from "./process-run-readiness-test-fixture.js";
 
 const caseInputs = new Map(
   Array.from({ length: 30 }, (_, index) => {
@@ -33,6 +40,37 @@ const cases = [...caseInputs].map(([id, text], index) => ({
   tags: index < 15 ? ["research"] : ["coding"],
 }));
 const temporaryRoots: string[] = [];
+
+function processReadySandbox(id: string): OsSandboxAdapter {
+  return {
+    id,
+    launch(request: SandboxLaunchRequest): Promise<SandboxedProcess> {
+      if (
+        !request.args.some((argument) =>
+          argument.includes("napier_shell_probe_v1"),
+        )
+      ) {
+        return Promise.reject(
+          new Error("Harness Eval fixture does not execute commands"),
+        );
+      }
+      const stdin = new PassThrough();
+      const stdout = new PassThrough();
+      const stderr = new PassThrough();
+      void Promise.resolve().then(() => {
+        stdout.end("napier_shell_probe_v1");
+        stderr.end();
+      });
+      return Promise.resolve({
+        stdin,
+        stdout,
+        stderr,
+        exit: Promise.resolve({ code: 0, signal: null }),
+        terminate: async () => undefined,
+      });
+    },
+  };
+}
 
 afterEach(async () => {
   await Promise.all(
@@ -181,7 +219,12 @@ describe("Harness experiments", () => {
     );
     const models = new ModelRegistry();
     models.registerProvider(provider.provider);
-    const runtime = processReadyAgentRuntime(store, models);
+    const runtime = new AgentRuntime(
+      store,
+      models,
+      undefined,
+      processReadySandbox("harness-eval-test"),
+    );
     const experiment = fixtureExperiment({
       primaryMetrics: ["task_success"],
     });
@@ -231,8 +274,7 @@ describe("Harness experiments", () => {
           ) {
             const tamperedEvents = structuredClone(events);
             const applied = tamperedEvents.find(
-              (event) =>
-                event.type === "harness.experiment.profile.applied",
+              (event) => event.type === "harness.experiment.profile.applied",
             );
             expect(applied).toBeDefined();
             const payload = applied!.payload as Record<string, unknown>;
@@ -250,9 +292,7 @@ describe("Harness experiments", () => {
                 events: tamperedEvents,
                 metrics: { task_success: 1 },
               }),
-            ).toThrow(
-              "Harness trial experiment profile evidence is invalid",
-            );
+            ).toThrow("Harness trial experiment profile evidence is invalid");
           }
           routeEventsByRun.set(
             run.id,
@@ -517,8 +557,7 @@ function trial(
     ),
     metrics: {
       task_success: taskSuccess,
-      tool_schema_tokens:
-        arm === "baseline" ? 100 : candidateToolSchemaTokens,
+      tool_schema_tokens: arm === "baseline" ? 100 : candidateToolSchemaTokens,
       repeated_call_rate: repeatedCallRate,
       intervention_count: 0,
     },

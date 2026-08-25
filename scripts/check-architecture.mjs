@@ -40,6 +40,7 @@ const defaultWorkspaceImports = {
     "@napier/runtime",
   ],
   "@napier/server": ["@napier/contracts", "@napier/runtime"],
+  "@napier/harness-eval": ["@napier/contracts", "@napier/runtime"],
   "@napier/web": ["@napier/contracts"],
 };
 

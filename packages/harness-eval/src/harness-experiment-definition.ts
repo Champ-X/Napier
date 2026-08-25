@@ -10,7 +10,7 @@ import type {
   ModelRouteLock,
 } from "@napier/contracts/harness-experiments";
 
-import { canonicalJson, sha256 } from "./ed25519.js";
+import { canonicalJson, sha256 } from "@napier/runtime/harness-eval-support";
 
 const HASH = /^[a-f0-9]{64}$/u;
 const ID = /^[a-z][a-z0-9_.-]{2,79}$/u;

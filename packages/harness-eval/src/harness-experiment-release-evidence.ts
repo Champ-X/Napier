@@ -9,7 +9,7 @@ import type {
   HarnessExperimentTrendPoint,
 } from "@napier/contracts/harness-experiments";
 
-import { canonicalJson, sha256 } from "./ed25519.js";
+import { canonicalJson, sha256 } from "@napier/runtime/harness-eval-support";
 import { validateHarnessExperiment } from "./harness-experiment-definition.js";
 import { validateHarnessExperimentExecution } from "./harness-experiment-execution.js";
 

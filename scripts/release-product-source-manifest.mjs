@@ -15,6 +15,7 @@ const DIRECTORIES = [
   "apps/web/src",
   "packages/benchmark-kit/src",
   "packages/contracts/src",
+  "packages/harness-eval/src",
   "packages/runtime/src",
   "skills",
 ];
@@ -34,6 +35,8 @@ const FILES = [
   "packages/benchmark-kit/tsconfig.json",
   "packages/contracts/package.json",
   "packages/contracts/tsconfig.json",
+  "packages/harness-eval/package.json",
+  "packages/harness-eval/tsconfig.json",
   "packages/runtime/package.json",
   "packages/runtime/tsconfig.json",
   "scripts/agent-harness-acceptance-bridge.mjs",

@@ -24,7 +24,7 @@ import { verifyProductPerformanceReportFile } from "./product-performance-report
 import { verifyCodingExecutorComparison } from "./check-coding-executor-comparison.mjs";
 import { parseControlledHarnessEvidence } from "../packages/runtime/dist/controlled-harness-evidence.js";
 import { validateAgentHarnessAcceptanceEvidence } from "../packages/runtime/dist/agent-harness-acceptance.js";
-import { validateHarnessExperimentReleaseEvidence } from "../packages/runtime/dist/harness-experiments.js";
+import { validateHarnessExperimentReleaseEvidence } from "../packages/harness-eval/dist/harness-experiments.js";
 import { loadOpenWebComparisonAttemptReceipt } from "./open-web-comparison-attempt-artifacts.mjs";
 import { loadOpenWebComparisonCampaignArtifacts } from "./open-web-comparison-campaign-artifacts.mjs";
 import { verifyOpenWebComparisonCampaign } from "./open-web-comparison-campaign.mjs";

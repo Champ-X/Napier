@@ -9,14 +9,17 @@ import type {
   ModelRouteLock,
 } from "@napier/contracts/harness-experiments";
 
-import { canonicalJson, sha256 } from "./ed25519.js";
+import {
+  canonicalJson,
+  hashEventStream,
+  projectRunHarnessEffectMetrics,
+  sha256,
+} from "@napier/runtime/harness-eval-support";
 import {
   evaluateHarnessExperiment,
   validateHarnessExperiment,
   validateHarnessExperimentTrial,
 } from "./harness-experiment-definition.js";
-import { projectRunHarnessEffectMetrics } from "./run-harness-effect-metrics.js";
-import { hashEventStream } from "./run-replay.js";
 
 export interface HarnessExperimentTrialEvidence {
   run: RunRecord;

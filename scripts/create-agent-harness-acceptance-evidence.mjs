@@ -8,7 +8,7 @@ import {
   createAgentHarnessAcceptanceEvidence,
   validateAgentHarnessAcceptanceEvidence,
 } from "../packages/runtime/dist/agent-harness-acceptance.js";
-import { validateHarnessExperimentReleaseEvidence } from "../packages/runtime/dist/harness-experiments.js";
+import { validateHarnessExperimentReleaseEvidence } from "../packages/harness-eval/dist/harness-experiments.js";
 import { collectCodeBridgeEvidence } from "./agent-harness-acceptance-bridge.mjs";
 import { collectRouteAndToolEvidence } from "./agent-harness-acceptance-route-tools.mjs";
 import { collectSubagentEvidence } from "./agent-harness-acceptance-subagents.mjs";

@@ -1,0 +1,29 @@
+{
+  "name": "@napier/harness-eval",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/harness-experiments.d.ts",
+      "import": "./dist/harness-experiments.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.json",
+    "test": "npm run build && vitest run --maxWorkers=2 --testTimeout=30000",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@napier/contracts": "*",
+    "@napier/runtime": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "0.82.0",
+    "@types/node": "24.12.4",
+    "vitest": "4.1.9"
+  }
+}
