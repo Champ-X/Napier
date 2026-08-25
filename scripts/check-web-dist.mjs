@@ -1,7 +1,13 @@
-import { createHash } from "node:crypto";
-import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+import {
+  resolveRepoRelativePath,
+  settleReceiptFile,
+  sha256,
+  stableJson,
+} from "./content-addressed-receipt.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
@@ -321,33 +327,6 @@ function parseCliOptions(args) {
   return options;
 }
 
-async function settleReceiptFile({ receipt, receiptPath, repoRoot }) {
-  const absoluteRepoRoot = path.resolve(repoRoot);
-  const absoluteReceiptPath = resolveRepoRelativePath(
-    absoluteRepoRoot,
-    receiptPath,
-    "--receipt-path",
-  );
-  if (!receipt.ok) {
-    await rm(absoluteReceiptPath, { force: true });
-    return;
-  }
-  await mkdir(path.dirname(absoluteReceiptPath), { recursive: true });
-  await writeFile(absoluteReceiptPath, `${JSON.stringify(receipt, null, 2)}\n`);
-}
-
-function resolveRepoRelativePath(repoRoot, filePath, optionName) {
-  if (path.isAbsolute(filePath)) {
-    throw new Error(`${optionName} must be a repo-relative path`);
-  }
-  const absolutePath = path.resolve(repoRoot, filePath);
-  const relativePath = path.relative(repoRoot, absolutePath);
-  if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
-    throw new Error(`${optionName} must stay inside the repo root`);
-  }
-  return absolutePath;
-}
-
 function parseJsonReceipt(receiptText, errors) {
   try {
     return JSON.parse(receiptText);
@@ -424,20 +403,6 @@ function isRecord(value) {
 
 function isSha256(value) {
   return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
-}
-
-function stableJson(value) {
-  return JSON.stringify(sortJson(value));
-}
-
-function sortJson(value) {
-  if (Array.isArray(value)) return value.map((item) => sortJson(item));
-  if (!isRecord(value)) return value;
-  return Object.fromEntries(
-    Object.entries(value)
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([key, nestedValue]) => [key, sortJson(nestedValue)]),
-  );
 }
 
 function readCliValue(args, index, name) {
@@ -572,10 +537,6 @@ function findMainEntryPath(indexHtml, manifestRoot, errors) {
 
 function toManifestPath(repoRoot, absolutePath) {
   return path.relative(repoRoot, absolutePath).split(path.sep).join("/");
-}
-
-function sha256(content) {
-  return createHash("sha256").update(content).digest("hex");
 }
 
 function formatBytes(bytes) {
