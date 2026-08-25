@@ -32,11 +32,16 @@
     "bench:store-scale": "npm run build:core && node scripts/benchmark-store-scale.mjs",
     "build": "npm run build:core && npm run build -w @napier/sdk && npm run build -w @napier/cli && npm run build -w @napier/server && npm run build -w @napier/web",
     "build:core": "npm run build -w @napier/contracts && npm run build -w @napier/runtime",
-    "check": "npm run check:runtime-environment && npm run check:runtime-environment-receipt && npm run check:package-lock && npm run check:package-lock-receipt && npm run check:sandbox-image-sbom && npm run check:oci-resource-limits && npm run check:oci-crash-recovery && npm run check:sandbox-security-casebook && npm run check:sandbox-product-acceptance && npm run check:sandbox-multi-architecture && npm run check:sandbox-portable-process && npm run check:sandbox-portable-lsp && npm run check:sandbox-portable-dap && npm run check:sandbox-oci-supply-chain && npm run check:linux-host-product-acceptance && npm run check:sandbox-acquisition && npm run check:profile-upgrade && npm run check:s1-shell-sandbox-completion && npm run check:s1-shell-sandbox-completion-workflow && npm run check:windows-host-product-acceptance-workflow && npm run check:sandbox-external-release-workflow && npm run check:architecture && npm run check:web-design && npm run check:prompt-regression && npm run check:management-openapi && npm run check:management-openapi-compatibility && npm run check:coding-comparison && npm run build && npm run check:web-ui-e2e && npm run check:product-performance-baseline && npm run check:product-performance && npm run check:web-dist-manifest && npm run check:web-dist && npm run check:web-dist-receipt && npm run check:release-artifacts && npm test",
+    "check": "npm run check:runtime-environment && npm run check:runtime-environment-receipt && npm run check:package-lock && npm run check:package-lock-receipt && npm run check:sandbox-image-sbom && npm run check:oci-resource-limits && npm run check:oci-crash-recovery && npm run check:sandbox-security-casebook && npm run check:sandbox-product-acceptance && npm run check:sandbox-multi-architecture && npm run check:sandbox-portable-process && npm run check:sandbox-portable-lsp && npm run check:sandbox-portable-dap && npm run check:sandbox-oci-supply-chain && npm run check:linux-host-product-acceptance && npm run check:sandbox-acquisition && npm run check:profile-upgrade && npm run check:s1-shell-sandbox-completion && npm run check:s1-shell-sandbox-completion-workflow && npm run check:windows-host-product-acceptance-workflow && npm run check:sandbox-external-release-workflow && npm run check:architecture && npm run check:dead-code && npm run check:duplicates && npm run check:dependency-ownership && npm run check:desktop-scope && npm run check:public-api && npm run check:web-design && npm run check:prompt-regression && npm run check:management-openapi && npm run check:management-openapi-compatibility && npm run check:coding-comparison && npm run build && npm run check:web-ui-e2e && npm run check:product-performance-baseline && npm run check:product-performance && npm run check:web-dist-manifest && npm run check:web-dist && npm run check:web-dist-receipt && npm run check:release-artifacts && npm test",
     "check:coding-comparison": "node scripts/check-coding-executor-comparison.mjs",
     "check:default-product-consolidated": "npm run build:core && node scripts/verify-default-product-consolidated.mjs docs/artifacts/default-product-consolidated-m4-0.1.2.json",
     "check:default-product-source": "node scripts/release-product-source-manifest.mjs",
     "check:architecture": "node scripts/check-architecture.mjs",
+    "check:dead-code": "node scripts/check-dead-code.mjs",
+    "check:duplicates": "node scripts/check-duplicates.mjs",
+    "check:dependency-ownership": "node scripts/check-dependency-ownership.mjs",
+    "check:desktop-scope": "node scripts/check-desktop-scope.mjs",
+    "check:public-api": "node scripts/check-public-api.mjs",
     "check:management-openapi": "node scripts/generate-management-openapi.mjs --check",
     "check:management-openapi-compatibility": "node scripts/check-management-openapi-compatibility.mjs --verify-fixture-path docs/artifacts/management-openapi-compatibility-0.1.0.json",
     "check:linux-host-product-acceptance": "node scripts/check-linux-host-product-acceptance.mjs",
@@ -148,10 +153,17 @@
     "write:web-dist-receipt": "node scripts/check-web-dist.mjs --receipt-path docs/artifacts/web-dist-audit-0.1.0.json"
   },
   "devDependencies": {
+    "@earendil-works/pi-ai": "0.82.0",
+    "@lydell/node-pty": "1.2.0-beta.15",
     "@types/node": "24.12.4",
     "concurrently": "9.2.4",
+    "jscpd": "5.0.16",
+    "knip": "6.32.2",
+    "playwright-core": "1.62.1",
     "prettier": "3.8.4",
+    "typebox": "1.1.38",
     "typescript": "5.9.3",
-    "vitest": "4.1.9"
+    "vitest": "4.1.9",
+    "yaml": "2.9.0"
   }
 }

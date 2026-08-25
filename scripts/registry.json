@@ -1,0 +1,132 @@
+{
+  "kind": "napier.script-entry-registry",
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "path": "scripts/capture-sdk-capability-parity.mjs",
+      "kind": "evidence",
+      "owner": "sdk",
+      "entryCommand": "node scripts/capture-sdk-capability-parity.mjs --verify-current",
+      "networkRequired": false,
+      "credentialClass": "none",
+      "retainedUntil": "0.1.x",
+      "outputArtifacts": ["docs/artifacts/sdk-capability-parity-stage7"]
+    },
+    {
+      "path": "scripts/linux-host-product-acceptance-guest.mjs",
+      "kind": "live",
+      "owner": "release",
+      "entryCommand": "dynamic import from Linux host acceptance",
+      "networkRequired": true,
+      "credentialClass": "registry",
+      "retainedUntil": "0.1.x",
+      "outputArtifacts": [
+        "docs/artifacts/linux-host-product-acceptance-stage19.json"
+      ]
+    },
+    {
+      "path": "scripts/refresh-skill-load-fast-core-evidence.mjs",
+      "kind": "evidence",
+      "owner": "skills",
+      "entryCommand": "node scripts/refresh-skill-load-fast-core-evidence.mjs --prepare|--finalize",
+      "networkRequired": false,
+      "credentialClass": "none",
+      "retainedUntil": "0.1.x",
+      "outputArtifacts": ["docs/artifacts/skill-load-fast-core-stage7"]
+    },
+    {
+      "path": "scripts/run-credential-reference-canary.ts",
+      "kind": "fixture",
+      "owner": "security",
+      "entryCommand": "node --import tsx scripts/run-credential-reference-canary.ts",
+      "networkRequired": false,
+      "credentialClass": "generated-canary",
+      "retainedUntil": "0.1.x",
+      "outputArtifacts": []
+    },
+    {
+      "path": "scripts/run-skill-lifecycle-ab-dogfood.mjs",
+      "kind": "evidence",
+      "owner": "skills",
+      "entryCommand": "node scripts/run-skill-lifecycle-ab-dogfood.mjs",
+      "networkRequired": true,
+      "credentialClass": "provider",
+      "retainedUntil": "0.1.x",
+      "outputArtifacts": ["docs/artifacts/skill-load-fast-core-stage7"]
+    },
+    {
+      "path": "scripts/skill-lifecycle-ab-process.mjs",
+      "kind": "child",
+      "owner": "skills",
+      "entryCommand": "spawned by run-skill-lifecycle-ab-dogfood.mjs",
+      "networkRequired": false,
+      "credentialClass": "none",
+      "retainedUntil": "0.1.x",
+      "outputArtifacts": []
+    },
+    {
+      "path": "scripts/run-skill-load-fast-core-evidence.mjs",
+      "kind": "evidence",
+      "owner": "skills",
+      "entryCommand": "node scripts/run-skill-load-fast-core-evidence.mjs",
+      "networkRequired": true,
+      "credentialClass": "provider",
+      "retainedUntil": "0.1.x",
+      "outputArtifacts": ["docs/artifacts/skill-load-fast-core-stage7"]
+    },
+    {
+      "path": "scripts/run-skill-load-final-check.mjs",
+      "kind": "gate",
+      "owner": "skills",
+      "entryCommand": "node scripts/run-skill-load-final-check.mjs --verify PATH",
+      "networkRequired": false,
+      "credentialClass": "none",
+      "retainedUntil": "0.1.x",
+      "outputArtifacts": [
+        "docs/artifacts/skill-load-fast-core-stage7/final-check.json"
+      ]
+    },
+    {
+      "path": "scripts/run-skill-resource-dogfood.mjs",
+      "kind": "evidence",
+      "owner": "skills",
+      "entryCommand": "node scripts/run-skill-resource-dogfood.mjs",
+      "networkRequired": true,
+      "credentialClass": "provider",
+      "retainedUntil": "0.1.x",
+      "outputArtifacts": ["docs/artifacts/skill-load-fast-core-stage7"]
+    },
+    {
+      "path": "scripts/run-standard-skill-directory-dogfood.mjs",
+      "kind": "evidence",
+      "owner": "skills",
+      "entryCommand": "node scripts/run-standard-skill-directory-dogfood.mjs",
+      "networkRequired": true,
+      "credentialClass": "provider",
+      "retainedUntil": "0.1.x",
+      "outputArtifacts": ["docs/artifacts/skill-load-fast-core-stage7"]
+    },
+    {
+      "path": "scripts/windows-host-product-acceptance-live.mjs",
+      "kind": "live",
+      "owner": "release",
+      "entryCommand": "dynamic import from Windows host acceptance",
+      "networkRequired": true,
+      "credentialClass": "registry",
+      "retainedUntil": "0.1.x",
+      "outputArtifacts": [
+        "docs/artifacts/windows-host-product-acceptance-stage23.json"
+      ]
+    },
+    {
+      "path": "packages/runtime/src/browser-runtime-installer-child.ts",
+      "kind": "child",
+      "owner": "runtime-browser",
+      "entryCommand": "spawned by browser-runtime-setup.ts",
+      "networkRequired": true,
+      "credentialClass": "none",
+      "retainedUntil": "runtime-v1",
+      "outputArtifacts": []
+    }
+  ]
+}

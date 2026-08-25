@@ -26,6 +26,7 @@
     "@napier/runtime": "*"
   },
   "devDependencies": {
+    "@earendil-works/pi-ai": "0.82.0",
     "@types/node": "24.12.4",
     "typescript": "5.9.3",
     "vitest": "4.1.9"

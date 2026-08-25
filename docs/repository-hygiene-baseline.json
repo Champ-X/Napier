@@ -1,0 +1,41 @@
+{
+  "kind": "napier.repository-hygiene-baseline",
+  "schemaVersion": 1,
+  "capturedAtCommit": "610e57c",
+  "deadCode": {
+    "allowedUnusedFiles": [
+      "apps/web/src/model-context-envelope-copy.ts",
+      "scripts/open-web-comparison-chrome.mjs",
+      "scripts/web-ui-e2e-browser-task.mjs",
+      "scripts/web-ui-e2e-default-product-trial.mjs"
+    ],
+    "allowedProductionUnreachableFiles": [
+      "apps/web/src/GoalPanel.tsx",
+      "apps/web/src/InspectorNavigation.tsx",
+      "apps/web/src/InspectorTabButton.tsx",
+      "apps/web/src/ResponsiveInspector.tsx",
+      "apps/web/src/model-context-envelope-copy.ts"
+    ]
+  },
+  "duplicates": {
+    "maximumCloneCount": 143,
+    "maximumDuplicatedLines": 5647,
+    "phase0TargetDuplicatedLines": 4000,
+    "minimumLines": 20,
+    "minimumTokens": 150,
+    "mode": "strict"
+  },
+  "desktopScope": {
+    "maximumNarrowViewportMediaBlocks": 22,
+    "supportedViewports": [
+      { "width": 1280, "height": 900 },
+      { "width": 1440, "height": 900 },
+      { "width": 1920, "height": 1080 }
+    ]
+  },
+  "publicApi": {
+    "maximumRuntimeRootExports": 199,
+    "maximumInternalRuntimeRootImportFiles": 198,
+    "maximumWebDuplicateDefaultExports": 18
+  }
+}

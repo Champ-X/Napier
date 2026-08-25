@@ -1,0 +1,66 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "scripts/capture-sdk-capability-parity.mjs",
+    "scripts/linux-host-product-acceptance-guest.mjs",
+    "scripts/refresh-skill-load-fast-core-evidence.mjs",
+    "scripts/run-credential-reference-canary.ts",
+    "scripts/run-skill-lifecycle-ab-dogfood.mjs",
+    "scripts/run-skill-load-fast-core-evidence.mjs",
+    "scripts/run-skill-load-final-check.mjs",
+    "scripts/run-skill-resource-dogfood.mjs",
+    "scripts/run-standard-skill-directory-dogfood.mjs",
+    "scripts/windows-host-product-acceptance-live.mjs"
+  ],
+  "project": ["scripts/**/*.{mjs,ts}"],
+  "ignore": [
+    "benchmark-results/**",
+    "benchmarks/**/expected/**",
+    "benchmarks/**/fixture/**",
+    "benchmarks/**/tests/**",
+    "examples/**",
+    "packages/runtime/test/fixtures/**"
+  ],
+  "ignoreDependencies": ["preact"],
+  "ignoreBinaries": ["docker.exe"],
+  "workspaces": {
+    "apps/cli": {
+      "entry": ["src/index.ts!", "test/**/*.test.ts"],
+      "project": ["src/**/*.ts!", "test/**/*.ts"]
+    },
+    "apps/server": {
+      "entry": ["src/index.ts!", "test/**/*.test.ts"],
+      "project": ["src/**/*.ts!", "test/**/*.ts"]
+    },
+    "apps/web": {
+      "entry": [
+        "src/main.tsx!",
+        "src/kernel-browser-inspector-slot.ts!",
+        "src/*.zh.ts!",
+        "test/**/*.test.{ts,tsx}"
+      ],
+      "project": ["src/**/*.{ts,tsx}!", "test/**/*.{ts,tsx}"]
+    },
+    "packages/contracts": {
+      "entry": ["src/index.ts!", "src/*.ts!", "test/**/*.test.ts"],
+      "project": ["src/**/*.ts!", "test/**/*.ts"]
+    },
+    "packages/runtime": {
+      "entry": [
+        "src/index.ts!",
+        "src/browser-runtime-installer-child.ts!",
+        "test/**/*.test.ts"
+      ],
+      "project": ["src/**/*.ts!", "test/**/*.ts"]
+    },
+    "packages/sdk": {
+      "entry": [
+        "src/index.ts!",
+        "src/management.ts!",
+        "examples/*.mjs",
+        "test/**/*.test.ts"
+      ],
+      "project": ["src/**/*.ts!", "examples/*.mjs", "test/**/*.ts"]
+    }
+  }
+}
