@@ -1,7 +1,10 @@
 import type { ThreadDetail } from "@napier/contracts";
 import { copy } from "./copy";
 import { getLocale } from "./locale";
-import { latestModelHarnessView, type ModelHarnessFamily } from "./model-harness-view";
+import {
+  latestModelHarnessView,
+  type ModelHarnessFamily,
+} from "./model-harness-view";
 import { taskRunProgress } from "./task-run-progress";
 
 type TaskNarrativeProjection = NonNullable<ThreadDetail["taskNarrative"]>;
@@ -35,14 +38,14 @@ export function taskNarrative(
   now = Date.now(),
 ): TaskNarrative {
   if (!detail)
-    return localizePhaseLabel(
+    return localizeNarrative(
       baseNarrative("ready", "Ready", copy.narrative.emptyAction),
     );
   const projected = projectedNarrative(detail, now);
   const narrative = projected ?? legacyTaskNarrative(detail, now);
   const runId = detail.thread.currentRunId ?? detail.runs.at(-1)?.id;
   const harness = latestModelHarnessView(detail.events, runId);
-  return localizePhaseLabel({
+  return localizeNarrative({
     ...narrative,
     ...(harness
       ? {
@@ -75,10 +78,51 @@ const PHASE_LABEL_ZH: Record<string, string> = {
   "Recovery failed": "恢复失败",
 };
 
-function localizePhaseLabel(narrative: TaskNarrative): TaskNarrative {
+const NARRATIVE_TEXT_ZH: Record<string, string> = {
+  "Review the failed run": "查看失败的运行",
+  "Model is preparing the next action": "模型正在准备下一步动作",
+  "Plan completed with recorded evidence": "计划已完成，证据已记录",
+  "Latest run completed": "最近一次运行已完成",
+  "Start a follow-up task or inspect the evidence.":
+    "发起后续任务，或查看相关证据。",
+  "Describe the task to begin": "描述任务即可开始",
+  "Assessing the interrupted run": "正在评估中断的运行",
+  "Automatic recovery stopped safely": "自动恢复已安全停止",
+  "Review the Retry card or resume manually.": "查看重试卡片，或手动恢复运行。",
+  "Waiting for a recovery claim": "正在等待恢复任务认领",
+  "Claiming the interrupted run": "正在认领中断的运行",
+  "Restoring from verified read-only evidence": "正在根据已验证的只读证据恢复",
+  "Interrupted work recovered": "中断的工作已恢复",
+  "Inspect the recovered output or start a follow-up task.":
+    "查看恢复后的输出，或发起后续任务。",
+  "Review the recovery attempt": "查看恢复尝试",
+  "Partial result preserved at the budget boundary": "已在预算边界保留部分结果",
+  "Run paused at its budget boundary": "运行已在预算边界暂停",
+  "Continue from preserved artifacts and open work.":
+    "从已保留的产物和未完成工作继续。",
+  "Continue from the recorded progress.": "从已记录的进度继续。",
+};
+
+function localizeNarrative(narrative: TaskNarrative): TaskNarrative {
   if (getLocale() !== "zh") return narrative;
-  const label = PHASE_LABEL_ZH[narrative.phaseLabel];
-  return label ? { ...narrative, phaseLabel: label } : narrative;
+  return {
+    ...narrative,
+    phaseLabel: PHASE_LABEL_ZH[narrative.phaseLabel] ?? narrative.phaseLabel,
+    currentAction: localizeNarrativeText(narrative.currentAction),
+    ...(narrative.nextStep
+      ? { nextStep: localizeNarrativeText(narrative.nextStep) }
+      : {}),
+  };
+}
+
+function localizeNarrativeText(value: string): string {
+  const exact = NARRATIVE_TEXT_ZH[value];
+  if (exact) return exact;
+  const readyTitle = value.match(/^Ready to start: (.+)$/);
+  if (readyTitle) return `可以开始：${readyTitle[1]}`;
+  const attempt = value.match(/^Attempt (\d+)\/(\d+) is in progress\.$/);
+  if (attempt) return `恢复尝试 ${attempt[1]}/${attempt[2]} 正在进行。`;
+  return value;
 }
 
 function legacyTaskNarrative(
@@ -415,15 +459,15 @@ function runMetrics(
   return {
     elapsed,
     metrics: [
-    run.limits
+      run.limits
         ? `${elapsed} / ${formatDuration(run.limits.timeoutMs)}`
         : elapsed,
-    run.limits
-      ? `${tokens.toLocaleString()} / ${run.limits.maxTotalTokens.toLocaleString()} tokens`
-      : `${tokens.toLocaleString()} tokens`,
-    run.limits
-      ? `$${run.usage.costUsd.toFixed(4)} / $${run.limits.maxCostUsd.toFixed(2)}`
-      : `$${run.usage.costUsd.toFixed(4)}`,
+      run.limits
+        ? `${tokens.toLocaleString()} / ${run.limits.maxTotalTokens.toLocaleString()} tokens`
+        : `${tokens.toLocaleString()} tokens`,
+      run.limits
+        ? `$${run.usage.costUsd.toFixed(4)} / $${run.limits.maxCostUsd.toFixed(2)}`
+        : `$${run.usage.costUsd.toFixed(4)}`,
     ].join(" · "),
   };
 }

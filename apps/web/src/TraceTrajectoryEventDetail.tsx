@@ -12,34 +12,55 @@ const TABS: DetailTab[] = ["summary", "context", "evidence", "timing"];
 export interface TraceTrajectoryEventDetailProps {
   event: TraceTrajectoryEvent;
   onClose?: () => void;
+  /**
+   * Rendered inside the unified {@link ContextInspector}: the shared column owns
+   * the frame, title, pin and close, so the detail drops its own heading and
+   * lets the inspector body scroll (design §9.6).
+   */
+  embedded?: boolean;
 }
 
 export function TraceTrajectoryEventDetail({
   event,
   onClose,
+  embedded = false,
 }: TraceTrajectoryEventDetailProps) {
   const [tab, setTab] = useState<DetailTab>("summary");
   const detail = traceTrajectoryEventDetailView(event);
   const highlights = traceTrajectoryEventHighlights(event, detail.evidence);
   const copy = traceTrajectoryCopy.detail;
   return (
-    <section className="trace-event-detail" aria-label={copy.label}>
-      <header className="trace-event-detail-heading">
-        <div>
+    <section
+      className={`trace-event-detail${embedded ? " is-embedded" : ""}`}
+      aria-label={copy.label}
+    >
+      {embedded ? (
+        <div className="trace-event-detail-meta">
           <span>
             {event.role} · #{String(event.event.seq).padStart(3, "0")}
           </span>
-          <strong>{event.label}</strong>
+          <i className={`status-${event.status}`}>
+            {traceTrajectoryCopy.statuses[event.status]}
+          </i>
         </div>
-        <i className={`status-${event.status}`}>
-          {traceTrajectoryCopy.statuses[event.status]}
-        </i>
-        {onClose ? (
-          <button type="button" aria-label={copy.close} onClick={onClose}>
-            <X size={14} aria-hidden="true" />
-          </button>
-        ) : null}
-      </header>
+      ) : (
+        <header className="trace-event-detail-heading">
+          <div>
+            <span>
+              {event.role} · #{String(event.event.seq).padStart(3, "0")}
+            </span>
+            <strong>{event.label}</strong>
+          </div>
+          <i className={`status-${event.status}`}>
+            {traceTrajectoryCopy.statuses[event.status]}
+          </i>
+          {onClose ? (
+            <button type="button" aria-label={copy.close} onClick={onClose}>
+              <X size={14} aria-hidden="true" />
+            </button>
+          ) : null}
+        </header>
+      )}
       <div
         className="trace-event-detail-tabs"
         role="tablist"

@@ -183,6 +183,10 @@ export async function verifyWebUiLongRunNarrative(browser, origin, expected) {
     });
     const after = await readWebUiNarrative(page, expected);
     assert.deepEqual(after, before);
+    const environmentFallbackInitiallyHidden = !(await page
+      .locator(".environment-degradation-notice")
+      .isVisible());
+    await page.locator(".task-status-details > summary").click();
     await page.locator(".environment-degradation-notice").waitFor({
       state: "visible",
       timeout: WEB_UI_START_TIMEOUT_MS,
@@ -230,21 +234,21 @@ export async function verifyWebUiLongRunNarrative(browser, origin, expected) {
       .count();
     const environmentFallbackGeometry = await page.evaluate(() => {
       const notice = document.querySelector(".environment-degradation-notice");
-      const status = document.querySelector(".task-status-bar");
+      const details = document.querySelector(".task-status-details-popover");
       if (
         !(notice instanceof HTMLElement) ||
-        !(status instanceof HTMLElement)
+        !(details instanceof HTMLElement)
       ) {
-        return { withinStatus: false, horizontalOverflowPx: -1 };
+        return { withinDetails: false, horizontalOverflowPx: -1 };
       }
       const noticeRect = notice.getBoundingClientRect();
-      const statusRect = status.getBoundingClientRect();
+      const detailsRect = details.getBoundingClientRect();
       return {
-        withinStatus:
-          noticeRect.top >= statusRect.top &&
-          noticeRect.bottom <= statusRect.bottom &&
-          noticeRect.left >= statusRect.left &&
-          noticeRect.right <= statusRect.right,
+        withinDetails:
+          noticeRect.top >= detailsRect.top &&
+          noticeRect.bottom <= detailsRect.bottom &&
+          noticeRect.left >= detailsRect.left &&
+          noticeRect.right <= detailsRect.right,
         horizontalOverflowPx: Math.max(
           0,
           document.documentElement.scrollWidth -
@@ -266,6 +270,7 @@ export async function verifyWebUiLongRunNarrative(browser, origin, expected) {
     );
     return {
       ...after,
+      environmentFallbackInitiallyHidden,
       environmentFallbackVisible: await page
         .locator(".environment-degradation-notice")
         .isVisible(),
@@ -277,7 +282,8 @@ export async function verifyWebUiLongRunNarrative(browser, origin, expected) {
         (
           await page.locator(".environment-degradation-repair").textContent()
         )?.trim() ?? "",
-      environmentFallbackWithinStatus: environmentFallbackGeometry.withinStatus,
+      environmentFallbackWithinDetails:
+        environmentFallbackGeometry.withinDetails,
       horizontalOverflowPx: environmentFallbackGeometry.horizontalOverflowPx,
       refreshPreserved: true,
       showEarlierVisible: collapsed.showEarlierVisible,
@@ -304,18 +310,27 @@ export async function verifyWebUiArtifactNavigation(browser, origin, expected) {
   );
   try {
     await page.waitForFunction(
-      ({ title, count }) =>
+      (title) =>
         document.querySelector(".thread-heading h1")?.textContent?.trim() ===
-          title &&
+          title && document.querySelector(".task-narrative-completed") !== null,
+      expected.title,
+      { timeout: WEB_UI_START_TIMEOUT_MS },
+    );
+    const completionToggle = page.locator(".task-completion-toggle");
+    if ((await completionToggle.getAttribute("aria-expanded")) === "false") {
+      await completionToggle.click();
+    }
+    await page.waitForFunction(
+      (count) =>
         document.querySelectorAll(".task-narrative-completed nav button")
           .length === count,
-      { title: expected.title, count: expected.paths.length },
+      expected.paths.length,
       { timeout: WEB_UI_START_TIMEOUT_MS },
     );
     const previews = [];
     for (const path of expected.paths) {
       await page
-        .locator(`.task-narrative-completed button[title="Open ${path}"]`)
+        .locator(`.task-completion-details nav button[title="Open ${path}"]`)
         .click();
       await page.waitForFunction(
         (targetPath) =>

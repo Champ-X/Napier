@@ -6,31 +6,33 @@
   min-height: 0;
   grid-template-areas:
     "header"
-    "narrative"
-    "notices"
-    "conversation"
-    "decisions"
-    "composer";
-  grid-template-rows: 76px auto auto minmax(0, 1fr) auto auto;
-  background: var(--paper-bright);
+    "content";
+  grid-template-rows: var(--layout-command-bar) minmax(0, 1fr);
+  background: var(--color-canvas);
 }
 
 .workbench-header {
+  position: relative;
+  z-index: 20;
   grid-area: header;
-  display: flex;
+  display: grid;
   min-width: 0;
   align-items: center;
-  gap: 16px;
-  padding: 0 20px 0 60px;
-  background: rgb(255 255 255 / 92%);
-  border-bottom: 1px solid var(--rule);
+  grid-template-columns: minmax(180px, 1fr) auto minmax(260px, 1fr);
+  gap: var(--space-2);
+  min-height: var(--layout-command-bar);
+  padding: 0 var(--space-6);
+  background: var(--color-paper);
+  border-bottom: 1px solid var(--color-border-subtle);
   box-shadow: none;
   backdrop-filter: blur(12px);
 }
 
 .thread-heading {
   min-width: 0;
-  flex: 0 1 auto;
+  display: grid;
+  gap: 2px;
+  align-content: center;
 }
 
 .folio-number {
@@ -46,12 +48,21 @@
 .thread-heading h1 {
   margin: 0;
   overflow: hidden;
-  font-family: var(--serif);
-  font-size: 15px;
-  font-weight: 700;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
   line-height: 1.1;
   text-overflow: ellipsis;
   letter-spacing: -0.015em;
+  white-space: nowrap;
+}
+
+.thread-heading > small {
+  overflow: hidden;
+  font-size: var(--text-xs);
+  line-height: 1;
+  color: var(--color-fg-subtle);
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -79,10 +90,11 @@
 
 .run-meta {
   display: flex;
+  min-width: 0;
   flex: 0 0 auto;
   align-items: center;
-  gap: 12px;
-  margin-left: auto;
+  gap: var(--space-2);
+  justify-self: end;
 }
 
 .workbench-settings {
@@ -95,7 +107,7 @@
   cursor: pointer;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
 }
 
 .workbench-settings:hover {
@@ -119,11 +131,11 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  min-height: 36px;
+  min-height: var(--control-target-primary);
   padding: 4px 12px 4px 4px;
   cursor: pointer;
-  border-right: 1px solid var(--rule);
-  border-radius: 7px 0 0 7px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
   transition:
     color 130ms ease,
     background 130ms ease;
@@ -142,7 +154,7 @@
 
 .model-chip.is-unavailable .model-glyph {
   color: var(--danger);
-  background: #f5dfd8;
+  background: var(--color-gold-91);
 }
 
 .model-chip.is-unavailable small {
@@ -165,8 +177,20 @@
 
 .model-chip-copy {
   display: flex;
-  max-width: 100px;
+  max-width: 84px;
   flex-direction: column;
+}
+
+@media (max-width: 1500px) {
+  .workbench-header {
+    grid-template-columns: minmax(170px, 1fr) auto minmax(250px, 1fr);
+    padding-inline: var(--space-4);
+  }
+
+  .workbench-settings kbd,
+  .model-chip small {
+    display: none;
+  }
 }
 
 .model-chip-chevron {
@@ -218,7 +242,7 @@
 .run-status > span {
   width: 6px;
   height: 6px;
-  background: #718078;
+  background: var(--color-gray-52);
   border-radius: 50%;
 }
 
@@ -231,9 +255,9 @@
   position: relative;
   grid-column: 1 / -1;
   min-width: 0;
-  background: rgb(240 244 237 / 98%);
-  border-top: 1px solid rgb(51 87 64 / 22%);
-  border-bottom: 1px solid rgb(51 87 64 / 22%);
+  background: color-mix(in srgb, var(--color-sage-91) 98%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--color-green-26) 22%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-green-26) 22%, transparent);
 }
 
 .default-product-trial::before {
@@ -278,7 +302,7 @@
 .default-product-trial > summary:hover,
 .default-product-trial > summary:focus-visible {
   color: var(--ink);
-  background: rgb(255 255 255 / 44%);
+  background: color-mix(in srgb, var(--color-paper) 44%, transparent);
   outline: none;
 }
 
@@ -286,7 +310,7 @@
   display: grid;
   gap: 8px;
   padding: 10px 13px 12px;
-  border-top: 1px dashed rgb(51 87 64 / 28%);
+  border-top: 1px dashed color-mix(in srgb, var(--color-green-26) 28%, transparent);
 }
 
 .default-product-trial > div > p {
@@ -320,7 +344,7 @@
   font-size: var(--text-xs);
   color: var(--ink);
   background: var(--paper-bright);
-  border: 1px solid rgb(51 87 64 / 32%);
+  border: 1px solid color-mix(in srgb, var(--color-green-26) 32%, transparent);
   border-radius: 2px;
 }
 
@@ -332,7 +356,7 @@
   font-size: var(--text-xs);
   color: var(--forest);
   background: var(--paper-bright);
-  border: 1px solid rgb(51 87 64 / 38%);
+  border: 1px solid color-mix(in srgb, var(--color-green-26) 38%, transparent);
   border-radius: 2px;
   cursor: pointer;
 }
@@ -410,9 +434,9 @@
   gap: 8px;
   padding: 9px 24px 9px 72px;
   font-size: var(--text-xs);
-  color: #793d2f;
+  color: var(--color-red-32);
   background: var(--vermilion-soft);
-  border-bottom: 1px solid #e1b9ad;
+  border-bottom: 1px solid var(--color-red-77);
 }
 
 .workbench-notices {
@@ -430,9 +454,9 @@
   gap: 10px;
   align-items: center;
   padding: 12px 24px 12px 72px;
-  color: #4a4d53;
-  background: #e1e6ee;
-  border-bottom: 1px solid #d8c38e;
+  color: var(--color-gray-30);
+  background: var(--color-border-subtle);
+  border-bottom: 1px solid var(--color-gold-69);
 }
 
 .recovery-mark {
@@ -440,9 +464,9 @@
   width: 30px;
   height: 30px;
   place-items: center;
-  color: #765814;
-  background: #eaeff7;
-  border: 1px solid #d8c38e;
+  color: var(--color-warning);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-gold-69);
   border-radius: 50%;
 }
 
@@ -470,13 +494,13 @@
   font-family: var(--serif);
   font-size: var(--text-xs);
   line-height: 1.4;
-  color: #5f6670;
+  color: var(--color-fg-disabled);
 }
 
 .recovery-banner code {
   display: block;
   overflow: hidden;
-  color: #91794b;
+  color: var(--color-gold-43);
   text-overflow: ellipsis;
   text-transform: none;
   white-space: nowrap;
@@ -504,17 +528,17 @@
   padding: 7px 9px;
   font-family: var(--mono);
   font-size: var(--text-xs);
-  color: #4a4d53;
+  color: var(--color-gray-30);
   cursor: pointer;
-  background: #eff4fc;
-  border: 1px solid #cdb67e;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-gold-69);
   border-radius: 2px;
 }
 
 .recovery-banner button:hover:not(:disabled) {
   color: var(--paper-bright);
-  background: #79602c;
-  border-color: #79602c;
+  background: var(--color-gold-32);
+  border-color: var(--color-gold-32);
 }
 
 .recovery-banner button:disabled {
@@ -531,6 +555,10 @@
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
+  /* Reserve the composer's live measured height (useComposerHeight) so
+     auto-scroll and scrollIntoView never park the last turn behind the
+     floating input (design §7.1). */
+  scroll-padding-block-end: var(--composer-height);
   scrollbar-width: thin;
   scrollbar-color: var(--rule-strong) transparent;
 }

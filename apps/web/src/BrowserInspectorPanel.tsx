@@ -8,6 +8,7 @@ import type {
 import type { SelectedModelAvailability } from "./model-selection-view-model";
 import { browserLiveViewExpected } from "./browser-live-view-state";
 import { browserLiveCopy } from "./browser-live-copy";
+import { motionScrollBehavior } from "./reduced-motion";
 import { BrowserUseLocalTaskPanel } from "./BrowserUseLocalTaskPanel";
 
 export interface BrowserInspectorPanelProps {
@@ -66,7 +67,7 @@ export function BrowserInspectorPanel({
 
 export function focusBrowserLive(): void {
   const target = document.querySelector<HTMLElement>(".browser-live-view");
-  target?.scrollIntoView({ behavior: "smooth", block: "center" });
+  target?.scrollIntoView({ behavior: motionScrollBehavior(), block: "center" });
   target?.focus({ preventScroll: true });
 }
 

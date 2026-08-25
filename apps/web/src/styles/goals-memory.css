@@ -2,9 +2,9 @@
 .goal-card {
   position: relative;
   padding: 18px 16px 16px;
-  background: #ebf0f8;
+  background: var(--color-surface-muted);
   border: 1px solid var(--rule-strong);
-  box-shadow: 4px 5px 0 rgb(96 103 113 / 7%);
+  box-shadow: 4px 5px 0 color-mix(in srgb, var(--color-fg-disabled) 7%, transparent);
 }
 
 .goal-card::before {
@@ -141,7 +141,7 @@
   font-size: 13px;
   line-height: 1.5;
   color: var(--ink);
-  background: #ebf0f8;
+  background: var(--color-surface-muted);
   border: 1px solid var(--rule-strong);
   border-radius: 3px;
 }
@@ -174,16 +174,16 @@
 .memory-count {
   color: var(--ledger);
   background: var(--ledger-soft);
-  border-color: #b9cdbf;
+  border-color: var(--color-sage-76);
 }
 
 .memory-compose {
   padding: 12px;
   margin-bottom: 24px;
-  background: #ebf0f8;
+  background: var(--color-surface-muted);
   border: 1px solid var(--rule-strong);
   border-radius: 3px;
-  box-shadow: 3px 4px 0 rgb(96 103 113 / 6%);
+  box-shadow: 3px 4px 0 color-mix(in srgb, var(--color-fg-disabled) 6%, transparent);
 }
 
 .memory-compose textarea {
@@ -215,8 +215,8 @@
   justify-content: space-between;
   padding: 8px 9px;
   margin: -2px -1px 10px;
-  background: rgb(179 136 53 / 8%);
-  border: 1px solid rgb(179 136 53 / 30%);
+  background: color-mix(in srgb, var(--color-gold-46) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-gold-46) 30%, transparent);
   border-left: 3px solid var(--ochre);
   border-radius: 2px;
 }
@@ -272,14 +272,14 @@
   font-size: var(--text-xs);
   color: var(--ink-faint);
   cursor: pointer;
-  background: rgb(255 255 255 / 35%);
+  background: color-mix(in srgb, var(--color-paper) 35%, transparent);
   border: 1px solid var(--rule);
   border-radius: 2px;
 }
 
 .memory-consolidation-ticket {
-  background: rgb(45 85 71 / 7%);
-  border-color: rgb(45 85 71 / 25%);
+  background: color-mix(in srgb, var(--color-green-26) 7%, transparent);
+  border-color: color-mix(in srgb, var(--color-green-26) 25%, transparent);
   border-left-color: var(--ledger);
 }
 
@@ -301,7 +301,7 @@
   gap: 5px;
   align-items: start;
   padding-top: 4px;
-  border-top: 1px dotted rgb(45 85 71 / 22%);
+  border-top: 1px dotted color-mix(in srgb, var(--color-green-26) 22%, transparent);
 }
 
 .memory-consolidation-ticket li p {
@@ -442,11 +442,11 @@
 }
 
 .memory-card.memory-review-due {
-  background: linear-gradient(90deg, rgb(179 136 53 / 5%), transparent 72%);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--color-gold-46) 5%, transparent), transparent 72%);
 }
 
 .memory-card.memory-consolidation-selected {
-  background: linear-gradient(90deg, rgb(45 85 71 / 8%), transparent 78%);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--color-green-26) 8%, transparent), transparent 78%);
 }
 
 .memory-card.memory-consolidation-selected::before {
@@ -471,7 +471,7 @@
   font-size: var(--text-xs);
   color: var(--ink-faint);
   text-transform: uppercase;
-  background: rgb(255 255 255 / 35%);
+  background: color-mix(in srgb, var(--color-paper) 35%, transparent);
   border: 1px solid var(--rule);
   border-radius: 2px;
 }
@@ -588,7 +588,7 @@
 .memory-card button:hover {
   color: var(--ledger);
   background: var(--ledger-soft);
-  border-color: #b9cdbf;
+  border-color: var(--color-sage-76);
 }
 
 .memory-card button:disabled {
@@ -608,16 +608,16 @@
 .memory-card .memory-consolidate-button:hover {
   color: var(--ledger);
   background: var(--ledger-soft);
-  border-color: #b9cdbf;
+  border-color: var(--color-sage-76);
 }
 
 .memory-card .memory-consolidate-button[aria-pressed="true"]:hover {
   color: var(--paper-bright);
-  background: #24473b;
+  background: var(--color-green-19);
 }
 
 .memory-card .memory-correct-button:hover {
   color: var(--ochre);
-  background: rgb(179 136 53 / 8%);
-  border-color: rgb(179 136 53 / 35%);
+  background: color-mix(in srgb, var(--color-gold-46) 8%, transparent);
+  border-color: color-mix(in srgb, var(--color-gold-46) 35%, transparent);
 }

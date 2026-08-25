@@ -18,7 +18,9 @@ export function WorkbenchHeader({
   models,
   status,
   title,
+  contextLabel,
   children,
+  taskStatus,
   onModel,
   onOpenSettings,
 }: {
@@ -27,7 +29,9 @@ export function WorkbenchHeader({
   models: readonly ModelSummary[];
   status: ThreadStatus | undefined;
   title: string;
+  contextLabel: string;
   children?: ReactNode;
+  taskStatus?: ReactNode;
   onModel(value: string): void;
   onOpenSettings(): void;
 }) {
@@ -36,7 +40,10 @@ export function WorkbenchHeader({
     <header className="workbench-header">
       <div className="thread-heading">
         {title ? (
-          <h1>{title}</h1>
+          <>
+            <small>{contextLabel}</small>
+            <h1>{title}</h1>
+          </>
         ) : (
           <span className="thread-heading-idle">
             <strong>{copy.appName}</strong>
@@ -46,6 +53,16 @@ export function WorkbenchHeader({
       </div>
       {children}
       <div className="run-meta">
+        {taskStatus ?? (
+          <div
+            className={`run-status ${isRunning ? "is-running" : ""}`}
+            role="status"
+            aria-live="polite"
+          >
+            <span />
+            {isRunning ? copy.running : statusLabel(status)}
+          </div>
+        )}
         <label
           className={`model-chip ${model.configured ? "" : "is-unavailable"}`}
           title={
@@ -91,14 +108,6 @@ export function WorkbenchHeader({
             ))}
           </select>
         </label>
-        <div
-          className={`run-status ${isRunning ? "is-running" : ""}`}
-          role="status"
-          aria-live="polite"
-        >
-          <span />
-          {isRunning ? copy.running : statusLabel(status)}
-        </div>
         <button
           className="workbench-settings"
           type="button"

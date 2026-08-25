@@ -18,6 +18,10 @@ export const advancedSurfaceCopyEn = {
     useDefault: "Use default",
     agentSettings: "Agent settings",
   },
+  conversationFollow: {
+    newActivity: "New activity",
+    resume: "Back to latest",
+  },
   navigation: {
     task: "Task",
     inspect: "Inspect",

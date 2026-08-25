@@ -42,6 +42,7 @@ export function WorkspaceSettingsSurface({
 }: WorkspaceSettingsSurfaceProps) {
   const restoreFocusRef = useRef<HTMLElement | null>(null);
   const surfaceRef = useRef<HTMLElement | null>(null);
+  const contentRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
     restoreFocusRef.current =
       document.activeElement instanceof HTMLElement
@@ -73,6 +74,7 @@ export function WorkspaceSettingsSurface({
     };
   }, [onClose]);
   useEffect(() => {
+    if (contentRef.current) contentRef.current.scrollTop = 0;
     const focusTimer = window.setTimeout(() => {
       document.getElementById(`settings-section-${section}`)?.focus();
     }, 120);
@@ -140,6 +142,7 @@ export function WorkspaceSettingsSurface({
           })}
         </nav>
         <section
+          ref={contentRef}
           id="settings-content-panel"
           className="settings-content"
           role="tabpanel"

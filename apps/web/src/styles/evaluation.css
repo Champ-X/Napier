@@ -47,11 +47,11 @@
   margin: 0 0 15px;
   overflow: hidden;
   background:
-    linear-gradient(90deg, rgb(45 85 71 / 4%) 1px, transparent 1px) 0 0 / 28px
+    linear-gradient(90deg, color-mix(in srgb, var(--color-green-26) 4%, transparent) 1px, transparent 1px) 0 0 / 28px
       100%,
-    #eaeff7;
-  border: 1px solid #9fb8a8;
-  box-shadow: 3px 4px 0 rgb(45 85 71 / 8%);
+    var(--color-surface-muted);
+  border: 1px solid var(--color-sage-67);
+  box-shadow: 3px 4px 0 color-mix(in srgb, var(--color-green-26) 8%, transparent);
 }
 
 .receipt-trust-panel::before {
@@ -115,8 +115,8 @@
 .receipt-verifier {
   min-width: 0;
   padding: 7px;
-  background: rgb(255 255 255 / 40%);
-  border: 1px dotted #9fb8a8;
+  background: color-mix(in srgb, var(--color-paper) 40%, transparent);
+  border: 1px dotted var(--color-sage-67);
 }
 
 .receipt-anchor-register > header strong,
@@ -151,7 +151,7 @@
   gap: 3px 6px;
   align-items: center;
   padding: 5px;
-  background: #f2f7ff;
+  background: var(--color-bg-subtle);
   border: 1px solid var(--rule);
   border-left: 2px solid var(--ledger);
 }
@@ -240,7 +240,7 @@
   padding: 2px 4px;
   color: var(--vermilion);
   background: var(--vermilion-soft);
-  border: 1px solid #d6b4af;
+  border: 1px solid var(--color-red-76);
 }
 
 .receipt-anchor-confirm button:last-child {
@@ -331,7 +331,7 @@
   color: var(--ledger);
   cursor: pointer;
   background: var(--ledger-soft);
-  border: 1px solid #9fb8a8;
+  border: 1px solid var(--color-sage-67);
 }
 
 .receipt-verifier > label input {
@@ -352,10 +352,10 @@
     repeating-linear-gradient(
       0deg,
       transparent 0 14px,
-      rgb(45 85 71 / 5%) 15px
+      color-mix(in srgb, var(--color-green-26) 5%, transparent) 15px
     ),
-    rgb(236 241 249 / 72%);
-  border-block: 1px dotted #9fb8a8;
+    color-mix(in srgb, var(--color-surface-muted) 72%, transparent);
+  border-block: 1px dotted var(--color-sage-67);
 }
 
 .receipt-directory-discovery label {
@@ -427,7 +427,7 @@
   grid-column: 1 / -1;
   gap: 4px;
   padding: 6px;
-  background: rgb(255 255 255 / 34%);
+  background: color-mix(in srgb, var(--color-paper) 34%, transparent);
   border: 1px solid var(--rule);
   border-radius: 2px;
 }
@@ -458,7 +458,7 @@
   color: var(--ledger);
   cursor: pointer;
   background: var(--ledger-soft);
-  border: 1px solid #9fb8a8;
+  border: 1px solid var(--color-sage-67);
   border-radius: 2px;
 }
 
@@ -517,7 +517,7 @@
   color: var(--ledger);
   cursor: pointer;
   background: var(--ledger-soft);
-  border: 1px solid #9fb8a8;
+  border: 1px solid var(--color-sage-67);
 }
 
 .receipt-directory-quorum {
@@ -526,7 +526,7 @@
   align-items: center;
   padding: 5px 6px;
   color: var(--ledger);
-  background: rgb(45 85 71 / 8%);
+  background: color-mix(in srgb, var(--color-green-26) 8%, transparent);
   border-left: 2px solid var(--ledger);
 }
 
@@ -566,7 +566,7 @@
   align-items: center;
   padding: 5px 6px;
   color: var(--ledger);
-  background: rgb(45 85 71 / 8%);
+  background: color-mix(in srgb, var(--color-green-26) 8%, transparent);
   border-left: 2px solid var(--ledger);
 }
 
@@ -606,10 +606,10 @@
   gap: 5px;
   padding: 7px;
   background:
-    linear-gradient(90deg, rgb(45 85 71 / 6%) 1px, transparent 1px) 0 0 / 18px
+    linear-gradient(90deg, color-mix(in srgb, var(--color-green-26) 6%, transparent) 1px, transparent 1px) 0 0 / 18px
       100%,
-    rgb(240 245 253 / 74%);
-  border: 1px solid #9fb8a8;
+    color-mix(in srgb, var(--color-surface-muted) 74%, transparent);
+  border: 1px solid var(--color-sage-67);
   border-radius: 2px;
 }
 
@@ -654,7 +654,7 @@
   min-width: 0;
   padding: 5px 6px;
   color: var(--ledger);
-  background: rgb(45 85 71 / 8%);
+  background: color-mix(in srgb, var(--color-green-26) 8%, transparent);
   border-left: 2px solid var(--ledger);
 }
 
@@ -710,7 +710,7 @@
   color: var(--ledger);
   cursor: pointer;
   background: var(--ledger-soft);
-  border: 1px solid #9fb8a8;
+  border: 1px solid var(--color-sage-67);
   border-radius: 2px;
 }
 
@@ -793,7 +793,7 @@
 
 .receipt-verification.verification-unknown_key {
   color: var(--ochre);
-  background: rgb(164 131 62 / 10%);
+  background: color-mix(in srgb, var(--color-gold-44) 10%, transparent);
   border-left-color: var(--ochre);
 }
 
@@ -848,13 +848,13 @@
   margin: 0 0 15px;
   overflow: hidden;
   background:
-    linear-gradient(90deg, rgb(45 85 71 / 4%) 1px, transparent 1px) 0 0 / 24px
+    linear-gradient(90deg, color-mix(in srgb, var(--color-green-26) 4%, transparent) 1px, transparent 1px) 0 0 / 24px
       100%,
-    linear-gradient(rgb(45 85 71 / 4%) 1px, transparent 1px) 0 0 / 100% 19px,
-    #edf2fa;
-  border: 1px solid #adc2b3;
+    linear-gradient(color-mix(in srgb, var(--color-green-26) 4%, transparent) 1px, transparent 1px) 0 0 / 100% 19px,
+    var(--color-surface-muted);
+  border: 1px solid var(--color-sage-76);
   border-radius: 2px;
-  box-shadow: 3px 4px 0 rgb(45 85 71 / 7%);
+  box-shadow: 3px 4px 0 color-mix(in srgb, var(--color-green-26) 7%, transparent);
 }
 
 .calibration-ledger::before {
@@ -915,8 +915,8 @@
   gap: 3px 4px;
   min-width: 0;
   padding: 7px;
-  background: rgb(255 255 255 / 46%);
-  border: 1px solid rgb(45 85 71 / 18%);
+  background: color-mix(in srgb, var(--color-paper) 46%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-green-26) 18%, transparent);
 }
 
 .calibration-metrics > div > span {
@@ -970,7 +970,7 @@
 }
 
 .calibration-cohorts details {
-  background: rgb(255 255 255 / 44%);
+  background: color-mix(in srgb, var(--color-paper) 44%, transparent);
   border: 1px solid var(--rule);
 }
 
@@ -1059,7 +1059,7 @@
 
 .calibration-cohorts td {
   color: var(--ink-soft);
-  background: rgb(255 255 255 / 38%);
+  background: color-mix(in srgb, var(--color-paper) 38%, transparent);
 }
 
 .calibration-cohorts td:not(:empty) {
@@ -1073,13 +1073,13 @@
   font-size: var(--text-xs) !important;
   font-style: italic;
   color: var(--ink-faint) !important;
-  background: rgb(255 255 255 / 34%);
+  background: color-mix(in srgb, var(--color-paper) 34%, transparent);
   border: 1px dotted var(--rule);
 }
 
 .calibration-register {
   margin-top: 9px;
-  background: rgb(255 255 255 / 36%);
+  background: color-mix(in srgb, var(--color-paper) 36%, transparent);
   border-top: 1px solid var(--rule-strong);
   border-bottom: 1px solid var(--rule-strong);
 }
@@ -1156,20 +1156,20 @@
   font-size: var(--text-xs);
   color: var(--ochre);
   text-transform: uppercase;
-  background: rgb(164 131 62 / 10%);
-  border: 1px solid rgb(164 131 62 / 30%);
+  background: color-mix(in srgb, var(--color-gold-44) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-gold-44) 30%, transparent);
 }
 
 .calibration-state.is-agreed {
   color: var(--ledger);
   background: var(--ledger-soft);
-  border-color: #b9cdbf;
+  border-color: var(--color-sage-76);
 }
 
 .calibration-state.is-diverged {
   color: var(--danger);
-  background: #f2dfdc;
-  border-color: #d6b4af;
+  background: var(--color-gold-91);
+  border-color: var(--color-red-76);
 }
 
 .calibration-verdict-pair {
@@ -1219,7 +1219,7 @@
   color: var(--ledger);
   cursor: pointer;
   background: transparent;
-  border: 1px solid #b9cdbf;
+  border: 1px solid var(--color-sage-76);
   border-radius: 2px;
 }
 
@@ -1239,7 +1239,7 @@
   font-family: var(--mono);
   font-size: var(--text-xs);
   color: var(--ledger);
-  border-left: 1px solid #b9cdbf;
+  border-left: 1px solid var(--color-sage-76);
 }
 
 .calibration-review-form {
@@ -1247,8 +1247,8 @@
   gap: 7px;
   padding: 7px;
   margin-top: 7px;
-  background: #e9eef6;
-  border: 1px solid #b9cdbf;
+  background: var(--color-border-subtle);
+  border: 1px solid var(--color-sage-76);
 }
 
 .calibration-review-form label {
@@ -1265,7 +1265,7 @@
   font-size: var(--text-xs);
   color: var(--ink);
   resize: vertical;
-  background: rgb(255 255 255 / 60%);
+  background: color-mix(in srgb, var(--color-paper) 60%, transparent);
   border: 1px solid var(--rule);
   border-radius: 2px;
 }
@@ -1312,8 +1312,8 @@
   padding: 9px;
   margin-top: 8px;
   background:
-    linear-gradient(90deg, rgb(45 85 71 / 6%) 0 14px, transparent 14px), #ebf0f8;
-  border: 1px solid #aebfb3;
+    linear-gradient(90deg, color-mix(in srgb, var(--color-green-26) 6%, transparent) 0 14px, transparent 14px), var(--color-surface-muted);
+  border: 1px solid var(--color-sage-67);
   box-shadow: inset 3px 0 0 var(--ledger);
 }
 
@@ -1391,8 +1391,8 @@
 
 .consensus-roster {
   padding: 7px;
-  background: rgb(255 255 255 / 42%);
-  border: 1px dotted #aebfb3;
+  background: color-mix(in srgb, var(--color-paper) 42%, transparent);
+  border: 1px dotted var(--color-sage-67);
 }
 
 .consensus-roster > header {
@@ -1422,12 +1422,12 @@
   padding: 5px 6px;
   text-align: left;
   cursor: pointer;
-  background: #f1f6fe;
+  background: var(--color-surface-muted);
   border: 1px solid var(--rule);
 }
 
 .consensus-roster li button:hover {
-  border-color: #aebfb3;
+  border-color: var(--color-sage-67);
 }
 
 .consensus-roster li span {
@@ -1476,7 +1476,7 @@
   gap: 6px;
   padding: 7px;
   margin-top: 6px;
-  background: #e4e9f1;
+  background: var(--color-border-subtle);
   border: 1px solid var(--rule);
 }
 
@@ -1503,7 +1503,7 @@
   font-size: var(--text-xs);
   color: var(--ink);
   resize: vertical;
-  background: rgb(255 255 255 / 62%);
+  background: color-mix(in srgb, var(--color-paper) 62%, transparent);
   border: 1px solid var(--rule);
   border-radius: 2px;
 }
@@ -1533,7 +1533,7 @@
   gap: 6px;
   padding: 7px;
   margin: 6px 0 0;
-  border: 1px solid #aebfb3;
+  border: 1px solid var(--color-sage-67);
 }
 
 .consensus-gate legend {
@@ -1604,7 +1604,7 @@
   padding: 7px;
   margin-top: 6px;
   background: var(--ledger-soft);
-  border: 1px solid #aebfb3;
+  border: 1px solid var(--color-sage-67);
 }
 
 .consensus-report > header {
@@ -1618,7 +1618,7 @@
   color: var(--ledger);
   text-transform: uppercase;
   background: var(--paper-bright);
-  border: 1px solid #aebfb3;
+  border: 1px solid var(--color-sage-67);
 }
 
 .consensus-report > header strong {
@@ -1652,8 +1652,8 @@
   font-family: var(--mono);
   font-size: var(--text-xs);
   color: var(--ink-faint);
-  background: rgb(255 255 255 / 48%);
-  border-top: 1px solid #aebfb3;
+  background: color-mix(in srgb, var(--color-paper) 48%, transparent);
+  border-top: 1px solid var(--color-sage-67);
 }
 
 .consensus-distribution strong {
@@ -1676,8 +1676,8 @@
   font-size: var(--text-xs) !important;
   font-style: italic;
   color: var(--ochre) !important;
-  background: rgb(164 131 62 / 8%);
-  border: 1px dotted rgb(164 131 62 / 35%);
+  background: color-mix(in srgb, var(--color-gold-44) 8%, transparent);
+  border: 1px dotted color-mix(in srgb, var(--color-gold-44) 35%, transparent);
 }
 
 .consensus-resolution {
@@ -1686,8 +1686,8 @@
   gap: 2px 5px;
   padding: 6px;
   margin-top: 6px;
-  background: rgb(255 255 255 / 35%);
-  border-top: 1px dotted #aebfb3;
+  background: color-mix(in srgb, var(--color-paper) 35%, transparent);
+  border-top: 1px dotted var(--color-sage-67);
 }
 
 .consensus-resolution span,
@@ -1759,13 +1759,13 @@
     linear-gradient(
       90deg,
       transparent 0 17px,
-      rgb(164 131 62 / 12%) 17px 18px,
+      color-mix(in srgb, var(--color-gold-44) 12%, transparent) 17px 18px,
       transparent 18px
     ),
-    #e8edf5;
-  border: 1px solid rgb(164 131 62 / 45%);
+    var(--color-border-subtle);
+  border: 1px solid color-mix(in srgb, var(--color-gold-44) 45%, transparent);
   border-radius: 2px;
-  box-shadow: 3px 4px 0 rgb(64 67 73 / 7%);
+  box-shadow: 3px 4px 0 color-mix(in srgb, var(--color-gray-30) 7%, transparent);
 }
 
 .casebook-panel::before {
@@ -1837,7 +1837,7 @@
   font-family: var(--serif);
   font-size: var(--text-xs);
   color: var(--ink);
-  background: rgb(255 255 255 / 55%);
+  background: color-mix(in srgb, var(--color-paper) 55%, transparent);
   border: 1px solid var(--rule);
   border-radius: 2px;
 }
@@ -1876,8 +1876,8 @@
   gap: 7px;
   padding: 8px;
   margin-top: 8px;
-  background: rgb(255 255 255 / 38%);
-  border: 1px solid rgb(164 131 62 / 35%);
+  background: color-mix(in srgb, var(--color-paper) 38%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-gold-44) 35%, transparent);
 }
 
 .casebook-metadata-form label {
@@ -1906,7 +1906,7 @@
   padding: 10px;
   margin-top: 9px;
   background:
-    linear-gradient(rgb(164 131 62 / 4%) 1px, transparent 1px) 0 0 / 100% 19px,
+    linear-gradient(color-mix(in srgb, var(--color-gold-44) 4%, transparent) 1px, transparent 1px) 0 0 / 100% 19px,
     var(--paper-bright);
   border: 1px solid var(--rule);
 }
@@ -1957,8 +1957,8 @@
 
 .casebook-metrics > div {
   padding: 6px;
-  background: rgb(232 237 245 / 70%);
-  border-top: 1px solid rgb(164 131 62 / 35%);
+  background: color-mix(in srgb, var(--color-border-subtle) 70%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--color-gold-44) 35%, transparent);
 }
 
 .casebook-metrics dt,
@@ -1985,8 +1985,8 @@
   gap: 7px;
   padding: 8px;
   margin-bottom: 8px;
-  background: rgb(255 255 255 / 58%);
-  border: 1px solid rgb(164 131 62 / 38%);
+  background: color-mix(in srgb, var(--color-paper) 58%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-gold-44) 38%, transparent);
 }
 
 .casebook-template-coverage > header {
@@ -2060,7 +2060,7 @@
   align-items: flex-start;
   padding: 5px;
   color: var(--ink-faint);
-  background: #eaeff7;
+  background: var(--color-surface-muted);
   border-left: 2px solid var(--rule);
 }
 
@@ -2104,8 +2104,8 @@
   gap: 7px;
   padding: 8px;
   margin-bottom: 8px;
-  background: rgb(233 240 231 / 68%);
-  border: 1px solid rgb(51 87 64 / 35%);
+  background: color-mix(in srgb, var(--color-trajectory-input-surface) 68%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-green-26) 35%, transparent);
 }
 
 .release-product-trial > header,
@@ -2192,7 +2192,7 @@
   font-family: var(--mono);
   font-size: var(--text-xs);
   border-left: 2px solid var(--ochre);
-  background: rgb(255 255 255 / 55%);
+  background: color-mix(in srgb, var(--color-paper) 55%, transparent);
 }
 
 .release-product-version-passed {
@@ -2213,8 +2213,8 @@
   gap: 7px;
   padding: 8px;
   margin-bottom: 8px;
-  background: rgb(232 237 244 / 72%);
-  border: 1px solid rgb(55 75 104 / 32%);
+  background: color-mix(in srgb, var(--color-border-subtle) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-blue-31) 32%, transparent);
 }
 
 .controlled-harness-evidence > header,
@@ -2319,7 +2319,7 @@
   min-width: 0;
   padding: 6px;
   color: var(--ink);
-  background: rgb(255 255 255 / 58%);
+  background: color-mix(in srgb, var(--color-paper) 58%, transparent);
   border-left: 2px solid currentcolor;
 }
 
@@ -2333,7 +2333,7 @@
   padding: 6px;
   font-family: var(--mono);
   font-size: var(--text-xs);
-  background: rgb(255 255 255 / 58%);
+  background: color-mix(in srgb, var(--color-paper) 58%, transparent);
 }
 
 .controlled-harness-blockers {
@@ -2349,8 +2349,8 @@
 
 .casebook-curation {
   padding: 8px;
-  background: #e5eaf2;
-  border: 1px solid rgb(164 131 62 / 30%);
+  background: var(--color-border-subtle);
+  border: 1px solid color-mix(in srgb, var(--color-gold-44) 30%, transparent);
 }
 
 .casebook-curation > header {
@@ -2395,7 +2395,7 @@
 
 .casebook-case-list > li {
   padding: 8px;
-  background: #f0f5fd;
+  background: var(--color-surface-muted);
   border: 1px solid var(--rule);
   border-left: 3px solid var(--ochre);
 }
@@ -2494,7 +2494,7 @@
 
 .casebook-remove-confirm button:last-child {
   color: var(--danger);
-  border-color: #d6b4af;
+  border-color: var(--color-red-76);
 }
 
 .casebook-qualification {
@@ -2502,9 +2502,9 @@
   padding: 9px;
   margin-top: 9px;
   background:
-    linear-gradient(90deg, rgb(45 85 71 / 5%) 0 1px, transparent 1px 100%),
-    #edf2fa;
-  border: 1px solid #b9cdbf;
+    linear-gradient(90deg, color-mix(in srgb, var(--color-green-26) 5%, transparent) 0 1px, transparent 1px 100%),
+    var(--color-surface-muted);
+  border: 1px solid var(--color-sage-76);
   box-shadow: inset 3px 0 0 var(--ledger);
 }
 
@@ -2573,19 +2573,19 @@
 .casebook-qualification-status-passed {
   color: var(--ledger);
   background: var(--ledger-soft);
-  border-color: #b9cdbf;
+  border-color: var(--color-sage-76);
 }
 
 .casebook-qualification-status-failed {
   color: var(--vermilion);
   background: var(--vermilion-soft);
-  border-color: #d6b4af;
+  border-color: var(--color-red-76);
 }
 
 .casebook-qualification-status-inconclusive {
   color: var(--ochre);
-  background: rgb(164 131 62 / 10%);
-  border-color: rgb(164 131 62 / 35%);
+  background: color-mix(in srgb, var(--color-gold-44) 10%, transparent);
+  border-color: color-mix(in srgb, var(--color-gold-44) 35%, transparent);
 }
 
 .casebook-qualification-compose {
@@ -2593,8 +2593,8 @@
   grid-template-columns: minmax(0, 1fr) 0.9fr;
   gap: 6px;
   padding: 7px;
-  background: rgb(255 255 255 / 42%);
-  border: 1px dotted #b9cdbf;
+  background: color-mix(in srgb, var(--color-paper) 42%, transparent);
+  border: 1px dotted var(--color-sage-76);
 }
 
 .casebook-qualification-compose > label {
@@ -2687,7 +2687,7 @@
   min-width: 0;
   padding: 5px;
   background: var(--ledger-soft);
-  border-top: 1px solid #b9cdbf;
+  border-top: 1px solid var(--color-sage-76);
 }
 
 .casebook-qualification-summary dt,
@@ -2722,7 +2722,7 @@
 .casebook-qualification-cases > li {
   min-width: 0;
   padding: 6px;
-  background: #f2f7ff;
+  background: var(--color-bg-subtle);
   border: 1px solid var(--rule);
   border-left: 2px solid var(--ledger);
 }
@@ -2861,7 +2861,7 @@
   margin: 7px 0 0 !important;
   font-style: italic;
   text-align: center;
-  background: rgb(255 255 255 / 35%);
+  background: color-mix(in srgb, var(--color-paper) 35%, transparent);
   border: 1px dotted var(--rule);
 }
 
@@ -2934,8 +2934,8 @@
   padding: 7px;
   margin-top: 7px;
   overflow: hidden;
-  background: rgb(45 85 71 / 6%);
-  border: 1px solid #b9cdbf;
+  background: color-mix(in srgb, var(--color-green-26) 6%, transparent);
+  border: 1px solid var(--color-sage-76);
   box-shadow: inset 3px 0 0 var(--ledger);
 }
 
@@ -2946,20 +2946,20 @@
   width: 18px;
   height: 18px;
   content: "";
-  border: 1px double rgb(45 85 71 / 35%);
+  border: 1px double color-mix(in srgb, var(--color-green-26) 35%, transparent);
   border-radius: 50%;
   transform: rotate(-9deg);
 }
 
 .qualification-baseline.baseline-stale {
-  background: rgb(164 131 62 / 8%);
-  border-color: rgb(164 131 62 / 32%);
+  background: color-mix(in srgb, var(--color-gold-44) 8%, transparent);
+  border-color: color-mix(in srgb, var(--color-gold-44) 32%, transparent);
   box-shadow: inset 3px 0 0 var(--ochre);
 }
 
 .qualification-baseline.baseline-revoked {
   background: var(--vermilion-soft);
-  border-color: #d6b4af;
+  border-color: var(--color-red-76);
   box-shadow: inset 3px 0 0 var(--vermilion);
 }
 
@@ -3022,7 +3022,7 @@
   align-items: center;
   padding-top: 7px;
   margin-top: 7px;
-  border-top: 1px dotted #b9cdbf;
+  border-top: 1px dotted var(--color-sage-76);
 }
 
 .casebook-qualification > footer > code {
@@ -3057,8 +3057,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 6px;
-  background: rgb(232 237 245 / 70%);
-  border: 1px solid rgb(164 131 62 / 22%);
+  background: color-mix(in srgb, var(--color-border-subtle) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-gold-44) 22%, transparent);
 }
 
 .casebook-cohorts span {
@@ -3185,7 +3185,7 @@
   font-size: var(--text-xs) !important;
   line-height: 1.5;
   color: var(--ink-faint) !important;
-  border-top: 1px solid rgb(164 131 62 / 25%);
+  border-top: 1px solid color-mix(in srgb, var(--color-gold-44) 25%, transparent);
 }
 
 .casebook-safety svg {
@@ -3199,11 +3199,11 @@
   gap: 9px;
   padding: 12px;
   background:
-    linear-gradient(rgb(45 85 71 / 3%) 1px, transparent 1px) 0 0 / 100% 19px,
-    #ecf1f9;
-  border: 1px solid #b9cdbf;
+    linear-gradient(color-mix(in srgb, var(--color-green-26) 3%, transparent) 1px, transparent 1px) 0 0 / 100% 19px,
+    var(--color-surface-muted);
+  border: 1px solid var(--color-sage-76);
   border-radius: 3px;
-  box-shadow: 3px 4px 0 rgb(45 85 71 / 6%);
+  box-shadow: 3px 4px 0 color-mix(in srgb, var(--color-green-26) 6%, transparent);
 }
 
 .suite-compose-heading {
@@ -3212,7 +3212,7 @@
   align-items: center;
   justify-content: space-between;
   padding-bottom: 7px;
-  border-bottom: 1px solid rgb(45 85 71 / 20%);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-green-26) 20%, transparent);
 }
 
 .suite-compose-heading code {
@@ -3249,7 +3249,7 @@
   font-family: var(--serif);
   font-size: var(--text-xs);
   color: var(--ink);
-  background: rgb(255 255 255 / 55%);
+  background: color-mix(in srgb, var(--color-paper) 55%, transparent);
   border: 1px solid var(--rule);
   border-radius: 2px;
 }
@@ -3290,7 +3290,7 @@
   min-width: 0;
   padding: 4px 5px;
   cursor: pointer;
-  background: rgb(255 255 255 / 32%);
+  background: color-mix(in srgb, var(--color-paper) 32%, transparent);
   border: 1px solid transparent;
   border-radius: 2px;
 }
@@ -3298,7 +3298,7 @@
 .suite-candidate-register label:has(input:checked) {
   color: var(--ledger);
   background: var(--ledger-soft);
-  border-color: #b9cdbf;
+  border-color: var(--color-sage-76);
 }
 
 .suite-candidate-register label span {
@@ -3323,7 +3323,7 @@
 .suite-gate-grid label {
   grid-template-columns: 1fr auto;
   padding: 7px;
-  background: rgb(255 255 255 / 35%);
+  background: color-mix(in srgb, var(--color-paper) 35%, transparent);
   border: 1px solid var(--rule);
   border-radius: 2px;
 }
@@ -3442,19 +3442,19 @@
 .suite-status-passed {
   color: var(--ledger);
   background: var(--ledger-soft);
-  border-color: #b9cdbf;
+  border-color: var(--color-sage-76);
 }
 
 .suite-status-failed {
   color: var(--danger);
-  background: #f2dfdc;
-  border-color: #d6b4af;
+  background: var(--color-gold-91);
+  border-color: var(--color-red-76);
 }
 
 .suite-status-inconclusive {
   color: var(--ochre);
-  background: rgb(164 131 62 / 10%);
-  border-color: rgb(164 131 62 / 35%);
+  background: color-mix(in srgb, var(--color-gold-44) 10%, transparent);
+  border-color: color-mix(in srgb, var(--color-gold-44) 35%, transparent);
 }
 
 .suite-docket > dl {
@@ -3497,7 +3497,7 @@
   align-items: end;
   padding: 8px;
   margin-bottom: 9px;
-  background: #e8edf5;
+  background: var(--color-border-subtle);
   border: 1px solid var(--rule);
 }
 
@@ -3573,7 +3573,7 @@
 .suite-case-evidence li {
   min-width: 0;
   padding: 7px;
-  background: #f1f6fe;
+  background: var(--color-surface-muted);
   border: 1px solid var(--rule);
 }
 
@@ -3724,21 +3724,21 @@
 }
 
 .verdict-stamp.verdict-inconclusive {
-  color: #765814;
-  background: #f3e8c8;
-  border-color: #d8c188;
+  color: var(--color-warning);
+  background: var(--color-warning-surface);
+  border-color: var(--color-gold-69);
 }
 
 .verdict-stamp.verdict-left_better {
-  color: #4b5674;
-  background: #e2e5ee;
-  border-color: #b8bfd2;
+  color: var(--color-blue-37);
+  background: var(--color-border-subtle);
+  border-color: var(--color-blue-77);
 }
 
 .verdict-stamp.verdict-right_better {
-  color: #285241;
-  background: #dfe9e0;
-  border-color: #abc3b1;
+  color: var(--color-green-26);
+  background: var(--color-success-surface);
+  border-color: var(--color-sage-67);
 }
 
 .evaluation-reason {

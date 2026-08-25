@@ -1,12 +1,20 @@
-import { ArrowRight, Check, Circle, Target } from "lucide-react";
+import { ArrowRight, Check, Circle, Target, TriangleAlert } from "lucide-react";
+import { useState } from "react";
 
-import type { GoalState, ThreadDetail } from "@napier/contracts";
-import { copy } from "./copy";
-
-type OverviewDetail = Pick<
+import type {
+  ExecutionPlanStatus,
+  GoalState,
+  PlanStepStatus,
   ThreadDetail,
-  "thread" | "plans" | "activePlan"
->;
+} from "@napier/contracts";
+import { copy } from "./copy";
+import {
+  deriveTaskOverview,
+  type TaskOverviewStep,
+} from "./task-overview-view-model";
+import { DisclosureRow } from "./ui/primitives/DisclosureRow";
+
+type OverviewDetail = Pick<ThreadDetail, "thread" | "plans" | "activePlan">;
 
 export function TaskOverviewPanel({
   detail,
@@ -27,86 +35,76 @@ export function TaskOverviewPanel({
   onGoalClear(): void;
   onContinue(): void;
 }) {
-  const plan =
-    detail?.plans.findLast(
-      (candidate) =>
-        candidate.status === "active" || candidate.status === "blocked",
-    ) ?? detail?.plans.at(-1);
-  const progress = detail?.activePlan;
-  const objective =
-    progress?.objective ?? plan?.objective ?? goal?.objective ?? detail?.thread.title;
-  const currentStep =
-    progress?.runningStep ?? progress?.blockedStep ?? progress?.nextStep;
+  const model = deriveTaskOverview(detail, goal);
+  const [completedOpen, setCompletedOpen] = useState(false);
+  const [upcomingOpen, setUpcomingOpen] = useState(false);
+  const overview = copy.taskView.overview;
 
   return (
-    <section className="task-panel task-overview" aria-labelledby="task-overview-title">
-      <header className="task-panel-heading">
-        <div>
-          <span>{copy.taskView.eyebrow}</span>
-          <h2 id="task-overview-title">{copy.taskView.overview.title}</h2>
-        </div>
-        {progress?.nextStep ? (
-          <button
-            className="task-primary-action"
-            type="button"
-            disabled={!modelConfigured}
-            title={modelConfigured ? undefined : copy.modelUnavailableHint}
-            onClick={onContinue}
-          >
-            {copy.taskView.overview.continue}
-            <ArrowRight size={15} aria-hidden="true" />
-          </button>
+    <section
+      className="task-panel task-overview"
+      aria-labelledby="task-overview-objective"
+    >
+      <header className="task-overview-lede">
+        <span className="task-overview-eyebrow">{overview.objective}</span>
+        <h2 id="task-overview-objective">
+          {model.hasObjective ? model.objective : overview.noPlan}
+        </h2>
+        {model.hasPlan ? (
+          <p className="task-overview-progress">
+            <span>
+              {model.completedStepCount} / {model.stepCount} {overview.complete}
+            </span>
+            {model.status ? (
+              <span className={`task-overview-status is-${model.status}`}>
+                {planStatusLabel(model.status)}
+              </span>
+            ) : null}
+            {model.artifactCount > 0 ? (
+              <span>
+                {model.artifactCount} {overview.artifacts}
+              </span>
+            ) : null}
+          </p>
         ) : null}
       </header>
 
-      <div className="task-overview-summary">
-        <article className="task-objective-card">
-          <span>{copy.taskView.overview.objective}</span>
-          <strong>{objective || copy.taskView.overview.noPlan}</strong>
-          {currentStep ? (
-            <p>
-              {copy.taskView.overview.current}: {currentStep.title}
-            </p>
-          ) : null}
-        </article>
-        <dl className="task-progress-stats">
-          <div>
-            <dt>{copy.taskView.overview.progress}</dt>
-            <dd>
-              {progress?.completedStepCount ?? 0}/{progress?.stepCount ?? 0}
-            </dd>
-          </div>
-          <div>
-            <dt>{copy.taskView.overview.artifacts}</dt>
-            <dd>
-              {(progress?.verifiedArtifactCount ?? 0) +
-                (progress?.producedArtifactCount ?? 0)}
-            </dd>
-          </div>
-        </dl>
-      </div>
+      {model.currentStep ? (
+        <CurrentStep
+          step={model.currentStep}
+          canContinue={model.canContinue}
+          modelConfigured={modelConfigured}
+          onContinue={onContinue}
+        />
+      ) : null}
 
-      {plan ? (
-        <ol className="task-step-list" aria-label={copy.taskView.overview.progress}>
-          {plan.steps.map((step) => (
-            <li className={`is-${step.status}`} key={step.id}>
-              <span aria-hidden="true">
-                {step.status === "completed" ? (
-                  <Check size={14} />
-                ) : (
-                  <Circle size={12} />
-                )}
-              </span>
-              <div>
-                <strong>{step.title}</strong>
-                <p>{step.description}</p>
-              </div>
-              <small>{step.status.replaceAll("_", " ")}</small>
-            </li>
-          ))}
-        </ol>
-      ) : (
-        <p className="task-empty-state">{copy.taskView.overview.noPlan}</p>
+      {model.completedSteps.length > 0 ? (
+        <DisclosureRow
+          id="task-completed-steps"
+          title={overview.completedSteps}
+          status="success"
+          meta={model.completedSteps.length}
+          open={completedOpen}
+          onToggle={setCompletedOpen}
+        >
+          <StepHistoryList steps={model.completedSteps} tone="completed" />
+        </DisclosureRow>
+      ) : null}
+
+      {model.upcomingSteps.length > 0 ? (
+        <DisclosureRow
+          id="task-upcoming-steps"
+          title={overview.upcomingSteps}
+          meta={model.upcomingSteps.length}
+          open={upcomingOpen}
+          onToggle={setUpcomingOpen}
+        >
+          <StepHistoryList steps={model.upcomingSteps} tone="upcoming" />
+        </DisclosureRow>
+      ) : null}
+
+      {model.hasPlan ? null : (
+        <p className="task-empty-state">{overview.noPlan}</p>
       )}
 
       <section className="task-goal" aria-label={copy.goal.title}>
@@ -119,13 +117,13 @@ export function TaskOverviewPanel({
             <p>{goal.objective}</p>
             {goal.evidence ? <small>{goal.evidence}</small> : null}
             <button type="button" onClick={onGoalClear}>
-              {copy.taskView.overview.clearGoal}
+              {overview.clearGoal}
             </button>
           </div>
         ) : (
           <details>
-            <summary>{copy.taskView.overview.addGoal}</summary>
-            <p>{copy.taskView.overview.noGoal}</p>
+            <summary>{overview.addGoal}</summary>
+            <p>{overview.noGoal}</p>
             <textarea
               rows={3}
               value={goalDraft}
@@ -138,11 +136,100 @@ export function TaskOverviewPanel({
               disabled={!goalDraft.trim()}
               onClick={onGoalSave}
             >
-              {copy.taskView.overview.saveGoal}
+              {overview.saveGoal}
             </button>
           </details>
         )}
       </section>
     </section>
   );
+}
+
+function CurrentStep({
+  step,
+  canContinue,
+  modelConfigured,
+  onContinue,
+}: {
+  step: TaskOverviewStep;
+  canContinue: boolean;
+  modelConfigured: boolean;
+  onContinue(): void;
+}) {
+  const overview = copy.taskView.overview;
+  return (
+    <section
+      className={`task-current-step status-${stepTone(step.status)}`}
+      aria-label={overview.current}
+    >
+      <header>
+        <span className="task-current-step-label">{overview.current}</span>
+        <span className="task-current-step-status">
+          {stepStatusLabel(step.status)}
+        </span>
+      </header>
+      <strong>{step.title}</strong>
+      {step.description ? <p>{step.description}</p> : null}
+      {step.blocker ? (
+        <p className="task-current-step-blocker">
+          <TriangleAlert size={15} aria-hidden="true" />
+          {step.blocker}
+        </p>
+      ) : null}
+      {canContinue ? (
+        <button
+          className="task-primary-action"
+          type="button"
+          disabled={!modelConfigured}
+          title={modelConfigured ? undefined : copy.modelUnavailableHint}
+          onClick={onContinue}
+        >
+          {overview.continue}
+          <ArrowRight size={15} aria-hidden="true" />
+        </button>
+      ) : null}
+    </section>
+  );
+}
+
+function StepHistoryList({
+  steps,
+  tone,
+}: {
+  steps: TaskOverviewStep[];
+  tone: "completed" | "upcoming";
+}) {
+  return (
+    <ol className="task-step-history">
+      {steps.map((step) => (
+        <li className={`is-${tone}`} key={step.id}>
+          <span aria-hidden="true">
+            {tone === "completed" ? <Check size={13} /> : <Circle size={11} />}
+          </span>
+          <span>{step.title}</span>
+          <small>{stepStatusLabel(step.status)}</small>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function planStatusLabel(status: ExecutionPlanStatus): string {
+  return (
+    (copy.taskView.overview.planStatus as Record<string, string>)[status] ??
+    status
+  );
+}
+
+function stepStatusLabel(status: PlanStepStatus): string {
+  return (
+    (copy.taskView.status as Record<string, string>)[status] ??
+    status.replaceAll("_", " ")
+  );
+}
+
+function stepTone(status: PlanStepStatus): "running" | "danger" | "neutral" {
+  if (status === "blocked") return "danger";
+  if (status === "running" || status === "ready") return "running";
+  return "neutral";
 }

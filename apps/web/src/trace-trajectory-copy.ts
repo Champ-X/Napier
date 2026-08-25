@@ -30,6 +30,11 @@ export const traceTrajectoryCopyEn = {
   turn: "Turn",
   events: "events",
   run: "Run",
+  rows: "Trajectory rows",
+  fold: {
+    events: "events folded",
+    label: "Folded low-signal events",
+  },
   durationUnits: { milliseconds: "ms", seconds: "s", minutes: "m" },
   audit: {
     type: "Type",
@@ -148,6 +153,11 @@ export const traceTrajectoryZh: LocaleOverride<typeof traceTrajectoryCopyEn> = {
   turn: "轮次",
   events: "个事件",
   run: "运行",
+  rows: "轨迹行",
+  fold: {
+    events: "个事件已折叠",
+    label: "已折叠的低价值事件",
+  },
   durationUnits: { milliseconds: "毫秒", seconds: "秒", minutes: "分" },
   audit: {
     type: "类型",

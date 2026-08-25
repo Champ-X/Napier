@@ -19,7 +19,10 @@ export function TaskChangesPanel({
   const artifacts = taskArtifacts(detail);
   const citations = detail?.citations ?? [];
   return (
-    <section className="task-panel task-changes" aria-labelledby="task-changes-title">
+    <section
+      className="task-panel task-changes"
+      aria-labelledby="task-changes-title"
+    >
       <header className="task-panel-heading">
         <div>
           <span>{copy.taskView.sections.changes}</span>
@@ -32,7 +35,7 @@ export function TaskChangesPanel({
         <div className="task-artifact-grid">
           {artifacts.map((artifact) => (
             <article
-              className="task-artifact-card conversation-artifact"
+              className={`task-artifact-card is-${artifact.status}`}
               data-artifact-path={artifact.path}
               key={`${artifact.id}:${artifact.path}`}
               tabIndex={-1}
@@ -43,7 +46,7 @@ export function TaskChangesPanel({
                 <p>{artifact.description}</p>
               </div>
               <span className={`task-status-badge is-${artifact.status}`}>
-                {artifact.status.replaceAll("_", " ")}
+                {taskStatusLabel(artifact.status)}
               </span>
             </article>
           ))}
@@ -53,7 +56,10 @@ export function TaskChangesPanel({
       )}
 
       {citations.length > 0 ? (
-        <section className="task-reference-list" aria-labelledby="task-references-title">
+        <section
+          className="task-reference-list"
+          aria-labelledby="task-references-title"
+        >
           <h3 id="task-references-title">
             <Link2 size={15} aria-hidden="true" />
             {copy.taskView.changes.references}
@@ -63,7 +69,8 @@ export function TaskChangesPanel({
               <li key={citation.id}>
                 <strong>{citation.sourceId}</strong>
                 <span>
-                  {citation.sourceKind} · L{citation.startLine}–{citation.endLine}
+                  {citation.sourceKind} · L{citation.startLine}–
+                  {citation.endLine}
                 </span>
               </li>
             ))}
@@ -80,12 +87,21 @@ export function TaskChangesPanel({
               <small>{copy.taskView.changes.recoveryBody}</small>
             </span>
           </summary>
-          <Suspense fallback={<div className="context-loading" role="status" />}>
+          <Suspense
+            fallback={<div className="context-loading" role="status" />}
+          >
             <LazyFilesPanel threadId={detail.thread.id} />
           </Suspense>
         </details>
       ) : null}
     </section>
+  );
+}
+
+function taskStatusLabel(status: string): string {
+  return (
+    (copy.taskView.status as Record<string, string>)[status] ??
+    status.replaceAll("_", " ")
   );
 }
 
@@ -100,7 +116,9 @@ function taskArtifacts(detail: ChangesDetail | undefined) {
         candidate.status === "active" || candidate.status === "blocked",
     ) ?? detail.plans.at(-1);
   const candidates = projected.length > 0 ? projected : (plan?.artifacts ?? []);
-  const unique = new Map(candidates.map((artifact) => [artifact.path, artifact]));
+  const unique = new Map(
+    candidates.map((artifact) => [artifact.path, artifact]),
+  );
   return [...unique.values()].filter(
     (artifact) => artifact.status !== "superseded",
   );

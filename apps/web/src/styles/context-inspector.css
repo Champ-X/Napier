@@ -1,0 +1,124 @@
+/* Unified context inspector (design §9.6). One right-column carrier for a
+   single selected context object — a trajectory event, a tool call, or an
+   evidence item. Header holds object type, title, pin and close; the body
+   swaps in place. Token-only: no color literals live here. */
+.context-inspector {
+  position: sticky;
+  top: 0;
+  display: grid;
+  min-width: 0;
+  height: calc(100vh - 142px);
+  max-height: 760px;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  color: var(--color-fg);
+  background: var(--color-surface);
+  border-inline-start: 1px solid var(--color-border);
+}
+
+.context-inspector:focus-visible {
+  outline: var(--control-focus-width) solid var(--color-focus-ring);
+  outline-offset: calc(-1 * var(--control-focus-width));
+}
+
+.context-inspector-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: center;
+  min-height: 58px;
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+  background: var(--color-surface-raised);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.context-inspector-identity {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.context-inspector-type {
+  font-family: var(--font-mono);
+  font-size: var(--text-annotation);
+  color: var(--color-fg-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.context-inspector-type.type-event {
+  color: var(--color-trajectory-model-fg);
+}
+
+.context-inspector-type.type-tool {
+  color: var(--color-trajectory-tool-fg);
+}
+
+.context-inspector-type.type-evidence {
+  color: var(--color-trajectory-input-fg);
+}
+
+.context-inspector-identity strong {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.context-inspector-actions {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+}
+
+.context-inspector-pin,
+.context-inspector-close {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--color-fg-subtle);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  place-items: center;
+}
+
+.context-inspector-pin:hover,
+.context-inspector-pin:focus-visible,
+.context-inspector-close:hover,
+.context-inspector-close:focus-visible {
+  color: var(--color-fg);
+  background: var(--color-surface-muted);
+}
+
+.context-inspector-pin.is-pinned {
+  color: var(--color-accent);
+}
+
+.context-inspector-body {
+  min-height: 0;
+  overflow: hidden auto;
+}
+
+@media (forced-colors: active) {
+  .context-inspector {
+    border-inline-start-color: CanvasText;
+  }
+
+  .context-inspector:focus-visible {
+    outline: var(--control-focus-width) solid Highlight;
+  }
+
+  .context-inspector-pin:focus-visible,
+  .context-inspector-close:focus-visible {
+    outline: var(--control-focus-width) solid Highlight;
+    outline-offset: var(--control-focus-offset);
+  }
+
+  .context-inspector-pin.is-pinned {
+    color: Highlight;
+  }
+}

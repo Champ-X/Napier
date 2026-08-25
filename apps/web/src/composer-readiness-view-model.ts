@@ -9,6 +9,8 @@ import {
   type ComposerReadinessItem,
   type ComposerRunReadiness,
 } from "./composer-readiness-types";
+import { composerCopy } from "./composer-copy";
+import { copy } from "./copy";
 
 export type {
   ComposerReadinessItem,
@@ -56,7 +58,9 @@ export function composerRunReadiness(
     const initial = initialComposerRunReadiness();
     return {
       ...initial,
-      message: `Effective capability readiness is unavailable${error ? "; review the capability contract before sending" : ""}.`,
+      message: error
+        ? composerCopy.messages.unavailableWithReview
+        : composerCopy.messages.unavailable,
     };
   }
   if (
@@ -68,8 +72,7 @@ export function composerRunReadiness(
     const initial = initialComposerRunReadiness();
     return {
       ...initial,
-      message:
-        "Refreshing effective readiness for the selected task mode before sending.",
+      message: composerCopy.messages.refreshing,
     };
   }
 
@@ -87,37 +90,52 @@ export function composerRunReadiness(
       blocked.length > 0 ? "blocked" : warned.length > 0 ? "warn" : "ready",
     message:
       blocked.length > 0
-        ? `Cannot start ${modeLabel(modeId)}: ${blocked.map((item) => `${item.label} ${item.value.toLowerCase()}`).join("; ")}. Review or restore capabilities before sending.`
+        ? blockedMessage(modeId, blocked)
         : warned.some(
               (item) =>
-                item.id === "sandbox" && item.value === "Read-only fallback",
+                item.id === "sandbox" &&
+                item.value === composerCopy.values.readOnlyFallback,
             )
-          ? "Starts with safe reads only. Configure Sandbox when the task needs edits, commands, Browser sessions, Extensions, or Subagents."
+          ? copy.readiness.safeReadsOnly
           : warned.some(
-                (item) => item.id === "sandbox" && item.value === "Host direct",
+                (item) =>
+                  item.id === "sandbox" &&
+                  item.value === composerCopy.values.hostDirect,
               )
-            ? "Host-direct execution is explicitly enabled without OS isolation. Commands run on this machine."
+            ? copy.readiness.hostDirect
             : "",
     items,
   };
+}
+
+function blockedMessage(
+  modeId: ModeId,
+  blocked: ComposerReadinessItem[],
+): string {
+  const { messages } = composerCopy;
+  const reasons = blocked
+    .map((item) => `${item.label} ${item.value.toLowerCase()}`)
+    .join(messages.blockedItemJoin);
+  return `${messages.blockedPrefix}${modeLabel(modeId)}${messages.blockedSeparator}${reasons}${messages.blockedSuffix}`;
 }
 
 function networkReadiness(
   modeId: ModeId,
   projection: EffectiveAgentCapabilityProjectionV1,
 ): ComposerReadinessItem {
+  const { labels, values, details } = composerCopy;
   if (!NETWORK_MODES.has(modeId)) {
-    return inactiveItem("network", "Network", "Not needed");
+    return inactiveItem("network", labels.network, values.notNeeded);
   }
   const records = ["web_search", "web_fetch"].map((tool) =>
     toolReadiness(projection, tool),
   );
   return combinedToolReadiness(
     "network",
-    "Network",
+    labels.network,
     records,
-    "Search + Fetch",
-    "Search or Fetch is not exposed by the effective Runtime.",
+    values.searchFetch,
+    details.networkBlocked,
   );
 }
 
@@ -125,6 +143,7 @@ function sandboxReadiness(
   modeId: ModeId,
   projection: EffectiveAgentCapabilityProjectionV1,
 ): ComposerReadinessItem {
+  const { labels, values, details } = composerCopy;
   const record = projection.readiness.find((item) =>
     item.id.startsWith("sandbox:"),
   );
@@ -134,33 +153,30 @@ function sandboxReadiness(
       projection.toolPolicy !== "observe" &&
       projection.configuredTools.some((tool) => PROCESS_TOOLS.has(tool)));
   if (!required) {
-    return inactiveItem("sandbox", "Sandbox", "Not needed");
+    return inactiveItem("sandbox", labels.sandbox, values.notNeeded);
   }
   if (!record || unavailable(record)) {
     return {
       id: "sandbox",
-      label: "Sandbox",
-      value: "Read-only fallback",
+      label: labels.sandbox,
+      value: values.readOnlyFallback,
       state: "warn",
-      detail:
-        record?.detail ??
-        "No supported Sandbox provider is reported. The Runtime will expose only its negotiated safe read-only tool surface.",
+      detail: record?.detail ?? details.sandboxReadOnlyFallback,
     };
   }
   if (record.id === "sandbox:host-direct") {
     return {
       id: "sandbox",
-      label: "Sandbox",
-      value: "Host direct",
+      label: labels.sandbox,
+      value: values.hostDirect,
       state: "warn",
-      detail:
-        "Explicit host-direct mode is active. It provides no OS isolation.",
+      detail: details.sandboxHostDirect,
     };
   }
   return {
     id: "sandbox",
-    label: "Sandbox",
-    value: record.status === "ready" ? "Ready" : "Available · unverified",
+    label: labels.sandbox,
+    value: record.status === "ready" ? values.ready : values.availableUnverified,
     state: record.status === "ready" ? "ready" : "warn",
     detail: record.detail,
   };
@@ -170,26 +186,25 @@ function browserReadiness(
   modeId: ModeId,
   projection: EffectiveAgentCapabilityProjectionV1,
 ): ComposerReadinessItem {
+  const { labels, values, details } = composerCopy;
   if (!BROWSER_MODES.has(modeId)) {
-    return inactiveItem("browser", "Browser", "Not needed");
+    return inactiveItem("browser", labels.browser, values.notNeeded);
   }
   const record = toolReadiness(projection, "browser");
   if (!record || unavailable(record)) {
     const required = modeId === "browser";
     return {
       id: "browser",
-      label: "Browser",
-      value: required ? "Unavailable" : "Static only",
+      label: labels.browser,
+      value: required ? values.unavailable : values.staticOnly,
       state: required ? "blocked" : "warn",
-      detail: required
-        ? "Browser mode requires the Browser tool to be exposed."
-        : "Dynamic-page Browser fallback is unavailable; static Search and Fetch can still run.",
+      detail: required ? details.browserRequired : details.browserStaticFallback,
     };
   }
   return {
     id: "browser",
-    label: "Browser",
-    value: record.status === "ready" ? "Ready" : "Available · unverified",
+    label: labels.browser,
+    value: record.status === "ready" ? values.ready : values.availableUnverified,
     state: record.status === "ready" ? "ready" : "warn",
     detail: record.detail,
   };
@@ -198,6 +213,7 @@ function browserReadiness(
 function permissionReadiness(
   projection: EffectiveAgentCapabilityProjectionV1,
 ): ComposerReadinessItem {
+  const { labels, values, details } = composerCopy;
   const sandboxUnavailable = projection.readiness.some(
     (record) =>
       record.id.startsWith("sandbox:") && record.status === "unavailable",
@@ -205,30 +221,29 @@ function permissionReadiness(
   if (sandboxUnavailable && projection.toolPolicy !== "observe") {
     return {
       id: "permission",
-      label: "Permission",
-      value: "Read-only fallback",
+      label: labels.permission,
+      value: values.readOnlyFallback,
       state: "warn",
-      detail:
-        "The configured write policy remains unchanged, but this Run will withhold mutating and process-backed capabilities until Sandbox is ready.",
+      detail: details.permissionReadOnlyFallback,
     };
   }
   const value =
     projection.toolPolicy === "observe"
-      ? "Read only"
+      ? values.readOnly
       : projection.toolPolicy === "workspace"
-        ? "Workspace changes"
-        : "External confirm";
+        ? values.workspaceChanges
+        : values.externalConfirm;
   return {
     id: "permission",
-    label: "Permission",
+    label: labels.permission,
     value,
     state: "ready",
     detail:
       projection.toolPolicy === "observe"
-        ? "This Run can observe but cannot mutate the workspace or perform external side effects."
+        ? details.permissionObserve
         : projection.toolPolicy === "workspace"
-          ? "Workspace changes are enabled; high-impact external effects still require confirmation."
-          : "External interaction is confirmation-bound.",
+          ? details.permissionWorkspace
+          : details.permissionExternal,
   };
 }
 
@@ -243,7 +258,7 @@ function combinedToolReadiness(
     return {
       id,
       label,
-      value: "Unavailable",
+      value: composerCopy.values.unavailable,
       state: "blocked",
       detail: blockedDetail,
     };
@@ -254,7 +269,9 @@ function combinedToolReadiness(
   return {
     id,
     label,
-    value: unverified ? `${readyValue} · unverified` : readyValue,
+    value: unverified
+      ? `${readyValue}${composerCopy.unverifiedSuffix}`
+      : readyValue,
     state: unverified ? "warn" : "ready",
     detail: records.map((record) => record!.detail).join(" "),
   };
@@ -286,14 +303,10 @@ function inactiveItem(
     label,
     value,
     state: "inactive",
-    detail: `${label} is not required by the active task mode.`,
+    detail: composerCopy.details.inactive.replace("{label}", label),
   };
 }
 
 function modeLabel(modeId: ModeId): string {
-  return modeId === "safe_automation"
-    ? "Safe Automation"
-    : modeId === "custom"
-      ? "Custom mode"
-      : `${modeId.charAt(0).toUpperCase()}${modeId.slice(1)}`;
+  return composerCopy.modeLabels[modeId];
 }

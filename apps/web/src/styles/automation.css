@@ -12,7 +12,7 @@
   color: var(--ledger);
   text-align: center;
   background: var(--ledger-soft);
-  border: 1px solid #b9cdbf;
+  border: 1px solid var(--color-sage-76);
 }
 
 .automation-error {
@@ -21,7 +21,7 @@
   overflow-wrap: anywhere;
   font-size: var(--text-xs);
   line-height: 1.5;
-  color: #843c2d;
+  color: var(--color-danger-fg);
   background: var(--vermilion-soft);
   border-left: 3px solid var(--vermilion);
 }
@@ -30,9 +30,9 @@
   min-width: 0;
   padding: 13px 12px;
   margin-bottom: 18px;
-  background: #ebf0f8;
+  background: var(--color-surface-muted);
   border: 1px solid var(--rule-strong);
-  box-shadow: 3px 4px 0 rgb(96 103 113 / 6%);
+  box-shadow: 3px 4px 0 color-mix(in srgb, var(--color-fg-disabled) 6%, transparent);
 }
 
 .automation-section-heading {
@@ -72,21 +72,21 @@
   flex: 0 0 auto;
   place-items: center;
   color: var(--ochre);
-  background: #dde2ea;
-  border: 1px solid #d3c18d;
+  background: var(--color-border);
+  border: 1px solid var(--color-gold-69);
   border-radius: 50%;
 }
 
 .automation-glyph.channel {
-  color: #4b5674;
-  background: #e2e5ee;
-  border-color: #b8bfd2;
+  color: var(--color-blue-37);
+  background: var(--color-border-subtle);
+  border-color: var(--color-blue-77);
 }
 
 .automation-glyph.recovery {
   color: var(--ledger);
   background: var(--ledger-soft);
-  border-color: #b9cdbf;
+  border-color: var(--color-sage-76);
 }
 
 .recovery-count {
@@ -109,7 +109,7 @@
   gap: 2px;
   padding: 7px 6px;
   text-align: center;
-  background: rgb(255 255 255 / 38%);
+  background: color-mix(in srgb, var(--color-paper) 38%, transparent);
   border: 1px solid var(--rule);
 }
 
@@ -342,14 +342,14 @@
   color: var(--ledger);
   cursor: pointer;
   background: var(--ledger-soft);
-  border: 1px solid #b9cdbf;
+  border: 1px solid var(--color-sage-76);
   border-radius: 2px;
 }
 
 .automation-primary:hover:not(:disabled) {
-  color: #eef3fb;
+  color: var(--color-surface-muted);
   background: var(--ledger);
-  border-color: #1f4035;
+  border-color: var(--color-green-19);
 }
 
 .automation-card-list {
@@ -377,7 +377,7 @@
 }
 
 .channel-card::before {
-  background: #697694;
+  background: var(--color-blue-50);
 }
 
 .schedule-card > header,
@@ -422,7 +422,7 @@
   color: var(--ledger);
   text-transform: uppercase;
   background: var(--ledger-soft);
-  border: 1px solid #b9cdbf;
+  border: 1px solid var(--color-sage-76);
 }
 
 .automation-state.state-paused,
@@ -520,7 +520,7 @@
 .channel-token button:hover:not(:disabled) {
   color: var(--ledger);
   background: var(--ledger-soft);
-  border-color: #b9cdbf;
+  border-color: var(--color-sage-76);
 }
 
 .automation-safety {
@@ -546,10 +546,10 @@
   padding: 10px;
   margin: 0 0 12px;
   overflow: hidden;
-  color: #eef0ea;
-  background: #29332e;
-  border: 1px solid #18201c;
-  box-shadow: 3px 4px 0 rgb(24 32 28 / 12%);
+  color: var(--color-sage-91);
+  background: var(--color-sage-17);
+  border: 1px solid var(--color-sage-11);
+  box-shadow: 3px 4px 0 color-mix(in srgb, var(--color-sage-11) 12%, transparent);
 }
 
 .channel-token::before {
@@ -564,7 +564,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #e8d2b0;
+  color: var(--color-gold-84);
 }
 
 .channel-token > header strong {
@@ -576,7 +576,7 @@
   margin: 7px 0 9px;
   font-size: var(--text-xs);
   line-height: 1.5;
-  color: #aeb9b2;
+  color: var(--color-sage-71);
 }
 
 .channel-token label {
@@ -587,7 +587,7 @@
 }
 
 .channel-token label > span {
-  color: #8f9d95;
+  color: var(--color-sage-59);
 }
 
 .channel-token code,
@@ -598,19 +598,19 @@
   overflow: auto hidden;
   font-family: var(--mono);
   font-size: var(--text-xs);
-  color: #eef0ea;
+  color: var(--color-sage-91);
   white-space: nowrap;
-  background: rgb(0 0 0 / 18%);
-  border: 1px solid rgb(255 255 255 / 8%);
+  background: color-mix(in srgb, var(--color-shadow) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-paper) 8%, transparent);
 }
 
 .channel-token footer {
-  border-color: rgb(255 255 255 / 9%);
+  border-color: color-mix(in srgb, var(--color-paper) 9%, transparent);
 }
 
 .channel-token button {
-  color: #c7d0ca;
-  border-color: rgb(255 255 255 / 14%);
+  color: var(--color-gold-77);
+  border-color: color-mix(in srgb, var(--color-paper) 14%, transparent);
 }
 
 .channel-card > code {
@@ -632,7 +632,7 @@
 }
 
 .channel-card > .channel-policy-summary {
-  color: #52617c;
+  color: var(--color-blue-37);
 }
 
 .channel-card > footer {
@@ -685,7 +685,7 @@
 }
 
 .channel-rotate-confirm button.danger {
-  color: #f3f8ff;
+  color: var(--color-bg-subtle);
   background: var(--vermilion);
   border-color: var(--vermilion);
 }
@@ -693,9 +693,9 @@
 .channel-policy-editor {
   padding: 8px;
   margin-top: 8px;
-  background: #eef0f5;
-  border: 1px solid #c8cedc;
-  border-left: 2px solid #697694;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-blue-82);
+  border-left: 2px solid var(--color-blue-50);
 }
 
 .channel-policy-editor > strong {
@@ -734,7 +734,7 @@
   margin-top: 8px;
   color: var(--ink-soft);
   background: var(--ledger-soft);
-  border: 1px solid rgb(97 118 87 / 20%);
+  border: 1px solid color-mix(in srgb, var(--color-sage-40) 20%, transparent);
   border-left: 2px solid var(--ledger);
 }
 
@@ -918,7 +918,7 @@
   font-size: var(--text-xs);
   line-height: 1.45;
   color: var(--ink-soft);
-  background: rgba(245, 250, 255, 0.82);
+  background: color-mix(in srgb, var(--color-bg-subtle) 82%, transparent);
   border: 1px solid var(--rule);
   border-left: 2px solid var(--ochre);
 }
@@ -968,8 +968,8 @@
 .delivery-retry-confirm {
   padding: 7px;
   margin-top: 6px;
-  background: #f7e9df;
-  border: 1px solid #dfb8a8;
+  background: var(--color-gold-91);
+  border: 1px solid var(--color-red-77);
   border-left: 2px solid var(--vermilion);
 }
 
@@ -993,7 +993,7 @@
 }
 
 .delivery-retry-confirm button.danger {
-  color: #f3f8ff;
+  color: var(--color-bg-subtle);
   background: var(--vermilion);
   border-color: var(--vermilion);
 }
@@ -1053,12 +1053,12 @@
   color: var(--paper-bright);
   background: linear-gradient(
     150deg,
-    #6f86ff 0%,
+    var(--color-blue-72) 0%,
     var(--ledger) 52%,
-    #3a54e0 100%
+    var(--color-accent-hover) 100%
   );
   border-radius: 18px;
-  box-shadow: 0 10px 26px rgb(77 107 254 / 30%);
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--color-focus-ring) 30%, transparent);
   animation: seal-float 1.8s ease-in-out infinite;
 }
 

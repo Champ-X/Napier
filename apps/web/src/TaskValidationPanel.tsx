@@ -21,7 +21,10 @@ export function TaskValidationPanel({
   );
 
   return (
-    <section className="task-panel task-validation" aria-labelledby="task-validation-title">
+    <section
+      className="task-panel task-validation"
+      aria-labelledby="task-validation-title"
+    >
       <header className="task-panel-heading">
         <div>
           <span>{copy.taskView.sections.validation}</span>
@@ -35,7 +38,7 @@ export function TaskValidationPanel({
           <BadgeCheck size={18} aria-hidden="true" />
           <div>
             <span>{copy.taskView.validation.latestRun}</span>
-            <strong>{latestRun.status.replaceAll("_", " ")}</strong>
+            <strong>{taskStatusLabel(latestRun.status)}</strong>
           </div>
           <time>
             <Clock3 size={14} aria-hidden="true" />
@@ -49,10 +52,13 @@ export function TaskValidationPanel({
           <h3 id="task-checks-title">{copy.taskView.validation.checks}</h3>
           <ol>
             {checks.map((step) => {
-              const verified = step.status === "completed" && Boolean(step.evidence);
+              const verified =
+                step.status === "completed" && Boolean(step.evidence);
               return (
                 <li key={step.id}>
-                  <span className={`task-status-badge ${verified ? "is-verified" : "is-pending"}`}>
+                  <span
+                    className={`task-status-badge ${verified ? "is-verified" : "is-pending"}`}
+                  >
                     {verified
                       ? copy.taskView.validation.passed
                       : copy.taskView.validation.pending}
@@ -80,6 +86,19 @@ function runDuration(startedAt: string, finishedAt: string | undefined) {
     (finishedAt ? Date.parse(finishedAt) : Date.now()) - Date.parse(startedAt),
   );
   const seconds = Math.floor(duration / 1_000);
-  if (seconds < 60) return `${seconds}s`;
-  return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+  if (seconds < 60) return seconds + copy.taskView.duration.second;
+  return (
+    Math.floor(seconds / 60) +
+    copy.taskView.duration.minute +
+    " " +
+    (seconds % 60) +
+    copy.taskView.duration.second
+  );
+}
+
+function taskStatusLabel(status: string): string {
+  return (
+    (copy.taskView.status as Record<string, string>)[status] ??
+    status.replaceAll("_", " ")
+  );
 }

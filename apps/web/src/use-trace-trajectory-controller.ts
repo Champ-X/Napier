@@ -12,6 +12,7 @@ import {
   TRACE_TRAJECTORY_LANES,
   type TraceTrajectoryViewMode,
 } from "./trace-trajectory-copy";
+import { motionScrollBehavior } from "./reduced-motion";
 
 export function useTraceTrajectoryController(
   events: RunEvent[],
@@ -134,9 +135,13 @@ function useSelectedEventScroll(
 ): void {
   useEffect(() => {
     if (!selectedEventId) return;
-    document
-      .getElementById(`trace-event-${selectedEventId}`)
-      ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    const node = document.getElementById(`trace-event-${selectedEventId}`);
+    if (!node) return;
+    // Honor reduced-motion: never drive a JS smooth scroll (design §9.4).
+    node.scrollIntoView({
+      block: "nearest",
+      behavior: motionScrollBehavior(),
+    });
   }, [selectedEventId, visibleEventIds]);
 }
 

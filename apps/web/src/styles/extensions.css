@@ -2,20 +2,20 @@
 .extension-count {
   max-width: 96px;
   overflow: hidden;
-  color: #4b5674;
+  color: var(--color-blue-37);
   text-overflow: ellipsis;
   white-space: nowrap;
-  background: #e2e5ee;
-  border-color: #b8bfd2;
+  background: var(--color-border-subtle);
+  border-color: var(--color-blue-77);
 }
 
 .extension-compose {
   padding: 12px;
   margin-bottom: 24px;
-  background: #ebf0f8;
+  background: var(--color-surface-muted);
   border: 1px solid var(--rule-strong);
   border-radius: 3px;
-  box-shadow: 3px 4px 0 rgb(96 103 113 / 6%);
+  box-shadow: 3px 4px 0 color-mix(in srgb, var(--color-fg-disabled) 6%, transparent);
 }
 
 .extension-compose > label,
@@ -103,7 +103,7 @@
   width: 11px;
   height: 11px;
   margin: 0;
-  accent-color: #4b5674;
+  accent-color: var(--color-blue-37);
 }
 
 .extension-transport-picker {
@@ -115,16 +115,16 @@
 .extension-stdio-fields {
   padding: 9px;
   margin-bottom: 10px;
-  background: #eeeee8;
-  border: 1px solid #c7c8c0;
-  border-left: 3px solid #5a647b;
+  background: var(--color-sage-91);
+  border: 1px solid var(--color-gold-77);
+  border-left: 3px solid var(--color-blue-42);
 }
 
 .extension-sandbox-access {
   flex-wrap: wrap;
   padding-bottom: 8px !important;
   margin-bottom: 8px !important;
-  border-bottom: 1px solid #d2d3cb !important;
+  border-bottom: 1px solid var(--color-gold-77) !important;
 }
 
 .extension-stdio-note {
@@ -140,7 +140,7 @@
 .extension-stdio-note svg {
   flex: 0 0 auto;
   margin-top: 1px;
-  color: #4b5674;
+  color: var(--color-blue-37);
 }
 
 .extension-derived-access {
@@ -171,9 +171,9 @@
 
 .extension-derived-access code {
   padding: 2px 4px;
-  color: #4b5674;
-  background: #e2e5ee;
-  border: 1px solid #b8bfd2;
+  color: var(--color-blue-37);
+  background: var(--color-border-subtle);
+  border: 1px solid var(--color-blue-77);
 }
 
 .extension-form-error {
@@ -182,7 +182,7 @@
   overflow-wrap: anywhere;
   font-size: var(--text-xs);
   line-height: 1.5;
-  color: #843c2d;
+  color: var(--color-danger-fg);
   background: var(--vermilion-soft);
   border-left: 3px solid var(--vermilion);
 }
@@ -193,11 +193,11 @@
   padding: 13px 11px 11px;
   margin-bottom: 22px;
   background:
-    linear-gradient(rgb(237 242 250 / 92%), rgb(237 242 250 / 92%)),
-    repeating-linear-gradient(0deg, transparent 0 21px, rgb(73 88 77 / 5%) 22px);
-  border: 1px solid #a2a9b3;
-  border-top: 3px double #777e73;
-  box-shadow: 3px 4px 0 rgb(71 74 80 / 6%);
+    linear-gradient(color-mix(in srgb, var(--color-surface-muted) 92%, transparent), color-mix(in srgb, var(--color-surface-muted) 92%, transparent)),
+    repeating-linear-gradient(0deg, transparent 0 21px, color-mix(in srgb, var(--color-sage-31) 5%, transparent) 22px);
+  border: 1px solid var(--color-blue-67);
+  border-top: 3px double var(--color-gray-52);
+  box-shadow: 3px 4px 0 color-mix(in srgb, var(--color-gray-30) 6%, transparent);
 }
 
 .extension-package-desk::after {
@@ -208,11 +208,11 @@
   height: 29px;
   pointer-events: none;
   content: "";
-  border: 1px solid rgb(57 88 72 / 16%);
+  border: 1px solid color-mix(in srgb, var(--color-green-26) 16%, transparent);
   border-radius: 50%;
   box-shadow:
-    inset 0 0 0 3px #edf2fa,
-    inset 0 0 0 4px rgb(57 88 72 / 10%);
+    inset 0 0 0 3px var(--color-surface-muted),
+    inset 0 0 0 4px color-mix(in srgb, var(--color-green-26) 10%, transparent);
 }
 
 .extension-package-desk > header,
@@ -243,7 +243,7 @@
 .extension-package-desk > header span {
   font-family: var(--mono);
   font-size: var(--text-xs);
-  color: #526257;
+  color: var(--color-sage-31);
   letter-spacing: 0.11em;
 }
 
@@ -279,7 +279,7 @@
   min-width: 0;
   padding: 9px;
   margin-top: 8px;
-  background: rgb(246 251 255 / 70%);
+  background: color-mix(in srgb, var(--color-bg) 70%, transparent);
   border: 1px solid var(--rule);
 }
 
@@ -369,7 +369,7 @@
   place-items: center;
   color: var(--ledger);
   background: var(--ledger-soft);
-  border: 1px solid #b9cdbf;
+  border: 1px solid var(--color-sage-76);
   border-radius: 50%;
 }
 
@@ -383,16 +383,16 @@
   padding: 2px 4px;
   font-family: var(--mono);
   font-size: var(--text-xs);
-  color: #285241;
+  color: var(--color-green-26);
   text-transform: uppercase;
-  background: #dfe9e0;
-  border: 1px solid #abc3b1;
+  background: var(--color-success-surface);
+  border: 1px solid var(--color-sage-67);
 }
 
 .state-revoked .extension-publisher-state {
-  color: #843c2d;
+  color: var(--color-danger-fg);
   background: var(--vermilion-soft);
-  border-color: rgb(155 72 53 / 30%);
+  border-color: color-mix(in srgb, var(--color-red-44) 30%, transparent);
 }
 
 .extension-publisher-key > button,
@@ -443,7 +443,7 @@
 .extension-package-transfer button:hover:not(:disabled) {
   color: var(--ledger);
   background: var(--ledger-soft);
-  border-color: #b9cdbf;
+  border-color: var(--color-sage-76);
 }
 
 .extension-publisher-key button:disabled,
@@ -626,10 +626,10 @@
 .extension-package-update-ticket {
   min-width: 0;
   padding: 9px;
-  background: #e8edf5;
-  border: 1px solid #a4a9b1;
-  border-top: 3px double #848b95;
-  box-shadow: 2px 2px 0 rgb(112 88 43 / 6%);
+  background: var(--color-border-subtle);
+  border: 1px solid var(--color-blue-67);
+  border-top: 3px double var(--color-blue-60);
+  box-shadow: 2px 2px 0 color-mix(in srgb, var(--color-gold-32) 6%, transparent);
 }
 
 .extension-package-update-ticket > header {
@@ -639,7 +639,7 @@
   gap: 5px;
   align-items: center;
   padding-bottom: 8px;
-  border-bottom: 1px dashed #b7bcc4;
+  border-bottom: 1px dashed var(--color-blue-74);
 }
 
 .extension-package-update-ticket > header > div {
@@ -680,22 +680,22 @@
   grid-column: 1 / -1;
   justify-self: center;
   padding: 2px 5px;
-  color: #604c25 !important;
-  background: #eee0bd;
-  border: 1px solid #cdbb8b;
+  color: var(--color-gold-26) !important;
+  background: var(--color-gold-84);
+  border: 1px solid var(--color-gold-69);
 }
 
 .extension-package-version.direction-upgrade {
-  color: #285241 !important;
-  background: #dfe9e0;
-  border-color: #abc3b1;
+  color: var(--color-green-26) !important;
+  background: var(--color-success-surface);
+  border-color: var(--color-sage-67);
 }
 
 .extension-package-version.direction-regression,
 .extension-package-version.direction-unknown {
-  color: #843c2d !important;
+  color: var(--color-danger-fg) !important;
   background: var(--vermilion-soft);
-  border-color: rgb(155 72 53 / 30%);
+  border-color: color-mix(in srgb, var(--color-red-44) 30%, transparent);
 }
 
 .extension-package-update-ticket > section {
@@ -720,10 +720,10 @@
   padding: 2px 4px;
   font-family: var(--mono);
   font-size: var(--text-xs);
-  color: #4c4f55;
+  color: var(--color-gray-30);
   text-transform: uppercase;
-  background: #eee0bd;
-  border: 1px solid #cdbb8b;
+  background: var(--color-gold-84);
+  border: 1px solid var(--color-gold-69);
 }
 
 .extension-package-update-deltas {
@@ -739,7 +739,7 @@
   grid-template-columns: 70px minmax(0, 1fr);
   gap: 6px;
   padding-top: 4px;
-  border-top: 1px dotted #b7bcc4;
+  border-top: 1px dotted var(--color-blue-74);
 }
 
 .extension-package-update-deltas dt,
@@ -774,14 +774,14 @@
 }
 
 .extension-package-update-warning {
-  color: #744331;
-  background: #f2e4d6;
+  color: var(--color-red-32);
+  background: var(--color-gold-91);
   border-left: 2px solid var(--vermilion);
 }
 
 .extension-package-update-noop {
-  color: #285241;
-  background: #e8efe6;
+  color: var(--color-green-26);
+  background: var(--color-trajectory-input-surface);
   border-left: 2px solid var(--ledger);
 }
 
@@ -801,7 +801,7 @@
   font-size: var(--text-xs);
   line-height: 1.4;
   color: var(--ink-soft);
-  border-top: 1px dashed #b7bcc4;
+  border-top: 1px dashed var(--color-blue-74);
 }
 
 .extension-package-update-confirm input {
@@ -819,7 +819,7 @@
   align-items: center;
   padding-top: 8px;
   margin-top: 8px;
-  border-top: 1px solid #b7bcc4;
+  border-top: 1px solid var(--color-blue-74);
 }
 
 .extension-package-update-ticket > footer > span {
@@ -839,8 +839,8 @@
   color: var(--ink-faint);
   text-overflow: ellipsis;
   white-space: nowrap;
-  background: rgb(255 255 255 / 35%);
-  border: 1px solid #b7bcc4;
+  background: color-mix(in srgb, var(--color-paper) 35%, transparent);
+  border: 1px solid var(--color-blue-74);
 }
 
 .extension-package-rollout form,
@@ -897,13 +897,13 @@
   gap: 5px;
   align-items: center;
   padding: 6px;
-  background: rgb(255 255 255 / 36%);
-  border: 1px solid #c1c6ce;
+  background: color-mix(in srgb, var(--color-paper) 36%, transparent);
+  border: 1px solid var(--color-blue-74);
 }
 
 .extension-package-rollout-list li.is-active {
-  background: #edf3ea;
-  border-color: #b9cdbf;
+  background: var(--color-trajectory-input-surface);
+  border-color: var(--color-sage-76);
 }
 
 .extension-package-rollout-list li > span {
@@ -946,8 +946,8 @@
   display: grid;
   gap: 8px;
   background:
-    linear-gradient(rgb(244 247 241 / 82%), rgb(244 247 241 / 82%)),
-    repeating-linear-gradient(0deg, transparent 0 18px, rgb(45 85 71 / 5%) 19px);
+    linear-gradient(color-mix(in srgb, var(--color-sage-91) 82%, transparent), color-mix(in srgb, var(--color-sage-91) 82%, transparent)),
+    repeating-linear-gradient(0deg, transparent 0 18px, color-mix(in srgb, var(--color-green-26) 5%, transparent) 19px);
 }
 
 .extension-package-deployment > header svg {
@@ -958,10 +958,10 @@
 .extension-package-deployment-ticket {
   min-width: 0;
   padding: 9px;
-  background: #edf1e8;
-  border: 1px solid #a9b9aa;
-  border-top: 3px double #718778;
-  box-shadow: 2px 2px 0 rgb(45 85 71 / 6%);
+  background: var(--color-sage-91);
+  border: 1px solid var(--color-sage-67);
+  border-top: 3px double var(--color-gray-52);
+  box-shadow: 2px 2px 0 color-mix(in srgb, var(--color-green-26) 6%, transparent);
 }
 
 .extension-package-deployment-ticket > header {
@@ -970,7 +970,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
   padding-bottom: 7px;
-  border-bottom: 1px dashed #b6c2b5;
+  border-bottom: 1px dashed var(--color-sage-76);
 }
 
 .extension-package-deployment-ticket > header > div {
@@ -1000,7 +1000,7 @@
 .extension-package-deployment-ticket > header code {
   grid-column: 1 / -1;
   padding-top: 4px;
-  border-top: 1px dotted #c2ccc0;
+  border-top: 1px dotted var(--color-sage-76);
 }
 
 .extension-package-deployment-items,
@@ -1020,8 +1020,8 @@
   gap: 5px;
   align-items: center;
   padding: 6px;
-  background: rgb(255 255 255 / 38%);
-  border: 1px solid #c2ccc0;
+  background: color-mix(in srgb, var(--color-paper) 38%, transparent);
+  border: 1px solid var(--color-sage-76);
 }
 
 .extension-package-deployment-items > li > span:nth-child(2) {
@@ -1052,16 +1052,16 @@
   padding: 2px 4px;
   font-family: var(--mono);
   font-size: var(--text-xs);
-  color: #285241;
+  color: var(--color-green-26);
   text-transform: uppercase;
-  background: #dfe9e0;
-  border: 1px solid #abc3b1;
+  background: var(--color-success-surface);
+  border: 1px solid var(--color-sage-67);
 }
 
 .deployment-action.action-update {
-  color: #604c25;
-  background: #eee0bd;
-  border-color: #cdbb8b;
+  color: var(--color-gold-26);
+  background: var(--color-gold-84);
+  border-color: var(--color-gold-69);
 }
 
 .extension-package-deployment-items dl {
@@ -1101,7 +1101,7 @@
   min-width: 0;
   padding-top: 8px;
   margin-top: 8px;
-  border-top: 1px dashed #b6c2b5;
+  border-top: 1px dashed var(--color-sage-76);
 }
 
 .extension-package-deployment-order > strong,
@@ -1149,7 +1149,7 @@
   grid-template-columns: minmax(0, 1fr);
   gap: 1px;
   padding-top: 3px;
-  border-top: 1px dotted #c2ccc0;
+  border-top: 1px dotted var(--color-sage-76);
 }
 
 .extension-package-deployment-resolutions dd {
@@ -1164,8 +1164,8 @@
   padding: 1px 3px;
   color: var(--ink-faint);
   text-transform: uppercase;
-  background: rgb(255 255 255 / 45%);
-  border: 1px solid #c2ccc0;
+  background: color-mix(in srgb, var(--color-paper) 45%, transparent);
+  border: 1px solid var(--color-sage-76);
 }
 
 .extension-package-deployment-ticket > footer {
@@ -1174,7 +1174,7 @@
   gap: 4px;
   padding-top: 8px;
   margin-top: 8px;
-  border-top: 1px solid #b6c2b5;
+  border-top: 1px solid var(--color-sage-76);
 }
 
 .extension-package-transfer > div {
@@ -1207,14 +1207,14 @@
   padding: 8px;
   margin-top: 8px;
   color: var(--ink-soft);
-  background: #eaeff7;
+  background: var(--color-surface-muted);
   border: 1px solid var(--rule);
 }
 
 .extension-package-receipt.verification-trusted {
-  color: #285241;
-  background: #edf3ea;
-  border-color: #b9cdbf;
+  color: var(--color-green-26);
+  background: var(--color-trajectory-input-surface);
+  border-color: var(--color-sage-76);
 }
 
 .extension-package-receipt.verification-invalid,
@@ -1223,9 +1223,9 @@
 .extension-package-receipt.verification-expired,
 .extension-package-receipt.verification-executable_mismatch,
 .extension-package-receipt.verification-configuration_drift {
-  color: #843c2d;
+  color: var(--color-danger-fg);
   background: var(--vermilion-soft);
-  border-color: rgb(155 72 53 / 30%);
+  border-color: color-mix(in srgb, var(--color-red-44) 30%, transparent);
 }
 
 .extension-package-receipt > svg {
@@ -1268,7 +1268,7 @@
   color: inherit;
   text-overflow: ellipsis;
   white-space: nowrap;
-  background: rgb(255 255 255 / 35%);
+  background: color-mix(in srgb, var(--color-paper) 35%, transparent);
   border: 1px solid currentcolor;
   opacity: 0.8;
 }
@@ -1297,7 +1297,7 @@
   display: grid;
   gap: 9px;
   padding: 11px;
-  background: #eef0ea;
+  background: var(--color-sage-91);
   border: 1px solid var(--rule-strong);
 }
 
@@ -1347,7 +1347,7 @@
   display: grid;
   gap: 8px;
   padding: 9px;
-  background: rgb(255 255 255 / 55%);
+  background: color-mix(in srgb, var(--color-paper) 55%, transparent);
   border: 1px solid var(--rule);
 }
 
@@ -1377,10 +1377,10 @@
   position: relative;
   padding: 12px;
   overflow: hidden;
-  background: #ecf1f9;
+  background: var(--color-surface-muted);
   border: 1px solid var(--rule-strong);
   border-radius: 2px;
-  box-shadow: 3px 4px 0 rgb(71 74 80 / 5%);
+  box-shadow: 3px 4px 0 color-mix(in srgb, var(--color-gray-30) 5%, transparent);
 }
 
 .extension-card::before {
@@ -1434,9 +1434,9 @@
   height: 25px;
   flex: 0 0 auto;
   place-items: center;
-  color: #4b5674;
-  background: #e2e5ee;
-  border: 1px solid #b8bfd2;
+  color: var(--color-blue-37);
+  background: var(--color-border-subtle);
+  border: 1px solid var(--color-blue-77);
   border-radius: 50%;
 }
 
@@ -1472,14 +1472,14 @@
 }
 
 .extension-approved .extension-state {
-  color: #285241;
-  background: #dfe9e0;
-  border-color: #abc3b1;
+  color: var(--color-green-26);
+  background: var(--color-success-surface);
+  border-color: var(--color-sage-67);
 }
 
 .extension-rejected .extension-state {
-  color: #6b6256;
-  background: #dbe0e8;
+  color: var(--color-gold-38);
+  background: var(--color-border);
 }
 
 .extension-tags {
@@ -1493,9 +1493,9 @@
   padding: 2px 4px;
   font-family: var(--mono);
   font-size: var(--text-xs);
-  color: #4b5674;
-  background: #eceef3;
-  border: 1px solid #c9cedc;
+  color: var(--color-blue-37);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-blue-82);
 }
 
 .extension-facts {
@@ -1533,9 +1533,9 @@
   gap: 6px;
   padding: 8px;
   margin-top: 9px;
-  color: #335849;
-  background: #edf2e9;
-  border: 1px solid #bdcdbd;
+  color: var(--color-green-26);
+  background: var(--color-trajectory-input-surface);
+  border: 1px solid var(--color-sage-76);
   border-left: 3px double var(--ledger);
 }
 
@@ -1570,11 +1570,11 @@
 }
 
 .extension-package-binding dt {
-  color: #668073;
+  color: var(--color-sage-41);
 }
 
 .extension-package-binding dd {
-  color: #294d3d;
+  color: var(--color-green-26);
 }
 
 .extension-package-binding code {
@@ -1589,10 +1589,10 @@
   margin: 7px 0 0;
   font-family: var(--mono);
   font-size: var(--text-xs);
-  color: #843c2d;
+  color: var(--color-danger-fg);
   text-transform: uppercase;
   background: var(--vermilion-soft);
-  border: 1px solid rgb(155 72 53 / 30%);
+  border: 1px solid color-mix(in srgb, var(--color-red-44) 30%, transparent);
 }
 
 .extension-package-warning svg {
@@ -1669,7 +1669,7 @@
 .extension-tool button:hover:not(:disabled) {
   color: var(--ledger);
   background: var(--ledger-soft);
-  border-color: #b9cdbf;
+  border-color: var(--color-sage-76);
 }
 
 .extension-actions button:disabled,
@@ -1726,7 +1726,7 @@
   gap: 4px;
   padding: 6px 7px;
   margin-top: 7px;
-  background: rgb(255 255 255 / 34%);
+  background: color-mix(in srgb, var(--color-paper) 34%, transparent);
   border: 1px dashed var(--rule);
 }
 
@@ -1760,7 +1760,7 @@
 
 .extension-routing-hint textarea:focus-visible {
   border-color: var(--ledger);
-  outline: 2px solid rgb(55 104 80 / 18%);
+  outline: 2px solid color-mix(in srgb, var(--color-green-28) 18%, transparent);
   outline-offset: 1px;
 }
 

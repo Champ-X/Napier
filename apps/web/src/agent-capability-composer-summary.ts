@@ -1,5 +1,7 @@
 import type { EffectiveAgentCapabilityProjectionV1 } from "@napier/contracts/agent-capability-contract";
 
+import { motionScrollBehavior } from "./reduced-motion";
+
 export function agentCapabilityComposerSummary(
   projection: EffectiveAgentCapabilityProjectionV1 | undefined,
   loading: boolean,
@@ -35,7 +37,7 @@ function compareText(left: string, right: string): number {
 export function focusCapabilityContract(attempt = 0): void {
   const target = document.getElementById("agent-capability-contract-review");
   if (target) {
-    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    target.scrollIntoView({ behavior: motionScrollBehavior(), block: "start" });
     target.focus({ preventScroll: true });
     return;
   }

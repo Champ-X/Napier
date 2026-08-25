@@ -2,17 +2,17 @@
   "type": "napier.web-dist-audit",
   "schemaVersion": 1,
   "ok": true,
-  "fileCount": 202,
+  "fileCount": 204,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-DQWY5C-7.js",
-    "sizeBytes": 142116,
+    "path": "apps/web/dist/assets/index-xJn0RWB2.js",
+    "sizeBytes": 142953,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "bd5395f95123eb189d39ff11714e9b6b47c433452c328578bf8023e4a1eb5cdc"
+    "sha256": "0ae1a771eaa074266d4da9af3dad978fa52a756c0484f7382645a39b1920e3cf"
   },
-  "distContentSha256": "bd5395f95123eb189d39ff11714e9b6b47c433452c328578bf8023e4a1eb5cdc",
+  "distContentSha256": "0ae1a771eaa074266d4da9af3dad978fa52a756c0484f7382645a39b1920e3cf",
   "errors": []
 }

@@ -281,7 +281,7 @@ async function verifyRuntimeScenario(browser, origin, expected) {
   );
   try {
     await waitForWorkbench(page);
-    await page.locator(".run-status.is-running").waitFor({
+    await page.locator(".task-narrative.phase-working").waitFor({
       state: "visible",
       timeout: WEB_UI_START_TIMEOUT_MS,
     });
@@ -329,7 +329,9 @@ async function verifyRuntimeScenario(browser, origin, expected) {
         };
         return {
           ...runningComposer,
-          runningIndicatorVisible: isVisible(".run-status.is-running"),
+          runningIndicatorVisible: isVisible(
+            ".task-narrative.phase-working [aria-live='polite']",
+          ),
           runtimeSectionVisible: isVisible("#task-section-environment"),
           sectionCount: count,
           browserSurfaceVisible: [
@@ -353,10 +355,11 @@ async function verifyTrajectoryScenario(browser, origin, expected) {
   try {
     await waitForWorkbench(page);
     await page.locator("#workspace-view-trajectory").click();
-    await page.locator("#trace-title").waitFor({
+    await page.locator("#trajectory-title").waitFor({
       state: "visible",
       timeout: WEB_UI_START_TIMEOUT_MS,
     });
+    await page.locator(".trace-evidence-stack > summary").click();
     await page.locator("#model-harness-title").waitFor({
       state: "visible",
       timeout: WEB_UI_START_TIMEOUT_MS,
@@ -450,6 +453,29 @@ async function verifySettingsScenario(browser, origin, expected) {
       state: "visible",
       timeout: WEB_UI_START_TIMEOUT_MS,
     });
+    await page.waitForFunction(
+      () => {
+        const selectors = [
+          ".agent-history-register button",
+          ".package-desk .package-actions button, .package-desk .package-file-action",
+          ".credential-register .credential-add, .credential-register .credential-card footer button, .credential-register .context-field input, .credential-register .context-field select, .credential-register .credential-vault-check",
+        ];
+        return selectors.every((selector) => {
+          const controls = [...document.querySelectorAll(selector)].filter(
+            (control) =>
+              control instanceof HTMLElement && control.offsetParent !== null,
+          );
+          return (
+            controls.length > 0 &&
+            controls.every(
+              (control) => control.getBoundingClientRect().height >= 44,
+            )
+          );
+        });
+      },
+      undefined,
+      { timeout: WEB_UI_START_TIMEOUT_MS },
+    );
     const revisionHistory = await page.evaluate(() => {
       const register = document.querySelector(".agent-history-register");
       if (!(register instanceof HTMLElement)) {
@@ -965,10 +991,12 @@ function readReadingAxis() {
     }
     return element.getBoundingClientRect();
   };
-  const status = required(".task-status-bar");
   const conversation = required(".message-ledger");
   const composer = required(".composer");
-  const centers = [status, conversation, composer].map(
+  const commandBar = required(".workbench-header");
+  const status = required(".task-narrative");
+  const model = required(".model-chip");
+  const centers = [conversation, composer].map(
     (rect) => rect.left + rect.width / 2,
   );
   const message = document.querySelector(".message-text");
@@ -977,6 +1005,13 @@ function readReadingAxis() {
   }
   return {
     statusWidth: Math.round(status.width),
+    statusHeight: Math.round(status.height),
+    statusWithinCommandBar:
+      status.top >= commandBar.top &&
+      status.bottom <= commandBar.bottom &&
+      status.left >= commandBar.left &&
+      status.right <= commandBar.right,
+    statusToModelGapPx: Math.round(model.left - status.right),
     conversationWidth: Math.round(conversation.width),
     composerWidth: Math.round(composer.width),
     maximumCenterDeltaPx: Math.round(

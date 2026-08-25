@@ -6,18 +6,18 @@
   margin-bottom: 10px;
   overflow: hidden;
   background:
-    linear-gradient(rgb(239 244 252 / 94%), rgb(239 244 252 / 94%)),
+    linear-gradient(color-mix(in srgb, var(--color-surface-muted) 94%, transparent), color-mix(in srgb, var(--color-surface-muted) 94%, transparent)),
     repeating-linear-gradient(
       0deg,
       transparent 0,
       transparent 22px,
-      rgb(75 78 84 / 8%) 23px
+      color-mix(in srgb, var(--color-gray-30) 8%, transparent) 23px
     );
   border: 1px solid var(--rule-strong);
   border-top: 3px double var(--vermilion);
   box-shadow:
-    3px 4px 0 rgb(63 66 72 / 6%),
-    inset 4px 0 0 rgb(164 75 56 / 78%);
+    3px 4px 0 color-mix(in srgb, var(--color-gray-30) 6%, transparent),
+    inset 4px 0 0 color-mix(in srgb, var(--color-red-44) 78%, transparent);
   animation: entry-rise 220ms ease-out both;
 }
 
@@ -31,7 +31,7 @@
   content: "";
   background: repeating-linear-gradient(
     0deg,
-    rgb(164 75 56 / 24%) 0 3px,
+    color-mix(in srgb, var(--color-red-44) 24%, transparent) 0 3px,
     transparent 3px 7px
   );
 }
@@ -49,8 +49,8 @@
   height: 31px;
   place-items: center;
   color: var(--vermilion);
-  background: rgb(164 75 56 / 10%);
-  border: 1px solid rgb(164 75 56 / 42%);
+  background: color-mix(in srgb, var(--color-red-44) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-red-44) 42%, transparent);
   border-radius: 50%;
   transform: rotate(-5deg);
 }
@@ -103,7 +103,7 @@
   font-size: var(--text-xs);
   font-weight: 600;
   color: var(--vermilion);
-  border: 1px solid rgb(164 75 56 / 35%);
+  border: 1px solid color-mix(in srgb, var(--color-red-44) 35%, transparent);
   transform: rotate(2deg);
 }
 
@@ -125,7 +125,7 @@
   min-width: 0;
   gap: 3px;
   padding: 7px;
-  background: rgb(255 255 255 / 56%);
+  background: color-mix(in srgb, var(--color-paper) 56%, transparent);
 }
 
 .workflow-breakpoint-evidence dd {
@@ -156,13 +156,13 @@
   gap: 8px;
   padding: 7px 9px;
   cursor: pointer;
-  background: rgb(255 255 255 / 46%);
-  border: 1px dashed rgb(164 75 56 / 42%);
+  background: color-mix(in srgb, var(--color-paper) 46%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--color-red-44) 42%, transparent);
 }
 
 .workflow-breakpoint-file:has(input:focus-visible) {
   border-color: var(--vermilion);
-  outline: 2px solid rgb(164 75 56 / 16%);
+  outline: 2px solid color-mix(in srgb, var(--color-red-44) 16%, transparent);
   outline-offset: 1px;
 }
 
@@ -204,22 +204,22 @@
   font-family: var(--mono);
   font-size: var(--text-xs);
   font-weight: 600;
-  color: #ecf1f9;
+  color: var(--color-surface-muted);
   text-transform: uppercase;
   letter-spacing: 0.07em;
   background: var(--ledger);
-  border: 1px solid #244b3d;
+  border: 1px solid var(--color-green-26);
   border-radius: 2px;
-  box-shadow: 2px 2px 0 rgb(45 85 71 / 16%);
+  box-shadow: 2px 2px 0 color-mix(in srgb, var(--color-green-26) 16%, transparent);
 }
 
 .workflow-breakpoint-continue:hover:not(:disabled) {
-  background: #244b3d;
+  background: var(--color-green-26);
   transform: translateY(-1px);
 }
 
 .workflow-breakpoint-continue:focus-visible {
-  outline: 2px solid rgb(45 85 71 / 28%);
+  outline: 2px solid color-mix(in srgb, var(--color-green-26) 28%, transparent);
   outline-offset: 2px;
 }
 
@@ -240,8 +240,8 @@
   gap: 2px 10px;
   align-items: baseline;
   padding: 8px 9px;
-  background: rgb(220 229 221 / 54%);
-  border: 1px solid #a9c0b1;
+  background: color-mix(in srgb, var(--color-success-surface) 54%, transparent);
+  border: 1px solid var(--color-sage-67);
   border-left: 3px solid var(--ledger);
 }
 
@@ -258,8 +258,8 @@
 
 .workflow-breakpoint-result.state-blocked,
 .workflow-breakpoint-result.state-cancelled {
-  background: rgb(164 75 56 / 8%);
-  border-color: rgb(164 75 56 / 32%);
+  background: color-mix(in srgb, var(--color-red-44) 8%, transparent);
+  border-color: color-mix(in srgb, var(--color-red-44) 32%, transparent);
   border-left-color: var(--vermilion);
 }
 
@@ -274,8 +274,8 @@
   font-family: var(--mono);
   font-size: var(--text-xs);
   line-height: 1.45;
-  color: #7d3025;
-  background: rgb(164 75 56 / 8%);
+  color: var(--color-red-34);
+  background: color-mix(in srgb, var(--color-red-44) 8%, transparent);
   border-left: 2px solid var(--vermilion);
 }
 

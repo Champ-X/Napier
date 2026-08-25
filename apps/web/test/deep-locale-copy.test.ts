@@ -10,6 +10,7 @@ import {
 } from "../src/agent-milestone-copy";
 import { automationCopyEn } from "../src/automation-copy";
 import { automationCopyZh } from "../src/automation-copy.zh";
+import { composerCopyEn, composerCopyZh } from "../src/composer-copy";
 import { contextCopyEn } from "../src/context-copy";
 import { contextZh } from "../src/context-copy.zh";
 import { en } from "../src/copy";
@@ -89,6 +90,7 @@ describe("deep locale copy", () => {
     const copySets: ReadonlyArray<readonly [string, unknown, unknown]> = [
       ["root", en, zh],
       ["advanced", advancedSurfaceCopyEn, advancedSurfaceCopyZh],
+      ["composer", composerCopyEn, composerCopyZh],
       ["automation", automationCopyEn, automationCopyZh],
       ["extension", extensionCopyEn, extensionCopyZh],
       ["workspaceProcess", workspaceProcessCopyEn, workspaceProcessCopyZh],

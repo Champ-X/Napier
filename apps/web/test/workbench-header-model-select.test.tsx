@@ -38,6 +38,7 @@ describe("Workbench header model selection", () => {
           ]}
           status="idle"
           title="Thread"
+          contextLabel="Conversation"
           onModel={onModel}
           onOpenSettings={() => undefined}
         />,
@@ -85,6 +86,7 @@ describe("Workbench header model selection", () => {
           ]}
           status="running"
           title="Thread"
+          contextLabel="Conversation"
           onModel={() => undefined}
           onOpenSettings={() => undefined}
         />,

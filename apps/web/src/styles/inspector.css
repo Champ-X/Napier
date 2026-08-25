@@ -13,7 +13,7 @@
   grid-template-rows: 48px auto minmax(0, 1fr);
   background: var(--paper-deep);
   border-left: 1px solid var(--rule-strong);
-  box-shadow: -18px 0 48px rgb(23 33 60 / 12%);
+  box-shadow: -18px 0 48px color-mix(in srgb, var(--color-blue-16) 12%, transparent);
 }
 
 .inspector.is-drawer-open {
@@ -32,14 +32,14 @@
   padding: 7px 10px;
   font-family: var(--mono);
   font-size: var(--text-xs);
-  color: #fff;
+  color: var(--color-paper);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
   background: var(--ledger);
   border: 1px solid var(--ledger);
   border-radius: 8px;
-  box-shadow: 0 8px 22px rgb(77 107 254 / 22%);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--color-focus-ring) 22%, transparent);
 }
 
 .inspector-drawer-backdrop {
@@ -49,7 +49,7 @@
   display: block;
   padding: 0;
   cursor: pointer;
-  background: rgb(23 33 60 / 28%);
+  background: color-mix(in srgb, var(--color-blue-16) 28%, transparent);
   border: 0;
   backdrop-filter: blur(2px);
 }
@@ -309,11 +309,11 @@
   padding: 13px;
   overflow: hidden;
   background:
-    linear-gradient(rgb(239 244 252 / 94%), rgb(239 244 252 / 94%)),
-    repeating-linear-gradient(0deg, transparent 0 23px, rgb(71 88 78 / 7%) 24px);
+    linear-gradient(color-mix(in srgb, var(--color-surface-muted) 94%, transparent), color-mix(in srgb, var(--color-surface-muted) 94%, transparent)),
+    repeating-linear-gradient(0deg, transparent 0 23px, color-mix(in srgb, var(--color-sage-31) 7%, transparent) 24px);
   border: 1px solid var(--rule-strong);
-  border-top: 3px double #7e8b82;
-  box-shadow: 3px 4px 0 rgb(71 74 80 / 6%);
+  border-top: 3px double var(--color-gray-52);
+  box-shadow: 3px 4px 0 color-mix(in srgb, var(--color-gray-30) 6%, transparent);
 }
 
 .process-card::before {
@@ -321,7 +321,7 @@
   inset: 0 auto 0 0;
   width: 3px;
   content: "";
-  background: #456b5b;
+  background: var(--color-success-border);
 }
 
 .process-card > header {
@@ -372,39 +372,39 @@
   font-size: var(--text-xs);
   color: var(--ink-soft);
   text-transform: uppercase;
-  background: #e0e5ed;
+  background: var(--color-border-subtle);
   border: 1px solid var(--rule-strong);
   letter-spacing: 0.07em;
 }
 
 .process-status.is-running {
-  color: #315b48;
-  background: #dfe9e0;
-  border-color: #afc7b6;
+  color: var(--color-success);
+  background: var(--color-success-surface);
+  border-color: var(--color-sage-76);
 }
 
 .process-status.is-failed,
 .process-status.is-timed_out,
 .process-status.is-output_capped,
 .process-status.is-interrupted {
-  color: #813d30;
+  color: var(--color-danger-fg);
   background: var(--vermilion-soft);
-  border-color: #d9a698;
+  border-color: var(--color-red-72);
 }
 
 .process-card dl {
   display: grid;
   grid-template-columns: 1fr 1fr;
   margin: 10px 0 0;
-  border-top: 1px solid rgb(108 115 125 / 13%);
-  border-left: 1px solid rgb(108 115 125 / 13%);
+  border-top: 1px solid color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
+  border-left: 1px solid color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
 }
 
 .process-card dl > div {
   min-width: 0;
   padding: 7px;
-  border-right: 1px solid rgb(108 115 125 / 13%);
-  border-bottom: 1px solid rgb(108 115 125 / 13%);
+  border-right: 1px solid color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
 }
 
 .process-card dt {
@@ -424,12 +424,12 @@
 }
 
 .process-delta-summary.is-unchanged dd {
-  color: #315b48;
+  color: var(--color-success);
 }
 
 .process-delta-summary.is-changed dd,
 .process-delta-summary.is-indeterminate dd {
-  color: #813d30;
+  color: var(--color-danger-fg);
 }
 
 .process-interruption {
@@ -437,8 +437,8 @@
   margin: 9px 0 0;
   font-size: var(--text-xs);
   line-height: 1.5;
-  color: #794233;
-  background: rgb(190 84 61 / 7%);
+  color: var(--color-red-32);
+  background: color-mix(in srgb, var(--color-red-46) 7%, transparent);
   border-left: 2px solid var(--vermilion);
 }
 
@@ -458,17 +458,17 @@
   font-size: var(--text-xs);
   color: var(--ink-soft);
   cursor: pointer;
-  background: rgb(255 255 255 / 48%);
+  background: color-mix(in srgb, var(--color-paper) 48%, transparent);
   border: 1px solid var(--rule-strong);
 }
 
 .process-actions button:hover:not(:disabled) {
   color: var(--ledger);
-  border-color: #8ca99a;
+  border-color: var(--color-sage-61);
 }
 
 .process-actions button.danger {
-  color: #813d30;
+  color: var(--color-danger-fg);
 }
 
 .process-rollback {
@@ -490,8 +490,8 @@
   width: 100%;
   padding: 9px;
   color: var(--ink-soft);
-  background: rgb(190 84 61 / 6%);
-  border: 1px solid #d9a698;
+  background: color-mix(in srgb, var(--color-red-46) 6%, transparent);
+  border: 1px solid var(--color-red-72);
   border-left: 3px solid var(--vermilion);
 }
 
@@ -529,7 +529,7 @@
 }
 
 .process-rollback > section .process-rollback-warning {
-  color: #813d30;
+  color: var(--color-danger-fg);
 }
 
 .process-rollback > section dl {
@@ -560,13 +560,13 @@
   gap: 2px;
   padding: 8px;
   margin: 0;
-  background: rgb(69 107 91 / 7%);
-  border-left: 3px solid #456b5b;
+  background: color-mix(in srgb, var(--color-success-border) 7%, transparent);
+  border-left: 3px solid var(--color-success-border);
 }
 
 .process-rollback-result.is-reverted,
 .process-rollback-result.is-indeterminate {
-  background: rgb(190 84 61 / 7%);
+  background: color-mix(in srgb, var(--color-red-46) 7%, transparent);
   border-left-color: var(--vermilion);
 }
 
@@ -580,8 +580,8 @@
   gap: 6px;
   padding: 9px;
   margin-top: 10px;
-  background: rgb(69 107 91 / 5%);
-  border: 1px dotted #8ca99a;
+  background: color-mix(in srgb, var(--color-success-border) 5%, transparent);
+  border: 1px dotted var(--color-sage-61);
 }
 
 .process-input label,
@@ -608,7 +608,7 @@
   font-size: var(--text-xs);
   line-height: 1.5;
   color: var(--ink);
-  background: rgb(255 255 255 / 62%);
+  background: color-mix(in srgb, var(--color-paper) 62%, transparent);
   border: 1px solid var(--rule-strong);
 }
 
@@ -637,23 +637,23 @@
 .process-output {
   padding: 9px;
   margin-top: 10px;
-  color: #dbe5dc;
+  color: var(--color-success-surface);
   background:
-    linear-gradient(rgb(37 52 45 / 96%), rgb(37 52 45 / 96%)),
+    linear-gradient(color-mix(in srgb, var(--color-sage-17) 96%, transparent), color-mix(in srgb, var(--color-sage-17) 96%, transparent)),
     repeating-linear-gradient(
       0deg,
       transparent 0 17px,
-      rgb(255 255 255 / 4%) 18px
+      color-mix(in srgb, var(--color-paper) 4%, transparent) 18px
     );
-  border: 1px solid #1c2f27;
-  box-shadow: inset 0 0 18px rgb(0 0 0 / 18%);
+  border: 1px solid var(--color-sage-17);
+  box-shadow: inset 0 0 18px color-mix(in srgb, var(--color-shadow) 18%, transparent);
 }
 
 .process-output > strong {
   display: block;
   margin-bottom: 7px;
   font-size: var(--text-xs);
-  color: #9eb5aa;
+  color: var(--color-sage-67);
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
@@ -689,9 +689,9 @@
   margin: 10px 0 0;
   font-size: var(--text-xs);
   line-height: 1.5;
-  color: #315b48;
-  background: rgb(69 107 91 / 7%);
-  border-left: 2px solid #456b5b;
+  color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success-border) 7%, transparent);
+  border-left: 2px solid var(--color-success-border);
 }
 
 .files-list {
@@ -704,11 +704,11 @@
   position: relative;
   padding: 13px;
   background:
-    linear-gradient(rgb(239 244 252 / 94%), rgb(239 244 252 / 94%)),
-    repeating-linear-gradient(0deg, transparent 0 23px, rgb(71 88 78 / 7%) 24px);
+    linear-gradient(color-mix(in srgb, var(--color-surface-muted) 94%, transparent), color-mix(in srgb, var(--color-surface-muted) 94%, transparent)),
+    repeating-linear-gradient(0deg, transparent 0 23px, color-mix(in srgb, var(--color-sage-31) 7%, transparent) 24px);
   border: 1px solid var(--rule-strong);
-  border-top: 3px double #7e8b82;
-  box-shadow: 3px 4px 0 rgb(71 74 80 / 6%);
+  border-top: 3px double var(--color-gray-52);
+  box-shadow: 3px 4px 0 color-mix(in srgb, var(--color-gray-30) 6%, transparent);
 }
 
 .files-card::before {
@@ -716,7 +716,7 @@
   inset: 0 auto 0 0;
   width: 3px;
   content: "";
-  background: #9a5a3f;
+  background: var(--color-red-43);
 }
 
 .files-card > header {
@@ -762,15 +762,15 @@
 .files-card dl {
   display: grid;
   margin: 10px 0;
-  border-top: 1px solid rgb(108 115 125 / 13%);
-  border-left: 1px solid rgb(108 115 125 / 13%);
+  border-top: 1px solid color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
+  border-left: 1px solid color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
 }
 
 .files-card dl > div {
   min-width: 0;
   padding: 7px;
-  border-right: 1px solid rgb(108 115 125 / 13%);
-  border-bottom: 1px solid rgb(108 115 125 / 13%);
+  border-right: 1px solid color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-fg-subtle) 13%, transparent);
 }
 
 .files-card dt {
@@ -806,9 +806,9 @@
   gap: 8px;
   padding: 9px;
   margin-top: 12px;
-  color: #315b48;
-  background: rgb(69 107 91 / 8%);
-  border: 1px solid #afc7b6;
+  color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success-border) 8%, transparent);
+  border: 1px solid var(--color-sage-76);
 }
 
 .files-restored > div {
@@ -835,9 +835,9 @@
   padding: 9px;
   margin-top: 10px;
   color: var(--ink-soft);
-  background: rgb(255 255 255 / 42%);
+  background: color-mix(in srgb, var(--color-paper) 42%, transparent);
   border: 1px solid var(--rule-strong);
-  border-left: 3px solid #456b5b;
+  border-left: 3px solid var(--color-success-border);
 }
 
 .process-delta.is-changed,
@@ -879,8 +879,8 @@
   grid-template-columns: auto minmax(0, 1fr);
   gap: 2px 7px;
   padding: 6px;
-  background: rgb(224 229 237 / 55%);
-  border: 1px solid rgb(108 115 125 / 18%);
+  background: color-mix(in srgb, var(--color-border-subtle) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-fg-subtle) 18%, transparent);
 }
 
 .process-delta li > span {
@@ -921,28 +921,28 @@
 }
 
 .live-index.is-live {
-  color: #896821;
-  background: #efe4c7;
-  border-color: #d5c18e;
+  color: var(--color-gold-33);
+  background: var(--color-warning-surface);
+  border-color: var(--color-gold-69);
   animation: breathe 1.4s ease-in-out infinite;
 }
 
 .goal-state.goal-active {
   color: var(--ledger);
   background: var(--ledger-soft);
-  border-color: #b9cdbf;
+  border-color: var(--color-sage-76);
 }
 
 .goal-state.goal-completed {
-  color: #285241;
-  background: #d8e7dc;
-  border-color: #9fbea9;
+  color: var(--color-green-26);
+  background: var(--color-success-surface);
+  border-color: var(--color-sage-67);
 }
 
 .goal-state.goal-blocked {
-  color: #8b3f2f;
+  color: var(--color-danger-fg);
   background: var(--vermilion-soft);
-  border-color: #d9a698;
+  border-color: var(--color-red-72);
 }
 
 .empty-panel {

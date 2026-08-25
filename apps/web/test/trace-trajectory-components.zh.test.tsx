@@ -77,6 +77,44 @@ describe("trajectory Chinese copy", () => {
     expect(text).not.toContain("摘要来源");
   });
 
+  it("folds low-signal events and exposes bounded aria row metadata", async () => {
+    const container = installChineseDom();
+    const { TraceTrajectoryRunSection } =
+      await import("../src/TraceTrajectoryLedger");
+    const key = trajectoryEvent();
+    const noise = Array.from({ length: 3 }, (_, index) =>
+      lowValueEvent(index + 2),
+    );
+    const events = [key, ...noise];
+
+    render(
+      <TraceTrajectoryRunSection
+        run={{
+          id: "run_12345678",
+          ordinal: 1,
+          status: "completed",
+          durationMs: 1200,
+          events,
+          turns: [{ index: 1, label: "Turn 1", events }],
+        }}
+        selectedEventId={undefined}
+        visibleEventIds={new Set(events.map((event) => event.event.id))}
+        forceOpen
+        latest
+        onSelect={vi.fn()}
+      />,
+      container,
+    );
+
+    const table = container.querySelector('[role="table"]');
+    expect(table?.getAttribute("aria-rowcount")).toBe("2");
+    const foldRow = container.querySelector(".trace-fold-row");
+    expect(foldRow?.getAttribute("role")).toBe("row");
+    expect(foldRow?.getAttribute("aria-rowindex")).toBe("2");
+    expect(foldRow?.textContent ?? "").toContain("3 个事件已折叠");
+    expect(container.textContent ?? "").not.toContain("events folded");
+  });
+
   it("renders a four-section event inspector with bounded evidence", async () => {
     const container = installChineseDom();
     const { TraceTrajectoryEventDetail } =
@@ -159,5 +197,31 @@ function trajectoryEvent(): TraceTrajectoryEvent {
     timestampMs: Date.parse("2026-08-19T08:00:00.000Z"),
     status: "completed",
     durationMs: 1200,
+  };
+}
+
+function lowValueEvent(seq: number): TraceTrajectoryEvent {
+  return {
+    event: {
+      id: `event_noise_${String(seq)}`,
+      threadId: "thread_12345678",
+      runId: "run_12345678",
+      seq,
+      type: "context.prepared",
+      category: "model",
+      visibility: "user",
+      createdAt: new Date(
+        Date.parse("2026-08-19T08:00:00.000Z") + seq * 1_000,
+      ).toISOString(),
+      payload: {},
+    },
+    summary: `噪声 ${String(seq)}`,
+    summarySource: "fixed",
+    lane: "tools",
+    role: "TOOL",
+    label: `准备 ${String(seq)}`,
+    turnIndex: 1,
+    timestampMs: Date.parse("2026-08-19T08:00:00.000Z") + seq * 1_000,
+    status: "neutral",
   };
 }
