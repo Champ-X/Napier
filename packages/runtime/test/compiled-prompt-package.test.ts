@@ -2,9 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import {
   COMPILED_PROMPT_PACKAGE_VERSION,
+  LEGACY_COMPILED_PROMPT_PACKAGE_VERSION,
   validateCompiledPromptPackageReceipt,
   type CompiledPromptPackageReceiptV2,
 } from "../src/compiled-prompt-package.js";
+import {
+  compatibilityTelemetrySnapshot,
+  resetCompatibilityTelemetryForTest,
+} from "../src/compatibility-telemetry.js";
 import { canonicalJson, sha256 } from "../src/ed25519.js";
 import { createModelContextEnvelopeReceipt } from "../src/model-context-envelope.js";
 import { modelAdapterReceipt } from "../src/model-adapters.js";
@@ -15,6 +20,44 @@ import {
 } from "../src/prompt-invariant-core.js";
 
 describe("historical compiled Prompt package", () => {
+  it("continues to validate the original v1 receipt format", () => {
+    const modern = historicalReceipt();
+    const layers = structuredClone(modern.layers);
+    layers[4]!.contentSha256 = sha256("historical-model-adapter-v1");
+    const content = {
+      kind: modern.kind,
+      schemaVersion: 1 as const,
+      packageVersion: LEGACY_COMPILED_PROMPT_PACKAGE_VERSION,
+      turnIndex: modern.turnIndex,
+      classification: modern.classification,
+      tokenEstimateMethod: modern.tokenEstimateMethod,
+      systemPromptSha256: modern.systemPromptSha256,
+      systemPromptBytes: modern.systemPromptBytes,
+      estimatedTokens: modern.estimatedTokens,
+      segmentCount: modern.segmentCount,
+      partitionSha256: modern.partitionSha256,
+      lossless: modern.lossless,
+      layers,
+      effectiveCapabilities: modern.effectiveCapabilities,
+      modelAdapter: {
+        adapterId: "napier.anthropic-messages.v1" as const,
+        adapterContentSha256: layers[4]!.contentSha256,
+      },
+    };
+    const receipt = {
+      ...content,
+      contentSha256: sha256(canonicalJson(content)),
+    };
+
+    resetCompatibilityTelemetryForTest();
+    expect(validateCompiledPromptPackageReceipt(receipt)).toEqual(receipt);
+    expect(
+      compatibilityTelemetrySnapshot().metrics.find(
+        (metric) => metric.id === "compat.receipt.legacy_read",
+      )?.count,
+    ).toBe(1);
+  });
+
   it("continues to validate replayed v2 receipts without retaining the regex creator", () => {
     const receipt = historicalReceipt();
 

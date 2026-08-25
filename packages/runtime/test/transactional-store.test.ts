@@ -17,6 +17,7 @@ import {
   sha256,
 } from "../src/index.js";
 import { exportThreadReplayBundle } from "../src/replay.js";
+import { compatibilityTelemetrySnapshot, resetCompatibilityTelemetryForTest } from "../src/compatibility-telemetry.js";
 
 const temporaryRoots: string[] = [];
 const openStores: LocalStore[] = [];
@@ -41,6 +42,10 @@ async function openStore(options: { dataRoot: string; workspaceRoot: string }): 
   openStores.push(store);
   await store.initialize();
   return store;
+}
+
+function compatibilityMetric(id: string): number {
+  return compatibilityTelemetrySnapshot().metrics.find((metric) => metric.id === id)?.count ?? 0;
 }
 
 async function createGovernedEvaluationInput(store: LocalStore, id: string): Promise<RunEvaluationRecord> {
@@ -669,6 +674,7 @@ describe("transactional LocalStore", () => {
   });
 
   it("migrates legacy JSON/JSONL and repairs an event-first crash", async () => {
+    resetCompatibilityTelemetryForTest();
     const options = await createOptions();
     const first = await openStore(options);
     const thread = first.listThreads()[0]!;
@@ -719,6 +725,7 @@ describe("transactional LocalStore", () => {
     });
 
     const migrated = await openStore(options);
+    expect(compatibilityMetric("compat.store.legacy_json_read")).toBe(1);
     expect(migrated.getThread(thread.id).eventCount).toBe(3);
     expect(migrated.listAgents()[0]?.runLimits).toEqual({
       maxTurns: 64,

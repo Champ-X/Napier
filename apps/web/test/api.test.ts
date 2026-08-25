@@ -150,7 +150,7 @@ describe("Web JSON API wrappers", () => {
           projectionBytesWritten: 0,
           maxCommitDurationMs: 0,
         },
-      },
+      }, compatibility: { schemaVersion: 1, privacy: "fixed_id_count_only", metrics: [] },
     };
     const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
       expect(path).toBe("/api/health");

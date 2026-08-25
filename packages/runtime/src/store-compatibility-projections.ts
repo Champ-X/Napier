@@ -4,6 +4,7 @@ import path from "node:path";
 
 import type { RunEvent } from "@napier/contracts";
 
+import { recordCompatibilityHit } from "./compatibility-telemetry.js";
 import { withWorkspacePathLocks } from "./workspace-write-lock.js";
 
 export interface CompatibilityProjectionWriteResult {
@@ -120,7 +121,7 @@ export class StoreCompatibilityProjectionWriter {
         this.dirtyThreadIds.delete(threadIds[index]!);
       }
     }
-    return {
+    const result = {
       stateProjectionBytes:
         results[0]?.status === "fulfilled" ? results[0].value : 0,
       eventProjectionBytes: results
@@ -134,6 +135,10 @@ export class StoreCompatibilityProjectionWriter {
         (result) => result.status === "rejected",
       ).length,
     };
+    if (result.stateProjectionBytes > 0 || result.eventProjectionBytes > 0) {
+      recordCompatibilityHit("compat.store.projection_write");
+    }
+    return result;
   }
 }
 

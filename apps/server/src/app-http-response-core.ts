@@ -1,5 +1,6 @@
 import { safeFilenameSegment, setBodyContentSha256Header, setStableContentSha256Header, sha256Json, sha256Text } from "./http-response-evidence.js";
 import type { EvaluationSuite, EvaluationSuiteExecution, EvaluationSuiteGateReceipt, ExecutionPlanBlueprintPortfolioCalibration, ExecutionPlanBlueprintRecommendationPolicyBacktest, ExecutionPlanBlueprintRecommendationPolicyOverride, ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview, ExecutionPlanBlueprintRecommendationPolicyOverrideList, ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory, ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle, ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerification, ExtensionRecord, HealthResponse, RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult } from "@napier/contracts";
+import { compatibilityTelemetrySnapshot } from "@napier/runtime/core";
 import type { Context } from "hono";
 
 const HEALTH_RUNTIME_COMPONENTS = ["sqlite", "openssl", "uv", "v8"] as const;
@@ -82,6 +83,7 @@ export function setHealthProjectionHeaders(context: Context, response: HealthRes
   context.header("X-Napier-Store-State-Bytes-Written", String(response.store.persistence.stateBytesWritten));
   context.header("X-Napier-Store-Event-Bytes-Written", String(response.store.persistence.eventBytesWritten));
   context.header("X-Napier-Store-Projection-Bytes-Written", String(response.store.persistence.projectionBytesWritten));
+  context.header("X-Napier-Compatibility-Metrics-SHA256", sha256Json(response.compatibility.metrics));
   const lastPersistence = response.store.persistence.last;
   if (lastPersistence) {
     context.header("X-Napier-Store-Last-Commit-Duration-Ms", String(lastPersistence.ledgerCommitDurationMs));
@@ -106,6 +108,10 @@ export function createHealthRuntimeProjection() {
     },
     components: Object.fromEntries(HEALTH_RUNTIME_COMPONENTS.map((component) => [component, process.versions[component] ?? "unavailable"])) as Record<(typeof HEALTH_RUNTIME_COMPONENTS)[number], string>,
   } satisfies HealthResponse["runtime"];
+}
+
+export function createHealthCompatibilityProjection(): HealthResponse["compatibility"] {
+  return compatibilityTelemetrySnapshot();
 }
 
 export function setExecutionPlanBlueprintPortfolioCalibrationHeaders(context: Context, calibration: ExecutionPlanBlueprintPortfolioCalibration): void {

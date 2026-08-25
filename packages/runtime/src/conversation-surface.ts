@@ -9,6 +9,7 @@ import type {
 import type { RunEvent, RunRecord } from "@napier/contracts";
 
 import { contextEventText } from "./compaction.js";
+import { recordCompatibilityHit } from "./compatibility-telemetry.js";
 import type { ConversationSurfaceCapsuleStore } from "./conversation-surface-capsule-store.js";
 import {
   toolCallSetSha256,
@@ -108,6 +109,9 @@ export async function projectConversationSurface(input: {
     claimedResponseKeys: new Set(),
     capsules: input.modelInvocationCapsules,
   });
+  for (const _unit of legacy.units) {
+    recordCompatibilityHit("compat.conversation_surface.legacy_read");
+  }
   units.push(
     ...legacy.units.map((unit) => ({
       seq: unit.seq,

@@ -25,6 +25,16 @@
       ]
     },
     {
+      "path": "scripts/migrate-compatibility.ts",
+      "kind": "migration",
+      "owner": "runtime",
+      "entryCommand": "npm run migrate:compatibility -- store|skills --workspace-root PATH [--data-root PATH] [--apply]",
+      "networkRequired": false,
+      "credentialClass": "none",
+      "retainedUntil": "0.3.0-earliest",
+      "outputArtifacts": []
+    },
+    {
       "path": "scripts/refresh-skill-load-fast-core-evidence.mjs",
       "kind": "evidence",
       "owner": "skills",

@@ -15,6 +15,7 @@ import {
   historicalDefaultCapabilitySignature,
   managedCapabilityPayload,
 } from "./default-agent-capability-contract.js";
+import { recordCompatibilityHit } from "./compatibility-telemetry.js";
 
 const BINDING_SOURCES = new Set([
   "seeded",
@@ -57,6 +58,7 @@ export function createLegacyDetectedCapabilityBinding(
   if (profile.id !== "agent_napier") return undefined;
   const legacySignatureSha256 = historicalDefaultCapabilitySignature(profile);
   if (!legacySignatureSha256) return undefined;
+  recordCompatibilityHit("compat.agent_capability.legacy_binding_read");
   return createBinding(profile, {
     source: "legacy_detected",
     ownership: "unknown_legacy",

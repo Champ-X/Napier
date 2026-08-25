@@ -53,6 +53,12 @@ export interface StorePersistenceMetrics {
   last?: StorePersistenceSample;
 }
 
+export interface CompatibilityTelemetrySnapshot {
+  schemaVersion: 1;
+  privacy: "fixed_id_count_only";
+  metrics: Array<{ id: string; count: number }>;
+}
+
 export interface HealthResponse {
   status: HealthStatus;
   service: "napier";
@@ -82,6 +88,7 @@ export interface HealthResponse {
   store: {
     persistence: StorePersistenceMetrics;
   };
+  compatibility: CompatibilityTelemetrySnapshot;
 }
 
 export interface BootstrapResponse {

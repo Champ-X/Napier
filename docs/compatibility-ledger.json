@@ -1,0 +1,198 @@
+{
+  "kind": "napier.compatibility-ledger",
+  "schemaVersion": 1,
+  "policy": {
+    "minimumSupportedVersion": "0.1.0",
+    "zeroHitReleaseWindowsRequired": 2,
+    "telemetryPrivacy": "fixed_id_count_only",
+    "removalGate": "A legacy reader may be removed only after migration is available, its oldest fixture passes, legacy writes have stopped, and two consecutive released versions report zero real read hits."
+  },
+  "entries": [
+    {
+      "id": "contracts-v1",
+      "compatibilityMode": "active_format",
+      "owner": "contracts",
+      "introducedVersion": "0.1.0",
+      "lastWriteVersion": "current",
+      "minimumReadableVersion": "0.1.0",
+      "readHitMetric": {
+        "mode": "not_applicable_active_format",
+        "metricId": null
+      },
+      "sourceReaders": [
+        "packages/contracts/src/workspace-bootstrap-v1.ts",
+        "packages/contracts/src/execution-plan-v1.ts",
+        "packages/contracts/src/protocol-v1-core.ts"
+      ],
+      "migrationCommand": "npm run write:management-openapi-compatibility && npm run check:management-openapi-compatibility",
+      "fixtures": [
+        "docs/artifacts/management-openapi-compatibility-0.1.0.json"
+      ],
+      "plannedRemovalVersion": "after-v2-and-two-zero-hit-release-windows",
+      "zeroHitReleaseWindows": [],
+      "rollbackPlan": "Restore the prior v1 schema and compatibility fixture from the release tag, then rerun management OpenAPI compatibility and SDK parity gates."
+    },
+    {
+      "id": "conversation-surface-legacy",
+      "compatibilityMode": "legacy_reader",
+      "owner": "runtime-conversation",
+      "introducedVersion": "0.1.0",
+      "lastWriteVersion": "0.1.0",
+      "minimumReadableVersion": "0.1.0",
+      "readHitMetric": {
+        "mode": "counter",
+        "metricId": "compat.conversation_surface.legacy_read"
+      },
+      "sourceReaders": [
+        "packages/runtime/src/conversation-surface-legacy.ts",
+        "packages/runtime/src/conversation-surface.ts"
+      ],
+      "migrationCommand": "npm run test -w @napier/runtime -- conversation-surface.test.ts",
+      "fixtures": ["packages/runtime/test/conversation-surface.test.ts"],
+      "plannedRemovalVersion": "0.3.0-earliest",
+      "zeroHitReleaseWindows": [],
+      "rollbackPlan": "Restore the legacy projection reader and replay the retained model-invocation capsule fixture before reopening writes."
+    },
+    {
+      "id": "store-json-jsonl-projections",
+      "compatibilityMode": "legacy_reader_and_writer",
+      "owner": "runtime-store",
+      "introducedVersion": "0.1.0",
+      "lastWriteVersion": "current",
+      "minimumReadableVersion": "0.1.0",
+      "readHitMetric": {
+        "mode": "counter",
+        "metricId": "compat.store.legacy_json_read"
+      },
+      "writeHitMetric": "compat.store.projection_write",
+      "sourceReaders": [
+        "packages/runtime/src/store.ts",
+        "packages/runtime/src/store-compatibility-projections.ts"
+      ],
+      "migrationCommand": "npm run migrate:compatibility -- store --data-root <data-root> --workspace-root <workspace-root> --apply",
+      "fixtures": [
+        "packages/runtime/test/fixtures/capability-contract-v1/pre-search/manifest.json",
+        "packages/runtime/test/transactional-store.test.ts"
+      ],
+      "plannedRemovalVersion": "0.3.0-earliest",
+      "zeroHitReleaseWindows": [],
+      "rollbackPlan": "Stop Napier, preserve the failed ledger.sqlite files, remove only those ledger files, and restore workspace.json plus events from the backup path printed by the migration command."
+    },
+    {
+      "id": "agent-capability-legacy-binding",
+      "compatibilityMode": "legacy_reader",
+      "owner": "runtime-agent-capabilities",
+      "introducedVersion": "0.1.0",
+      "lastWriteVersion": "0.1.0",
+      "minimumReadableVersion": "0.1.0",
+      "readHitMetric": {
+        "mode": "counter",
+        "metricId": "compat.agent_capability.legacy_binding_read"
+      },
+      "sourceReaders": [
+        "packages/runtime/src/agent-capability-bindings.ts",
+        "packages/runtime/src/agent-capability-upgrade.ts"
+      ],
+      "migrationCommand": "npm run napier -- capabilities --workspace <workspace-root> --restore-recommended",
+      "fixtures": [
+        "packages/runtime/test/fixtures/capability-contract-v1/pre-search/manifest.json",
+        "packages/runtime/test/fixtures/capability-contract-v1/search-fetch/manifest.json"
+      ],
+      "plannedRemovalVersion": "0.3.0-earliest",
+      "zeroHitReleaseWindows": [],
+      "rollbackPlan": "Use the retained Agent revision and capability binding to roll back the explicit restore; never infer ownership for an unknown legacy profile."
+    },
+    {
+      "id": "project-legacy-skill-root",
+      "compatibilityMode": "legacy_reader",
+      "owner": "runtime-skills",
+      "introducedVersion": "0.1.0",
+      "lastWriteVersion": "0.1.0",
+      "minimumReadableVersion": "0.1.0",
+      "readHitMetric": {
+        "mode": "counter",
+        "metricId": "compat.skill.project_legacy_read"
+      },
+      "sourceReaders": [
+        "packages/runtime/src/standard-skill-snapshot.ts",
+        "packages/runtime/src/standard-skill-snapshot-compose.ts"
+      ],
+      "migrationCommand": "npm run migrate:compatibility -- skills --workspace-root <workspace-root> --apply",
+      "fixtures": [
+        "packages/runtime/test/fixtures/compatibility-v1/manifest.json",
+        "packages/runtime/test/standard-skill-snapshot.test.ts"
+      ],
+      "plannedRemovalVersion": "0.3.0-earliest",
+      "zeroHitReleaseWindows": [],
+      "rollbackPlan": "Remove only copied .agents/skills entries listed by the migration result; the source skills directory remains unchanged throughout migration."
+    },
+    {
+      "id": "workflow-terminal-without-plan-revision",
+      "compatibilityMode": "legacy_reader",
+      "owner": "runtime-workflow",
+      "introducedVersion": "0.1.0",
+      "lastWriteVersion": "0.1.0",
+      "minimumReadableVersion": "0.1.0",
+      "readHitMetric": {
+        "mode": "counter",
+        "metricId": "compat.workflow.legacy_terminal_read"
+      },
+      "sourceReaders": ["packages/runtime/src/workflow-ledger.ts"],
+      "migrationCommand": "npm run test -w @napier/runtime -- compatibility-fixtures.test.ts",
+      "fixtures": [
+        "packages/runtime/test/fixtures/compatibility-v1/workflow-terminal.json",
+        "packages/runtime/test/fixtures/compatibility-v1/manifest.json"
+      ],
+      "plannedRemovalVersion": "0.3.0-earliest",
+      "zeroHitReleaseWindows": [],
+      "rollbackPlan": "Restore the planRevision-optional lookup and replay the content-addressed terminal fixture; do not rewrite immutable historical event payloads in place."
+    },
+    {
+      "id": "compiled-prompt-model-receipts",
+      "compatibilityMode": "legacy_reader",
+      "owner": "runtime-model",
+      "introducedVersion": "0.1.0",
+      "lastWriteVersion": "0.1.0",
+      "minimumReadableVersion": "0.1.0",
+      "readHitMetric": {
+        "mode": "counter",
+        "metricId": "compat.receipt.legacy_read"
+      },
+      "sourceReaders": [
+        "packages/runtime/src/compiled-prompt-package-receipt.ts",
+        "packages/runtime/src/model-context-envelope.ts",
+        "packages/runtime/src/model-adapters.ts"
+      ],
+      "migrationCommand": "npm run test -w @napier/runtime -- compiled-prompt-package.test.ts model-context-envelope.test.ts model-adapters.test.ts",
+      "fixtures": [
+        "packages/runtime/test/compiled-prompt-package.test.ts",
+        "packages/runtime/test/model-context-envelope.test.ts",
+        "packages/runtime/test/model-adapters.test.ts"
+      ],
+      "plannedRemovalVersion": "0.3.0-earliest",
+      "zeroHitReleaseWindows": [],
+      "rollbackPlan": "Restore the v1 validators and replay retained receipts; immutable hashed receipts are never rewritten in place."
+    },
+    {
+      "id": "inbound-auth-legacy-bearer",
+      "compatibilityMode": "legacy_reader_and_default",
+      "owner": "runtime-security",
+      "introducedVersion": "0.1.0",
+      "lastWriteVersion": "current",
+      "minimumReadableVersion": "0.1.0",
+      "readHitMetric": {
+        "mode": "counter",
+        "metricId": "compat.inbound_auth.legacy_bearer_read"
+      },
+      "sourceReaders": ["packages/runtime/src/inbound-channel-policy.ts"],
+      "migrationCommand": "curl -fsS -X PUT <server-url>/api/channels/<channel-id>/signature-policy -H 'Content-Type: application/json' --data '{\"signaturePolicy\":{\"required\":true,\"toleranceSeconds\":300}}'",
+      "fixtures": [
+        "packages/runtime/test/channels.test.ts",
+        "apps/server/test/inbound-channel-admin-http-validation.test.ts"
+      ],
+      "plannedRemovalVersion": "0.3.0-earliest",
+      "zeroHitReleaseWindows": [],
+      "rollbackPlan": "With explicit operator confirmation, restore the channel policyTemplate to legacy_bearer while retaining the rotated bearer token; never expose token material in telemetry."
+    }
+  ]
+}

@@ -174,7 +174,7 @@ describe("Napier HTTP goal flow", () => {
     expect(response.headers.get("x-napier-store-projection-failure-count")).toBe(String(health.store.persistence.projectionFailureCount));
     expect(response.headers.get("x-napier-store-state-bytes-written")).toBe(String(health.store.persistence.stateBytesWritten));
     expect(response.headers.get("x-napier-store-event-bytes-written")).toBe(String(health.store.persistence.eventBytesWritten));
-    expect(response.headers.get("x-napier-store-projection-bytes-written")).toBe(String(health.store.persistence.projectionBytesWritten));
+    expect(response.headers.get("x-napier-store-projection-bytes-written")).toBe(String(health.store.persistence.projectionBytesWritten)); expect(response.headers.get("x-napier-compatibility-metrics-sha256")).toBe(responseSha256(health.compatibility.metrics));
     expect(response.headers.get("x-napier-store-last-commit-duration-ms")).toBeNull();
     expect(response.headers.get("x-napier-store-last-persist-duration-ms")).toBeNull();
     expect(response.headers.get("x-napier-store-last-state-bytes")).toBeNull();
@@ -209,13 +209,13 @@ describe("Napier HTTP goal flow", () => {
             }),
           ]),
         }),
-        store: {
-          persistence: expect.objectContaining({
-            schemaVersion: 1,
-            commitCount: expect.any(Number),
-            failedCommitCount: 0,
-            projectionFailureCount: 0,
-          }),
+        store: { persistence: expect.objectContaining({ schemaVersion: 1, commitCount: expect.any(Number), failedCommitCount: 0, projectionFailureCount: 0 }) },
+        compatibility: {
+          schemaVersion: 1,
+          privacy: "fixed_id_count_only",
+          metrics: expect.arrayContaining([
+            expect.objectContaining({ id: "compat.store.projection_write", count: expect.any(Number) }),
+          ]),
         },
       }),
     );

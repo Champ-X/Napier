@@ -1,6 +1,7 @@
 import type { ModelContextEnvelopeReceipt, RunEvent } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { recordCompatibilityHit } from "./compatibility-telemetry.js";
 
 export const MODEL_CONTEXT_ENVELOPE_EVENT = "context.model_envelope";
 export const MODEL_CONTEXT_ENVELOPE_VERSION = 2 as const;
@@ -186,6 +187,9 @@ export function validateModelContextEnvelopeReceipt(
   const { contentSha256, ...content } = receipt;
   if (sha256(canonicalJson(content)) !== contentSha256) {
     throw new Error("Model context envelope hash mismatch");
+  }
+  if (receipt.schemaVersion === 1) {
+    recordCompatibilityHit("compat.receipt.legacy_read");
   }
   return receipt;
 }

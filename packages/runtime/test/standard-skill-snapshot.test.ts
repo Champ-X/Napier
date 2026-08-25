@@ -11,6 +11,10 @@ import {
 } from "../src/standard-skill-snapshot.js";
 import { inspectStandardSkillCatalog } from "../src/standard-skill-catalog.js";
 import { createSkillLoadTool } from "../src/skill-load-tool.js";
+import {
+  compatibilityTelemetrySnapshot,
+  resetCompatibilityTelemetryForTest,
+} from "../src/compatibility-telemetry.js";
 import { afterEach, describe, expect, it } from "vitest";
 
 const roots: string[] = [];
@@ -72,6 +76,7 @@ async function setup() {
 
 describe("standard project and user Skill snapshots", () => {
   it("preserves the V1 contract for a relevant legacy-only Skill", async () => {
+    resetCompatibilityTelemetryForTest();
     const { workspace, home } = await setup();
     await putSkill(workspace, "legacy-brief");
 
@@ -86,6 +91,11 @@ describe("standard project and user Skill snapshots", () => {
     expect(snapshot.entry("legacy-brief")?.formattedInvocation).toContain(
       'location="/project/skills/legacy-brief/SKILL.md"',
     );
+    expect(
+      compatibilityTelemetrySnapshot().metrics.find(
+        (metric) => metric.id === "compat.skill.project_legacy_read",
+      )?.count,
+    ).toBe(1);
   });
 
   it("loads a project-standard Skill with source-explicit V2 evidence", async () => {

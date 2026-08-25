@@ -8,6 +8,10 @@ import { describe, expect, it } from "vitest";
 
 import { canonicalJson, sha256 } from "../src/ed25519.js";
 import {
+  compatibilityTelemetrySnapshot,
+  resetCompatibilityTelemetryForTest,
+} from "../src/compatibility-telemetry.js";
+import {
   applyModelAdapterOptions,
   createModelAdapterModels,
   MODEL_ADAPTER_DEFAULT_STREAM_OPTION_MAX_TOKENS,
@@ -97,12 +101,18 @@ describe("Model adapters", () => {
       adapterVersion: 1 as const,
       adapterId: "napier.openai-family.v1" as const,
     };
+    resetCompatibilityTelemetryForTest();
     expect(
       validateModelAdapterReceipt({
         ...legacy,
         contentSha256: hash(legacy),
       }),
     ).toEqual({ ...legacy, contentSha256: hash(legacy) });
+    expect(
+      compatibilityTelemetrySnapshot().metrics.find(
+        (metric) => metric.id === "compat.receipt.legacy_read",
+      )?.count,
+    ).toBe(1);
   });
 
   it("applies the selected policy through all four Models entrypoints", async () => {

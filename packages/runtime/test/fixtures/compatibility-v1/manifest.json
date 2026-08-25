@@ -1,0 +1,24 @@
+{
+  "kind": "napier.compatibility-fixture-manifest",
+  "schemaVersion": 1,
+  "minimumReadableVersion": "0.1.0",
+  "fixtures": [
+    {
+      "id": "store-profile-pre-search",
+      "sourceCommit": "37a048ba2fe081ead4665dea0bce95a6b30c56e2",
+      "path": "../capability-contract-v1/pre-search/manifest.json"
+    },
+    {
+      "id": "project-legacy-skill",
+      "sourceCommit": "d24938d8adaad83aefa31f242196aafc585ba854",
+      "path": "skills/research-brief/SKILL.md",
+      "sha256": "e16d803879271613589555d1a8d77ea866a960a038de980fab7f0a8f95b3726f"
+    },
+    {
+      "id": "workflow-terminal-before-plan-revision",
+      "sourceCommit": "0b3fb45be7d402a8458b824ca10982e89bf56903",
+      "path": "workflow-terminal.json",
+      "sha256": "38a2c33772a67dc34c3b8d81c81e5144777f0687cec9765e3f45dd9fb4ccaa11"
+    }
+  ]
+}

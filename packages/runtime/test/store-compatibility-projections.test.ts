@@ -5,6 +5,10 @@ import { DatabaseSync } from "node:sqlite";
 
 import { afterEach, describe, expect, it } from "vitest";
 
+import {
+  compatibilityTelemetrySnapshot,
+  resetCompatibilityTelemetryForTest,
+} from "../src/compatibility-telemetry.js";
 import { LocalStore } from "../src/store.js";
 import { LEDGER_DATABASE_FILENAME } from "../src/sqlite-ledger.js";
 
@@ -56,6 +60,7 @@ describe("Store compatibility projections", () => {
     expect((await reopened.listEvents(thread.id)).at(-1)?.type).toBe(
       "message.user",
     );
+    resetCompatibilityTelemetryForTest();
     await reopened.flushCompatibilityProjections();
     const state = JSON.parse(await workspaceProjection(options.dataRoot)) as {
       threads: Array<{ id: string; eventCount: number }>;
@@ -64,6 +69,11 @@ describe("Store compatibility projections", () => {
       state.threads.find((candidate) => candidate.id === thread.id)?.eventCount,
     ).toBe(4);
     expect((await projectedEventTypes(eventPath)).at(-1)).toBe("message.user");
+    expect(
+      compatibilityTelemetrySnapshot().metrics.find(
+        (metric) => metric.id === "compat.store.projection_write",
+      )?.count,
+    ).toBe(1);
   });
 
   it("checkpoints every dirty Thread at a turn boundary", async () => {

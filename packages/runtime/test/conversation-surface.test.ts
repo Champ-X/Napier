@@ -12,6 +12,10 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { AgentRuntime } from "../src/agent-runtime.js";
 import { contextMessageEvents } from "../src/compaction.js";
+import {
+  compatibilityTelemetrySnapshot,
+  resetCompatibilityTelemetryForTest,
+} from "../src/compatibility-telemetry.js";
 import { projectConversationSurface } from "../src/conversation-surface.js";
 import { ModelRegistry } from "../src/models.js";
 import { LocalStore } from "../src/store.js";
@@ -228,6 +232,7 @@ describe("Conversation Surface", () => {
   });
 
   it("recovers pre-upgrade exchanges from the next bound model invocation", async () => {
+    resetCompatibilityTelemetryForTest();
     const fixture = await createFixture("legacy");
     const first = fauxProvider({ provider: "faux-surface-legacy" });
     first.setResponses([
@@ -263,6 +268,11 @@ describe("Conversation Surface", () => {
 
     expect(projection.toolExchangeCount).toBe(1);
     expect(projection.omittedToolExchangeCount).toBe(0);
+    expect(
+      compatibilityTelemetrySnapshot().metrics.find(
+        (metric) => metric.id === "compat.conversation_surface.legacy_read",
+      )?.count,
+    ).toBe(1);
     const toolCallIndex = projection.messages.findIndex(
       (message) =>
         message.role === "assistant" &&

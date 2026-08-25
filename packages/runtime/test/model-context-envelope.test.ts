@@ -11,6 +11,10 @@ import {
   validateModelContextEnvelopeReceipt,
 } from "../src/model-context-envelope.js";
 import { canonicalJson, sha256 } from "../src/ed25519.js";
+import {
+  compatibilityTelemetrySnapshot,
+  resetCompatibilityTelemetryForTest,
+} from "../src/compatibility-telemetry.js";
 
 describe("model context envelope", () => {
   it("binds prompt, messages, and tools without copying raw context", () => {
@@ -120,6 +124,7 @@ describe("model context envelope", () => {
   });
 
   it("accepts legacy v1 hash-only receipts", () => {
+    resetCompatibilityTelemetryForTest();
     const modern = createModelContextEnvelopeReceipt({
       turnIndex: 0,
       systemPrompt: "System",
@@ -140,6 +145,11 @@ describe("model context envelope", () => {
     };
 
     expect(validateModelContextEnvelopeReceipt(legacy)).toEqual(legacy);
+    expect(
+      compatibilityTelemetrySnapshot().metrics.find(
+        (metric) => metric.id === "compat.receipt.legacy_read",
+      )?.count,
+    ).toBe(1);
   });
 
   it("requires each envelope to have exactly one response or retry binding", () => {

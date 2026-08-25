@@ -8,6 +8,10 @@ import { afterEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import { AgentRuntime } from "../src/agent-runtime.js";
 import { ChannelService } from "../src/channels.js";
 import {
+  compatibilityTelemetrySnapshot,
+  resetCompatibilityTelemetryForTest,
+} from "../src/compatibility-telemetry.js";
+import {
   createInboundDeadLetterRetryHistory,
   createInboundDeadLetterRetryPreview,
   verifyInboundDeadLetterExportArtifact,
@@ -162,6 +166,7 @@ describe("inbound webhook channels", () => {
   });
 
   it("applies inbound channel policy templates and derives custom revisions", async () => {
+    resetCompatibilityTelemetryForTest();
     const { dataRoot, store } = await createFixture();
     const agent = store.listAgents()[0]!;
     const thread = await store.createThread({
@@ -184,6 +189,11 @@ describe("inbound webhook channels", () => {
         }),
       }),
     );
+    expect(
+      compatibilityTelemetrySnapshot().metrics.find(
+        (metric) => metric.id === "compat.inbound_auth.legacy_bearer_read",
+      )?.count,
+    ).toBe(1);
 
     const strict = await store.createInboundChannel({
       name: "Strict hook",

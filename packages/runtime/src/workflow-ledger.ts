@@ -10,6 +10,7 @@ import type {
 } from "@napier/contracts";
 
 import type { EventSink } from "./event-sink.js";
+import { recordCompatibilityHit } from "./compatibility-telemetry.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
 import type { LocalStore } from "./store.js";
@@ -917,8 +918,7 @@ export class ExecutionPlanWorkflowLedger {
       isWorkflowRecord(legacy.payload) &&
       workflowTerminalEventMatches(legacy.payload, input, false)
     ) {
-      return true;
-    }
+      recordCompatibilityHit("compat.workflow.legacy_terminal_read"); return true; }
     return false;
   }
 

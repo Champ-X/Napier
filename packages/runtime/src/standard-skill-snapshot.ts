@@ -5,6 +5,7 @@ import path from "node:path";
 
 import type { StandardSkillRootKind } from "@napier/contracts/skill-load-standard";
 
+import { recordCompatibilityHit } from "./compatibility-telemetry.js";
 import { sha256 } from "./ed25519.js";
 import {
   buildProjectSkillSnapshot,
@@ -95,6 +96,7 @@ export async function buildStandardSkillSnapshot(
     !nonLegacyRelevant &&
     (legacyRelevant || (configuredNames.length === 0 && legacyPresent))
   ) {
+    recordCompatibilityHit("compat.skill.project_legacy_read");
     return buildProjectSkillSnapshot(
       workspaceRoot,
       configuredNames,
@@ -102,13 +104,21 @@ export async function buildStandardSkillSnapshot(
       options.hooks?.project_legacy,
     );
   }
-  return composeStandardSkillSnapshot(
+  const snapshot = composeStandardSkillSnapshot(
     workspaceRoot,
     configuredNames,
     scans.filter((scan) => relevantRootKinds.has(scan.root.kind)),
     candidates,
     signal,
   );
+  if (
+    snapshot.content.entries.some(
+      (entry) => entry.rootKind === "project_legacy",
+    )
+  ) {
+    recordCompatibilityHit("compat.skill.project_legacy_read");
+  }
+  return snapshot;
 }
 
 export async function discoverStandardSkillNames(

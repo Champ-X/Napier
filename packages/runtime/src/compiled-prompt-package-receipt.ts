@@ -5,6 +5,7 @@ import {
   type CompiledPromptPackageReceiptV3,
 } from "./compiled-prompt-package-v3.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { recordCompatibilityHit } from "./compatibility-telemetry.js";
 import type { ModelAdapterReceipt } from "./model-adapters.js";
 import {
   PROMPT_INVARIANT_CORE,
@@ -148,6 +149,9 @@ export function validateCompiledPromptPackageReceipt(
   const { contentSha256, ...content } = receipt;
   if (sha256(canonicalJson(content)) !== contentSha256) {
     throw new Error("Compiled Prompt package receipt hash mismatch");
+  }
+  if (generation === "legacy") {
+    recordCompatibilityHit("compat.receipt.legacy_read");
   }
   return receipt;
 }

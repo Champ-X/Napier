@@ -17,15 +17,10 @@ import {
   managedCapabilityPayload,
   managedCapabilitySha256,
 } from "../src/default-agent-capability-contract.js";
-import {
-  bindingMatchesProfile,
-  ensureCurrentCapabilityBindings,
-  lookupCapabilityBinding,
-  propagateUpdatedCapabilityBinding,
-  validateCapabilityBinding,
-} from "../src/agent-capability-bindings.js";
+import { bindingMatchesProfile, ensureCurrentCapabilityBindings, lookupCapabilityBinding, propagateUpdatedCapabilityBinding, validateCapabilityBinding } from "../src/agent-capability-bindings.js";
 import { inspectProcessSandboxReadiness } from "../src/process-run-readiness.js";
 import { CapabilityRestorePersistenceError } from "../src/agent-capability-store-mutations.js";
+import { compatibilityTelemetrySnapshot, resetCompatibilityTelemetryForTest } from "../src/compatibility-telemetry.js";
 
 const roots: string[] = [];
 const CODER_SAFE_TOOLS = ["apply_patch", "lsp_diagnostics", "read_file"];
@@ -352,11 +347,13 @@ describe("default Agent Capability Contract", () => {
   ])(
     "detects the authentic %s historical fixture without changing its profile",
     async (name, expectedManagedSha256) => {
+      resetCompatibilityTelemetryForTest();
       const fixture = await createFixtureRuntime(name);
       const services = await fixture.create();
       const before = services.store.getAgent("agent_napier");
       try {
         expect(managedCapabilitySha256(before)).toBe(expectedManagedSha256);
+        expect(compatibilityTelemetrySnapshot().metrics.find((metric) => metric.id === "compat.agent_capability.legacy_binding_read")?.count).toBe(1);
         expect(
           services.store.getAgentCapabilityBinding(before.id, before.revision),
         ).toEqual(

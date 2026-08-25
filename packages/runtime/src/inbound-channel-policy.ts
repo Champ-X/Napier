@@ -5,6 +5,7 @@ import {
   type InboundRetryPolicy,
   type InboundSignaturePolicy,
 } from "@napier/contracts";
+import { recordCompatibilityHit } from "./compatibility-telemetry.js";
 export {
   assertRepositoryLeaseToken as assertHashedToken,
   createRepositoryLeaseToken as createLeaseToken,
@@ -113,11 +114,18 @@ export function normalizeInboundChannelPolicy(
   retryPolicy: InboundRetryPolicy | undefined;
   signaturePolicy: Partial<InboundSignaturePolicy> | undefined;
 } {
+  const implicitLegacyDefault =
+    request.policyTemplate === undefined &&
+    request.retryPolicy === undefined &&
+    request.signaturePolicy === undefined;
   const templateId =
     request.policyTemplate ??
     (request.retryPolicy || request.signaturePolicy
       ? "custom"
       : "legacy_bearer");
+  if (implicitLegacyDefault) {
+    recordCompatibilityHit("compat.inbound_auth.legacy_bearer_read");
+  }
   if (templateId === "custom") {
     return {
       retryPolicy: request.retryPolicy,

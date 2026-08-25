@@ -1,4 +1,5 @@
 export { canonicalJson, sha256 } from "../ed25519.js";
+export { compatibilityTelemetrySnapshot } from "../compatibility-telemetry.js";
 export { createId } from "../ids.js";
 export {
   createOpenTelemetryTraceArtifact,

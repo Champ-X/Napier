@@ -226,6 +226,7 @@ import {
   compatibilityCheckpointRequired,
   StoreCompatibilityProjectionWriter,
 } from "./store-compatibility-projections.js";
+import { recordCompatibilityHit } from "./compatibility-telemetry.js";
 import { persistStoreMutation } from "./store-persistence.js";
 import {
   applyThreadSummaryEvent,
@@ -685,8 +686,7 @@ export class LocalStore {
           const events = await this.readLegacyEvents();
           this.state = this.validateState(this.state, events);
           const imported = ledger.bootstrap(JSON.stringify(this.state), events);
-          this.restoreSnapshot(imported);
-          restored = true;
+          this.restoreSnapshot(imported); recordCompatibilityHit("compat.store.legacy_json_read"); restored = true;
           await this.compatibilityProjections.writeAll(
             imported.stateJson,
             this.state.threads.map((thread) => thread.id),

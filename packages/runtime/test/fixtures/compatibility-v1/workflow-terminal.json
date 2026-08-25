@@ -1,0 +1,21 @@
+{
+  "id": "event_legacy_workflow_terminal",
+  "threadId": "thread_legacy_workflow",
+  "runId": "runctl_legacy_workflow",
+  "seq": 1,
+  "type": "workflow.completed",
+  "category": "plan",
+  "visibility": "user",
+  "createdAt": "2026-07-31T00:08:38.000Z",
+  "payload": {
+    "schemaVersion": 1,
+    "planId": "plan_legacy_workflow",
+    "manifestSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "blueprintSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "status": "completed",
+    "nodeResultCount": 1,
+    "completedNodeCount": 1,
+    "outputSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "resultSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  }
+}

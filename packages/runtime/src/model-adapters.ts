@@ -6,6 +6,7 @@ import type {
 } from "@earendil-works/pi-ai";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { recordCompatibilityHit } from "./compatibility-telemetry.js";
 
 export type ModelAdapterId =
   | "napier.anthropic-messages.v1"
@@ -207,7 +208,12 @@ export function validateModelAdapterReceipt(
   if (sha256(canonicalJson(content)) !== contentSha256) {
     throw new Error("Model Adapter receipt hash mismatch");
   }
+  recordLegacyModelAdapterReceiptHit(receipt.schemaVersion);
   return structuredClone(receipt);
+}
+
+function recordLegacyModelAdapterReceiptHit(schemaVersion: number): void {
+  if (schemaVersion === 1) recordCompatibilityHit("compat.receipt.legacy_read");
 }
 
 export function createModelAdapterModels(models: MutableModels): MutableModels {
