@@ -146,7 +146,16 @@ function DiagnosisPanel({
         <div>
           <span>{copy.category}</span>
           <strong>{copy.categories[diagnosis.category]}</strong>
-          <p>{copy.guidance[diagnosis.category]}</p>
+          <dl className="trace-event-diagnosis-guidance">
+            <div>
+              <dt>{copy.safeSummary}</dt>
+              <dd>{copy.summaries[diagnosis.category]}</dd>
+            </div>
+            <div>
+              <dt>{copy.nextAction}</dt>
+              <dd>{copy.guidance[diagnosis.category]}</dd>
+            </div>
+          </dl>
         </div>
       </div>
       {diagnosis.subject ? (

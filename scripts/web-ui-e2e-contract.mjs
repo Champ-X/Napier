@@ -296,6 +296,7 @@ export function assertViewportReceipt(viewport) {
   assert.equal(viewport.readingAxis.statusWidth <= 290, true);
   assert.equal(viewport.readingAxis.statusHeight <= 58, true);
   assert.equal(viewport.readingAxis.statusWithinCommandBar, true);
+  assert.equal(viewport.readingAxis.navigationToStatusGapPx >= 0, true);
   assert.equal(viewport.readingAxis.statusToModelGapPx >= 0, true);
   assert.equal(viewport.readingAxis.conversationWidth >= 760, true);
   assert.equal(viewport.readingAxis.conversationWidth <= 880, true);

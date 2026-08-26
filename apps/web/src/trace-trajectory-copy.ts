@@ -57,6 +57,8 @@ export const traceTrajectoryCopyEn = {
     noEvidence: "No additional bounded evidence was recorded for this event.",
     diagnosisView: {
       category: "Failure category",
+      safeSummary: "Safe error summary",
+      nextAction: "Next action",
       input: "Input receipt",
       outcome: "Recorded outcome",
       parent: "Parent context",
@@ -73,6 +75,18 @@ export const traceTrajectoryCopyEn = {
         run_failure: "Run failed",
         tool_failure: "Tool execution failed",
         execution_failure: "Execution failed",
+      },
+      summaries: {
+        timeout: "The operation exceeded its bounded execution window.",
+        output_limit:
+          "The operation stopped at its configured output boundary.",
+        policy_block:
+          "The active policy denied the operation before permitted execution.",
+        model_route_failure: "No safe model attempt completed for this route.",
+        run_failure: "The run ended without a successful terminal outcome.",
+        tool_failure: "The tool ended without a successful terminal receipt.",
+        execution_failure:
+          "The event recorded an unsuccessful execution outcome.",
       },
       guidance: {
         timeout: "Reduce the scope or raise the bounded timeout before retrying.",
@@ -225,6 +239,8 @@ export const traceTrajectoryZh: LocaleOverride<typeof traceTrajectoryCopyEn> = {
     noEvidence: "该事件没有记录额外的边界化证据。",
     diagnosisView: {
       category: "失败分类",
+      safeSummary: "安全错误摘要",
+      nextAction: "下一步动作",
       input: "输入凭据",
       outcome: "结果记录",
       parent: "父级上下文",
@@ -241,6 +257,15 @@ export const traceTrajectoryZh: LocaleOverride<typeof traceTrajectoryCopyEn> = {
         run_failure: "运行失败",
         tool_failure: "工具执行失败",
         execution_failure: "执行失败",
+      },
+      summaries: {
+        timeout: "操作超过了受限执行时间。",
+        output_limit: "操作在达到配置的输出边界后停止。",
+        policy_block: "当前策略在授权执行前阻止了该操作。",
+        model_route_failure: "当前路由没有完成安全的模型调用。",
+        run_failure: "运行在没有成功终态的情况下结束。",
+        tool_failure: "工具在没有成功终态凭据的情况下结束。",
+        execution_failure: "该事件记录了未成功的执行结果。",
       },
       guidance: {
         timeout: "缩小任务范围或调整受限超时后再重试。",

@@ -6,7 +6,7 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "6caf1c2e8e194bcd4ea500b44318e7683f1da244899f3a959bc0aaea59361fa8",
+  "artifactSetSha256": "69a9e2891a6babcd04054d6ec0ae09635a16fff26d7bd4abab002731e42d5f85",
   "artifacts": [
     {
       "kind": "package-lock-audit",
@@ -119,13 +119,13 @@
     {
       "kind": "web-dist-audit",
       "path": "docs/artifacts/web-dist-audit-0.1.0.json",
-      "sha256": "a57308c2004b2bef0d0fd5e738d9008ff27161f5a94fadd6531f0cbe3b9b5b92",
+      "sha256": "211ae37f11bf8d17751c98c5bf875d230e09d57fe12d73169c6d6826f068f476",
       "valid": true
     },
     {
       "kind": "web-dist-manifest",
       "path": "docs/artifacts/web-dist-0.1.0.sha256",
-      "sha256": "3e9d11009de47dfe09af1c2e01203f3404e247056a525bd11e0ff90cd63e09f6",
+      "sha256": "a5ca2ffe813e40330eae03ea8708767b255e0162561e22b22845fba567470db5",
       "valid": true
     },
     {
@@ -155,25 +155,25 @@
     {
       "kind": "harness-experiment-release-evidence",
       "path": "docs/artifacts/harness-experiment-release-evidence-0.1.3.json",
-      "sha256": "e3b5f9d4516ee7ac06a602979c6f2bc567b4f60677df2a0d72e324759b732dfe",
+      "sha256": "ee491524f1169a66cf86d9d26abeb0123b00ecb724eef36cbcfc250a35d4fc58",
       "valid": true
     },
     {
       "kind": "agent-harness-acceptance-evidence",
       "path": "docs/artifacts/agent-harness-acceptance-evidence-0.1.3.json",
-      "sha256": "f7d396550e627a96eae33a3c28b0baa274ceff508a23189f6e423d520928bd69",
+      "sha256": "5e14c8515d3a2951abbd349ff71eb7968d54d173c6fa2e64de683d72c92b2fb6",
       "valid": true
     },
     {
       "kind": "default-product-source-bound-smoke",
       "path": "docs/artifacts/default-product-source-bound-smoke-m4-0.1.3.json",
-      "sha256": "a9ea4448d153d71e81d90797500f4eaf9795248a41cca50c676a2bf436eba263",
+      "sha256": "242e7664551f38d9f6bc12fa62d8f450e940eb3e64a65b211b5f335eb68995ed",
       "valid": true
     },
     {
       "kind": "default-product-source-manifest",
       "path": "docs/artifacts/default-product-source-manifest-0.1.3.json",
-      "sha256": "48b94db343b1c83aab820927461d975b43300dd98a3cd416a5f1d103193f48f4",
+      "sha256": "74ef79c0ee8b470b4c5bcbf360d71fb46e67de9a6d44c6e8393fd839326402ad",
       "valid": true
     },
     {

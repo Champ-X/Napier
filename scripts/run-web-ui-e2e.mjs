@@ -1065,6 +1065,7 @@ function readReadingAxis() {
   const conversation = required(".message-ledger");
   const composer = required(".composer");
   const commandBar = required(".workbench-header");
+  const navigation = required(".workspace-view-navigation");
   const status = required(".task-narrative");
   const model = required(".model-chip");
   const centers = [conversation, composer].map(
@@ -1082,6 +1083,7 @@ function readReadingAxis() {
       status.bottom <= commandBar.bottom &&
       status.left >= commandBar.left &&
       status.right <= commandBar.right,
+    navigationToStatusGapPx: Math.round(status.left - navigation.right),
     statusToModelGapPx: Math.round(model.left - status.right),
     conversationWidth: Math.round(conversation.width),
     composerWidth: Math.round(composer.width),

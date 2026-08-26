@@ -10,7 +10,6 @@ describe("trajectory Chinese copy", () => {
   afterEach(() => {
     containers.splice(0).forEach((container) => render(null, container));
     vi.unstubAllGlobals();
-    vi.resetModules();
   });
 
   it("renders lane, detail, and search controls in Chinese", async () => {
@@ -154,10 +153,42 @@ describe("trajectory Chinese copy", () => {
     expect(evidence).not.toContain("INPUT TOKENS");
     expect(evidence).not.toContain("TOP_SECRET_MODEL_OUTPUT");
   });
+
+  it("renders an actionable, privacy-bounded diagnosis for failed events", async () => {
+    const container = installChineseDom();
+    const { TraceTrajectoryEventDetail } =
+      await import("../src/TraceTrajectoryEventDetail");
+    const event = trajectoryEvent();
+    event.event.type = "tool.failed";
+    event.event.category = "tool";
+    event.event.payload = {
+      callId: "call_failed_1",
+      toolName: "run_command",
+      error: "TOP_SECRET_ERROR",
+      errorSha256: "b".repeat(64),
+      details: {
+        runtime: "node",
+        status: "timed_out",
+        argumentCount: 2,
+        exitCode: 124,
+      },
+    };
+    event.status = "failed";
+
+    render(<TraceTrajectoryEventDetail event={event} />, container);
+
+    const text = container.textContent ?? "";
+    expect(text).toContain("诊断");
+    expect(text).toContain("执行超时");
+    expect(text).toContain("安全错误摘要");
+    expect(text).toContain("操作超过了受限执行时间。");
+    expect(text).toContain("下一步动作");
+    expect(text).toContain("缩小任务范围或调整受限超时后再重试。");
+    expect(text).not.toContain("TOP_SECRET_ERROR");
+  });
 });
 
 function installChineseDom(): HTMLElement {
-  vi.resetModules();
   const { document, window } = parseHTML(
     "<!doctype html><html><body><div id=app></div></body></html>",
   );

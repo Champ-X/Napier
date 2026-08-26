@@ -5,13 +5,13 @@
   "predecessor": {
     "productVersion": "0.1.2",
     "commit": "45c736f0b426db5d03f88adbb17acb8df32e7703",
-    "changedPathCount": 1228,
-    "changedPathsSha256": "8839ef529b622e4643f6d01d9bcb6a56209c30986655721a208c83bcb1f03a13"
+    "changedPathCount": 1229,
+    "changedPathsSha256": "4958fd6b2b070a860601352f97aa812d7c59d003e5aef43a88462d1badac3358"
   },
   "identityDeclarationPath": "packages/runtime/src/release-product-identity.ts",
   "identityDeclarationSha256": "5a8dada43a7d464d3de4e65cc7c556def3391ef59f674cdb6949a1ce5362b62d",
   "fileCount": 2007,
-  "totalBytes": 14278827,
+  "totalBytes": 14281563,
   "files": [
     {
       "path": "apps/server/package.json",
@@ -1390,8 +1390,8 @@
     },
     {
       "path": "apps/web/src/FilesPanel.tsx",
-      "bytes": 6579,
-      "sha256": "8c01e7e0f9724790ce318c598ad3afa9b4cba0bf97c344eabff5206c8b32ba1e"
+      "bytes": 7526,
+      "sha256": "cba11408938c6e05adceddbb96251b220a34ccf1d17801444a2ce423ae7bda8d"
     },
     {
       "path": "apps/web/src/KernelPluginDesk.tsx",
@@ -1845,8 +1845,8 @@
     },
     {
       "path": "apps/web/src/TaskChangesPanel.tsx",
-      "bytes": 4369,
-      "sha256": "8672f5ddfd66b6e2e30c9123bd2390417e6e54943a024fecc36dd81c63b64436"
+      "bytes": 3980,
+      "sha256": "04764b7f6946040ac07de85b42b3163126a4dfc9479bac03fe4ddd753d22d744"
     },
     {
       "path": "apps/web/src/TaskCompletionSummary.tsx",
@@ -1940,8 +1940,8 @@
     },
     {
       "path": "apps/web/src/TraceTrajectoryEventDetail.tsx",
-      "bytes": 7793,
-      "sha256": "d5607a01a637e645b1af722192c6298e2459e0c8ed1a00daebeae7233ae4c300"
+      "bytes": 8090,
+      "sha256": "03f97a0b8af3d4b0b275046c8330eb235e1bcf3efbac3f670fd00e19bd2fcc72"
     },
     {
       "path": "apps/web/src/TraceTrajectoryLedger.tsx",
@@ -3150,8 +3150,8 @@
     },
     {
       "path": "apps/web/src/model-picker.css",
-      "bytes": 5305,
-      "sha256": "8f02add257cd0a810d199e88647faf4b9948dfb46ad9fe87a3df9ca30f771ab6"
+      "bytes": 5388,
+      "sha256": "fd8e7fcad9e1bf6f397f78e801b5d971956b54da81c53fdf170d84d24c7dd19b"
     },
     {
       "path": "apps/web/src/model-response-view.ts",
@@ -3666,7 +3666,7 @@
     {
       "path": "apps/web/src/styles/task-workbench.css",
       "bytes": 11564,
-      "sha256": "40d6749dc41d1cb994df7c88a4ff69fa3b7cfcdaeca4216c24d3d448603b35f3"
+      "sha256": "5c6a529c79e7a35f7fc0ad34a79007a93f87faa6e156863697c2f859c85eb693"
     },
     {
       "path": "apps/web/src/styles/tokens.css",
@@ -3711,7 +3711,7 @@
     {
       "path": "apps/web/src/task-narrative.css",
       "bytes": 10212,
-      "sha256": "ce55fd3f289d6149c127d33457c45527a41a61a1ccb3ebbb4e4ff4bb2367393f"
+      "sha256": "57ffade7076c58c100c13999df126cfae5ae4101d12e8531ed044dc9e4c86ba9"
     },
     {
       "path": "apps/web/src/task-overview-view-model.ts",
@@ -3840,8 +3840,8 @@
     },
     {
       "path": "apps/web/src/trace-trajectory-copy.ts",
-      "bytes": 12167,
-      "sha256": "44363699db38b7123ebc60715ac06a8d56b56cf266c8f971ad6ccaf17faeeefe"
+      "bytes": 13490,
+      "sha256": "e63ee0215288add9be38ab5ef8693166df804f78e9cd7c004a68c40ede59f46c"
     },
     {
       "path": "apps/web/src/trace-trajectory-event-detail-view.ts",
@@ -3870,8 +3870,8 @@
     },
     {
       "path": "apps/web/src/trace-trajectory.css",
-      "bytes": 33081,
-      "sha256": "d3c4b1db806f9b8f137908781ab62e979a47fe0f816f36bf67bfe8b323b3b4f9"
+      "bytes": 33556,
+      "sha256": "9a061fea5c485c8f6c024e96dfba6e2615921b5500c284a406ca8963d7e1e078"
     },
     {
       "path": "apps/web/src/typescript-ast-event-view.ts",
@@ -10049,5 +10049,5 @@
       "sha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c"
     }
   ],
-  "contentSha256": "0cd063c1985817d0c288481faf4c85d40ce2f5fc2f357b69bd68ce44f4b6cfca"
+  "contentSha256": "c1f3f2837f01c1561a6db388bd0ba62cb40712ae906e9ef7057cd5cd6a7d0142"
 }

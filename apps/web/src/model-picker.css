@@ -51,6 +51,12 @@
   width: min(210px, 18vw);
 }
 
+@media (max-width: 1500px) {
+  .model-picker.is-compact {
+    width: 120px;
+  }
+}
+
 .model-picker.is-compact .model-picker-trigger {
   border-color: transparent;
 }

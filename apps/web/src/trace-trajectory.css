@@ -1302,8 +1302,34 @@
   color: var(--vermilion);
 }
 
-.trace-event-diagnosis-summary p,
 .trace-event-diagnosis-privacy {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.trace-event-diagnosis-guidance {
+  display: grid;
+  gap: 7px;
+  margin: 2px 0 0;
+}
+
+.trace-event-diagnosis-guidance > div {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+}
+
+.trace-event-diagnosis-guidance dt {
+  font-family: var(--mono);
+  font-size: var(--text-annotation);
+  color: var(--vermilion);
+}
+
+.trace-event-diagnosis-guidance dd {
   margin: 0;
   font-family: var(--serif);
   font-size: 12px;

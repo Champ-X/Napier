@@ -160,6 +160,7 @@ function validReceipt() {
         statusWidth: 220,
         statusHeight: 32,
         statusWithinCommandBar: true,
+        navigationToStatusGapPx: 8,
         statusToModelGapPx: 8,
         conversationWidth: 800,
         composerWidth: 800,

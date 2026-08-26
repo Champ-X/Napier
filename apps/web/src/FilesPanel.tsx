@@ -10,6 +10,7 @@ import {
   listWorkspaceTrash,
   restoreWorkspaceTrashItem,
 } from "./workspace-file-api";
+import { copy as appCopy } from "./copy";
 import { workspaceFileCopy as copy } from "./workspace-file-copy";
 import {
   workspaceFileRequestIsCurrent,
@@ -18,6 +19,7 @@ import {
 
 export default function FilesPanel({ threadId }: { threadId: string }) {
   const [items, setItems] = useState<WorkspaceTrashItem[]>([]);
+  const [loadedThreadId, setLoadedThreadId] = useState<string>();
   const [busyId, setBusyId] = useState<string>();
   const [restored, setRestored] = useState<WorkspaceTrashRestoreResult>();
   const [error, setError] = useState<string>();
@@ -47,6 +49,7 @@ export default function FilesPanel({ threadId }: { threadId: string }) {
       }
       setItems(list.items);
       setError(undefined);
+      setLoadedThreadId(threadId);
     } catch {
       if (
         !controller.signal.aborted &&
@@ -57,6 +60,7 @@ export default function FilesPanel({ threadId }: { threadId: string }) {
         )
       ) {
         setError(copy.error);
+        setLoadedThreadId(threadId);
       }
     } finally {
       activeControllersRef.current.delete(controller);
@@ -65,6 +69,7 @@ export default function FilesPanel({ threadId }: { threadId: string }) {
 
   useEffect(() => {
     setItems([]);
+    setLoadedThreadId(undefined);
     setRestored(undefined);
     setError(undefined);
     void load();
@@ -82,6 +87,7 @@ export default function FilesPanel({ threadId }: { threadId: string }) {
     () => items.map((item) => workspaceTrashCardView(item)),
     [items],
   );
+  const ready = loadedThreadId === threadId;
 
   const restore = async (trashId: string) => {
     const token = {
@@ -135,92 +141,111 @@ export default function FilesPanel({ threadId }: { threadId: string }) {
     }
   };
 
+  if (!ready) return null;
+
+  if (cards.length === 0 && !restored) {
+    return error ? (
+      <p className="inline-error task-recovery-error" role="alert">
+        {error}
+      </p>
+    ) : null;
+  }
+
   return (
-    <section
-      className="panel-section files-panel"
-      aria-labelledby="files-panel-title"
-    >
-      <div className="panel-heading">
-        <div>
-          <span>{copy.eyebrow}</span>
-          <h3 id="files-panel-title">{copy.title}</h3>
-        </div>
-        <button
-          className="icon-button"
-          type="button"
-          onClick={() => void load()}
-          aria-label={copy.refresh}
-          title={copy.refresh}
-        >
-          <RefreshCw size={14} aria-hidden="true" />
-        </button>
-      </div>
-      <p className="quiet-copy">{copy.description}</p>
-      <p className="files-safety">{copy.safety}</p>
-      {error ? (
-        <p className="inline-error" role="alert">
-          {error}
-        </p>
-      ) : null}
-      {restored ? (
-        <div className="files-restored" role="status">
-          <ArchiveRestore size={14} aria-hidden="true" />
+    <details className="task-recovery-disclosure">
+      <summary>
+        <ArchiveRestore size={15} aria-hidden="true" />
+        <span>
+          <strong>{appCopy.taskView.changes.recovery}</strong>
+          <small>{appCopy.taskView.changes.recoveryBody}</small>
+        </span>
+      </summary>
+      <section
+        className="panel-section files-panel"
+        aria-labelledby="files-panel-title"
+      >
+        <div className="panel-heading">
           <div>
-            <strong>{copy.restored}</strong>
-            <code>{restored.restoredPath}</code>
-            <span>
-              {copy.evidence} {restored.evidence.contentSha256.slice(0, 12)}
-            </span>
+            <span>{copy.eyebrow}</span>
+            <h3 id="files-panel-title">{copy.title}</h3>
           </div>
+          <button
+            className="icon-button"
+            type="button"
+            onClick={() => void load()}
+            aria-label={copy.refresh}
+            title={copy.refresh}
+          >
+            <RefreshCw size={14} aria-hidden="true" />
+          </button>
         </div>
-      ) : null}
-      {cards.length === 0 ? (
-        <p className="empty-panel">{copy.noItems}</p>
-      ) : (
-        <div className="files-list">
-          {cards.map((card) => (
-            <article className="files-card" key={card.id}>
-              <header>
-                <FolderArchive size={15} aria-hidden="true" />
-                <div>
-                  <strong>{card.kindLabel}</strong>
-                  <span>{card.id}</span>
-                </div>
-              </header>
-              <dl>
-                <div>
-                  <dt>{copy.originalPath}</dt>
-                  <dd>
-                    <code>{card.originalPath}</code>
-                  </dd>
-                </div>
-                <div>
-                  <dt>{copy.scope}</dt>
-                  <dd>{card.scopeLabel}</dd>
-                </div>
-                <div>
-                  <dt>{copy.trashedAt}</dt>
-                  <dd>{formatDate(card.trashedAt)}</dd>
-                </div>
-                <div>
-                  <dt>{copy.snapshot}</dt>
-                  <dd>{card.snapshotHash}</dd>
-                </div>
-              </dl>
-              <button
-                type="button"
-                className="secondary-button files-restore-button"
-                disabled={busyId === card.id}
-                onClick={() => void restore(card.id)}
-              >
-                <ArchiveRestore size={12} aria-hidden="true" />
-                {busyId === card.id ? copy.restoring : copy.restore}
-              </button>
-            </article>
-          ))}
-        </div>
-      )}
-    </section>
+        <p className="quiet-copy">{copy.description}</p>
+        <p className="files-safety">{copy.safety}</p>
+        {error ? (
+          <p className="inline-error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        {restored ? (
+          <div className="files-restored" role="status">
+            <ArchiveRestore size={14} aria-hidden="true" />
+            <div>
+              <strong>{copy.restored}</strong>
+              <code>{restored.restoredPath}</code>
+              <span>
+                {copy.evidence} {restored.evidence.contentSha256.slice(0, 12)}
+              </span>
+            </div>
+          </div>
+        ) : null}
+        {cards.length === 0 ? (
+          <p className="empty-panel">{copy.noItems}</p>
+        ) : (
+          <div className="files-list">
+            {cards.map((card) => (
+              <article className="files-card" key={card.id}>
+                <header>
+                  <FolderArchive size={15} aria-hidden="true" />
+                  <div>
+                    <strong>{card.kindLabel}</strong>
+                    <span>{card.id}</span>
+                  </div>
+                </header>
+                <dl>
+                  <div>
+                    <dt>{copy.originalPath}</dt>
+                    <dd>
+                      <code>{card.originalPath}</code>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{copy.scope}</dt>
+                    <dd>{card.scopeLabel}</dd>
+                  </div>
+                  <div>
+                    <dt>{copy.trashedAt}</dt>
+                    <dd>{formatDate(card.trashedAt)}</dd>
+                  </div>
+                  <div>
+                    <dt>{copy.snapshot}</dt>
+                    <dd>{card.snapshotHash}</dd>
+                  </div>
+                </dl>
+                <button
+                  type="button"
+                  className="secondary-button files-restore-button"
+                  disabled={busyId === card.id}
+                  onClick={() => void restore(card.id)}
+                >
+                  <ArchiveRestore size={12} aria-hidden="true" />
+                  {busyId === card.id ? copy.restoring : copy.restore}
+                </button>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </details>
   );
 }
 

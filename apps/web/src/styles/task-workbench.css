@@ -189,7 +189,7 @@
 
 @media (max-width: 1500px) {
   .workbench-header {
-    grid-template-columns: minmax(170px, 1fr) auto minmax(250px, 1fr);
+    grid-template-columns: minmax(170px, 1fr) auto minmax(350px, 1fr);
     padding-inline: var(--space-4);
   }
 

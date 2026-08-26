@@ -1,4 +1,4 @@
-import { ArchiveRestore, FileText, Link2 } from "lucide-react";
+import { FileText, Link2 } from "lucide-react";
 import { lazy, Suspense } from "react";
 
 import type { ThreadDetail } from "@napier/contracts";
@@ -88,20 +88,9 @@ export function TaskChangesPanel({
       ) : null}
 
       {detail ? (
-        <details className="task-recovery-disclosure">
-          <summary>
-            <ArchiveRestore size={15} aria-hidden="true" />
-            <span>
-              <strong>{copy.taskView.changes.recovery}</strong>
-              <small>{copy.taskView.changes.recoveryBody}</small>
-            </span>
-          </summary>
-          <Suspense
-            fallback={<div className="context-loading" role="status" />}
-          >
-            <LazyFilesPanel threadId={detail.thread.id} />
-          </Suspense>
-        </details>
+        <Suspense fallback={<div className="context-loading" role="status" />}>
+          <LazyFilesPanel threadId={detail.thread.id} />
+        </Suspense>
       ) : null}
     </section>
   );
