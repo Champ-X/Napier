@@ -9,6 +9,7 @@ import { useContextPanelController } from "./use-context-panel-controller";
 import "./context-panel-shell.css";
 import "./context-profile-policies.css";
 import "./context-profile-variables.css";
+import "./context-model-route.css";
 import "./context-workspace-evidence.css";
 
 export type ContextPanelProps = ContextPanelInput;

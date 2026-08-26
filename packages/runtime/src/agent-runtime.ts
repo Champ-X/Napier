@@ -352,7 +352,7 @@ export class AgentRuntime {
       this.modelRegistry,
       effectiveAgentSnapshot,
       invocationSource,
-      options.model,
+      options.model, options.modelRoute,
     );
     const workflowInvocation = isWorkflowRunSource(invocationSource);
     const messageExperiment = options[AGENT_MESSAGE_EXPERIMENT_EXECUTION];
@@ -562,9 +562,9 @@ export class AgentRuntime {
       abortController.signal.throwIfAborted();
       const model = await this.modelRegistry.resolveConfigured(modelRef);
       const modelRoute = await createAgentRunModelRoute(this.modelRouter, {
-        run,
-        model,
+        run, model, profile: agentProfile,
         ...(options.modelRoute ? { request: options.modelRoute } : {}),
+        explicitPrimary: options.model !== undefined,
         ...(options.onEvent ? { onEvent: options.onEvent } : {}),
       });
       const subagents =

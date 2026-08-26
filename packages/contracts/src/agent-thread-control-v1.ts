@@ -1,8 +1,9 @@
 import type { AutomaticRecoveryPolicy, ModelAdvisorPolicy, ModelRef, RunLimits, SubagentLimits, SubagentRole, ToolLoopGuardPolicy, ToolPolicyMode } from "./execution-core.js";
 import type { AgentProfile, PromptVariableDefinition } from "./execution-runs.js";
+import type { ModelRoutePolicyV2 } from "./model-route.js";
 import type { GoalState, ThreadStatus } from "./protocol-v1-core.js";
 
-export type AgentProfileField = "name" | "description" | "systemPrompt" | "model" | "thinkingLevel" | "toolPolicy" | "enabledTools" | "enabledSkills" | "enabledSubagents" | "subagentLimits" | "runLimits" | "automaticRecovery" | "modelAdvisor" | "promptVariables" | "toolLoopGuard";
+export type AgentProfileField = "name" | "description" | "systemPrompt" | "model" | "thinkingLevel" | "toolPolicy" | "enabledTools" | "enabledSkills" | "enabledSubagents" | "subagentLimits" | "runLimits" | "automaticRecovery" | "modelAdvisor" | "promptVariables" | "toolLoopGuard" | "modelRoute";
 
 export type AgentProfileRevisionSource = "created" | "updated" | "rollback" | "imported" | "migrated";
 
@@ -34,6 +35,8 @@ export interface UpdateAgentProfileRequest {
   modelAdvisor?: ModelAdvisorPolicy;
   promptVariables?: PromptVariableDefinition[];
   toolLoopGuard?: ToolLoopGuardPolicy;
+  modelRoute?: ModelRoutePolicyV2;
+  clearModelRoute?: true;
   threadId?: string;
 }
 

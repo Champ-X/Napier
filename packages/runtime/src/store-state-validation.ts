@@ -7,6 +7,7 @@ import {
 } from "./store-state-normalization.js";
 import { validatePersistedReceiptTrustState } from "./store-state-receipt-validation.js";
 import { validatePersistedRunState } from "./store-state-run-validation.js";
+import { validatePersistedModelRouteState } from "./model-route-state.js";
 import type { PersistedStoreState } from "./store-state.js";
 
 export function validatePersistedStoreState(
@@ -18,6 +19,7 @@ export function validatePersistedStoreState(
   validatePersistedExtensionState(state);
   validatePersistedWorkspaceState(state, migrateAgentRevisions);
   validatePersistedRunState(state);
+  validatePersistedModelRouteState(state);
   validatePersistedEvaluationState(state, sourceBindingEvents);
   validatePersistedReceiptTrustState(state);
   return state;

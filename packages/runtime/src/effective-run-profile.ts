@@ -33,15 +33,19 @@ export function effectiveRunProfile(
     configuration.schemaVersion === 5 ||
     configuration.schemaVersion === 6 ||
     configuration.schemaVersion === 7 ||
-    configuration.schemaVersion === 8
+    configuration.schemaVersion === 8 ||
+    configuration.schemaVersion === 9
       ? {
           modelAdvisor: structuredClone(configuration.modelAdvisor),
         }
       : {}),
-    ...(configuration.schemaVersion === 8
+    ...(configuration.schemaVersion === 8 || configuration.schemaVersion === 9
       ? {
           toolLoopGuard: structuredClone(configuration.toolLoopGuard),
         }
+      : {}),
+    ...(configuration.schemaVersion === 9
+      ? { modelRoute: structuredClone(configuration.modelRoute) }
       : {}),
   };
 }
@@ -50,7 +54,7 @@ export function modernRunConfiguration(
   configuration: RunRecord["configuration"],
 ): configuration is Extract<
   NonNullable<RunRecord["configuration"]>,
-  { schemaVersion: 2 | 3 | 4 | 5 | 6 | 7 | 8 }
+  { schemaVersion: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 }
 > {
   return (
     configuration !== undefined &&
@@ -60,7 +64,8 @@ export function modernRunConfiguration(
       configuration.schemaVersion === 5 ||
       configuration.schemaVersion === 6 ||
       configuration.schemaVersion === 7 ||
-      configuration.schemaVersion === 8)
+      configuration.schemaVersion === 8 ||
+      configuration.schemaVersion === 9)
   );
 }
 

@@ -274,12 +274,7 @@ import {
 } from "./agents.js";
 import { AutomaticRecoveryRepository } from "./automatic-recovery-repository.js";
 import { AutomationScheduleRepository } from "./automation-schedule-repository.js";
-import {
-  createCredentialReference as createCredentialReferenceRecord,
-  credentialSourceKey,
-  recordCredentialAvailability,
-  setCredentialReferenceStatus,
-} from "./credential-references.js";
+import { CredentialReferenceRepository } from "./credential-reference-repository.js";
 import { EvaluationCasebookRepository } from "./evaluation-casebook-repository.js";
 import { assertRunEvaluationCompletedEventBindings } from "./evaluation-governance.js";
 import { EvaluationReviewRepository } from "./evaluation-review-repository.js";
@@ -292,6 +287,7 @@ import { InboundChannelRepository } from "./inbound-channel-repository.js";
 import { InboundDeliveryRepository } from "./inbound-delivery-repository.js";
 import { resolveStoredRunCapabilityProfile } from "./internal-research-recovery-authorization.js";
 import { MemoryRepository } from "./memory-repository.js";
+import { ModelRouteStateRepository } from "./model-route-state.js";
 import {
   MODEL_INVOCATION_EXPERIMENT_EXECUTION,
   type ModelInvocationExperimentExecution,
@@ -556,6 +552,8 @@ export class LocalStore {
   readonly signedPackageRepository: SignedPackageRepository;
   readonly extensionDistributionRepository: ExtensionDistributionRepository;
   readonly memoryRepository: MemoryRepository;
+  private readonly credentialReferenceRepository: CredentialReferenceRepository;
+  readonly modelRouteStateRepository: ModelRouteStateRepository;
 
   constructor(options: LocalStoreOptions) {
     this.dataRoot = path.resolve(options.dataRoot);
@@ -588,6 +586,26 @@ export class LocalStore {
           const mutation = operation(this.state);
           if (mutation.changed) await this.persistState();
           return mutation.value;
+        }),
+    });
+    this.credentialReferenceRepository = new CredentialReferenceRepository({
+      assertReady: () => this.assertInitialized(),
+      read: () => this.state,
+      mutate: (operation) =>
+        this.stateQueue.run(async () => {
+          const result = operation(this.state);
+          await this.persistState();
+          return result;
+        }),
+    });
+    this.modelRouteStateRepository = new ModelRouteStateRepository({
+      assertReady: () => this.assertInitialized(),
+      read: () => this.state,
+      mutate: (operation) =>
+        this.stateQueue.run(async () => {
+          const result = operation(this.state);
+          await this.persistState();
+          return result;
         }),
     });
     const repositoryHost =
@@ -892,100 +910,30 @@ export class LocalStore {
   }
 
   listCredentialReferences(): CredentialReference[] {
-    this.assertInitialized();
-    return structuredClone(
-      [...this.state.credentials].sort((left, right) =>
-        `${left.providerId}:${left.label}`.localeCompare(
-          `${right.providerId}:${right.label}`,
-        ),
-      ),
-    );
+    return this.credentialReferenceRepository.list();
   }
 
   getCredentialReference(referenceId: string): CredentialReference {
-    this.assertInitialized();
-    const reference = this.state.credentials.find(
-      (candidate) => candidate.id === referenceId,
-    );
-    if (!reference) {
-      throw new Error(`Credential reference not found: ${referenceId}`);
-    }
-    return structuredClone(reference);
+    return this.credentialReferenceRepository.get(referenceId);
   }
 
   getActiveCredentialReference(
     providerId: string,
   ): CredentialReference | undefined {
-    this.assertInitialized();
-    const reference = this.state.credentials.find(
-      (candidate) =>
-        candidate.providerId === providerId && candidate.status === "active",
-    );
-    return reference ? structuredClone(reference) : undefined;
+    return this.credentialReferenceRepository.getActive(providerId);
   }
 
   async createCredentialReference(
     request: CreateCredentialReferenceRequest,
   ): Promise<CredentialReference> {
-    this.assertInitialized();
-    const reference = createCredentialReferenceRecord(request);
-    return this.stateQueue.run(async () => {
-      if (
-        this.state.credentials.some(
-          (candidate) =>
-            candidate.providerId === reference.providerId &&
-            candidate.status === "active",
-        )
-      ) {
-        throw new Error(
-          `Provider already has an active credential reference: ${reference.providerId}`,
-        );
-      }
-      const sourceKey = credentialSourceKey(reference);
-      if (
-        this.state.credentials.some(
-          (candidate) => credentialSourceKey(candidate) === sourceKey,
-        )
-      ) {
-        throw new Error("Credential reference source already exists");
-      }
-      this.state.credentials.push(reference);
-      await this.persistState();
-      return structuredClone(reference);
-    });
+    return this.credentialReferenceRepository.create(request);
   }
 
   async setCredentialReferenceStatus(
     referenceId: string,
     status: CredentialReference["status"],
   ): Promise<CredentialReference> {
-    this.assertInitialized();
-    return this.stateQueue.run(async () => {
-      const index = this.state.credentials.findIndex(
-        (candidate) => candidate.id === referenceId,
-      );
-      const current = this.state.credentials[index];
-      if (!current) {
-        throw new Error(`Credential reference not found: ${referenceId}`);
-      }
-      if (
-        status === "active" &&
-        this.state.credentials.some(
-          (candidate) =>
-            candidate.id !== referenceId &&
-            candidate.providerId === current.providerId &&
-            candidate.status === "active",
-        )
-      ) {
-        throw new Error(
-          `Provider already has an active credential reference: ${current.providerId}`,
-        );
-      }
-      const updated = setCredentialReferenceStatus(current, status);
-      this.state.credentials[index] = updated;
-      if (updated.revision !== current.revision) await this.persistState();
-      return structuredClone(updated);
-    });
+    return this.credentialReferenceRepository.setStatus(referenceId, status);
   }
 
   async recordCredentialAvailability(
@@ -993,24 +941,11 @@ export class LocalStore {
     availability: CredentialAvailability,
     error?: string,
   ): Promise<CredentialReference> {
-    this.assertInitialized();
-    return this.stateQueue.run(async () => {
-      const index = this.state.credentials.findIndex(
-        (candidate) => candidate.id === referenceId,
-      );
-      const current = this.state.credentials[index];
-      if (!current) {
-        throw new Error(`Credential reference not found: ${referenceId}`);
-      }
-      const updated = recordCredentialAvailability(
-        current,
-        availability,
-        error,
-      );
-      this.state.credentials[index] = updated;
-      await this.persistState();
-      return structuredClone(updated);
-    });
+    return this.credentialReferenceRepository.recordAvailability(
+      referenceId,
+      availability,
+      error,
+    );
   }
 
   listReceiptTrustAnchors(): ReceiptTrustAnchor[] {
@@ -3767,6 +3702,8 @@ export class LocalStore {
       !Array.isArray(parsed.executionPlanBlueprintOutcomeBaselines) ||
       !Array.isArray(parsed.automaticRecoveryAssessments) ||
       !Array.isArray(parsed.automaticRecoveryAttempts) ||
+      !Array.isArray(parsed.modelRouteHealth) ||
+      !Array.isArray(parsed.modelRouteCursors) ||
       migrateEvaluationCasebooks ||
       migrateExtensionPackageHistory;
     this.state = this.validateState(

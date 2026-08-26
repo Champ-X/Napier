@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import type {
   AgentProfile,
+  CredentialReference,
   ModelSummary,
   PromptVariableDefinition,
   SubagentRole,
@@ -21,10 +22,13 @@ import {
   validPromptVariableName,
 } from "./context-panel-helpers";
 import { reviewerModelAvailability } from "./model-selection-view-model";
+import { modelRouteSavePatch } from "./model-route-editor";
+import { useContextModelRouteController } from "./use-context-model-route-controller";
 
 export interface ContextAgentProfileControllerInput {
   agent: AgentProfile;
   models: ModelSummary[];
+  credentials: CredentialReference[];
   selectedModelKey: string;
   threadId: string;
   selectedModelConfigured: boolean;
@@ -35,6 +39,7 @@ export interface ContextAgentProfileControllerInput {
 export function useContextAgentProfileController({
   agent,
   models,
+  credentials,
   selectedModelKey,
   threadId,
   selectedModelConfigured,
@@ -108,6 +113,7 @@ export function useContextAgentProfileController({
     initial.agentTimeoutSeconds,
   );
   const [configurationBusy, setConfigurationBusy] = useState(false);
+  const modelRoute = useContextModelRouteController(agent, models, credentials);
 
   const advisorReviewModel = reviewerModelAvailability(
     models,
@@ -237,6 +243,11 @@ export function useContextAgentProfileController({
           exemptTools:
             parseToolLoopGuardExemptTools(agentToolLoopGuardExemptTools) ?? [],
         },
+        ...modelRouteSavePatch(
+          agent.modelRoute !== undefined,
+          modelRoute.modelRouteEnabled,
+          modelRoute.modelRoutePolicy,
+        ),
         runLimits: {
           maxTurns: agentRunMaxTurns,
           maxTotalTokens: agentRunMaxTotalTokens,
@@ -269,12 +280,16 @@ export function useContextAgentProfileController({
     promptVariables: agentPromptVariables,
     toolLoopGuardThreshold: agentToolLoopGuardThreshold,
     toolLoopGuardExemptTools: agentToolLoopGuardExemptTools,
+    ...(modelRoute.modelRouteError
+      ? { modelRouteError: modelRoute.modelRouteError }
+      : {}),
   });
   const profileSaveDescriptionIds = [
     !selectedModelConfigured ? "context-model-unavailable" : undefined,
     !advisorReviewModelAvailable
       ? "context-advisor-review-model-unavailable"
       : undefined,
+    modelRoute.modelRouteError ? "context-model-route-error" : undefined,
   ]
     .filter((id): id is string => Boolean(id))
     .join(" ");
@@ -352,5 +367,6 @@ export function useContextAgentProfileController({
     profileSaveDescriptionIds,
     subagentOptions,
     toolOptions: AGENT_TOOL_NAMES,
+    ...modelRoute,
   };
 }

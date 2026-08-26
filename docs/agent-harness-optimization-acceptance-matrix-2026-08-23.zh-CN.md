@@ -1,9 +1,12 @@
 # Napier Agent Harness 优化验收矩阵
 
-> 验收日期：2026-08-23  
+> 验收日期：2026-08-26<br>
 > 唯一设计依据：`docs/agent-harness-optimization-design-2026-08-22.zh-CN.md`  
 > 产品版本：`0.1.3`  
-> 最终源码身份：`f79504c9ae122a9e1c77fb2ad765b762a5fe3620aa4c8d501faeb72e8090169b`
+> 历史基线源码身份：`f79504c9ae122a9e1c77fb2ad765b762a5fe3620aa4c8d501faeb72e8090169b`<br>
+> 当前 Route v2 增量源码身份：`757c784e1abb808bf7f05329208d045da2c8a2c3c961ec62e0e2d69dc94f2564`
+
+原 A1–A8 与发布证据保留为历史基线；本次 `next.md` 增量单独记录在第 9 节。除源码清单与 Route v2 专项证据外，旧发布制品尚未按当前源码身份刷新，不得据此宣称整轮 `next.md` 已完成。
 
 ## 1. 判定口径
 
@@ -21,7 +24,7 @@
 
 | 项目 | 设计要求 | 核心实现 | 测试与真实证据 | 结论 |
 | --- | --- | --- | --- | --- |
-| A1 Model Route Plan 与安全回退 | 五类角色；统一失败分类；retry-before-visible；可见输出后不跨模型续写；未知副作用不重放；每次 attempt 入 Ledger；最终 serving model 可归因 | `packages/contracts/src/model-route.ts`；`packages/runtime/src/model-route.ts`、`model-route-policy.ts`、`model-route-stream.ts`、`model-route-evidence.ts`、`agent-run-model-route.ts`；CLI `interactive-renderer.ts`/`tui-state.ts`；Web `model-route-event-view.ts` | `model-route.test.ts`、`model-route-integration.test.ts`、CLI/Web route view 测试；Acceptance 102 个 route cases、100 个注入恢复样本：恢复率 `1.0`，可见输出跨模型续写 `0`，未知副作用重放 `0`，route attribution `1.0` | **verified** |
+| A1 Model Route Plan 与安全回退 | 五类角色；role/path/subagent 解析；endpoint/gateway/dialect；多 credential slot 与持久健康度；Retry-After、jitter/backoff；retry-before-visible；可见输出或副作用后不跨模型重放；每次 attempt 可归因 | `packages/contracts/src/model-route.ts`；`packages/runtime/src/model-route-profile.ts`、`model-route-resolution.ts`、`model-route-state.ts`、`model-route.ts`、`model-route-stream.ts`、`agent-run-model-route.ts`；Web `ContextModelRouteFieldset.tsx`、`model-route-editor.ts`、`model-route-event-view.ts` | Runtime Route/Store/Credential 7 files / 81 tests、Agent 13 tests、Server HTTP 6 tests、Web Route/Profile/Trace 5 files / 18 tests；三档桌面浏览器验证保存、恢复、显式清除与 fail-closed；历史 Acceptance 的 100 个注入样本继续证明可见输出跨模型续写 `0`、未知副作用重放 `0` | **verified**（Route v2 当前增量） |
 | A2 可组合 Step/Tool/Completion 生命周期 | 有序 `prepare/around/finalize/dispose`；安全扩展在最外层；注册可撤销；每 step 动态能力；canonical result 与展示分离；Runtime 收缩 | `lifecycle-extension-pipeline.ts`、`agent-lifecycle-pipeline-host.ts`、`agent-step-lifecycle-stream.ts`、`agent-tool-preflight.ts`、`agent-tool-result-boundary.ts`、`agent-run-completion-lifecycle.ts`；`agent-runtime-step-lifecycle.ts` | `lifecycle-extension-pipeline.test.ts`、`agent-step-lifecycle-stream.test.ts`、`agent-tool-result-boundary.test.ts`、`agent-runtime.test.ts`；架构门禁约束热点与复杂度 | **verified** |
 | A3 Tool Protocol v2 与能力可达性 | Essential Core、Capability Catalog、Resolved Tool View；被裁掉的第一方工具可发现并按下一 step 激活；V2 schema 分离 canonical/model-visible 输出、并发、副作用与 policy tags；编辑方言归一 | `packages/contracts/src/tool-protocol.ts`、`agent-tool-names.ts`；`packages/runtime/src/capability-catalog.ts`、`edit-dialect-adapter.ts`、`effective-capabilities-prompt-builder.ts`；Web capability copy/projection | `capability-catalog.test.ts`、`capability-catalog-runtime.test.ts`、`edit-dialect-adapter.test.ts`、provider tool schema 测试；Acceptance 100 个可达性 case，不可达率 `0`；A/B 中 `tool_schema_tokens` 平均下降 `4815.36` 且成功率不降 | **verified** |
 | A4 Governed Code Bridge | JS/Python 代码通过受限 `napier.call` 嵌套调用；完整复用参数校验、Policy、Approval、Sandbox、预算、Receipt、Ledger 和结果裁剪；无原始凭证与宿主权限；遵守并发语义 | `governed-code-bridge.ts`、`governed-code-bridge-model.ts`、`javascript-kernel-code-bridge.ts`、`python-kernel-code-bridge.ts`、`python-kernel-code-bridge-worker.ts`；JS/Python kernel 接线 | `governed-code-bridge.test.ts`、`governed-code-bridge-concurrency.test.ts`、`python-kernel.test.ts`；Acceptance 100 个 nested calls 治理覆盖率 `1.0`，3 个权限探针，权限扩大路径 `0` | **verified** |
@@ -78,13 +81,13 @@
 
 | 层级 | 制品 / 结果 | 判定 |
 | --- | --- | --- |
-| 源码身份 | `default-product-source-manifest-0.1.3.json` 与 Runtime 常量共同固定 `f79504c9…69b`；manifest 覆盖 1848 个文件、13277578 bytes | **verified** |
-| 实验决策 | `harness-experiment-release-evidence-0.1.3.json`：content SHA `05ace12e…663c`，`promotionReady=true`；两个 execution、360 Runs 均绑定最终源码 | **verified**（fixture 实验） |
-| 综合验收 | `agent-harness-acceptance-evidence-0.1.3.json`：content SHA `1c56410f…4c89`，388 Ledger Runs，`acceptanceReady=true`，并绑定前述源码 manifest 与实验 SHA | **verified** |
-| 产品路径 smoke | 干净 Thread `thread_fa3ba57081cf465e947a`、Casebook `casebook_c8e8e98d15fb46b5a9e0`；正式产品 Web/API 创建 6 个最终 identity Run/Trial：`run_580cc5e90c724ccd8ef9`、`run_fb60d84da8ba4b2fb288`、`run_83c1e281f2274e148517`、`run_b07cc194531940978b04`、`run_e971c06a8cea46488f48`、`run_446ea24c00e2494fabff`；6/6 passed；content SHA `fd93ff0e…d2d2` | **verified**；完整 10-case Gate 仅覆盖 6 cases，因此保持 `status=incomplete`、`defaultTrackReady=false`，未把 smoke 伪装成完整 Gate |
-| OCI 与升级路径 | `sandbox-product-acceptance-stage13.json`：schema 5、9 项 setup checks、content SHA `976639b8…f2c1`；`profile-upgrade-stage21.json`：CLI/Web/Unmanaged 三路径 | **verified** |
-| Web 分发 | 285 个 dist 文件；主入口 `index-EFxXBnkr.js` 为 24.82 KiB，低于 150 KiB 硬预算；manifest/dist SHA `921ba47b…ac11`，receipt 已刷新 | **verified** |
-| 发布制品集合 | `release-artifacts-audit-0.1.0.json`：169 项，`ok=true`，set SHA `50ef4092…b88a`；收据文件 SHA `74269873…fc18` | **verified** |
+| 源码身份 | `default-product-source-manifest-0.1.3.json` 与 Runtime 常量共同固定 `757c784e…2564`；manifest 覆盖 2040 个文件、14464854 bytes | **verified**（当前 Route v2 增量） |
+| 实验决策 | `harness-experiment-release-evidence-0.1.3.json`：content SHA `05ace12e…663c`，`promotionReady=true`；两个 execution、360 Runs | **historical**：尚未绑定当前增量源码身份，最终阶段统一刷新 |
+| 综合验收 | `agent-harness-acceptance-evidence-0.1.3.json`：content SHA `1c56410f…4c89`，388 Ledger Runs，`acceptanceReady=true` | **historical**：尚未绑定当前增量源码身份，最终阶段统一刷新 |
+| 产品路径 smoke | 历史干净 Thread/Casebook 创建 6 个 Run/Trial，6/6 passed；完整 10-case Gate 仅覆盖 6 cases | **historical**：保持 `status=incomplete`、`defaultTrackReady=false`，当前源码需重新采集 |
+| OCI 与升级路径 | `sandbox-product-acceptance-stage13.json` 与 `profile-upgrade-stage21.json` 保留历史实采 | **historical**：最终阶段重验 |
+| Web 分发 | 当前源码已通过 Web production build；dist manifest、receipt 与分发预算尚未刷新 | **pending** |
+| 发布制品集合 | `release-artifacts-audit-0.1.0.json` 保留上一轮 169 项审计 | **historical**：最终阶段重验 |
 
 ## 7. 明确保留的外部阻塞
 
@@ -99,13 +102,28 @@
 
 | 验收项 | 最终结果 | 结论 |
 | --- | --- | --- |
-| 全仓门禁 | 在最终 SDK parity、Sandbox、S1 readiness 与 release audit 一致状态下从头执行 `npm run check`，退出码 `0`；build、Web UI E2E、performance、dist、release receipt、Root/CLI/Server/Runtime/SDK 工作区测试全部通过 | **verified** |
-| Web 分发预算 | 285 个 dist 文件；主入口 `apps/web/dist/assets/index-EFxXBnkr.js` 为 25420 bytes（24.82 KiB），低于 153600 bytes（150 KiB）硬预算；dist SHA `921ba47b…ac11` | **verified** |
-| 1440×900 产品 QA | 在隔离产品服务 `http://127.0.0.1:8791` 打开最终 source-bound Thread，依次验收对话、任务、轨迹、设置；四个状态 `horizontalOverflowPx=0`，console 与 page errors 均为空，截图目视无遮挡或布局破坏 | **verified** |
-| 1280×720 产品 QA | 同一 Thread 重复验收对话、任务、轨迹、设置；四个状态 `horizontalOverflowPx=0`，console 与 page errors 均为空，截图目视无遮挡或布局破坏 | **verified** |
-| 懒加载 | 1280×720 刷新进入对话时 `TaskWorkspace`、`TraceWorkspace`、`WorkspaceSettingsSurface` 均未加载；点击任务、轨迹、设置后分别出现 `TaskWorkspace-eKz7MYWL.js`、`TraceWorkspace--3HFD3_J.js`、`WorkspaceSettingsSurface-CW6hErHd.js` | **verified** |
-| Web UI E2E 基线 | 自动化 E2E 在 1280×900、1440×900、1920×1080 三视口均匹配基线，`horizontalOverflowPx=0`、`console.errorCount=0` | **verified** |
+| 全仓门禁 | 上一轮完整 `npm run check` 结果保留；当前 Route v2 已通过 build、专项测试、Web design、architecture 与 diff 门禁，最终全仓门禁尚未执行 | **pending**（最终阶段） |
+| Web 分发预算 | 当前 production build 通过；dist manifest、receipt 与 150 KiB 主入口预算等待最终统一刷新 | **pending** |
+| 1280×900 Route QA | 隔离当前源码服务中验证启用、端点、凭证池、fallback、错误阻断、保存、刷新和显式清除；`horizontalOverflowPx=0`，可见 Route 元素无越界 | **verified** |
+| 1440×900 Route QA | 同一隔离数据与 Route 控制面；`horizontalOverflowPx=0`，设置抽屉与 Route 卡片均在视口内，截图目视无重叠或裁切 | **verified** |
+| 1920×1080 Route QA | 同一隔离数据与 Route 控制面；`horizontalOverflowPx=0`，设置抽屉与 Route 卡片均在视口内，截图目视无重叠或裁切 | **verified** |
+| Route 浏览器安全路径 | 秘密 Header 使保存按钮 fail closed；显式 credential pool 在 0/1 成员时 fail closed、2 成员时恢复；保存后 Bootstrap 返回规范化 Route；关闭保存后字段删除且刷新保持关闭；console/page error 为空 | **verified** |
+| Route v2 实现回归 | Contracts `126/126`、Runtime `2010/2010`、Server `263/263`、Web `958/958`、CLI `194/194`、SDK `80/80`、Benchmark Kit `90/90`、Harness Eval `10/10`（含 180 Runs）均通过；live-only tests 按环境跳过 | **verified** |
+| Root 历史证据校验 | `444` 项通过；`11` 项对旧 release/S1/SDK parity 快照与当前源码身份不一致执行 fail closed | **pending**（最终证据刷新阶段） |
+| Web UI E2E 基线 | 上一轮三视口基线保留；当前源码的全量 E2E 与布局基线等待最终统一刷新 | **pending**（最终阶段） |
 
-## 9. 最终判定
+## 9. `next.md` Phase 3 当前增量
 
-A1–A8 与 Phase 0–5 的首轮设计交付均已有实现与可复验证据；核心安全不变量和量化门槛成立。全仓 `typecheck`、架构门禁、完整 `npm run check`、最终 dist 硬预算及 1440×900 / 1280×720 双视口产品浏览器回归均已通过。Agent Harness 本地实现与最终源码绑定的证据闭环验收完成。S1 的外部签名发布及 Windows 主机验收继续独立保持 `blocked`。
+| 交付单元 | 当前事实 | 结论 |
+| --- | --- | --- |
+| Model Route v2 | role/path/subagent 统一解析；最多 4 级 fallback；Run fingerprint v9 冻结 Route；旧 v1–v8 回放兼容；持久 health/cooldown/cursor；Retry-After、provider hint、backoff 与 attempt 归因 | **verified** |
+| Provider Endpoint Profile | HTTPS/loopback HTTP 限制；拒绝 URL credential/query/fragment；gateway/model/dialect/non-secret headers；真实 provider 调用接收 endpoint、header 与 credential；Ledger 仅保存哈希 slot ID | **verified** |
+| Web Route 控制面 | role/path/subagent binding、endpoint、round-robin pool、retry envelope、中文文案、修订历史与显式清除；三档桌面视口完成浏览器验收 | **verified** |
+| 原生 Tool Protocol v2 | 尚未进入本轮实现与回归 | **pending** |
+| Context Projection Service | 尚未进入本轮实现与回归 | **pending** |
+| Subagent Hub 与监督 UI | 冻结 Route 已传入现有 Subagent 执行路径；Hub 产品面与实时监督尚未完成 | **pending** |
+| Phase 4 与最终发布证据 | 尚未开始；必须在后续实现后刷新全仓门禁、E2E、dist、acceptance、release audit | **pending** |
+
+## 10. 当前判定
+
+历史 A1–A8 基线继续有效；当前 `next.md` 的首个 Phase 3 独立单元——Model Route v2 与 Provider Endpoint Profile——已经由实现、专项测试、源码身份和真实浏览器交互共同验证。原生 Tool Protocol v2、Context Projection Service、Subagent Hub、Phase 4 与最终发布证据仍为 `pending`，因此本矩阵不把总目标标记为完成。S1 的外部签名发布及 Windows 主机验收继续独立保持 `blocked`。

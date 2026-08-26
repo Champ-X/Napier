@@ -1,6 +1,7 @@
 import {
   createModels,
   type Api,
+  type Credential,
   type AuthContext,
   type CredentialStore,
   type Model,
@@ -26,10 +27,18 @@ export const MAX_PROJECTED_LIVE_MODELS = 512;
 
 export class ModelRegistry {
   readonly models: MutableModels;
+  readonly credentialReferences?: {
+    readReference(referenceId: string): Promise<Credential | undefined>;
+  };
   modelTurnDeadlinePolicy?: Partial<ModelTurnDeadlinePolicy>;
   toolDeadlinePolicy?: Partial<ToolDeadlinePolicy>;
 
   constructor(credentials?: CredentialStore) {
+    if (credentials && "readReference" in credentials) {
+      this.credentialReferences = credentials as CredentialStore & {
+        readReference(referenceId: string): Promise<Credential | undefined>;
+      };
+    }
     const models = createModelAdapterModels(
       createModels({
         ...(credentials ? { credentials } : {}),

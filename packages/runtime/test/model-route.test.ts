@@ -1,6 +1,7 @@
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { DatabaseSync } from "node:sqlite";
 
 import {
   createAssistantMessageEventStream,
@@ -15,12 +16,14 @@ import {
 import { afterEach, describe, expect, it } from "vitest";
 
 import { canonicalJson, sha256 } from "../src/ed25519.js";
+import { CredentialReferenceStore } from "../src/credentials.js";
 import {
   classifyRouteFailure,
   ModelRouter,
   routeCanFallback,
 } from "../src/model-route.js";
 import { ModelRegistry } from "../src/models.js";
+import { LEDGER_DATABASE_FILENAME } from "../src/sqlite-ledger.js";
 import { LocalStore } from "../src/store.js";
 
 const roots: string[] = [];
@@ -79,6 +82,249 @@ describe("Model route failure policy", () => {
 });
 
 describe("ModelRouteSession", () => {
+  it.each(["health", "cursor"] as const)(
+    "fails closed on corrupted persisted Model route %s state",
+    async (kind) => {
+      const root = await mkdtemp(path.join(tmpdir(), "napier-model-route-corrupt-"));
+      roots.push(root);
+      const options = {
+        workspaceRoot: path.join(root, "workspace"),
+        dataRoot: path.join(root, "data"),
+      };
+      await mkdir(options.workspaceRoot);
+      const store = new LocalStore(options);
+      await store.initialize();
+      store.close();
+
+      const database = new DatabaseSync(
+        path.join(options.dataRoot, LEDGER_DATABASE_FILENAME),
+      );
+      const row = database
+        .prepare(
+          "SELECT state_json FROM workspace_state WHERE singleton = 1",
+        )
+        .get() as { state_json: string };
+      const state = JSON.parse(row.state_json) as {
+        modelRouteHealth: unknown;
+        modelRouteCursors: unknown;
+      };
+      if (kind === "health") {
+        state.modelRouteHealth = [
+          {
+            key: "tampered",
+            providerId: "route-fixture",
+            modelId: "served",
+            health: "healthy",
+            consecutiveFailures: 0,
+            updatedAt: new Date().toISOString(),
+          },
+        ];
+      } else {
+        state.modelRouteCursors = [
+          {
+            poolId: "route_pool",
+            nextIndex: -1,
+            updatedAt: new Date().toISOString(),
+          },
+        ];
+      }
+      database
+        .prepare(
+          "UPDATE workspace_state SET state_json = ? WHERE singleton = 1",
+        )
+        .run(JSON.stringify(state));
+      database.close();
+
+      const reopened = new LocalStore(options);
+      await expect(reopened.initialize()).rejects.toThrow(
+        kind === "health"
+          ? "Invalid persisted Model route health"
+          : "Invalid persisted Model route cursor",
+      );
+    },
+  );
+
+  it("uses role, endpoint, and credential-pool configuration across restarts", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-model-route-state-"));
+    roots.push(root);
+    const options = {
+      workspaceRoot: path.join(root, "workspace"),
+      dataRoot: path.join(root, "data"),
+    };
+    await mkdir(options.workspaceRoot);
+    const store = new LocalStore(options);
+    await store.initialize();
+    let agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      modelRoute: {
+        schemaVersion: 2,
+        roles: {},
+        credentialPools: [
+          { id: "route_pool", providerId: "route-fixture", strategy: "round_robin" },
+        ],
+      },
+    });
+    const first = await store.createCredentialReference({
+      providerId: "route-fixture",
+      label: "First",
+      source: { type: "environment", variable: "ROUTE_FIRST_KEY" },
+    });
+    const second = await store.createCredentialReference({
+      providerId: "route-fixture",
+      label: "Second",
+      source: { type: "environment", variable: "ROUTE_SECOND_KEY" },
+    });
+    agent = await store.updateAgent(agent.id, {
+      modelRoute: {
+        schemaVersion: 2,
+        roles: {
+          reasoning: {
+            model: { provider: "route-fixture", id: "reasoning" },
+            endpointProfileId: "corp_gateway",
+            credentialPoolId: "route_pool",
+          },
+        },
+        endpointProfiles: [
+          {
+            id: "corp_gateway",
+            providerId: "route-fixture",
+            kind: "gateway",
+            baseUrl: "https://gateway.example.test/v1/",
+            modelId: "served-reasoning",
+            dialect: "openai_responses",
+            headers: { "x-napier-tenant": "delivery" },
+          },
+        ],
+        credentialPools: [
+          {
+            id: "route_pool",
+            providerId: "route-fixture",
+            strategy: "round_robin",
+            credentialReferenceIds: [first.id, second.id],
+          },
+        ],
+        retryPolicy: { jitterRatio: 0, maxBackoffMs: 120_000 },
+      },
+    });
+    const thread = await store.createThread({
+      title: "Persistent model route",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+      model: agent.model,
+    });
+    const credentials = new CredentialReferenceStore({
+      store,
+      env: { ROUTE_FIRST_KEY: "secret-first", ROUTE_SECOND_KEY: "secret-second" },
+    });
+    const registry = new ModelRegistry(credentials);
+    registry.registerProvider(
+      fauxProvider({
+        provider: "route-fixture",
+        models: [
+          { id: agent.model.id },
+          { id: "reasoning", reasoning: true },
+        ],
+      }).provider,
+    );
+    const defaultModel = await registry.resolveConfigured({
+      provider: "route-fixture",
+      id: "reasoning",
+    });
+    if (!defaultModel) throw new Error("Route model was not resolved");
+    const now = Date.now();
+    const router = new ModelRouter(store, registry, () => now, () => 0);
+    const session = await router.createSession({
+      run,
+      primary: defaultModel,
+      profile: agent,
+      request: { role: "reasoning" },
+    });
+    let usedSecret = "";
+    const stream = session.stream({
+      signal: new AbortController().signal,
+      invoke: async (model, context) => {
+        usedSecret = context?.streamOptions.apiKey ?? "";
+        await context?.streamOptions.onResponse?.(
+          {
+            status: 429,
+            headers: { "Retry-After": "2", "X-Provider-Hint": "regional" },
+          },
+          model,
+        );
+        expect(model).toEqual(
+          expect.objectContaining({
+            id: "served-reasoning",
+            api: "openai-responses",
+            baseUrl: "https://gateway.example.test/v1",
+          }),
+        );
+        expect(context?.streamOptions.headers).toEqual({
+          "x-napier-tenant": "delivery",
+        });
+        return terminalStream(model, "error", "HTTP 429 rate limit");
+      },
+    });
+    await collect(stream);
+    expect(usedSecret).toBe("secret-first");
+    expect(session.plan).toEqual(
+      expect.objectContaining({
+        role: "reasoning",
+        resolutionSource: "role",
+        candidates: [
+          expect.objectContaining({
+            modelId: "served-reasoning",
+            sourceModelId: "reasoning",
+            endpointProfileId: "corp_gateway",
+            credentialPoolId: "route_pool",
+          }),
+        ],
+      }),
+    );
+    const ended = (await store.listEvents(thread.id)).find(
+      (event) => event.type === "route_attempt_ended",
+    );
+    expect(ended?.payload).toEqual(
+      expect.objectContaining({
+        providerHint: "regional",
+        retryAfterMs: 2_000,
+        backoffMs: 60_000,
+      }),
+    );
+    const descriptor = session.plan.candidates[0]!;
+    store.close();
+
+    const reopened = new LocalStore(options);
+    await reopened.initialize();
+    expect(reopened.modelRouteStateRepository.health(descriptor)).toEqual(
+      expect.objectContaining({
+        health: "cooling_down",
+        providerHint: "regional",
+        retryAfterMs: 2_000,
+      }),
+    );
+    expect(
+      (await reopened.modelRouteStateRepository.reserveCredential(
+        agent.modelRoute!.credentialPools![0]!,
+        { modelId: "served-reasoning", endpointProfileId: "corp_gateway" },
+      )).id,
+    ).toBe(second.id);
+    expect(
+      (await reopened.modelRouteStateRepository.reserveCredential(
+        agent.modelRoute!.credentialPools![0]!,
+        { modelId: "served-reasoning", endpointProfileId: "corp_gateway" },
+      )).id,
+    ).toBe(second.id);
+    const persisted = await readFile(
+      path.join(options.dataRoot, "workspace.json"),
+      "utf8",
+    );
+    expect(persisted).not.toContain("secret-first");
+    expect(persisted).not.toContain("secret-second");
+    reopened.close();
+  });
+
   it("records an immutable plan and falls back before presenting output", async () => {
     const fixture = await createFixture();
     const session = await fixture.router.createSession({

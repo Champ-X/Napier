@@ -272,7 +272,7 @@ export const contextCopyEn = {
     automaticRecovery: "Interruption policy",
     modelAdvisor: "Model Advisor",
     promptVariables: "Prompt variables",
-    toolLoopGuard: "Tool loop guard",
+    toolLoopGuard: "Tool loop guard", modelRoute: "Model route",
   },
   promptPackageEyebrow: "SIGNED PROMPT BASELINE",
   promptPackage: "Prompt package",

@@ -592,7 +592,7 @@ describe("safe automatic recovery", () => {
     );
     expect(recovered.configuration).toEqual(
       expect.objectContaining({
-        schemaVersion: 8,
+        schemaVersion: 9,
         executionMode: "safe_read_only_recovery",
         toolPolicy: "observe",
         enabledTools: [

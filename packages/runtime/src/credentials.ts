@@ -57,6 +57,14 @@ export class CredentialReferenceStore implements CredentialStore {
     const reference =
       this.options.store.getActiveCredentialReference(providerId);
     if (!reference) return undefined;
+    return this.readReference(reference.id);
+  }
+
+  async readReference(referenceId: string): Promise<Credential | undefined> {
+    const reference = this.options.store.getCredentialReference(referenceId);
+    if (reference.status !== "active") {
+      throw new Error(`Credential reference is disabled: ${reference.id}`);
+    }
     const value = await this.resolveReference(reference);
     if (!value) {
       throw new Error(
@@ -176,7 +184,8 @@ export class CredentialReferenceStore implements CredentialStore {
         (candidate) =>
           candidate.providerId === reference.providerId &&
           candidate.status === "active",
-      )
+      ) &&
+      !providerHasCredentialPool(this.options.store, reference.providerId)
     ) {
       throw new Error(
         `Provider already has an active credential reference: ${reference.providerId}`,
@@ -191,6 +200,17 @@ export class CredentialReferenceStore implements CredentialStore {
       throw new Error("Credential reference source already exists");
     }
   }
+}
+
+function providerHasCredentialPool(
+  store: Pick<LocalStore, "listAgents">,
+  providerId: string,
+): boolean {
+  return store.listAgents().some((agent) =>
+    agent.modelRoute?.credentialPools?.some(
+      (pool) => pool.providerId === providerId,
+    ),
+  );
 }
 
 export class MacOsKeychainResolver

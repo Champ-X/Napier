@@ -270,6 +270,7 @@ export const contextZh: LocaleOverride<typeof contextCopyEn> = {
     modelAdvisor: "模型顾问",
     promptVariables: "提示词变量",
     toolLoopGuard: "工具循环防护",
+    modelRoute: "模型路由",
   },
   promptPackageEyebrow: "已签名提示词基线",
   promptPackage: "提示词包",

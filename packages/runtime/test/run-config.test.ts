@@ -8,6 +8,7 @@ import {
   createRunConfigurationFingerprint,
   fingerprintAutomaticRecovery,
   fingerprintExecutionMode,
+  fingerprintModelRoute,
   fingerprintModelAdvisor,
   fingerprintSkillCatalogSha256,
   validateRunConfigurationFingerprint,
@@ -296,7 +297,7 @@ describe("Run configuration fingerprints", () => {
     );
   });
 
-  it("binds Prompt Variables and Tool Loop Guard in schema-8 fingerprints", () => {
+  it("binds Prompt Variables, Tool Loop Guard, and Model Route in schema-9 fingerprints", () => {
     const profile: AgentProfile = {
       ...PROFILE,
       promptVariables: [{ name: "project", type: "literal", value: "Napier" }],
@@ -320,7 +321,7 @@ describe("Run configuration fingerprints", () => {
 
     expect(fingerprint).toEqual(
       expect.objectContaining({
-        schemaVersion: 8,
+        schemaVersion: 9,
         skillCatalogSha256: "a".repeat(64),
         promptVariableCatalogSha256,
         promptVariableSnapshotSha256: "c".repeat(64),
@@ -330,21 +331,43 @@ describe("Run configuration fingerprints", () => {
           threshold: 3,
           exemptTools: [],
         },
+        modelRoute: {
+          schemaVersion: 2,
+          roles: { default: { model: PROFILE.model } },
+          retryPolicy: { jitterRatio: 0.2, maxBackoffMs: 120_000 },
+        },
       }),
     );
     expect(JSON.stringify(fingerprint)).not.toContain("Napier");
     expect(validateRunConfigurationFingerprint(fingerprint)).toEqual(
       fingerprint,
     );
-    if (fingerprint.schemaVersion !== 8) {
-      throw new Error("Expected a schema-8 fingerprint");
+    if (fingerprint.schemaVersion !== 9) {
+      throw new Error("Expected a schema-9 fingerprint");
     }
     const {
       schemaVersion: _schemaVersion,
-      toolLoopGuard: _toolLoopGuard,
+      modelRoute: _modelRoute,
       contentSha256: _contentSha256,
-      ...legacyShared
+      ...schema8Shared
     } = fingerprint;
+    const schema8Content = {
+      ...schema8Shared,
+      schemaVersion: 8 as const,
+    };
+    const schema8 = {
+      ...schema8Content,
+      contentSha256: createHash("sha256")
+        .update(canonicalJson(schema8Content))
+        .digest("hex"),
+    };
+    expect(validateRunConfigurationFingerprint(schema8)).toEqual(schema8);
+    const {
+      schemaVersion: _schema8Version,
+      toolLoopGuard: _toolLoopGuard,
+      contentSha256: _schema8ContentSha256,
+      ...legacyShared
+    } = schema8;
     const legacyContent = {
       ...legacyShared,
       schemaVersion: 7 as const,
@@ -356,6 +379,8 @@ describe("Run configuration fingerprints", () => {
         .digest("hex"),
     };
     expect(validateRunConfigurationFingerprint(legacy)).toEqual(legacy);
+    expect(fingerprintModelRoute(fingerprint)).toEqual(fingerprint.modelRoute);
+    expect(fingerprintModelRoute(schema8)).toBeUndefined();
 
     const receiptOnlyDrift = createRunConfigurationFingerprint(
       profile,
@@ -416,6 +441,30 @@ describe("Run configuration fingerprints", () => {
         changedFields: ["toolLoopGuard"],
       }),
     );
+    const routed = createRunConfigurationFingerprint(
+      {
+        ...profile,
+        modelRoute: {
+          schemaVersion: 2,
+          roles: {
+            reasoning: { model: { provider: "openai", id: "gpt-5.4" } },
+          },
+        },
+      },
+      PROFILE.model,
+      "standard",
+      {
+        skillCatalogSha256: "a".repeat(64),
+        promptVariables: {
+          catalogSha256: promptVariableCatalogSha256,
+          snapshotSha256: "c".repeat(64),
+          renderedSystemPromptSha256: "d".repeat(64),
+        },
+      },
+    );
+    expect(compareRunConfigurations(fingerprint, routed)).toEqual(
+      expect.objectContaining({ changedFields: ["modelRoute"] }),
+    );
     const canonicalExemptions = createRunConfigurationFingerprint(
       {
         ...profile,
@@ -436,8 +485,8 @@ describe("Run configuration fingerprints", () => {
         },
       },
     );
-    if (canonicalExemptions.schemaVersion !== 8) {
-      throw new Error("Expected a schema-8 fingerprint");
+    if (canonicalExemptions.schemaVersion !== 9) {
+      throw new Error("Expected a schema-9 fingerprint");
     }
     const nonCanonicalExemptions = structuredClone(canonicalExemptions);
     nonCanonicalExemptions.toolLoopGuard.exemptTools.reverse();

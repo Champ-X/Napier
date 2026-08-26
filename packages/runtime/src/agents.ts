@@ -12,13 +12,24 @@ import {
   type ResolvedModelAdvisorPolicy,
   type RunLimits,
   type SubagentLimits,
-  type ToolLoopGuardPolicy,
   type UpdateAgentProfileRequest,
 } from "@napier/contracts";
-
 import { nowIso } from "./ids.js";
 import { normalizePromptVariableDefinitions } from "./prompt-variables.js";
 import { normalizeToolLoopGuardPolicy } from "./tool-loop-guard.js";
+import {
+  effectiveToolLoopGuardPolicy,
+  optionalPromptVariableUpdate,
+  optionalToolLoopGuardUpdate,
+} from "./agent-runtime-settings.js";
+export { effectiveToolLoopGuardPolicy } from "./agent-runtime-settings.js";
+import {
+  assertCompatibleModelRouteUpdate,
+  assertCanonicalAgentModelRoute,
+  effectiveModelRoutePolicy,
+  normalizedModelRouteUpdate,
+} from "./agent-model-route-profile.js";
+export { effectiveModelRoutePolicy } from "./agent-model-route-profile.js";
 
 const THINKING_LEVELS = new Set<AgentProfile["thinkingLevel"]>([
   "off",
@@ -58,6 +69,7 @@ const AGENT_PROFILE_FIELDS: readonly AgentProfileField[] = [
   "modelAdvisor",
   "promptVariables",
   "toolLoopGuard",
+  "modelRoute",
 ];
 const AGENT_REVISION_SOURCES = new Set<AgentProfileRevisionSource>([
   "created",
@@ -102,6 +114,7 @@ export function updateAgentProfile(
   current: AgentProfile,
   request: UpdateAgentProfileRequest,
 ): AgentProfile {
+  assertCompatibleModelRouteUpdate(request);
   const updated: AgentProfile = {
     ...current,
     ...(request.name !== undefined
@@ -188,7 +201,16 @@ export function updateAgentProfile(
           request.toolLoopGuard,
         )
       : {}),
+    ...(request.modelRoute
+      ? {
+          modelRoute: normalizedModelRouteUpdate(
+            current.modelRoute,
+            request.modelRoute,
+          ),
+        }
+      : {}),
   };
+  if (request.clearModelRoute) delete updated.modelRoute;
   if (request.enabledSubagents === undefined && updated.enabledSubagents && !coderSubagentCapabilitiesAvailable(updated)) {
     updated.enabledSubagents = updated.enabledSubagents.filter((role) => role !== "coder");
   }
@@ -223,6 +245,12 @@ export function changedAgentFields(
       return (
         JSON.stringify(effectiveToolLoopGuardPolicy(before)) !==
         JSON.stringify(effectiveToolLoopGuardPolicy(after))
+      );
+    }
+    if (field === "modelRoute") {
+      return (
+        JSON.stringify(effectiveModelRoutePolicy(before)) !==
+        JSON.stringify(effectiveModelRoutePolicy(after))
       );
     }
     return JSON.stringify(before[field]) !== JSON.stringify(after[field]);
@@ -344,6 +372,7 @@ export function rollbackAgentProfile(
       profile.promptVariables,
     ),
     toolLoopGuard: effectiveToolLoopGuardPolicy(profile),
+    ...(profile.modelRoute ? { modelRoute: effectiveModelRoutePolicy(profile)! } : { clearModelRoute: true }),
   });
   if (updated.revision === current.revision) {
     throw new Error("Agent profile already matches the target revision");
@@ -422,6 +451,7 @@ function assertAgentProfileSnapshot(profile: AgentProfile): void {
   ) {
     throw new Error("Agent profile tool loop guard is not canonical");
   }
+  assertCanonicalAgentModelRoute(profile);
   assertIndependentAdvisorModel(profile);
   assertCoderSubagentCapabilities(profile);
 }
@@ -524,12 +554,6 @@ export function effectiveModelAdvisorPolicy(
   );
 }
 
-export function effectiveToolLoopGuardPolicy(
-  profile: Pick<AgentProfile, "toolLoopGuard">,
-): ToolLoopGuardPolicy {
-  return normalizeToolLoopGuardPolicy(profile.toolLoopGuard);
-}
-
 export function normalizeModelAdvisorPolicy(
   input: ModelAdvisorPolicy,
 ): ResolvedModelAdvisorPolicy {
@@ -573,31 +597,6 @@ function optionalModelAdvisorUpdate(
     return current === undefined ? {} : { modelAdvisor: current };
   }
   return { modelAdvisor: normalized };
-}
-
-function optionalPromptVariableUpdate(
-  current: AgentProfile["promptVariables"],
-  requested: NonNullable<AgentProfile["promptVariables"]>,
-): Pick<AgentProfile, "promptVariables"> | Record<string, never> {
-  const normalized = normalizePromptVariableDefinitions(requested);
-  const effectiveCurrent = normalizePromptVariableDefinitions(current);
-  if (JSON.stringify(effectiveCurrent) === JSON.stringify(normalized)) {
-    return current === undefined ? {} : { promptVariables: current };
-  }
-  if (current === undefined && normalized.length === 0) return {};
-  return { promptVariables: normalized };
-}
-
-function optionalToolLoopGuardUpdate(
-  current: AgentProfile["toolLoopGuard"],
-  requested: ToolLoopGuardPolicy,
-): { toolLoopGuard?: ToolLoopGuardPolicy } {
-  const normalized = normalizeToolLoopGuardPolicy(requested);
-  const effectiveCurrent = normalizeToolLoopGuardPolicy(current);
-  if (JSON.stringify(effectiveCurrent) === JSON.stringify(normalized)) {
-    return current === undefined ? {} : { toolLoopGuard: current };
-  }
-  return { toolLoopGuard: normalized };
 }
 
 function normalizeNames(values: string[], label: string): string[] {
@@ -799,5 +798,6 @@ function configSignature(profile: AgentProfile): string {
       profile.promptVariables,
     ),
     toolLoopGuard: effectiveToolLoopGuardPolicy(profile),
+    modelRoute: effectiveModelRoutePolicy(profile),
   });
 }

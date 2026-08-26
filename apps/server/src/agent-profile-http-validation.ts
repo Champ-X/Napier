@@ -5,7 +5,9 @@ import {
   type ToolLoopGuardPolicy,
   type UpdateAgentProfileRequest,
 } from "@napier/contracts";
+import type { ModelRoutePolicyV2 } from "@napier/contracts/model-route";
 import {
+  normalizeModelRoutePolicy,
   normalizePromptVariableDefinitions,
 } from "@napier/runtime/model";
 import {
@@ -44,6 +46,8 @@ export function parseUpdateAgentProfileRequest(
     "modelAdvisor",
     "promptVariables",
     "toolLoopGuard",
+    "modelRoute",
+    "clearModelRoute",
     "threadId",
   ]);
   if (!record) return undefined;
@@ -98,6 +102,16 @@ export function parseUpdateAgentProfileRequest(
     "toolLoopGuard",
     parseToolLoopGuardPolicy,
   );
+  const modelRoute = optionalField(
+    record,
+    "modelRoute",
+    parseModelRoutePolicy,
+  );
+  const clearModelRoute = optionalField(
+    record,
+    "clearModelRoute",
+    parseTrue,
+  );
   const threadId = optionalField(record, "threadId", (value) =>
     validThreadId(value) ? value : undefined,
   );
@@ -117,9 +131,14 @@ export function parseUpdateAgentProfileRequest(
     modelAdvisor,
     promptVariables,
     toolLoopGuard,
+    modelRoute,
+    clearModelRoute,
     threadId,
   ];
-  if (fields.some((field) => !field.valid)) return undefined;
+  if (
+    fields.some((field) => !field.valid) ||
+    (modelRoute.value !== undefined && clearModelRoute.value === true)
+  ) return undefined;
   return {
     ...(name.value !== undefined ? { name: name.value } : {}),
     ...(description.value !== undefined
@@ -158,8 +177,26 @@ export function parseUpdateAgentProfileRequest(
     ...(toolLoopGuard.value !== undefined
       ? { toolLoopGuard: toolLoopGuard.value }
       : {}),
+    ...(modelRoute.value !== undefined
+      ? { modelRoute: modelRoute.value }
+      : {}),
+    ...(clearModelRoute.value === true ? { clearModelRoute: true as const } : {}),
     ...(threadId.value !== undefined ? { threadId: threadId.value } : {}),
   };
+}
+
+function parseModelRoutePolicy(
+  input: unknown,
+): ModelRoutePolicyV2 | undefined {
+  try {
+    return normalizeModelRoutePolicy(input as ModelRoutePolicyV2);
+  } catch {
+    return undefined;
+  }
+}
+
+function parseTrue(input: unknown): true | undefined {
+  return input === true ? true : undefined;
 }
 
 export function parseRollbackAgentProfileRequest(

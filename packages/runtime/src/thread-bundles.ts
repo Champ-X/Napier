@@ -60,14 +60,15 @@ import {
   validateModelContextEnvelopeReceipt,
 } from "./model-context-envelope.js";
 import { assertModelRequestEvidenceBindings } from "./model-prompt-evidence-bindings.js";
+import { normalizeModelRoutePolicy } from "./model-route-profile.js";
 import { projectOperatorDecisions } from "./operator-decisions.js";
 import {
-  createPromptVariableCatalog,
   normalizePromptVariableDefinitions,
   PROMPT_VARIABLES_RESOLVED_EVENT,
   projectPromptVariableSnapshots,
 } from "./prompt-variables.js";
 import { validateRunConfigurationFingerprint } from "./run-config.js";
+import { assertReplayRunConfiguration } from "./thread-replay-run-configuration.js";
 import { assertOutcome } from "./run-outcomes.js";
 import { PLAN_STEP_STATUSES } from "./plan-step-transition.js";
 import {
@@ -516,6 +517,14 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
       throw new Error("agent.toolLoopGuard must be canonical");
     }
   }
+  if (agent["modelRoute"] !== undefined) {
+    const modelRoute = normalizeModelRoutePolicy(
+      agent["modelRoute"] as NonNullable<AgentProfile["modelRoute"]>,
+    );
+    if (JSON.stringify(modelRoute) !== JSON.stringify(agent["modelRoute"])) {
+      throw new Error("agent.modelRoute must be canonical");
+    }
+  }
   const agentProfilesByRevision = new Map<number, AgentProfile>([
     [Number(agent["revision"]), record["agent"] as AgentProfile],
   ]);
@@ -595,53 +604,7 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
     if (run["limits"] !== undefined) {
       assertRunLimits(run["limits"], `runs[${index}].limits`);
     }
-    if (run["configuration"] !== undefined) {
-      const configuration = validateRunConfigurationFingerprint(
-        run["configuration"],
-      );
-      if (
-        (run["agentRevision"] !== undefined &&
-          run["agentRevision"] !== configuration.agentRevision) ||
-        (run["limits"] !== undefined &&
-          JSON.stringify(run["limits"]) !==
-            JSON.stringify(configuration.runLimits))
-      ) {
-        throw new Error(
-          `Thread replay bundle run configuration conflicts with run: ${runId}`,
-        );
-      }
-      if (
-        configuration.schemaVersion === 7 ||
-        configuration.schemaVersion === 8
-      ) {
-        const runAgentProfile = agentProfilesByRevision.get(
-          configuration.agentRevision,
-        );
-        if (
-          !runAgentProfile ||
-          configuration.systemPromptSha256 !==
-            sha256(runAgentProfile.systemPrompt) ||
-          configuration.promptVariableCatalogSha256 !==
-            createPromptVariableCatalog(runAgentProfile.promptVariables)
-              .contentSha256
-        ) {
-          throw new Error(
-            `Thread replay bundle Prompt configuration does not match Agent revision: ${runId}`,
-          );
-        }
-        if (
-          configuration.schemaVersion === 8 &&
-          JSON.stringify(configuration.toolLoopGuard) !==
-            JSON.stringify(
-              normalizeToolLoopGuardPolicy(runAgentProfile.toolLoopGuard),
-            )
-        ) {
-          throw new Error(
-            `Thread replay bundle schema-8 loop guard does not match Agent revision: ${runId}`,
-          );
-        }
-      }
-    }
+    assertReplayRunConfiguration(run, runId, agentProfilesByRevision);
   }
   if (
     threadRunIds.length !== runRecords.length ||
@@ -751,7 +714,9 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
       ? validateRunConfigurationFingerprint(run["configuration"])
       : undefined;
     const runAgentProfile =
-      configuration?.schemaVersion === 7 || configuration?.schemaVersion === 8
+      configuration?.schemaVersion === 7 ||
+      configuration?.schemaVersion === 8 ||
+      configuration?.schemaVersion === 9
         ? agentProfilesByRevision.get(configuration.agentRevision)
         : undefined;
     const definitions = runAgentProfile
@@ -763,7 +728,8 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
     );
     if (
       (configuration?.schemaVersion !== 7 &&
-        configuration?.schemaVersion !== 8) ||
+        configuration?.schemaVersion !== 8 &&
+        configuration?.schemaVersion !== 9) ||
       configuration.promptVariableCatalogSha256 !== snapshot.catalogSha256 ||
       configuration.promptVariableSnapshotSha256 !== snapshot.contentSha256 ||
       configuration.resolvedSystemPromptSha256 !==
@@ -788,10 +754,12 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
     const eventCount = promptVariableEventsByRun.get(String(run["id"])) ?? 0;
     if (
       ((configuration?.schemaVersion === 7 ||
-        configuration?.schemaVersion === 8) &&
+        configuration?.schemaVersion === 8 ||
+        configuration?.schemaVersion === 9) &&
         eventCount !== 1) ||
       (configuration?.schemaVersion !== 7 &&
         configuration?.schemaVersion !== 8 &&
+        configuration?.schemaVersion !== 9 &&
         eventCount !== 0)
     ) {
       throw new Error(
@@ -817,7 +785,8 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
       (toolLoopContextEventsByRun.get(event.runId) ?? 0) + 1,
     );
     if (
-      configuration?.schemaVersion !== 8 ||
+      (configuration?.schemaVersion !== 8 &&
+        configuration?.schemaVersion !== 9) ||
       JSON.stringify(toolLoopContexts[index]) !==
         JSON.stringify(
           createToolLoopGuardContextReceipt(configuration.toolLoopGuard),
@@ -834,8 +803,12 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
       : undefined;
     const eventCount = toolLoopContextEventsByRun.get(String(run["id"])) ?? 0;
     if (
-      (configuration?.schemaVersion === 8 && eventCount !== 1) ||
-      (configuration?.schemaVersion !== 8 && eventCount !== 0)
+      ((configuration?.schemaVersion === 8 ||
+        configuration?.schemaVersion === 9) &&
+        eventCount !== 1) ||
+      (configuration?.schemaVersion !== 8 &&
+        configuration?.schemaVersion !== 9 &&
+        eventCount !== 0)
     ) {
       throw new Error(
         `Thread replay bundle Tool Loop Guard context count is invalid: ${String(run["id"])}`,
@@ -863,7 +836,8 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
     const triggerKey = `${event.runId}:${toolLoopTriggers[index]!.receipt.attemptSetSha256}`;
     if (
       toolLoopTriggerKeys.has(triggerKey) ||
-      configuration?.schemaVersion !== 8 ||
+      (configuration?.schemaVersion !== 8 &&
+        configuration?.schemaVersion !== 9) ||
       !validateToolLoopGuardTriggerEvidence(
         event,
         typedEvents,

@@ -81,6 +81,7 @@ const CONFIGURATION_FIELDS = new Set([
   "skillCatalog",
   "promptVariables",
   "toolLoopGuard",
+  "modelRoute",
 ]);
 
 export function validateAgentMessageExperimentComparison(

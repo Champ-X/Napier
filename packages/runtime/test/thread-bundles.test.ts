@@ -862,8 +862,8 @@ describe("thread replay bundles", () => {
       threadId: thread.id,
       text: "Freeze the prompt context.",
     });
-    if (run.configuration?.schemaVersion !== 8) {
-      throw new Error("Expected schema-8 runtime evidence");
+    if (run.configuration?.schemaVersion !== 9) {
+      throw new Error("Expected schema-9 runtime evidence");
     }
 
     const invalidDetail = structuredClone(await store.getDetail(thread.id));
@@ -886,7 +886,7 @@ describe("thread replay bundles", () => {
       (event) => event.type === "context.prompt_variables",
     )!;
     if (
-      forgedRun.configuration?.schemaVersion !== 8 ||
+      forgedRun.configuration?.schemaVersion !== 9 ||
       !forgedEvent.payload ||
       Array.isArray(forgedEvent.payload) ||
       typeof forgedEvent.payload !== "object"
@@ -929,7 +929,7 @@ describe("thread replay bundles", () => {
       (event) => event.type === "context.prompt_variables",
     )!;
     if (
-      mismatchedEntryRun.configuration?.schemaVersion !== 8 ||
+      mismatchedEntryRun.configuration?.schemaVersion !== 9 ||
       !mismatchedEntryEvent.payload ||
       Array.isArray(mismatchedEntryEvent.payload) ||
       typeof mismatchedEntryEvent.payload !== "object" ||
@@ -1040,7 +1040,7 @@ describe("thread replay bundles", () => {
       text: "Inspect without looping.",
       model: { provider: "faux-portable-loop", id: "faux-1" },
     });
-    expect(run.configuration?.schemaVersion).toBe(8);
+    expect(run.configuration?.schemaVersion).toBe(9);
 
     const invalidDetail = structuredClone(await store.getDetail(thread.id));
     const invalidTrigger = invalidDetail.events.find(

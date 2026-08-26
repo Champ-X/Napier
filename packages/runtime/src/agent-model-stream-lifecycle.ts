@@ -20,6 +20,7 @@ import type { ModelThinkingLoopEvidence } from "./model-thinking-loop-policy.js"
 import { captureCompiledModelInvocation } from "./model-invocation-capture.js";
 import type { ModelInvocationCapsuleStore } from "./model-invocation-capsule-store.js";
 import type { ModelRouteSession } from "./model-route.js";
+import type { ModelRouteAttemptContext } from "./model-route.js";
 import type { ModelRegistry } from "./models.js";
 import { modelStream, streamCtx } from "./model-stream-cancellation.js";
 import type { CompiledPromptArtifact } from "./prompt-compiler.js";
@@ -122,21 +123,27 @@ export function agentModelStreamLife(
                 ...shortThinkingLoopRetryOptions(model, attemptOptions),
                 signal,
               };
-        const createCandidateSource = async (candidate: Model<Api>) => {
+        const createCandidateSource = async (
+          candidate: Model<Api>,
+          routeContext?: ModelRouteAttemptContext,
+        ) => {
           currentServingModel = candidate;
+          const routedOptions = routeContext
+            ? mergeRouteStreamOptions(nextOptions, routeContext.streamOptions)
+            : nextOptions;
           const preparedCall = input.prepareCall
             ? await input.prepareCall({
                 run: input.run,
                 attempt,
                 model: candidate,
                 context: nextContext,
-                options: nextOptions,
+                options: routedOptions,
                 ...(input.harnessExperimentProfile
                   ? { harnessExperimentProfile: input.harnessExperimentProfile }
                   : {}),
                 ...(input.onEvent ? { onEvent: input.onEvent } : {}),
               })
-            : { context: nextContext, options: nextOptions };
+            : { context: nextContext, options: routedOptions };
           const createInvocation = async (
             recoveryAttempt: 0 | 1,
             baseContext = preparedCall.context,
@@ -242,8 +249,8 @@ export function agentModelStreamLife(
             options: nextOptions,
             source: input.modelRoute.stream({
               signal,
-              invoke: async (candidate) =>
-                (await createCandidateSource(candidate)).source,
+              invoke: async (candidate, routeContext) =>
+                (await createCandidateSource(candidate, routeContext)).source,
             }),
           };
         }
@@ -258,6 +265,28 @@ export function agentModelStreamLife(
           currentEnvelope,
         ),
     });
+  };
+}
+
+function mergeRouteStreamOptions(
+  base: SimpleStreamOptions,
+  route: ModelRouteAttemptContext["streamOptions"],
+): SimpleStreamOptions {
+  const onResponse =
+    base.onResponse || route.onResponse
+      ? async (...args: Parameters<NonNullable<SimpleStreamOptions["onResponse"]>>) => {
+          await base.onResponse?.(...args);
+          await route.onResponse?.(...args);
+        }
+      : undefined;
+  return {
+    ...base,
+    ...route,
+    ...(base.headers || route.headers
+      ? { headers: { ...base.headers, ...route.headers } }
+      : {}),
+    ...(base.env || route.env ? { env: { ...base.env, ...route.env } } : {}),
+    ...(onResponse ? { onResponse } : {}),
   };
 }
 

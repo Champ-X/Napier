@@ -48,6 +48,7 @@ export function useContextPanelController(props: ContextPanelProps) {
   const profile = useContextAgentProfileController({
     agent,
     models,
+    credentials: props.credentials,
     selectedModelKey,
     threadId,
     selectedModelConfigured: selectedModel.configured,

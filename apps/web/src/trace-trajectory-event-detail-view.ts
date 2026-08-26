@@ -345,15 +345,32 @@ function safeEvidenceValue(
     return typeof value === "string" && SHA256.test(value);
   }
   if (
+    key === "durationMs" ||
+    key === "retryAfterMs" ||
+    key === "backoffMs" ||
     key.endsWith("Tokens") ||
     key.endsWith("Bytes") ||
     key.endsWith("Count") ||
     key.endsWith("DurationMs") ||
+    key.endsWith("AfterMs") ||
+    key.endsWith("BackoffMs") ||
     key.endsWith("CostUsd") ||
     key.endsWith("ExitCode") ||
     key === "turnIndex"
   ) {
     return typeof value === "number" && Number.isFinite(value);
+  }
+  if (key === "providerHint") {
+    return (
+      typeof value === "string" &&
+      /^[A-Za-z0-9._:/ -]{1,120}$/u.test(value)
+    );
+  }
+  if (key === "candidateChain") {
+    return (
+      typeof value === "string" &&
+      /^[A-Za-z0-9_.:/@ >-]{1,500}$/u.test(value)
+    );
   }
   return (
     [
@@ -365,7 +382,18 @@ function safeEvidenceValue(
       "status",
       "effect",
       "role",
+      "path",
+      "resolutionSource",
+      "candidateChain",
       "servingModel",
+      "sourceModelId",
+      "endpointProfileId",
+      "endpointKind",
+      "dialect",
+      "credentialPoolId",
+      "credentialSlotId",
+      "credentialHealth",
+      "cooldownUntil",
       "outcome",
       "failureClass",
       "fallbackReason",

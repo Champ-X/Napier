@@ -143,7 +143,7 @@ describe("AgentRuntime demo path", () => {
     });
     expect(run.configuration).toEqual(
       expect.objectContaining({
-        schemaVersion: 8,
+        schemaVersion: 9,
         skillCatalogSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         promptVariableCatalogSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         promptVariableSnapshotSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
@@ -236,7 +236,7 @@ describe("AgentRuntime demo path", () => {
 
     expect(run.configuration).toEqual(
       expect.objectContaining({
-        schemaVersion: 8,
+        schemaVersion: 9,
         promptVariableCatalogSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         promptVariableSnapshotSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         resolvedSystemPromptSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
@@ -317,7 +317,7 @@ describe("AgentRuntime demo path", () => {
     expect(run.status).toBe("completed");
     expect(run.configuration).toEqual(
       expect.objectContaining({
-        schemaVersion: 8,
+        schemaVersion: 9,
         toolLoopGuard: {
           enabled: true,
           threshold: 3,
@@ -981,7 +981,7 @@ describe("AgentRuntime demo path", () => {
     expect(run.status).toBe("completed");
     expect(run.configuration).toEqual(
       expect.objectContaining({
-        schemaVersion: 8,
+        schemaVersion: 9,
         modelAdvisor: expect.objectContaining({
           reviewModel: { provider: "faux-turn-reviewer", id: "faux-1" },
         }),

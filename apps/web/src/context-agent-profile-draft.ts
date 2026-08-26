@@ -71,6 +71,7 @@ export interface ContextAgentProfileSaveState {
   promptVariables: PromptVariableDefinition[];
   toolLoopGuardThreshold: number;
   toolLoopGuardExemptTools: string;
+  modelRouteError?: string;
 }
 
 export function canSaveContextAgentProfile({
@@ -83,6 +84,7 @@ export function canSaveContextAgentProfile({
   promptVariables,
   toolLoopGuardThreshold,
   toolLoopGuardExemptTools,
+  modelRouteError,
 }: ContextAgentProfileSaveState): boolean {
   return (
     !busy &&
@@ -95,6 +97,7 @@ export function canSaveContextAgentProfile({
     Number.isSafeInteger(toolLoopGuardThreshold) &&
     toolLoopGuardThreshold >= 2 &&
     toolLoopGuardThreshold <= 8 &&
-    parseToolLoopGuardExemptTools(toolLoopGuardExemptTools) !== undefined
+    parseToolLoopGuardExemptTools(toolLoopGuardExemptTools) !== undefined &&
+    modelRouteError === undefined
   );
 }

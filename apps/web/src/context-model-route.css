@@ -1,0 +1,384 @@
+.context-model-route {
+  min-width: 0;
+  padding: var(--inset-sm);
+  margin: var(--stack-xs) 0 var(--stack-sm);
+  background:
+    linear-gradient(
+      135deg,
+      var(--color-surface-raised),
+      var(--color-surface) 58%
+    ),
+    var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.context-model-route.is-enabled {
+  border-color: var(--color-accent);
+  box-shadow: inset var(--space-1) 0 0 var(--color-accent);
+}
+
+.context-model-route > legend {
+  padding-inline: var(--inset-xs);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-fg-subtle);
+}
+
+.context-model-route > header,
+.model-route-registry > header,
+.model-route-retry > header {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--inline-sm);
+}
+
+.context-model-route > header > svg {
+  flex: none;
+  color: var(--color-accent);
+}
+
+.context-model-route > header > div {
+  display: grid;
+  min-width: 0;
+  gap: var(--stack-xs);
+}
+
+.context-model-route > header strong,
+.model-route-registry strong,
+.model-route-retry strong {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.context-model-route > header span,
+.context-model-route > p,
+.model-route-registry > p,
+.model-route-binding-group > p {
+  font-size: var(--text-xs);
+  line-height: var(--leading-compact);
+  color: var(--color-fg-subtle);
+}
+
+.context-model-route > header span {
+  font-family: var(--font-mono);
+}
+
+.context-model-route > header .context-loop-toggle {
+  margin-inline-start: auto;
+}
+
+.model-route-console {
+  display: grid;
+  min-width: 0;
+  gap: var(--stack-sm);
+  padding-block-start: var(--inset-sm);
+  margin-block-start: var(--stack-sm);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.model-route-bindings {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--stack-sm);
+  align-items: start;
+}
+
+.model-route-binding-group,
+.model-route-registry,
+.model-route-retry {
+  min-width: 0;
+  padding: var(--inset-sm);
+  background: var(--color-paper);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.model-route-binding-group > summary {
+  display: flex;
+  min-height: var(--control-target);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--inline-sm);
+  color: var(--color-fg);
+  cursor: pointer;
+}
+
+.model-route-binding-group > summary > span,
+.model-route-registry > header > div {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--inline-xs);
+}
+
+.model-route-binding-group > summary small,
+.model-route-registry > header > small {
+  margin-inline-start: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-fg-subtle);
+}
+
+.model-route-binding-list {
+  display: grid;
+  gap: var(--stack-xs);
+}
+
+.model-route-binding {
+  min-width: 0;
+  padding: var(--inset-xs);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.model-route-binding.is-bound {
+  background: var(--color-accent-subtle);
+  border-color: var(--color-accent);
+}
+
+.model-route-binding > header,
+.model-route-registry-title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--inline-sm);
+}
+
+.model-route-binding > header > div {
+  display: grid;
+  min-width: 0;
+  gap: var(--stack-xs);
+}
+
+.model-route-binding > header strong {
+  font-size: var(--text-sm);
+}
+
+.model-route-binding code,
+.model-route-registry code,
+.model-route-target-index {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-fg-subtle);
+  text-overflow: ellipsis;
+}
+
+.model-route-binding > header label,
+.model-route-members label {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--inline-xs);
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.model-route-binding input[type="checkbox"],
+.model-route-members input {
+  width: var(--space-4);
+  height: var(--space-4);
+  flex: none;
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+.model-route-target {
+  display: grid;
+  grid-template-columns: var(--space-8) minmax(0, 1.8fr) minmax(0, 1fr) minmax(
+      0,
+      1fr
+    );
+  gap: var(--stack-xs);
+  align-items: end;
+  padding-block-start: var(--inset-xs);
+  margin-block-start: var(--stack-xs);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.model-route-target .context-field {
+  margin: 0;
+}
+
+.model-route-target-index {
+  display: grid;
+  min-height: var(--control-target-primary);
+  place-items: center;
+  color: var(--color-accent);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.model-route-add,
+.model-route-remove,
+.model-route-registry-title button {
+  display: inline-flex;
+  min-height: var(--control-target);
+  align-items: center;
+  justify-content: center;
+  gap: var(--inline-xs);
+  padding-inline: var(--inset-xs);
+  font-size: var(--text-xs);
+  color: var(--color-accent);
+  cursor: pointer;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.model-route-remove {
+  grid-column: 2 / -1;
+  color: var(--color-danger);
+}
+
+.model-route-add:hover:not(:disabled),
+.model-route-remove:hover:not(:disabled),
+.model-route-registry-title button:hover:not(:disabled) {
+  border-color: currentColor;
+}
+
+.model-route-add:active:not(:disabled),
+.model-route-remove:active:not(:disabled),
+.model-route-registry-title button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.model-route-add:focus-visible,
+.model-route-remove:focus-visible,
+.model-route-registry-title button:focus-visible,
+.model-route-binding-group > summary:focus-visible,
+.model-route-binding label:has(input:focus-visible),
+.model-route-members label:has(input:focus-visible) {
+  outline: none;
+  box-shadow:
+    0 0 0 var(--control-focus-offset) var(--color-surface),
+    0 0 0 calc(var(--control-focus-offset) + var(--control-focus-width))
+      var(--color-focus-ring);
+}
+
+.model-route-add:disabled,
+.model-route-remove:disabled,
+.model-route-registry-title button:disabled {
+  color: var(--color-fg-disabled);
+  cursor: not-allowed;
+  background: var(--color-surface-muted);
+}
+
+.model-route-registry-row {
+  display: grid;
+  grid-template-columns: var(--space-10) minmax(0, 1fr);
+  gap: var(--stack-sm);
+  padding-block: var(--inset-sm);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.model-route-grid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--stack-xs);
+}
+
+.model-route-grid .context-field {
+  margin: 0;
+}
+
+.model-route-wide {
+  grid-column: span 2;
+}
+
+.model-route-members {
+  display: grid;
+  min-width: 0;
+  grid-column: 1 / -1;
+  gap: var(--stack-xs);
+  padding: var(--inset-xs);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.model-route-members legend {
+  padding-inline: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--color-fg-subtle);
+}
+
+.model-route-members code {
+  margin-inline-start: auto;
+}
+
+.model-route-error,
+.model-route-safety {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--inline-xs);
+  padding: var(--inset-xs);
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: var(--leading-compact);
+  border-radius: var(--radius-sm);
+}
+
+.model-route-error {
+  color: var(--color-danger-fg);
+  background: var(--color-danger-surface);
+  border: 1px solid var(--color-danger-border);
+}
+
+.model-route-safety {
+  color: var(--color-success);
+  background: var(--color-success-surface);
+  border: 1px solid var(--color-success-border);
+}
+
+@container context-panel (max-width: 1100px) {
+  .model-route-bindings {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@container context-panel (max-width: 768px) {
+  .model-route-target,
+  .model-route-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .model-route-target-index,
+  .model-route-remove,
+  .model-route-wide,
+  .model-route-members {
+    grid-column: auto;
+  }
+
+  .model-route-registry-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .model-route-add,
+  .model-route-remove,
+  .model-route-registry-title button {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .context-model-route,
+  .model-route-binding-group,
+  .model-route-binding,
+  .model-route-registry,
+  .model-route-retry,
+  .model-route-target-index,
+  .model-route-add,
+  .model-route-remove,
+  .model-route-registry-title button {
+    border-color: ButtonText;
+  }
+}

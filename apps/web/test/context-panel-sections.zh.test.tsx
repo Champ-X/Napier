@@ -89,6 +89,72 @@ describe("Context panel sections Chinese copy", () => {
     expect(container.innerHTML).toContain('value="web_search"');
     expect(container.textContent).not.toContain("Safe automatic recovery");
   });
+
+  it("renders the Route v2 control plane and its safety boundary in Chinese", async () => {
+    const container = installChineseDom();
+    const { ContextModelRouteFieldset } = await import(
+      "../src/ContextModelRouteFieldset"
+    );
+    const controller = stubController({
+      agent: { model: { provider: "openai", id: "gpt-5.4" } },
+      configurationBusy: false,
+      credentials: [
+        {
+          id: "credential_0123456789abcdef",
+          providerId: "openai",
+          label: "OpenAI primary",
+          status: "active",
+        },
+      ],
+      providers: ["openai"],
+      modelGroups: [
+        {
+          provider: "openai",
+          label: "OpenAI",
+          options: [
+            {
+              key: "openai/gpt-5.4",
+              label: "openai / GPT-5.4",
+              configured: true,
+            },
+          ],
+        },
+      ],
+      modelRouteEnabled: true,
+      setModelRouteEnabled: vi.fn(),
+      modelRoutePolicy: {
+        schemaVersion: 2,
+        roles: {
+          reasoning: {
+            model: { provider: "openai", id: "gpt-5.4" },
+            endpointProfileId: "corp_gateway",
+          },
+        },
+        endpointProfiles: [
+          {
+            id: "corp_gateway",
+            providerId: "openai",
+            kind: "gateway",
+            baseUrl: "https://gateway.example.test/v1",
+            dialect: "openai_responses",
+          },
+        ],
+        retryPolicy: { jitterRatio: 0.2, maxBackoffMs: 120_000 },
+      },
+      setModelRoutePolicy: vi.fn(),
+      modelRouteError: undefined,
+    });
+
+    render(<ContextModelRouteFieldset controller={controller} />, container);
+
+    expect(container.textContent).toContain("路由控制面");
+    expect(container.textContent).toContain("模型角色");
+    expect(container.textContent).toContain("端点 Profile");
+    expect(container.textContent).toContain("凭证池");
+    expect(container.textContent).toContain("可见输出");
+    expect(container.innerHTML).toContain("corp_gateway");
+    expect(container.textContent).not.toContain("Route control plane");
+  });
 });
 
 function stubController(

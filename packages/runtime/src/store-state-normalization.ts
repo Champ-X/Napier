@@ -194,6 +194,14 @@ function normalizePlanningCollections(state: PersistedStoreState): void {
 
 function normalizeOperationalCollections(state: PersistedStoreState): void {
   if (!Array.isArray(state.credentials)) state.credentials = [];
+  if (state.modelRouteHealth === undefined) state.modelRouteHealth = [];
+  else if (!Array.isArray(state.modelRouteHealth)) {
+    throw new Error("Invalid persisted Model route health collection");
+  }
+  if (state.modelRouteCursors === undefined) state.modelRouteCursors = [];
+  else if (!Array.isArray(state.modelRouteCursors)) {
+    throw new Error("Invalid persisted Model route cursor collection");
+  }
   if (!Array.isArray(state.schedules)) state.schedules = [];
   if (!Array.isArray(state.channels)) state.channels = [];
   if (!Array.isArray(state.inboundDeliveries)) {

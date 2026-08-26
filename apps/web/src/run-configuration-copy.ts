@@ -21,6 +21,7 @@ export const runConfigurationFieldCopyEn: Record<
   skillCatalog: "Skill catalog",
   promptVariables: "Prompt variables",
   toolLoopGuard: "Tool loop guard",
+  modelRoute: "Model route",
 };
 
 export const runConfigurationFieldCopyZh: Record<
@@ -43,6 +44,7 @@ export const runConfigurationFieldCopyZh: Record<
   skillCatalog: "Skill 目录",
   promptVariables: "提示词变量",
   toolLoopGuard: "工具循环防护",
+  modelRoute: "模型路由",
 };
 
 export const runConfigurationFieldCopy =

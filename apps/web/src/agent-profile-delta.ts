@@ -22,6 +22,7 @@ const PROFILE_FIELDS: AgentProfileField[] = [
   "modelAdvisor",
   "promptVariables",
   "toolLoopGuard",
+  "modelRoute",
 ];
 
 export function agentProfileDelta(

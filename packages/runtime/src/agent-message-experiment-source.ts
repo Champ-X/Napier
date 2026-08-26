@@ -5,9 +5,14 @@ import type {
   CreateAgentMessageExperimentRequest,
   RunConfigurationFingerprintV7,
   RunConfigurationFingerprintV8,
+  RunConfigurationFingerprint,
   RunEvent,
   RunRecord,
 } from "@napier/contracts";
+type RunConfigurationFingerprintV9 = Extract<
+  RunConfigurationFingerprint,
+  { schemaVersion: 9 }
+>;
 import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
 
 import {
@@ -62,7 +67,8 @@ export async function projectAgentMessageExperimentSource(
   }
   const sourceConfiguration = sourceRun.configuration as
     | RunConfigurationFingerprintV7
-    | RunConfigurationFingerprintV8;
+    | RunConfigurationFingerprintV8
+    | RunConfigurationFingerprintV9;
   const sourceEvents = await store.listEvents(sourceThreadId);
   const sourceMessage = sourceEvents.find(
     (event) =>
@@ -263,7 +269,10 @@ function availableSourceRun(
   run: RunRecord | undefined,
   threadAgentId: string,
 ): run is RunRecord & {
-  configuration: RunConfigurationFingerprintV7 | RunConfigurationFingerprintV8;
+  configuration:
+    | RunConfigurationFingerprintV7
+    | RunConfigurationFingerprintV8
+    | RunConfigurationFingerprintV9;
   agentRevision: number;
   finishedAt: string;
 } {

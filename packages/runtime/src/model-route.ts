@@ -1,11 +1,18 @@
-import type { Api, AssistantMessageEventStream, Model } from "@earendil-works/pi-ai";
-import type { ModelRef, RunRecord } from "@napier/contracts";
+import type {
+  Api,
+  AssistantMessageEventStream,
+  Credential,
+  Model,
+} from "@earendil-works/pi-ai";
+import type { AgentProfile, CredentialReference, RunRecord } from "@napier/contracts";
 import type {
   ModelRouteCandidate,
   ModelRouteCredentialHealth,
   ModelRoutePlan,
+  ModelRoutePolicyV2,
   ModelRouteRequest,
-  ModelRole,
+  ModelRouteTarget,
+  ProviderEndpointProfile,
   RouteFailureClass,
 } from "@napier/contracts/model-route";
 
@@ -13,79 +20,104 @@ import { canonicalJson, sha256 } from "./ed25519.js";
 import type { EventSink } from "./event-sink.js";
 import { createId } from "./ids.js";
 import { appendRouteEvent } from "./model-route-evidence.js";
+import { defaultModelRoutePolicy, normalizeModelRoutePolicy } from "./model-route-profile.js";
+import {
+  resolveModelRouteSelection,
+  type ModelRouteResolutionSource,
+} from "./model-route-resolution.js";
+import {
+  credentialHealth,
+  modelRouteCredentialSlotId,
+  type ModelRouteFailureUpdate,
+  type ModelRouteStateRepository,
+} from "./model-route-state.js";
 import { cooldownDurationMs } from "./model-route-policy.js";
 import { createModelRouteStream } from "./model-route-stream.js";
+import type {
+  ModelRouteAttemptContext,
+  ResolvedRouteCandidate,
+} from "./model-route-types.js";
 import type { ModelRegistry } from "./models.js";
 import type { LocalStore } from "./store.js";
 
 export { classifyRouteFailure, routeCanFallback } from "./model-route-policy.js";
+export type {
+  ModelRouteAttemptContext,
+  ResolvedRouteCandidate,
+} from "./model-route-types.js";
 
 const RETRYABLE_FAILURES = [
   "rate_limited",
   "provider_server",
   "network",
 ] as const satisfies readonly RouteFailureClass[];
-const MAX_ROUTE_CANDIDATES = 5;
-
-export interface ResolvedRouteCandidate {
-  descriptor: ModelRouteCandidate;
-  model: Model<Api>;
-}
-
-interface CandidateCooldown {
-  until: number;
-  failureClass: RouteFailureClass;
-}
 
 export interface CreateModelRouteSessionInput {
   run: RunRecord;
   primary: Model<Api>;
+  profile?: AgentProfile;
   request?: ModelRouteRequest;
+  explicitPrimary?: boolean;
+  subagentRole?: import("@napier/contracts").SubagentRole;
   onEvent?: EventSink;
 }
 
-export interface ModelRouteInvocation {
-  candidate: Model<Api>;
-  source: AssistantMessageEventStream;
-}
-
-/**
- * Owns route health across Runs while each Session owns one immutable plan.
- * Cooldowns contain identifiers and timestamps only; credentials never enter
- * route evidence or process-local health state.
- */
+/** Owns immutable plans while durable health and pool cursors live in Store. */
 export class ModelRouter {
-  private readonly cooldowns = new Map<string, CandidateCooldown>();
+  private readonly routeState: ModelRouteStateRepository;
 
   constructor(
     private readonly store: LocalStore,
-    private readonly registry: Pick<ModelRegistry, "resolveConfigured">,
+    private readonly registry: Pick<
+      ModelRegistry,
+      "resolveConfigured" | "credentialReferences"
+    >,
     private readonly clock: () => number = Date.now,
-  ) {}
+    private readonly random: () => number = Math.random,
+  ) {
+    this.routeState = store.modelRouteStateRepository;
+  }
 
-  async createSession(
-    input: CreateModelRouteSessionInput,
-  ): Promise<ModelRouteSession> {
-    const role = input.request?.role ?? "default";
-    const refs = uniqueCandidates(
-      { provider: input.primary.provider, id: input.primary.id },
-      input.request?.fallbackModels ?? [],
+  async createSession(input: CreateModelRouteSessionInput): Promise<ModelRouteSession> {
+    const policy = normalizeModelRoutePolicy(
+      input.profile?.modelRoute ??
+        defaultModelRoutePolicy({
+          provider: input.primary.provider,
+          id: input.primary.id,
+        }),
     );
+    const selection = resolveModelRouteSelection({
+      agentDefault: { provider: input.primary.provider, id: input.primary.id },
+      policy,
+      ...(input.request ? { request: input.request } : {}),
+      source: input.run.source ?? "user",
+      ...(input.explicitPrimary
+        ? {
+            explicitPrimary: {
+              provider: input.primary.provider,
+              id: input.primary.id,
+            },
+          }
+        : {}),
+      ...(input.subagentRole ? { subagentRole: input.subagentRole } : {}),
+    });
     const resolved = await Promise.all(
-      refs.map(async (ref, index): Promise<ResolvedRouteCandidate> => {
-        const model =
-          index === 0
-            ? input.primary
-            : await this.registry.resolveConfigured(ref);
-        if (!model) {
-          throw new Error(
-            `Model route candidate must use a live model: ${ref.provider}/${ref.id}`,
-          );
-        }
-        return { model, descriptor: this.describeCandidate(ref) };
-      }),
+      selection.targets.map((target, index) =>
+        this.resolveCandidate(
+          target,
+          index === 0 ? input.primary : undefined,
+          policy,
+          selection.source,
+        ),
+      ),
     );
-    const content = routePlanContent(input.run.id, role, resolved, this.clock);
+    const content = routePlanContent(
+      input.run.id,
+      selection,
+      policy,
+      resolved,
+      this.clock,
+    );
     const plan: ModelRoutePlan = {
       ...content,
       contentSha256: sha256(canonicalJson(content)),
@@ -107,60 +139,131 @@ export class ModelRouter {
     });
   }
 
-  resolveConfigured(ref: ModelRef): Promise<Model<Api> | undefined> {
+  resolveConfigured(ref: import("@napier/contracts").ModelRef): Promise<Model<Api> | undefined> {
     return this.registry.resolveConfigured(ref);
   }
 
-  availableCandidates(
-    candidates: readonly ResolvedRouteCandidate[],
-  ): ResolvedRouteCandidate[] {
+  availableCandidates(candidates: readonly ResolvedRouteCandidate[]): ResolvedRouteCandidate[] {
     const now = this.clock();
     const available = candidates.filter((candidate) => {
-      const cooldown = this.cooldowns.get(candidateKey(candidate.descriptor));
-      if (!cooldown) return true;
-      if (cooldown.until > now) return false;
-      this.cooldowns.delete(candidateKey(candidate.descriptor));
-      return true;
+      const health = this.routeState.health(candidate.descriptor);
+      return !health?.cooldownUntil || Date.parse(health.cooldownUntil) <= now;
     });
     return available.length > 0 ? available : [candidates[0]!];
   }
 
-  markFailure(
+  async markFailure(
     candidate: ModelRouteCandidate,
     failureClass: RouteFailureClass,
-  ): void {
-    const duration = cooldownDurationMs(failureClass);
-    if (duration === 0) return;
-    this.cooldowns.set(candidateKey(candidate), {
-      until: this.clock() + duration,
+    hints: Omit<ModelRouteFailureUpdate, "failureClass"> = {},
+    retryPolicy: ModelRoutePlan["retryPolicy"] = {
+      maxAttemptsPerStep: 1,
+      retryableFailureClasses: [...RETRYABLE_FAILURES],
+      jitterRatio: 0.2,
+      maxBackoffMs: 120_000,
+    },
+  ): Promise<{ cooldownUntil?: string; backoffMs: number }> {
+    const duration = Math.max(
+      cooldownDurationMs(failureClass),
+      hints.retryAfterMs ?? 0,
+    );
+    const jitter = duration * retryPolicy.jitterRatio * this.random();
+    const backoffMs = Math.min(
+      retryPolicy.maxBackoffMs,
+      Math.round(duration + jitter),
+    );
+    const cooldownUntil =
+      backoffMs > 0
+        ? new Date(this.clock() + backoffMs).toISOString()
+        : undefined;
+    await this.routeState.recordFailure(candidate, {
       failureClass,
+      ...(cooldownUntil ? { cooldownUntil } : {}),
+      ...hints,
     });
+    return { ...(cooldownUntil ? { cooldownUntil } : {}), backoffMs };
+  }
+
+  async markSuccess(candidate: ModelRouteCandidate): Promise<void> {
+    await this.routeState.recordSuccess(candidate);
   }
 
   candidateHealth(candidate: ModelRouteCandidate): {
     credentialHealth: ModelRouteCredentialHealth;
     cooldownUntil?: string;
   } {
-    const cooldown = this.cooldowns.get(candidateKey(candidate));
-    if (!cooldown || cooldown.until <= this.clock()) {
-      if (cooldown) this.cooldowns.delete(candidateKey(candidate));
-      return { credentialHealth: candidate.credentialHealth };
+    const health = this.routeState.health(candidate);
+    if (!health) return { credentialHealth: candidate.credentialHealth };
+    if (health.cooldownUntil && Date.parse(health.cooldownUntil) > this.clock()) {
+      return {
+        credentialHealth: "cooling_down",
+        cooldownUntil: health.cooldownUntil,
+      };
     }
-    return {
-      credentialHealth: "cooling_down",
-      cooldownUntil: new Date(cooldown.until).toISOString(),
-    };
+    return { credentialHealth: health.health };
   }
 
-  private describeCandidate(ref: ModelRef): ModelRouteCandidate {
-    const credential = this.store.getActiveCredentialReference(ref.provider);
+  private async resolveCandidate(
+    target: ModelRouteTarget,
+    primary: Model<Api> | undefined,
+    policy: ModelRoutePolicyV2,
+    selectionReason: ModelRouteResolutionSource,
+  ): Promise<ResolvedRouteCandidate> {
+    const source =
+      primary && primary.provider === target.model.provider && primary.id === target.model.id
+        ? primary
+        : await this.registry.resolveConfigured(target.model);
+    if (!source) {
+      throw new Error(
+        `Model route candidate must use a live model: ${target.model.provider}/${target.model.id}`,
+      );
+    }
+    const endpoint = policy.endpointProfiles?.find(
+      (profile) => profile.id === target.endpointProfileId,
+    );
+    const pool = policy.credentialPools?.find(
+      (candidate) => candidate.id === target.credentialPoolId,
+    );
+    const activeReferences = this.store
+      .listCredentialReferences()
+      .filter(
+        (reference) =>
+          reference.providerId === target.model.provider &&
+          reference.status === "active",
+      );
+    if (!pool && activeReferences.length > 1) {
+      throw new Error(
+        `Model route target requires an explicit credential pool: ${target.model.provider}`,
+      );
+    }
+    const model = applyEndpointProfile(source, endpoint);
+    const reference = pool
+      ? await this.routeState.reserveCredential(pool, {
+          modelId: model.id,
+          ...(endpoint ? { endpointProfileId: endpoint.id } : {}),
+        })
+      : activeReferences[0];
+    const credential = reference
+      ? await this.registry.credentialReferences?.readReference(reference.id)
+      : undefined;
+    if (pool && (!reference || !credential)) {
+      throw new Error(`Model route credential pool is unavailable: ${pool.id}`);
+    }
+    const descriptor = describeCandidate(
+      target,
+      model,
+      reference,
+      endpoint,
+      selectionReason,
+    );
+    const apiKey = apiKeyCredential(credential);
     return {
-      providerId: ref.provider,
-      modelId: ref.id,
-      ...(credential
-        ? { credentialSlotId: `slot_${sha256(credential.id).slice(0, 20)}` }
-        : {}),
-      credentialHealth: credentialHealth(credential?.availability),
+      model,
+      descriptor,
+      streamOptions: {
+        ...(apiKey ? { apiKey } : {}),
+        ...(endpoint?.headers ? { headers: endpoint.headers } : {}),
+      },
     };
   }
 }
@@ -183,41 +286,48 @@ export class ModelRouteSession {
     return structuredClone(this.options.plan);
   }
 
+  get primary(): Model<Api> {
+    return this.options.candidates[0]!.model;
+  }
+
   stream(input: {
     signal: AbortSignal;
-    invoke(model: Model<Api>): Promise<AssistantMessageEventStream>;
+    invoke(
+      model: Model<Api>,
+      context?: ModelRouteAttemptContext,
+    ): Promise<AssistantMessageEventStream>;
   }): AssistantMessageEventStream {
-    return createModelRouteStream(
-      this.options,
-      input,
-      () => ++this.attempt,
-    );
+    return createModelRouteStream(this.options, input, () => ++this.attempt);
   }
 }
 
 function routePlanContent(
   runId: string,
-  role: ModelRole,
+  selection: ReturnType<typeof resolveModelRouteSelection>,
+  policy: ModelRoutePolicyV2,
   candidates: readonly ResolvedRouteCandidate[],
   clock: () => number,
 ) {
   return {
     kind: "napier.model-route-plan" as const,
-    schemaVersion: 1 as const,
+    schemaVersion: 2 as const,
     id: createId("route"),
     runId,
-    role,
+    role: selection.role,
+    path: selection.path,
+    resolutionSource: selection.source,
     candidates: candidates.map((candidate) => candidate.descriptor),
     retryPolicy: {
       maxAttemptsPerStep: candidates.length,
       retryableFailureClasses: [...RETRYABLE_FAILURES],
+      jitterRatio: policy.retryPolicy!.jitterRatio,
+      maxBackoffMs: policy.retryPolicy!.maxBackoffMs,
     },
     fallbackPolicy: {
       requireNoVisibleOutput: true as const,
       requireNoSideEffects: true as const,
       allowCrossProvider:
-        new Set(candidates.map((candidate) => candidate.model.provider)).size >
-        1,
+        new Set(candidates.map((candidate) => candidate.model.provider)).size > 1,
     },
     evidencePolicy: {
       recordEveryAttempt: true as const,
@@ -228,53 +338,59 @@ function routePlanContent(
   };
 }
 
-function uniqueCandidates(
-  primary: ModelRef,
-  fallbacks: readonly ModelRef[],
-): ModelRef[] {
-  if (fallbacks.length > MAX_ROUTE_CANDIDATES - 1) {
-    throw new Error(
-      `Model route supports at most ${String(MAX_ROUTE_CANDIDATES - 1)} fallback models`,
-    );
-  }
-  const candidates = [primary, ...fallbacks].map(normalizeModelRef);
-  const seen = new Set<string>();
-  for (const candidate of candidates) {
-    const key = `${candidate.provider}/${candidate.id}`;
-    if (seen.has(key)) {
-      throw new Error(`Model route candidate is duplicated: ${key}`);
-    }
-    seen.add(key);
-  }
-  return candidates;
+function describeCandidate(
+  target: ModelRouteTarget,
+  model: Model<Api>,
+  credential: CredentialReference | undefined,
+  endpoint: ProviderEndpointProfile | undefined,
+  selectionReason: ModelRouteResolutionSource,
+): ModelRouteCandidate {
+  return {
+    providerId: target.model.provider,
+    modelId: model.id,
+    ...(model.id !== target.model.id ? { sourceModelId: target.model.id } : {}),
+    ...(credential
+      ? { credentialSlotId: modelRouteCredentialSlotId(credential.id) }
+      : {}),
+    credentialHealth: credentialHealth(credential?.availability),
+    ...(target.credentialPoolId
+      ? { credentialPoolId: target.credentialPoolId }
+      : {}),
+    ...(endpoint
+      ? {
+          endpointProfileId: endpoint.id,
+          endpointKind: endpoint.kind,
+          dialect: endpoint.dialect,
+        }
+      : {}),
+    selectionReason,
+  };
 }
 
-function normalizeModelRef(ref: ModelRef): ModelRef {
-  const provider = ref.provider.trim().toLowerCase();
-  const id = ref.id.trim();
-  if (
-    !/^[a-z][a-z0-9_-]{0,63}$/u.test(provider) ||
-    !id ||
-    id.length > 200 ||
-    /[\u0000-\u001f\u007f<>\s]/u.test(id)
-  ) {
-    throw new Error("Model route candidate is invalid");
-  }
-  return { provider, id };
+function applyEndpointProfile(
+  model: Model<Api>,
+  profile: ProviderEndpointProfile | undefined,
+): Model<Api> {
+  if (!profile) return model;
+  const api =
+    profile.dialect === "openai_completions"
+      ? "openai-completions"
+      : profile.dialect === "openai_responses"
+        ? "openai-responses"
+        : profile.dialect === "anthropic_messages"
+          ? "anthropic-messages"
+          : model.api;
+  return {
+    ...model,
+    api,
+    id: profile.modelId ?? model.id,
+    baseUrl: profile.baseUrl,
+    ...(profile.headers
+      ? { headers: { ...model.headers, ...profile.headers } }
+      : {}),
+  } as Model<Api>;
 }
 
-function credentialHealth(
-  availability: string | undefined,
-): ModelRouteCredentialHealth {
-  if (availability === "available") return "healthy";
-  if (availability === "missing" || availability === "error") {
-    return "unavailable";
-  }
-  return "unknown";
-}
-
-function candidateKey(candidate: ModelRouteCandidate): string {
-  return (
-    candidate.credentialSlotId ?? `${candidate.providerId}/${candidate.modelId}`
-  );
+function apiKeyCredential(credential: Credential | undefined): string | undefined {
+  return credential?.type === "api_key" ? credential.key : undefined;
 }

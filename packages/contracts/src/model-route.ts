@@ -7,6 +7,42 @@ export type ModelRole =
   | "vision"
   | "subagent";
 
+export type ModelRoutePath =
+  | "interactive"
+  | "recovery"
+  | "automation"
+  | "workflow"
+  | "experiment";
+
+export type ProviderEndpointDialect =
+  | "provider_default"
+  | "openai_completions"
+  | "openai_responses"
+  | "anthropic_messages";
+
+export interface ProviderEndpointProfile {
+  id: string;
+  providerId: string;
+  kind: "direct" | "gateway";
+  baseUrl: string;
+  modelId?: string;
+  dialect: ProviderEndpointDialect;
+  headers?: Record<string, string>;
+}
+
+export interface ModelRouteCredentialPool {
+  id: string;
+  providerId: string;
+  strategy: "round_robin";
+  credentialReferenceIds?: string[];
+}
+
+export interface ModelRouteTarget {
+  model: ModelRef;
+  endpointProfileId?: string;
+  credentialPoolId?: string;
+}
+
 export type RouteFailureClass =
   | "rate_limited"
   | "provider_server"
@@ -35,26 +71,62 @@ export interface ModelRouteRequest {
 export interface ModelRoleRouteBinding {
   model: ModelRef;
   fallbackModels?: ModelRef[];
+  endpointProfileId?: string;
+  credentialPoolId?: string;
+  fallbackTargets?: ModelRouteTarget[];
+}
+
+export interface ModelRoutePolicyV2 {
+  schemaVersion: 2;
+  roles: Partial<Record<ModelRole, ModelRoleRouteBinding>>;
+  paths?: Partial<Record<ModelRoutePath, ModelRoleRouteBinding>>;
+  subagentRoles?: Partial<Record<SubagentRole, ModelRoleRouteBinding>>;
+  endpointProfiles?: ProviderEndpointProfile[];
+  credentialPools?: ModelRouteCredentialPool[];
+  retryPolicy?: {
+    jitterRatio: number;
+    maxBackoffMs: number;
+  };
 }
 
 export interface ModelRouteCandidate {
   providerId: string;
   modelId: string;
+  sourceModelId?: string;
   credentialSlotId?: string;
   credentialHealth: ModelRouteCredentialHealth;
   cooldownUntil?: string;
+  credentialPoolId?: string;
+  endpointProfileId?: string;
+  endpointKind?: ProviderEndpointProfile["kind"];
+  dialect?: ProviderEndpointDialect;
+  selectionReason?:
+    | "explicit"
+    | "role"
+    | "path"
+    | "subagent_role"
+    | "agent_default";
 }
 
 export interface ModelRoutePlan {
   kind: "napier.model-route-plan";
-  schemaVersion: 1;
+  schemaVersion: 2;
   id: string;
   runId: string;
   role: ModelRole;
+  path: ModelRoutePath;
+  resolutionSource:
+    | "explicit"
+    | "role"
+    | "path"
+    | "subagent_role"
+    | "agent_default";
   candidates: ModelRouteCandidate[];
   retryPolicy: {
     maxAttemptsPerStep: number;
     retryableFailureClasses: RouteFailureClass[];
+    jitterRatio: number;
+    maxBackoffMs: number;
   };
   fallbackPolicy: {
     requireNoVisibleOutput: true;
@@ -91,5 +163,8 @@ export interface ModelRouteAttempt {
   fallbackFromAttempt?: number;
   fallbackReason?: RouteFailureClass;
   diagnosticSha256?: string;
+  providerHint?: string;
+  retryAfterMs?: number;
+  backoffMs?: number;
   contentSha256: string;
 }

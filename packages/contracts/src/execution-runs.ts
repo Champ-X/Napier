@@ -15,6 +15,7 @@ import type {
   ToolPolicyMode,
   Usage,
 } from "./execution-core.js";
+import type { ModelRoutePolicyV2 } from "./model-route.js";
 
 export type PromptVariableDateFormat =
   | "readable-date"
@@ -60,6 +61,7 @@ export interface AgentProfile {
   modelAdvisor?: ModelAdvisorPolicy;
   promptVariables?: PromptVariableDefinition[];
   toolLoopGuard?: ToolLoopGuardPolicy;
+  modelRoute?: ModelRoutePolicyV2;
   revision: number;
   createdAt: string;
   updatedAt: string;
@@ -143,6 +145,19 @@ export interface RunConfigurationFingerprintV8 extends RunConfigurationFingerpri
   toolLoopGuard: ToolLoopGuardPolicy;
 }
 
+interface RunConfigurationFingerprintV9 extends RunConfigurationFingerprintBase {
+  schemaVersion: 9;
+  automaticRecovery: AutomaticRecoveryPolicy;
+  executionMode: RunExecutionMode;
+  skillCatalogSha256: string;
+  modelAdvisor: ResolvedModelAdvisorPolicy;
+  promptVariableCatalogSha256: string;
+  promptVariableSnapshotSha256: string;
+  resolvedSystemPromptSha256: string;
+  toolLoopGuard: ToolLoopGuardPolicy;
+  modelRoute: ModelRoutePolicyV2;
+}
+
 export type RunConfigurationFingerprint =
   | RunConfigurationFingerprintV1
   | RunConfigurationFingerprintV2
@@ -151,7 +166,8 @@ export type RunConfigurationFingerprint =
   | RunConfigurationFingerprintV5
   | RunConfigurationFingerprintV6
   | RunConfigurationFingerprintV7
-  | RunConfigurationFingerprintV8;
+  | RunConfigurationFingerprintV8
+  | RunConfigurationFingerprintV9;
 
 type RunOutcome =
   | "completed"
@@ -234,7 +250,8 @@ export type RunConfigurationField =
   | "executionMode"
   | "skillCatalog"
   | "promptVariables"
-  | "toolLoopGuard";
+  | "toolLoopGuard"
+  | "modelRoute";
 
 export interface RunConfigurationDelta {
   status: "comparable" | "unavailable";

@@ -21,6 +21,7 @@ import type { OsSandboxAdapter } from "./sandbox.js";
 import type { LocalStore } from "./store.js";
 import { InProcessSubagentProvider } from "./in-process-subagent-provider.js";
 import { ModelRouter } from "./model-route.js";
+import { resolveModelRouteSelection } from "./model-route-resolution.js";
 import type { DelegationDetails } from "./subagent-task-evidence.js";
 import { SubagentSupervisor } from "./subagent-supervisor.js";
 import {
@@ -172,6 +173,7 @@ export class SubagentCoordinator {
         models: options.models,
         ...(options.modelRouter ? { modelRouter: options.modelRouter } : {}),
         defaultModel: options.model,
+        profile: options.profile,
         run: options.run,
         limits: this.limits,
         parentSignal: options.parentSignal,
@@ -244,12 +246,7 @@ export class SubagentCoordinator {
     const failureContextSha256 =
       input.role === "coder"
         ? coderFailureContextSha256(this.options.profile, {
-            provider:
-              this.options.modelRouteRequest?.subagentRoles?.coder?.model
-                .provider ?? this.options.model.provider,
-            id:
-              this.options.modelRouteRequest?.subagentRoles?.coder?.model.id ??
-              this.options.model.id,
+            ...this.subagentModel(input.role),
           })
         : undefined;
     const reusable = input.revivedFromTaskId
@@ -296,6 +293,23 @@ export class SubagentCoordinator {
     } finally {
       this.reservedIntentSha256.delete(intentSha256);
     }
+  }
+
+  private subagentModel(role: SubagentRole) {
+    return resolveModelRouteSelection({
+      agentDefault: {
+        provider: this.options.model.provider,
+        id: this.options.model.id,
+      },
+      ...(this.options.profile.modelRoute
+        ? { policy: this.options.profile.modelRoute }
+        : {}),
+      ...(this.options.modelRouteRequest
+        ? { request: this.options.modelRouteRequest }
+        : {}),
+      source: this.options.run.source ?? "user",
+      subagentRole: role,
+    }).targets[0]!.model;
   }
 }
 

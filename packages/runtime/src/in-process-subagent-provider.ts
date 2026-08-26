@@ -1,6 +1,7 @@
 import type { Api, Model, MutableModels } from "@earendil-works/pi-ai";
 import type {
   JsonValue,
+  AgentProfile,
   RegisteredRunEventTypeForCategory,
   RunEvent,
   RunRecord,
@@ -50,6 +51,7 @@ export class InProcessSubagentProvider implements SubagentProvider {
       models: MutableModels;
       modelRouter?: ModelRouter;
       defaultModel: Model<Api>;
+      profile: AgentProfile;
       run: RunRecord;
       limits: SubagentLimits;
       parentSignal: AbortSignal;
@@ -259,29 +261,24 @@ export class InProcessSubagentProvider implements SubagentProvider {
     model: Model<Api>;
     route?: ModelRouteSession;
   }> {
-    const binding = request.modelRoute?.subagentRoles?.[request.role];
     if (!this.options.modelRouter) {
-      if (binding) {
+      if (
+        request.modelRoute?.subagentRoles?.[request.role] ||
+        this.options.profile.modelRoute?.subagentRoles?.[request.role]
+      ) {
         throw new Error("Subagent role routing requires a model router");
       }
       return { model: this.options.defaultModel };
     }
-    const model = binding
-      ? await this.options.modelRouter.resolveConfigured(binding.model)
-      : this.options.defaultModel;
-    if (!model) throw new Error("Subagent route primary model is unavailable");
     const route = await this.options.modelRouter.createSession({
       run: this.options.run,
-      primary: model,
-      request: {
-        role: "subagent",
-        ...(binding?.fallbackModels
-          ? { fallbackModels: binding.fallbackModels }
-          : {}),
-      },
+      primary: this.options.defaultModel,
+      profile: this.options.profile,
+      ...(request.modelRoute ? { request: request.modelRoute } : {}),
+      subagentRole: request.role,
       ...(this.options.onEvent ? { onEvent: this.options.onEvent } : {}),
     });
-    return { model, route };
+    return { model: route.primary, route };
   }
 
   private assertRequest(request: SubagentRequest): void {

@@ -57,6 +57,10 @@ import type {
 } from "./receipt-trust-directory-subscriptions.js";
 import type { AppendEventInput } from "./run-event-registry.js";
 import type { RunEventQueryScope } from "./run-event-query-port.js";
+import type {
+  PersistedModelRouteCursor,
+  PersistedModelRouteHealth,
+} from "./model-route-state.js";
 
 export interface StorePersistedRunRecord extends RunRecord {
   leaseTokenSha256?: string;
@@ -115,6 +119,8 @@ export interface StoreRepositoryState {
   schedules: StorePersistedAutomationSchedule[];
   channels: StorePersistedInboundChannel[];
   inboundDeliveries: StorePersistedInboundDelivery[];
+  modelRouteHealth: PersistedModelRouteHealth[];
+  modelRouteCursors: PersistedModelRouteCursor[];
 }
 
 export interface StoreRepositoryQueue {

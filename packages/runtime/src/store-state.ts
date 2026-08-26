@@ -4,6 +4,10 @@ import {
   type MemoryFact,
 } from "@napier/contracts";
 import type { StoreRepositoryState } from "./store-repository-host.js";
+import type {
+  PersistedModelRouteCursor,
+  PersistedModelRouteHealth,
+} from "./model-route-state.js";
 
 export interface PersistedStoreState extends StoreRepositoryState {
   version: 1;
@@ -11,6 +15,8 @@ export interface PersistedStoreState extends StoreRepositoryState {
   agentCapabilityBindings: unknown[];
   memories: MemoryFact[];
   credentials: CredentialReference[];
+  modelRouteHealth: PersistedModelRouteHealth[];
+  modelRouteCursors: PersistedModelRouteCursor[];
 }
 
 export const EMPTY_STORE_STATE: PersistedStoreState = {
@@ -57,6 +63,8 @@ export const EMPTY_STORE_STATE: PersistedStoreState = {
   executionPlanBlueprintRecommendationPolicyOverrides: [],
   executionPlanBlueprintRecommendationPolicyOverrideRetirements: [],
   credentials: [],
+  modelRouteHealth: [],
+  modelRouteCursors: [],
   schedules: [],
   channels: [],
   inboundDeliveries: [],

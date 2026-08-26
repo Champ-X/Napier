@@ -5,6 +5,7 @@ import { ContextBudgetFieldsets } from "./ContextBudgetFieldsets";
 import { ContextCapabilityFields } from "./ContextCapabilityFields";
 import { contextCopy } from "./context-copy";
 import { ContextModelAdvisorFieldset } from "./ContextModelAdvisorFieldset";
+import { ContextModelRouteFieldset } from "./ContextModelRouteFieldset";
 import { ContextPromptVariablesFieldset } from "./ContextPromptVariablesFieldset";
 import { ContextRecoveryPolicyFieldset } from "./ContextRecoveryPolicyFieldset";
 import { ContextToolLoopGuardFieldset } from "./ContextToolLoopGuardFieldset";
@@ -42,6 +43,7 @@ export function ContextAgentProfileForm({
         </div>
       </header>
       <ContextAgentIdentityFields controller={controller} />
+      <ContextModelRouteFieldset controller={controller} />
       <ContextPromptVariablesFieldset controller={controller} />
       <ContextCapabilityFields controller={controller} />
       <ContextRecoveryPolicyFieldset controller={controller} />

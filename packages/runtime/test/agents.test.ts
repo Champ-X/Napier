@@ -88,6 +88,17 @@ describe("Agent profile updates", () => {
         threshold: 4,
         exemptTools: ["web_search", "read_file"],
       },
+      modelRoute: {
+        schemaVersion: 2,
+        roles: {
+          reasoning: {
+            model: { provider: "OpenAI", id: "gpt-5.4" },
+            fallbackModels: [
+              { provider: "Anthropic", id: "claude-sonnet-4-6" },
+            ],
+          },
+        },
+      },
     });
 
     expect(updated).toEqual(
@@ -128,6 +139,23 @@ describe("Agent profile updates", () => {
           threshold: 4,
           exemptTools: ["read_file", "web_search"],
         },
+        modelRoute: {
+          schemaVersion: 2,
+          roles: {
+            reasoning: {
+              model: { provider: "openai", id: "gpt-5.4" },
+              fallbackTargets: [
+                {
+                  model: {
+                    provider: "anthropic",
+                    id: "claude-sonnet-4-6",
+                  },
+                },
+              ],
+            },
+          },
+          retryPolicy: { jitterRatio: 0.2, maxBackoffMs: 120_000 },
+        },
         revision: 2,
       }),
     );
@@ -146,8 +174,107 @@ describe("Agent profile updates", () => {
         "automaticRecovery",
         "modelAdvisor",
         "toolLoopGuard",
+        "modelRoute",
       ]),
     );
+  });
+
+  it("validates endpoint profiles and explicit credential pools", () => {
+    const updated = updateAgentProfile(PROFILE, {
+      modelRoute: {
+        schemaVersion: 2,
+        roles: {
+          fast: {
+            model: { provider: "openai", id: "gpt-5.4-mini" },
+            endpointProfileId: "corp_gateway",
+            credentialPoolId: "openai_pool",
+          },
+        },
+        endpointProfiles: [
+          {
+            id: "corp_gateway",
+            providerId: "openai",
+            kind: "gateway",
+            baseUrl: "https://gateway.example.test/v1/",
+            modelId: "served-fast",
+            dialect: "openai_responses",
+            headers: { "X-Napier-Tenant": "delivery" },
+          },
+        ],
+        credentialPools: [
+          {
+            id: "openai_pool",
+            providerId: "openai",
+            strategy: "round_robin",
+            credentialReferenceIds: [
+              "credential_12345678",
+              "credential_abcdefgh",
+            ],
+          },
+        ],
+      },
+    });
+
+    expect(updated.modelRoute).toEqual(
+      expect.objectContaining({
+        endpointProfiles: [
+          expect.objectContaining({
+            baseUrl: "https://gateway.example.test/v1",
+            headers: { "x-napier-tenant": "delivery" },
+          }),
+        ],
+      }),
+    );
+    expect(changedAgentFields(PROFILE, updated)).toContain("modelRoute");
+    expect(() =>
+      updateAgentProfile(PROFILE, {
+        modelRoute: {
+          schemaVersion: 2,
+          roles: {},
+          endpointProfiles: [
+            {
+              id: "leaky",
+              providerId: "openai",
+              kind: "direct",
+              baseUrl: "https://api.example.test",
+              dialect: "provider_default",
+              headers: { Authorization: "Bearer secret" },
+            },
+          ],
+        },
+      }),
+    ).toThrow("secret-bearing");
+    expect(() =>
+      updateAgentProfile(PROFILE, {
+        modelRoute: {
+          schemaVersion: 2,
+          roles: {},
+          endpointProfiles: [
+            {
+              id: "leaky",
+              providerId: "openai",
+              kind: "direct",
+              baseUrl: "https://api.example.test",
+              dialect: "provider_default",
+              headers: { "x-access-token": "secret" },
+            },
+          ],
+        },
+      }),
+    ).toThrow("secret-bearing");
+    expect(() =>
+      updateAgentProfile(PROFILE, {
+        modelRoute: {
+          schemaVersion: 2,
+          roles: {
+            fast: {
+              model: { provider: "openai", id: "gpt-5.4-mini" },
+              unexpected: true,
+            } as never,
+          },
+        },
+      }),
+    ).toThrow("unsupported field");
   });
 
   it("does not revise a semantic no-op", () => {
@@ -476,5 +603,41 @@ describe("Agent profile updates", () => {
     expect(() => rollbackAgentProfile(restored, baseline)).toThrow(
       "already matches",
     );
+  });
+
+  it("clears a model route when rolling back to a revision without one", () => {
+    const baseline = createAgentProfileRevision(PROFILE, {
+      source: "created",
+    });
+    const routed = updateAgentProfile(PROFILE, {
+      modelRoute: {
+        schemaVersion: 2,
+        roles: {
+          reasoning: {
+            model: { provider: "openai", id: "gpt-5.4" },
+          },
+        },
+      },
+    });
+
+    const restored = rollbackAgentProfile(routed, baseline);
+
+    expect(restored).not.toHaveProperty("modelRoute");
+    expect(restored.revision).toBe(3);
+    expect(changedAgentFields(routed, restored)).toContain("modelRoute");
+  });
+
+  it("clears a model route through an explicit update", () => {
+    const routed = updateAgentProfile(PROFILE, {
+      modelRoute: {
+        schemaVersion: 2,
+        roles: { default: { model: PROFILE.model } },
+      },
+    });
+
+    const cleared = updateAgentProfile(routed, { clearModelRoute: true });
+
+    expect(cleared).not.toHaveProperty("modelRoute");
+    expect(cleared.revision).toBe(3);
   });
 });

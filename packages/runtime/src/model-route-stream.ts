@@ -34,11 +34,10 @@ import {
   routeErrorText,
 } from "./model-route-policy.js";
 import type { LocalStore } from "./store.js";
-
-interface ResolvedRouteCandidate {
-  descriptor: ModelRouteCandidate;
-  model: Model<Api>;
-}
+import type {
+  ModelRouteAttemptContext,
+  ResolvedRouteCandidate,
+} from "./model-route-types.js";
 
 interface RouterPort {
   availableCandidates(
@@ -47,7 +46,10 @@ interface RouterPort {
   markFailure(
     candidate: ModelRouteCandidate,
     failureClass: RouteFailureClass,
-  ): void;
+    hints?: { providerHint?: string; retryAfterMs?: number },
+    retryPolicy?: ModelRoutePlan["retryPolicy"],
+  ): Promise<{ cooldownUntil?: string; backoffMs: number }>;
+  markSuccess(candidate: ModelRouteCandidate): Promise<void>;
   candidateHealth(candidate: ModelRouteCandidate): {
     credentialHealth: ModelRouteCredentialHealth;
     cooldownUntil?: string;
@@ -65,7 +67,10 @@ interface StreamOptions {
 
 interface StreamInput {
   signal: AbortSignal;
-  invoke(model: Model<Api>): Promise<AssistantMessageEventStream>;
+  invoke(
+    model: Model<Api>,
+    context?: ModelRouteAttemptContext,
+  ): Promise<AssistantMessageEventStream>;
 }
 
 type AttemptResult =
@@ -155,6 +160,7 @@ async function* runCandidate(input: {
 }): AsyncGenerator<AssistantMessageEvent, AttemptResult> {
   const startedAtMs = Date.now();
   const started = createStartedAttempt(input, startedAtMs);
+  const responseHints: { providerHint?: string; retryAfterMs?: number } = {};
   await appendRouteEvent(
     input.options.store,
     input.options.run,
@@ -164,9 +170,24 @@ async function* runCandidate(input: {
   );
   let source: AssistantMessageEventStream;
   try {
-    source = await input.input.invoke(input.candidate.model);
+    source = await input.input.invoke(input.candidate.model, {
+      descriptor: structuredClone(input.candidate.descriptor),
+      streamOptions: {
+        ...input.candidate.streamOptions,
+        onResponse: (response) => {
+          Object.assign(responseHints, routeResponseHints(response.headers));
+        },
+      },
+    });
   } catch (error) {
-    return settleFailure(input, started, startedAtMs, error, false);
+    return settleFailure(
+      input,
+      started,
+      startedAtMs,
+      error,
+      false,
+      responseHints,
+    );
   }
 
   const iterator = source[Symbol.asyncIterator]();
@@ -179,6 +200,7 @@ async function* runCandidate(input: {
         startedAtMs,
         consumed.failure,
         consumed.visibleOutputProduced,
+        responseHints,
       );
     }
     if (!consumed.finalMessage) {
@@ -190,6 +212,7 @@ async function* runCandidate(input: {
       startedAtMs,
       consumed.finalMessage,
       consumed.visibleOutputProduced,
+      responseHints,
     );
     if (result.action === "terminal") {
       for (const buffered of consumed.pending) yield buffered;
@@ -246,6 +269,7 @@ async function settleFailure(
   startedAtMs: number,
   error: unknown,
   visibleOutputProduced: boolean,
+  responseHints: { providerHint?: string; retryAfterMs?: number },
 ): Promise<AttemptResult> {
   const failureClass = classifyRouteFailure(error);
   const canFallback = await recordFailure(
@@ -255,6 +279,7 @@ async function settleFailure(
     failureClass,
     visibleOutputProduced,
     error,
+    responseHints,
   );
   return canFallback
     ? { action: "fallback", attempt: input.attempt, reason: failureClass }
@@ -274,11 +299,13 @@ async function settleMessage(
   startedAtMs: number,
   message: AssistantMessage,
   visibleOutputProduced: boolean,
+  responseHints: { providerHint?: string; retryAfterMs?: number },
 ): Promise<AttemptResult> {
   const failed =
     message.stopReason === "error" || message.stopReason === "aborted";
   const failureClass = failed ? classifyRouteFailure(message) : undefined;
   if (!failureClass) {
+    await input.options.router.markSuccess(input.candidate.descriptor);
     await recordEnded(input, started, startedAtMs, {
       visibleOutputProduced,
       sideEffectState: await routeSideEffectState(
@@ -296,6 +323,7 @@ async function settleMessage(
     failureClass,
     visibleOutputProduced,
     message,
+    responseHints,
   );
   return canFallback
     ? { action: "fallback", attempt: input.attempt, reason: failureClass }
@@ -309,6 +337,7 @@ async function recordFailure(
   failureClass: RouteFailureClass,
   visibleOutputProduced: boolean,
   error: unknown,
+  responseHints: { providerHint?: string; retryAfterMs?: number },
 ): Promise<boolean> {
   const sideEffectState = await routeSideEffectState(
     input.options.store,
@@ -321,15 +350,107 @@ async function recordFailure(
     hasNextCandidate: input.index + 1 < input.candidateCount,
     aborted: input.input.signal.aborted,
   });
-  input.options.router.markFailure(input.candidate.descriptor, failureClass);
+  const hints = { ...responseHints, ...routeFailureHints(error) };
+  const cooldown = await input.options.router.markFailure(
+    input.candidate.descriptor,
+    failureClass,
+    hints,
+    input.options.plan.retryPolicy,
+  );
   await recordEnded(input, started, startedAtMs, {
     visibleOutputProduced,
     sideEffectState,
     outcome: canFallback ? "retryable" : "terminal",
     failureClass,
     diagnosticSha256: sha256(routeErrorText(error)),
+    ...(hints.providerHint ? { providerHint: hints.providerHint } : {}),
+    ...(hints.retryAfterMs !== undefined
+      ? { retryAfterMs: hints.retryAfterMs }
+      : {}),
+    ...(cooldown.backoffMs > 0 ? { backoffMs: cooldown.backoffMs } : {}),
   });
   return canFallback;
+}
+
+function routeFailureHints(error: unknown): {
+  providerHint?: string;
+  retryAfterMs?: number;
+} {
+  if (!error || typeof error !== "object") return {};
+  const record = error as Record<string, unknown>;
+  const headers = normalizedHeaders(
+    record["headers"] && typeof record["headers"] === "object"
+      ? (record["headers"] as Record<string, unknown>)
+      : {},
+  );
+  const retryAfter =
+    record["retryAfterMs"] ??
+    headers["retry-after-ms"];
+  const retryAfterMs =
+    retryAfter !== undefined
+      ? parseMilliseconds(retryAfter)
+      : parseRetryAfterHeader(headers["retry-after"]);
+  const hint =
+    record["providerHint"] ??
+    headers["x-provider-hint"] ??
+    headers["x-ratelimit-scope"];
+  const providerHint =
+    typeof hint === "string" && /^[A-Za-z0-9._:/ -]{1,120}$/u.test(hint)
+      ? hint
+      : undefined;
+  return {
+    ...(providerHint ? { providerHint } : {}),
+    ...(retryAfterMs !== undefined ? { retryAfterMs } : {}),
+  };
+}
+
+function routeResponseHints(headers: Record<string, string>): {
+  providerHint?: string;
+  retryAfterMs?: number;
+} {
+  const normalized = normalizedHeaders(headers);
+  const providerHint = safeProviderHint(
+    normalized["x-provider-hint"] ?? normalized["x-ratelimit-scope"],
+  );
+  const retryAfterMs =
+    parseMilliseconds(normalized["retry-after-ms"]) ??
+    parseRetryAfterHeader(normalized["retry-after"]);
+  return {
+    ...(providerHint ? { providerHint } : {}),
+    ...(retryAfterMs !== undefined ? { retryAfterMs } : {}),
+  };
+}
+
+function parseMilliseconds(value: unknown): number | undefined {
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric) || numeric < 0) return undefined;
+  return Math.min(300_000, Math.round(numeric));
+}
+
+function parseRetryAfterHeader(value: unknown): number | undefined {
+  if (typeof value !== "string") return undefined;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds >= 0) {
+    return Math.min(300_000, Math.round(seconds * 1_000));
+  }
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp)
+    ? Math.min(300_000, Math.max(0, timestamp - Date.now()))
+    : undefined;
+}
+
+function normalizedHeaders(
+  headers: Record<string, unknown>,
+): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(headers).map(([name, value]) => [name.toLowerCase(), value]),
+  );
+}
+
+function safeProviderHint(value: unknown): string | undefined {
+  return typeof value === "string" && /^[A-Za-z0-9._:/ -]{1,120}$/u.test(value)
+    ? value
+    : undefined;
 }
 
 async function recordEnded(

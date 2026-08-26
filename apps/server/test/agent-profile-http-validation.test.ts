@@ -122,6 +122,89 @@ describe("Agent profile HTTP validation", () => {
     });
   });
 
+  it("preserves an explicit request to clear Model route policy", () => {
+    expect(parseUpdateAgentProfileRequest({ clearModelRoute: true })).toEqual({
+      clearModelRoute: true,
+    });
+    expect(
+      parseUpdateAgentProfileRequest({
+        clearModelRoute: true,
+        modelRoute: { schemaVersion: 2, roles: {} },
+      }),
+    ).toBeUndefined();
+  });
+
+  it("normalizes Model route endpoint and credential-pool configuration", () => {
+    expect(
+      parseUpdateAgentProfileRequest({
+        modelRoute: {
+          schemaVersion: 2,
+          roles: {
+            reasoning: {
+              model: { provider: " DeepSeek ", id: " deepseek-reasoner " },
+              endpointProfileId: "corp_gateway",
+              credentialPoolId: "reasoning_pool",
+            },
+          },
+          endpointProfiles: [
+            {
+              id: "corp_gateway",
+              providerId: "deepseek",
+              kind: "gateway",
+              baseUrl: "https://gateway.example.test/v1/",
+              dialect: "openai_completions",
+              headers: { "X-Napier-Tenant": " delivery " },
+            },
+          ],
+          credentialPools: [
+            {
+              id: "reasoning_pool",
+              providerId: "deepseek",
+              strategy: "round_robin",
+              credentialReferenceIds: [
+                "credential_0123456789abcdef",
+                "credential_fedcba9876543210",
+              ],
+            },
+          ],
+        },
+      }),
+    ).toEqual({
+      modelRoute: {
+        schemaVersion: 2,
+        roles: {
+          reasoning: {
+            model: { provider: "deepseek", id: "deepseek-reasoner" },
+            endpointProfileId: "corp_gateway",
+            credentialPoolId: "reasoning_pool",
+          },
+        },
+        endpointProfiles: [
+          {
+            id: "corp_gateway",
+            providerId: "deepseek",
+            kind: "gateway",
+            baseUrl: "https://gateway.example.test/v1",
+            dialect: "openai_completions",
+            headers: { "x-napier-tenant": "delivery" },
+          },
+        ],
+        credentialPools: [
+          {
+            id: "reasoning_pool",
+            providerId: "deepseek",
+            strategy: "round_robin",
+            credentialReferenceIds: [
+              "credential_0123456789abcdef",
+              "credential_fedcba9876543210",
+            ],
+          },
+        ],
+        retryPolicy: { jitterRatio: 0.2, maxBackoffMs: 120_000 },
+      },
+    });
+  });
+
   it("fails closed on unknown, duplicate, or out-of-range fields", () => {
     const invalidUpdates = [
       { name: "Agent", unexpected: true },
@@ -175,6 +258,23 @@ describe("Agent profile HTTP validation", () => {
           exemptTools: [],
         },
       },
+      {
+        modelRoute: {
+          schemaVersion: 2,
+          roles: {},
+          endpointProfiles: [
+            {
+              id: "corp_gateway",
+              providerId: "deepseek",
+              kind: "gateway",
+              baseUrl: "https://gateway.example.test",
+              dialect: "openai_completions",
+              headers: { "x-api-key": "must-not-be-persisted" },
+            },
+          ],
+        },
+      },
+      { modelRoute: { schemaVersion: 2, roles: {}, unexpected: true } },
       { threadId: "thread_invalid" },
     ];
     for (const input of invalidUpdates) {
