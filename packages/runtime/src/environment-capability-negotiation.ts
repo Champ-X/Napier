@@ -1,6 +1,6 @@
 import type {
   AgentProfile,
-  JsonValue,
+  JsonObject,
   RunExecutionMode,
 } from "@napier/contracts";
 import type { CapabilityReadinessRecord } from "@napier/contracts/agent-capability-contract";
@@ -85,12 +85,16 @@ export function createEnvironmentCapabilityNegotiationEvents(input: {
       type: ENVIRONMENT_CAPABILITY_NEGOTIATED_EVENT,
       category: "system",
       visibility: "user",
-      payload: createEnvironmentCapabilityNegotiationReceipt({
-        configuredProfile: input.configuredProfile,
-        activeProfile: input.activeProfile,
-        sandboxId: input.sandboxId,
-        readiness: input.readiness,
-      }) as unknown as JsonValue,
+      payload: JSON.parse(
+        JSON.stringify(
+          createEnvironmentCapabilityNegotiationReceipt({
+            configuredProfile: input.configuredProfile,
+            activeProfile: input.activeProfile,
+            sandboxId: input.sandboxId,
+            readiness: input.readiness,
+          }),
+        ),
+      ) as JsonObject,
     },
   ];
 }

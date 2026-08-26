@@ -5,7 +5,7 @@ import {
   type BrowserInteractionConfirmationStatus,
   type DecideBrowserInteractionConfirmationRequest,
 } from "@napier/contracts/browser-interaction-confirmation";
-import type { JsonValue } from "@napier/contracts";
+import type { JsonObject } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { EventSink } from "./event-sink.js";
@@ -247,7 +247,7 @@ export class BrowserInteractionConfirmationManager {
       type: `browser.interaction_confirmation.${confirmation.status}`,
       category: "tool",
       visibility: "user",
-      payload: JSON.parse(JSON.stringify(confirmation)) as JsonValue,
+      payload: JSON.parse(JSON.stringify(confirmation)) as JsonObject,
     });
     try {
       await onEvent?.(event);

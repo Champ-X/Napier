@@ -1,6 +1,6 @@
 import type {
   AgentProfile,
-  JsonValue,
+  JsonObject,
   ModelRef,
   RunInvocationSource,
   RunLimits,
@@ -27,7 +27,7 @@ export function createAgentRunStartedPayload(input: {
         assessmentSha256?: string;
       }
     | undefined;
-}): JsonValue {
+}): JsonObject {
   const intentId = input.recovery?.intentId ?? createRunIntentId(input.run.id);
   assertRunIntent(intentId);
   return JSON.parse(
@@ -63,5 +63,5 @@ export function createAgentRunStartedPayload(input: {
           }
         : {}),
     }),
-  ) as JsonValue;
+  ) as JsonObject;
 }

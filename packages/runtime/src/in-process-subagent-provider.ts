@@ -1,6 +1,7 @@
 import type { Api, Model, MutableModels } from "@earendil-works/pi-ai";
 import type {
   JsonValue,
+  RegisteredRunEventTypeForCategory,
   RunEvent,
   RunRecord,
   SubagentLimits,
@@ -138,7 +139,10 @@ export class InProcessSubagentProvider implements SubagentProvider {
       .then(() =>
         this.options.schedule ? this.options.schedule(execute) : execute(),
       )
-      .then((result) => ({ result }), (error: unknown) => ({ error }))
+      .then(
+        (result) => ({ result }),
+        (error: unknown) => ({ error }),
+      )
       .finally(unlink);
     this.active.set(executionId, { handle, control, abort, settled });
     return handle;
@@ -194,7 +198,9 @@ export class InProcessSubagentProvider implements SubagentProvider {
         acceptedCount: accepted.length,
         deliveredCount: delivered.length,
         pendingCount: Math.max(0, accepted.length - delivered.length),
-        ...(accepted.at(-1) ? { lastAcceptedAt: accepted.at(-1)!.createdAt } : {}),
+        ...(accepted.at(-1)
+          ? { lastAcceptedAt: accepted.at(-1)!.createdAt }
+          : {}),
         ...(delivered.at(-1)
           ? { lastDeliveredAt: delivered.at(-1)!.createdAt }
           : {}),
@@ -342,7 +348,7 @@ export class InProcessSubagentProvider implements SubagentProvider {
   }
 
   private async emit(
-    type: string,
+    type: RegisteredRunEventTypeForCategory<"subagent">,
     task: SubagentTask,
     payload: unknown,
   ): Promise<void> {
@@ -406,20 +412,18 @@ function supervisorStatus(task: SubagentTask): SubagentSupervisorStatus {
 function isSupervisorTerminal(
   status: SubagentSupervisorStatus,
 ): status is SubagentCollectedOutcome["status"] {
-  return [
-    "completed",
-    "failed",
-    "cancelled",
-    "timed_out",
-    "orphaned",
-  ].includes(status);
+  return ["completed", "failed", "cancelled", "timed_out", "orphaned"].includes(
+    status,
+  );
 }
 
 function linkAbortSignals(
   signals: Array<AbortSignal | undefined>,
   target: AbortController,
 ): () => void {
-  const active = signals.filter((signal): signal is AbortSignal => Boolean(signal));
+  const active = signals.filter((signal): signal is AbortSignal =>
+    Boolean(signal),
+  );
   const abort = (): void => target.abort();
   for (const signal of active) {
     if (signal.aborted) target.abort();

@@ -1,5 +1,5 @@
 import type {
-  JsonValue,
+  JsonObject,
   RunEvent,
   RunLimits,
   RunRecord,
@@ -118,7 +118,7 @@ export class RunResearchBudget {
       payload: {
         ...content,
         contentSha256: sha256(canonicalJson(content)),
-      } as unknown as JsonValue,
+      } as unknown as JsonObject,
     });
     await emit(this.context.onEvent, event);
   }

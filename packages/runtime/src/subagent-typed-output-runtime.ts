@@ -8,6 +8,7 @@ import {
 } from "@earendil-works/pi-ai";
 import type {
   JsonValue,
+  RegisteredRunEventTypeForCategory,
   SubagentLimits,
   SubagentTask,
   Usage,
@@ -40,7 +41,11 @@ export async function settleSubagentTypedOutput(input: {
   outputSchema: WorkflowValueSchema;
   usage: Usage;
   activateAgent(abort: () => void): void;
-  emit(type: string, task: SubagentTask, payload: unknown): Promise<void>;
+  emit(
+    type: RegisteredRunEventTypeForCategory<"subagent">,
+    task: SubagentTask,
+    payload: unknown,
+  ): Promise<void>;
 }): Promise<SubagentTypedOutputResult> {
   try {
     return {
@@ -83,11 +88,7 @@ async function repairTypedOutput(
     ...requestContent,
     contentSha256: sha256(canonicalJson(requestContent)),
   };
-  await input.emit(
-    "subagent.output.repair.requested",
-    input.task,
-    request,
-  );
+  await input.emit("subagent.output.repair.requested", input.task, request);
   let task = input.task;
   let usage = input.usage;
   let resultText = "";

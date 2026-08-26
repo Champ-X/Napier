@@ -1,5 +1,6 @@
 import type {
   CreateBranchRequest,
+  RegisteredRunEventInput,
   RunRecord,
   ThreadDetail,
 } from "@napier/contracts";
@@ -112,13 +113,11 @@ export async function createThreadBranch(
       },
     });
     for (const event of messageEvents) {
+      const copied = branchMessageEvent(event);
       await store.appendEvent({
         threadId: branch.id,
         runId: lease.run.id,
-        type: event.type,
-        category: event.category,
-        visibility: event.visibility,
-        payload: event.payload,
+        ...copied,
       });
     }
     const run = await store.finishRun(lease.run.id, "completed", {
@@ -139,6 +138,68 @@ export async function createThreadBranch(
       .catch(() => undefined);
     throw error;
   }
+}
+
+function branchMessageEvent(
+  event: ThreadDetail["events"][number],
+):
+  | Extract<RegisteredRunEventInput, { type: "message.user" }>
+  | Extract<RegisteredRunEventInput, { type: "message.assistant" }>
+  | Extract<RegisteredRunEventInput, { type: "goal.continuation.prompt" }> {
+  if (event.type === "message.user") {
+    if (
+      !event.payload ||
+      Array.isArray(event.payload) ||
+      typeof event.payload !== "object" ||
+      event.payload["role"] !== "user" ||
+      typeof event.payload["text"] !== "string"
+    ) {
+      throw new ThreadBranchRequestError("Source user message is invalid");
+    }
+    return {
+      type: event.type,
+      category: "message",
+      visibility: event.visibility,
+      payload: { ...event.payload, role: "user", text: event.payload["text"] },
+    };
+  }
+  if (event.type === "message.assistant") {
+    if (
+      !event.payload ||
+      Array.isArray(event.payload) ||
+      typeof event.payload !== "object" ||
+      event.payload["role"] !== "assistant" ||
+      typeof event.payload["text"] !== "string"
+    ) {
+      throw new ThreadBranchRequestError("Source assistant message is invalid");
+    }
+    return {
+      type: event.type,
+      category: "message",
+      visibility: event.visibility,
+      payload: {
+        ...event.payload,
+        role: "assistant",
+        text: event.payload["text"],
+      },
+    };
+  }
+  if (event.type === "goal.continuation.prompt") {
+    if (
+      !event.payload ||
+      Array.isArray(event.payload) ||
+      typeof event.payload !== "object"
+    ) {
+      throw new ThreadBranchRequestError("Source goal prompt is invalid");
+    }
+    return {
+      type: event.type,
+      category: "goal",
+      visibility: event.visibility,
+      payload: event.payload,
+    };
+  }
+  throw new ThreadBranchRequestError("Source branch event is not copyable");
 }
 
 function normalizeBranchTitle(value: string): string {

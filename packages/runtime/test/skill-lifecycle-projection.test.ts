@@ -322,12 +322,13 @@ async function append(
   type: string,
   payload: unknown,
 ) {
+  const contextEvent = type === "context.skills";
   await store.appendEvent({
     threadId,
     runId: targetRunId,
     type,
-    category: "skill",
-    visibility: "user",
+    category: contextEvent ? "system" : "tool",
+    visibility: contextEvent ? "debug" : "user",
     payload: payload as JsonValue,
   });
 }

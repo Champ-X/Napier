@@ -1,6 +1,11 @@
 import type { AgentEvent } from "@earendil-works/pi-agent-core";
 import { contentText } from "@earendil-works/pi-ai";
-import type { SubagentLimits, SubagentTask, Usage } from "@napier/contracts";
+import type {
+  RegisteredRunEventTypeForCategory,
+  SubagentLimits,
+  SubagentTask,
+  Usage,
+} from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { LocalStore } from "./store.js";
@@ -11,7 +16,11 @@ import {
   truncateSubagentText,
 } from "./subagent-task-evidence.js";
 
-type Emit = (type: string, task: SubagentTask, payload: unknown) => Promise<void>;
+type Emit = (
+  type: RegisteredRunEventTypeForCategory<"subagent">,
+  task: SubagentTask,
+  payload: unknown,
+) => Promise<void>;
 
 export class SubagentTaskObserver {
   task: SubagentTask;
@@ -42,7 +51,9 @@ export class SubagentTaskObserver {
   }
 
   private async observeAssistant(
-    message: Extract<AgentEvent, { type: "message_end" }>["message"] & { role: "assistant" },
+    message: Extract<AgentEvent, { type: "message_end" }>["message"] & {
+      role: "assistant";
+    },
   ): Promise<void> {
     this.task = await this.store.recordSubagentProgress(this.task.id, {
       turnDelta: 1,
@@ -80,7 +91,10 @@ export class SubagentTaskObserver {
         .map((block) => ({
           name: block.name,
           argumentsSha256: sha256(canonicalJson(block.arguments)),
-          argumentsBytes: Buffer.byteLength(canonicalJson(block.arguments), "utf8"),
+          argumentsBytes: Buffer.byteLength(
+            canonicalJson(block.arguments),
+            "utf8",
+          ),
           argumentsRedacted: true,
         })),
     });

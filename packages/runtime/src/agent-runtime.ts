@@ -1071,9 +1071,7 @@ export class AgentRuntime {
         {
           threadId: run.threadId,
           runId: run.id,
-          type: promptEvent.type,
-          category: promptEvent.category,
-          visibility: promptEvent.visibility,
+          ...promptEvent,
           payload: { role: "user", text: prompt },
         },
         onEvent,
@@ -1898,9 +1896,7 @@ export class AgentRuntime {
           {
             threadId: run.threadId,
             runId: run.id,
-            type: promptEvent.type,
-            category: promptEvent.category,
-            visibility: promptEvent.visibility,
+            ...promptEvent,
             payload: { role: "user", text },
           },
           onEvent,

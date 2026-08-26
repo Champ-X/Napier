@@ -32,7 +32,9 @@ export interface ExecuteWorkflowKernelRunOptions {
   onRunCreated(run: RunRecord): Promise<void>;
   executeSession(input: { run: RunRecord; signal: AbortSignal }): Promise<{
     output: JsonValue;
-    completionEventType: string;
+    completionEventType:
+      | "workflow.javascript.completed"
+      | "workflow.python.completed";
     completionPayload: Record<string, JsonValue>;
   }>;
   cleanupRun(runId: string): Promise<void>;

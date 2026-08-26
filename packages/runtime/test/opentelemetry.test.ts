@@ -441,7 +441,7 @@ describe("OpenTelemetry trace export", () => {
       runId: run.id,
       type: "run.settlement.recorded",
       category: "lifecycle",
-      visibility: "debug",
+      visibility: "user",
       payload: { status: "completed" },
     });
     await store.appendEvent({

@@ -89,19 +89,21 @@ describe("Store compatibility projections", () => {
       threadId: secondThread.id,
       agentId: secondThread.agentId,
     });
-    await store.appendEvent({
+    await store.appendCompatibilityEvent({
       threadId: firstThread.id,
       runId: firstRunId,
       type: "checkpoint.first_pending",
       category: "system",
       payload: {},
+      compatibility: fixtureBoundary("first pending checkpoint"),
     });
-    await store.appendEvent({
+    await store.appendCompatibilityEvent({
       threadId: secondThread.id,
       runId: secondRun.id,
       type: "checkpoint.second_pending",
       category: "system",
       payload: {},
+      compatibility: fixtureBoundary("second pending checkpoint"),
     });
     const before = store.getPersistenceMetrics();
     const beforeLedger = ledgerSnapshot(options.dataRoot);
@@ -160,12 +162,13 @@ describe("Store compatibility projections", () => {
     const eventPath = threadEventPath(options.dataRoot, thread.id);
 
     for (let seq = 4; seq <= 64; seq += 1) {
-      await store.appendEvent({
+      await store.appendCompatibilityEvent({
         threadId: thread.id,
         runId,
         type: "checkpoint.interval_event",
         category: "system",
         payload: { seq },
+        compatibility: fixtureBoundary("checkpoint interval event"),
       });
     }
 
@@ -208,12 +211,13 @@ describe("Store compatibility projections", () => {
     });
     const firstContents = await readFile(eventPath);
     const firstStat = await stat(eventPath);
-    await store.appendEvent({
+    await store.appendCompatibilityEvent({
       threadId: thread.id,
       runId,
       type: "checkpoint.incremental_pending",
       category: "system",
       payload: {},
+      compatibility: fixtureBoundary("incremental pending checkpoint"),
     });
     await store.appendEvent({
       threadId: thread.id,
@@ -313,12 +317,13 @@ describe("Store compatibility projections", () => {
     const options = await storeOptions();
     const store = await openStore(options);
     const thread = store.listThreads()[0]!;
-    await store.appendEvent({
+    await store.appendCompatibilityEvent({
       threadId: thread.id,
       runId: store.getThread(thread.id).runIds[0]!,
       type: "checkpoint.pending",
       category: "system",
       payload: {},
+      compatibility: fixtureBoundary("snapshot drift checkpoint"),
     });
     store.close();
     openStores.splice(openStores.indexOf(store), 1);
@@ -356,12 +361,13 @@ describe("Store compatibility projections", () => {
 
     const events = await Promise.all(
       Array.from({ length: 20 }, (_, index) =>
-        (index % 2 === 0 ? first : second).appendEvent({
+        (index % 2 === 0 ? first : second).appendCompatibilityEvent({
           threadId: thread.id,
           runId,
           type: "checkpoint.concurrent",
           category: "system",
           payload: { index },
+          compatibility: fixtureBoundary("concurrent checkpoint event"),
         }),
       ),
     );
@@ -377,6 +383,10 @@ describe("Store compatibility projections", () => {
     expect(second.getThread(thread.id).eventCount).toBe(23);
   });
 });
+
+function fixtureBoundary(reason: string) {
+  return { boundary: "test_fixture" as const, reason };
+}
 
 async function storeOptions() {
   const root = await mkdtemp(path.join(tmpdir(), "napier-projections-"));

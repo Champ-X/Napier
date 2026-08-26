@@ -227,9 +227,9 @@ import {
   StoreCompatibilityProjectionWriter,
 } from "./store-compatibility-projections.js";
 import { recordCompatibilityHit } from "./compatibility-telemetry.js";
+import { assertArtifactReceiptEventBoundary } from "./artifact-receipts.js";
 import { persistStoreMutation } from "./store-persistence.js";
 import {
-  applyThreadSummaryEvent,
   replayThreadSummaryTails,
   threadMessagePreview,
 } from "./store-thread-summary-projection.js";
@@ -275,7 +275,6 @@ import {
   rollbackAgentProfile,
   updateAgentProfile,
 } from "./agents.js";
-import { assertArtifactReceiptEventBoundary } from "./artifact-receipts.js";
 import { AutomaticRecoveryRepository } from "./automatic-recovery-repository.js";
 import { AutomationScheduleRepository } from "./automation-schedule-repository.js";
 import {
@@ -336,9 +335,18 @@ import type {
 } from "./run-control-repository.js";
 import { RunControlRepository } from "./run-control-repository.js";
 import {
-  assertRunEventAdmission,
+  resolveCompatibilityEventInput,
+  resolveExtensionEventInput,
+  resolveRegisteredEventInput,
+  type AppendCompatibilityEventInput,
   type AppendEventInput,
-} from "./run-event-admission.js";
+  type AppendExtensionEventInput,
+  type ResolvedRunEventInput,
+} from "./run-event-registry.js";
+import {
+  appendRegisteredEventsToThread,
+  appendResolvedRunEvent,
+} from "./run-event-writer.js";
 import {
   createRunLeaseBinding,
   renewNormalizedRunLease,
@@ -347,6 +355,7 @@ import {
 } from "./run-lease-renewal.js";
 import { applyNormalizedRunLeases } from "./run-lease-state.js";
 import { RunLifecycleRepository } from "./run-lifecycle-repository.js";
+import { initialRunStatus } from "./run-state-machine.js";
 import { SignedPackageRepository } from "./signed-package-repository.js";
 import {
   ConcurrentRunLeaseUpdateError,
@@ -397,7 +406,7 @@ export {
   DEFAULT_INBOUND_RETRY_POLICY,
   DEFAULT_INBOUND_SIGNATURE_POLICY,
 } from "./inbound-channel-policy.js";
-export type { AppendEventInput } from "./run-event-admission.js";
+export type * from "./run-event-registry.js";
 export type { RunLeaseOptions } from "./run-lease-renewal.js";
 const MAX_CONCURRENT_WORKFLOW_RUNS_PER_THREAD = 4;
 type PersistedRunRecord = PersistedStoreState["runs"][number];
@@ -3070,20 +3079,32 @@ export class LocalStore {
   }
 
   async appendEvent(input: AppendEventInput): Promise<RunEvent> {
+    return this.appendResolvedEvent(resolveRegisteredEventInput(input));
+  }
+
+  async appendExtensionEvent(input: AppendExtensionEventInput): Promise<RunEvent> {
+    return this.appendResolvedEvent(resolveExtensionEventInput(input));
+  }
+
+  async appendCompatibilityEvent(input: AppendCompatibilityEventInput): Promise<RunEvent> {
+    return this.appendResolvedEvent(resolveCompatibilityEventInput(input));
+  }
+
+  private async appendResolvedEvent(
+    input: ResolvedRunEventInput,
+  ): Promise<RunEvent> {
     this.assertInitialized();
-    this.validateResourceId(input.threadId);
-    return this.threadQueue(input.threadId).run(() =>
-      this.stateQueue.run(async () => {
-        const currentThread = this.mutableThread(input.threadId);
-        assertRunEventAdmission(
-          input,
-          this.state.runs.find((run) => run.id === input.runId),
-        );
-        const [event] = this.appendEventsToThread(currentThread, [input]);
-        if (!event) throw new Error("Ledger event was not created");
-        await this.persistState(event, "event");
-        return structuredClone(event);
-      }),
+    return appendResolvedRunEvent(
+      {
+        runStatus: (runId) => this.state.runs.find((run) => run.id === runId),
+        mutableThread: (threadId) => this.mutableThread(threadId),
+        runInThreadQueue: (threadId, operation) =>
+          this.threadQueue(threadId).run(operation),
+        runInStateQueue: (operation) => this.stateQueue.run(operation),
+        persistEvent: (event) => this.persistState(event, "event"),
+        validateResourceId: (id) => this.validateResourceId(id),
+      },
+      input,
     );
   }
 
@@ -3150,31 +3171,10 @@ export class LocalStore {
   private appendEventsToThread(
     thread: ThreadRecord,
     inputs: AppendEventInput[],
+    options: { createdAt?: string } = {},
   ): RunEvent[] {
-    const events = inputs.map((input) => {
-      if (input.threadId !== thread.id) {
-        throw new Error(
-          "Ledger event Thread does not match mutable projection",
-        );
-      }
-      const event: RunEvent = {
-        id: createId("event"),
-        threadId: input.threadId,
-        runId: input.runId,
-        seq: thread.eventCount + 1,
-        type: input.type,
-        category: input.category,
-        visibility: input.visibility ?? "debug",
-        createdAt: nowIso(),
-        payload: input.payload,
-      };
-      assertArtifactReceiptEventBoundary(event, `Ledger event ${input.type}`);
-      applyThreadSummaryEvent(thread, event);
-      return event;
-    });
-    return events;
+    return appendRegisteredEventsToThread(thread, inputs, options);
   }
-
   private createRunRecord(
     input: CreateRunInput,
     lease?: {
@@ -3490,7 +3490,7 @@ export class LocalStore {
       id: createId("run"),
       threadId: input.threadId,
       agentId: input.agentId,
-      status: "running",
+      status: initialRunStatus(),
       ...(input.source ? { source: input.source } : {}),
       ...(workflowPlanId ? { workflowPlanId } : {}),
       ...(input.triggerId ? { triggerId: input.triggerId } : {}),

@@ -3,7 +3,7 @@ import type {
   AgentToolResult,
   AgentToolUpdateCallback,
 } from "@earendil-works/pi-agent-core";
-import type { JsonValue, RunEvent, RunRecord } from "@napier/contracts";
+import type { JsonObject, RunEvent, RunRecord } from "@napier/contracts";
 
 import { builtInToolEffect } from "./agent-tool-effects.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
@@ -240,7 +240,7 @@ export class ToolDeadlineManager {
     } as ToolEffectJournalEvidence;
     await this.append(
       "tool.effect.journaled",
-      evidence as unknown as JsonValue,
+      evidence as unknown as JsonObject,
     );
     return evidence;
   }
@@ -267,7 +267,10 @@ export class ToolDeadlineManager {
     });
   }
 
-  private async append(type: string, payload: JsonValue): Promise<void> {
+  private async append(
+    type: "tool.effect.journaled" | "tool.retry.started",
+    payload: JsonObject,
+  ): Promise<void> {
     const event = await this.context.store.appendEvent({
       threadId: this.context.run.threadId,
       runId: this.context.run.id,
@@ -314,7 +317,7 @@ export class ToolDeadlineManager {
           : "tool.cancellation.settled",
       category: "tool",
       visibility: "user",
-      payload: evidence as unknown as JsonValue,
+      payload: evidence as unknown as JsonObject,
     });
     await emit(this.context.onEvent, event);
     return evidence;

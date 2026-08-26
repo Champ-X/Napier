@@ -1,4 +1,5 @@
 import type {
+  JsonObject,
   JsonValue,
   RunEvent,
   WorkspaceProcessRollbackAttempt,
@@ -62,14 +63,14 @@ const RESULT_KEYS = [
 
 export function workspaceProcessRollbackAttemptPayload(
   attempt: WorkspaceProcessRollbackAttempt,
-): JsonValue {
-  return JSON.parse(JSON.stringify(attempt)) as JsonValue;
+): JsonObject {
+  return JSON.parse(JSON.stringify(attempt)) as JsonObject;
 }
 
 export function workspaceProcessRollbackResultPayload(
   result: WorkspaceProcessRollbackResult,
-): JsonValue {
-  return JSON.parse(JSON.stringify(result)) as JsonValue;
+): JsonObject {
+  return JSON.parse(JSON.stringify(result)) as JsonObject;
 }
 
 export function projectWorkspaceProcessRollbackHistory(

@@ -3,6 +3,7 @@ import type { RunEvent } from "@napier/contracts";
 import { nowIso, preserveRunLeaseOnStartup } from "./ids.js";
 import { interruptPlanRun } from "./plans.js";
 import { cancelPendingRunControlMessages } from "./run-lifecycle-cancellation.js";
+import { transitionRunStatus } from "./run-state-machine.js";
 import type {
   StoreRepositoryHost,
   StoreRepositoryState,
@@ -96,7 +97,7 @@ function interruptExpiredRuns(
     ) {
       continue;
     }
-    run.status = "interrupted";
+    transitionRunStatus(run, "interrupted");
     run.interruptedAt = timestamp;
     run.interruptionReason = INTERRUPTION_REASON;
     run.finishedAt = timestamp;

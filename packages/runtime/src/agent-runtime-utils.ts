@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 
 import type { AgentTool } from "@earendil-works/pi-agent-core";
-import type { JsonValue } from "@napier/contracts";
+import type { JsonObject, JsonValue } from "@napier/contracts";
 import { isModelContextOverflowMessage } from "./model-context-overflow-recovery.js";
 
 export class OperatorDecisionPendingError extends Error {
@@ -49,6 +49,8 @@ export function formatPlanToolGuidance(tools: readonly AgentTool[]): string {
   return lines.join("\n");
 }
 
+export function toJsonValue(value: object): JsonObject;
+export function toJsonValue(value: unknown): JsonValue;
 export function toJsonValue(value: unknown): JsonValue {
   if (value === undefined) return null;
   try {

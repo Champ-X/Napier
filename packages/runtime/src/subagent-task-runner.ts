@@ -4,6 +4,7 @@ import {
   emptyUsage,
   type RunEvent,
   type RunRecord,
+  type RegisteredRunEventTypeForCategory,
   type SubagentLimits,
   type SubagentTask,
 } from "@napier/contracts";
@@ -27,9 +28,7 @@ import {
 import { SubagentTaskObserver } from "./subagent-task-observer.js";
 import { settleSubagentTypedOutput } from "./subagent-typed-output-runtime.js";
 import { finishSubagentTypedOutput } from "./subagent-typed-output-settlement.js";
-import type {
-  SubagentWorktreeMutationManager,
-} from "./subagent-worktree-mutation.js";
+import type { SubagentWorktreeMutationManager } from "./subagent-worktree-mutation.js";
 import type { SubagentWorktreeSession } from "./subagent-worktree-files.js";
 import { createWorkspaceTools } from "./tools.js";
 
@@ -217,7 +216,9 @@ export class SubagentTaskRunner {
         finalText = settled.resultText;
         const terminal = await finishSubagentTypedOutput({
           store: this.options.store,
-          ...(this.options.worktrees ? { worktrees: this.options.worktrees } : {}),
+          ...(this.options.worktrees
+            ? { worktrees: this.options.worktrees }
+            : {}),
           task,
           resultText: finalText,
           output: settled.output,
@@ -247,7 +248,9 @@ export class SubagentTaskRunner {
         },
         emit: (type, currentTask, payload) =>
           this.emit(type, currentTask, payload),
-        ...(this.options.worktrees ? { worktrees: this.options.worktrees } : {}),
+        ...(this.options.worktrees
+          ? { worktrees: this.options.worktrees }
+          : {}),
         ...(worktree ? { worktree } : {}),
         ...(toolSignal ? { toolSignal } : {}),
       });
@@ -324,7 +327,7 @@ export class SubagentTaskRunner {
   }
 
   private async emit(
-    type: string,
+    type: RegisteredRunEventTypeForCategory<"subagent">,
     task: SubagentTask,
     payload: unknown,
   ): Promise<void> {

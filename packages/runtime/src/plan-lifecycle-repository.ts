@@ -17,7 +17,7 @@ import {
 import {
   verifyExecutionPlanBlueprintRecordReplayEventProjection
 } from "./execution-plan-blueprint-replay-verification.js";
-import { createId,nowIso } from "./ids.js";
+import { createId } from "./ids.js";
 import {
   createExecutionPlan,
   recoverCompletedPlanStep as recoverCompletedPlanStepProjection,
@@ -176,45 +176,43 @@ export class PlanLifecycleRepository {
         }
         this.host.state.plans.push(plan);
         const currentThread = this.host.mutableThread(threadId);
-        const event: RunEvent = {
-          id: createId("event"),
-          threadId,
-          runId: createId("runctl"),
-          seq: currentThread.eventCount + 1,
-          type: "plan.created",
-          category: "plan",
-          visibility: "user",
-          createdAt: nowIso(),
-          payload: {
-            planId: plan.id,
-            objective: plan.objective,
-            status: plan.status,
-            stepCount: plan.steps.length,
-            artifactCount: plan.artifacts.length,
-            criticalPathStepIds: plan.criticalPathStepIds,
-            readyStepIds: plan.readyStepIds,
-            blockedStepIds: plan.blockedStepIds,
-            activePhaseIndex: plan.activePhaseIndex,
-            parallelReadyStepIds: plan.parallelReadyStepIds,
-            phaseWaveCount: plan.phaseWaves.length,
-            phaseProjectionSha256: plan.phaseProjectionSha256,
-            blueprintRecordId: record.id,
-            blueprintSha256: record.blueprintSha256,
-            blueprintSourcePlanId: record.sourcePlanId,
-            blueprintSourcePlanRevision: record.sourcePlanRevision,
-            blueprintSourceArchiveSha256: record.sourcePlanArchiveSha256,
-            blueprintQualificationStatus: preview.qualification.status,
-            blueprintQualificationSha256: sha256(
-              JSON.stringify(preview.qualification),
-            ),
-            blueprintQualificationDiagnosticsSha256: sha256(
-              JSON.stringify(preview.qualification.diagnostics),
-            ),
-            blueprintPreviewSha256: preview.previewSha256,
+        const [event] = this.host.appendEventsToThread(currentThread, [
+          {
+            threadId,
+            runId: createId("runctl"),
+            type: "plan.created",
+            category: "plan",
+            visibility: "user",
+            payload: {
+              planId: plan.id,
+              objective: plan.objective,
+              status: plan.status,
+              stepCount: plan.steps.length,
+              artifactCount: plan.artifacts.length,
+              criticalPathStepIds: plan.criticalPathStepIds,
+              readyStepIds: plan.readyStepIds,
+              blockedStepIds: plan.blockedStepIds,
+              activePhaseIndex: plan.activePhaseIndex,
+              parallelReadyStepIds: plan.parallelReadyStepIds,
+              phaseWaveCount: plan.phaseWaves.length,
+              phaseProjectionSha256: plan.phaseProjectionSha256,
+              blueprintRecordId: record.id,
+              blueprintSha256: record.blueprintSha256,
+              blueprintSourcePlanId: record.sourcePlanId,
+              blueprintSourcePlanRevision: record.sourcePlanRevision,
+              blueprintSourceArchiveSha256: record.sourcePlanArchiveSha256,
+              blueprintQualificationStatus: preview.qualification.status,
+              blueprintQualificationSha256: sha256(
+                JSON.stringify(preview.qualification),
+              ),
+              blueprintQualificationDiagnosticsSha256: sha256(
+                JSON.stringify(preview.qualification.diagnostics),
+              ),
+              blueprintPreviewSha256: preview.previewSha256,
+            },
           },
-        };
-        currentThread.eventCount = event.seq;
-        currentThread.updatedAt = event.createdAt;
+        ]);
+        if (!event) throw new Error("Plan creation event was not created");
         await this.host.persistState(event);
         return {
           plan: structuredClone(plan),

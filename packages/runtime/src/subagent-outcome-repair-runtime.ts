@@ -6,7 +6,12 @@ import {
   type MutableModels,
   type Usage as PiUsage,
 } from "@earendil-works/pi-ai";
-import type { SubagentLimits, SubagentTask, Usage } from "@napier/contracts";
+import type {
+  RegisteredRunEventTypeForCategory,
+  SubagentLimits,
+  SubagentTask,
+  Usage,
+} from "@napier/contracts";
 
 import { sha256 } from "./ed25519.js";
 import type { LocalStore } from "./store.js";
@@ -35,7 +40,11 @@ export async function runSubagentOutcomeRepair(input: {
   diagnostic: string;
   usage: Usage;
   activateAgent(abort: () => void): void;
-  emit(type: string, task: SubagentTask, payload: unknown): Promise<void>;
+  emit(
+    type: RegisteredRunEventTypeForCategory<"subagent">,
+    task: SubagentTask,
+    payload: unknown,
+  ): Promise<void>;
 }): Promise<SubagentOutcomeRepairRuntimeResult> {
   const request = createSubagentOutcomeRepairRequest({
     taskId: input.task.id,

@@ -597,7 +597,7 @@ describe("thread replay bundles", () => {
       type: "message.user",
       category: "message",
       visibility: "user",
-      payload: { text: "Record portable progress." },
+      payload: { role: "user", text: "Record portable progress." },
     });
     const sourceMilestone = (
       await store.recordAgentMilestone({
@@ -1549,7 +1549,7 @@ describe("thread replay bundles", () => {
       prompt: "Check every claim against the ledger.",
       model: { provider: "napier", id: "demo" },
     });
-    await store.appendEvent({
+    await store.appendCompatibilityEvent({
       threadId: thread.id,
       runId: active.id,
       type: "fixture.references",
@@ -1568,8 +1568,8 @@ describe("thread replay bundles", () => {
           task.id,
         ],
       },
+      compatibility: { boundary: "test_fixture", reason: "Synthetic reference fixture" },
     });
-
     const bundle = await exportThreadReplayBundle(store, thread.id);
     expect(bundle.agentRevisions).toEqual([
       expect.objectContaining({
@@ -1692,7 +1692,7 @@ describe("thread replay bundles", () => {
       expect.objectContaining({
         type: "thread.imported",
         category: "lifecycle",
-        visibility: "debug",
+        visibility: "debug", schemaVersion: 1,
         seq: imported.thread.importProvenance!.localImportedThroughSeq,
         payload: {
           kind: "napier.thread-import-provenance",

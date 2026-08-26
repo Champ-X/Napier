@@ -1,5 +1,6 @@
 import type { Api, Model, MutableModels } from "@earendil-works/pi-ai";
 import type {
+  RegisteredRunEventTypeForCategory,
   SubagentLimits,
   SubagentOutcome,
   SubagentTask,
@@ -28,7 +29,11 @@ import type {
   SubagentWorktreePreview,
 } from "./subagent-worktree-mutation.js";
 
-type Emit = (type: string, task: SubagentTask, payload: unknown) => Promise<void>;
+type Emit = (
+  type: RegisteredRunEventTypeForCategory<"subagent">,
+  task: SubagentTask,
+  payload: unknown,
+) => Promise<void>;
 
 export async function settleSubagentOutcome(input: {
   store: LocalStore;
@@ -93,7 +98,8 @@ export async function settleSubagentOutcome(input: {
         ? "Subagent outcome repair cancelled"
         : undefined;
     if (interrupted || repair.error) {
-      const message = interrupted ?? repair.error ?? "Subagent outcome repair failed";
+      const message =
+        interrupted ?? repair.error ?? "Subagent outcome repair failed";
       await input.emit(
         "subagent.outcome.repair.outcome",
         task,
@@ -104,14 +110,27 @@ export async function settleSubagentOutcome(input: {
           diagnostic: message,
         }),
       );
-      await recordOutcomeRejection(input.emit, task, repair.resultText, message);
+      await recordOutcomeRejection(
+        input.emit,
+        task,
+        repair.resultText,
+        message,
+      );
       throw new Error(message);
     }
     finalText = repair.resultText;
     try {
-      outcome = await groundOutcome(input.store, task, finalText, input.worktree);
+      outcome = await groundOutcome(
+        input.store,
+        task,
+        finalText,
+        input.worktree,
+      );
     } catch (repairError) {
-      const message = errorMessage(repairError, "Unknown repaired outcome error");
+      const message = errorMessage(
+        repairError,
+        "Unknown repaired outcome error",
+      );
       await input.emit(
         "subagent.outcome.repair.outcome",
         task,
@@ -166,10 +185,16 @@ export async function settleSubagentOutcome(input: {
     evidenceSetSha256: outcome.evidenceSetSha256,
     evidenceCount: outcome.evidenceCount,
   });
-  await input.emit("subagent.completed", task, subagentTaskPayload(task, preview));
+  await input.emit(
+    "subagent.completed",
+    task,
+    subagentTaskPayload(task, preview),
+  );
   return {
     result: {
-      content: [{ type: "text", text: formatDelegationResult(task, result, preview) }],
+      content: [
+        { type: "text", text: formatDelegationResult(task, result, preview) },
+      ],
       details: subagentTaskDetails(task, preview),
     },
     ...(preview ? { preview } : {}),
@@ -210,4 +235,3 @@ async function recordOutcomeRejection(
 function errorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
-

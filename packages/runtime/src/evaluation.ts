@@ -8,7 +8,7 @@ import {
 import type {
   CreateRunEvaluationRequest,
   EvaluationRubricSnapshot,
-  JsonValue,
+  JsonObject,
   ModelContextEnvelopeReceipt,
   ModelRef,
   RunEvaluationRecord,
@@ -236,7 +236,7 @@ export class RunEvaluationService {
         type: MODEL_CONTEXT_ENVELOPE_EVENT,
         category: "model",
         visibility: "debug",
-        payload: structuredClone(envelope) as unknown as JsonValue,
+        payload: structuredClone(envelope) as unknown as JsonObject,
       });
     }
     let response: AssistantMessage;

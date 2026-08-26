@@ -1,5 +1,6 @@
 import type {
   ExecutionPlan,
+  JsonObject,
   JsonValue,
   RunInvocationSource,
   RunRecord,
@@ -16,7 +17,6 @@ import {
 import { registerPlanArtifactCandidates } from "./plan-artifact-candidates.js";
 import { partialRunPlanSteps } from "./plan-step-partial.js";
 import { hashEventStream } from "./run-replay.js";
-import { toJsonValue } from "./agent-runtime-utils.js";
 import { recordActiveSkillLifecycles } from "./skill-lifecycle-projection.js";
 import type { AppendEventInput, LocalStore } from "./store.js";
 import { recordRunFinalizationReserve } from "./run-finalization-reserve.js";
@@ -76,15 +76,17 @@ export async function settleRunFailure(input: {
         type: "run.recovery.failed",
         category: "lifecycle",
         visibility: "user",
-        payload: {
-          parentRunId: input.parentRunId,
-          status: failure.status,
-          message: failure.message,
-          mode: input.recovery?.mode ?? "manual",
-          ...(input.recovery?.attemptId
-            ? { attemptId: input.recovery.attemptId }
-            : {}),
-        },
+        payload: JSON.parse(
+          JSON.stringify({
+            parentRunId: input.parentRunId,
+            status: failure.status,
+            message: failure.message,
+            mode: input.recovery?.mode ?? "manual",
+            ...(input.recovery?.attemptId
+              ? { attemptId: input.recovery.attemptId }
+              : {}),
+          }),
+        ) as JsonObject,
       },
       input.onEvent,
     );
@@ -110,21 +112,31 @@ async function recordBudgetBoundary(
     });
     return;
   }
-  const boundary = input.failure.budgetExhaustion
+  const boundary: AppendEventInput | undefined = input.failure.budgetExhaustion
     ? {
+        threadId: input.run.threadId,
+        runId: input.run.id,
         type: "run.budget.exhausted",
-        payload: {
-          status: "exhausted",
-          reason: input.failure.budgetExhaustion.reason,
-          limit: input.failure.budgetExhaustion.limit,
-          observed: input.failure.budgetExhaustion.observed,
-          limits: input.limits,
-          message: input.failure.message,
-        },
+        category: "lifecycle",
+        visibility: "user",
+        payload: JSON.parse(
+          JSON.stringify({
+            status: "exhausted",
+            reason: input.failure.budgetExhaustion.reason,
+            limit: input.failure.budgetExhaustion.limit,
+            observed: input.failure.budgetExhaustion.observed,
+            limits: input.limits,
+            message: input.failure.message,
+          }),
+        ) as JsonObject,
       }
     : input.failure.modelWatchdog
       ? {
+          threadId: input.run.threadId,
+          runId: input.run.id,
           type: "model.stream.watchdog_triggered",
+          category: "lifecycle",
+          visibility: "user",
           payload: {
             kind: "napier.model-stream-watchdog",
             schemaVersion: 1,
@@ -134,7 +146,11 @@ async function recordBudgetBoundary(
         }
       : input.failure.noProgress
         ? {
+            threadId: input.run.threadId,
+            runId: input.run.id,
             type: "run.no_progress",
+            category: "lifecycle",
+            visibility: "user",
             payload: {
               kind: "napier.run-no-progress",
               schemaVersion: 1,
@@ -144,7 +160,11 @@ async function recordBudgetBoundary(
           }
         : input.failure.thinkingLoop
           ? {
+              threadId: input.run.threadId,
+              runId: input.run.id,
               type: "model.thinking_loop.finalized",
+              category: "lifecycle",
+              visibility: "user",
               payload: {
                 kind: "napier.model-thinking-loop-finalization",
                 schemaVersion: 1,
@@ -154,18 +174,7 @@ async function recordBudgetBoundary(
             }
           : undefined;
   if (!boundary) return;
-  await record(
-    input.store,
-    {
-      threadId: input.run.threadId,
-      runId: input.run.id,
-      type: boundary.type,
-      category: "lifecycle",
-      visibility: "user",
-      payload: toJsonValue(boundary.payload),
-    },
-    input.onEvent,
-  );
+  await record(input.store, boundary, input.onEvent);
 }
 
 async function recordBudgetSettlement(

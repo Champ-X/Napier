@@ -852,7 +852,7 @@ describe("execution plan archives", () => {
         threadId: targetThread.id,
         type: "plan.created",
         category: "plan",
-        visibility: "user",
+        visibility: "user", schemaVersion: 1,
         seq: 1,
         payload: expect.objectContaining({
           planId: plan.id,
@@ -1677,16 +1677,14 @@ describe("execution plan archives", () => {
         observedCompletedCount: 1,
       }),
     );
-    await store.appendEvent({
+    await store.appendCompatibilityEvent({
       threadId: sourceThread.id,
       runId: "runctl_library",
       type: "plan.audit",
       category: "plan",
       visibility: "debug",
-      payload: {
-        planId: sourcePlan.id,
-        blueprintSha256: blueprint.contentSha256,
-      },
+      payload: { planId: sourcePlan.id, blueprintSha256: blueprint.contentSha256 },
+      compatibility: { boundary: "test_fixture", reason: "Synthetic plan audit" },
     });
     await expect(
       store.qualifyExecutionPlanBlueprintRecord(first.record.id),

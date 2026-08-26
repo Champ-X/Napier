@@ -1,9 +1,6 @@
-export type JsonPrimitive = boolean | number | string | null;
+import type { JsonPrimitive } from "./run-event-v1.js";
 
-export type JsonValue =
-  | JsonPrimitive
-  | JsonValue[]
-  | { [key: string]: JsonValue };
+export * from "./run-event-v1.js";
 
 export type RunStatus =
   | "queued"
@@ -26,43 +23,12 @@ export type RunInvocationSource =
   | "model_experiment"
   | "tool_experiment";
 
-export type EventCategory =
-  | "lifecycle"
-  | "message"
-  | "model"
-  | "tool"
-  | "artifact"
-  | "goal"
-  | "plan"
-  | "memory"
-  | "subagent"
-  | "extension"
-  | "credential"
-  | "evaluation"
-  | "automation"
-  | "channel"
-  | "system";
-
-export type EventVisibility = "user" | "debug" | "hidden";
-
 export interface Usage extends Record<string, JsonPrimitive> {
   inputTokens: number;
   outputTokens: number;
   cacheReadTokens: number;
   cacheWriteTokens: number;
   costUsd: number;
-}
-
-export interface RunEvent<TPayload extends JsonValue = JsonValue> {
-  id: string;
-  threadId: string;
-  runId: string;
-  seq: number;
-  type: string;
-  category: EventCategory;
-  visibility: EventVisibility;
-  createdAt: string;
-  payload: TPayload;
 }
 
 export type ModelAdvisorRuleId =

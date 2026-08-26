@@ -790,12 +790,16 @@ describe("transactional LocalStore", () => {
     `);
 
     await expect(
-      store.appendEvent({
+      store.appendCompatibilityEvent({
         threadId: thread.id,
         runId: run.id,
         type: "test.atomic",
         category: "system",
         payload: { attempt: 1 },
+        compatibility: {
+          boundary: "test_fixture",
+          reason: "Exercise atomic rollback with a synthetic event",
+        },
       }),
     ).rejects.toThrow("injected state failure");
 
@@ -808,12 +812,16 @@ describe("transactional LocalStore", () => {
     database.exec("DROP TRIGGER abort_workspace_projection");
     database.close();
     await expect(
-      store.appendEvent({
+      store.appendCompatibilityEvent({
         threadId: thread.id,
         runId: run.id,
         type: "test.atomic",
         category: "system",
         payload: { attempt: 2 },
+        compatibility: {
+          boundary: "test_fixture",
+          reason: "Exercise atomic recovery with a synthetic event",
+        },
       }),
     ).resolves.toEqual(expect.objectContaining({ seq: 1 }));
   });
@@ -867,12 +875,16 @@ describe("transactional LocalStore", () => {
 
     const events = await Promise.all(
       Array.from({ length: 20 }, (_, index) =>
-        (index % 2 === 0 ? first : second).appendEvent({
+        (index % 2 === 0 ? first : second).appendCompatibilityEvent({
           threadId: thread.id,
           runId: run.id,
           type: "test.concurrent",
           category: "system",
           payload: { index },
+          compatibility: {
+            boundary: "test_fixture",
+            reason: "Exercise concurrent writers with synthetic events",
+          },
         }),
       ),
     );

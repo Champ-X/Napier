@@ -1,4 +1,5 @@
 import type { RunRecord, RunStatus, ThreadStatus } from "@napier/contracts";
+import { transitionRunStatus } from "./run-state-machine.js";
 
 type RunOutcome = NonNullable<RunRecord["outcome"]>;
 
@@ -51,7 +52,7 @@ export function applyOutcome(
   outcome: RunOutcome | undefined,
 ): void {
   assertOutcome(status, outcome);
-  run.status = status;
+  transitionRunStatus(run, status);
   if (outcome) run.outcome = outcome;
 }
 

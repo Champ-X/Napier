@@ -1,4 +1,8 @@
-import type { JsonValue, SubagentTask } from "@napier/contracts";
+import type {
+  JsonValue,
+  RegisteredRunEventTypeForCategory,
+  SubagentTask,
+} from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { LocalStore } from "./store.js";
@@ -16,7 +20,11 @@ import type {
 } from "./subagent-worktree-mutation.js";
 import type { SubagentWorktreeSession } from "./subagent-worktree-files.js";
 
-type Emit = (type: string, task: SubagentTask, payload: unknown) => Promise<void>;
+type Emit = (
+  type: RegisteredRunEventTypeForCategory<"subagent">,
+  task: SubagentTask,
+  payload: unknown,
+) => Promise<void>;
 
 export async function finishSubagentTypedOutput(input: {
   store: LocalStore;
@@ -68,7 +76,10 @@ export async function finishSubagentTypedOutput(input: {
   return {
     result: {
       content: [
-        { type: "text", text: formatDelegationResult(task, resultText, preview) },
+        {
+          type: "text",
+          text: formatDelegationResult(task, resultText, preview),
+        },
       ],
       details: subagentTaskDetails(task, preview),
     },

@@ -7,7 +7,7 @@ import type { WorkflowSimulatedNode } from "./workflow-context.js";
 import { workflowSchemaSha256 } from "./workflow-schemas.js";
 
 export const WORKFLOW_NODE_SIMULATION_REQUESTED_EVENT =
-  "workflow.node.simulation.requested";
+  "workflow.node.simulation.requested" as const;
 export const WORKFLOW_NODE_SIMULATED_EVENT = "workflow.node.simulated";
 
 export function workflowSimulationRequestPayload(input: {

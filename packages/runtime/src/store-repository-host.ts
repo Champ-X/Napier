@@ -55,7 +55,7 @@ import type {
   PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   PersistedReceiptTrustAnchorDirectorySubscription,
 } from "./receipt-trust-directory-subscriptions.js";
-import type { AppendEventInput } from "./run-event-admission.js";
+import type { AppendEventInput } from "./run-event-registry.js";
 
 export interface StorePersistedRunRecord extends RunRecord {
   leaseTokenSha256?: string;
@@ -166,6 +166,7 @@ export interface StoreRepositoryHost {
   appendEventsToThread(
     thread: ThreadRecord,
     inputs: AppendEventInput[],
+    options?: { createdAt?: string },
   ): RunEvent[];
   appendEvent(input: AppendEventInput): Promise<RunEvent>;
   getDetail(

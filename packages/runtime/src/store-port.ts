@@ -5,15 +5,12 @@ import type {
   EvaluationCasebookQualificationExecution,
   EvaluationSuite,
   EvaluationSuiteExecution,
-  EventCategory,
-  EventVisibility,
   ExecutionPlan,
   ExecutionPlanBlueprintRecord,
   InboundChannel,
   InboundDelivery,
   InboundMessageRequest,
   InboundReceipt,
-  JsonValue,
   ModelRef,
   RunEvaluationRecord,
   RunEvent,
@@ -23,15 +20,9 @@ import type {
   ThreadDetail,
   ThreadRecord,
 } from "@napier/contracts";
+import type { AppendEventInput } from "./run-event-registry.js";
 
-export interface StoreAppendEventInput {
-  threadId: string;
-  runId: string;
-  type: string;
-  category: EventCategory;
-  visibility?: EventVisibility;
-  payload: JsonValue;
-}
+export type StoreAppendEventInput = AppendEventInput;
 
 export interface StoreCreateRunInput {
   threadId: string;

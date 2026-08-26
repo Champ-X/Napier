@@ -15,6 +15,7 @@ import {
 import { recommendedCapabilityUpdate } from "./default-agent-capability-contract.js";
 import { createId, nowIso } from "./ids.js";
 import { createRunConfigurationFingerprint } from "./run-config.js";
+import { appendRegisteredEventsToThread } from "./run-event-writer.js";
 
 export interface WorkspaceSeed {
   agent: AgentProfile;
@@ -46,55 +47,58 @@ export function createWorkspaceSeed(): WorkspaceSeed {
     createdAt: timestamp,
     updatedAt: timestamp,
   };
-  const events: RunEvent[] = [
-    {
-      id: createId("event"),
-      threadId,
-      runId,
-      seq: 1,
-      type: "run.started",
-      category: "lifecycle",
-      visibility: "debug",
-      createdAt: timestamp,
-      payload: { source: "onboarding" },
-    },
-    {
-      id: createId("event"),
-      threadId,
-      runId,
-      seq: 2,
-      type: "message.assistant",
-      category: "message",
-      visibility: "user",
-      createdAt: nowIso(),
-      payload: { role: "assistant", text: assistantText, model: "napier/demo" },
-    },
-    {
-      id: createId("event"),
-      threadId,
-      runId,
-      seq: 3,
-      type: "system.note",
-      category: "system",
-      visibility: "debug",
-      createdAt: nowIso(),
-      payload: {
-        text: "Demo mode is active. Configure a provider key to switch this agent to a live model.",
-      },
-    },
-  ];
-  const finishedAt = events.at(-1)!.createdAt;
   const thread: ThreadRecord = {
     id: threadId,
     title: "The first ledger",
     agentId: agent.id,
     status: "idle",
     createdAt: timestamp,
-    updatedAt: finishedAt,
-    lastMessage: assistantText,
-    eventCount: events.length,
+    updatedAt: timestamp,
+    lastMessage: "",
+    eventCount: 0,
     runIds: [runId],
   };
+  const events: RunEvent[] = [
+    ...appendRegisteredEventsToThread(
+      thread,
+      [
+        {
+          threadId,
+          runId,
+          type: "run.started",
+          category: "lifecycle",
+          visibility: "debug",
+          payload: { source: "onboarding" },
+        },
+      ],
+      { createdAt: timestamp },
+    ),
+    ...appendRegisteredEventsToThread(thread, [
+      {
+        threadId,
+        runId,
+        type: "message.assistant",
+        category: "message",
+        visibility: "user",
+        payload: {
+          role: "assistant",
+          text: assistantText,
+          model: "napier/demo",
+        },
+      },
+      {
+        threadId,
+        runId,
+        type: "system.note",
+        category: "system",
+        visibility: "debug",
+        payload: {
+          text: "Demo mode is active. Configure a provider key to switch this agent to a live model.",
+        },
+      },
+    ]),
+  ];
+  const finishedAt = events.at(-1)!.createdAt;
   const run: RunRecord = {
     id: runId,
     threadId,

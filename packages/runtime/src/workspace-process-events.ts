@@ -42,6 +42,10 @@ export const WORKSPACE_PROCESS_RESIZED_EVENT = "workspace.process.resized";
 export const WORKSPACE_PROCESS_SETTLED_EVENT = "workspace.process.settled";
 export const WORKSPACE_PROCESS_INTERRUPTED_EVENT =
   "workspace.process.interrupted";
+export type WorkspaceProcessSessionEventType =
+  | typeof WORKSPACE_PROCESS_INTERRUPTED_EVENT
+  | typeof WORKSPACE_PROCESS_SETTLED_EVENT
+  | typeof WORKSPACE_PROCESS_STARTED_EVENT;
 
 export function projectWorkspaceProcessSessions(
   events: RunEvent[],

@@ -1,4 +1,4 @@
-import type { JsonValue } from "@napier/contracts";
+import type { JsonObject } from "@napier/contracts";
 import type { BrowserSessionPauseState } from "@napier/contracts/browser-session-control";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
@@ -229,7 +229,10 @@ export class BrowserSessionPauseManager {
 
   private async append(
     state: BrowserSessionPauseState,
-    type: string,
+    type:
+      | "browser.session_pause.cancelled"
+      | "browser.session_pause.requested"
+      | "browser.session_pause.resumed",
   ): Promise<void> {
     await this.store.appendEvent({
       threadId: state.threadId,
@@ -237,7 +240,7 @@ export class BrowserSessionPauseManager {
       type,
       category: "tool",
       visibility: "user",
-      payload: JSON.parse(JSON.stringify(state)) as JsonValue,
+      payload: JSON.parse(JSON.stringify(state)) as JsonObject,
     });
   }
 }

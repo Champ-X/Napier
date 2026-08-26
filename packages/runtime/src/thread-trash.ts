@@ -44,7 +44,7 @@ export function threadTrashEvent(input: {
   | {
       threadId: string;
       runId: string;
-      type: string;
+      type: "thread.trashed" | "thread.restored";
       category: "lifecycle";
       visibility: "user";
       payload: {};

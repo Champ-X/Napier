@@ -189,12 +189,16 @@ describe("local Agent Runtime bootstrap", () => {
       title: "Shutdown cleanup",
       agentId: services.store.listAgents()[0]!.id,
     });
-    await services.store.appendEvent({
+    await services.store.appendCompatibilityEvent({
       threadId: thread.id,
       runId: "runctl_shutdown",
       type: "shutdown.pending",
       category: "system",
       payload: {},
+      compatibility: {
+        boundary: "test_fixture",
+        reason: "Synthetic shutdown fixture",
+      },
     });
     const statePath = path.join(root, "state", "workspace.json");
     expect(

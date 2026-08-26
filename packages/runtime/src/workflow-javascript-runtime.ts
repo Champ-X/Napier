@@ -105,7 +105,7 @@ export class ExecutionPlanWorkflowJavascriptRuntime {
     signal: AbortSignal,
   ): Promise<{
     output: JsonValue;
-    completionEventType: string;
+    completionEventType: "workflow.javascript.completed";
     completionPayload: Record<string, JsonValue>;
   }> {
     if (!this.kernels) {

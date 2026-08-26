@@ -1,4 +1,5 @@
 import type {
+  JsonObject,
   JsonValue,
   WorkspaceProcessInputReceipt,
   WorkspaceProcessSession,
@@ -50,8 +51,8 @@ export function createWorkspaceProcessSession(
 
 export function workspaceProcessSessionPayload(
   session: WorkspaceProcessSession,
-): JsonValue {
-  return JSON.parse(JSON.stringify(session)) as JsonValue;
+): JsonObject {
+  return JSON.parse(JSON.stringify(session)) as JsonObject;
 }
 
 export function workspaceProcessStableSessionInput(
@@ -100,8 +101,8 @@ export function createWorkspaceProcessInputReceipt(
 
 export function workspaceProcessInputReceiptPayload(
   receipt: WorkspaceProcessInputReceipt,
-): JsonValue {
-  return JSON.parse(JSON.stringify(receipt)) as JsonValue;
+): JsonObject {
+  return JSON.parse(JSON.stringify(receipt)) as JsonObject;
 }
 
 export function parseWorkspaceProcessInputReceipt(

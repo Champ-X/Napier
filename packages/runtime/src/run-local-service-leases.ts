@@ -1,5 +1,4 @@
 import type {
-  JsonValue,
   RunEvent,
   WorkspaceProcessLocalService,
   WorkspaceProcessSession,
@@ -7,17 +6,9 @@ import type {
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { EventSink } from "./event-sink.js";
+import type { RunEventStorePort } from "./run-event-store-port.js";
 
-interface RunLocalServiceLeaseStore {
-  appendEvent(input: {
-    threadId: string;
-    runId: string;
-    type: string;
-    category: "lifecycle";
-    visibility: "debug";
-    payload: JsonValue;
-  }): Promise<RunEvent>;
-}
+type RunLocalServiceLeaseStore = RunEventStorePort;
 
 export type LocalServiceLeaseRevocationReason =
   | "process_settled"
@@ -162,7 +153,9 @@ export class RunLocalServiceLeaseRegistry {
   private async record(
     threadId: string,
     runId: string,
-    type: string,
+    type:
+      | "workspace.process.local_service_lease.granted"
+      | "workspace.process.local_service_lease.revoked",
     payload: Record<string, string | number>,
   ): Promise<void> {
     const contentSha256 = sha256(canonicalJson(payload));

@@ -67,7 +67,9 @@ export async function appendPlanStepEvent(
   });
 }
 
-function stepEventSuffix(action: TransitionPlanStepRequest["action"]): string {
+function stepEventSuffix(
+  action: TransitionPlanStepRequest["action"],
+): "blocked" | "completed" | "reopened" | "skipped" | "started" {
   if (action === "start") return "started";
   if (action === "complete") return "completed";
   if (action === "block") return "blocked";

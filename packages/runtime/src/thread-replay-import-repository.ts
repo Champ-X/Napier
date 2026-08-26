@@ -1,6 +1,7 @@
 import {
   type AutomaticRecoveryAssessment,
   type AutomaticRecoveryAttempt,
+  type JsonObject,
   type JsonValue,
   type RunEvent,
   type SubagentTask,
@@ -127,7 +128,7 @@ function rebindImportedSubagentEventPayload(
 
 function threadImportProvenanceEventPayload(
   provenance: ThreadImportProvenance,
-): JsonValue {
+): JsonObject {
   return {
     kind: "napier.thread-import-provenance",
     sourceThreadId: provenance.sourceThreadId,
@@ -250,6 +251,9 @@ export class ThreadReplayImportRepository {
           visibility: source.visibility,
           createdAt: source.createdAt,
           payload,
+          ...(source.schemaVersion !== undefined
+            ? { schemaVersion: source.schemaVersion }
+            : {}),
         };
       });
       const mappedAssessmentSha256 = new Map<string, string>();
@@ -405,17 +409,6 @@ export class ThreadReplayImportRepository {
           bundleVerification.embeddedModelContextEnvelopeCount,
         importedAt,
       };
-      events.push({
-        id: createId("event"),
-        threadId,
-        runId: createId("runctl"),
-        seq: localImportedThroughSeq,
-        type: THREAD_IMPORTED_EVENT,
-        category: "lifecycle",
-        visibility: "debug",
-        createdAt: importedAt,
-        payload: threadImportProvenanceEventPayload(importProvenance),
-      });
       const thread: ThreadRecord = {
         id: threadId,
         title: normalizeImportedThreadTitle(
@@ -431,6 +424,22 @@ export class ThreadReplayImportRepository {
         runIds: bundle.thread.runIds.map((runId) => runIds.get(runId)!),
         importProvenance,
       };
+      events.push(
+        ...this.host.appendEventsToThread(
+          thread,
+          [
+            {
+              threadId,
+              runId: createId("runctl"),
+              type: THREAD_IMPORTED_EVENT,
+              category: "lifecycle",
+              visibility: "debug",
+              payload: threadImportProvenanceEventPayload(importProvenance),
+            },
+          ],
+          { createdAt: importedAt },
+        ),
+      );
       this.host.state.agents.push(agent);
       this.host.state.agentRevisions.push(...agentRevisions);
       this.host.state.threads.push(thread);

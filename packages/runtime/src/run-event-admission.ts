@@ -1,24 +1,15 @@
-import type {
-  EventCategory,
-  EventVisibility,
-  JsonValue,
-  RunRecord,
-} from "@napier/contracts";
+import type { RunStatus } from "@napier/contracts";
+import type { ResolvedRunEventInput } from "./run-event-registry.js";
 
-export interface AppendEventInput {
+interface RunEventAdmissionRun {
   threadId: string;
-  runId: string;
-  type: string;
-  category: EventCategory;
-  visibility?: EventVisibility;
-  payload: JsonValue;
-  admission?: "run_active";
+  status: RunStatus;
 }
 
 export class RunEventAdmissionError extends Error {
-  readonly status: RunRecord["status"] | "missing";
+  readonly status: RunStatus | "missing";
 
-  constructor(status: RunRecord["status"] | "missing") {
+  constructor(status: RunStatus | "missing") {
     super("Run event admission rejected because the Run is not active");
     this.name = "RunEventAdmissionError";
     this.status = status;
@@ -26,8 +17,8 @@ export class RunEventAdmissionError extends Error {
 }
 
 export function assertRunEventAdmission(
-  input: AppendEventInput,
-  run: RunRecord | undefined,
+  input: ResolvedRunEventInput,
+  run: RunEventAdmissionRun | undefined,
 ): void {
   if (input.admission !== "run_active") return;
   if (

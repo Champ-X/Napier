@@ -1,4 +1,4 @@
-import type { JsonValue, RunEvent } from "@napier/contracts";
+import type { JsonObject, RunEvent } from "@napier/contracts";
 
 import type { EventSink } from "./event-sink.js";
 import { sha256 } from "./ed25519.js";
@@ -124,7 +124,7 @@ function policyFor(type: ModelDeltaEventType): DeltaPolicy {
   return type === "model.thinking.delta" ? THINKING_POLICY : TEXT_POLICY;
 }
 
-function deltaPayload(pending: PendingDelta, delta: string): JsonValue {
+function deltaPayload(pending: PendingDelta, delta: string): JsonObject {
   const shared = {
     chunkCount: pending.chunkCount,
     deltaBytes: pending.bytes,

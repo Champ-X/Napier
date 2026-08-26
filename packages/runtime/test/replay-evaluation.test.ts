@@ -462,7 +462,7 @@ describe("run replay", () => {
       threadId: thread.id,
       runId: run.id,
       type: "model.advisor.independent.reviewed",
-      category: "model",
+      category: "system",
       visibility: "debug",
       payload: result.review,
     });
@@ -689,7 +689,7 @@ describe("run replay", () => {
       threadId: thread.id,
       runId: run.id,
       type: "model.advisor.independent.reviewed",
-      category: "model",
+      category: "system",
       visibility: "debug",
       payload: result.review,
     });
@@ -846,15 +846,15 @@ describe("run replay", () => {
     const store = await createStore();
     const { threadId, left, right } = await createComparedRuns(store);
 
-    await store.appendEvent({
+    await store.appendCompatibilityEvent({
       threadId,
       runId: right.id,
       type: "alpha.audit",
       category: "system",
       visibility: "debug",
       payload: { summary: "TOP_SECRET_ALPHA" },
+      compatibility: { boundary: "test_fixture", reason: "Synthetic trace event" },
     });
-
     const comparison = await compareRuns(store, threadId, left.id, right.id);
 
     expect(comparison.traceSummaryBoundaryDelta).toEqual({
@@ -894,7 +894,7 @@ describe("run replay", () => {
       threadId,
       runId: right.id,
       type: "model.advisor.independent.reviewed",
-      category: "model",
+      category: "system",
       visibility: "debug",
       payload: {
         verdict: "accept",

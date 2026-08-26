@@ -37,6 +37,7 @@ import {
   workspaceProcessInputReceiptPayload,
   workspaceProcessSessionPayload,
   workspaceProcessStableSessionInput as stableSessionInput,
+  type WorkspaceProcessSessionEventType,
 } from "./workspace-process-events.js";
 import {
   type ResizeWorkspaceProcessRequest,
@@ -768,10 +769,7 @@ export class WorkspaceProcessManager {
     this.notifyChange(entry);
   }
 
-  private async appendSession(
-    session: WorkspaceProcessSession,
-    type: string,
-  ): Promise<void> {
+  private async appendSession(session: WorkspaceProcessSession, type: WorkspaceProcessSessionEventType): Promise<void> {
     await this.appendProjection(session, {
       threadId: session.threadId,
       runId: session.runId,

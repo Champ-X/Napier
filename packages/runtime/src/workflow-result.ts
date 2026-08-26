@@ -139,7 +139,12 @@ export async function finishExecutionPlanWorkflow(
 
 function workflowTerminalEventType(
   status: ExecutionPlanWorkflowResult["status"],
-): string {
+):
+  | "workflow.blocked"
+  | "workflow.cancelled"
+  | "workflow.completed"
+  | "workflow.paused"
+  | "workflow.waiting" {
   if (status === "completed") return WORKFLOW_COMPLETED_EVENT;
   if (status === "waiting") return WORKFLOW_WAITING_EVENT;
   if (status === "paused") return WORKFLOW_PAUSED_EVENT;

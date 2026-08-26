@@ -315,7 +315,12 @@ async function append(
     run: Pick<RunRecord, "id" | "threadId">;
     onEvent?: EventSink;
   },
-  type: string,
+  type:
+    | "code_bridge.authorized"
+    | "tool.blocked"
+    | "tool.completed"
+    | "tool.failed"
+    | "tool.started",
   toolCall: { id: string; name: string },
   payload: Record<string, JsonValue>,
 ): Promise<void> {

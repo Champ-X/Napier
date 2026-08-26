@@ -5,7 +5,9 @@ import type {
   InboundDelivery,
   InboundMessageRequest,
   InboundReceipt,
+  JsonObject,
   JsonValue,
+  RegisteredRunEventTypeForCategory,
 } from "@napier/contracts";
 
 import type { AgentExecutionPort } from "./agent-execution.js";
@@ -315,7 +317,7 @@ export class ChannelService<
 
   private async record(
     deliveryId: string,
-    type: string,
+    type: RegisteredRunEventTypeForCategory<"channel">,
     payload: Record<string, JsonValue>,
     runId?: string,
   ): Promise<void> {
@@ -324,7 +326,7 @@ export class ChannelService<
       .find((candidate) => candidate.id === deliveryId);
     if (!delivery) return;
     const channel = this.store.getInboundChannel(delivery.channelId);
-    const deliveryEvidence: Record<string, JsonValue> = {
+    const deliveryEvidence: JsonObject = {
       ...(delivery.bodySha256 ? { bodySha256: delivery.bodySha256 } : {}),
       ...(delivery.adapterCatalogSha256
         ? { adapterCatalogSha256: delivery.adapterCatalogSha256 }

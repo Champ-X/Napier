@@ -3,6 +3,7 @@ import type {
   AutomaticRecoveryAttempt,
   AutomaticRecoveryClaim,
   JsonValue,
+  RegisteredRunEventTypeForCategory,
   RunEvent,
 } from "@napier/contracts";
 
@@ -293,7 +294,7 @@ export class RecoveryService {
 
   private async record(
     threadId: string,
-    type: string,
+    type: RegisteredRunEventTypeForCategory<"automation">,
     payload: Record<string, JsonValue>,
   ): Promise<void> {
     await this.store.appendEvent({
@@ -307,7 +308,15 @@ export class RecoveryService {
   }
 }
 
-function attemptEventType(status: AutomaticRecoveryAttempt["status"]): string {
+function attemptEventType(
+  status: AutomaticRecoveryAttempt["status"],
+):
+  | "run.recovery.auto.abandoned"
+  | "run.recovery.auto.claimed"
+  | "run.recovery.auto.completed"
+  | "run.recovery.auto.failed"
+  | "run.recovery.auto.interrupted"
+  | "run.recovery.auto.started" {
   if (status === "claimed") return "run.recovery.auto.claimed";
   if (status === "running") return "run.recovery.auto.started";
   if (status === "completed") return "run.recovery.auto.completed";

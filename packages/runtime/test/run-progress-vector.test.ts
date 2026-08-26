@@ -705,12 +705,13 @@ function event(
   type: string,
   payload: Parameters<LocalStore["appendEvent"]>[0]["payload"],
 ) {
+  const toolEvent = type.startsWith("tool.");
   return store.appendEvent({
     threadId: run.threadId,
     runId: run.id,
     type,
-    category: "lifecycle",
-    visibility: "debug",
+    category: toolEvent ? "tool" : "lifecycle",
+    visibility: toolEvent ? "user" : "debug",
     payload,
   });
 }

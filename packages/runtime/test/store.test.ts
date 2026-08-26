@@ -63,19 +63,16 @@ describe("LocalStore", () => {
       title: "Persistence observability",
       agentId: agent.id,
     });
-    const run = await store.createRun({
-      threadId: thread.id,
-      agentId: agent.id,
-    });
+    const run = await store.createRun({ threadId: thread.id, agentId: agent.id });
     const before = store.getPersistenceMetrics();
-
-    await store.appendEvent({
+    await store.appendCompatibilityEvent({
       threadId: thread.id,
       runId: run.id,
       type: "benchmark.observed",
       category: "lifecycle",
       visibility: "debug",
       payload: { marker: "must-not-appear-in-persistence-metrics" },
+      compatibility: { boundary: "test_fixture", reason: "Synthetic metrics fixture" },
     });
 
     const after = store.getPersistenceMetrics();
@@ -599,12 +596,13 @@ describe("LocalStore", () => {
     });
     const events = await Promise.all(
       Array.from({ length: 8 }, (_, index) =>
-        store.appendEvent({
+        store.appendCompatibilityEvent({
           threadId: thread.id,
           runId: run.id,
           type: "test.event",
           category: "system",
           payload: { index },
+          compatibility: { boundary: "test_fixture", reason: "Synthetic sequence fixture" },
         }),
       ),
     );

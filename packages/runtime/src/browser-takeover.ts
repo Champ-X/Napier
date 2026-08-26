@@ -1,4 +1,4 @@
-import type { JsonValue } from "@napier/contracts";
+import type { JsonObject } from "@napier/contracts";
 import {
   type BrowserTakeoverActionReceipt,
   type BrowserTakeoverSnapshot,
@@ -273,7 +273,7 @@ export class BrowserTakeoverService {
       type: `browser.takeover.${receipt.status}`,
       category: "tool",
       visibility: "user",
-      payload: JSON.parse(JSON.stringify(receipt)) as JsonValue,
+      payload: JSON.parse(JSON.stringify(receipt)) as JsonObject,
     });
   }
 }

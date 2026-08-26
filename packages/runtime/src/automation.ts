@@ -203,7 +203,12 @@ export class AutomationService {
 
   private async recordScheduleEvent(
     schedule: AutomationSchedule,
-    type: string,
+    type:
+      | "schedule.claimed"
+      | "schedule.completed"
+      | "schedule.deduplicated"
+      | "schedule.failed"
+      | "schedule.skipped",
     payload: Record<string, string>,
     runId?: string,
   ): Promise<void> {

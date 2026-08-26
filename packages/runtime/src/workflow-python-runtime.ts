@@ -102,7 +102,7 @@ export class ExecutionPlanWorkflowPythonRuntime {
     signal: AbortSignal,
   ): Promise<{
     output: JsonValue;
-    completionEventType: string;
+    completionEventType: "workflow.python.completed";
     completionPayload: Record<string, JsonValue>;
   }> {
     if (!this.kernels) {

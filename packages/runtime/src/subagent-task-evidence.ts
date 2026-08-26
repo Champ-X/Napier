@@ -1,6 +1,7 @@
 import type { AgentEvent } from "@earendil-works/pi-agent-core";
 import type { Usage as PiUsage } from "@earendil-works/pi-ai";
 import type {
+  JsonObject,
   JsonValue,
   SubagentRole,
   SubagentTask,
@@ -336,10 +337,14 @@ function record(value: unknown): Record<string, unknown> | undefined {
     : undefined;
 }
 
-export function subagentJsonValue(value: unknown): JsonValue {
+export function subagentJsonValue(value: unknown): JsonObject {
   try {
-    return JSON.parse(JSON.stringify(value)) as JsonValue;
+    const parsed = JSON.parse(JSON.stringify(value)) as JsonValue;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("Subagent event payload must be an object");
+    }
+    return parsed;
   } catch {
-    return String(value);
+    return { serializationError: String(value) };
   }
 }

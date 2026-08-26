@@ -75,12 +75,15 @@ export function createAgentToolPreflight(input: {
         (content) => content.type === "toolCall",
       );
       if (
-        toolCalls.some((candidate) => candidate.name === "request_operator_decision") &&
+        toolCalls.some(
+          (candidate) => candidate.name === "request_operator_decision",
+        ) &&
         toolCalls.length !== 1
       ) {
         return {
           block: true,
-          reason: "request_operator_decision must be the only tool call in its assistant turn",
+          reason:
+            "request_operator_decision must be the only tool call in its assistant turn",
         };
       }
       const exhaustion =
@@ -126,8 +129,11 @@ export function createAgentToolPreflight(input: {
 }
 
 async function append(
-  input: Pick<Parameters<typeof createAgentToolPreflight>[0], "store" | "policy" | "onEvent">,
-  type: string,
+  input: Pick<
+    Parameters<typeof createAgentToolPreflight>[0],
+    "store" | "policy" | "onEvent"
+  >,
+  type: "tool.blocked",
   payload: Parameters<LocalStore["appendEvent"]>[0]["payload"],
 ): Promise<void> {
   const event = await input.store.appendEvent({

@@ -1,6 +1,7 @@
 import type { BeforeToolCallResult } from "@earendil-works/pi-agent-core";
 import type {
   ExecutionPlan,
+  JsonObject,
   JsonValue,
   RunLimits,
   RunEvent,
@@ -208,7 +209,7 @@ export class RunProgressTracker {
       type: "run.progress.vector",
       category: "lifecycle",
       visibility: "debug",
-      payload: payload as unknown as JsonValue,
+      payload: payload as unknown as JsonObject,
     });
     this.lastSeq = event.seq;
     this.previousDimensions = dimensions;

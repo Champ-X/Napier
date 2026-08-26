@@ -1,4 +1,5 @@
 import type {
+  JsonObject,
   JsonValue,
   WorkspaceProcessResizeReceipt,
   WorkspaceProcessSession,
@@ -37,8 +38,8 @@ export function createWorkspaceProcessResizeReceipt(
 
 export function workspaceProcessResizeReceiptPayload(
   receipt: WorkspaceProcessResizeReceipt,
-): JsonValue {
-  return JSON.parse(JSON.stringify(receipt)) as JsonValue;
+): JsonObject {
+  return JSON.parse(JSON.stringify(receipt)) as JsonObject;
 }
 
 export function parseWorkspaceProcessResizeReceipt(

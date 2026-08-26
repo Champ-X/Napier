@@ -11,7 +11,7 @@ import {
 import path from "node:path";
 
 import type {
-  JsonValue,
+  JsonObject,
   WorkspaceFileMutationEvidence,
   WorkspaceFileMutationOperation,
   WorkspaceTrashItem,
@@ -613,7 +613,7 @@ export class WorkspaceFileMutationManager {
         type: "workspace.file.mutated",
         category: "tool",
         visibility: "user",
-        payload: evidence as unknown as JsonValue,
+        payload: evidence as unknown as JsonObject,
       });
     } catch {
       throw new Error(

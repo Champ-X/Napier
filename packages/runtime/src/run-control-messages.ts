@@ -158,7 +158,7 @@ export function createRunControlMessageCancelledPayload(input: {
 
 export function createRunControlMessageUserPayload(
   pending: PendingRunControlMessage,
-): JsonValue {
+): { role: "user"; text: string } & Record<string, JsonValue> {
   return {
     role: "user",
     text: pending.text,

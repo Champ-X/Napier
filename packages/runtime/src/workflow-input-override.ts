@@ -15,7 +15,7 @@ import {
 } from "./workflow-schemas.js";
 
 export const WORKFLOW_NODE_INPUT_REPLACEMENT_REQUESTED_EVENT =
-  "workflow.node.input_replacement.requested";
+  "workflow.node.input_replacement.requested" as const;
 
 export function validateWorkflowExperimentReplacementInput(
   mode: ExecutionPlanWorkflowExperimentMode | undefined,
