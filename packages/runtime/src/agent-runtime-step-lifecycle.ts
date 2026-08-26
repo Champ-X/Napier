@@ -25,9 +25,11 @@ import type { AgentLifecyclePipelineHost } from "./lifecycle-extension-pipeline.
 import { modernRunConfiguration } from "./effective-run-profile.js";
 import { formatEditDialectGuidance } from "./edit-dialect-adapter.js";
 import type { ModelHarnessExperimentProfile } from "./model-harness-experiment-profile.js";
+import type { ToolProtocolRegistry } from "./tool-protocol-registry.js";
 
 export function wrapAgentToolsWithLifecycle(input: {
   tools: readonly AgentTool[];
+  registry: ToolProtocolRegistry;
   lifecycles: AgentLifecyclePipelineHost;
   run: Pick<RunRecord, "id" | "threadId">;
   stepIndex: () => number;
@@ -42,6 +44,7 @@ export function wrapAgentToolsWithLifecycle(input: {
           threadId: input.run.threadId,
           stepIndex: input.stepIndex(),
           toolCall: Object.freeze({ id: toolCallId, name: tool.name }),
+          protocol: input.registry.require(tool.name).invocation(args),
           input: structuredClone(args),
           ...(toolSignal ? { signal: toolSignal } : {}),
         },
@@ -55,6 +58,7 @@ export function createLifecycleAgentStepStream(input: {
   lifecycles: AgentLifecyclePipelineHost;
   run: Pick<RunRecord, "id" | "threadId">;
   toolSetSha256: string;
+  registry: ToolProtocolRegistry;
   onStep(index: number, activeToolNames: Set<string>): void;
 }): StreamFn {
   let stepIndex = 0;
@@ -63,6 +67,8 @@ export function createLifecycleAgentStepStream(input: {
     const capabilityView = createAgentStepCapabilityView({
       toolNames: (context.tools ?? []).map((tool) => tool.name),
       schemaVersion: input.toolSetSha256,
+      definitionSha256: (toolName) =>
+        input.registry.require(toolName).definitionSha256,
     });
     return runAgentStepLifecycleStream({
       model,

@@ -22,6 +22,7 @@ import type { LocalStore } from "./store.js";
 import { isSkillLoadFailure } from "./skill-load-contracts.js";
 import { isSkillLoadAgentTool } from "./skill-load-tool.js";
 import type { ModelRegistry } from "./models.js";
+import type { ToolProtocolRegistry } from "./tool-protocol-registry.js";
 import type { RunBudgetTracker } from "./run-budget.js";
 import {
   wrapToolsWithDeadlines,
@@ -33,6 +34,7 @@ export interface AgentToolResultLifecycleOptions {
   run: RunRecord;
   tools: AgentTool[];
   definitions: AgentTool[];
+  toolProtocol: ToolProtocolRegistry;
   invocationCapsules: ToolInvocationCapsuleStore;
   resultCapsules: ToolInvocationResultCapsuleStore;
   budget: RunBudgetTracker;
@@ -53,10 +55,11 @@ export function toolLife(
   optional: [
     FrozenToolResultReplayController | undefined,
     ((event: RunEvent) => Promise<void> | void) | undefined,
+    ToolProtocolRegistry,
   ],
 ): AgentToolResultLifecycle {
   const [budget, run, tools, deferredTools, definitions] = values;
-  const [replay, onEvent] = optional;
+  const [replay, onEvent, toolProtocol] = optional;
   return new AgentToolResultLifecycle({
     store: host.store,
     registry: host.modelRegistry,
@@ -66,6 +69,7 @@ export function toolLife(
     run,
     tools,
     definitions,
+    toolProtocol,
     deferredTools,
     ...(replay ? { replay } : {}),
     ...(onEvent ? { onEvent } : {}),
@@ -75,6 +79,7 @@ export function toolLife(
 export class AgentToolResultLifecycle {
   private readonly definitions: Map<string, AgentTool>;
   private readonly captured = new Map<string, ToolInvocationCapsuleReceipt>();
+  private readonly invocationInputs = new Map<string, unknown>();
   readonly deadlines: ToolDeadlineManager;
 
   constructor(private readonly options: AgentToolResultLifecycleOptions) {
@@ -86,6 +91,7 @@ export class AgentToolResultLifecycle {
       deferredTools: options.deferredTools,
       immediateTools: options.tools,
       registry: options.registry,
+      toolProtocol: options.toolProtocol,
       run: options.run,
       store: options.store,
       ...(options.onEvent ? { onEvent: options.onEvent } : {}),
@@ -107,9 +113,14 @@ export class AgentToolResultLifecycle {
     args: unknown,
   ): Promise<BeforeToolCallResult | undefined> {
     const tool = this.definitions.get(toolName);
+    const protocol = this.options.toolProtocol.get(toolName);
+    if (!protocol) {
+      return { block: true, reason: `Tool Protocol definition is unavailable: ${toolName}` };
+    }
+    this.invocationInputs.set(toolCallId, structuredClone(args));
     const replay = this.options.replay;
     if (replay) {
-      const reservation = replay.reserve(toolCallId, tool, toolName, args);
+      const reservation = replay.reserve(toolCallId, protocol, toolName, args);
       if (reservation.block) {
         await this.append({
           threadId: this.options.run.threadId,
@@ -140,6 +151,7 @@ export class AgentToolResultLifecycle {
       toolCallId,
       toolName,
       args,
+      protocol.definitionSha256,
       this.options.onEvent,
     );
     if (receipt) this.captured.set(toolCallId, receipt);
@@ -151,7 +163,16 @@ export class AgentToolResultLifecycle {
     result: AgentToolResult<unknown>;
     isError: boolean;
   }): Promise<AfterToolCallResult | undefined> {
+    const protocol = this.options.toolProtocol.require(input.toolCall.name);
+    const typedSkillFailure =
+      isSkillLoadFailure(input.result.details) ||
+      isSkillResourceLoadFailureV1(input.result.details);
     const replay = this.options.replay;
+    const effectiveIsError = replay?.effectiveIsError(
+      input.toolCall.id,
+      input.isError || typedSkillFailure,
+    ) ?? (input.isError || typedSkillFailure);
+    protocol.validateCanonicalResult(input.result, effectiveIsError);
     const reused = replay?.finalize(input.toolCall.id);
     if (replay && reused) {
       await this.append({
@@ -178,10 +199,6 @@ export class AgentToolResultLifecycle {
       });
       return reused.patch;
     }
-    const typedSkillFailure =
-      isSkillLoadFailure(input.result.details) ||
-      isSkillResourceLoadFailureV1(input.result.details);
-    const effectiveIsError = input.isError || typedSkillFailure;
     await captureToolInvocationResult(
       this.options.store,
       this.options.resultCapsules,
@@ -204,6 +221,30 @@ export class AgentToolResultLifecycle {
     return selection
       ? { details: JSON.parse(JSON.stringify(selection)) as JsonValue }
       : {};
+  }
+
+  protocolProjection(
+    toolCallId: string,
+    toolName: string,
+    status: "started" | "completed" | "failed" | "blocked",
+    args?: unknown,
+  ): Record<string, JsonValue> {
+    const protocol = this.options.toolProtocol.get(toolName);
+    if (!protocol) return {};
+    const input = args ?? this.invocationInputs.get(toolCallId);
+    return {
+      toolProtocol: protocol.uiProjection(status, input) as unknown as JsonValue,
+    };
+  }
+
+  validateModelVisibleResult(
+    toolName: string,
+    result: AgentToolResult<unknown>,
+    isError: boolean,
+  ): void {
+    this.options.toolProtocol
+      .require(toolName)
+      .validateModelVisibleResult(result, isError);
   }
 
   toolCallArguments(args: unknown, fallback: JsonValue): JsonValue {

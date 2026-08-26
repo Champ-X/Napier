@@ -76,7 +76,10 @@ export function validateToolInvocationExperimentRunGate(input: {
     capsuleEvent.seq >= terminalEvent.seq ||
     receipt.callId !== execution.sourceCallId ||
     receipt.toolName !== execution.sourceToolName ||
-    receipt.toolDefinitionSha256 !== execution.sourceToolDefinitionSha256 ||
+    toolImplementationSha256(
+      startedEvent,
+      receipt.toolDefinitionSha256,
+    ) !== execution.sourceToolDefinitionSha256 ||
     receipt.argumentsSha256 !== execution.sourceArgumentsSha256 ||
     receipt.workspaceScopeSha256 !== execution.sourceWorkspaceScopeSha256 ||
     receipt.capsuleSha256 !== execution.sourceCapsuleSha256 ||
@@ -93,6 +96,18 @@ export function validateToolInvocationExperimentRunGate(input: {
       "Tool invocation experiment requires its verified read-only capability",
     );
   }
+}
+
+function toolImplementationSha256(
+  event: RunEvent,
+  legacy: string,
+): string {
+  const payload = record(event.payload);
+  const protocol = record(payload?.["toolProtocol"]);
+  const value = protocol?.["implementationSha256"];
+  return typeof value === "string" && /^[a-f0-9]{64}$/u.test(value)
+    ? value
+    : legacy;
 }
 
 function record(value: unknown): Record<string, unknown> | undefined {

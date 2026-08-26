@@ -112,6 +112,27 @@ describe("Governed Code Bridge", () => {
           toolVersionSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
         }),
       );
+      const startedProtocol = nestedStarted?.payload["toolProtocol"] as
+        | Record<string, unknown>
+        | undefined;
+      expect(startedProtocol).toEqual(
+        expect.objectContaining({
+          kind: "napier.tool-ui-projection",
+          schemaVersion: 2,
+          toolId: "read_file",
+          semanticVersion: "2.0.0",
+          definitionSha256: authorized?.payload["definitionSha256"],
+          implementationSha256: authorized?.payload["toolVersionSha256"],
+          status: "started",
+          sideEffect: "none",
+          concurrency: "safe",
+          compatibilityMode: "native",
+        }),
+      );
+      expect(nestedCompleted?.payload["toolProtocol"]).toEqual({
+        ...startedProtocol,
+        status: "completed",
+      });
       expect(authorized!.seq).toBeLessThan(nestedStarted!.seq);
       expect(
         events.some(
@@ -168,14 +189,27 @@ describe("Governed Code Bridge", () => {
       const events = (await fixture.store.listEvents(fixture.threadId)).filter(
         (event) => event.runId === run.id,
       );
-      expect(
-        events.find(
+      const blocked = events.find(
           (event) =>
             event.type === "tool.blocked" &&
             event.payload["toolName"] === "read_file" &&
             String(event.payload["callId"]).startsWith("codebridge_"),
-        )?.payload["policyReason"],
-      ).toBe("path escapes the configured workspace");
+        );
+      expect(blocked?.payload["policyReason"]).toBe(
+        "path escapes the configured workspace",
+      );
+      expect(blocked?.payload["toolProtocol"]).toEqual(
+        expect.objectContaining({
+          kind: "napier.tool-ui-projection",
+          schemaVersion: 2,
+          toolId: "read_file",
+          semanticVersion: "2.0.0",
+          status: "blocked",
+          sideEffect: "none",
+          concurrency: "safe",
+          compatibilityMode: "native",
+        }),
+      );
       expect(
         events.some(
           (event) =>

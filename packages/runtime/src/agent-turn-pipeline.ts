@@ -11,7 +11,7 @@ import {
 } from "./agent-tool-policy-preflight.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { validateCompiledPromptArtifact } from "./prompt-compiler.js";
-import { toolDefinitionSha256 } from "./tool-invocation-capsule.js";
+import { createOwnedToolRecordV2 } from "./tool-protocol-registry.js";
 
 export interface AgentTurnPromptAdapter {
   id: string;
@@ -297,9 +297,11 @@ function toolSetSha256(candidates: AgentTurnToolCandidates): string {
 }
 
 function agentTurnToolIntegritySha256(tool: AgentTool): string {
+  const protocol = createOwnedToolRecordV2(tool);
   return sha256(
     canonicalJson({
-      definitionSha256: toolDefinitionSha256(tool),
+      definitionSha256: protocol.definitionSha256,
+      implementationSha256: protocol.implementationSha256,
       label: tool.label,
       executionMode: tool.executionMode ?? "default",
     }),

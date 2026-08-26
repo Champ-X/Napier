@@ -89,6 +89,11 @@ import {
   toolResultReuseSummaryParts,
   type ToolResultReuseEventTraceView,
 } from "./tool-result-reuse-event-view";
+import {
+  toolProtocolEventBase,
+  toolProtocolSummaryParts,
+  type ToolProtocolEventEvidence,
+} from "./tool-protocol-event-view";
 
 export interface ToolEventTraceView
   extends
@@ -109,7 +114,8 @@ export interface ToolEventTraceView
     WriteLinkedTestEventTraceView,
     WorkspaceReadToolEventTraceView,
     SkillToolEventTraceView,
-    ToolResultReuseEventTraceView {
+    ToolResultReuseEventTraceView,
+    ToolProtocolEventEvidence {
   toolName: string;
   status: string;
   effect?: "read" | "write";
@@ -160,8 +166,6 @@ export interface ToolEventTraceView
 
 const TOOL_EVENT_PATTERN =
   /^tool\.(started|completed|failed|blocked|experiment\.(started|compared)|result_reused|result_reuse\.blocked)$/u;
-const TOOL_NAME = /^[A-Za-z0-9_.:-]{1,160}$/u;
-const STATUS = /^[A-Za-z0-9_.:-]{1,64}$/u;
 const SHA256 = /^[a-f0-9]{64}$/u;
 const TOOL_RECEIPT_SUMMARY = "tool receipt";
 
@@ -176,12 +180,9 @@ export function toolEventTraceView(
   ) {
     return undefined;
   }
-  const toolName =
-    safeToolName(event.payload["toolName"]) ??
-    safeToolName(event.payload["sourceToolName"]);
-  const status = safeStatus(event.payload["status"]) ?? statusFromEvent(event);
-  if (!toolName || !status) return undefined;
-  const effect = safeEffect(event.payload["effect"]);
+  const base = toolProtocolEventBase(event.payload, statusFromEvent(event));
+  if (!base) return undefined;
+  const { toolName } = base;
   const inputSha256 = sha256(event.payload["inputSha256"]);
   const loopGuardTriggerSha256 = sha256(
     event.payload["loopGuardTriggerSha256"],
@@ -253,9 +254,7 @@ export function toolEventTraceView(
       ? workspaceFileMutationEvidence(event.payload["details"])
       : undefined;
   return {
-    toolName,
-    status,
-    ...(effect ? { effect } : {}),
+    ...base,
     ...(inputSha256 ? { inputSha256 } : {}),
     ...(loopGuardTriggerSha256 ? { loopGuardTriggerSha256 } : {}),
     ...(workspaceReadEvidence ?? {}),
@@ -288,6 +287,7 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     `tool / ${view.toolName}`,
     view.status,
     ...(view.effect ? [`effect ${view.effect}`] : []),
+    ...toolProtocolSummaryParts(view),
     ...(view.inputSha256 ? [`input ${view.inputSha256.slice(0, 12)}`] : []),
     ...(view.loopGuardTriggerSha256
       ? [`loop ${view.loopGuardTriggerSha256.slice(0, 12)}`]
@@ -407,18 +407,6 @@ function statusFromEvent(event: RunEvent): string | undefined {
   if (event.type === "tool.result_reused") return "reused";
   if (event.type === "tool.result_reuse.blocked") return "blocked";
   return undefined;
-}
-
-function safeToolName(value: unknown): string | undefined {
-  return typeof value === "string" && TOOL_NAME.test(value) ? value : undefined;
-}
-
-function safeStatus(value: unknown): string | undefined {
-  return typeof value === "string" && STATUS.test(value) ? value : undefined;
-}
-
-function safeEffect(value: unknown): "read" | "write" | undefined {
-  return value === "read" || value === "write" ? value : undefined;
 }
 
 function sha256(value: unknown): string | undefined {

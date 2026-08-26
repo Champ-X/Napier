@@ -559,16 +559,33 @@ describe("Agent Kernel", () => {
         model: { provider: "faux-narrowed", id: "faux-1" },
       });
       expect(narrowedRun.status).toBe("completed");
+      const narrowedEvents = await services.store.listEvents(narrowedThread.id);
       expect(
-        (await services.store.listEvents(narrowedThread.id)).filter(
-          (event) => event.type === "tool.completed",
-        ),
+        narrowedEvents.filter((event) => event.type === "tool.completed"),
       ).toHaveLength(0);
       expect(
-        (await services.store.listEvents(narrowedThread.id)).find(
+        narrowedEvents.find(
           (event) => event.type === "tool.failed",
         )?.payload,
       ).toEqual(expect.objectContaining({ toolName: "read_file" }));
+      expect(
+        narrowedEvents.find((event) => event.type === "tool.blocked")?.payload,
+      ).toEqual(
+        expect.objectContaining({
+          toolName: "read_file",
+          harnessInterventionReason: "capability_block",
+          toolProtocol: expect.objectContaining({
+            kind: "napier.tool-ui-projection",
+            schemaVersion: 2,
+            toolId: "read_file",
+            semanticVersion: "2.0.0",
+            status: "blocked",
+            sideEffect: "none",
+            concurrency: "safe",
+            compatibilityMode: "native",
+          }),
+        }),
+      );
       await narrowing.dispose();
 
       const legacyThread = await services.store.createThread({

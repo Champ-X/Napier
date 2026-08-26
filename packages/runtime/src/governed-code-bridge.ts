@@ -7,7 +7,6 @@ import type {
 import { validateToolArguments } from "@earendil-works/pi-ai";
 import type { JsonValue, RunEvent, RunRecord } from "@napier/contracts";
 import type { ToolConcurrency } from "@napier/contracts/tool-protocol";
-import type { ToolDefinitionV2 } from "@napier/contracts/tool-protocol";
 
 import {
   agentToolGenericDetailsLedgerProjection,
@@ -16,16 +15,20 @@ import {
 } from "./agent-tool-ledger.js";
 import { builtInToolHarnessProjection } from "./agent-tool-effects.js";
 import { agentToolResultText } from "./agent-tool-result-text.js";
-import { createToolDefinitionV2 } from "./capability-catalog.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { EventSink } from "./event-sink.js";
 import type { GovernedCodeBridgeDispatcher } from "./governed-code-bridge-model.js";
 import type { LocalStore } from "./store.js";
+import {
+  ToolProtocolRegistry,
+  type OwnedToolRecordV2,
+} from "./tool-protocol-registry.js";
 
 export function createGovernedCodeBridgeDispatcher(input: {
   store: LocalStore;
   run: Pick<RunRecord, "id" | "threadId">;
   tools: readonly AgentTool[];
+  registry?: ToolProtocolRegistry;
   activeToolNames(): ReadonlySet<string>;
   assertBudget(): void;
   preflight(
@@ -41,9 +44,7 @@ export function createGovernedCodeBridgeDispatcher(input: {
   onEvent?: EventSink;
 }): GovernedCodeBridgeDispatcher {
   const tools = new Map(input.tools.map((tool) => [tool.name, tool]));
-  const definitions = new Map(
-    input.tools.map((tool) => [tool.name, createToolDefinitionV2(tool)]),
-  );
+  const registry = input.registry ?? new ToolProtocolRegistry(input.tools);
   const concurrency = new ToolConcurrencyGate();
   return async (request, signal) => {
     const tool = tools.get(request.toolId);
@@ -52,20 +53,21 @@ export function createGovernedCodeBridgeDispatcher(input: {
         `Code Bridge capability is unavailable: ${request.toolId}`,
       );
     }
-    const definition = definitions.get(tool.name)!;
-    const sideEffect = definition.sideEffect;
-    if (sideEffect !== "none" && sideEffect !== "reversible") {
+    const protocol = registry.require(tool.name);
+    const invocation = protocol.invocation(request.input);
+    if (invocation.approval.codeBridge !== "allowed") {
+      const sideEffect = invocation.sideEffect;
       const reason = `Code Bridge capability requires an approval checkpoint outside the code session: ${tool.name}/${sideEffect}`;
-      await appendBlocked(input, request, tool.name, reason);
+      await appendBlocked(input, request, tool.name, reason, protocol);
       throw new Error(reason);
     }
     if (!input.activeToolNames().has(tool.name)) {
       const reason = `Code Bridge capability is not active for this step: ${tool.name}`;
-      await appendBlocked(input, request, tool.name, reason);
+      await appendBlocked(input, request, tool.name, reason, protocol);
       throw new Error(reason);
     }
-    return concurrency.run(definition.concurrency, signal, () =>
-      dispatchGovernedTool(input, request, tool, definition, signal),
+    return concurrency.run(invocation.concurrency, signal, () =>
+      dispatchGovernedTool(input, request, tool, protocol, signal),
     );
   };
 }
@@ -75,6 +77,7 @@ async function appendBlocked(
   request: Parameters<GovernedCodeBridgeDispatcher>[0],
   toolName: string,
   reason: string,
+  protocol?: OwnedToolRecordV2,
 ): Promise<void> {
   await append(
     input,
@@ -90,6 +93,14 @@ async function appendBlocked(
       policyReason: reason,
       harnessInterventionReason: "approval_block",
       inputSha256: sha256(canonicalJson(request.input)),
+      ...(protocol
+        ? {
+            toolProtocol: protocol.uiProjection(
+              "blocked",
+              request.input,
+            ) as never,
+          }
+        : {}),
     },
   );
 }
@@ -98,7 +109,7 @@ async function dispatchGovernedTool(
   input: Parameters<typeof createGovernedCodeBridgeDispatcher>[0],
   request: Parameters<GovernedCodeBridgeDispatcher>[0],
   tool: AgentTool,
-  definition: ToolDefinitionV2,
+  protocol: OwnedToolRecordV2,
   signal?: AbortSignal,
 ) {
   const callId = `codebridge_${request.evaluationId}_${String(request.callId)}`;
@@ -109,6 +120,7 @@ async function dispatchGovernedTool(
     name: tool.name,
     arguments: bridgeArguments(request.input),
   });
+  const invocation = protocol.invocation(args);
   try {
     input.assertBudget();
   } catch (error) {
@@ -120,6 +132,7 @@ async function dispatchGovernedTool(
       policyReason: reason,
       harnessInterventionReason: "budget_pause",
       inputSha256: sha256(canonicalJson(request.input)),
+      toolProtocol: protocol.uiProjection("blocked", args) as never,
     });
     throw error;
   }
@@ -130,10 +143,15 @@ async function dispatchGovernedTool(
     nestedDispatch: true,
     parentEvaluationId: request.evaluationId,
     inputSha256: sha256(canonicalJson(request.input)),
-    definitionSha256: sha256(canonicalJson(definition)),
-    toolVersionSha256: definition.version,
-    concurrency: definition.concurrency,
-    sideEffect: definition.sideEffect,
+    definitionSha256: protocol.definitionSha256,
+    toolVersionSha256: protocol.implementationSha256,
+    semanticVersion: invocation.semanticVersion,
+    concurrency: invocation.concurrency,
+    sideEffect: invocation.sideEffect,
+    retryStrategy: invocation.retry.strategy,
+    idempotencyKey: invocation.idempotency.key,
+    approvalMode: invocation.approval.mode,
+    compatibilityMode: invocation.compatibilityMode,
     validationChecked: true,
     policyChecked: true,
     workspaceBoundaryChecked: true,
@@ -147,6 +165,7 @@ async function dispatchGovernedTool(
     inputSha256: sha256(canonicalJson(request.input)),
     ...builtInToolHarnessProjection(tool.name, args),
     ...agentToolInputLedgerProjection(tool.name, args),
+    toolProtocol: protocol.uiProjection("started", args) as never,
   });
   let result: AgentToolResult<unknown>;
   let isError = false;
@@ -188,6 +207,10 @@ async function dispatchGovernedTool(
         outputProjection,
         presented.result.details,
       ),
+      toolProtocol: protocol.uiProjection(
+        presented.isError ? "failed" : "completed",
+        args,
+      ) as never,
     },
   );
   return {

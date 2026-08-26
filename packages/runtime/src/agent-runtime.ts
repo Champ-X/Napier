@@ -101,6 +101,7 @@ import { agentToolResultText } from "./agent-tool-result-text.js";
 import { createAgentToolResultFinalizer } from "./agent-tool-result-boundary.js";
 import { createAgentToolPreflight } from "./agent-tool-preflight.js";
 import { createCapabilityCatalogTool } from "./capability-catalog.js";
+import { ToolProtocolRegistry } from "./tool-protocol-registry.js";
 import { createGovernedCodeBridgeBinding } from "./governed-code-bridge.js";
 import { PrivateSourceModelContentBoundary } from "./private-source-model-content.js";
 import { BrowserInteractionConfirmationManager } from "./browser-interaction-confirmations.js";
@@ -1333,31 +1334,27 @@ export class AgentRuntime {
     if (
       !advisorCorrection &&
       tools.length + deferredExtensionTools.length > 20
-    )
-      tools.push(createCapabilityCatalogTool([...tools, ...deferredExtensionTools]));
+    ) {
+      const candidates = [...tools, ...deferredExtensionTools];
+      tools.push(createCapabilityCatalogTool(candidates, new ToolProtocolRegistry(candidates)));
+    }
     const toolSelection = await turnPipeline.compileTools({
       immediate: tools,
       deferred: deferredExtensionTools,
     });
-    const definitions = toolSelection.immediate.concat(toolSelection.deferred);
+    const definitions = toolSelection.immediate.concat(toolSelection.deferred); const toolProtocol = new ToolProtocolRegistry(definitions);
     tools = toolSelection.immediate; deferredExtensionTools = toolSelection.deferred;
-    const lifecyclePipelines = this.lifecycles.current();
-    let stepIndex = 0;
+    const lifecyclePipelines = this.lifecycles.current(); let stepIndex = 0;
     let activeStepToolNames = new Set(tools.map((tool) => tool.name));
-    const wrapTools = (candidates: readonly AgentTool[]) =>
-      wrapAgentToolsWithLifecycle({
-        tools: candidates,
-        lifecycles: lifecyclePipelines,
-        run,
-        stepIndex: () => stepIndex,
-      });
+    const wrapTools = (candidates: readonly AgentTool[]) => wrapAgentToolsWithLifecycle({
+      tools: candidates, registry: toolProtocol, lifecycles: lifecyclePipelines,
+      run, stepIndex: () => stepIndex,
+    });
     tools = wrapTools(tools);
     deferredExtensionTools = wrapTools(deferredExtensionTools);
-    const toolResultLifecycle = toolLife(
-      this,
+    const toolResultLifecycle = toolLife(this,
       [budget, run, tools, deferredExtensionTools, definitions],
-      [toolResultReplay, onEvent],
-    );
+      [toolResultReplay, onEvent, toolProtocol]);
     const progress = await progLife(this, budget, run, tools, prompt, onEvent);
     const workspaceToolGuidance = formatWorkspaceToolGuidance(tools);
     const planToolGuidance = formatPlanToolGuidance(tools);
@@ -1432,7 +1429,7 @@ export class AgentRuntime {
       delegate: streamWithModelContextEnvelope,
       lifecycles: lifecyclePipelines,
       run,
-      toolSetSha256: toolSelection.receipt.activeToolSetSha256,
+      toolSetSha256: toolSelection.receipt.activeToolSetSha256, registry: toolProtocol,
       onStep: (index, names) => {
         stepIndex = index;
         activeStepToolNames = names;
@@ -1446,7 +1443,7 @@ export class AgentRuntime {
         confirmations: this.browserInteractionConfirmations,
         browserPauses: this.browserSessionPauses,
         browserConfirmation: this.capabilities.browserConfirmation,
-        restrictedReadOnlyExecution,
+        restrictedReadOnlyExecution, toolProtocol,
         ...(onEvent ? { onEvent } : {}),
       },
       turnPipeline, budget, progress, lifecycle: toolResultLifecycle,
@@ -1457,8 +1454,7 @@ export class AgentRuntime {
     const afterToolCall = createAgentToolResultFinalizer(toolResultLifecycle);
     codeBridge.attach({
       store: this.store,
-      run,
-      tools: [...tools, ...deferredExtensionTools],
+      run, tools: [...tools, ...deferredExtensionTools], registry: toolProtocol,
       activeToolNames: () => activeStepToolNames,
       assertBudget: () => budget.assertCanStartAuxiliaryCall(),
       preflight: toolPreflight.governed,
@@ -2038,6 +2034,8 @@ export class AgentRuntime {
               event.toolName,
               event.args,
             ),
+            ...toolResultLifecycle.protocolProjection(
+              event.toolCallId, event.toolName, "started", event.args),
           },
         },
         onEvent,
@@ -2076,6 +2074,8 @@ export class AgentRuntime {
                     event.result.details,
                   ),
                 }),
+            ...toolResultLifecycle.protocolProjection(event.toolCallId,
+              event.toolName, event.isError ? "failed" : "completed"),
           },
         },
         onEvent,

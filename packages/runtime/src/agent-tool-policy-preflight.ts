@@ -23,6 +23,7 @@ import type { EventSink } from "./event-sink.js";
 import type { McpExtensionManager } from "./mcp.js";
 import { assessToolCall } from "./policy.js";
 import type { LocalStore } from "./store.js";
+import type { ToolProtocolRegistry } from "./tool-protocol-registry.js";
 import { toolInvocationArgumentsSha256 } from "./tool-invocation-capsule.js";
 
 export async function preflightAgentToolPolicy(input: {
@@ -49,6 +50,7 @@ export async function preflightAgentToolPolicy(input: {
     ) => boolean;
   };
   restrictedReadOnlyExecution: boolean;
+  toolProtocol?: ToolProtocolRegistry;
   toolCall: { id: string; name: string };
   args: unknown;
   signal?: AbortSignal;
@@ -308,6 +310,7 @@ export async function recordAgentToolPolicyBlock(
     run: RunRecord;
     toolCall: { id: string; name: string };
     args: unknown;
+    toolProtocol?: ToolProtocolRegistry;
     onEvent?: EventSink;
   },
   reason: string,
@@ -326,6 +329,13 @@ export async function recordAgentToolPolicyBlock(
       callId: input.toolCall.id,
       toolName: input.toolCall.name,
       status: "blocked",
+      ...(input.toolProtocol
+        ? {
+            toolProtocol: input.toolProtocol
+              .require(input.toolCall.name)
+              .uiProjection("blocked", input.args) as unknown as JsonValue,
+          }
+        : {}),
       ...agentToolInputLedgerProjection(input.toolCall.name, input.args),
       policyReason: reason,
       ...(harnessInterventionReason ? { harnessInterventionReason } : {}),

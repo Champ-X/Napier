@@ -111,6 +111,16 @@ describe("Governed Code Bridge concurrency", () => {
       expect.objectContaining({
         harnessInterventionReason: "budget_pause",
         nestedDispatch: true,
+        toolProtocol: expect.objectContaining({
+          kind: "napier.tool-ui-projection",
+          schemaVersion: 2,
+          toolId: "read_file",
+          semanticVersion: "2.0.0",
+          status: "blocked",
+          sideEffect: "none",
+          concurrency: "safe",
+          compatibilityMode: "native",
+        }),
       }),
     );
     fixture.store.close();

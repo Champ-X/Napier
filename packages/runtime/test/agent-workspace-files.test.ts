@@ -114,6 +114,42 @@ describe("Agent Workspace file lifecycle", () => {
       ["workspace_file_preview", "read"],
       ["workspace_file_apply", "write"],
     ]);
+    for (const [toolName, sideEffect, concurrency] of [
+      ["workspace_file_preview", "none", "safe"],
+      ["workspace_file_apply", "reversible", "exclusive"],
+    ] as const) {
+      const started = events.find(
+        (event) =>
+          event.type === "tool.started" &&
+          event.payload["toolName"] === toolName,
+      );
+      const completed = events.find(
+        (event) =>
+          event.type === "tool.completed" &&
+          event.payload["toolName"] === toolName,
+      );
+      const startedProtocol = started?.payload["toolProtocol"] as
+        | Record<string, unknown>
+        | undefined;
+      expect(startedProtocol).toEqual(
+        expect.objectContaining({
+          kind: "napier.tool-ui-projection",
+          schemaVersion: 2,
+          toolId: toolName,
+          semanticVersion: "2.0.0",
+          definitionSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+          implementationSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+          status: "started",
+          sideEffect,
+          concurrency,
+          compatibilityMode: "native",
+        }),
+      );
+      expect(completed?.payload["toolProtocol"]).toEqual({
+        ...startedProtocol,
+        status: "completed",
+      });
+    }
     expect(
       events.filter((event) => event.type === "workspace.file.mutated"),
     ).toEqual([

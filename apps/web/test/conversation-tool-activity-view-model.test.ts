@@ -170,6 +170,39 @@ describe("Conversation tool activities", () => {
       )?.status,
     ).toBe("blocked");
   });
+
+  it("uses the typed Tool Protocol projection for activity evidence", () => {
+    const activity = conversationToolActivity(
+      event(9, "tool.started", {
+        callId: "call_native",
+        toolName: "workspace_file_apply",
+        status: "started",
+        effect: "read",
+        toolProtocol: {
+          kind: "napier.tool-ui-projection",
+          schemaVersion: 2,
+          toolId: "workspace_file_apply",
+          semanticVersion: "2.0.0",
+          definitionSha256: "a".repeat(64),
+          implementationSha256: "b".repeat(64),
+          status: "started",
+          sideEffect: "reversible",
+          concurrency: "exclusive",
+          compatibilityMode: "native",
+        },
+      }),
+    );
+
+    expect(activity?.evidence).toEqual(
+      expect.objectContaining({
+        effect: "write",
+        toolProtocolVersion: "2.0.0",
+        toolSideEffect: "reversible",
+        toolConcurrency: "exclusive",
+        toolCompatibilityMode: "native",
+      }),
+    );
+  });
 });
 
 function event(

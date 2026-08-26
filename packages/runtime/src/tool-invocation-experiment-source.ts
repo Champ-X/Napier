@@ -87,6 +87,10 @@ export async function projectToolInvocationExperimentSource(
     );
   }
   const startedEvent = startedEvents[0]!;
+  const implementationSha256 = toolImplementationSha256(
+    startedEvent,
+    receipt.toolDefinitionSha256,
+  );
   const terminalEvents = events.filter(
     (event) =>
       event.runId === sourceRun.id &&
@@ -125,7 +129,7 @@ export async function projectToolInvocationExperimentSource(
     runId: sourceRun.id,
     toolName: capsule.toolName,
     arguments: capsule.arguments,
-    expectedDefinitionSha256: capsule.toolDefinitionSha256,
+    expectedDefinitionSha256: implementationSha256,
   });
   const workspace = await createWorkspacePathSnapshot(
     store.workspaceRoot,
@@ -156,7 +160,7 @@ export async function projectToolInvocationExperimentSource(
     sourceTerminalEventSeq: terminalEvent.seq,
     sourceToolName: receipt.toolName,
     sourceEffect: "read" as const,
-    sourceToolDefinitionSha256: receipt.toolDefinitionSha256,
+    sourceToolDefinitionSha256: implementationSha256,
     sourceArgumentsSha256: receipt.argumentsSha256,
     sourceWorkspaceScopeSha256: receipt.workspaceScopeSha256,
     sourceCapsuleSha256: receipt.capsuleSha256,
@@ -184,6 +188,15 @@ export async function projectToolInvocationExperimentSource(
     title:
       request.title ?? defaultExperimentTitle(thread.title, capsule.toolName),
   };
+}
+
+function toolImplementationSha256(event: RunEvent, legacy: string): string {
+  const payload = record(event.payload);
+  const protocol = record(payload?.["toolProtocol"]);
+  const value = protocol?.["implementationSha256"];
+  return typeof value === "string" && /^[a-f0-9]{64}$/u.test(value)
+    ? value
+    : legacy;
 }
 
 function defaultExperimentTitle(sourceTitle: string, toolName: string): string {

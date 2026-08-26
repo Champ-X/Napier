@@ -4,9 +4,9 @@
 > 唯一设计依据：`docs/agent-harness-optimization-design-2026-08-22.zh-CN.md`  
 > 产品版本：`0.1.3`  
 > 历史基线源码身份：`f79504c9ae122a9e1c77fb2ad765b762a5fe3620aa4c8d501faeb72e8090169b`<br>
-> 当前 Route v2 增量源码身份：`757c784e1abb808bf7f05329208d045da2c8a2c3c961ec62e0e2d69dc94f2564`
+> 当前 Tool Protocol v2 增量源码身份：`fe4cdd7d23281130355d7f3672592fcff306b00bc2e537ea3f6ed1aa5c5a84ff`
 
-原 A1–A8 与发布证据保留为历史基线；本次 `next.md` 增量单独记录在第 9 节。除源码清单与 Route v2 专项证据外，旧发布制品尚未按当前源码身份刷新，不得据此宣称整轮 `next.md` 已完成。
+原 A1–A8 与发布证据保留为历史基线；本次 `next.md` 增量单独记录在第 9 节。除源码清单、Route v2 与 Tool Protocol v2 专项证据外，旧发布制品尚未按当前源码身份刷新，不得据此宣称整轮 `next.md` 已完成。
 
 ## 1. 判定口径
 
@@ -81,7 +81,7 @@
 
 | 层级 | 制品 / 结果 | 判定 |
 | --- | --- | --- |
-| 源码身份 | `default-product-source-manifest-0.1.3.json` 与 Runtime 常量共同固定 `757c784e…2564`；manifest 覆盖 2040 个文件、14464854 bytes | **verified**（当前 Route v2 增量） |
+| 源码身份 | `default-product-source-manifest-0.1.3.json` 与 Runtime 常量共同固定 `fe4cdd7d…a84ff`；manifest 覆盖 2043 个文件、14497438 bytes | **verified**（当前 Tool Protocol v2 增量） |
 | 实验决策 | `harness-experiment-release-evidence-0.1.3.json`：content SHA `05ace12e…663c`，`promotionReady=true`；两个 execution、360 Runs | **historical**：尚未绑定当前增量源码身份，最终阶段统一刷新 |
 | 综合验收 | `agent-harness-acceptance-evidence-0.1.3.json`：content SHA `1c56410f…4c89`，388 Ledger Runs，`acceptanceReady=true` | **historical**：尚未绑定当前增量源码身份，最终阶段统一刷新 |
 | 产品路径 smoke | 历史干净 Thread/Casebook 创建 6 个 Run/Trial，6/6 passed；完整 10-case Gate 仅覆盖 6 cases | **historical**：保持 `status=incomplete`、`defaultTrackReady=false`，当前源码需重新采集 |
@@ -109,6 +109,7 @@
 | 1920×1080 Route QA | 同一隔离数据与 Route 控制面；`horizontalOverflowPx=0`，设置抽屉与 Route 卡片均在视口内，截图目视无重叠或裁切 | **verified** |
 | Route 浏览器安全路径 | 秘密 Header 使保存按钮 fail closed；显式 credential pool 在 0/1 成员时 fail closed、2 成员时恢复；保存后 Bootstrap 返回规范化 Route；关闭保存后字段删除且刷新保持关闭；console/page error 为空 | **verified** |
 | Route v2 实现回归 | Contracts `126/126`、Runtime `2010/2010`、Server `263/263`、Web `958/958`、CLI `194/194`、SDK `80/80`、Benchmark Kit `90/90`、Harness Eval `10/10`（含 180 Runs）均通过；live-only tests 按环境跳过 | **verified** |
+| Tool Protocol v2 实现回归 | Contracts `126/126`、Runtime `2015/2015`、Web `960/960` 均通过；Runtime 14 个 live-only files / 32 tests 按环境跳过；architecture、dead-code、duplicates、dependency ownership 门禁全绿 | **verified** |
 | Root 历史证据校验 | `444` 项通过；`11` 项对旧 release/S1/SDK parity 快照与当前源码身份不一致执行 fail closed | **pending**（最终证据刷新阶段） |
 | Web UI E2E 基线 | 上一轮三视口基线保留；当前源码的全量 E2E 与布局基线等待最终统一刷新 | **pending**（最终阶段） |
 
@@ -119,11 +120,11 @@
 | Model Route v2 | role/path/subagent 统一解析；最多 4 级 fallback；Run fingerprint v9 冻结 Route；旧 v1–v8 回放兼容；持久 health/cooldown/cursor；Retry-After、provider hint、backoff 与 attempt 归因 | **verified** |
 | Provider Endpoint Profile | HTTPS/loopback HTTP 限制；拒绝 URL credential/query/fragment；gateway/model/dialect/non-secret headers；真实 provider 调用接收 endpoint、header 与 credential；Ledger 仅保存哈希 slot ID | **verified** |
 | Web Route 控制面 | role/path/subagent binding、endpoint、round-robin pool、retry envelope、中文文案、修订历史与显式清除；三档桌面视口完成浏览器验收 | **verified** |
-| 原生 Tool Protocol v2 | 尚未进入本轮实现与回归 | **pending** |
+| 原生 Tool Protocol v2 | 单一 Registry 拥有 definition / invocation / UI projection；原生 `read_file`、workspace preview/apply、Browser；其余工具显式走兼容适配层；definition/implementation hash 分离；canonical/model-visible schema、动态副作用、审批、并发、重试、回放与 Code Bridge 统一消费协议；旧 Browser v2 receipt 与历史 implementation hash 保持兼容 | **verified** |
 | Context Projection Service | 尚未进入本轮实现与回归 | **pending** |
 | Subagent Hub 与监督 UI | 冻结 Route 已传入现有 Subagent 执行路径；Hub 产品面与实时监督尚未完成 | **pending** |
 | Phase 4 与最终发布证据 | 尚未开始；必须在后续实现后刷新全仓门禁、E2E、dist、acceptance、release audit | **pending** |
 
 ## 10. 当前判定
 
-历史 A1–A8 基线继续有效；当前 `next.md` 的首个 Phase 3 独立单元——Model Route v2 与 Provider Endpoint Profile——已经由实现、专项测试、源码身份和真实浏览器交互共同验证。原生 Tool Protocol v2、Context Projection Service、Subagent Hub、Phase 4 与最终发布证据仍为 `pending`，因此本矩阵不把总目标标记为完成。S1 的外部签名发布及 Windows 主机验收继续独立保持 `blocked`。
+历史 A1–A8 基线继续有效；当前 `next.md` 的 Model Route v2、Provider Endpoint Profile 与原生 Tool Protocol v2 已由实现、完整 Runtime/Web/Contracts 回归、源码身份及对应专项证据共同验证。Context Projection Service、Subagent Hub、Phase 4 与最终发布证据仍为 `pending`，因此本矩阵不把总目标标记为完成。S1 的外部签名发布及 Windows 主机验收继续独立保持 `blocked`。

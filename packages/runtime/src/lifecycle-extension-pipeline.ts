@@ -28,6 +28,7 @@ export interface LifecycleExtensionEffect {
 
 export interface AgentStepCapabilityView {
   candidateToolNames: readonly string[];
+  definitionSha256(toolName: string): string;
   activeToolNames(): readonly string[];
   restrictTo(toolNames: readonly string[]): void;
   schemaVersion: string;
@@ -49,6 +50,9 @@ export interface AgentToolLifecycleContext {
   threadId: string;
   stepIndex: number;
   toolCall: Readonly<{ id: string; name: string }>;
+  protocol: Readonly<
+    import("@napier/contracts/tool-protocol").ToolInvocationProtocolV2
+  >;
   input: unknown;
   signal?: AbortSignal;
 }
@@ -339,12 +343,19 @@ export class AgentLifecyclePipelineHost {
 export function createAgentStepCapabilityView(input: {
   toolNames: readonly string[];
   schemaVersion: string;
+  definitionSha256?: (toolName: string) => string;
 }): AgentStepCapabilityView {
   const candidates = Object.freeze(uniqueStrings(input.toolNames));
   let active = candidates;
   return Object.freeze({
     candidateToolNames: candidates,
     schemaVersion: input.schemaVersion,
+    definitionSha256: (toolName: string) => {
+      if (!candidates.includes(toolName)) {
+        throw new Error(`Lifecycle capability is unavailable: ${toolName}`);
+      }
+      return input.definitionSha256?.(toolName) ?? input.schemaVersion;
+    },
     activeToolNames: () => active,
     restrictTo: (toolNames: readonly string[]) => {
       const requested = uniqueStrings(toolNames);

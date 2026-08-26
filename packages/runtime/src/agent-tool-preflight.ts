@@ -1,6 +1,6 @@
 import type { BeforeToolCallResult } from "@earendil-works/pi-agent-core";
 import type { AssistantMessage } from "@earendil-works/pi-ai";
-import type { ToolLoopGuardPolicy } from "@napier/contracts";
+import type { JsonValue, ToolLoopGuardPolicy } from "@napier/contracts";
 
 import { agentToolInputLedgerProjection } from "./agent-tool-ledger.js";
 import type { AgentToolResultLifecycle } from "./agent-tool-result-lifecycle.js";
@@ -48,6 +48,28 @@ export function createAgentToolPreflight(input: {
     signal?: AbortSignal,
   ): Promise<BeforeToolCallResult | undefined>;
 } {
+  const recordBlock = async (
+    toolCall: ToolCallContext["toolCall"],
+    args: unknown,
+    reason: string,
+    evidence: Record<string, JsonValue> = {},
+  ): Promise<BeforeToolCallResult> => {
+    await append(input, "tool.blocked", {
+      callId: toolCall.id,
+      toolName: toolCall.name,
+      status: "blocked",
+      ...input.lifecycle.protocolProjection(
+        toolCall.id,
+        toolCall.name,
+        "blocked",
+        args,
+      ),
+      ...agentToolInputLedgerProjection(toolCall.name, args),
+      policyReason: reason,
+      ...evidence,
+    });
+    return { block: true, reason };
+  };
   const governed = async (
     toolCall: { id: string; name: string },
     args: unknown,
@@ -66,10 +88,12 @@ export function createAgentToolPreflight(input: {
     beforeToolCall: async ({ assistantMessage, toolCall, args }, signal) => {
       if (signal?.aborted && !input.budget.exhaustion) return undefined;
       if (!input.activeToolNames().has(toolCall.name)) {
-        return {
-          block: true,
-          reason: `Tool ${toolCall.name} is not active for this step`,
-        };
+        return recordBlock(
+          toolCall,
+          args,
+          `Tool ${toolCall.name} is not active for this step`,
+          { harnessInterventionReason: "capability_block" },
+        );
       }
       const toolCalls = assistantMessage.content.filter(
         (content) => content.type === "toolCall",
@@ -80,26 +104,21 @@ export function createAgentToolPreflight(input: {
         ) &&
         toolCalls.length !== 1
       ) {
-        return {
-          block: true,
-          reason:
-            "request_operator_decision must be the only tool call in its assistant turn",
-        };
+        return recordBlock(
+          toolCall,
+          args,
+          "request_operator_decision must be the only tool call in its assistant turn",
+          { harnessInterventionReason: "safety_block" },
+        );
       }
       const exhaustion =
         toolCall.name === "request_operator_decision"
           ? input.budget.exhaustion
           : input.budget.exhaustBeforeNextPrimaryTurn();
       if (exhaustion) {
-        await append(input, "tool.blocked", {
-          callId: toolCall.id,
-          toolName: toolCall.name,
-          status: "blocked",
-          ...agentToolInputLedgerProjection(toolCall.name, args),
-          policyReason: exhaustion.message,
+        return recordBlock(toolCall, args, exhaustion.message, {
           harnessInterventionReason: "budget_pause",
         });
-        return { block: true, reason: exhaustion.message };
       }
       const guard = latestActiveToolLoopGuard(
         await input.store.listRunEvents(input.policy.run.id),
@@ -113,12 +132,8 @@ export function createAgentToolPreflight(input: {
         createToolCallSha256(toolCall.name, args) === guard.receipt.callSha256
       ) {
         const reason = toolLoopGuardBlockReason(guard);
-        await append(input, "tool.blocked", {
-          callId: toolCall.id,
-          toolName: toolCall.name,
-          status: "blocked",
+        await recordBlock(toolCall, args, TOOL_LOOP_GUARD_POLICY_REASON, {
           inputSha256: createToolCallSha256(toolCall.name, args),
-          policyReason: TOOL_LOOP_GUARD_POLICY_REASON,
           loopGuardTriggerSha256: guard.receipt.contentSha256,
         });
         return { block: true, reason };

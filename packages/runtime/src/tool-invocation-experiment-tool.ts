@@ -8,8 +8,8 @@ import { createStatelessAgentTools } from "./stateless-agent-tools.js";
 import type { LocalStore } from "./store.js";
 import {
   TOOL_INVOCATION_EXPERIMENT_TOOLS,
-  toolDefinitionSha256,
 } from "./tool-invocation-capsule.js";
+import { createOwnedToolRecordV2 } from "./tool-protocol-registry.js";
 
 export function resolveToolInvocationExperimentTool(input: {
   store: LocalStore;
@@ -39,7 +39,7 @@ export function resolveToolInvocationExperimentTool(input: {
   }).find((candidate) => candidate.name === input.toolName);
   if (
     !tool ||
-    toolDefinitionSha256(tool) !== input.expectedDefinitionSha256 ||
+    !definitionMatches(tool, input.expectedDefinitionSha256) ||
     builtInToolEffect(input.toolName, input.arguments) !== "read"
   ) {
     throw new Error(
@@ -65,4 +65,9 @@ export function resolveToolInvocationExperimentTool(input: {
     throw new Error("Tool invocation experiment policy denied execution");
   }
   return tool;
+}
+
+function definitionMatches(tool: AgentTool, expected: string): boolean {
+  const protocol = createOwnedToolRecordV2(tool);
+  return protocol.implementationSha256 === expected;
 }

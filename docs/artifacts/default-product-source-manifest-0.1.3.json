@@ -5,13 +5,13 @@
   "predecessor": {
     "productVersion": "0.1.2",
     "commit": "45c736f0b426db5d03f88adbb17acb8df32e7703",
-    "changedPathCount": 1283,
-    "changedPathsSha256": "0c9b9cc2982c50a22cf08ea357b4a78f6e9ceee1f99590bf78b549d0a23f4798"
+    "changedPathCount": 1292,
+    "changedPathsSha256": "eb2dc0a227fdac763734ddbe5be2645e14187a567b5384c63cdd595066292139"
   },
   "identityDeclarationPath": "packages/runtime/src/release-product-identity.ts",
   "identityDeclarationSha256": "5a8dada43a7d464d3de4e65cc7c556def3391ef59f674cdb6949a1ce5362b62d",
-  "fileCount": 2040,
-  "totalBytes": 14464854,
+  "fileCount": 2043,
+  "totalBytes": 14497438,
   "files": [
     {
       "path": "apps/server/package.json",
@@ -2795,8 +2795,8 @@
     },
     {
       "path": "apps/web/src/conversation-tool-activity-view-model.ts",
-      "bytes": 9196,
-      "sha256": "48c063d9fa1c15fa13b2bd64a47592f2eacd25b0f9ebcc0610d06bca4ecd3b72"
+      "bytes": 10310,
+      "sha256": "7657fb6fcf3980a95b4e14bb88944db365b893024c6a19e2d3a19f12d43ecd4a"
     },
     {
       "path": "apps/web/src/copy-narrative.ts",
@@ -3815,8 +3815,8 @@
     },
     {
       "path": "apps/web/src/tool-event-view.ts",
-      "bytes": 23811,
-      "sha256": "7d5efd95e1d88ba25cf4a84885141faae9fc0bda26b6157cd9e185528f9c56e8"
+      "bytes": 23294,
+      "sha256": "5ccf876e60d3d1e8532958ab679fa191348c87a209f5ecbe9dc0128132f0d351"
     },
     {
       "path": "apps/web/src/tool-invocation-experiment-api.ts",
@@ -3852,6 +3852,11 @@
       "path": "apps/web/src/tool-loop-guard-view.ts",
       "bytes": 1994,
       "sha256": "8ea5312fdc0a496bc08e8feb30724ac3467e1da199d2a5239cee1e1e49c7acc2"
+    },
+    {
+      "path": "apps/web/src/tool-protocol-event-view.ts",
+      "bytes": 3976,
+      "sha256": "15fb734c212437b4bd81c21b157df3e8451fbbaba03bd4308627dd79c991d01f"
     },
     {
       "path": "apps/web/src/tool-result-context-pruning-view.ts",
@@ -5345,8 +5350,8 @@
     },
     {
       "path": "packages/contracts/src/tool-protocol.ts",
-      "bytes": 1771,
-      "sha256": "3b25842c87a9f38b66e7cf93d4f90c1f73b1a99c6e10d803ea08bab6714db043"
+      "bytes": 3440,
+      "sha256": "65cdd4dc766d985296e9969f43977302efe2f8c48cc7b46437afd129fbec898e"
     },
     {
       "path": "packages/contracts/src/trusted-receipt-envelope-v1.ts",
@@ -5560,8 +5565,8 @@
     },
     {
       "path": "packages/runtime/src/agent-message-tool-result-replay.ts",
-      "bytes": 15491,
-      "sha256": "53e8d0d8f941deb81de200ba63dead6ce75baa2e826a5ec764bcf23461944520"
+      "bytes": 15738,
+      "sha256": "0be5ebbd9a3af378427d1c2d3eb73842f727ac07a58cbc4885b0b0a35aa7fa86"
     },
     {
       "path": "packages/runtime/src/agent-milestone-tool.ts",
@@ -5660,8 +5665,8 @@
     },
     {
       "path": "packages/runtime/src/agent-runtime-step-lifecycle.ts",
-      "bytes": 6256,
-      "sha256": "000ee14781f90c09f1e222b885f49ba0df56513e0859765868871ecfafa55799"
+      "bytes": 6566,
+      "sha256": "7709ace4e8264f08b349900e784f6c7e46fa654e60ec4cb6e390e8651f6f590f"
     },
     {
       "path": "packages/runtime/src/agent-runtime-utils.ts",
@@ -5670,8 +5675,8 @@
     },
     {
       "path": "packages/runtime/src/agent-runtime.ts",
-      "bytes": 111073,
-      "sha256": "37d1f72b7632a22f5f033bf88cad7431a02d31d19984602e5e2be71bac4e7ef7"
+      "bytes": 111603,
+      "sha256": "0d3b1765211f582f01258c33d265f1e3be0ff5834bc02a588f12fda698a0de1f"
     },
     {
       "path": "packages/runtime/src/agent-sessions.ts",
@@ -5700,13 +5705,13 @@
     },
     {
       "path": "packages/runtime/src/agent-tool-policy-preflight.ts",
-      "bytes": 11946,
-      "sha256": "23974be7336a8dcda39bb821db8b830274258d98c07e0b6592b4bc1219e554aa"
+      "bytes": 12332,
+      "sha256": "34fdbb9e38f1865601db8f51f108c66b3d93b97b61b8035bbcaaaa80630b31d3"
     },
     {
       "path": "packages/runtime/src/agent-tool-preflight.ts",
-      "bytes": 4898,
-      "sha256": "3f5c32a4092a9e760c4e6f411b44c9b647ba36531d57c1dc37342da84a31bf9a"
+      "bytes": 5292,
+      "sha256": "3b50b3df8fa119135f4ed66d3eb46915bb8f55381581f6eff79a6c6e51d381c4"
     },
     {
       "path": "packages/runtime/src/agent-tool-readiness.ts",
@@ -5715,13 +5720,13 @@
     },
     {
       "path": "packages/runtime/src/agent-tool-result-boundary.ts",
-      "bytes": 2678,
-      "sha256": "ba9d4a91c01a243442d56de64b5bc1a19fdfd406254d4dd28541e1151564dd67"
+      "bytes": 2915,
+      "sha256": "14505bcd8e8bc83449154881b831c57992ff27d42edb34fb0ec6d71abc52857d"
     },
     {
       "path": "packages/runtime/src/agent-tool-result-lifecycle.ts",
-      "bytes": 8223,
-      "sha256": "b5b7d818351d14d7d419fcb490b2f60949ea0ead1e96a4c531cacceea2d9fdd6"
+      "bytes": 9718,
+      "sha256": "fc19c388afc8771f067e1eb27fd63ad174608b02391ca2a428b85fd31881bd53"
     },
     {
       "path": "packages/runtime/src/agent-tool-result-text.ts",
@@ -5745,8 +5750,8 @@
     },
     {
       "path": "packages/runtime/src/agent-turn-pipeline.ts",
-      "bytes": 9271,
-      "sha256": "b9f643f10c161dbd6b1417e3bedf63a78cd5c8dc514b96189a9006b80d7001d7"
+      "bytes": 9381,
+      "sha256": "b21f4ccc1295f2756836a9a7d17965db335680596e3d16281324941e20d8afc5"
     },
     {
       "path": "packages/runtime/src/agents.ts",
@@ -6115,8 +6120,8 @@
     },
     {
       "path": "packages/runtime/src/capability-catalog.ts",
-      "bytes": 6809,
-      "sha256": "95a8376286d72b165131fb9577bd1b29c5b7e645a286eafc39540a5ca4e87501"
+      "bytes": 4933,
+      "sha256": "9ea04a7e534946a0cc8bd816544cf1cb60f179fb0247efa162ffc78a11801165"
     },
     {
       "path": "packages/runtime/src/channels.ts",
@@ -6925,8 +6930,8 @@
     },
     {
       "path": "packages/runtime/src/governed-code-bridge.ts",
-      "bytes": 10943,
-      "sha256": "34b619bd6a896cead65898d0823bfff9f4895dd658a163320a9169ce67c4c957"
+      "bytes": 11741,
+      "sha256": "5a1ea4318913d56f9863697a7953e938855d2d9af65698c0fe011c8044c3c04e"
     },
     {
       "path": "packages/runtime/src/harness-eval-support.ts",
@@ -7125,8 +7130,8 @@
     },
     {
       "path": "packages/runtime/src/lifecycle-extension-pipeline.ts",
-      "bytes": 11992,
-      "sha256": "11f441e6ee4d32a4cef1032469510e5ab3324023995b3323fe72f7d692d0c750"
+      "bytes": 12441,
+      "sha256": "3c037b8d3b923949808868bf376117f0b999366db52a928c2fa77a7f6644b483"
     },
     {
       "path": "packages/runtime/src/local-agent-runtime.ts",
@@ -9100,8 +9105,8 @@
     },
     {
       "path": "packages/runtime/src/tool-deadline.ts",
-      "bytes": 12070,
-      "sha256": "c6c0f040ece15f075e9c26d07977be282fce8a2a0758c62764bad7f343bdf995"
+      "bytes": 12869,
+      "sha256": "2e650bd623181843bde350a6663853fbfe63b911c925ac3838643b0fa65abf6f"
     },
     {
       "path": "packages/runtime/src/tool-invocation-capsule-store.ts",
@@ -9115,8 +9120,8 @@
     },
     {
       "path": "packages/runtime/src/tool-invocation-capture.ts",
-      "bytes": 2802,
-      "sha256": "60790ddfadf60307d2524347421acaf0139c2cac7a47de8c54752d798a903ac4"
+      "bytes": 2851,
+      "sha256": "d4c5dcec8281956605552aa5e1f4a81196fd310f23c202df08e451b75c7363cb"
     },
     {
       "path": "packages/runtime/src/tool-invocation-experiment-comparison-protocol.ts",
@@ -9145,18 +9150,18 @@
     },
     {
       "path": "packages/runtime/src/tool-invocation-experiment-run-gate.ts",
-      "bytes": 3935,
-      "sha256": "6b7f8ed5ca6f739ecfdb61d4d9ec9e6a936e9feae45a22866310afc8e77b4255"
+      "bytes": 4322,
+      "sha256": "a41dccc6d74e39461def8253e457c4517464ed3d66672de2d4158d566d222606"
     },
     {
       "path": "packages/runtime/src/tool-invocation-experiment-source.ts",
-      "bytes": 7237,
-      "sha256": "c1db4f21e7bad4d985692acaa1b5c755b2625d4ffe239fc34ced71f88d48ec61"
+      "bytes": 7656,
+      "sha256": "967214c3f4f45e8de448b4805ba5b4e3ea0aad6ab624a55a86b7601aec09af6c"
     },
     {
       "path": "packages/runtime/src/tool-invocation-experiment-tool.ts",
-      "bytes": 2099,
-      "sha256": "d6ff2adfebcc1bbebfead8ed70365b5829508dfa22e196773dfe1b31606ba560"
+      "bytes": 2320,
+      "sha256": "9388558b48c79dec5cd7efeaf6132a5574b7050efdf6352427bfac58d6a1cc1a"
     },
     {
       "path": "packages/runtime/src/tool-invocation-experiments.ts",
@@ -9187,6 +9192,16 @@
       "path": "packages/runtime/src/tool-loop-guard.ts",
       "bytes": 12370,
       "sha256": "a286ca0e0581c25afc5952f47f7b019ef217fcd4befd0c969d6559361dd48b53"
+    },
+    {
+      "path": "packages/runtime/src/tool-protocol-registry.ts",
+      "bytes": 10011,
+      "sha256": "1cb1a71255160c9d67d00a07715accf0e697a3efcb75611dee6f0c8cf3807954"
+    },
+    {
+      "path": "packages/runtime/src/tool-protocol-schema.ts",
+      "bytes": 11376,
+      "sha256": "2f4df068d343f4a8bc281bead5f254d838091b65ddc9354b5aa27cee0c454099"
     },
     {
       "path": "packages/runtime/src/tool-result-context-extension.ts",
@@ -10214,5 +10229,5 @@
       "sha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c"
     }
   ],
-  "contentSha256": "757c784e1abb808bf7f05329208d045da2c8a2c3c961ec62e0e2d69dc94f2564"
+  "contentSha256": "fe4cdd7d23281130355d7f3672592fcff306b00bc2e537ea3f6ed1aa5c5a84ff"
 }

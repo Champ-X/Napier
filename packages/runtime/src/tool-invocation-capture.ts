@@ -21,6 +21,7 @@ export async function captureToolInvocation(
   callId: string,
   toolName: string,
   args: unknown,
+  definitionSha256?: string,
   onEvent?: EventSink,
 ): Promise<ToolInvocationCapsuleReceipt | undefined> {
   if (!TOOL_INVOCATION_EXPERIMENT_TOOLS.has(toolName)) return undefined;
@@ -33,7 +34,7 @@ export async function captureToolInvocation(
       sourceRunId: run.id,
       callId,
       toolName,
-      toolDefinitionSha256: toolDefinitionSha256(tool),
+      toolDefinitionSha256: definitionSha256 ?? toolDefinitionSha256(tool),
       arguments: args,
     });
     await append(

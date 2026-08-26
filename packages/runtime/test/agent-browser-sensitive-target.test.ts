@@ -109,6 +109,18 @@ describe("Agent Browser sensitive-target handoff", () => {
         policyReason: expect.stringContaining(
           "requires pause-bound human takeover",
         ),
+        toolProtocol: expect.objectContaining({
+          kind: "napier.tool-ui-projection",
+          schemaVersion: 2,
+          toolId: "browser",
+          semanticVersion: "2.0.0",
+          definitionSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+          implementationSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+          status: "blocked",
+          sideEffect: "unknown",
+          concurrency: "serialized",
+          compatibilityMode: "native",
+        }),
       }),
     );
     const durable = JSON.stringify(events);

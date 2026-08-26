@@ -11,7 +11,10 @@ export interface CanonicalAgentToolResult {
 }
 
 export function createAgentToolResultFinalizer(
-  lifecycle: Pick<AgentToolResultLifecycle, "finalize">,
+  lifecycle: Pick<
+    AgentToolResultLifecycle,
+    "finalize" | "validateModelVisibleResult"
+  >,
 ): (
   input: Parameters<AgentToolResultLifecycle["finalize"]>[0],
 ) => Promise<AfterToolCallResult> {
@@ -22,7 +25,13 @@ export function createAgentToolResultFinalizer(
       result: canonical.result,
       isError: canonical.isError,
     });
-    return presentCanonicalAgentToolResult(canonical, override);
+    const presented = presentCanonicalAgentToolResult(canonical, override);
+    lifecycle.validateModelVisibleResult(
+      toolCall.name,
+      presented as AgentToolResult<unknown>,
+      presented.isError ?? canonical.isError,
+    );
+    return presented;
   };
 }
 

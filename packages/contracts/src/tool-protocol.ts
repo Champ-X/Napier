@@ -8,16 +8,75 @@ export type ToolSideEffect =
 
 export type ToolJsonSchema = Record<string, unknown>;
 
+export type ToolSideEffectMode = "static" | "input_dependent";
+
+export interface ToolRetryPolicyV2 {
+  strategy: "never" | "not_started";
+  maxAttempts: number;
+}
+
+export interface ToolIdempotencyPolicyV2 {
+  key: "none" | "arguments" | "preview_token";
+  resultReplay: "never" | "exact_result_only";
+}
+
+export interface ToolApprovalPolicyV2 {
+  mode: "none" | "policy" | "explicit";
+  codeBridge: "allowed" | "external_checkpoint";
+}
+
+export interface ToolCompatibilityAdapterV2 {
+  mode: "native" | "compatibility";
+  runtime: "pi-agent-tool/v1";
+  legacyDefinitionSha256: string;
+}
+
 export interface ToolDefinitionV2 {
+  schemaVersion: 2;
   id: string;
   version: string;
   capabilityUris: string[];
   inputSchema: ToolJsonSchema;
   canonicalOutputSchema: ToolJsonSchema;
   modelVisibleOutputSchema: ToolJsonSchema;
+  uiProjectionSchema: ToolJsonSchema;
   concurrency: ToolConcurrency;
   sideEffect: ToolSideEffect;
+  sideEffectMode: ToolSideEffectMode;
+  retry: ToolRetryPolicyV2;
+  idempotency: ToolIdempotencyPolicyV2;
+  approval: ToolApprovalPolicyV2;
   policyTags: string[];
+  compatibility: ToolCompatibilityAdapterV2;
+}
+
+export interface ToolInvocationProtocolV2 {
+  kind: "napier.tool-invocation-protocol";
+  schemaVersion: 2;
+  toolId: string;
+  semanticVersion: string;
+  definitionSha256: string;
+  implementationSha256: string;
+  sideEffect: ToolSideEffect;
+  concurrency: ToolConcurrency;
+  retry: ToolRetryPolicyV2;
+  idempotency: ToolIdempotencyPolicyV2;
+  approval: ToolApprovalPolicyV2;
+  policyTags: string[];
+  compatibilityMode: ToolCompatibilityAdapterV2["mode"];
+}
+
+export interface ToolUiProjectionV2 {
+  kind: "napier.tool-ui-projection";
+  schemaVersion: 2;
+  toolId: string;
+  semanticVersion: string;
+  definitionSha256: string;
+  implementationSha256: string;
+  status: "started" | "completed" | "failed" | "blocked";
+  sideEffect: ToolSideEffect;
+  concurrency: ToolConcurrency;
+  compatibilityMode: ToolCompatibilityAdapterV2["mode"];
 }
 
 export interface CapabilityDescriptor {

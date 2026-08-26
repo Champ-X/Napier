@@ -5,13 +5,13 @@ import type {
 } from "@earendil-works/pi-agent-core";
 import type { JsonObject, RunEvent, RunRecord } from "@napier/contracts";
 
-import { builtInToolEffect } from "./agent-tool-effects.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { EventSink } from "./event-sink.js";
 import type { ModelRegistry } from "./models.js";
 import type { RunBudgetTracker } from "./run-budget.js";
 import type { LocalStore } from "./store.js";
 import { createToolCallSha256 } from "./tool-loop-guard.js";
+import type { ToolProtocolRegistry } from "./tool-protocol-registry.js";
 import {
   DEFAULT_TOOL_DEADLINE_POLICY,
   ToolDeadlineError,
@@ -36,6 +36,7 @@ export class ToolDeadlineManager {
       policy: ToolDeadlinePolicy;
       run: Pick<RunRecord, "id" | "threadId">;
       store: LocalStore;
+      toolProtocol?: ToolProtocolRegistry;
       onEvent?: EventSink;
     },
   ) {}
@@ -191,7 +192,9 @@ export class ToolDeadlineManager {
     >;
     startedJournal: Promise<ToolEffectJournalEvidence>;
   }> {
-    for (let attempt = 1; attempt <= 2; attempt += 1) {
+    const retry = this.context.toolProtocol?.get(tool.name)?.definition.retry;
+    const maxAttempts = retry?.maxAttempts ?? 2;
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       await this.journal(tool, callId, args, "not_started", attempt);
       signal.throwIfAborted();
       try {
@@ -209,7 +212,11 @@ export class ToolDeadlineManager {
         );
         return { attempt, settled, startedJournal };
       } catch (error) {
-        if (!(error instanceof ToolNotStartedError) || attempt >= 2)
+        if (
+          !(error instanceof ToolNotStartedError) ||
+          retry?.strategy === "never" ||
+          attempt >= maxAttempts
+        )
           throw error;
         await this.retry(tool, callId, args, attempt);
       }
@@ -229,7 +236,9 @@ export class ToolDeadlineManager {
       schemaVersion: 1 as const,
       callId,
       toolNameSha256: sha256(tool.name),
-      effect: builtInToolEffect(tool.name, args) ?? "unknown",
+      effect: legacyEffect(
+        this.context.toolProtocol?.get(tool.name)?.invocation(args).sideEffect,
+      ),
       state,
       attempt,
       callSha256: createToolCallSha256(tool.name, args),
@@ -290,8 +299,9 @@ export class ToolDeadlineManager {
     timeoutMs: number,
     state: ToolEffectState,
   ): Promise<ToolDeadlineEvidence> {
-    const effect: ToolDeadlineEvidence["effect"] =
-      builtInToolEffect(tool.name, args) ?? "unknown";
+    const effect: ToolDeadlineEvidence["effect"] = legacyEffect(
+      this.context.toolProtocol?.get(tool.name)?.invocation(args).sideEffect,
+    );
     const content = {
       kind: "napier.tool-deadline" as const,
       schemaVersion: 1 as const,
@@ -338,6 +348,7 @@ export function createToolDeadlineManager(input: {
   registry: ModelRegistry;
   run: Pick<RunRecord, "id" | "threadId">;
   store: LocalStore;
+  toolProtocol?: ToolProtocolRegistry;
   onEvent?: EventSink;
 }): ToolDeadlineManager {
   const policy = {
@@ -354,6 +365,7 @@ export function wrapToolsWithDeadlines(input: {
   registry: ModelRegistry;
   run: Pick<RunRecord, "id" | "threadId">;
   store: LocalStore;
+  toolProtocol?: ToolProtocolRegistry;
   onEvent?: EventSink;
 }): ToolDeadlineManager {
   const manager = createToolDeadlineManager({
@@ -361,11 +373,20 @@ export function wrapToolsWithDeadlines(input: {
     registry: input.registry,
     run: input.run,
     store: input.store,
+    ...(input.toolProtocol ? { toolProtocol: input.toolProtocol } : {}),
     ...(input.onEvent ? { onEvent: input.onEvent } : {}),
   });
   manager.wrap(input.immediateTools);
   manager.wrap(input.deferredTools);
   return manager;
+}
+
+function legacyEffect(
+  effect: import("@napier/contracts/tool-protocol").ToolSideEffect | undefined,
+): "read" | "write" | "unknown" {
+  if (effect === "none") return "read";
+  if (effect === "reversible" || effect === "irreversible") return "write";
+  return "unknown";
 }
 
 function requestedTimeoutMs(value: unknown): number | undefined {

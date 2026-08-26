@@ -34,9 +34,23 @@ describe("Capability Catalog", () => {
         uri: "cap://tools/apply_patch",
         definitionSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
         definition: expect.objectContaining({
+          schemaVersion: 2,
           id: "apply_patch",
+          version: "1.0.0-compat.1",
           sideEffect: "reversible",
+          sideEffectMode: "static",
           concurrency: "serialized",
+          retry: { strategy: "not_started", maxAttempts: 2 },
+          idempotency: { key: "none", resultReplay: "never" },
+          approval: { mode: "policy", codeBridge: "allowed" },
+          uiProjectionSchema: expect.objectContaining({
+            type: "object",
+          }),
+          compatibility: expect.objectContaining({
+            mode: "compatibility",
+            runtime: "pi-agent-tool/v1",
+            legacyDefinitionSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+          }),
           canonicalOutputSchema: expect.objectContaining({
             "x-napier-surface": "canonical",
           }),
@@ -47,7 +61,16 @@ describe("Capability Catalog", () => {
       }),
     );
     expect(descriptors[1]?.definition).toEqual(
-      expect.objectContaining({ sideEffect: "none", concurrency: "safe" }),
+      expect.objectContaining({
+        version: "2.0.0",
+        sideEffect: "none",
+        concurrency: "safe",
+        idempotency: {
+          key: "arguments",
+          resultReplay: "exact_result_only",
+        },
+        compatibility: expect.objectContaining({ mode: "native" }),
+      }),
     );
   });
 

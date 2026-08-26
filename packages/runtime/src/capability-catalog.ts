@@ -1,28 +1,19 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type {
   CapabilityDescriptor,
-  ToolConcurrency,
   ToolDefinitionV2,
-  ToolSideEffect,
 } from "@napier/contracts/tool-protocol";
 import { Type } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
-import { builtInToolEffect } from "./agent-tool-effects.js";
-import { toolDefinitionSha256 } from "./tool-invocation-capsule.js";
+import {
+  createOwnedToolRecordV2,
+  ToolProtocolRegistry,
+} from "./tool-protocol-registry.js";
 
 export const CAPABILITY_TOOL_NAME = "capability";
 const CAPABILITY_ROOT_URI = "cap://tools";
 const MAX_CAPABILITY_MATCHES = 20;
-const REVERSIBLE_TOOL_NAMES = new Set([
-  "apply_patch",
-  "workspace_file_apply",
-  "lsp_rename_apply",
-  "lsp_code_action_apply",
-  "web_fetch_save",
-]);
-const EXCLUSIVE_TOOL_NAMES = new Set(["workspace_file_apply"]);
-
 const capabilitySchema = Type.Union([
   Type.Object(
     {
@@ -53,8 +44,9 @@ export interface CapabilityCatalogDetails {
 
 export function createCapabilityCatalogTool(
   candidates: readonly AgentTool[],
+  registry?: ToolProtocolRegistry,
 ): AgentTool<typeof capabilitySchema, CapabilityCatalogDetails> {
-  const descriptors = createCapabilityDescriptors(candidates);
+  const descriptors = createCapabilityDescriptors(candidates, registry);
   const catalogSha256 = sha256(
     canonicalJson(descriptors.map(({ definitionSha256 }) => definitionSha256)),
   );
@@ -90,45 +82,26 @@ export function createCapabilityCatalogTool(
 
 export function createCapabilityDescriptors(
   candidates: readonly AgentTool[],
+  registry?: ToolProtocolRegistry,
 ): CapabilityDescriptor[] {
-  const names = new Set<string>();
-  return candidates
-    .filter((tool) => tool.name !== CAPABILITY_TOOL_NAME)
-    .map((tool) => {
-      if (names.has(tool.name)) {
-        throw new Error(`Capability Catalog tool name is duplicated: ${tool.name}`);
-      }
-      names.add(tool.name);
-      const definition = createToolDefinitionV2(tool);
-      const uri = definition.capabilityUris[0]!;
-      return Object.freeze({
-        kind: "napier.capability-descriptor" as const,
-        schemaVersion: 1 as const,
-        uri,
-        toolId: tool.name,
-        label: tool.label,
-        description: tool.description,
-        definition,
-        definitionSha256: sha256(canonicalJson(definition)),
-      });
-    })
-    .sort((left, right) => left.toolId.localeCompare(right.toolId));
+  const expected = new Set<string>();
+  for (const tool of candidates) {
+    if (expected.has(tool.name)) {
+      throw new Error(`Capability Catalog tool name is duplicated: ${tool.name}`);
+    }
+    if (tool.name !== CAPABILITY_TOOL_NAME) expected.add(tool.name);
+  }
+  const descriptors = (registry ?? new ToolProtocolRegistry(candidates))
+    .descriptors()
+    .filter(({ toolId }) => expected.has(toolId));
+  if (descriptors.length !== expected.size) {
+    throw new Error("Capability Catalog registry does not own every candidate");
+  }
+  return descriptors;
 }
 
 export function createToolDefinitionV2(tool: AgentTool): ToolDefinitionV2 {
-  const uri = `${CAPABILITY_ROOT_URI}/${encodeURIComponent(tool.name)}`;
-  const sideEffect = toolSideEffect(tool.name);
-  return Object.freeze({
-    id: tool.name,
-    version: toolDefinitionSha256(tool),
-    capabilityUris: [uri],
-    inputSchema: jsonSchema(tool.parameters),
-    canonicalOutputSchema: resultSchema("canonical"),
-    modelVisibleOutputSchema: resultSchema("model_visible"),
-    concurrency: toolConcurrency(tool, sideEffect),
-    sideEffect,
-    policyTags: ["configured", `side_effect:${sideEffect}`],
-  });
+  return createOwnedToolRecordV2(tool).definition;
 }
 
 function selectByUri(
@@ -161,40 +134,6 @@ function selectByQuery(
       return terms.every((term) => searchable.includes(term));
     })
     .slice(0, limit);
-}
-
-export function toolSideEffect(toolName: string): ToolSideEffect {
-  const effect = builtInToolEffect(toolName);
-  if (effect === "read") return "none";
-  if (effect === "write" && REVERSIBLE_TOOL_NAMES.has(toolName))
-    return "reversible";
-  return "unknown";
-}
-
-function toolConcurrency(
-  tool: AgentTool,
-  sideEffect: ToolSideEffect,
-): ToolConcurrency {
-  if (EXCLUSIVE_TOOL_NAMES.has(tool.name)) return "exclusive";
-  if (tool.executionMode === "sequential") return "serialized";
-  return sideEffect === "none" ? "safe" : "serialized";
-}
-
-function jsonSchema(value: unknown): Record<string, unknown> {
-  return JSON.parse(JSON.stringify(value)) as Record<string, unknown>;
-}
-
-function resultSchema(surface: "canonical" | "model_visible") {
-  return {
-    type: "object",
-    required: ["content", "details"],
-    properties: {
-      content: { type: "array" },
-      details: {},
-    },
-    additionalProperties: true,
-    "x-napier-surface": surface,
-  };
 }
 
 function formatCapabilityResult(details: CapabilityCatalogDetails): string {

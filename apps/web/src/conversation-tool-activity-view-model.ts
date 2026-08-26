@@ -1,6 +1,11 @@
 import type { RunEvent } from "@napier/contracts";
+import {
+  legacyToolEffect,
+  toolProtocolEventEvidence,
+  type ToolProtocolEventEvidence,
+} from "./tool-protocol-event-view";
 
-export interface ConversationToolEvidence {
+export interface ConversationToolEvidence extends ToolProtocolEventEvidence {
   effect?: "read" | "write";
   inputSha256?: string;
   outputSha256?: string;
@@ -119,9 +124,15 @@ function toolEvidence(
   payload: Record<string, unknown>,
 ): ConversationToolEvidence {
   const effect =
-    payload["effect"] === "read" || payload["effect"] === "write"
+    legacyToolEffect(toolProtocolEventEvidence(payload, toolName, statusFromPayload(payload))) ??
+    (payload["effect"] === "read" || payload["effect"] === "write"
       ? payload["effect"]
-      : undefined;
+      : undefined);
+  const protocol = toolProtocolEventEvidence(
+    payload,
+    toolName,
+    statusFromPayload(payload),
+  );
   const inputSha256 = hash(payload["inputSha256"]);
   const outputSha256 =
     hash(payload["outputSha256"]) ?? hash(payload["outputTextSha256"]);
@@ -137,9 +148,22 @@ function toolEvidence(
     ...(inputSha256 ? { inputSha256 } : {}),
     ...(outputSha256 ? { outputSha256 } : {}),
     ...(outputBytes !== undefined ? { outputBytes } : {}),
+    ...protocol,
     ...command,
     ...read,
   };
+}
+
+function statusFromPayload(
+  payload: Record<string, unknown>,
+): "started" | "completed" | "failed" | "blocked" {
+  const value = payload["status"];
+  return value === "started" ||
+    value === "completed" ||
+    value === "failed" ||
+    value === "blocked"
+    ? value
+    : "failed";
 }
 
 function readFileEvidence(value: unknown): ConversationToolEvidence {
@@ -216,6 +240,17 @@ function toolReceipt(
     `tool / ${toolName}`,
     eventType.slice("tool.".length),
     ...(evidence.effect ? [`effect ${evidence.effect}`] : []),
+    ...(evidence.toolProtocolVersion
+      ? [
+          `protocol v${evidence.toolProtocolVersion}`,
+          `side-effect ${evidence.toolSideEffect}`,
+          `concurrency ${evidence.toolConcurrency}`,
+          `definition ${evidence.toolDefinitionSha256!.slice(0, 12)}`,
+          evidence.toolCompatibilityMode === "compatibility"
+            ? "compatibility pi-v1"
+            : "native protocol",
+        ]
+      : []),
     ...(evidence.commandStatus
       ? [`command ${evidence.commandRuntime} ${evidence.commandStatus}`]
       : []),

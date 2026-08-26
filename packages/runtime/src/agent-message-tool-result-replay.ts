@@ -1,5 +1,4 @@
 import type {
-  AgentTool,
   AgentToolResult,
   AfterToolCallResult,
 } from "@earendil-works/pi-agent-core";
@@ -19,7 +18,6 @@ import {
 } from "./tool-invocation-result-capsule.js";
 import type { ToolInvocationResultCapsuleStore } from "./tool-invocation-result-capsule-store.js";
 import {
-  toolDefinitionSha256,
   toolInvocationArgumentsSha256,
   validateToolInvocationCapsuleReceipt,
 } from "./tool-invocation-capsule.js";
@@ -33,6 +31,7 @@ import {
   validateSkillSnapshotForContinuation,
 } from "./skill-load-replay.js";
 import type { SkillSnapshot } from "./standard-skill-snapshot.js";
+import type { OwnedToolRecordV2 } from "./tool-protocol-registry.js";
 
 export const AGENT_MESSAGE_TOOL_RESULT_REPLAY: unique symbol = Symbol(
   "napier.agent-message-tool-result-replay",
@@ -126,7 +125,7 @@ export class FrozenToolResultReplayController {
 
   reserve(
     targetCallId: string,
-    tool: AgentTool | undefined,
+    tool: OwnedToolRecordV2 | undefined,
     toolName: string,
     args: unknown,
   ): { block: boolean; reason?: string } {
@@ -144,14 +143,15 @@ export class FrozenToolResultReplayController {
       };
     }
     const expected = this.plan.entries[this.nextIndex];
-    const definitionSha256 = tool ? toolDefinitionSha256(tool) : "";
     const argumentsSha256 = toolInvocationArgumentsSha256(args);
     if (
       !expected ||
       !tool ||
-      tool.name !== toolName ||
+      tool.definition.id !== toolName ||
       expected.toolName !== toolName ||
-      expected.toolDefinitionSha256 !== definitionSha256 ||
+      (expected.toolDefinitionSha256 !== tool.definitionSha256 &&
+        expected.toolDefinitionSha256 !==
+          tool.definition.compatibility.legacyDefinitionSha256) ||
       expected.argumentsSha256 !== argumentsSha256 ||
       this.reservations.has(targetCallId)
     ) {
@@ -185,6 +185,10 @@ export class FrozenToolResultReplayController {
     }
     reservation.executed = true;
     return replayableToolResult(reservation.entry.capsule);
+  }
+
+  effectiveIsError(targetCallId: string, fallback: boolean): boolean {
+    return this.reservations.get(targetCallId)?.entry.isError ?? fallback;
   }
 
   finalize(targetCallId: string):

@@ -429,8 +429,8 @@ describe("AgentRuntime demo path", () => {
       expect.objectContaining({
         toolName: "read_file",
         status: "blocked",
-        inputSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
-        loopGuardTriggerSha256: trigger?.payload["contentSha256"],
+        inputSha256: expect.stringMatching(/^[a-f0-9]{64}$/u), loopGuardTriggerSha256: trigger?.payload["contentSha256"],
+        toolProtocol: expect.objectContaining({ kind: "napier.tool-ui-projection", schemaVersion: 2, toolId: "read_file", semanticVersion: "2.0.0", definitionSha256: expect.stringMatching(/^[a-f0-9]{64}$/u), implementationSha256: expect.stringMatching(/^[a-f0-9]{64}$/u), status: "blocked", sideEffect: "none", concurrency: "safe", compatibilityMode: "native" }),
       }),
     );
     expect(blocked?.payload).not.toHaveProperty("input");
