@@ -1,6 +1,7 @@
 import { Sparkles } from "lucide-react";
 
 import { contextCopy } from "./context-copy";
+import { ModelPicker } from "./ModelPicker";
 import type { ContextPanelController } from "./use-context-panel-controller";
 
 export interface ContextRunModelCardProps {
@@ -8,7 +9,8 @@ export interface ContextRunModelCardProps {
 }
 
 export function ContextRunModelCard({ controller }: ContextRunModelCardProps) {
-  const { modelGroups, onModel, selectedModel, selectedModelKey } = controller;
+  const { agent, models, onModel, recentModelKeys, selectedModel, selectedModelKey } =
+    controller;
   return (
     <section
       className="context-runtime-card"
@@ -23,27 +25,17 @@ export function ContextRunModelCard({ controller }: ContextRunModelCardProps) {
           <h3 id="runtime-model-title">{contextCopy.runModel}</h3>
         </div>
       </header>
-      <label className="context-field">
+      <div className="context-field">
         <span>{contextCopy.chooseModel}</span>
-        <select
+        <ModelPicker
+          models={models}
           value={selectedModelKey}
-          onChange={(event) => onModel(event.target.value)}
-        >
-          {modelGroups.map((group) => (
-            <optgroup key={group.provider} label={group.label}>
-              {group.options.map((option) => (
-                <option
-                  key={option.key}
-                  value={option.key}
-                  disabled={!option.configured}
-                >
-                  {option.label}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
-      </label>
+          label={contextCopy.chooseModel}
+          recommendedModelKeys={[`${agent.model.provider}/${agent.model.id}`]}
+          recentModelKeys={recentModelKeys}
+          onChange={onModel}
+        />
+      </div>
       {!selectedModel.configured ? (
         <p
           className="context-model-warning"

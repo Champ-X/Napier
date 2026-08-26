@@ -101,7 +101,12 @@ export function TaskWorkspace({
             onReviewDecision={onOpenConversation}
           />
         ) : null}
-        {section === "changes" ? <TaskChangesPanel detail={vm.detail} /> : null}
+        {section === "changes" ? (
+          <TaskChangesPanel
+            detail={vm.detail}
+            onLedgerChanged={vm.refreshActiveThread}
+          />
+        ) : null}
         {section === "environment" && runtimeVisible ? (
           <TaskRuntimePanel
             vm={vm}

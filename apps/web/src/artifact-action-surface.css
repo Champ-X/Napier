@@ -1,0 +1,145 @@
+.artifact-action-surface {
+  min-width: 0;
+}
+
+.artifact-action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.artifact-action-bar button {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  color: var(--ink-soft);
+  cursor: pointer;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+}
+
+.artifact-action-bar button[data-artifact-action="open"] {
+  color: var(--color-surface-muted);
+  background: var(--ledger);
+  border-color: var(--ledger);
+}
+
+.artifact-action-bar button:hover:not(:disabled),
+.artifact-action-bar button:focus-visible {
+  color: var(--ledger);
+  border-color: var(--ledger);
+  outline: none;
+}
+
+.artifact-action-bar button[data-artifact-action="open"]:hover:not(:disabled),
+.artifact-action-bar button[data-artifact-action="open"]:focus-visible {
+  color: var(--color-paper);
+  background: var(--color-green-26);
+  border-color: var(--color-green-26);
+}
+
+.artifact-action-bar button:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.artifact-action-error {
+  padding: 7px 8px;
+  margin: 8px 0 0;
+  font-size: var(--text-xs);
+  color: var(--danger);
+  background: color-mix(in srgb, var(--color-red-40) 6%, transparent);
+  border-left: 2px solid var(--danger);
+}
+
+.artifact-action-inspection {
+  display: grid;
+  min-width: 0;
+  margin-top: 9px;
+  overflow: hidden;
+  color: var(--color-success-surface);
+  background: var(--color-sage-11);
+  border-radius: 3px;
+}
+
+.artifact-action-inspection > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px 6px 12px;
+  color: var(--color-sage-61);
+  border-bottom: 1px solid var(--color-sage-24);
+}
+
+.artifact-action-inspection > header > div {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.artifact-action-inspection > header strong {
+  font-family: var(--serif);
+  font-size: var(--text-xs);
+}
+
+.artifact-action-inspection > header span {
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  color: var(--color-sage-61);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.artifact-action-inspection > header button {
+  display: grid;
+  min-width: 28px;
+  min-height: 24px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 3px;
+  color: var(--color-sage-76);
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--color-sage-36);
+  border-radius: 2px;
+}
+
+.artifact-action-inspection > header button:hover,
+.artifact-action-inspection > header button:focus-visible {
+  color: var(--paper-bright);
+  border-color: var(--paper-bright);
+  outline: none;
+}
+
+.artifact-action-inspection pre {
+  max-height: 340px;
+  margin: 0;
+  padding: 12px;
+  overflow: auto;
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  white-space: pre;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .artifact-action-bar button {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .artifact-action-bar button:focus-visible,
+  .artifact-action-inspection > header button:focus-visible {
+    outline: var(--control-focus-width) solid Highlight;
+  }
+}

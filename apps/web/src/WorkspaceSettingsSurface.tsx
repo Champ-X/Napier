@@ -2,8 +2,6 @@ import { lazy, Suspense, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 
 import { copy } from "./copy";
-import { DeveloperToolsPanel } from "./DeveloperToolsPanel";
-import { DesignSystemShowcase } from "./DesignSystemShowcase";
 import { ExtensionInspectorSurface } from "./ExtensionInspectorSurface";
 import {
   moveSettingsSection,
@@ -12,7 +10,7 @@ import {
 import type { SettingsSection } from "./settings-section-registry";
 import { SettingsLanguagePanel } from "./SettingsLanguagePanel";
 import { WorkspaceRootPanel } from "./WorkspaceRootPanel";
-import { WorkspaceAutomationSettings } from "./WorkspaceAutomationSettings";
+import { recentModelKeysFromRuns } from "./model-selection-view-model";
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
 
 const LazyContextPanel = lazy(() => import("./ContextPanel"));
@@ -28,7 +26,6 @@ export interface WorkspaceSettingsSurfaceProps {
   onSection(section: SettingsSection): void;
   onClose(): void;
   onWorkspaceSwitch(root: string): Promise<void>;
-  onConversation(): void;
 }
 
 export function WorkspaceSettingsSurface({
@@ -38,7 +35,6 @@ export function WorkspaceSettingsSurface({
   onSection,
   onClose,
   onWorkspaceSwitch,
-  onConversation,
 }: WorkspaceSettingsSurfaceProps) {
   const restoreFocusRef = useRef<HTMLElement | null>(null);
   const surfaceRef = useRef<HTMLElement | null>(null);
@@ -163,6 +159,7 @@ export function WorkspaceSettingsSurface({
                 usagePriceTableCatalog={vm.bootstrap.usagePriceTableCatalog}
                 threadId={vm.detail.thread.id}
                 selectedModelKey={vm.selectedModelKey}
+                recentModelKeys={recentModelKeysFromRuns(vm.detail.runs)}
                 onModel={vm.setSelectedModelKey}
                 onAgentUpdated={vm.commitAgentConfiguration}
                 onBootstrapUpdated={vm.commitConfigurationBootstrap}
@@ -216,17 +213,6 @@ export function WorkspaceSettingsSurface({
               onWorkspaceSwitch={onWorkspaceSwitch}
             />
           ) : null}
-          {section === "automations" ? (
-            <WorkspaceAutomationSettings vm={vm} />
-          ) : null}
-          {section === "developer" ? (
-            <DeveloperToolsPanel
-              vm={vm}
-              activeModel={vm.selectedModel}
-              onConversation={onConversation}
-            />
-          ) : null}
-          {section === "design" ? <DesignSystemShowcase /> : null}
           {section === "language" ? <SettingsLanguagePanel /> : null}
         </section>
       </aside>

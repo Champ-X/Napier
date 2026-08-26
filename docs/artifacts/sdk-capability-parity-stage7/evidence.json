@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "b8014c0603e8d90bd2bc910c50084f110ffc8373172c120934908981b5031517",
+      "stdoutSha256": "04fb3c9903d0a3c3fde7f1171cf3859113a7f8795cb17ffd32e9526792578847",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "2a0b6d17d4316fffd4f7200f1e59bdedecd726b631cadd712a81b4dac5fcfdc8",
-      "receiptSha256": "0cda3957001f2da330118224b4371a4c2ed098a146925ca559d2fd84d1ef6ca6"
+      "evidenceSha256": "e542111507e0d4e0a81b3d928b9997587398ef353d3f491d74a2ca9ecf6e02ce",
+      "receiptSha256": "7326f210b17d36834e9434ae4014c3d240ab372b7789942b08f616b0cd3b5396"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "94aa4d2628d2d2d514d15591a44f810252bb2a05401ea9c91498a45d7b819ffa",
+      "stdoutSha256": "c37e31e8a0370fdf60fbec93ea343b22209b96a11dbc33f05102b8c1dd91f3ce",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "b04efa740c8c33af6ca4a8e7bc52f45475896b47094ee2ea72aa8e8e8d47b526",
-      "receiptSha256": "d65330ceba4cc5ba41ccf34e7a77267b6c4bae58b47347efa832576318bbd8cb"
+      "evidenceSha256": "313fcdb12f5fccce1a729bab5f76c7bd812dbcb83750711a36e1785292824a14",
+      "receiptSha256": "69d6fc43912284d715cbe984088f63d9fc1e763e3a7a9c724a81242962961f31"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -617,6 +617,7 @@
         "apps/server/src/plan-artifact-directory-http.ts",
         "apps/server/src/plan-artifact-directory-verification.ts",
         "apps/server/src/plan-artifact-file-http.ts",
+        "apps/server/src/plan-artifact-http-response.ts",
         "apps/server/src/plan-artifact-http-store.ts",
         "apps/server/src/plan-artifact-inspection-http.ts",
         "apps/server/src/plan-blueprint-instantiation-http.ts",
@@ -679,6 +680,7 @@
         "apps/server/test/evaluation-casebook-http-validation.test.ts",
         "apps/server/test/node-debugger.test.ts",
         "apps/server/test/partial-run-recovery-http.test.ts",
+        "apps/server/test/plan-artifact-diff-http.test.ts",
         "apps/server/test/process-run-readiness-test-fixture.ts",
         "apps/server/test/recent-workspaces.test.ts",
         "apps/server/test/release-product-trial-http.test.ts",
@@ -701,15 +703,18 @@
         "apps/web/src/AgentMessageExperimentDesk.tsx",
         "apps/web/src/AgentMessageExperimentDockets.tsx",
         "apps/web/src/AgentMessageExperimentView.tsx",
+        "apps/web/src/AgentPackagePublishingSurface.tsx",
         "apps/web/src/AgentRevisionCard.tsx",
         "apps/web/src/AgentRevisionHistory.tsx",
         "apps/web/src/AgentRollbackTicket.tsx",
         "apps/web/src/App.tsx",
+        "apps/web/src/AppDeveloperWorkbenchOverlay.tsx",
         "apps/web/src/AppInitialStates.tsx",
         "apps/web/src/AppLedgerNavigation.tsx",
         "apps/web/src/AppSettingsOverlay.tsx",
         "apps/web/src/AppWorkbenchHeader.tsx",
         "apps/web/src/AppWorkspaceViews.tsx",
+        "apps/web/src/ArtifactActionSurface.tsx",
         "apps/web/src/AutomationAdapterPreviewReceipt.tsx",
         "apps/web/src/AutomationChannelCard.tsx",
         "apps/web/src/AutomationChannelComposer.tsx",
@@ -756,6 +761,7 @@
         "apps/web/src/ContextNumberField.tsx",
         "apps/web/src/ContextOptionGroup.tsx",
         "apps/web/src/ContextPackageManagement.tsx",
+        "apps/web/src/ContextPackagePublishing.tsx",
         "apps/web/src/ContextPanel.tsx",
         "apps/web/src/ContextPromptVariableRow.tsx",
         "apps/web/src/ContextPromptVariablesFieldset.tsx",
@@ -786,6 +792,7 @@
         "apps/web/src/DelegationEvidenceCheck.tsx",
         "apps/web/src/DesignSystemShowcase.tsx",
         "apps/web/src/DeveloperToolsPanel.tsx",
+        "apps/web/src/DeveloperWorkbenchSurface.tsx",
         "apps/web/src/EnvironmentDegradationNotice.tsx",
         "apps/web/src/EvaluationCalibrationCohorts.tsx",
         "apps/web/src/EvaluationCalibrationLedger.tsx",
@@ -821,6 +828,7 @@
         "apps/web/src/ExtensionPanel.tsx",
         "apps/web/src/ExtensionProposalForm.tsx",
         "apps/web/src/ExtensionPublisherManagement.tsx",
+        "apps/web/src/ExtensionPublishingSurface.tsx",
         "apps/web/src/ExtensionToolList.tsx",
         "apps/web/src/ExtensionTransportFields.tsx",
         "apps/web/src/InspectorTabButton.tsx",
@@ -837,6 +845,7 @@
         "apps/web/src/ModelInvocationExperimentDesk.tsx",
         "apps/web/src/ModelInvocationExperimentDockets.tsx",
         "apps/web/src/ModelInvocationExperimentView.tsx",
+        "apps/web/src/ModelPicker.tsx",
         "apps/web/src/OperatorDecisionPanel.tsx",
         "apps/web/src/PackageFileAction.tsx",
         "apps/web/src/PackageReceiptHashRow.tsx",
@@ -957,6 +966,10 @@
         "apps/web/src/agent-revision-shared.css",
         "apps/web/src/agent-rollback-ticket.css",
         "apps/web/src/api.ts",
+        "apps/web/src/artifact-action-copy.ts",
+        "apps/web/src/artifact-action-model.ts",
+        "apps/web/src/artifact-action-surface.css",
+        "apps/web/src/artifact-file-api.ts",
         "apps/web/src/artifact-manifest-view-model.ts",
         "apps/web/src/automation-channel-card-types.ts",
         "apps/web/src/automation-channel-composer-actions.ts",
@@ -1051,6 +1064,7 @@
         "apps/web/src/credential-register.css",
         "apps/web/src/deep-ui-copy.zh.ts",
         "apps/web/src/desktop-workbench-copy.ts",
+        "apps/web/src/developer-workbench-section-registry.ts",
         "apps/web/src/download-json-artifact.ts",
         "apps/web/src/environment-degradation-notice.css",
         "apps/web/src/environment-degradation-view.ts",
@@ -1096,8 +1110,10 @@
         "apps/web/src/model-invocation-experiment-copy.zh.ts",
         "apps/web/src/model-invocation-experiment-web-protocol.ts",
         "apps/web/src/model-invocation-experiment.css",
+        "apps/web/src/model-picker.css",
         "apps/web/src/model-response-view.ts",
         "apps/web/src/model-route-event-view.ts",
+        "apps/web/src/model-selection-view-model.ts",
         "apps/web/src/model-stream-event-view.ts",
         "apps/web/src/next-run-capability-preset-execution.ts",
         "apps/web/src/node-debugger-event-view.ts",
@@ -1191,6 +1207,7 @@
         "apps/web/src/task-run-progress.ts",
         "apps/web/src/task-runtime-view-model.ts",
         "apps/web/src/task-surface-copy.ts",
+        "apps/web/src/task-validation-matrix.ts",
         "apps/web/src/thread-detail-view-state.ts",
         "apps/web/src/thread-location.ts",
         "apps/web/src/thread-run-api.ts",
@@ -1291,6 +1308,7 @@
         "apps/web/src/workspace-tree-copy.ts",
         "apps/web/src/write-linked-test-event-view.ts",
         "apps/web/test/AgentCapabilityContractCard.test.tsx",
+        "apps/web/test/ArtifactActionSurface.test.tsx",
         "apps/web/test/ComposerCapabilityControl.test.tsx",
         "apps/web/test/ConversationArtifactCard.test.tsx",
         "apps/web/test/ConversationFollowButton.test.tsx",
@@ -1315,6 +1333,7 @@
         "apps/web/test/agent-revision-history.test.tsx",
         "apps/web/test/api-boundary.test.ts",
         "apps/web/test/api.test.ts",
+        "apps/web/test/artifact-action-model.test.ts",
         "apps/web/test/artifact-manifest-view-model.test.ts",
         "apps/web/test/automation-panel.test.tsx",
         "apps/web/test/bootstrap-workspace-restore.test.ts",
@@ -1385,6 +1404,7 @@
         "apps/web/test/model-harness-view.test.ts",
         "apps/web/test/model-invocation-experiment-web-protocol.test.ts",
         "apps/web/test/model-route-event-view.test.ts",
+        "apps/web/test/model-selection-view-model.test.ts",
         "apps/web/test/model-stream-event-view.test.ts",
         "apps/web/test/operator-decisions-protocol.test.ts",
         "apps/web/test/package-governance-event-view.test.ts",
@@ -1406,6 +1426,7 @@
         "apps/web/test/sandbox-setup-api.test.ts",
         "apps/web/test/sandbox-setup-view-model.test.ts",
         "apps/web/test/schedule-event-view.test.ts",
+        "apps/web/test/settings-developer-boundary.test.ts",
         "apps/web/test/skill-lifecycle-event-view.test.ts",
         "apps/web/test/skill-load-event-view.test.ts",
         "apps/web/test/stream-api-recovery.test.ts",
@@ -1423,6 +1444,7 @@
         "apps/web/test/task-runtime-view-model.test.ts",
         "apps/web/test/task-status-badge.test.ts",
         "apps/web/test/task-surface-components.zh.test.tsx",
+        "apps/web/test/task-validation-matrix.test.ts",
         "apps/web/test/temporary-capability-preset-api.test.ts",
         "apps/web/test/thread-list.test.ts",
         "apps/web/test/thread-location.test.ts",
@@ -2325,6 +2347,7 @@
         "packages/runtime/src/workflow-simulation-materializer.ts",
         "packages/runtime/src/workflow-tool-node.ts",
         "packages/runtime/src/workflow-tool-runtime.ts",
+        "packages/runtime/src/workspace-artifact-diff.ts",
         "packages/runtime/src/workspace-file-tools.ts",
         "packages/runtime/src/workspace-patch-range.ts",
         "packages/runtime/src/workspace-patch-tool.ts",
@@ -2575,6 +2598,7 @@
         "packages/runtime/test/workflow-manifest-fixtures.ts",
         "packages/runtime/test/workflow-manifests.test.ts",
         "packages/runtime/test/workflow-runtime.test.ts",
+        "packages/runtime/test/workspace-artifact-diff.test.ts",
         "packages/runtime/test/workspace-patch-tool.test.ts",
         "packages/runtime/test/workspace-process-local-service.test.ts",
         "packages/runtime/test/workspace-search-coverage.test.ts",
@@ -3186,7 +3210,7 @@
           "lines": 308
         },
         "apps/server/src/app.ts": {
-          "sha256": "4a966fa8baf7d866f4f55a0b8866fbbe2b689f40a9e8184f48a4d8edac67e20f",
+          "sha256": "414ddfa7e3e79bed9639e3c24e2ae18f8063fb88c3615b930098fd474501c6e4",
           "lines": 2981
         },
         "apps/server/src/bootstrap-http.ts": {
@@ -3337,13 +3361,17 @@
           "sha256": "b35555efb588ebbb38dfb3ae84e29f63329ea6e1442b4a0105c5c283300147a5",
           "lines": 219
         },
+        "apps/server/src/plan-artifact-http-response.ts": {
+          "sha256": "09a991be46e85de2df6747d38fa35bf2ee58d2d97b2023a1243df3ba75d9843b",
+          "lines": 378
+        },
         "apps/server/src/plan-artifact-http-store.ts": {
           "sha256": "7bcd72769591ac608a838933c3a0f7f7c01de787ad7167bdad175ed7aa1a83d9",
           "lines": 19
         },
         "apps/server/src/plan-artifact-inspection-http.ts": {
-          "sha256": "a498936498afcf38374859e5b990f6ea8c9d1a32292238a43207192d0ec393af",
-          "lines": 172
+          "sha256": "dde3ed6980e476b31a7e5fa1a03bebdfc7bb3fd8868c621fb6ecad6130cb317e",
+          "lines": 246
         },
         "apps/server/src/plan-blueprint-instantiation-http.ts": {
           "sha256": "af2248b81e54b1b363888cd13da92326e4b8f84d8f8186208cbd2b89685a6130",
@@ -3442,8 +3470,8 @@
           "lines": 215
         },
         "apps/server/src/server-composition-root.ts": {
-          "sha256": "22efe398aeed8fa7dc6e7f0b664d1fec47aca2177ea70833fc27c97039a7dc17",
-          "lines": 139
+          "sha256": "d2fb22ac06543ae1ed01f7462b18bbbd896c739a0f2f6ffe1af67c7e433cf535",
+          "lines": 142
         },
         "apps/server/src/server-service-options.ts": {
           "sha256": "9dea1fddf2ce8dd63417ec09351055e6b0e7b3780fe9452755b75fa78d684db5",
@@ -3585,6 +3613,10 @@
           "sha256": "992eedd52127941f2cff8c2bdd90a6ea8b5ce573fbc3a162fd29575a3ca42efd",
           "lines": 174
         },
+        "apps/server/test/plan-artifact-diff-http.test.ts": {
+          "sha256": "7ab58ede137c5d16e446fc97759ddb70aed03cb83f56ecc193e65d1bd3179c07",
+          "lines": 242
+        },
         "apps/server/test/process-run-readiness-test-fixture.ts": {
           "sha256": "0de02cdd7b40ac405803cee358e29311ddbc3232d147b94757043c83e81220b1",
           "lines": 38
@@ -3669,6 +3701,10 @@
           "sha256": "68e0285a6e8219b1101c24661b0422ef3352c1ebcf801eb877884073cae231ff",
           "lines": 180
         },
+        "apps/web/src/AgentPackagePublishingSurface.tsx": {
+          "sha256": "a3db6f11d213685ec942ba0b817d2896196aacfdf35040fed76d302bad61028d",
+          "lines": 32
+        },
         "apps/web/src/AgentRevisionCard.tsx": {
           "sha256": "09014e4d9354bb09e840990a454fb2933c0b3adb27d3290b6ac29bb3aa29f671",
           "lines": 95
@@ -3682,28 +3718,36 @@
           "lines": 90
         },
         "apps/web/src/App.tsx": {
-          "sha256": "c66a722ea1e5a20d8d96dd19a7a54bb34c800af6f8bf65ff9a34a056394bcb4d",
-          "lines": 56
+          "sha256": "d3dcb16cb7da21a9a9e617d6fd58b268f96b049cdf9711e0b769f13abdf508f8",
+          "lines": 62
+        },
+        "apps/web/src/AppDeveloperWorkbenchOverlay.tsx": {
+          "sha256": "008279d7882deecda52f97d0bcaffe1d765a41639d0595b7944c60b2300f8ed3",
+          "lines": 28
         },
         "apps/web/src/AppInitialStates.tsx": {
           "sha256": "d233bba52b81179116c52895446119ceec4584936ae481a5246019fd1ebd4087",
           "lines": 31
         },
         "apps/web/src/AppLedgerNavigation.tsx": {
-          "sha256": "250b2b9fdbc21a8c5cbddb68dc2d83f1ae5c077e2f0d00585dd10cd633921597",
-          "lines": 28
+          "sha256": "afb06b39cbe393dc64fa4504f612c5133eba3a9a63911907e0cc54054b059663",
+          "lines": 29
         },
         "apps/web/src/AppSettingsOverlay.tsx": {
-          "sha256": "fa06ef41745745d806579b72c99efb1043075c72de653d2439b0d5c5a8533f08",
-          "lines": 32
+          "sha256": "57bfd8183196661041467d5716204512d7cd6ac56446b4d2cf5ee2b39c04eb76",
+          "lines": 28
         },
         "apps/web/src/AppWorkbenchHeader.tsx": {
-          "sha256": "30a4e1c13656672a595f6cfc944d056ef88291110002a54b227afa6f4b956440",
-          "lines": 54
+          "sha256": "1b96e2f1f1de7a0723e4025feef1c00e30a0dd0e1b7d0caf7a5c3a6a915afe18",
+          "lines": 62
         },
         "apps/web/src/AppWorkspaceViews.tsx": {
           "sha256": "22db7720132af32053a8fa9d04b6f7ab26e4ab594f2b84b14084044e0d0d1744",
           "lines": 110
+        },
+        "apps/web/src/ArtifactActionSurface.tsx": {
+          "sha256": "7cd1aa8fef0cbc54c5f411b7199e0e8d690b0e8a5036762fd21f9d0e31b8235d",
+          "lines": 122
         },
         "apps/web/src/AutomationAdapterPreviewReceipt.tsx": {
           "sha256": "5a5ab202b3e3292f4fc877ab25357f07b111b643a680f42fa4a4109cac18240c",
@@ -3886,8 +3930,12 @@
           "lines": 59
         },
         "apps/web/src/ContextPackageManagement.tsx": {
-          "sha256": "5e8a1ecc469e837b3d3b4b1af920ed4b1264da8076480a0a792bc587fd39bc94",
-          "lines": 126
+          "sha256": "9e4ceda89ac8dbfc2b372498c2a1e876338a54f0eeac60300a334dedc85775cd",
+          "lines": 59
+        },
+        "apps/web/src/ContextPackagePublishing.tsx": {
+          "sha256": "7c6766fd6bf1317c9b9e7562618907005a9817afb8fa569057c1a7e05bd3e903",
+          "lines": 84
         },
         "apps/web/src/ContextPanel.tsx": {
           "sha256": "da90eca9eab436da26bdee20d744120633085304c0370b376abf52fd3c6273fb",
@@ -3906,8 +3954,8 @@
           "lines": 76
         },
         "apps/web/src/ContextRunModelCard.tsx": {
-          "sha256": "22bc2f042e8705984635cddb01014a497e6ba3271aefff1f24e3f87256acc3c9",
-          "lines": 59
+          "sha256": "fc184cd61cac9b4f90a8e46d570e4323160a77adf6a5dc8243752df2bfeb318a",
+          "lines": 51
         },
         "apps/web/src/ContextToolLoopGuardFieldset.tsx": {
           "sha256": "c6c20182e29685a6e0266bfdd0f4d66a2081a951599146587d1e51f460e1642b",
@@ -3930,8 +3978,8 @@
           "lines": 121
         },
         "apps/web/src/ConversationArtifactCard.tsx": {
-          "sha256": "259f61ba03ffb5034db73503929bbb6f34fe20f0818004efbc33ae05b2b46662",
-          "lines": 180
+          "sha256": "19a3905290fe4c918c7903d82211f6317396189aa3c050860310c1a403b2ef1c",
+          "lines": 143
         },
         "apps/web/src/ConversationBrowserActivityCard.tsx": {
           "sha256": "1691440a7fc118a2789069ec9398aace432779d8d51bda5a3ee372f7579919ec",
@@ -4008,6 +4056,10 @@
         "apps/web/src/DeveloperToolsPanel.tsx": {
           "sha256": "ce088baf87a0ab2b884444654d3f8a3a6641eacd06b8f1a09b261bfcc94c73cd",
           "lines": 122
+        },
+        "apps/web/src/DeveloperWorkbenchSurface.tsx": {
+          "sha256": "82697711a9c8a1ceea1a5af9ec143e2c039ab11bb1fc18366773490085eacaf8",
+          "lines": 195
         },
         "apps/web/src/EnvironmentDegradationNotice.tsx": {
           "sha256": "06eb737863f808af3ab4f526bca06efdd9a029c97dc5fd663e2c453c997e601f",
@@ -4102,8 +4154,8 @@
           "lines": 84
         },
         "apps/web/src/ExtensionInspectorSurface.tsx": {
-          "sha256": "34e48d9273a673aab8756ec6bfa2f5cc92c2da498f0f5dd314b06f913ccd140b",
-          "lines": 76
+          "sha256": "a441d50abac3b7449df0dae0469ce8a91b770af56904398685f3d082bbfafe87",
+          "lines": 56
         },
         "apps/web/src/ExtensionPackageBindingSummary.tsx": {
           "sha256": "a4e16e557e321244a159e9ec13674905c7d4bbbb7d6092289e2b2c5c283d18aa",
@@ -4138,8 +4190,8 @@
           "lines": 229
         },
         "apps/web/src/ExtensionPanel.tsx": {
-          "sha256": "de0036db059ebf583a707a7ed1181ea9e960e546298eda658368b7021a9a5a89",
-          "lines": 188
+          "sha256": "b034720fa4ccfb57a7028d1fc15e9b96cd04a61c81004ac92d86462c912f0d3d",
+          "lines": 100
         },
         "apps/web/src/ExtensionProposalForm.tsx": {
           "sha256": "d75eba817fc48ae154eb1d2b2df5c050cb7b335fac8cc713f786f1df3b950c82",
@@ -4148,6 +4200,10 @@
         "apps/web/src/ExtensionPublisherManagement.tsx": {
           "sha256": "073f38693866552de5821857cbfea8bd50a1b94a7f63dc9b65691d65bb3e02b5",
           "lines": 207
+        },
+        "apps/web/src/ExtensionPublishingSurface.tsx": {
+          "sha256": "20b1c89fbfa6771cd45575c48cbfe7af4baa4ea8ad31de53aa21c70fb22d83ba",
+          "lines": 58
         },
         "apps/web/src/ExtensionToolList.tsx": {
           "sha256": "23e8743dec6c2819f37f1c94ffb7cac274bf5f9b697abca0fc2a8a8387b16412",
@@ -4166,8 +4222,8 @@
           "lines": 45
         },
         "apps/web/src/LedgerNavigation.tsx": {
-          "sha256": "0f1bb2f2a2b9d83c357ec82f1c295d1715b53be0b0af3d261f08d538bfa7a724",
-          "lines": 98
+          "sha256": "6058a5c1bdca18dbbec3423361e6e5522a7822638e9bb89ce4aa592c5bc0b4df",
+          "lines": 111
         },
         "apps/web/src/MemoryCards.tsx": {
           "sha256": "b094007886f636873ee7b9212a99a9293927e36e0ef210d943a021002e2d29c4",
@@ -4208,6 +4264,10 @@
         "apps/web/src/ModelInvocationExperimentView.tsx": {
           "sha256": "cfba00ebb579f934b34eadc9fbf75c9ed0912b0da765b23f25aad527fbf1820f",
           "lines": 162
+        },
+        "apps/web/src/ModelPicker.tsx": {
+          "sha256": "d29e330dfc18519e9d72d978046d11e167f701717f33a57f03633855b2b91532",
+          "lines": 207
         },
         "apps/web/src/OperatorDecisionPanel.tsx": {
           "sha256": "814b5d755c43b7e2edd6a7dd5e15ed3250238ffa1113455cbbc5f9c31a938000",
@@ -4286,8 +4346,8 @@
           "lines": 52
         },
         "apps/web/src/PromptPackageDesk.tsx": {
-          "sha256": "593b3dfbcd0616015be142d7424e3f2f657747bc5f2f5645417528490ff4628c",
-          "lines": 127
+          "sha256": "068c77ea81f9a7a0dfc45808b64ffe950be2c49b699cce5d08ca4a5ead45fa1b",
+          "lines": 130
         },
         "apps/web/src/PromptPackageReceiptCard.tsx": {
           "sha256": "130e98fc24998bc2a9a539154d2d7b65f4f763350ca8e516b1887a1e6075474e",
@@ -4426,8 +4486,8 @@
           "lines": 72
         },
         "apps/web/src/TaskChangesPanel.tsx": {
-          "sha256": "96c296d5e92a2bb31e740214ddb6d800bad03907357c9193b6c71ca71aa80923",
-          "lines": 125
+          "sha256": "8672f5ddfd66b6e2e30c9123bd2390417e6e54943a024fecc36dd81c63b64436",
+          "lines": 140
         },
         "apps/web/src/TaskCompletionSummary.tsx": {
           "sha256": "b5368d700fb7e0206eb97d2657a9d1b127c8e7d539e52272cf667f81b9013f86",
@@ -4450,12 +4510,12 @@
           "lines": 79
         },
         "apps/web/src/TaskValidationPanel.tsx": {
-          "sha256": "cc6d73d081e0e270206c3082a924a9b60c610aa3cf998e0e71e736f76318d426",
-          "lines": 104
+          "sha256": "3e71240cd91f671bf90d5a9e0bea85b9d631e40b713960cbe780c26bb9d601e8",
+          "lines": 129
         },
         "apps/web/src/TaskWorkspace.tsx": {
-          "sha256": "7a04ebd8563afe67d2cd4415bd0667ab55d1b3d887857fc121d1f42a53ddd158",
-          "lines": 150
+          "sha256": "38ede1b54834066949675ffab42f72047eaa0c6964f04f5ec144ba5471330488",
+          "lines": 155
         },
         "apps/web/src/ThreadList.tsx": {
           "sha256": "cb501e767e471987cb79dec8cd4e485dd4f9b8c53bfbf287ea23010bcdc744ec",
@@ -4494,16 +4554,16 @@
           "lines": 253
         },
         "apps/web/src/TraceTrajectory.tsx": {
-          "sha256": "67f2ed70e30418696838e24bf877ce77ca1b15ddb413b1bbfd34b436eac7854c",
-          "lines": 166
+          "sha256": "e7a2cc7fd05db0fb387744f916d79cd522999a54ddf1c169e099e46463abb1b6",
+          "lines": 168
         },
         "apps/web/src/TraceTrajectoryControls.tsx": {
           "sha256": "5ba9ca7c7f19ee647f77a54b6742899b5099710c92a55910abbf97f535a42b74",
           "lines": 115
         },
         "apps/web/src/TraceTrajectoryEventDetail.tsx": {
-          "sha256": "48589f950341ec5798c50c786d6ccd4226cc20f60318e009d742d3688cde41b7",
-          "lines": 138
+          "sha256": "d5607a01a637e645b1af722192c6298e2459e0c8ed1a00daebeae7233ae4c300",
+          "lines": 250
         },
         "apps/web/src/TraceTrajectoryLedger.tsx": {
           "sha256": "330fecbd29ca69844d60f603305d8e46ce32993a65b1c6054b4ab15661c0229a",
@@ -4534,8 +4594,8 @@
           "lines": 80
         },
         "apps/web/src/WorkbenchHeader.tsx": {
-          "sha256": "9d7a51d47515fe2dff8058d99daace43953efc43bd9a49c2b081f35ae851fd7d",
-          "lines": 129
+          "sha256": "6a743dfa287a794324dcbbc2b8da7d5bc2ecaf2d83a7d7263123bc41558d39d9",
+          "lines": 108
         },
         "apps/web/src/WorkbenchNotices.tsx": {
           "sha256": "646d33f3b36c11ca4fc3390139f352fc3ad10a3ae4c5446280a6ddc6976ff0a3",
@@ -4594,8 +4654,8 @@
           "lines": 91
         },
         "apps/web/src/WorkspaceSettingsSurface.tsx": {
-          "sha256": "80e8ebed8f0f064a54f65dcf6d5b05c603053856f7ca964d897169ba4bc92a6f",
-          "lines": 251
+          "sha256": "23e837740fae8c30ad2cfb510132cc3cb9c4f2fd951fddd0a0a19951ab0afac5",
+          "lines": 237
         },
         "apps/web/src/WorkspaceThreadPreviews.tsx": {
           "sha256": "9eaa1dc1104e8f7d38e89a19661e21760e34df6cec9b2c0dbcec88c494be5b0b",
@@ -4688,6 +4748,22 @@
         "apps/web/src/api.ts": {
           "sha256": "9d522f942cac2c17a94745e478c731656643bb61a2614d48ee404d282fac5b5a",
           "lines": 1204
+        },
+        "apps/web/src/artifact-action-copy.ts": {
+          "sha256": "55bb674a8a4ef6d1878bc293e9e96b93c3bb5e10ba8744d07901984a21d2059d",
+          "lines": 19
+        },
+        "apps/web/src/artifact-action-model.ts": {
+          "sha256": "ca344606dd8835c6a89baffd1fe1ef0b967c67e23751f74dcfb682d0a88a98d1",
+          "lines": 45
+        },
+        "apps/web/src/artifact-action-surface.css": {
+          "sha256": "8a1810c56c4b98b33df64bf097fb6a7240221f71b3e7e7db9a55be9286b36dc0",
+          "lines": 145
+        },
+        "apps/web/src/artifact-file-api.ts": {
+          "sha256": "0833ab72cb2251fb48d841df59aad7c86ef9371a05b0babd4f289210aaf99c44",
+          "lines": 395
         },
         "apps/web/src/artifact-manifest-view-model.ts": {
           "sha256": "e6ad7487703669d7539b3511588e31924b86cd22d717997dfddb896a299b9022",
@@ -4890,8 +4966,8 @@
           "lines": 269
         },
         "apps/web/src/context-panel-types.ts": {
-          "sha256": "6b66f310d45b4ad618d8c37fde79c4f3c534ef5a3cfe98fa8775df76293267fe",
-          "lines": 30
+          "sha256": "c95126c7ddfb03d91f459d5b1112acc982bb557ea473a32a02d7d4d1c1bdf067",
+          "lines": 31
         },
         "apps/web/src/context-profile-policies.css": {
           "sha256": "e85dda9ebe4630e6d3ea3612e73455985ae196a33d98c5275dbf836794531355",
@@ -5034,12 +5110,12 @@
           "lines": 27
         },
         "apps/web/src/copy.ts": {
-          "sha256": "c6ff843adfa7e61eaedc1092638682163275e8dfb11c65a6abec73c0f9a0f4e6",
+          "sha256": "fb1edd5ae08ebc616b063e1e4bd4e9eaf688343ead22979a0af95c9b2c0b9a9f",
           "lines": 886
         },
         "apps/web/src/copy.zh.ts": {
-          "sha256": "5c51a82dd832582b8fb99f7055f334230765b52f17d29ce95ba9305cb12d1e3a",
-          "lines": 439
+          "sha256": "d45001e8bfbb98253dbae51577af71d79a7095ddd717c360328b12de07727d72",
+          "lines": 498
         },
         "apps/web/src/credential-card.css": {
           "sha256": "866af3b3be608ff8d895c5999ec83b6e233e34633726318b811b067ff6c28504",
@@ -5062,8 +5138,12 @@
           "lines": 153
         },
         "apps/web/src/desktop-workbench-copy.ts": {
-          "sha256": "899bac490dad39d1b71cdb93c5615114b44375a3ac8dfc45160195f0742a44cf",
-          "lines": 311
+          "sha256": "58d58d8f27f9d46a6218480df184cfd2905b8c0db2dde7df4d1836e385ec4c49",
+          "lines": 372
+        },
+        "apps/web/src/developer-workbench-section-registry.ts": {
+          "sha256": "c433fc72b07606f9d1e1240c7728017dee76554a8e26dcfbc95ffbedf822d201",
+          "lines": 79
         },
         "apps/web/src/download-json-artifact.ts": {
           "sha256": "e523ba665df3a149ef3edc29625f2b7dad6bb3acc73b57ff75257a6a0f473f36",
@@ -5237,6 +5317,10 @@
           "sha256": "be01a714d37509141c88f10c61cad7df6a3239e6140ecf438d164bda264945d4",
           "lines": 139
         },
+        "apps/web/src/model-picker.css": {
+          "sha256": "8f02add257cd0a810d199e88647faf4b9948dfb46ad9fe87a3df9ca30f771ab6",
+          "lines": 236
+        },
         "apps/web/src/model-response-view.ts": {
           "sha256": "6c87c3cc2657e0f27e86e15c9565bef9f68c70113e595b07d847f85baa9ac68d",
           "lines": 101
@@ -5244,6 +5328,10 @@
         "apps/web/src/model-route-event-view.ts": {
           "sha256": "1fce4fd9b302d72769fe03033618f613e56efbf0ce4c6a3ad55b737314b4b727",
           "lines": 136
+        },
+        "apps/web/src/model-selection-view-model.ts": {
+          "sha256": "19ae708f1498ec4444b3e9d36bdb03bd959b8c08105d81899f04b13bf672e859",
+          "lines": 295
         },
         "apps/web/src/model-stream-event-view.ts": {
           "sha256": "a29235a104fa639d872dc2d1f44e0c3da27a2c274fbfd26f2b5223a0961e3a97",
@@ -5486,8 +5574,8 @@
           "lines": 119
         },
         "apps/web/src/settings-section-registry.ts": {
-          "sha256": "738ce0fde1b6ef96572b368c1ad9958cb7a5eaf884e42448e4fb4407ca9abed6",
-          "lines": 115
+          "sha256": "49dba23327dd7dbb416d517134b346f88da40524fde6cf8cded7fca272a5eb11",
+          "lines": 91
         },
         "apps/web/src/shell-copy.ts": {
           "sha256": "2102923547c0c593f32734011fb7d21877d2d8b11ae15785740ad4d44d74ec91",
@@ -5574,8 +5662,8 @@
           "lines": 606
         },
         "apps/web/src/styles/task-workbench.css": {
-          "sha256": "8b4b8f069a6f0e8124c79fc68f1c97627e761191672b7e3e559036d1eb9cb4fa",
-          "lines": 564
+          "sha256": "40d6749dc41d1cb994df7c88a4ff69fa3b7cfcdaeca4216c24d3d448603b35f3",
+          "lines": 570
         },
         "apps/web/src/styles/tokens.css": {
           "sha256": "1149fcd9aeb9be0aeae84e2753684ffea9f5d3d6b197891a2d74b54721e3c39e",
@@ -5616,6 +5704,10 @@
         "apps/web/src/task-surface-copy.ts": {
           "sha256": "ffe516b27d1b42166a1bd00451e1e43bfb177802141886024b41dd3ad834638f",
           "lines": 155
+        },
+        "apps/web/src/task-validation-matrix.ts": {
+          "sha256": "1f8434a2a0b9eaa785abcfaa859e3fa10c7f841cf95a941542e087a04c949738",
+          "lines": 193
         },
         "apps/web/src/thread-detail-view-state.ts": {
           "sha256": "e23c15f17bb0a6573886aa5fbd80694ec04776b20940f7782c03a0aa66cbea4f",
@@ -5682,12 +5774,12 @@
           "lines": 209
         },
         "apps/web/src/trace-trajectory-copy.ts": {
-          "sha256": "3a4134bab3cfe84cbb444036ee0716569173178060b7c84db78e263102d17123",
-          "lines": 278
+          "sha256": "44363699db38b7123ebc60715ac06a8d56b56cf266c8f971ad6ccaf17faeeefe",
+          "lines": 368
         },
         "apps/web/src/trace-trajectory-event-detail-view.ts": {
-          "sha256": "72456fbb8bf7782d01dd624f8955192c2ad4fd96aad73c07e6c8f36383802211",
-          "lines": 221
+          "sha256": "30ace62a17cd453cb2c8e81bd64d43d93aeb4d5cb561750af85c8d6ce099a555",
+          "lines": 438
         },
         "apps/web/src/trace-trajectory-events.ts": {
           "sha256": "61522ad2862af1fb6143e8b9a546f2a75ff50a0ac3fdb1199c6b7ffb577b877b",
@@ -5706,8 +5798,8 @@
           "lines": 69
         },
         "apps/web/src/trace-trajectory.css": {
-          "sha256": "5ddd08ebb2adbcd59cea410eec98e4a527101fba5318df4ec71368b48e5d85e9",
-          "lines": 1542
+          "sha256": "d3c4b1db806f9b8f137908781ab62e979a47fe0f816f36bf67bfe8b323b3b4f9",
+          "lines": 1655
         },
         "apps/web/src/ui/primitives/DisclosureRow/DisclosureRow.css": {
           "sha256": "f9f6e97bc67cf0af868e08dbd3df909f96794f7f5e7de86e66e6542a7d76612b",
@@ -5898,8 +5990,8 @@
           "lines": 41
         },
         "apps/web/src/use-task-control-navigation.ts": {
-          "sha256": "e71d9211a665ba45169470f84d86a16ce21ff842c6c47e7242f4afc1b42bcb35",
-          "lines": 72
+          "sha256": "434a34b4c1dcfd9ad5a84443fb5948e09a5de722ab07dbd78eab923fd7edcaf9",
+          "lines": 79
         },
         "apps/web/src/use-thread-trash.ts": {
           "sha256": "69ed5227fee5fe919d83abaa59e1ed493fda17bdd566d3918c285369500cc12d",
@@ -5918,8 +6010,8 @@
           "lines": 25
         },
         "apps/web/src/use-workspace-shell.ts": {
-          "sha256": "299086c30234e9671ed0b6aefbf006384066216ca5d7134974bcd238908a9913",
-          "lines": 136
+          "sha256": "77264f56eef703c1da689314336d871be0eda66c6f90b04a3d06e0de89d76892",
+          "lines": 183
         },
         "apps/web/src/use-workspace-view-model.ts": {
           "sha256": "83dc87192a0b9e7419436f13227baa736eea04e897d34cb0e001217edf18df88",
@@ -5990,8 +6082,8 @@
           "lines": 434
         },
         "apps/web/src/workspace-shell.css": {
-          "sha256": "86edfe5171da1e88c2159d70eddd80e99f563e3b43f9094df44400091eaff448",
-          "lines": 1947
+          "sha256": "87644609c03357aeea7ec153d239169028a0be6539844127c5a8d0e819bbbe27",
+          "lines": 2076
         },
         "apps/web/src/workspace-thread-presentation.ts": {
           "sha256": "ea2fe9943705ade8640e2eec05859dbf8cb7c383bf2fa9dd4ee51a02c2e35883",
@@ -6013,12 +6105,16 @@
           "sha256": "04ea7c048970f315fa26cc855bf9a18619a50eb8b77653fd3767287239ae0f50",
           "lines": 347
         },
+        "apps/web/test/ArtifactActionSurface.test.tsx": {
+          "sha256": "687346abdd3af29c8e857f3eb980a41c7dd37e9237e19f2442934f0c0d462b92",
+          "lines": 243
+        },
         "apps/web/test/ComposerCapabilityControl.test.tsx": {
           "sha256": "7eb2e3a7998fbefd5d6f8e63dfe5051d09a04f9cd85bf48ab09f6ec735044ae0",
           "lines": 231
         },
         "apps/web/test/ConversationArtifactCard.test.tsx": {
-          "sha256": "8341b524803f2041e9f2ab71003bc5081495b03f9b398d87c9b723d34519c4d8",
+          "sha256": "3628c34ef50042d2e257e48205f8ab31e5b9c3684b51b4be10d9e57afd832801",
           "lines": 223
         },
         "apps/web/test/ConversationFollowButton.test.tsx": {
@@ -6109,6 +6205,10 @@
           "sha256": "aa5720d4e17b21feb8c6955fab1e94007ebd6015fab171439102cc6bdcf73c26",
           "lines": 2488
         },
+        "apps/web/test/artifact-action-model.test.ts": {
+          "sha256": "91496832e013af54a1e1e16cf4b1eba9014e579c6622de64733fb278568e72f8",
+          "lines": 82
+        },
         "apps/web/test/artifact-manifest-view-model.test.ts": {
           "sha256": "7b440e0f9947e202f34cae173545aa38c217433dbc26d267129e8a67c5e29ea8",
           "lines": 295
@@ -6194,8 +6294,8 @@
           "lines": 215
         },
         "apps/web/test/context-panel-sections.zh.test.tsx": {
-          "sha256": "d123cf7fc2d0cd51b0019dd2fe70f55440d16fb2373a2b04d06a9e591778b1ad",
-          "lines": 128
+          "sha256": "6a77e5118f6d9aabe200f57721d2693f04d072014dc93589b8abfc37fdff376c",
+          "lines": 135
         },
         "apps/web/test/controlled-harness-evidence-control.test.tsx": {
           "sha256": "1e9021a1ee2916c4230998bda539a64b23615143e7f42e0d67b2e7a7f20056ab",
@@ -6338,8 +6438,8 @@
           "lines": 130
         },
         "apps/web/test/ledger-navigation.test.ts": {
-          "sha256": "b3dae98288f3bc22756c36b09ecfc5dbd4af1b576a97f4419a1d35ed385264a0",
-          "lines": 54
+          "sha256": "2097129234c5859de94a4dac03178628aa851b988148aaa105939a11a0b86cce",
+          "lines": 55
         },
         "apps/web/test/manual-run-recovery.test.ts": {
           "sha256": "f105fe239f2cd0ced5b776a39e84428e148c1b9c5ee4dc4fc3b49a30912cda73",
@@ -6388,6 +6488,10 @@
         "apps/web/test/model-route-event-view.test.ts": {
           "sha256": "2ac83d73dcd5e211f2b2413744162f85e77be47b150d92792bcd2500ad1194f3",
           "lines": 91
+        },
+        "apps/web/test/model-selection-view-model.test.ts": {
+          "sha256": "d233a6940a927868f5fc621b71fa6fe260a5d890dd319fc3eb9b2f09861a83ea",
+          "lines": 265
         },
         "apps/web/test/model-stream-event-view.test.ts": {
           "sha256": "7b11bde39a6447ebd0d9f50d605f2b7ffbd46a2a2732b808d0b35dce05fa7aa9",
@@ -6473,6 +6577,10 @@
           "sha256": "780004c68fbf25c5f21020e9bdd03125cd0fc4c412a6947175f2cf95304eaa65",
           "lines": 113
         },
+        "apps/web/test/settings-developer-boundary.test.ts": {
+          "sha256": "6435fcee6b2cbd5c84dcff325ef5fd7d8954634ce7342727db0be4b2130345ac",
+          "lines": 69
+        },
         "apps/web/test/skill-lifecycle-event-view.test.ts": {
           "sha256": "3a6987ac86205775910514dec5cfc0ee8376ef5f9fc06269340900c740d3bf0d",
           "lines": 170
@@ -6541,6 +6649,10 @@
           "sha256": "136590e5c24a724da05c0f85ab616aebe329074b93d257cd4eeb1464158971c7",
           "lines": 243
         },
+        "apps/web/test/task-validation-matrix.test.ts": {
+          "sha256": "ec0261070c13c09edae4a0b066ccc859dd9bda53c6ad95281f3e56f6543f8e45",
+          "lines": 156
+        },
         "apps/web/test/temporary-capability-preset-api.test.ts": {
           "sha256": "f7f8eb654deadc4e80dd489af45336ec8f2e8ffab76ab105ee3917049d662083",
           "lines": 128
@@ -6582,8 +6694,8 @@
           "lines": 227
         },
         "apps/web/test/trace-trajectory-event-detail-view.test.ts": {
-          "sha256": "a79eee4d26c3bf63b288036733108bf4aa06d88cc0c90c96af7b14976a9b4bea",
-          "lines": 108
+          "sha256": "bedb33fd847426aff50e34e0ca0e208088077acc9c72d5225e98d8466e5a3f9a",
+          "lines": 182
         },
         "apps/web/test/trace-trajectory-model.test.ts": {
           "sha256": "502daf2577b0f118d63517a1d3928e6b3b8ae9554c3fd9a0b30485770f01447f",
@@ -6606,12 +6718,12 @@
           "lines": 104
         },
         "apps/web/test/workbench-header-model-select.test.tsx": {
-          "sha256": "0117ac79f86d4793b3c29b0ca589b069646f3e4936378549046d537b8b248ba7",
-          "lines": 158
+          "sha256": "2f1140e1cd09c4b2d602c149c2cdd73f2c23ab9c3ef678b2deb6b0bd7e505684",
+          "lines": 208
         },
         "apps/web/test/workbench-layout.test.ts": {
-          "sha256": "774ef49b8a946ad468c0d105af7a79c54cf2f32ab67f90a8022f92203a1895fd",
-          "lines": 439
+          "sha256": "3136c36bdef631b256085646e89d3dacccd6bb2e656d6390546d17add61408e2",
+          "lines": 441
         },
         "apps/web/test/workspace-process-event-view.test.ts": {
           "sha256": "30e7067e65bcbaa5d46d71b1814d97b9b1b10fbdaf472205a6075619abedcb05",
@@ -6730,7 +6842,7 @@
           "lines": 533
         },
         "docs/artifacts/agent-harness-acceptance-evidence-0.1.3.json": {
-          "sha256": "befe146461156a8692e5006fbedc14ab9f02dcc398b7ba4631ebedcb399028e2",
+          "sha256": "f7d396550e627a96eae33a3c28b0baa274ceff508a23189f6e423d520928bd69",
           "lines": 120278
         },
         "docs/artifacts/benchmarks/napier-benchmark-ledger-coding_pricing_options_migration_v1-e8ef307d538aab40.json": {
@@ -6838,19 +6950,19 @@
           "lines": 87
         },
         "docs/artifacts/default-product-source-bound-smoke-m4-0.1.3.json": {
-          "sha256": "05d00a230553d887807f32f5896195d12e365f42c8b009faf16e533bc3b3a4b6",
+          "sha256": "a9ea4448d153d71e81d90797500f4eaf9795248a41cca50c676a2bf436eba263",
           "lines": 174
         },
         "docs/artifacts/default-product-source-manifest-0.1.3.json": {
-          "sha256": "5989bf3e8a20570dc4657b8a177efe488641f15d5588d6cc533655f27080deec",
-          "lines": 9983
+          "sha256": "48b94db343b1c83aab820927461d975b43300dd98a3cd416a5f1d103193f48f4",
+          "lines": 10053
         },
         "docs/artifacts/default-product-trial-m4-0.1.2.json": {
           "sha256": "f83a7edbc673388806d5f58f4e6faf2f7e1e9d9ccfec16bdcb96705f3bde38c4",
           "lines": 168
         },
         "docs/artifacts/harness-experiment-release-evidence-0.1.3.json": {
-          "sha256": "21d47a0b313a0f0c54cc7cc68dbd7fa11e5484656b54fa3b3bdfb74d526abd81",
+          "sha256": "e3b5f9d4516ee7ac06a602979c6f2bc567b4f60677df2a0d72e324759b732dfe",
           "lines": 9093
         },
         "docs/artifacts/linux-host-product-acceptance-stage19.json": {
@@ -6858,12 +6970,12 @@
           "lines": 556
         },
         "docs/artifacts/management-openapi-0.1.0.json": {
-          "sha256": "bf2963c8eea67937e3aceddad2055cb5055c2bc18c76992cb6d9106b466c36fc",
-          "lines": 16290
+          "sha256": "e6c99b58b4ac3f02cbfe067e3cf873c2ce358c041f7d53072a8689b40316ef7e",
+          "lines": 16348
         },
         "docs/artifacts/management-openapi-compatibility-0.1.0.json": {
-          "sha256": "3b12f5f789b8275145e0527d8f5ba19d586dae3fd807069ac23e6c1b7531c899",
-          "lines": 6240
+          "sha256": "c0c0998f8608590497e3f98291b51371dbec8422aad2ee129af38255dad80e33",
+          "lines": 6344
         },
         "docs/artifacts/oci-crash-recovery-stage11.json": {
           "sha256": "794559d4d9aa89007d3376b412908ed9203f91f1af05b0dfc5d5c643216d50f6",
@@ -6922,7 +7034,7 @@
           "lines": 116
         },
         "docs/artifacts/release-artifacts-audit-0.1.0.json": {
-          "sha256": "f7c2ac34d16e750e0237a8d77ff376d914d3e39726f323a23242f7be98b36df1",
+          "sha256": "bb2d9bb40ac4e1f919bc4f76e5fc6c6a98e82f53f05017627e3bf52388647d0e",
           "lines": 1027
         },
         "docs/artifacts/runtime-environment-audit-0.1.0.json": {
@@ -6978,11 +7090,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "2a0b6d17d4316fffd4f7200f1e59bdedecd726b631cadd712a81b4dac5fcfdc8",
+          "sha256": "e542111507e0d4e0a81b3d928b9997587398ef353d3f491d74a2ca9ecf6e02ce",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "b04efa740c8c33af6ca4a8e7bc52f45475896b47094ee2ea72aa8e8e8d47b526",
+          "sha256": "313fcdb12f5fccce1a729bab5f76c7bd812dbcb83750711a36e1785292824a14",
           "lines": 71
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -7010,15 +7122,15 @@
           "lines": 101
         },
         "docs/artifacts/web-dist-0.1.0.sha256": {
-          "sha256": "e6d0816bf6022244e01daad3c84607c07d001b9b2ef841d154e647f11a286cfd",
-          "lines": 283
+          "sha256": "3e9d11009de47dfe09af1c2e01203f3404e247056a525bd11e0ff90cd63e09f6",
+          "lines": 299
         },
         "docs/artifacts/web-dist-audit-0.1.0.json": {
-          "sha256": "a1bf5546b413a892123c1dc814ea888a2120651f28d2b43d46856f68e45a6978",
+          "sha256": "a57308c2004b2bef0d0fd5e738d9008ff27161f5a94fadd6531f0cbe3b9b5b92",
           "lines": 18
         },
         "docs/artifacts/web-ui-layout-baseline-0.1.0.json": {
-          "sha256": "bd1b9ce851ba0b05cba02754f0d489fb468c6b304b6e10652295aaee4e18a852",
+          "sha256": "7ef420a4578ebb4ecbe3dcfbc7f1a418ae076643617405fcc1886338d373159c",
           "lines": 155
         },
         "docs/artifacts/web-ui-layout-baseline-linux-0.1.0.json": {
@@ -9258,8 +9370,8 @@
           "lines": 3
         },
         "packages/runtime/src/public/workflow.ts": {
-          "sha256": "d528507a1a8150bbd9ae4681f16d3084cff01c221ec4a3258c2fa43dc1204d5d",
-          "lines": 47
+          "sha256": "75f9797e0d930263ab56989d92df42c913d9a7ec733adf16282d92e22d95d4e0",
+          "lines": 49
         },
         "packages/runtime/src/python-kernel-code-bridge-worker.ts": {
           "sha256": "b0f1d2386ee995b85ce05a3f1b472d798b1d54e2da1bab488faea4e4eec45999",
@@ -9342,7 +9454,7 @@
           "lines": 121
         },
         "packages/runtime/src/release-product-identity.ts": {
-          "sha256": "59721254e2c3db0a2e3659eebaaa81b396696ba5eace123d59eb68779a259aba",
+          "sha256": "acc4f58f3d07b36bbbb5e83b0f18ac2d5da64035ba6b0978579432d2ee9ff595",
           "lines": 3
         },
         "packages/runtime/src/release-product-trial-adoption.ts": {
@@ -10132,6 +10244,10 @@
         "packages/runtime/src/workflow-tool-runtime.ts": {
           "sha256": "555f69b7791047f1ee1fcb7d0ed3f06cfc16f6d98ac1305108aafbacd79b3091",
           "lines": 490
+        },
+        "packages/runtime/src/workspace-artifact-diff.ts": {
+          "sha256": "43b8a78e7f03c48487fcb9910370e60f26b910bb65dc8ad3f2254e542f1f6007",
+          "lines": 50
         },
         "packages/runtime/src/workspace-file-tools.ts": {
           "sha256": "35580fd3a10cf88b55fbb599428a3c6b6ab9c466162e74506b9de7990c953fcb",
@@ -11133,6 +11249,10 @@
           "sha256": "85628cdda3a3875060c72ca1ac36f9047e3cb40ebc0ef3b298c475e6821a39a8",
           "lines": 3833
         },
+        "packages/runtime/test/workspace-artifact-diff.test.ts": {
+          "sha256": "005102a04202856ed96b38d664ab44e5f2e53990e5b2f702e61b9aeb9585d460",
+          "lines": 150
+        },
         "packages/runtime/test/workspace-patch-tool.test.ts": {
           "sha256": "391a6da2302c5792fd75f31721175e05ca65a6843b3f644c29554ee1d5a1c1ba",
           "lines": 326
@@ -11782,8 +11902,8 @@
           "lines": 236
         },
         "scripts/run-web-ui-e2e.mjs": {
-          "sha256": "0c6bf4b214277fe7c988ccabd55dff03cc3f25330d3a28ad9c477e852e1dda43",
-          "lines": 1183
+          "sha256": "c51154dfefa1cccbae00cbe7da69f63652f9a6e067978ff49733d39bff0dea5b",
+          "lines": 1249
         },
         "scripts/run-workflow-benchmark.mjs": {
           "sha256": "a51541008054064f9a0549c052591864af93c2be3f13c05ad332d4c5c591e0e6",
@@ -11970,7 +12090,7 @@
           "lines": 487
         },
         "scripts/sdk-capability-parity-evidence.test.mjs": {
-          "sha256": "981fc8054c080a7762744ad5edc3fe36f5e76b664759109e1d47668c58d26820",
+          "sha256": "a85ea40a5b43c8d45d71f39c0f4784f4387671af5d4acccbd5484687b8eab440",
           "lines": 313
         },
         "scripts/sdk-capability-parity-identity.mjs": {
@@ -12062,20 +12182,20 @@
           "lines": 39
         },
         "scripts/web-ui-e2e-contract.mjs": {
-          "sha256": "e18623c3d1906f280f0e577ffde7a87195a69a7ef7d8b4b539841460380cd967",
-          "lines": 339
+          "sha256": "b7decf1fd5d82ab37407fd762306999c555a5280f914de32bbe309141c58584c",
+          "lines": 362
         },
         "scripts/web-ui-e2e-contract.test.mjs": {
-          "sha256": "1e37e20d4054f4d89a4d7c74aee4a533def305748d102af67e2029dc1637b47d",
-          "lines": 328
+          "sha256": "df3de83f2248214ec577c88fa42b4ca37b00ee7a1d6931c114f947b0fb7ecc76",
+          "lines": 350
         },
         "scripts/web-ui-e2e-fixture.mjs": {
           "sha256": "db1c057dcbf4579bf6cd32dd67699e836472ee3554959117fa2479f6291d615d",
           "lines": 726
         },
         "scripts/web-ui-e2e-narrative.mjs": {
-          "sha256": "5205a1ee2e8c46213d81067b6674bf3152fb2d96732bb9c2f37fd66738c80183",
-          "lines": 380
+          "sha256": "62bab5bbcb9aa3e19173b71cf269daae968b644ad177d421c0777579c4e2b840",
+          "lines": 396
         },
         "scripts/web-ui-e2e-runtime.mjs": {
           "sha256": "1e9de3b667f27c6fded75cd9d688bc6ae72c920e8d5ba1cec3d41bf3874b9d91",
@@ -12169,7 +12289,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "6fbf6ab9f32a13b61e88d1258776d6b925266b3aa96c3bd74d600aac8fa67829"
+      "manifestSha256": "0e47fc2a42c17cfb3c9a1d3281f5756953c8b51ee310cf2b0ae1228a685df066"
     },
     "executionClosure": {
       "algorithm": {
@@ -13273,6 +13393,7 @@
             "packages/runtime/dist/workflow-tool-node.js",
             "packages/runtime/dist/workflow-tool-runtime.js",
             "packages/runtime/dist/workflow-top-level-input-override.js",
+            "packages/runtime/dist/workspace-artifact-diff.js",
             "packages/runtime/dist/workspace-change-commit.js",
             "packages/runtime/dist/workspace-change-files.js",
             "packages/runtime/dist/workspace-change-model.js",
@@ -14420,6 +14541,7 @@
             "packages/runtime/src/workflow-tool-node.ts",
             "packages/runtime/src/workflow-tool-runtime.ts",
             "packages/runtime/src/workflow-top-level-input-override.ts",
+            "packages/runtime/src/workspace-artifact-diff.ts",
             "packages/runtime/src/workspace-change-commit.ts",
             "packages/runtime/src/workspace-change-files.ts",
             "packages/runtime/src/workspace-change-model.ts",
@@ -14529,16 +14651,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 1145,
-            "sourceCounterparts": 1140,
+            "executionFiles": 1146,
+            "sourceCounterparts": 1141,
             "packageManifests": 2,
-            "allFiles": 2287
+            "allFiles": 2289
           },
           "executionAreaCounts": {
             "apps/cli/dist": 67,
             "apps/server/dist": 133,
             "packages/contracts/dist": 54,
-            "packages/runtime/dist": 883,
+            "packages/runtime/dist": 884,
             "packages/runtime/test/fixtures": 3,
             "packages/sdk/dist": 3,
             "scripts": 2
@@ -15105,7 +15227,7 @@
               "lines": 289
             },
             "apps/server/dist/app.js": {
-              "sha256": "5800add042731f2a7798359bfbacdc2ea179cd5a23bb17980310809cfa2d4eb3",
+              "sha256": "a3cfaf56c548e023be17338c46146ad7064c6ce2cbeb2e449afac3cfbea820fc",
               "lines": 2880
             },
             "apps/server/dist/bootstrap-http.js": {
@@ -15341,16 +15463,16 @@
               "lines": 144
             },
             "apps/server/dist/plan-artifact-http-response.js": {
-              "sha256": "7f7698bc5d34f55515bd9eb4a14a31545dc8bedcdc1d0720bccc2921ff330c7a",
-              "lines": 107
+              "sha256": "77d95330129eb7d0bb5064b62b44d8ea1e855d426fcf842de427af661c00baec",
+              "lines": 116
             },
             "apps/server/dist/plan-artifact-http-store.js": {
               "sha256": "0d781db823e7dc98eb4c3927fb11a17720ff0164c9159c36cf3645f8552ffc1b",
               "lines": 7
             },
             "apps/server/dist/plan-artifact-inspection-http.js": {
-              "sha256": "666490e89f468fde82bd685541c8751a48f414dd4d225c9888d0fcd1fa0b3a6c",
-              "lines": 129
+              "sha256": "93fdec993b2553b23cbcf864e6e3acdaca644aa8992cf7f2b803c73d5c2b3928",
+              "lines": 186
             },
             "apps/server/dist/plan-blueprint-instantiation-http-response.js": {
               "sha256": "bf92bbb2fa82d118c43ff96c60431cc38482acb7d00592afb30c844cb9dcc468",
@@ -15493,8 +15615,8 @@
               "lines": 133
             },
             "apps/server/dist/server-composition-root.js": {
-              "sha256": "45e55609cf6f4c374aa07c1f07ae6d090541e3875996183c1489593676ffbb6b",
-              "lines": 69
+              "sha256": "8e96b0592adcb0583cc33045885cc0db9c6e394fdf2b51bbe82777e007e90465",
+              "lines": 70
             },
             "apps/server/dist/thread-control-http-response.js": {
               "sha256": "cf796134cd57ad526ae848e81597c1a6ae78dbe47f6c37d3948ebc5c3dcf1487",
@@ -15637,7 +15759,7 @@
               "lines": 308
             },
             "apps/server/src/app.ts": {
-              "sha256": "4a966fa8baf7d866f4f55a0b8866fbbe2b689f40a9e8184f48a4d8edac67e20f",
+              "sha256": "414ddfa7e3e79bed9639e3c24e2ae18f8063fb88c3615b930098fd474501c6e4",
               "lines": 2981
             },
             "apps/server/src/bootstrap-http.ts": {
@@ -15873,16 +15995,16 @@
               "lines": 219
             },
             "apps/server/src/plan-artifact-http-response.ts": {
-              "sha256": "b58db167ca1d111b5f3d7cba7cbaae730420dce81ac04e7a68a5390bd9a6492b",
-              "lines": 356
+              "sha256": "09a991be46e85de2df6747d38fa35bf2ee58d2d97b2023a1243df3ba75d9843b",
+              "lines": 378
             },
             "apps/server/src/plan-artifact-http-store.ts": {
               "sha256": "7bcd72769591ac608a838933c3a0f7f7c01de787ad7167bdad175ed7aa1a83d9",
               "lines": 19
             },
             "apps/server/src/plan-artifact-inspection-http.ts": {
-              "sha256": "a498936498afcf38374859e5b990f6ea8c9d1a32292238a43207192d0ec393af",
-              "lines": 172
+              "sha256": "dde3ed6980e476b31a7e5fa1a03bebdfc7bb3fd8868c621fb6ecad6130cb317e",
+              "lines": 246
             },
             "apps/server/src/plan-blueprint-instantiation-http-response.ts": {
               "sha256": "ccb411d5959eaf1296ff5fd7800deb239e016f36981fe281eaf90a0efd88869d",
@@ -16025,8 +16147,8 @@
               "lines": 215
             },
             "apps/server/src/server-composition-root.ts": {
-              "sha256": "22efe398aeed8fa7dc6e7f0b664d1fec47aca2177ea70833fc27c97039a7dc17",
-              "lines": 139
+              "sha256": "d2fb22ac06543ae1ed01f7462b18bbbd896c739a0f2f6ffe1af67c7e433cf535",
+              "lines": 142
             },
             "apps/server/src/thread-control-http-response.ts": {
               "sha256": "71b4e22e772cf22290fb765a16cea2feb1111e6c822b7fb645fad71d73988e0f",
@@ -18461,8 +18583,8 @@
               "lines": 3
             },
             "packages/runtime/dist/public/workflow.js": {
-              "sha256": "0790a95be7c4b33cef74933920038b34d264da78984c284b3ebbbf718eb2f484",
-              "lines": 15
+              "sha256": "351e7f1c591c718530e84ac096adfe9f34c4086b0331c553117c994f388bda64",
+              "lines": 16
             },
             "packages/runtime/dist/python-kernel-code-bridge-worker.js": {
               "sha256": "8d85c4db08beb805abe933d7df8c4a28af468f75634ad374d6f5e0c7fd9aec0a",
@@ -18569,7 +18691,7 @@
               "lines": 86
             },
             "packages/runtime/dist/release-product-identity.js": {
-              "sha256": "59ee9d65ce34e13f4d202cf94914b2e5c1a3906da223e91e32b612824d51604d",
+              "sha256": "c387da4633fde4bfdd0bf3093cfc96ed286c4186245eb181458ad047cb67d332",
               "lines": 2
             },
             "packages/runtime/dist/release-product-trial-adoption.js": {
@@ -19871,6 +19993,10 @@
             "packages/runtime/dist/workflow-top-level-input-override.js": {
               "sha256": "52d02a1fff4f013a10cec04edd75f92a2458e36ed411029f16bbdd9c4c380108",
               "lines": 42
+            },
+            "packages/runtime/dist/workspace-artifact-diff.js": {
+              "sha256": "f3f9bfbb5bb31a9ca2c908e2b9aae0978689e2c28f4dc95051de0e9d828f81dd",
+              "lines": 30
             },
             "packages/runtime/dist/workspace-change-commit.js": {
               "sha256": "d83dc90cb7767bd3e135b21747b3b833f8a9d6365157b1e5017ae47df9e05ecf",
@@ -21997,8 +22123,8 @@
               "lines": 3
             },
             "packages/runtime/src/public/workflow.ts": {
-              "sha256": "d528507a1a8150bbd9ae4681f16d3084cff01c221ec4a3258c2fa43dc1204d5d",
-              "lines": 47
+              "sha256": "75f9797e0d930263ab56989d92df42c913d9a7ec733adf16282d92e22d95d4e0",
+              "lines": 49
             },
             "packages/runtime/src/python-kernel-code-bridge-worker.ts": {
               "sha256": "b0f1d2386ee995b85ce05a3f1b472d798b1d54e2da1bab488faea4e4eec45999",
@@ -22105,7 +22231,7 @@
               "lines": 121
             },
             "packages/runtime/src/release-product-identity.ts": {
-              "sha256": "59721254e2c3db0a2e3659eebaaa81b396696ba5eace123d59eb68779a259aba",
+              "sha256": "acc4f58f3d07b36bbbb5e83b0f18ac2d5da64035ba6b0978579432d2ee9ff595",
               "lines": 3
             },
             "packages/runtime/src/release-product-trial-adoption.ts": {
@@ -23408,6 +23534,10 @@
               "sha256": "6b600ba18359e1dde3798c1ace39910e2cae56e809500ff6f33c3f50fa3cb67c",
               "lines": 84
             },
+            "packages/runtime/src/workspace-artifact-diff.ts": {
+              "sha256": "43b8a78e7f03c48487fcb9910370e60f26b910bb65dc8ad3f2254e542f1f6007",
+              "lines": 50
+            },
             "packages/runtime/src/workspace-change-commit.ts": {
               "sha256": "d6508d3f147c2e7768905fbd3a5772d739524a0388df248596308ae917723597",
               "lines": 304
@@ -23693,7 +23823,7 @@
               "lines": 32
             }
           },
-          "manifestSha256": "e93004ca05fdad073e99568a78cb30c6dd0c03c47cf8ee47a1c8d6e9c8d9470c"
+          "manifestSha256": "d953e7de995996a9f061f3d6953e001499fa6487b676e040f17222d2b0a548af"
         },
         "productionServerTrace": {
           "roots": [
@@ -24715,6 +24845,7 @@
             "packages/runtime/dist/workflow-tool-node.js",
             "packages/runtime/dist/workflow-tool-runtime.js",
             "packages/runtime/dist/workflow-top-level-input-override.js",
+            "packages/runtime/dist/workspace-artifact-diff.js",
             "packages/runtime/dist/workspace-change-commit.js",
             "packages/runtime/dist/workspace-change-files.js",
             "packages/runtime/dist/workspace-change-model.js",
@@ -25795,6 +25926,7 @@
             "packages/runtime/src/workflow-tool-node.ts",
             "packages/runtime/src/workflow-tool-runtime.ts",
             "packages/runtime/src/workflow-top-level-input-override.ts",
+            "packages/runtime/src/workspace-artifact-diff.ts",
             "packages/runtime/src/workspace-change-commit.ts",
             "packages/runtime/src/workspace-change-files.ts",
             "packages/runtime/src/workspace-change-model.ts",
@@ -25905,16 +26037,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 1078,
-            "sourceCounterparts": 1072,
+            "executionFiles": 1079,
+            "sourceCounterparts": 1073,
             "packageManifests": 3,
-            "allFiles": 2153
+            "allFiles": 2155
           },
           "executionAreaCounts": {
             "apps/server/dist": 135,
             "other": 1,
             "packages/contracts/dist": 54,
-            "packages/runtime/dist": 880,
+            "packages/runtime/dist": 881,
             "packages/sdk/dist": 3,
             "scripts": 5
           },
@@ -25944,7 +26076,7 @@
               "lines": 289
             },
             "apps/server/dist/app.js": {
-              "sha256": "5800add042731f2a7798359bfbacdc2ea179cd5a23bb17980310809cfa2d4eb3",
+              "sha256": "a3cfaf56c548e023be17338c46146ad7064c6ce2cbeb2e449afac3cfbea820fc",
               "lines": 2880
             },
             "apps/server/dist/bootstrap-http.js": {
@@ -26184,16 +26316,16 @@
               "lines": 144
             },
             "apps/server/dist/plan-artifact-http-response.js": {
-              "sha256": "7f7698bc5d34f55515bd9eb4a14a31545dc8bedcdc1d0720bccc2921ff330c7a",
-              "lines": 107
+              "sha256": "77d95330129eb7d0bb5064b62b44d8ea1e855d426fcf842de427af661c00baec",
+              "lines": 116
             },
             "apps/server/dist/plan-artifact-http-store.js": {
               "sha256": "0d781db823e7dc98eb4c3927fb11a17720ff0164c9159c36cf3645f8552ffc1b",
               "lines": 7
             },
             "apps/server/dist/plan-artifact-inspection-http.js": {
-              "sha256": "666490e89f468fde82bd685541c8751a48f414dd4d225c9888d0fcd1fa0b3a6c",
-              "lines": 129
+              "sha256": "93fdec993b2553b23cbcf864e6e3acdaca644aa8992cf7f2b803c73d5c2b3928",
+              "lines": 186
             },
             "apps/server/dist/plan-blueprint-instantiation-http-response.js": {
               "sha256": "bf92bbb2fa82d118c43ff96c60431cc38482acb7d00592afb30c844cb9dcc468",
@@ -26336,8 +26468,8 @@
               "lines": 133
             },
             "apps/server/dist/server-composition-root.js": {
-              "sha256": "45e55609cf6f4c374aa07c1f07ae6d090541e3875996183c1489593676ffbb6b",
-              "lines": 69
+              "sha256": "8e96b0592adcb0583cc33045885cc0db9c6e394fdf2b51bbe82777e007e90465",
+              "lines": 70
             },
             "apps/server/dist/thread-control-http-response.js": {
               "sha256": "cf796134cd57ad526ae848e81597c1a6ae78dbe47f6c37d3948ebc5c3dcf1487",
@@ -26484,7 +26616,7 @@
               "lines": 308
             },
             "apps/server/src/app.ts": {
-              "sha256": "4a966fa8baf7d866f4f55a0b8866fbbe2b689f40a9e8184f48a4d8edac67e20f",
+              "sha256": "414ddfa7e3e79bed9639e3c24e2ae18f8063fb88c3615b930098fd474501c6e4",
               "lines": 2981
             },
             "apps/server/src/bootstrap-http.ts": {
@@ -26724,16 +26856,16 @@
               "lines": 219
             },
             "apps/server/src/plan-artifact-http-response.ts": {
-              "sha256": "b58db167ca1d111b5f3d7cba7cbaae730420dce81ac04e7a68a5390bd9a6492b",
-              "lines": 356
+              "sha256": "09a991be46e85de2df6747d38fa35bf2ee58d2d97b2023a1243df3ba75d9843b",
+              "lines": 378
             },
             "apps/server/src/plan-artifact-http-store.ts": {
               "sha256": "7bcd72769591ac608a838933c3a0f7f7c01de787ad7167bdad175ed7aa1a83d9",
               "lines": 19
             },
             "apps/server/src/plan-artifact-inspection-http.ts": {
-              "sha256": "a498936498afcf38374859e5b990f6ea8c9d1a32292238a43207192d0ec393af",
-              "lines": 172
+              "sha256": "dde3ed6980e476b31a7e5fa1a03bebdfc7bb3fd8868c621fb6ecad6130cb317e",
+              "lines": 246
             },
             "apps/server/src/plan-blueprint-instantiation-http-response.ts": {
               "sha256": "ccb411d5959eaf1296ff5fd7800deb239e016f36981fe281eaf90a0efd88869d",
@@ -26876,8 +27008,8 @@
               "lines": 215
             },
             "apps/server/src/server-composition-root.ts": {
-              "sha256": "22efe398aeed8fa7dc6e7f0b664d1fec47aca2177ea70833fc27c97039a7dc17",
-              "lines": 139
+              "sha256": "d2fb22ac06543ae1ed01f7462b18bbbd896c739a0f2f6ffe1af67c7e433cf535",
+              "lines": 142
             },
             "apps/server/src/thread-control-http-response.ts": {
               "sha256": "71b4e22e772cf22290fb765a16cea2feb1111e6c822b7fb645fad71d73988e0f",
@@ -29308,8 +29440,8 @@
               "lines": 3
             },
             "packages/runtime/dist/public/workflow.js": {
-              "sha256": "0790a95be7c4b33cef74933920038b34d264da78984c284b3ebbbf718eb2f484",
-              "lines": 15
+              "sha256": "351e7f1c591c718530e84ac096adfe9f34c4086b0331c553117c994f388bda64",
+              "lines": 16
             },
             "packages/runtime/dist/python-kernel-code-bridge-worker.js": {
               "sha256": "8d85c4db08beb805abe933d7df8c4a28af468f75634ad374d6f5e0c7fd9aec0a",
@@ -29416,7 +29548,7 @@
               "lines": 86
             },
             "packages/runtime/dist/release-product-identity.js": {
-              "sha256": "59ee9d65ce34e13f4d202cf94914b2e5c1a3906da223e91e32b612824d51604d",
+              "sha256": "c387da4633fde4bfdd0bf3093cfc96ed286c4186245eb181458ad047cb67d332",
               "lines": 2
             },
             "packages/runtime/dist/release-product-trial-adoption.js": {
@@ -30714,6 +30846,10 @@
             "packages/runtime/dist/workflow-top-level-input-override.js": {
               "sha256": "52d02a1fff4f013a10cec04edd75f92a2458e36ed411029f16bbdd9c4c380108",
               "lines": 42
+            },
+            "packages/runtime/dist/workspace-artifact-diff.js": {
+              "sha256": "f3f9bfbb5bb31a9ca2c908e2b9aae0978689e2c28f4dc95051de0e9d828f81dd",
+              "lines": 30
             },
             "packages/runtime/dist/workspace-change-commit.js": {
               "sha256": "d83dc90cb7767bd3e135b21747b3b833f8a9d6365157b1e5017ae47df9e05ecf",
@@ -32832,8 +32968,8 @@
               "lines": 3
             },
             "packages/runtime/src/public/workflow.ts": {
-              "sha256": "d528507a1a8150bbd9ae4681f16d3084cff01c221ec4a3258c2fa43dc1204d5d",
-              "lines": 47
+              "sha256": "75f9797e0d930263ab56989d92df42c913d9a7ec733adf16282d92e22d95d4e0",
+              "lines": 49
             },
             "packages/runtime/src/python-kernel-code-bridge-worker.ts": {
               "sha256": "b0f1d2386ee995b85ce05a3f1b472d798b1d54e2da1bab488faea4e4eec45999",
@@ -32940,7 +33076,7 @@
               "lines": 121
             },
             "packages/runtime/src/release-product-identity.ts": {
-              "sha256": "59721254e2c3db0a2e3659eebaaa81b396696ba5eace123d59eb68779a259aba",
+              "sha256": "acc4f58f3d07b36bbbb5e83b0f18ac2d5da64035ba6b0978579432d2ee9ff595",
               "lines": 3
             },
             "packages/runtime/src/release-product-trial-adoption.ts": {
@@ -34239,6 +34375,10 @@
               "sha256": "6b600ba18359e1dde3798c1ace39910e2cae56e809500ff6f33c3f50fa3cb67c",
               "lines": 84
             },
+            "packages/runtime/src/workspace-artifact-diff.ts": {
+              "sha256": "43b8a78e7f03c48487fcb9910370e60f26b910bb65dc8ad3f2254e542f1f6007",
+              "lines": 50
+            },
             "packages/runtime/src/workspace-change-commit.ts": {
               "sha256": "d6508d3f147c2e7768905fbd3a5772d739524a0388df248596308ae917723597",
               "lines": 304
@@ -34532,7 +34672,7 @@
               "lines": 99
             }
           },
-          "manifestSha256": "58d99b825af966f79216f771034520a6e41052d85ae84a029d0d81f2270aec34"
+          "manifestSha256": "4263acb4d6993a0a207f01c59688b8630051e33374991a7e462668387d2ee5b5"
         }
       },
       "excludedCategories": [
@@ -34561,9 +34701,9 @@
           "reason": "evidence.json cannot contain its own content hash; the external Stage 8 repair commit binds that blob."
         }
       ],
-      "manifestSha256": "ab511406ec381dca9fb006fe96dd37590e24dfc034d31190297eb5d8a209617a"
+      "manifestSha256": "6a876ef204c7aab9490ec0a87342b9dc2c27c6b962a619cc828b44f81a6a120e"
     },
-    "manifestSha256": "e2064ffa54db2275ba335d8243ef3535c0525ae84befb052ebe1c002e8109362"
+    "manifestSha256": "2a914dec543a96329dcfab80dcd8bbc8cfa1441f58b89f03b820008be590f660"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -34756,11 +34896,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "2a0b6d17d4316fffd4f7200f1e59bdedecd726b631cadd712a81b4dac5fcfdc8"
+      "sha256": "e542111507e0d4e0a81b3d928b9997587398ef353d3f491d74a2ca9ecf6e02ce"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "b04efa740c8c33af6ca4a8e7bc52f45475896b47094ee2ea72aa8e8e8d47b526"
+      "sha256": "313fcdb12f5fccce1a729bab5f76c7bd812dbcb83750711a36e1785292824a14"
     }
   }
 }

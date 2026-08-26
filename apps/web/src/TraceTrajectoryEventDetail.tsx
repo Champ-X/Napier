@@ -1,16 +1,22 @@
-import { useState } from "react";
-import { X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowRight, ShieldAlert, X } from "lucide-react";
 
 import type { TraceTrajectoryEvent } from "./trace-trajectory-model";
 import { traceTrajectoryCopy } from "./trace-trajectory-copy";
 import { traceTrajectoryEventDetailView } from "./trace-trajectory-event-detail-view";
 import { traceTrajectoryEventHighlights } from "./trace-trajectory-presentation";
 
-type DetailTab = "summary" | "context" | "evidence" | "timing";
-const TABS: DetailTab[] = ["summary", "context", "evidence", "timing"];
+type DetailTab =
+  | "diagnosis"
+  | "summary"
+  | "context"
+  | "evidence"
+  | "timing";
 
 export interface TraceTrajectoryEventDetailProps {
   event: TraceTrajectoryEvent;
+  events?: readonly TraceTrajectoryEvent[];
+  onSelectEvent?(eventId: string): void;
   onClose?: () => void;
   /**
    * Rendered inside the unified {@link ContextInspector}: the shared column owns
@@ -22,13 +28,24 @@ export interface TraceTrajectoryEventDetailProps {
 
 export function TraceTrajectoryEventDetail({
   event,
+  events = [event],
+  onSelectEvent,
   onClose,
   embedded = false,
 }: TraceTrajectoryEventDetailProps) {
-  const [tab, setTab] = useState<DetailTab>("summary");
-  const detail = traceTrajectoryEventDetailView(event);
+  const [tab, setTab] = useState<DetailTab>(initialTab(event));
+  const selectedEventId = useRef(event.event.id);
+  const detail = traceTrajectoryEventDetailView(event, events);
+  const tabs: DetailTab[] = detail.diagnosis
+    ? ["diagnosis", "summary", "context", "evidence", "timing"]
+    : ["summary", "context", "evidence", "timing"];
   const highlights = traceTrajectoryEventHighlights(event, detail.evidence);
   const copy = traceTrajectoryCopy.detail;
+  useEffect(() => {
+    if (selectedEventId.current === event.event.id) return;
+    selectedEventId.current = event.event.id;
+    setTab(initialTab(event));
+  }, [event]);
   return (
     <section
       className={`trace-event-detail${embedded ? " is-embedded" : ""}`}
@@ -66,7 +83,7 @@ export function TraceTrajectoryEventDetail({
         role="tablist"
         aria-label={copy.tabs}
       >
-        {TABS.map((candidate) => (
+        {tabs.map((candidate) => (
           <button
             type="button"
             role="tab"
@@ -83,6 +100,12 @@ export function TraceTrajectoryEventDetail({
         ))}
       </div>
       <div className="trace-event-detail-panel" role="tabpanel">
+        {tab === "diagnosis" && detail.diagnosis ? (
+          <DiagnosisPanel
+            diagnosis={detail.diagnosis}
+            {...(onSelectEvent ? { onSelectEvent } : {})}
+          />
+        ) : null}
         {tab === "summary" ? (
           <div className="trace-event-detail-summary">
             <div className="trace-event-detail-callout">
@@ -102,6 +125,91 @@ export function TraceTrajectoryEventDetail({
         ) : null}
         {tab === "timing" ? <DetailGrid fields={detail.timing} /> : null}
       </div>
+    </section>
+  );
+}
+
+function DiagnosisPanel({
+  diagnosis,
+  onSelectEvent,
+}: {
+  diagnosis: NonNullable<
+    ReturnType<typeof traceTrajectoryEventDetailView>["diagnosis"]
+  >;
+  onSelectEvent?: (eventId: string) => void;
+}) {
+  const copy = traceTrajectoryCopy.detail.diagnosisView;
+  return (
+    <div className="trace-event-diagnosis">
+      <div className="trace-event-diagnosis-summary">
+        <ShieldAlert size={17} aria-hidden="true" />
+        <div>
+          <span>{copy.category}</span>
+          <strong>{copy.categories[diagnosis.category]}</strong>
+          <p>{copy.guidance[diagnosis.category]}</p>
+        </div>
+      </div>
+      {diagnosis.subject ? (
+        <DetailGrid
+          fields={[{ key: "failureSubject", value: diagnosis.subject }]}
+        />
+      ) : null}
+      <DiagnosisGroup
+        title={copy.input}
+        fields={diagnosis.input}
+        empty={copy.inputUnknown}
+      />
+      <DiagnosisGroup
+        title={copy.outcome}
+        fields={diagnosis.outcome}
+        empty={copy.outcomeUnknown}
+      />
+      <DiagnosisGroup
+        title={copy.parent}
+        fields={diagnosis.parent}
+        empty={copy.parentUnknown}
+      />
+      <section className="trace-event-diagnosis-group">
+        <h4>{copy.related}</h4>
+        <ol className="trace-event-related-events">
+          {diagnosis.related.map((related) => (
+            <li key={`${related.relation}:${related.eventId}`}>
+              <button
+                type="button"
+                disabled={!onSelectEvent}
+                onClick={() => onSelectEvent?.(related.eventId)}
+              >
+                <span>{copy.relations[related.relation]}</span>
+                <strong>{related.label}</strong>
+                <code>#{String(related.sequence).padStart(3, "0")}</code>
+                <ArrowRight size={13} aria-hidden="true" />
+              </button>
+            </li>
+          ))}
+        </ol>
+      </section>
+      <p className="trace-event-diagnosis-privacy">{copy.privacy}</p>
+    </div>
+  );
+}
+
+function DiagnosisGroup({
+  title,
+  fields,
+  empty,
+}: {
+  title: string;
+  fields: ReturnType<typeof traceTrajectoryEventDetailView>["context"];
+  empty: string;
+}) {
+  return (
+    <section className="trace-event-diagnosis-group">
+      <h4>{title}</h4>
+      {fields.length > 0 ? (
+        <DetailGrid fields={fields} />
+      ) : (
+        <p className="trace-event-detail-empty">{empty}</p>
+      )}
     </section>
   );
 }
@@ -135,4 +243,8 @@ function fieldLabel(key: string): string {
     .replace(/Sha256$/u, " SHA-256")
     .replace(/([a-z0-9])([A-Z])/gu, "$1 $2")
     .replace(/^./u, (value) => value.toLocaleUpperCase());
+}
+
+function initialTab(event: TraceTrajectoryEvent): DetailTab {
+  return event.status === "failed" ? "diagnosis" : "summary";
 }

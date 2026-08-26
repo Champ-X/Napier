@@ -6,7 +6,7 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "72d8ded3f958a9a0ba63e52f804c28b3128f4276c96b9b6fdd6942b3fdd1fdd4",
+  "artifactSetSha256": "6caf1c2e8e194bcd4ea500b44318e7683f1da244899f3a959bc0aaea59361fa8",
   "artifacts": [
     {
       "kind": "package-lock-audit",
@@ -119,25 +119,25 @@
     {
       "kind": "web-dist-audit",
       "path": "docs/artifacts/web-dist-audit-0.1.0.json",
-      "sha256": "a1bf5546b413a892123c1dc814ea888a2120651f28d2b43d46856f68e45a6978",
+      "sha256": "a57308c2004b2bef0d0fd5e738d9008ff27161f5a94fadd6531f0cbe3b9b5b92",
       "valid": true
     },
     {
       "kind": "web-dist-manifest",
       "path": "docs/artifacts/web-dist-0.1.0.sha256",
-      "sha256": "e6d0816bf6022244e01daad3c84607c07d001b9b2ef841d154e647f11a286cfd",
+      "sha256": "3e9d11009de47dfe09af1c2e01203f3404e247056a525bd11e0ff90cd63e09f6",
       "valid": true
     },
     {
       "kind": "management-openapi",
       "path": "docs/artifacts/management-openapi-0.1.0.json",
-      "sha256": "bf2963c8eea67937e3aceddad2055cb5055c2bc18c76992cb6d9106b466c36fc",
+      "sha256": "e6c99b58b4ac3f02cbfe067e3cf873c2ce358c041f7d53072a8689b40316ef7e",
       "valid": true
     },
     {
       "kind": "management-openapi-compatibility",
       "path": "docs/artifacts/management-openapi-compatibility-0.1.0.json",
-      "sha256": "3b12f5f789b8275145e0527d8f5ba19d586dae3fd807069ac23e6c1b7531c899",
+      "sha256": "c0c0998f8608590497e3f98291b51371dbec8422aad2ee129af38255dad80e33",
       "valid": true
     },
     {
@@ -155,25 +155,25 @@
     {
       "kind": "harness-experiment-release-evidence",
       "path": "docs/artifacts/harness-experiment-release-evidence-0.1.3.json",
-      "sha256": "21d47a0b313a0f0c54cc7cc68dbd7fa11e5484656b54fa3b3bdfb74d526abd81",
+      "sha256": "e3b5f9d4516ee7ac06a602979c6f2bc567b4f60677df2a0d72e324759b732dfe",
       "valid": true
     },
     {
       "kind": "agent-harness-acceptance-evidence",
       "path": "docs/artifacts/agent-harness-acceptance-evidence-0.1.3.json",
-      "sha256": "befe146461156a8692e5006fbedc14ab9f02dcc398b7ba4631ebedcb399028e2",
+      "sha256": "f7d396550e627a96eae33a3c28b0baa274ceff508a23189f6e423d520928bd69",
       "valid": true
     },
     {
       "kind": "default-product-source-bound-smoke",
       "path": "docs/artifacts/default-product-source-bound-smoke-m4-0.1.3.json",
-      "sha256": "05d00a230553d887807f32f5896195d12e365f42c8b009faf16e533bc3b3a4b6",
+      "sha256": "a9ea4448d153d71e81d90797500f4eaf9795248a41cca50c676a2bf436eba263",
       "valid": true
     },
     {
       "kind": "default-product-source-manifest",
       "path": "docs/artifacts/default-product-source-manifest-0.1.3.json",
-      "sha256": "5989bf3e8a20570dc4657b8a177efe488641f15d5588d6cc533655f27080deec",
+      "sha256": "48b94db343b1c83aab820927461d975b43300dd98a3cd416a5f1d103193f48f4",
       "valid": true
     },
     {

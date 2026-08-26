@@ -21,6 +21,7 @@ export function AppLedgerNavigation({
       onTrash={(threadId) => void vm.trashThread(threadId)}
       onRestore={() => void vm.restoreTrashedThread()}
       onWorkspaceSwitch={vm.switchWorkspaceRoot}
+      onOpenDeveloperWorkbench={shell.openDeveloperWorkbench}
       onOpenSettings={shell.openSettings}
       onOpenWorkspaceSettings={shell.openWorkspaceSettings}
     />

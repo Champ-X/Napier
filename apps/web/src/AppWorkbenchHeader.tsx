@@ -6,6 +6,7 @@ import {
 import { TaskNarrativeBoundary } from "./TaskNarrativeBoundary";
 import type { useWorkspaceShell } from "./use-workspace-shell";
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
+import { recentModelKeysFromRuns } from "./model-selection-view-model";
 
 export function AppWorkbenchHeader({
   vm,
@@ -33,6 +34,13 @@ export function AppWorkbenchHeader({
         ""
       }
       onModel={vm.setSelectedModelKey}
+      recommendedModelKeys={
+        vm.detail?.agent
+          ? [`${vm.detail.agent.model.provider}/${vm.detail.agent.model.id}`]
+          : []
+      }
+      recentModelKeys={recentModelKeysFromRuns(vm.detail?.runs ?? [])}
+      onOpenDeveloperWorkbench={shell.openDeveloperWorkbench}
       onOpenSettings={shell.openSettings}
       taskStatus={
         <TaskNarrativeBoundary

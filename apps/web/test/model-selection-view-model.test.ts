@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   configuredModelProviderGroups,
+  modelPickerGroups,
   modelProviderGroups,
   modelSelectOption,
+  recentModelKeysFromRuns,
   reviewerModelAvailability,
   selectedModelAvailability,
 } from "../src/model-selection-view-model";
@@ -51,6 +53,70 @@ describe("model selection view model", () => {
         key: "deepseek/deepseek-v4-flash",
         configured: true,
       }),
+    ]);
+  });
+
+  it("pins the Agent default and recent models before provider groups", () => {
+    const groups = modelPickerGroups(
+      [
+        model("deepseek", "deepseek-v4-flash", "DeepSeek V4 Flash", true),
+        model("openai", "gpt-5", "GPT-5", true),
+        model("openai", "gpt-4.1", "GPT-4.1", false),
+        model("napier", "demo", "Deterministic demo", true),
+      ],
+      {
+        recommendedModelKeys: ["openai/gpt-5"],
+        recentModelKeys: ["deepseek/deepseek-v4-flash", "openai/gpt-5"],
+      },
+    );
+
+    expect(groups.map((group) => group.id)).toEqual([
+      "recommended",
+      "recent",
+      "provider:napier",
+    ]);
+    expect(groups[0]?.options.map((option) => option.key)).toEqual([
+      "openai/gpt-5",
+    ]);
+    expect(groups[1]?.options.map((option) => option.key)).toEqual([
+      "deepseek/deepseek-v4-flash",
+    ]);
+    expect(groups.flatMap((group) => group.options)).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ key: "openai/gpt-4.1" })]),
+    );
+  });
+
+  it("searches model metadata and only reveals unavailable models explicitly", () => {
+    const models = [
+      model("openai", "gpt-5", "GPT-5", true),
+      model("openai", "gpt-4.1", "GPT-4.1", false),
+      model("deepseek", "deepseek-v4-flash", "DeepSeek V4 Flash", true),
+    ];
+    expect(
+      modelPickerGroups(models, { query: "gpt" })
+        .flatMap((group) => group.options)
+        .map((option) => option.key),
+    ).toEqual(["openai/gpt-5"]);
+    expect(
+      modelPickerGroups(models, { query: "gpt", showUnavailable: true })
+        .flatMap((group) => group.options)
+        .map((option) => option.key),
+    ).toEqual(["openai/gpt-5", "openai/gpt-4.1"]);
+  });
+
+  it("derives recent model order from settled run configuration", () => {
+    const runs = [
+      { configuration: { model: { provider: "openai", id: "gpt-5" } } },
+      {
+        configuration: {
+          model: { provider: "deepseek", id: "deepseek-v4-flash" },
+        },
+      },
+      { configuration: { model: { provider: "openai", id: "gpt-5" } } },
+    ];
+    expect(recentModelKeysFromRuns(runs as never)).toEqual([
+      "openai/gpt-5",
+      "deepseek/deepseek-v4-flash",
     ]);
   });
 

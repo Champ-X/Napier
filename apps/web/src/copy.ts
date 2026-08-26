@@ -857,6 +857,7 @@ export const en = {
     chipLabel: "Workspace",
   },
   settingsSurface: desktopWorkbenchCopy.settingsSurface,
+  developerWorkbench: desktopWorkbenchCopy.developerWorkbench, modelPicker: desktopWorkbenchCopy.modelPicker,
   welcome: {
     eyebrow: "A glass-box agent runtime",
     title: "Work that leaves evidence.",
@@ -882,5 +883,4 @@ export const en = {
 } as const;
 
 export type Copy = typeof en;
-
 export const copy: Copy = deepMergeCopy(en, getLocale() === "zh" ? zh : {});

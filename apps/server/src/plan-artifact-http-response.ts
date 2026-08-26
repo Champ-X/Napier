@@ -14,6 +14,28 @@ import {
 
 type PlanArtifact = ExecutionPlan["artifacts"][number];
 
+export function setPlanArtifactDiffHeaders(
+  context: Context,
+  plan: ExecutionPlan,
+  artifact: PlanArtifact,
+  preview: {
+    outputSha256: string;
+    outputBytes: number;
+    fileCount: number;
+    hunkCount: number;
+    addedLineCount: number;
+    deletedLineCount: number;
+  } & Partial<LedgerEventReceiptProjection>,
+): void {
+  setPlanArtifactHeaders(context, plan, artifact, preview);
+  context.header("X-Napier-Plan-Artifact-Diff-SHA256", preview.outputSha256);
+  context.header("X-Napier-Plan-Artifact-Diff-Bytes", String(preview.outputBytes));
+  context.header("X-Napier-Plan-Artifact-Diff-Files", String(preview.fileCount));
+  context.header("X-Napier-Plan-Artifact-Diff-Hunks", String(preview.hunkCount));
+  context.header("X-Napier-Plan-Artifact-Diff-Added", String(preview.addedLineCount));
+  context.header("X-Napier-Plan-Artifact-Diff-Deleted", String(preview.deletedLineCount));
+}
+
 export function setPlanArtifactDriftCheckHeaders(
   context: Context,
   plan: ExecutionPlan,

@@ -2,23 +2,20 @@ import { BadgeCheck, Clock3 } from "lucide-react";
 
 import type { ThreadDetail } from "@napier/contracts";
 import { copy } from "./copy";
+import {
+  taskValidationMatrix,
+  type TaskValidationMatrixRow,
+} from "./task-validation-matrix";
 
-type ValidationDetail = Pick<ThreadDetail, "plans" | "runs">;
+type ValidationDetail = Pick<ThreadDetail, "events" | "plans" | "runs">;
 
 export function TaskValidationPanel({
   detail,
 }: {
   detail: ValidationDetail | undefined;
 }) {
-  const plan =
-    detail?.plans.findLast(
-      (candidate) =>
-        candidate.status === "active" || candidate.status === "blocked",
-    ) ?? detail?.plans.at(-1);
   const latestRun = detail?.runs.at(-1);
-  const checks = plan?.steps.filter(
-    (step) => step.verification || step.evidence,
-  );
+  const rows = taskValidationMatrix(detail?.events ?? [], detail?.plans ?? []);
 
   return (
     <section
@@ -47,37 +44,65 @@ export function TaskValidationPanel({
         </article>
       ) : null}
 
-      {checks && checks.length > 0 ? (
-        <section className="task-checks" aria-labelledby="task-checks-title">
-          <h3 id="task-checks-title">{copy.taskView.validation.checks}</h3>
-          <ol>
-            {checks.map((step) => {
-              const verified =
-                step.status === "completed" && Boolean(step.evidence);
-              return (
-                <li key={step.id}>
-                  <span
-                    className={`task-status-badge ${verified ? "is-verified" : "is-pending"}`}
-                  >
-                    {verified
-                      ? copy.taskView.validation.passed
-                      : copy.taskView.validation.pending}
-                  </span>
-                  <div>
-                    <strong>{step.title}</strong>
-                    <p>{step.verification}</p>
-                    {step.evidence ? <small>{step.evidence}</small> : null}
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-        </section>
-      ) : latestRun ? null : (
-        <p className="task-empty-state">{copy.taskView.validation.empty}</p>
-      )}
+      <section className="task-checks" aria-labelledby="task-checks-title">
+        <h3 id="task-checks-title">{copy.taskView.validation.checks}</h3>
+        <div className="task-validation-matrix" role="table">
+          <div className="task-validation-matrix-head" role="row">
+            <span role="columnheader">{copy.taskView.validation.checks}</span>
+            <span role="columnheader">{copy.taskView.validation.evidence}</span>
+            <span role="columnheader">{copy.taskView.validation.source}</span>
+          </div>
+          {rows.map((row) => (
+            <div className="task-validation-row" role="row" key={row.id}>
+              <div role="cell">
+                <span className={`task-status-badge is-${row.status}`}>
+                  {copy.taskView.validation[row.status]}
+                </span>
+                <strong>{copy.taskView.validation.checksByKind[row.id]}</strong>
+              </div>
+              <p role="cell">{validationEvidence(row)}</p>
+              <span role="cell" className="task-validation-source">
+                {copy.taskView.validation.sources[row.source]}
+                {row.eventSeq !== undefined ? ` · #${row.eventSeq}` : ""}
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
     </section>
   );
+}
+
+function validationEvidence(row: TaskValidationMatrixRow): string {
+  const text = copy.taskView.validation;
+  if (row.status === "unknown") return text.noEvidence;
+  if (row.id === "artifact") {
+    return text.artifactCounts
+      .replace("{verified}", String(row.verifiedArtifactCount ?? 0))
+      .replace("{produced}", String(row.producedArtifactCount ?? 0))
+      .replace("{missing}", String(row.missingArtifactCount ?? 0))
+      .replace("{total}", String(row.artifactCount ?? 0));
+  }
+  const parts = [
+    ...(row.diagnosticCount !== undefined
+      ? [`${text.diagnostics} ${row.diagnosticCount}`]
+      : []),
+    ...(row.errorCount !== undefined ? [`${text.errors} ${row.errorCount}`] : []),
+    ...(row.warningCount !== undefined
+      ? [`${text.warnings} ${row.warningCount}`]
+      : []),
+    ...(row.exitCode !== undefined ? [`${text.exitCode} ${row.exitCode}`] : []),
+    ...(row.durationMs !== undefined
+      ? [`${text.duration} ${formatDuration(row.durationMs)}`]
+      : []),
+    ...(row.stale ? [text.stale] : []),
+  ];
+  return parts.join(" · ") || text.noEvidence;
+}
+
+function formatDuration(durationMs: number): string {
+  if (durationMs < 1_000) return `${durationMs} ms`;
+  return `${(durationMs / 1_000).toFixed(1)} s`;
 }
 
 function runDuration(startedAt: string, finishedAt: string | undefined) {

@@ -116,6 +116,12 @@
   border-color: var(--rule);
 }
 
+.workbench-developer {
+  color: var(--color-accent);
+  background: var(--color-accent-subtle);
+  border-color: var(--color-border-subtle);
+}
+
 .workbench-settings kbd {
   font-family: var(--mono);
   font-size: var(--text-xs);

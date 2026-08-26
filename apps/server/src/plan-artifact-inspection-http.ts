@@ -3,8 +3,10 @@ import {
 } from "@napier/runtime/core";
 import {
   inspectWorkspaceArtifactDrift,
+  previewWorkspaceArtifactDiff,
   previewWorkspaceTextArtifact,
 } from "@napier/runtime/workflow";
+import type { OsSandboxAdapter } from "@napier/runtime/code";
 import { Hono } from "hono";
 
 import {
@@ -14,6 +16,7 @@ import {
   sha256Text,
 } from "./http-response-evidence.js";
 import {
+  setPlanArtifactDiffHeaders,
   setPlanArtifactDriftCheckHeaders,
   setPlanArtifactTextPreviewHeaders,
 } from "./plan-artifact-http-response.js";
@@ -25,9 +28,80 @@ import {
 export function registerPlanArtifactInspectionHttp(
   app: Hono,
   store: PlanArtifactHttpStore,
+  sandbox: OsSandboxAdapter,
 ): void {
   registerPlanArtifactDriftCheckHttp(app, store);
   registerPlanArtifactTextPreviewHttp(app, store);
+  registerPlanArtifactDiffHttp(app, store, sandbox);
+}
+
+function registerPlanArtifactDiffHttp(
+  app: Hono,
+  store: PlanArtifactHttpStore,
+  sandbox: OsSandboxAdapter,
+): void {
+  app.get(
+    "/api/threads/:threadId/plans/:planId/artifacts/:artifactId/diff",
+    async (context) => {
+      const threadId = context.req.param("threadId");
+      const plan = getThreadPlan(store, context.req.param("planId"), threadId);
+      const artifact = plan.artifacts.find(
+        (candidate) => candidate.id === context.req.param("artifactId"),
+      );
+      if (!artifact) {
+        return jsonError(context, "Plan artifact diff is invalid", 404);
+      }
+      try {
+        const diff = await previewWorkspaceArtifactDiff(
+          store.workspaceRoot,
+          artifact,
+          sandbox,
+        );
+        const payload = {
+          kind: "napier.plan-artifact-diff-preview" as const,
+          schemaVersion: 1 as const,
+          planId: plan.id,
+          artifactId: artifact.id,
+          planRevision: plan.revision,
+          status: artifact.status,
+          artifactKind: artifact.kind,
+          pathSha256: sha256Text(artifact.path),
+          ...diff,
+        };
+        const ledgerEvent = await store.appendEvent({
+          threadId,
+          runId: createId("runctl"),
+          type: "artifact.diff_previewed",
+          category: "artifact",
+          visibility: "user",
+          payload: {
+            planId: plan.id,
+            artifactId: artifact.id,
+            planRevision: plan.revision,
+            status: artifact.status,
+            kind: artifact.kind,
+            pathSha256: payload.pathSha256,
+            scope: diff.scope,
+            outputSha256: diff.outputSha256,
+            outputBytes: diff.outputBytes,
+            fileCount: diff.fileCount,
+            hunkCount: diff.hunkCount,
+            addedLineCount: diff.addedLineCount,
+            deletedLineCount: diff.deletedLineCount,
+            repositoryStateSha256: diff.repositoryStateSha256,
+          },
+        });
+        const response = {
+          ...payload,
+          ...createLedgerEventReceiptProjection(ledgerEvent),
+        };
+        setPlanArtifactDiffHeaders(context, plan, artifact, response);
+        return context.json(response);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 400);
+      }
+    },
+  );
 }
 
 function registerPlanArtifactDriftCheckHttp(

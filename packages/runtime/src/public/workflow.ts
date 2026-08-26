@@ -28,6 +28,8 @@ export {
   verifyExecutionPlanBlueprint,
 } from "../workflow-blueprints.js";
 export { validateExecutionPlanWorkflowBreakpointNodeIds } from "../workflow-breakpoint-model.js";
+export { previewWorkspaceArtifactDiff } from "../workspace-artifact-diff.js";
+export type { WorkspaceArtifactDiffPreview } from "../workspace-artifact-diff.js";
 export { validateCreateExecutionPlanWorkflowExperimentRequest } from "../workflow-experiment-protocol.js";
 export { createExecutionPlanWorkflowExperimentResultFrame } from "../workflow-experiment-result-protocol.js";
 export {

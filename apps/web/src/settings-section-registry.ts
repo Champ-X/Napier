@@ -2,12 +2,9 @@ import type { KeyboardEvent } from "react";
 import {
   Bot,
   Brain,
-  CalendarClock,
   Cable,
-  FlaskConical,
   FolderTree,
   Languages,
-  Palette,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -18,9 +15,6 @@ export type SettingsSection =
   | "memory"
   | "extensions"
   | "workspace"
-  | "automations"
-  | "developer"
-  | "design"
   | "language";
 
 export interface SettingsSectionDefinition {
@@ -54,24 +48,6 @@ export const SETTINGS_SECTIONS: ReadonlyArray<SettingsSectionDefinition> = [
     label: copy.workspaceSurface.section,
     description: copy.workspaceSurface.sectionDescription,
     icon: FolderTree,
-  },
-  {
-    id: "automations",
-    label: copy.settingsSurface.automationsSection,
-    description: copy.settingsSurface.automationsSectionDescription,
-    icon: CalendarClock,
-  },
-  {
-    id: "design",
-    label: copy.settingsSurface.designSection,
-    description: copy.settingsSurface.designSectionDescription,
-    icon: Palette,
-  },
-  {
-    id: "developer",
-    label: copy.settingsSurface.developerSection,
-    description: copy.settingsSurface.developerSectionDescription,
-    icon: FlaskConical,
   },
   {
     id: "language",

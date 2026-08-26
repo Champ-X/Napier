@@ -30,11 +30,6 @@ export function ExtensionInspectorSurface({
         publisherAnchors={vm.bootstrap.extensionPublisherTrustAnchors}
         agentId={agentId}
         busyId={vm.extensionBusyId}
-        packageReceipt={vm.extensionPackageReceipt}
-        packageDeploymentPreview={vm.extensionPackageDeploymentPreview}
-        packageRolloutPreview={vm.extensionPackageRolloutPreview}
-        packageRolloutChannels={vm.bootstrap.extensionPackageRolloutChannels}
-        packageUpdatePreview={vm.extensionPackageUpdatePreview}
         onPropose={vm.proposeMcpExtension}
         onReview={(extensionId, action) =>
           void vm.reviewExtensionTrust(extensionId, action)
@@ -55,21 +50,6 @@ export function ExtensionInspectorSurface({
         onToggle={(extensionId, enabled) =>
           void vm.toggleExtension(extensionId, enabled)
         }
-        onCreatePublisher={vm.createExtensionPublisher}
-        onRevokePublisher={vm.revokeExtensionPublisher}
-        onSignPackage={vm.downloadSignedExtensionPackage}
-        onVerifyPackage={vm.verifySignedExtensionPackageFile}
-        onImportPackage={vm.importSignedExtensionPackageFile}
-        onExportPackageLockfile={vm.exportExtensionPackageLockfile}
-        onDownloadPackageChannelIndex={vm.downloadExtensionPackageChannelIndex}
-        onPublishPackageRollout={vm.publishExtensionPackageRolloutChannel}
-        onPreviewPackageRollout={vm.previewExtensionPackageRolloutChannel}
-        onPreviewPackageUpdate={vm.previewExtensionPackageUpdateFile}
-        onApplyPackageUpdate={vm.applyExtensionPackageUpdate}
-        onCancelPackageUpdate={vm.cancelExtensionPackageUpdate}
-        onPreviewPackageDeployment={vm.previewExtensionPackageDeploymentFiles}
-        onApplyPackageDeployment={vm.applyExtensionPackageDeployment}
-        onCancelPackageDeployment={vm.cancelExtensionPackageDeployment}
       />
     </Suspense>
   );

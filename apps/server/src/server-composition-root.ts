@@ -23,6 +23,7 @@ import { inferWorkspaceRoot } from "./workspace-root.js";
 export interface NapierServices extends Pick<
   LocalAgentRuntimeServices,
   | "store"
+  | "sandbox"
   | "models"
   | "extensions"
   | "runtime"
@@ -76,6 +77,7 @@ export async function createServices(
   });
   const {
     store,
+    sandbox,
     credentials,
     models,
     extensions,
@@ -110,6 +112,7 @@ export async function createServices(
   }
   return {
     store,
+    sandbox,
     models,
     extensions,
     runtime,

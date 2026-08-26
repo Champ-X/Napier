@@ -75,6 +75,8 @@ describe("Workbench layout", () => {
 
     expect(summary).toContain("onClick={() => onOpenArtifact(path)}");
     expect(navigation).toContain('candidate.dataset["artifactPath"] === path');
+    expect(navigation).toContain('[data-artifact-action="open"]');
+    expect(navigation).toContain("?.click()");
     expect(navigation).toContain('openInspector("files")');
     expect(app).toContain("onOpenArtifact={taskControls.openArtifact}");
     expect(shell).toContain('files: "changes"');

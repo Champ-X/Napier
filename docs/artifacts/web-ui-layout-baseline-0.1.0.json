@@ -22,9 +22,9 @@
           "height": 58
         },
         "status": {
-          "x": 948,
+          "x": 803,
           "y": 13,
-          "width": 162,
+          "width": 177,
           "height": 32
         },
         "conversation": {
@@ -71,9 +71,9 @@
           "height": 58
         },
         "status": {
-          "x": 1108,
+          "x": 963,
           "y": 13,
-          "width": 162,
+          "width": 177,
           "height": 32
         },
         "conversation": {
@@ -120,7 +120,7 @@
           "height": 58
         },
         "status": {
-          "x": 1460,
+          "x": 1363,
           "y": 13,
           "width": 202,
           "height": 32

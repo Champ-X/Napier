@@ -21,19 +21,8 @@ describe("Context panel sections Chinese copy", () => {
         import("../src/ContextPromptVariablesFieldset"),
       ]);
     const controller = stubController({
-      modelGroups: [
-        {
-          provider: "openai",
-          label: "OpenAI",
-          options: [
-            {
-              key: "openai/gpt-5",
-              label: "GPT-5",
-              configured: true,
-            },
-          ],
-        },
-      ],
+      agent: { model: { provider: "openai", id: "gpt-5" } },
+      models: [model("openai", "gpt-5", "GPT-5", true)],
       selectedModelKey: "openai/gpt-5",
       selectedModel: { configured: true },
       onModel: vi.fn(),
@@ -106,6 +95,24 @@ function stubController(
   fields: Record<string, unknown>,
 ): ContextPanelController {
   return fields as unknown as ContextPanelController;
+}
+
+function model(
+  provider: string,
+  id: string,
+  name: string,
+  configured: boolean,
+) {
+  return {
+    provider,
+    providerName: provider,
+    id,
+    name,
+    contextWindow: 100_000,
+    reasoning: true,
+    vision: false,
+    configured,
+  };
 }
 
 function installChineseDom(): HTMLElement {

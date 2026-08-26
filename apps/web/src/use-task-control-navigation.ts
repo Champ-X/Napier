@@ -34,14 +34,25 @@ export function useTaskControlNavigation({
   }, [openInspector]);
   const openArtifact = useCallback(
     (path: string) => {
+      const openArtifactCard = (target: HTMLElement) => {
+        target.scrollIntoView({
+          behavior: motionScrollBehavior(),
+          block: "center",
+        });
+        target.focus({ preventScroll: true });
+        target
+          .querySelector<HTMLButtonElement>(
+            '[data-artifact-action="open"]',
+          )
+          ?.click();
+      };
       const target = [
         ...document.querySelectorAll<HTMLElement>(
           ".conversation-artifact:not(.task-artifact-card)[data-artifact-path]",
         ),
       ].find((candidate) => candidate.dataset["artifactPath"] === path);
       if (target) {
-        target.scrollIntoView({ behavior: motionScrollBehavior(), block: "center" });
-        target.focus({ preventScroll: true });
+        openArtifactCard(target);
         return;
       }
       openInspector("files");
@@ -52,11 +63,7 @@ export function useTaskControlNavigation({
               ".task-artifact-card[data-artifact-path]",
             ),
           ].find((candidate) => candidate.dataset["artifactPath"] === path);
-          taskArtifact?.scrollIntoView({
-            behavior: motionScrollBehavior(),
-            block: "center",
-          });
-          taskArtifact?.focus({ preventScroll: true });
+          if (taskArtifact) openArtifactCard(taskArtifact);
         }),
       );
     },

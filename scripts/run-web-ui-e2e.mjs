@@ -443,7 +443,7 @@ async function verifySettingsScenario(browser, origin, expected) {
           ".default-product-trial, .release-product-trial",
         ) === null,
     );
-    await page.locator(".workbench-settings").click();
+    await page.locator(".workbench-settings:not(.workbench-developer)").click();
     await page.locator(".workspace-settings-surface").waitFor({
       state: "visible",
       timeout: WEB_UI_START_TIMEOUT_MS,
@@ -458,7 +458,6 @@ async function verifySettingsScenario(browser, origin, expected) {
       () => {
         const selectors = [
           ".agent-history-register button",
-          ".package-desk .package-actions button, .package-desk .package-file-action",
           ".credential-register .credential-add, .credential-register .credential-card footer button, .credential-register .context-field input, .credential-register .context-field select, .credential-register .credential-vault-check",
         ];
         return selectors.every((selector) => {
@@ -507,44 +506,17 @@ async function verifySettingsScenario(browser, origin, expected) {
         ),
       };
     });
-    const packageManagement = await page.evaluate(() => {
-      const desks = [...document.querySelectorAll(".package-desk")].filter(
-        (desk) => desk instanceof HTMLElement && desk.offsetParent !== null,
-      );
-      const visibleTextElements = desks.flatMap((desk) =>
-        [...desk.querySelectorAll("*")].filter(
-          (element) =>
-            element instanceof HTMLElement &&
-            element.offsetParent !== null &&
-            (element.childNodes.length === 0 ||
-              [...element.childNodes].some(
-                (node) =>
-                  node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
-              )),
-        ),
-      );
-      const actions = desks
-        .flatMap((desk) => [
-          ...desk.querySelectorAll(
-            ".package-actions button, .package-file-action",
-          ),
-        ])
-        .filter(
-          (action) =>
-            action instanceof HTMLElement && action.offsetParent !== null,
-        );
-      return {
-        count: desks.length,
-        minimumFontPx: Math.min(
-          ...visibleTextElements.map((element) =>
-            Number.parseFloat(getComputedStyle(element).fontSize),
-          ),
-        ),
-        minimumActionHeight: Math.min(
-          ...actions.map((action) => action.getBoundingClientRect().height),
-        ),
-      };
-    });
+    const ordinaryGovernanceHidden = await page.evaluate(() =>
+      [
+        ".extension-package-desk",
+        ".skill-package-desk",
+        ".prompt-package-desk",
+        ".developer-tools",
+        ".design-showcase",
+        ".automation-panel",
+        ".receipt-trust-workbench",
+      ].every((selector) => document.querySelector(selector) === null),
+    );
     const credentialRegister = await page.evaluate(() => {
       const register = document.querySelector(".credential-register");
       if (!(register instanceof HTMLElement)) {
@@ -588,16 +560,6 @@ async function verifySettingsScenario(browser, origin, expected) {
     await page.keyboard.press("Tab");
     const focusTrappedForward = await boundaryFocused(page, "first");
 
-    await page.locator("#settings-section-developer").click();
-    await page.locator(".developer-tools").waitFor({
-      state: "visible",
-      timeout: WEB_UI_START_TIMEOUT_MS,
-    });
-    const developerProductTrialAvailable = await page
-      .locator(".developer-tool > summary")
-      .filter({ hasText: /Product trial/iu })
-      .count()
-      .then((count) => count === 1);
     const modal = await page
       .locator(".workspace-settings-surface")
       .getAttribute("aria-modal")
@@ -609,22 +571,109 @@ async function verifySettingsScenario(browser, origin, expected) {
 
     await page.keyboard.press("Escape");
     await waitForSettingsClosed(page);
+    const escapeRestoredTriggerFocus = await page.evaluate(
+      () =>
+        document.activeElement?.classList.contains("workbench-settings") ??
+        false,
+    );
+
+    await page.locator(".workbench-developer").click();
+    await page.locator(".developer-workbench-surface").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    await page.locator(".developer-tools").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    const developerProductTrialAvailable = await page
+      .locator(".developer-tool > summary")
+      .filter({ hasText: /Product trial/iu })
+      .count()
+      .then((count) => count === 1);
+    await page.locator(".receipt-trust-workbench").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    const receiptTrustAvailable = true;
+    const developerLabels = await page
+      .locator(".developer-workbench-surface .settings-navigation strong")
+      .allTextContents();
+    const developerModal = await page
+      .locator(".developer-workbench-surface")
+      .getAttribute("aria-modal")
+      .then((value) => value === "true");
+    const developerDialog = await page
+      .locator(".developer-workbench-surface")
+      .getAttribute("role")
+      .then((value) => value === "dialog");
+    await page.locator("#developer-section-publishing").click();
+    await page.locator(".extension-package-desk").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    const packageManagement = await page.evaluate(() => {
+      const desks = [...document.querySelectorAll(
+        ".extension-package-desk, .skill-package-desk, .prompt-package-desk",
+      )].filter(
+        (desk) => desk instanceof HTMLElement && desk.offsetParent !== null,
+      );
+      const visibleTextElements = desks.flatMap((desk) =>
+        [...desk.querySelectorAll("*")].filter(
+          (element) =>
+            element instanceof HTMLElement &&
+            element.offsetParent !== null &&
+            (element.childNodes.length === 0 ||
+              [...element.childNodes].some(
+                (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
+              )),
+        ),
+      );
+      const actions = desks
+        .flatMap((desk) => [
+          ...desk.querySelectorAll(
+            ".package-actions button, .package-file-action",
+          ),
+        ])
+        .filter(
+          (action) => action instanceof HTMLElement && action.offsetParent !== null,
+        );
+      return {
+        count: desks.length,
+        minimumFontPx: Math.min(...visibleTextElements.map((element) =>
+          Number.parseFloat(getComputedStyle(element).fontSize),
+        )),
+        minimumActionHeight: Math.min(...actions.map((action) =>
+          action.getBoundingClientRect().height,
+        )),
+      };
+    });
+
+    await page.keyboard.press("Escape");
+    await waitForDeveloperWorkbenchClosed(page);
+    const developerEscapeRestoredTriggerFocus = await page.evaluate(
+      () =>
+        document.activeElement?.classList.contains("workbench-developer") ??
+        false,
+    );
     return {
       dialog,
       modal,
       focusTrappedForward,
       focusTrappedBackward,
-      escapeRestoredTriggerFocus: await page.evaluate(
-        () =>
-          document.activeElement?.classList.contains("workbench-settings") ??
-          false,
-      ),
+      escapeRestoredTriggerFocus,
       defaultProductTrialHidden,
+      ordinaryGovernanceHidden,
+      developerDialog,
+      developerModal,
+      developerLabels: developerLabels.map((label) => label.trim()),
       developerProductTrialAvailable,
+      receiptTrustAvailable,
+      developerEscapeRestoredTriggerFocus,
       revisionHistoryVisible: revisionHistory.visible,
       revisionHistoryMinimumFontPx: revisionHistory.minimumFontPx,
       revisionHistoryMinimumButtonHeight: revisionHistory.minimumButtonHeight,
-      packageDeskCount: packageManagement.count,
+      publishingSurfaceCount: packageManagement.count,
       packageManagementMinimumFontPx: packageManagement.minimumFontPx,
       packageManagementMinimumActionHeight:
         packageManagement.minimumActionHeight,
@@ -677,7 +726,7 @@ async function verifyChineseCoreLocale(browser, origin, expected) {
     }));
 
     await page.locator("#workspace-view-conversation").click();
-    await page.locator(".workbench-settings").click();
+    await page.locator(".workbench-settings:not(.workbench-developer)").click();
     await page.locator(".workspace-settings-surface").waitFor({
       state: "visible",
       timeout: WEB_UI_START_TIMEOUT_MS,
@@ -704,7 +753,10 @@ async function verifyChineseCoreLocale(browser, origin, expected) {
           ?.textContent?.trim() ?? "",
     }));
 
-    await page.locator("#settings-section-developer").click();
+    await page.keyboard.press("Escape");
+    await waitForSettingsClosed(page);
+    await page.locator(".workbench-developer").click();
+    await page.locator("#developer-section-lab").click();
     const workflowStudio = page
       .locator(".developer-tool")
       .filter({ hasText: "工作流工作室" });
@@ -732,13 +784,17 @@ async function verifyChineseCoreLocale(browser, origin, expected) {
           ?.textContent?.trim() ?? "",
     }));
     const lang = await page.locator("html").getAttribute("lang");
+    const developerLabels = await page
+      .locator(".developer-workbench-surface .settings-navigation strong")
+      .allTextContents();
     await page.keyboard.press("Escape");
-    await waitForSettingsClosed(page);
+    await waitForDeveloperWorkbenchClosed(page);
     return {
       lang,
       workspaceLabels: workspaceLabels.map((label) => label.trim()),
       taskSections: taskSections.map((label) => label.trim()),
       settingsLabels: settingsLabels.map((label) => label.trim()),
+      developerLabels: developerLabels.map((label) => label.trim()),
       composerPlaceholder,
       trajectoryTitles,
       contextTitles,
@@ -809,7 +865,7 @@ async function readTaskContract(page) {
 }
 
 async function readSettingsContract(page, initiallyHidden) {
-  await page.locator(".workbench-settings").click();
+  await page.locator(".workbench-settings:not(.workbench-developer)").click();
   await page.locator(".workspace-settings-surface").waitFor({
     state: "visible",
     timeout: WEB_UI_START_TIMEOUT_MS,
@@ -889,6 +945,16 @@ async function waitForSettingsClosed(page) {
     () =>
       document.querySelector(".workspace-settings-surface") === null &&
       document.activeElement?.classList.contains("workbench-settings") === true,
+    undefined,
+    { timeout: 5_000 },
+  );
+}
+
+async function waitForDeveloperWorkbenchClosed(page) {
+  await page.waitForFunction(
+    () =>
+      document.querySelector(".developer-workbench-surface") === null &&
+      document.activeElement?.classList.contains("workbench-developer") === true,
     undefined,
     { timeout: 5_000 },
   );

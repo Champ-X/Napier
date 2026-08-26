@@ -99,6 +99,8 @@ export function TraceTrajectory({
                   content: (
                     <TraceTrajectoryEventDetail
                       event={state.selectedEvent}
+                      events={state.model.events}
+                      onSelectEvent={state.setSelectedEventId}
                       embedded
                     />
                   ),

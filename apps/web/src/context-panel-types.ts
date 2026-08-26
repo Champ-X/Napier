@@ -22,6 +22,7 @@ export interface ContextPanelProps {
   usagePriceTableCatalog: UsagePriceTableCatalog;
   threadId: string;
   selectedModelKey: string;
+  recentModelKeys?: readonly string[];
   checkpoint?: ContextCheckpointSnapshot;
   checkpointCalibration?: ContextCheckpointCalibrationReport;
   onModel: (value: string) => void;

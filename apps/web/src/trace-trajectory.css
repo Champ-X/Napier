@@ -1260,6 +1260,119 @@
   gap: 12px;
 }
 
+.trace-event-diagnosis {
+  display: grid;
+  gap: 14px;
+}
+
+.trace-event-diagnosis-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 12px;
+  color: var(--vermilion);
+  background: var(--color-danger-surface);
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-sm);
+}
+
+.trace-event-diagnosis-summary > svg {
+  margin-top: 2px;
+}
+
+.trace-event-diagnosis-summary > div {
+  display: grid;
+  gap: 4px;
+}
+
+.trace-event-diagnosis-summary span,
+.trace-event-diagnosis-group h4 {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: var(--text-annotation);
+  font-weight: 500;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.trace-event-diagnosis-summary strong {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--vermilion);
+}
+
+.trace-event-diagnosis-summary p,
+.trace-event-diagnosis-privacy {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.trace-event-diagnosis-group {
+  display: grid;
+  gap: 7px;
+}
+
+.trace-event-related-events {
+  display: grid;
+  gap: 1px;
+  padding: 1px;
+  margin: 0;
+  list-style: none;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+}
+
+.trace-event-related-events button {
+  display: grid;
+  width: 100%;
+  min-height: 38px;
+  grid-template-columns: 52px minmax(0, 1fr) auto auto;
+  gap: 7px;
+  align-items: center;
+  padding: 7px 9px;
+  font-family: var(--mono);
+  color: var(--ink-soft);
+  text-align: left;
+  cursor: pointer;
+  background: var(--paper-bright);
+  border: 0;
+}
+
+.trace-event-related-events button:hover,
+.trace-event-related-events button:focus-visible {
+  color: var(--ink);
+  background: var(--paper-deep);
+}
+
+.trace-event-related-events button:disabled {
+  cursor: default;
+}
+
+.trace-event-related-events span,
+.trace-event-related-events code {
+  font-size: var(--text-annotation);
+  color: var(--ink-faint);
+}
+
+.trace-event-related-events strong {
+  overflow: hidden;
+  font-size: var(--text-annotation);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trace-event-diagnosis-privacy {
+  padding-top: 9px;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--rule);
+}
+
 .trace-event-detail-callout {
   display: grid;
   gap: 7px;

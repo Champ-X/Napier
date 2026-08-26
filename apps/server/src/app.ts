@@ -2120,7 +2120,7 @@ export function createApp(services: NapierServices, options?: CreateAppOptions):
 
   registerPlanProgressHttp(app, services.store);
 
-  registerPlanArtifactInspectionHttp(app, services.store);
+  registerPlanArtifactInspectionHttp(app, services.store, services.sandbox);
 
   registerPlanArtifactFileHttp(app, services.store);
 

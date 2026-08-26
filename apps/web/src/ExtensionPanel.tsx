@@ -2,10 +2,6 @@ import { ShieldCheck } from "lucide-react";
 
 import type {
   CreateMcpExtensionRequest,
-  ExtensionPackageDeploymentPreview,
-  ExtensionPackageRolloutChannel,
-  ExtensionPackageRolloutPreview,
-  ExtensionPackageUpdatePreview,
   ExtensionPublisherTrustAnchor,
   ExtensionRecord,
 } from "@napier/contracts";
@@ -13,16 +9,8 @@ import type { KernelPluginInspection } from "@napier/contracts/kernel-plugins";
 
 import { extensionCopy as copy } from "./extension-copy";
 import { ExtensionCard } from "./ExtensionCard";
-import ExtensionPackageDesk from "./ExtensionPackageDesk";
 import { ExtensionProposalForm } from "./ExtensionProposalForm";
 import KernelPluginDesk from "./KernelPluginDesk";
-import type {
-  ExtensionPackageDeploymentConfirmation,
-  ExtensionPackageReceipt,
-  ExtensionPackageSignDraft,
-  ExtensionPackageUpdateConfirmation,
-  ExtensionPublisherDraft,
-} from "./extension-package-types";
 
 type Proposal = Omit<CreateMcpExtensionRequest, "threadId">;
 
@@ -32,11 +20,6 @@ export interface ExtensionPanelProps {
   publisherAnchors: ExtensionPublisherTrustAnchor[];
   agentId: string;
   busyId: string | undefined;
-  packageReceipt: ExtensionPackageReceipt | undefined;
-  packageDeploymentPreview: ExtensionPackageDeploymentPreview | undefined;
-  packageRolloutPreview: ExtensionPackageRolloutPreview | undefined;
-  packageRolloutChannels: ExtensionPackageRolloutChannel[];
-  packageUpdatePreview: ExtensionPackageUpdatePreview | undefined;
   onPropose: (request: Proposal) => Promise<void>;
   onReview: (extensionId: string, action: "approve" | "reject") => void;
   onConnect: (extensionId: string) => void;
@@ -49,31 +32,6 @@ export interface ExtensionPanelProps {
     routingHint?: string,
   ) => void;
   onToggle: (extensionId: string, enabled: boolean) => void;
-  onCreatePublisher: (draft: ExtensionPublisherDraft) => Promise<void>;
-  onRevokePublisher: (anchorId: string) => Promise<void>;
-  onSignPackage: (
-    extensionId: string,
-    draft: ExtensionPackageSignDraft,
-  ) => Promise<void>;
-  onVerifyPackage: (file: File) => Promise<void>;
-  onImportPackage: (file: File) => Promise<void>;
-  onExportPackageLockfile: () => Promise<void>;
-  onDownloadPackageChannelIndex: (
-    trustAnchorId: string,
-    publisher: string,
-  ) => Promise<void>;
-  onPublishPackageRollout: (name: string) => Promise<void>;
-  onPreviewPackageRollout: (channelId: string) => Promise<void>;
-  onPreviewPackageUpdate: (extensionId: string, file: File) => Promise<void>;
-  onApplyPackageUpdate: (
-    confirmation: ExtensionPackageUpdateConfirmation,
-  ) => Promise<void>;
-  onCancelPackageUpdate: () => void;
-  onPreviewPackageDeployment: (files: File[]) => Promise<void>;
-  onApplyPackageDeployment: (
-    confirmation: ExtensionPackageDeploymentConfirmation,
-  ) => Promise<void>;
-  onCancelPackageDeployment: () => void;
 }
 
 export default function ExtensionPanel({
@@ -82,32 +40,12 @@ export default function ExtensionPanel({
   publisherAnchors,
   agentId,
   busyId,
-  packageReceipt,
-  packageDeploymentPreview,
-  packageRolloutPreview,
-  packageRolloutChannels,
-  packageUpdatePreview,
   onPropose,
   onReview,
   onConnect,
   onDisconnect,
   onToolReview,
   onToggle,
-  onCreatePublisher,
-  onRevokePublisher,
-  onSignPackage,
-  onVerifyPackage,
-  onImportPackage,
-  onExportPackageLockfile,
-  onDownloadPackageChannelIndex,
-  onPublishPackageRollout,
-  onPreviewPackageRollout,
-  onPreviewPackageUpdate,
-  onApplyPackageUpdate,
-  onCancelPackageUpdate,
-  onPreviewPackageDeployment,
-  onApplyPackageDeployment,
-  onCancelPackageDeployment,
 }: ExtensionPanelProps) {
   const activeTools = extensions.reduce(
     (count, extension) =>
@@ -131,32 +69,6 @@ export default function ExtensionPanel({
       </div>
 
       <KernelPluginDesk plugins={plugins} />
-
-      <ExtensionPackageDesk
-        anchors={publisherAnchors}
-        extensions={extensions}
-        busyId={busyId}
-        receipt={packageReceipt}
-        deploymentPreview={packageDeploymentPreview}
-        rolloutPreview={packageRolloutPreview}
-        rolloutChannels={packageRolloutChannels}
-        updatePreview={packageUpdatePreview}
-        onCreatePublisher={onCreatePublisher}
-        onRevokePublisher={onRevokePublisher}
-        onSign={onSignPackage}
-        onVerify={onVerifyPackage}
-        onImport={onImportPackage}
-        onExportLockfile={onExportPackageLockfile}
-        onDownloadChannelIndex={onDownloadPackageChannelIndex}
-        onPublishRollout={onPublishPackageRollout}
-        onPreviewRollout={onPreviewPackageRollout}
-        onPreviewUpdate={onPreviewPackageUpdate}
-        onApplyUpdate={onApplyPackageUpdate}
-        onCancelUpdate={onCancelPackageUpdate}
-        onPreviewDeployment={onPreviewPackageDeployment}
-        onApplyDeployment={onApplyPackageDeployment}
-        onCancelDeployment={onCancelPackageDeployment}
-      />
 
       <ExtensionProposalForm busyId={busyId} onPropose={onPropose} />
 

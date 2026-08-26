@@ -40,7 +40,10 @@ export function PromptPackageDesk({
   onInspectFile,
 }: PromptPackageDeskProps) {
   return (
-    <section className="package-desk" aria-labelledby="prompt-package-title">
+    <section
+      className="package-desk prompt-package-desk"
+      aria-labelledby="prompt-package-title"
+    >
       <header className="context-section-heading">
         <div className="context-section-glyph" aria-hidden="true">
           <FileCheck size={16} />

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import type { TaskSection } from "./TaskWorkspace";
+import type { DeveloperWorkbenchSection } from "./developer-workbench-section-registry";
 import type { InspectorTab } from "./use-workspace-view-model";
 import type { SettingsSection } from "./WorkspaceSettingsSurface";
 import type { WorkspaceView } from "./WorkspaceViewNavigation";
@@ -16,9 +17,11 @@ const SETTINGS_TAB: Partial<Record<InspectorTab, SettingsSection>> = {
   context: "context",
   memory: "memory",
   extensions: "extensions",
+};
+const DEVELOPER_TAB: Partial<Record<InspectorTab, DeveloperWorkbenchSection>> = {
   automations: "automations",
-  studio: "developer",
-  lab: "developer",
+  studio: "lab",
+  lab: "lab",
 };
 
 // Sections that map onto a legacy InspectorTab (deep-link / roving focus).
@@ -30,11 +33,17 @@ function inspectorTabForSection(
     section === "memory" ||
     section === "extensions"
     ? section
-    : section === "automations"
-      ? "automations"
-      : section === "developer"
-        ? "lab"
-        : undefined;
+    : undefined;
+}
+
+function inspectorTabForDeveloperSection(
+  section: DeveloperWorkbenchSection,
+): InspectorTab | undefined {
+  return section === "automations"
+    ? "automations"
+    : section === "lab"
+      ? "lab"
+      : undefined;
 }
 
 export function useWorkspaceShell(
@@ -47,6 +56,9 @@ export function useWorkspaceShell(
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSection, setSettingsSectionState] =
     useState<SettingsSection>("context");
+  const [developerWorkbenchOpen, setDeveloperWorkbenchOpen] = useState(false);
+  const [developerWorkbenchSection, setDeveloperWorkbenchSectionState] =
+    useState<DeveloperWorkbenchSection>("lab");
 
   const routeInspector = useCallback(
     (tab: InspectorTab) => {
@@ -54,6 +66,7 @@ export function useWorkspaceShell(
       if (tab === "trace") {
         setWorkspaceView("trajectory");
         setSettingsOpen(false);
+        setDeveloperWorkbenchOpen(false);
         return;
       }
       const task = TASK_TAB[tab];
@@ -61,12 +74,21 @@ export function useWorkspaceShell(
         setTaskSectionState(task);
         setWorkspaceView("task");
         setSettingsOpen(false);
+        setDeveloperWorkbenchOpen(false);
         return;
       }
       const settings = SETTINGS_TAB[tab];
       if (settings) {
         setSettingsSectionState(settings);
         setSettingsOpen(true);
+        setDeveloperWorkbenchOpen(false);
+        return;
+      }
+      const developer = DEVELOPER_TAB[tab];
+      if (developer) {
+        setDeveloperWorkbenchSectionState(developer);
+        setDeveloperWorkbenchOpen(true);
+        setSettingsOpen(false);
       }
     },
     [setInspectorTab],
@@ -75,7 +97,14 @@ export function useWorkspaceShell(
     const tab = inspectorTabForSection(settingsSection);
     if (tab) setInspectorTab(tab);
     setSettingsOpen(true);
+    setDeveloperWorkbenchOpen(false);
   }, [setInspectorTab, settingsSection]);
+  const openDeveloperWorkbench = useCallback(() => {
+    const tab = inspectorTabForDeveloperSection(developerWorkbenchSection);
+    if (tab) setInspectorTab(tab);
+    setDeveloperWorkbenchOpen(true);
+    setSettingsOpen(false);
+  }, [developerWorkbenchSection, setInspectorTab]);
   const setTaskSection = useCallback(
     (section: TaskSection) => {
       setTaskSectionState(section);
@@ -102,8 +131,21 @@ export function useWorkspaceShell(
   const openWorkspaceSettings = useCallback(() => {
     setSettingsSectionState("workspace");
     setSettingsOpen(true);
+    setDeveloperWorkbenchOpen(false);
   }, []);
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
+  const setDeveloperWorkbenchSection = useCallback(
+    (section: DeveloperWorkbenchSection) => {
+      setDeveloperWorkbenchSectionState(section);
+      const tab = inspectorTabForDeveloperSection(section);
+      if (tab) setInspectorTab(tab);
+    },
+    [setInspectorTab],
+  );
+  const closeDeveloperWorkbench = useCallback(
+    () => setDeveloperWorkbenchOpen(false),
+    [],
+  );
 
   useEffect(() => {
     const shortcut = (event: KeyboardEvent) => {
@@ -129,6 +171,11 @@ export function useWorkspaceShell(
     settingsSection,
     setSettingsSection,
     closeSettings,
+    developerWorkbenchOpen,
+    developerWorkbenchSection,
+    setDeveloperWorkbenchSection,
+    openDeveloperWorkbench,
+    closeDeveloperWorkbench,
     routeInspector,
     openSettings,
     openWorkspaceSettings,

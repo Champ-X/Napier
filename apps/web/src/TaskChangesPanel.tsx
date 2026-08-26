@@ -2,6 +2,7 @@ import { ArchiveRestore, FileText, Link2 } from "lucide-react";
 import { lazy, Suspense } from "react";
 
 import type { ThreadDetail } from "@napier/contracts";
+import { ArtifactActionSurface } from "./ArtifactActionSurface";
 import { copy } from "./copy";
 
 const LazyFilesPanel = lazy(() => import("./FilesPanel"));
@@ -13,8 +14,10 @@ type ChangesDetail = Pick<
 
 export function TaskChangesPanel({
   detail,
+  onLedgerChanged,
 }: {
   detail: ChangesDetail | undefined;
+  onLedgerChanged?(): void | Promise<void>;
 }) {
   const artifacts = taskArtifacts(detail);
   const citations = detail?.citations ?? [];
@@ -33,7 +36,7 @@ export function TaskChangesPanel({
 
       {artifacts.length > 0 ? (
         <div className="task-artifact-grid">
-          {artifacts.map((artifact) => (
+          {artifacts.map(({ artifact, planId }) => (
             <article
               className={`task-artifact-card is-${artifact.status}`}
               data-artifact-path={artifact.path}
@@ -48,6 +51,12 @@ export function TaskChangesPanel({
               <span className={`task-status-badge is-${artifact.status}`}>
                 {taskStatusLabel(artifact.status)}
               </span>
+              <ArtifactActionSurface
+                artifact={artifact}
+                planId={planId}
+                threadId={detail!.thread.id}
+                {...(onLedgerChanged ? { onLedgerChanged } : {})}
+              />
             </article>
           ))}
         </div>
@@ -109,17 +118,23 @@ function taskArtifacts(detail: ChangesDetail | undefined) {
   if (!detail) return [];
   const projected = (detail.artifacts ?? [])
     .filter((entry) => entry.attemptScope === "current")
-    .map((entry) => entry.artifact);
+    .map((entry) => ({ artifact: entry.artifact, planId: entry.planId }));
   const plan =
     detail.plans.findLast(
       (candidate) =>
         candidate.status === "active" || candidate.status === "blocked",
     ) ?? detail.plans.at(-1);
-  const candidates = projected.length > 0 ? projected : (plan?.artifacts ?? []);
+  const candidates =
+    projected.length > 0
+      ? projected
+      : (plan?.artifacts ?? []).map((artifact) => ({
+          artifact,
+          planId: plan!.id,
+        }));
   const unique = new Map(
-    candidates.map((artifact) => [artifact.path, artifact]),
+    candidates.map((item) => [item.artifact.path, item]),
   );
   return [...unique.values()].filter(
-    (artifact) => artifact.status !== "superseded",
+    ({ artifact }) => artifact.status !== "superseded",
   );
 }

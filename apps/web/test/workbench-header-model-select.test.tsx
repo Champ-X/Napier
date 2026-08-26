@@ -40,29 +40,24 @@ describe("Workbench header model selection", () => {
           title="Thread"
           contextLabel="Conversation"
           onModel={onModel}
+          onOpenDeveloperWorkbench={() => undefined}
           onOpenSettings={() => undefined}
         />,
       );
     });
 
-    const select = findElement(container, "select")!;
-    expect(select.getAttribute("aria-label")).toBe("Agent & Model");
-    expect(optionValues(select)).toEqual([
-      "napier/demo",
-      "deepseek/deepseek-v4-flash",
-    ]);
+    const trigger = findByAttribute(container, "aria-label", "Agent & Model")!;
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
     await act(async () => {
-      const options = findElements(select, "option");
-      options
-        .find((option) => option.getAttribute("value") === "napier/demo")
-        ?.removeAttribute("selected");
-      options
-        .find(
-          (option) =>
-            option.getAttribute("value") === "deepseek/deepseek-v4-flash",
-        )
-        ?.setAttribute("selected", "");
-      select.dispatchEvent(new Event("change", { bubbles: true }));
+      trigger.dispatchEvent(new Event("click", { bubbles: true }));
+    });
+    expect(container.textContent).toContain("DeepSeek V4 Flash");
+    expect(container.textContent).not.toContain("GPT-4.1");
+    const option = findElements(container, "button").find((button) =>
+      button.textContent?.includes("DeepSeek V4 Flash"),
+    )!;
+    await act(async () => {
+      option.dispatchEvent(new Event("click", { bubbles: true }));
     });
     expect(onModel).toHaveBeenCalledWith("deepseek/deepseek-v4-flash");
   });
@@ -88,14 +83,67 @@ describe("Workbench header model selection", () => {
           title="Thread"
           contextLabel="Conversation"
           onModel={() => undefined}
+          onOpenDeveloperWorkbench={() => undefined}
           onOpenSettings={() => undefined}
         />,
       );
     });
 
-    expect(findElement(container, "select")?.hasAttribute("disabled")).toBe(
-      true,
-    );
+    expect(
+      findByAttribute(container, "aria-label", "Agent & Model")?.hasAttribute(
+        "disabled",
+      ),
+    ).toBe(true);
+  });
+
+  it("reveals unavailable models explicitly and filters by search", async () => {
+    const container = installDom();
+    const root = createRoot(container);
+    roots.push(root);
+    await act(async () => {
+      root.render(
+        <WorkbenchHeader
+          isRunning={false}
+          model={{ configured: true, id: "gpt-5", key: "openai/gpt-5", provider: "openai" }}
+          models={[
+            model("openai", "gpt-5", "GPT-5", true),
+            model("openai", "gpt-4.1", "GPT-4.1", false),
+            model("deepseek", "deepseek-v4-flash", "DeepSeek V4 Flash", true),
+          ]}
+          status="idle"
+          title="Thread"
+          contextLabel="Conversation"
+          onModel={() => undefined}
+          onOpenDeveloperWorkbench={() => undefined}
+          onOpenSettings={() => undefined}
+        />,
+      );
+      findByAttribute(container, "aria-label", "Agent & Model")?.dispatchEvent(
+        new Event("click", { bubbles: true }),
+      );
+    });
+
+    expect(container.textContent).not.toContain("GPT-4.1");
+    const checkbox = findElements(container, "input").find(
+      (input) => input.getAttribute("type") === "checkbox",
+    ) as HTMLInputElement;
+    await act(async () => {
+      checkbox.checked = true;
+      checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    expect(container.textContent).toContain("GPT-4.1");
+
+    const search = findElements(container, "input").find(
+      (input) => input.getAttribute("type") === "search",
+    ) as HTMLInputElement;
+    await act(async () => {
+      search.value = "deepseek";
+      search.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    const results = findByAttribute(container, "role", "listbox")!;
+    expect(results.textContent).toContain("DeepSeek V4 Flash");
+    expect(results.textContent).not.toContain("GPT-5");
+    expect(results.textContent).not.toContain("GPT-4.1");
   });
 });
 
@@ -112,17 +160,21 @@ function installDom(): HTMLElement {
   return document.getElementById("app") as unknown as HTMLElement;
 }
 
-function optionValues(select: Element): string[] {
-  return findElements(select, "option").map(
-    (option) => option.getAttribute("value") ?? "",
-  );
-}
-
-function findElement(root: Element, tagName: string): Element | undefined {
-  return findElements(root, tagName)[0];
+function findByAttribute(
+  root: Element,
+  name: string,
+  value: string,
+): Element | undefined {
+  return allElements(root).find((element) => element.getAttribute(name) === value);
 }
 
 function findElements(root: Element, tagName: string): Element[] {
+  return allElements(root).filter(
+    (element) => String(element.localName).toLowerCase() === tagName,
+  );
+}
+
+function allElements(root: Element): Element[] {
   const matches: Element[] = [];
   const pending = Array.from(root.childNodes);
   while (pending.length > 0) {
@@ -130,9 +182,7 @@ function findElements(root: Element, tagName: string): Element[] {
     if (!node) continue;
     if (node.nodeType === 1) {
       const element = node as Element;
-      if (String(element.localName).toLowerCase() === tagName) {
-        matches.push(element);
-      }
+      matches.push(element);
     }
     pending.push(...Array.from(node.childNodes));
   }

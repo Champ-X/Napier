@@ -1,9 +1,9 @@
 import type { ModelSummary, ThreadStatus } from "@napier/contracts";
 import type { ReactNode } from "react";
-import { ChevronDown, Settings2 } from "lucide-react";
+import { Settings2, Wrench } from "lucide-react";
 
 import { copy } from "./copy";
-import { configuredModelProviderGroups } from "./model-selection-view-model";
+import { ModelPicker } from "./ModelPicker";
 
 type HeaderModel = {
   configured: boolean;
@@ -21,7 +21,10 @@ export function WorkbenchHeader({
   contextLabel,
   children,
   taskStatus,
+  recommendedModelKeys,
+  recentModelKeys,
   onModel,
+  onOpenDeveloperWorkbench,
   onOpenSettings,
 }: {
   isRunning: boolean;
@@ -32,10 +35,12 @@ export function WorkbenchHeader({
   contextLabel: string;
   children?: ReactNode;
   taskStatus?: ReactNode;
+  recommendedModelKeys?: readonly string[];
+  recentModelKeys?: readonly string[];
   onModel(value: string): void;
+  onOpenDeveloperWorkbench(): void;
   onOpenSettings(): void;
 }) {
-  const modelGroups = configuredModelProviderGroups(models);
   return (
     <header className="workbench-header">
       <div className="thread-heading">
@@ -63,51 +68,25 @@ export function WorkbenchHeader({
             {isRunning ? copy.running : statusLabel(status)}
           </div>
         )}
-        <label
-          className={`model-chip ${model.configured ? "" : "is-unavailable"}`}
-          title={
-            model.configured
-              ? model.key
-              : `${model.key} · ${copy.modelUnavailable}`
-          }
+        <ModelPicker
+          models={models}
+          value={model.key}
+          label={copy.settingsSurface.contextSection}
+          disabled={isRunning}
+          variant="compact"
+          recommendedModelKeys={recommendedModelKeys}
+          recentModelKeys={recentModelKeys}
+          onChange={onModel}
+        />
+        <button
+          className="workbench-settings workbench-developer"
+          type="button"
+          onClick={onOpenDeveloperWorkbench}
+          aria-label={copy.developerWorkbench.open}
+          title={copy.developerWorkbench.open}
         >
-          <span className="model-glyph" aria-hidden="true">
-            {model.provider === "napier"
-              ? "D"
-              : model.provider.slice(0, 1).toUpperCase()}
-          </span>
-          <span className="model-chip-copy">
-            <small>
-              {!model.configured
-                ? copy.modelUnavailable
-                : model.provider === "napier"
-                  ? copy.context.demoProvider
-                  : copy.context.liveProvider}
-            </small>
-            <strong>{model.id}</strong>
-          </span>
-          <ChevronDown
-            className="model-chip-chevron"
-            size={12}
-            aria-hidden="true"
-          />
-          <select
-            aria-label={copy.settingsSurface.contextSection}
-            value={model.key}
-            disabled={isRunning}
-            onChange={(event) => onModel(event.target.value)}
-          >
-            {modelGroups.map((group) => (
-              <optgroup key={group.provider} label={group.label}>
-                {group.options.map((option) => (
-                  <option key={option.key} value={option.key}>
-                    {option.label}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-        </label>
+          <Wrench size={15} aria-hidden="true" />
+        </button>
         <button
           className="workbench-settings"
           type="button"

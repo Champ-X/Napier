@@ -3,12 +3,12 @@
   "schemaVersion": 1,
   "openapi": {
     "path": "docs/artifacts/management-openapi-0.1.0.json",
-    "sha256": "fe31dfadc98ced8658ccae70f252947d49b38f8cee78597727c46eb63413d2af",
-    "routeCount": 287,
-    "routeSetSha256": "28c11c7b6b457d707ea88ddf7b983c0a8e5dd3627110006a055c7c6173f188f1"
+    "sha256": "e6c99b58b4ac3f02cbfe067e3cf873c2ce358c041f7d53072a8689b40316ef7e",
+    "routeCount": 292,
+    "routeSetSha256": "aad048744e85b51893d8e6d26e023cf87b0d79b035a90fe9bc0dde7fa54d8265"
   },
-  "operationCount": 287,
-  "operationSetSha256": "1592d838580ffd6e1a457d3cabfa2b4d6ed61088bbb4acb416d7d2e57aedb668",
+  "operationCount": 292,
+  "operationSetSha256": "8a9811f18aaaee3caec40b22dadb2a063ff810f704eb320653ea5b56746646ab",
   "operations": [
     {
       "key": "DELETE /api/threads/{threadId}",
@@ -1610,6 +1610,30 @@
       ]
     },
     {
+      "key": "GET /api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/diff",
+      "method": "get",
+      "path": "/api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/diff",
+      "operationId": "get-threads-by-threadId-plans-by-planId-artifacts-by-artifactId-diff",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "artifactId",
+        "planId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
       "key": "GET /api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/file",
       "method": "get",
       "path": "/api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/file",
@@ -2030,6 +2054,66 @@
       "operationId": "get-usage-price-tables",
       "tags": [
         "usage-price-tables"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/workspace/directories",
+      "method": "get",
+      "path": "/api/workspace/directories",
+      "operationId": "get-workspace-directories",
+      "tags": [
+        "workspace"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/workspace/recent",
+      "method": "get",
+      "path": "/api/workspace/recent",
+      "operationId": "get-workspace-recent",
+      "tags": [
+        "workspace"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/workspace/threads",
+      "method": "get",
+      "path": "/api/workspace/threads",
+      "operationId": "get-workspace-threads",
+      "tags": [
+        "workspace"
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
@@ -6068,6 +6152,26 @@
       "operationId": "post-usage-price-tables-verify",
       "tags": [
         "usage-price-tables"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/workspace/root",
+      "method": "post",
+      "path": "/api/workspace/root",
+      "operationId": "post-workspace-root",
+      "tags": [
+        "workspace"
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,

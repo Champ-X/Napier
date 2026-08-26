@@ -23,10 +23,6 @@ export function AppSettingsOverlay({
       onSection={shell.setSettingsSection}
       onClose={shell.closeSettings}
       onWorkspaceSwitch={vm.switchWorkspaceRoot}
-      onConversation={() => {
-        shell.closeSettings();
-        shell.setWorkspaceView("conversation");
-      }}
     />
   );
 }

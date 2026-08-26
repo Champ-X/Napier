@@ -10183,6 +10183,64 @@
         "x-napier-source-route": "POST /api/threads/:threadId/plans/:planId/artifacts/:artifactId/data/verify"
       }
     },
+    "/api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/diff": {
+      "get": {
+        "operationId": "get-threads-by-threadId-plans-by-planId-artifacts-by-artifactId-diff",
+        "tags": [
+          "threads"
+        ],
+        "summary": "GET /api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/diff",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "planId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "artifactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/threads/:threadId/plans/:planId/artifacts/:artifactId/diff"
+      }
+    },
     "/api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/drift-check": {
       "post": {
         "operationId": "post-threads-by-threadId-plans-by-planId-artifacts-by-artifactId-drift-check",
@@ -16284,7 +16342,7 @@
     "apps/server/src/workspace-process-http.ts",
     "apps/server/src/workspace-root-http.ts"
   ],
-  "x-napier-source-sha256": "a4e69ab308b30b62a1c2c0b61448466a5fb2767cdcb89d71a338991f70b98ab7",
-  "x-napier-route-count": 291,
-  "x-napier-route-set-sha256": "c2a88deb5fdb38e3166c951002ef4b373df27520829b36e8379fda6c6fc3e450"
+  "x-napier-source-sha256": "1cd4249dcfe16ea613c331710fa7a0cc5fa513eda8513a7a76149f172e04c996",
+  "x-napier-route-count": 292,
+  "x-napier-route-set-sha256": "aad048744e85b51893d8e6d26e023cf87b0d79b035a90fe9bc0dde7fa54d8265"
 }

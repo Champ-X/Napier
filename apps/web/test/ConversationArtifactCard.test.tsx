@@ -44,7 +44,7 @@ describe("ConversationArtifactCard", () => {
     expect(container.textContent).not.toContain("ledger_event_secret");
     expect(container.textContent).not.toContain("c".repeat(64));
 
-    await click(button(container, "Close preview artifacts/report.md"));
+    await click(button(container, "Close artifact inspection artifacts/report.md"));
     expect(findElementsByLocalName(container, "pre")).toHaveLength(0);
   });
 

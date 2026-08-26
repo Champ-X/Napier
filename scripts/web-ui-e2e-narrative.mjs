@@ -220,6 +220,49 @@ export async function verifyWebUiLongRunNarrative(browser, origin, expected) {
         ).length,
       };
     });
+    const environmentFallback = {
+      visible: await page
+        .locator(".environment-degradation-notice")
+        .isVisible(),
+      tools:
+        (
+          await page.locator(".environment-degradation-tools").textContent()
+        )?.trim() ?? "",
+      repair:
+        (
+          await page.locator(".environment-degradation-repair").textContent()
+        )?.trim() ?? "",
+      geometry: await page.evaluate(() => {
+        const notice = document.querySelector(
+          ".environment-degradation-notice",
+        );
+        const details = document.querySelector(".task-status-details-popover");
+        if (
+          !(notice instanceof HTMLElement) ||
+          !(details instanceof HTMLElement)
+        ) {
+          return { withinDetails: false, horizontalOverflowPx: -1 };
+        }
+        const noticeRect = notice.getBoundingClientRect();
+        const detailsRect = details.getBoundingClientRect();
+        return {
+          withinDetails:
+            noticeRect.top >= detailsRect.top &&
+            noticeRect.bottom <= detailsRect.bottom &&
+            noticeRect.left >= detailsRect.left &&
+            noticeRect.right <= detailsRect.right,
+          horizontalOverflowPx: Math.max(
+            0,
+            document.documentElement.scrollWidth -
+              document.documentElement.clientWidth,
+          ),
+        };
+      }),
+    };
+    await page.locator(".task-status-details > summary").click();
+    await page
+      .locator(".task-status-details-popover")
+      .waitFor({ state: "hidden", timeout: WEB_UI_START_TIMEOUT_MS });
     await page.locator(".conversation-show-earlier").click();
     await page.waitForFunction(
       () =>
@@ -232,30 +275,6 @@ export async function verifyWebUiLongRunNarrative(browser, origin, expected) {
     const expandedFeedItems = await page
       .locator(".message-ledger > :is(article, details, section)")
       .count();
-    const environmentFallbackGeometry = await page.evaluate(() => {
-      const notice = document.querySelector(".environment-degradation-notice");
-      const details = document.querySelector(".task-status-details-popover");
-      if (
-        !(notice instanceof HTMLElement) ||
-        !(details instanceof HTMLElement)
-      ) {
-        return { withinDetails: false, horizontalOverflowPx: -1 };
-      }
-      const noticeRect = notice.getBoundingClientRect();
-      const detailsRect = details.getBoundingClientRect();
-      return {
-        withinDetails:
-          noticeRect.top >= detailsRect.top &&
-          noticeRect.bottom <= detailsRect.bottom &&
-          noticeRect.left >= detailsRect.left &&
-          noticeRect.right <= detailsRect.right,
-        horizontalOverflowPx: Math.max(
-          0,
-          document.documentElement.scrollWidth -
-            document.documentElement.clientWidth,
-        ),
-      };
-    });
     await page
       .locator(".conversation-activity-group > summary")
       .first()
@@ -271,20 +290,12 @@ export async function verifyWebUiLongRunNarrative(browser, origin, expected) {
     return {
       ...after,
       environmentFallbackInitiallyHidden,
-      environmentFallbackVisible: await page
-        .locator(".environment-degradation-notice")
-        .isVisible(),
-      environmentFallbackTools:
-        (
-          await page.locator(".environment-degradation-tools").textContent()
-        )?.trim() ?? "",
-      environmentFallbackRepair:
-        (
-          await page.locator(".environment-degradation-repair").textContent()
-        )?.trim() ?? "",
+      environmentFallbackVisible: environmentFallback.visible,
+      environmentFallbackTools: environmentFallback.tools,
+      environmentFallbackRepair: environmentFallback.repair,
       environmentFallbackWithinDetails:
-        environmentFallbackGeometry.withinDetails,
-      horizontalOverflowPx: environmentFallbackGeometry.horizontalOverflowPx,
+        environmentFallback.geometry.withinDetails,
+      horizontalOverflowPx: environmentFallback.geometry.horizontalOverflowPx,
       refreshPreserved: true,
       showEarlierVisible: collapsed.showEarlierVisible,
       mountedFeedItems: collapsed.mountedFeedItems,
@@ -335,26 +346,31 @@ export async function verifyWebUiArtifactNavigation(browser, origin, expected) {
       await page.waitForFunction(
         (targetPath) =>
           document.activeElement instanceof HTMLElement &&
-          document.activeElement.dataset["artifactPath"] === targetPath,
+          document.activeElement.dataset["artifactPath"] === targetPath &&
+          document.activeElement.querySelector(
+            '.artifact-action-inspection',
+          ) !== null,
         path,
         { timeout: WEB_UI_START_TIMEOUT_MS },
       );
       const card = page.locator(
         `.conversation-artifact[data-artifact-path="${path}"]`,
       );
-      await card.getByRole("button", { name: "Preview" }).click();
-      await card.locator(".conversation-artifact-preview").waitFor({
+      await card.locator(".artifact-action-inspection").waitFor({
         state: "visible",
         timeout: WEB_UI_START_TIMEOUT_MS,
       });
       previews.push({
         path,
         focused: true,
+        openedInOneClick: true,
         preview: await card
-          .locator(".conversation-artifact-preview pre")
+          .locator(".artifact-action-inspection pre")
           .textContent(),
       });
-      await card.getByRole("button", { name: `Close preview ${path}` }).click();
+      await card
+        .getByRole("button", { name: `Close artifact inspection ${path}` })
+        .click();
     }
     return { outputCount: expected.paths.length, previews };
   } finally {

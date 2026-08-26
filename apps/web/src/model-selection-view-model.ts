@@ -1,4 +1,4 @@
-import type { ModelSummary } from "@napier/contracts";
+import type { ModelSummary, RunRecord } from "@napier/contracts";
 
 export interface ModelSelectOption {
   key: string;
@@ -13,6 +13,29 @@ export interface ModelProviderGroup {
   configuredCount: number;
   totalCount: number;
   options: ModelSelectOption[];
+}
+
+export interface ModelPickerOption extends ModelSelectOption {
+  id: string;
+  name: string;
+  providerName: string;
+  contextWindow: number;
+  reasoning: boolean;
+  vision: boolean;
+}
+
+export interface ModelPickerGroup {
+  id: "recommended" | "recent" | `provider:${string}`;
+  provider?: string;
+  label: string;
+  options: ModelPickerOption[];
+}
+
+export interface ModelPickerQuery {
+  query?: string;
+  showUnavailable?: boolean;
+  recommendedModelKeys?: readonly string[];
+  recentModelKeys?: readonly string[];
 }
 
 export interface SelectedModelAvailability {
@@ -73,6 +96,77 @@ export function configuredModelProviderGroups(
   });
 }
 
+export function modelPickerGroups(
+  models: readonly ModelSummary[],
+  {
+    query = "",
+    showUnavailable = false,
+    recommendedModelKeys = [],
+    recentModelKeys = [],
+  }: ModelPickerQuery = {},
+): ModelPickerGroup[] {
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  const options = models
+    .filter((model) => showUnavailable || model.configured)
+    .map(modelPickerOption)
+    .filter((option) => matchesModelQuery(option, normalizedQuery));
+  const byKey = new Map(options.map((option) => [option.key, option]));
+  const claimed = new Set<string>();
+  const priorityGroup = (
+    id: "recommended" | "recent",
+    label: string,
+    keys: readonly string[],
+  ): ModelPickerGroup | undefined => {
+    const groupOptions = uniqueKeys(keys).flatMap((key) => {
+      const option = byKey.get(key);
+      if (!option || claimed.has(key)) return [];
+      claimed.add(key);
+      return [option];
+    });
+    return groupOptions.length > 0 ? { id, label, options: groupOptions } : undefined;
+  };
+  const recommended = priorityGroup(
+    "recommended",
+    "Recommended",
+    recommendedModelKeys,
+  );
+  const recent = priorityGroup("recent", "Recent", recentModelKeys);
+  const providers = new Map<string, ModelPickerOption[]>();
+  for (const option of options) {
+    if (claimed.has(option.key)) continue;
+    providers.set(option.provider, [
+      ...(providers.get(option.provider) ?? []),
+      option,
+    ]);
+  }
+  const providerGroups = [...providers.entries()]
+    .map(([provider, providerOptions]): ModelPickerGroup => ({
+      id: `provider:${provider}`,
+      provider,
+      label: providerOptions[0]?.providerName ?? provider,
+      options: providerOptions.sort(comparePickerOptions),
+    }))
+    .sort((left, right) => left.label.localeCompare(right.label));
+  return [recommended, recent, ...providerGroups].filter(
+    (group): group is ModelPickerGroup => group !== undefined,
+  );
+}
+
+export function recentModelKeysFromRuns(
+  runs: readonly RunRecord[],
+  limit = 4,
+): string[] {
+  return uniqueKeys(
+    runs
+      .slice()
+      .reverse()
+      .flatMap((run) => {
+        const model = run.configuration?.model;
+        return model ? [`${model.provider}/${model.id}`] : [];
+      }),
+  ).slice(0, limit);
+}
+
 export function modelSelectOption(model: ModelSummary): ModelSelectOption {
   return {
     key: `${model.provider}/${model.id}`,
@@ -81,6 +175,18 @@ export function modelSelectOption(model: ModelSummary): ModelSelectOption {
     }`,
     configured: model.configured,
     provider: model.provider,
+  };
+}
+
+export function modelPickerOption(model: ModelSummary): ModelPickerOption {
+  return {
+    ...modelSelectOption(model),
+    id: model.id,
+    name: model.name,
+    providerName: model.providerName,
+    contextWindow: model.contextWindow,
+    reasoning: model.reasoning,
+    vision: model.vision,
   };
 }
 
@@ -150,6 +256,31 @@ function compareModelProviderGroups(
   const rightRank =
     right.provider === "napier" ? 0 : right.configuredCount > 0 ? 1 : 2;
   return leftRank - rightRank || left.provider.localeCompare(right.provider);
+}
+
+function comparePickerOptions(
+  left: ModelPickerOption,
+  right: ModelPickerOption,
+): number {
+  return (
+    Number(right.configured) - Number(left.configured) ||
+    left.name.localeCompare(right.name)
+  );
+}
+
+function matchesModelQuery(
+  option: ModelPickerOption,
+  query: string,
+): boolean {
+  if (!query) return true;
+  return [option.name, option.id, option.provider, option.providerName]
+    .join(" ")
+    .toLocaleLowerCase()
+    .includes(query);
+}
+
+function uniqueKeys(keys: readonly string[]): string[] {
+  return [...new Set(keys.filter(Boolean))];
 }
 
 function parseModelKeyParts(key: string): { provider: string; id: string } {

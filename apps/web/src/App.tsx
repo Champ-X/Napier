@@ -1,4 +1,5 @@
 import { FatalState, LoadingShell } from "./AppInitialStates";
+import { AppDeveloperWorkbenchOverlay } from "./AppDeveloperWorkbenchOverlay";
 import { AppLedgerNavigation } from "./AppLedgerNavigation";
 import { AppSettingsOverlay } from "./AppSettingsOverlay";
 import { AppWorkbenchHeader } from "./AppWorkbenchHeader";
@@ -51,6 +52,11 @@ export function App() {
         />
       </main>
       <AppSettingsOverlay vm={vm} shell={shell} activeAgent={activeAgent} />
+      <AppDeveloperWorkbenchOverlay
+        vm={vm}
+        shell={shell}
+        activeAgent={activeAgent}
+      />
     </div>
   );
 }

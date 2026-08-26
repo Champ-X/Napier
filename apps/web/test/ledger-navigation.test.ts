@@ -43,6 +43,7 @@ describe("Ledger navigation", () => {
     expect(styles).not.toContain("minmax(520px, 1fr) 338px");
     expect(styles).toContain(".ledger-collapse-button");
     expect(source).toContain('className="workspace-settings-button"');
+    expect(source).toContain("onClick={onOpenDeveloperWorkbench}");
     expect(source).toContain("onClick={onOpenSettings}");
     expect(source).toContain(
       "onOpenWorkspaceSettings={onOpenWorkspaceSettings}",

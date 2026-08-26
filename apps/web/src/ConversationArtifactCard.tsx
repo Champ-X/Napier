@@ -1,12 +1,13 @@
-import { Download, FileCheck2, FileWarning, X } from "lucide-react";
+import { Download, FileCheck2, FileWarning } from "lucide-react";
 import { useState } from "react";
 
 import "./conversation-artifact-card.css";
+import { ArtifactActionSurface } from "./ArtifactActionSurface";
 import { formatApiErrorMessage } from "./api-error";
 import {
   downloadPlanArtifactFile,
+  previewPlanArtifactDiff,
   previewPlanArtifactText,
-  type PlanArtifactTextPreviewReceipt,
 } from "./artifact-file-api";
 import { formatArtifactSizeBytes } from "./artifact-manifest-view-model";
 import {
@@ -21,41 +22,25 @@ export interface ConversationArtifactCardProps {
   threadId: string;
   onLedgerChanged: () => Promise<void>;
   previewArtifact?: typeof previewPlanArtifactText;
+  previewDiff?: typeof previewPlanArtifactDiff;
   downloadArtifact?: typeof downloadPlanArtifactFile;
 }
-
 export function ConversationArtifactCard({
   item,
   threadId,
   onLedgerChanged,
   previewArtifact = previewPlanArtifactText,
+  previewDiff = previewPlanArtifactDiff,
   downloadArtifact = downloadPlanArtifactFile,
 }: ConversationArtifactCardProps) {
   const copy = conversationDetailCopy.artifact;
-  const [busy, setBusy] = useState<"preview" | "download">();
-  const [preview, setPreview] = useState<PlanArtifactTextPreviewReceipt>();
+  const [busy, setBusy] = useState<"download">();
   const [error, setError] = useState<string>();
   const available =
     item.artifact.kind === "file" &&
     (item.artifact.status === "produced" ||
       item.artifact.status === "verified");
   const Icon = item.artifact.status === "verified" ? FileCheck2 : FileWarning;
-
-  const openPreview = async () => {
-    if (!available || busy) return;
-    setBusy("preview");
-    setError(undefined);
-    try {
-      setPreview(
-        await previewArtifact(threadId, item.planId, item.artifact.id),
-      );
-      await onLedgerChanged();
-    } catch (reason) {
-      setError(formatApiErrorMessage(reason));
-    } finally {
-      setBusy(undefined);
-    }
-  };
 
   const download = async () => {
     if (!available || busy) return;
@@ -115,11 +100,16 @@ export function ConversationArtifactCard({
           </div>
         ) : null}
       </dl>
+      <ArtifactActionSurface
+        artifact={item.artifact}
+        planId={item.planId}
+        threadId={threadId}
+        onLedgerChanged={onLedgerChanged}
+        previewArtifact={previewArtifact}
+        previewDiff={previewDiff}
+      />
       {available ? (
-        <div className="conversation-artifact-actions">
-          <button type="button" disabled={Boolean(busy)} onClick={openPreview}>
-            {busy === "preview" ? copy.opening : copy.preview}
-          </button>
+        <div className="conversation-artifact-actions is-export-only">
           <button type="button" disabled={Boolean(busy)} onClick={download}>
             <Download size={12} aria-hidden="true" />
             {busy === "download" ? copy.downloading : copy.download}
@@ -130,27 +120,6 @@ export function ConversationArtifactCard({
         <p className="conversation-artifact-error" role="alert">
           {error}
         </p>
-      ) : null}
-      {preview ? (
-        <section
-          className="conversation-artifact-preview"
-          aria-label={`${copy.previewLabel} ${item.artifact.path}`}
-        >
-          <header>
-            <span>
-              {formatNumber(preview.lineCount)} {copy.lines} ·{" "}
-              {formatArtifactSizeBytes(preview.sizeBytes)}
-            </span>
-            <button
-              type="button"
-              aria-label={`${copy.closePreview} ${item.artifact.path}`}
-              onClick={() => setPreview(undefined)}
-            >
-              <X size={12} aria-hidden="true" />
-            </button>
-          </header>
-          <pre>{preview.text}</pre>
-        </section>
       ) : null}
     </article>
   );
@@ -171,10 +140,4 @@ function formatTime(value: string): string {
     minute: "2-digit",
     hour12: false,
   }).format(new Date(value));
-}
-
-function formatNumber(value: number): string {
-  return new Intl.NumberFormat(getLocale() === "zh" ? "zh-CN" : "en").format(
-    value,
-  );
 }

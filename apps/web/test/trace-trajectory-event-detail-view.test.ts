@@ -74,18 +74,92 @@ describe("Trace trajectory event detail view", () => {
     );
     expect(JSON.stringify(detail)).not.toContain("TOP_SECRET_MODEL_OUTPUT");
   });
+
+  it("diagnoses failed tools from bounded receipts and links the retry chain", () => {
+    const started = event(
+      "tool.started",
+      {
+        callId: "call_failed_1",
+        toolName: "run_command",
+        callInputSha256: "a".repeat(64),
+        input: "TOP_SECRET_COMMAND",
+        details: { runtime: "node", status: "failed", argumentCount: 3 },
+      },
+      { id: "event_started", seq: 10, status: "active" },
+    );
+    const failed = event(
+      "tool.failed",
+      {
+        callId: "call_failed_1",
+        toolName: "run_command",
+        outputTextSha256: "b".repeat(64),
+        outputTextBytes: 2048,
+        error: "TOP_SECRET_ERROR",
+        details: {
+          runtime: "node",
+          status: "timed_out",
+          argumentCount: 3,
+          exitCode: 124,
+          stderrTruncated: true,
+        },
+        parentEvaluationId: "eval_bridge_1",
+      },
+      { id: "event_failed", seq: 11, status: "failed" },
+    );
+    const retry = event(
+      "tool.started",
+      { callId: "call_retry_2", toolName: "run_command" },
+      { id: "event_retry", seq: 12, status: "active" },
+    );
+    const detail = traceTrajectoryEventDetailView(failed, [
+      started,
+      failed,
+      retry,
+    ]);
+
+    expect(detail.diagnosis).toMatchObject({
+      category: "timeout",
+      subject: "run_command",
+      related: [
+        { eventId: "event_started", relation: "started", sequence: 10 },
+        { eventId: "event_failed", relation: "failed", sequence: 11 },
+        { eventId: "event_retry", relation: "retry", sequence: 12 },
+      ],
+    });
+    expect(detail.diagnosis?.input).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ key: "inputSha256", value: "aaaaaaaaaaaa…" }),
+        expect.objectContaining({ key: "argumentCount", value: "3" }),
+      ]),
+    );
+    expect(detail.diagnosis?.outcome).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ key: "exitCode", value: "124" }),
+        expect.objectContaining({ key: "outputBytes", value: "2048" }),
+        expect.objectContaining({ key: "outputTruncated", value: "true" }),
+      ]),
+    );
+    expect(detail.diagnosis?.parent).toEqual([
+      expect.objectContaining({ key: "codeBridge", value: "eval_bridge_1" }),
+    ]);
+    expect(JSON.stringify(detail)).not.toContain("TOP_SECRET");
+  });
 });
 
 function event(
   type: string,
   payload: RunEvent["payload"],
+  overrides: Partial<
+    Pick<TraceTrajectoryEvent, "status"> &
+      Pick<TraceTrajectoryEvent["event"], "id" | "seq">
+  > = {},
 ): TraceTrajectoryEvent {
   return {
     event: {
-      id: "event_detail_1",
+      id: overrides.id ?? "event_detail_1",
       threadId: "thread_detail_1",
       runId: "run_detail_123456789",
-      seq: 158,
+      seq: overrides.seq ?? 158,
       type,
       category: type.startsWith("tool.") ? "tool" : "model",
       visibility: "user",
@@ -102,7 +176,7 @@ function event(
     turnIndex: 6,
     callOrdinal: 7,
     timestampMs: Date.parse("2026-08-21T04:51:33.000Z"),
-    status: "completed",
+    status: overrides.status ?? "completed",
     durationMs: 1200,
   };
 }

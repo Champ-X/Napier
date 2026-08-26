@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Plus, Settings2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Settings2, Wrench } from "lucide-react";
 
 import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
 import { copy } from "./copy";
@@ -17,6 +17,7 @@ export function LedgerNavigation({
   onRestore,
   onWorkspaceSwitch,
   onOpenWorkspaceSettings,
+  onOpenDeveloperWorkbench,
   onOpenSettings,
 }: {
   bootstrap: LiveReadyBootstrapResponse;
@@ -29,6 +30,7 @@ export function LedgerNavigation({
   onRestore(): void;
   onWorkspaceSwitch(root: string, threadId?: string): Promise<void>;
   onOpenWorkspaceSettings(): void;
+  onOpenDeveloperWorkbench(): void;
   onOpenSettings(): void;
 }) {
   const { collapsed, toggleSidebar } = useWorkspaceLayout();
@@ -84,15 +86,26 @@ export function LedgerNavigation({
         onOpenWorkspaceSettings={onOpenWorkspaceSettings}
       />
 
-      <button
-        className="workspace-settings-button"
-        type="button"
-        aria-label={copy.settings}
-        onClick={onOpenSettings}
-      >
-        <Settings2 size={14} aria-hidden="true" />
-        <span>{copy.settings}</span>
-      </button>
+      <div className="workspace-control-buttons">
+        <button
+          className="workspace-settings-button"
+          type="button"
+          aria-label={copy.developerWorkbench.open}
+          onClick={onOpenDeveloperWorkbench}
+        >
+          <Wrench size={14} aria-hidden="true" />
+          <span>{copy.developerWorkbench.open}</span>
+        </button>
+        <button
+          className="workspace-settings-button"
+          type="button"
+          aria-label={copy.settings}
+          onClick={onOpenSettings}
+        >
+          <Settings2 size={14} aria-hidden="true" />
+          <span>{copy.settings}</span>
+        </button>
+      </div>
     </nav>
   );
 }

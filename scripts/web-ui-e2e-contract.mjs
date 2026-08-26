@@ -23,10 +23,13 @@ export const SETTINGS_SECTION_LABELS = Object.freeze([
   "Memory",
   "Extensions",
   "Workspace",
-  "Automations",
-  "Design system",
-  "Developer",
   "Language",
+]);
+export const DEVELOPER_WORKBENCH_SECTION_LABELS = Object.freeze([
+  "Automations",
+  "Lab & workflow",
+  "Publishing",
+  "Design system",
 ]);
 export const WEB_UI_UX_SCENARIOS = Object.freeze([
   "empty-conversation",
@@ -166,17 +169,11 @@ export function assertWebUiE2eReceipt(receipt) {
   assert.equal(receipt?.settings?.focusTrappedBackward, true);
   assert.equal(receipt?.settings?.escapeRestoredTriggerFocus, true);
   assert.equal(receipt?.settings?.defaultProductTrialHidden, true);
-  assert.equal(receipt?.settings?.developerProductTrialAvailable, true);
+  assert.equal(receipt?.settings?.ordinaryGovernanceHidden, true);
   assert.equal(receipt?.settings?.revisionHistoryVisible, true);
   assert.equal(receipt?.settings?.revisionHistoryMinimumFontPx >= 12, true);
   assert.equal(
     receipt?.settings?.revisionHistoryMinimumButtonHeight >= 44,
-    true,
-  );
-  assert.equal(receipt?.settings?.packageDeskCount, 3);
-  assert.equal(receipt?.settings?.packageManagementMinimumFontPx >= 12, true);
-  assert.equal(
-    receipt?.settings?.packageManagementMinimumActionHeight >= 44,
     true,
   );
   assert.equal(receipt?.settings?.credentialRegisterVisible, true);
@@ -185,6 +182,18 @@ export function assertWebUiE2eReceipt(receipt) {
     receipt?.settings?.credentialRegisterMinimumControlHeight >= 44,
     true,
   );
+  assert.equal(receipt?.settings?.developerDialog, true);
+  assert.equal(receipt?.settings?.developerModal, true);
+  assert.deepEqual(
+    receipt?.settings?.developerLabels,
+    DEVELOPER_WORKBENCH_SECTION_LABELS,
+  );
+  assert.equal(receipt?.settings?.developerProductTrialAvailable, true);
+  assert.equal(receipt?.settings?.receiptTrustAvailable, true);
+  assert.equal(receipt?.settings?.publishingSurfaceCount, 3);
+  assert.equal(receipt?.settings?.packageManagementMinimumFontPx >= 12, true);
+  assert.equal(receipt?.settings?.packageManagementMinimumActionHeight >= 44, true);
+  assert.equal(receipt?.settings?.developerEscapeRestoredTriggerFocus, true);
   assert.equal(receipt?.locale?.lang, "zh-CN");
   assert.deepEqual(receipt?.locale?.workspaceLabels, ["对话", "任务", "轨迹"]);
   assert.deepEqual(receipt?.locale?.taskSections, ["概览", "变更", "验证"]);
@@ -193,10 +202,13 @@ export function assertWebUiE2eReceipt(receipt) {
     "记忆",
     "扩展",
     "工作区",
-    "自动化",
-    "设计系统",
-    "开发者",
     "语言",
+  ]);
+  assert.deepEqual(receipt?.locale?.developerLabels, [
+    "自动化工作台",
+    "实验与工作流",
+    "发布治理",
+    "设计系统",
   ]);
   assert.match(
     receipt?.locale?.composerPlaceholder ?? "",
@@ -218,13 +230,24 @@ export function assertWebUiE2eReceipt(receipt) {
   });
   assert.equal(receipt?.artifactNavigation?.outputCount, 2);
   assert.deepEqual(
-    receipt?.artifactNavigation?.previews?.map(({ path, focused }) => ({
+    receipt?.artifactNavigation?.previews?.map(
+      ({ path, focused, openedInOneClick }) => ({
       path,
       focused,
-    })),
+        openedInOneClick,
+      }),
+    ),
     [
-      { path: "artifacts/output-report.md", focused: true },
-      { path: "artifacts/source-notes.md", focused: true },
+      {
+        path: "artifacts/output-report.md",
+        focused: true,
+        openedInOneClick: true,
+      },
+      {
+        path: "artifacts/source-notes.md",
+        focused: true,
+        openedInOneClick: true,
+      },
     ],
   );
   assert.equal(receipt?.recovery?.selectedThreadPreserved, true);

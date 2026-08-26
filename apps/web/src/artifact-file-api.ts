@@ -14,6 +14,26 @@ export interface PlanArtifactFileDownload extends PlanArtifactLedgerEventReceipt
   sizeBytes: number;
 }
 
+export interface PlanArtifactDiffPreviewReceipt extends PlanArtifactLedgerEventReceipt {
+  kind: "napier.plan-artifact-diff-preview";
+  schemaVersion: 1;
+  planId: string;
+  artifactId: string;
+  planRevision: number;
+  status: string;
+  artifactKind: string;
+  pathSha256: string;
+  scope: "working";
+  text: string;
+  outputSha256: string;
+  outputBytes: number;
+  fileCount: number;
+  hunkCount: number;
+  addedLineCount: number;
+  deletedLineCount: number;
+  repositoryStateSha256: string;
+}
+
 export interface PlanArtifactFileVerification extends PlanArtifactLedgerEventReceipt {
   kind: "napier.plan-artifact-file-verification";
   schemaVersion: 1;
@@ -246,6 +266,16 @@ export function previewPlanArtifactText(
 ): Promise<PlanArtifactTextPreviewReceipt> {
   return requestJson(
     `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/artifacts/${encodeURIComponent(artifactId)}/preview`,
+  );
+}
+
+export function previewPlanArtifactDiff(
+  threadId: string,
+  planId: string,
+  artifactId: string,
+): Promise<PlanArtifactDiffPreviewReceipt> {
+  return requestJson(
+    `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/artifacts/${encodeURIComponent(artifactId)}/diff`,
   );
 }
 
