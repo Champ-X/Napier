@@ -18,26 +18,26 @@
     {
       "id": "prompt_network_v1",
       "dimension": "network",
-      "testFile": "apps/cli/test/open-web-research-benchmark.test.ts",
+      "testFile": "packages/benchmark-kit/test/open-web-research-benchmark.test.ts",
       "testNameSha256": "8ceb75510ad10bcd4cf44b3df399154b17785342415d9abd2277c8b2c8036cc6",
       "testFileSha256": "b4087548790de21d717fc353bb798e8830fb2af624e4cbc884c989c7980b1939",
-      "argvSha256": "1184cdbde6500c3c0ee664f7bc9a75ca03cd1e0be436eb7eb1b2e2104665ded2",
+      "argvSha256": "bc6f82973a41afb119491f864d9faae6a50ae6ae2e55556a653cdb32f479b830",
       "status": "passed",
       "testFileCount": 1,
       "testCount": 1,
-      "contentSha256": "dbca0ec6787cd7fe999a22cfd686349e77239b0527e84b3903831cefd6361743"
+      "contentSha256": "df896344097706256706b15469d192b7d65413f90f01150e6519dbf111291ef7"
     },
     {
       "id": "prompt_coding_v1",
       "dimension": "coding",
-      "testFile": "apps/cli/test/coding-benchmark.test.ts",
+      "testFile": "packages/benchmark-kit/test/coding-benchmark.test.ts",
       "testNameSha256": "405b2a675017ac78ee346d5e89e48ec2cbc9c9468df9333983cf188120acf90d",
       "testFileSha256": "458d1f82e41fe0ddf3f23590ef91cebd24521efe164eb73422f9699368c4e15d",
-      "argvSha256": "3865ec053a7ae5ed045cdbceea0992aa20da97451c42f47dde30011f4a27c868",
+      "argvSha256": "d705c0790e56d5293fb216a60fbda3b758ee673a0a1c84e20b2c1d9109664702",
       "status": "passed",
       "testFileCount": 1,
       "testCount": 1,
-      "contentSha256": "de31423538f39dac03fe9bac2bcf2e693c8aff41d45624adf6a30445b9c8118d"
+      "contentSha256": "ded3dde309db03a69c439f420e0494c033d0cc7d6242190532838255487db9c4"
     },
     {
       "id": "prompt_browser_v1",
@@ -54,14 +54,14 @@
     {
       "id": "prompt_long_task_v1",
       "dimension": "long_task",
-      "testFile": "apps/cli/test/workflow-benchmark-long-horizon.test.ts",
+      "testFile": "packages/benchmark-kit/test/workflow-benchmark-long-horizon.test.ts",
       "testNameSha256": "928d8d6e118308315e5e1a9ad533079f8861b7d75586e85746110f781644f624",
       "testFileSha256": "de852e11a6239a9460c2e3270be1a701e3bcc1e0d08641116dd817cc7c22d7b7",
-      "argvSha256": "c713bf7078fe4b3a0eb5de4292fafb1f48d6f6811792379584dd56e328a0522d",
+      "argvSha256": "6296ab659cee4e0e37ecce210f4948558ad990808e109d1b1f5f4590c140f106",
       "status": "passed",
       "testFileCount": 1,
       "testCount": 1,
-      "contentSha256": "b9da87ecd95db4b3795b4069e96aa70ecabe1f077a72d39f68ce33781e45a856"
+      "contentSha256": "2d90ec419aa223ffaaf33faff759593ad89439d5446cc544d952bfd8d5e70596"
     },
     {
       "id": "prompt_user_interrupt_v1",
@@ -112,5 +112,5 @@
       "contentSha256": "815d079471f189bcb085cf9507f3c6a22ab6e7929d59c41d2b3c16c4dba9d0fc"
     }
   ],
-  "contentSha256": "c192ea0b3419a74c0fee78ca7dfaccd405e8ec1ceb67c483c3d19da97a26244b"
+  "contentSha256": "460a63dc9d2775e6e06830414edc169ffe44d124bbfd4f2a78fad910a6200fc4"
 }

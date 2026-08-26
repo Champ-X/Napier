@@ -1,11 +1,11 @@
 {
   "kind": "napier.sandbox-portable-process-stage15",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-15T13:12:47.740Z",
+  "generatedAt": "2026-08-26T01:19:48.855Z",
   "image": {
-    "id": "sha256:aac9f04b81bf3994d8c4629381ff11eb728094c7a2facd452d7ff99e224ec662",
+    "id": "sha256:7dfe2fa46ceb6051d06e4b510e202cc4cbbf8c1eb435c7b21ed22f5cbe480405",
     "platform": "linux/arm64",
-    "provenanceSha256": "644470d4c5d573eacbe0ec3d95c0584090dc4e24e9d7c6af89f1ae95419fa6fb"
+    "provenanceSha256": "2d089e12974793ffce17b89caf4a9ebce7fa4724d7732c2c57478feea38a5c18"
   },
   "implementation": {
     "containerIdentitySha256": "ed83e9a2b2584a4ac08a1b61c4ff4bb7de2f281e9739e435984db5c8e93e2314",
@@ -24,7 +24,7 @@
     "nonRoot": true,
     "hostIdsRetained": false,
     "userIdentitySha256": "3948adb881e7eacea184cc9ca7d05fa730ee9debe218918f043602c70728044e",
-    "runtimeIdentitySha256": "865443706cc0372293546e6b32fe3983676c5373fc88623c43faeddf749a6da2"
+    "runtimeIdentitySha256": "c8018650e2ea93d54bcc76e8b9087b630294b5b567c2eee279696a740a193629"
   },
   "controlledWindowsProjection": {
     "workspaceMapped": true,
@@ -52,17 +52,17 @@
       "processLocalSafeDirectory": true,
       "wildcardSafeDirectory": false,
       "hostGlobalConfigChanged": false,
-      "resultSha256": "8d44fad11b0f41d784d20d7cee002949842637306ccfa9f475f634f77fcd3209"
+      "resultSha256": "03c121ae6fc6eb3943f37024cc1ccc0ab11bc65250148725a0de1be649972637"
     },
     "verification": {
       "typecheckStatus": "passed",
       "testStatus": "passed",
       "typecheckVersion": "5.9.3",
       "testVersion": "4.1.9",
-      "typecheckRuntimeIdentitySha256": "a3e6623be52ce462ede52866ee5910844b4405553d1a311791440755a1ad86cd",
-      "testRuntimeIdentitySha256": "a3e6623be52ce462ede52866ee5910844b4405553d1a311791440755a1ad86cd",
-      "typecheckResultSha256": "908af05ee8cc93573bd9327d3e7f1fb7e1963175cc193772fe3f033d27a86648",
-      "testResultSha256": "dfbcd53ea5f017c6ffc5b65aefb9f34c9857c93ca5e3de255e875565d48f5398"
+      "typecheckRuntimeIdentitySha256": "0b5336d9eb16250fd25964ce2da7ab66445b6f774863303b39558eccd2ba96cd",
+      "testRuntimeIdentitySha256": "0b5336d9eb16250fd25964ce2da7ab66445b6f774863303b39558eccd2ba96cd",
+      "typecheckResultSha256": "1f04ea2f29e7973376aef0453a0e5125496b4bd820c63f95af6a62237b4abbd3",
+      "testResultSha256": "770fc8bd80edf94b8b31932f431bc313a6d8ab82ab90e0bba6fd787b8c2f2fc3"
     },
     "scopedWrite": {
       "status": "passed",
@@ -103,5 +103,5 @@
       "image signature and external attestation"
     ]
   },
-  "contentSha256": "301eb34c4b0d02327651e8bb1e561667f624c6e4b2ad1e15307f6effac5a30bb"
+  "contentSha256": "3716e0687900aab96ac67dc65cab622e4e9b201636584b68c795dbec90bd9922"
 }

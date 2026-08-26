@@ -6,8 +6,11 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { verifyLinuxHostProductAcceptance } from "./check-linux-host-product-acceptance.mjs";
 import {
+  colimaSshArguments,
+  colimaSshTarget,
   includeLinuxHostSourceSnapshotPath,
   linuxGuestCommand,
+  linuxSourceArchiveArguments,
 } from "./linux-host-product-acceptance-live.mjs";
 
 const roots = [];
@@ -19,6 +22,35 @@ afterEach(async () => {
 });
 
 describe("Linux host product acceptance artifact", () => {
+  it("resolves the safe host alias from the generated Colima SSH config", () => {
+    expect(
+      colimaSshTarget(
+        [
+          "# generated",
+          "Host colima",
+          "  Hostname 127.0.0.1",
+          "  Port 57327",
+          "",
+        ].join("\n"),
+      ),
+    ).toBe("colima");
+    expect(() => colimaSshTarget("Host unsafe target\n")).toThrow(
+      "Colima SSH config has no safe host target",
+    );
+    expect(colimaSshArguments("/tmp/colima-ssh.config", "colima")).toEqual([
+      "-T",
+      "-F",
+      "/tmp/colima-ssh.config",
+      "-o",
+      "ControlMaster=no",
+      "-o",
+      "ControlPath=none",
+      "colima",
+      "bash",
+      "-s",
+    ]);
+  });
+
   it("bounds guest diagnostics without truncating the final JSON result", () => {
     const command = linuxGuestCommand({
       archivePath: "/tmp/source.tar",
@@ -34,14 +66,30 @@ describe("Linux host product acceptance artifact", () => {
     expect(command).toContain("exit 1");
   });
 
+  it("omits host metadata from the portable Linux source archive", () => {
+    expect(linuxSourceArchiveArguments("/repo", "/tmp/source.tar")).toEqual([
+      "--no-mac-metadata",
+      "--no-xattrs",
+      "-cf",
+      "/tmp/source.tar",
+      "-C",
+      "/repo",
+      "--null",
+      "-T",
+      "-",
+    ]);
+  });
+
   it("excludes mutable and downstream receipts from the clean source archive", () => {
     expect(
       [
         "goal.md",
+        "pre.md",
+        "next.md",
         "docs/artifacts/linux-host-product-acceptance-stage19.json",
         "docs/artifacts/release-artifacts-audit-0.1.0.json",
       ].map(includeLinuxHostSourceSnapshotPath),
-    ).toEqual([false, false, false]);
+    ).toEqual([false, false, false, false, false]);
     expect(
       includeLinuxHostSourceSnapshotPath(
         "scripts/linux-host-product-acceptance-live.mjs",

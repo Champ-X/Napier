@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
-import { lstat, mkdtemp, readFile, rm } from "node:fs/promises";
+import { lstat, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { canonicalJson, sha256 } from "../packages/runtime/dist/index.js";
@@ -57,20 +57,20 @@ export async function runLinuxHostProductAcceptance(input) {
       runName,
       nodeVersion: NODE_VERSION,
     });
-    const execution = await runBounded("colima", [
+    const sshConfigPath = path.join(temporaryRoot, "colima-ssh.config");
+    const sshConfig = await runBounded("colima", ["ssh-config"], {
+      maxOutputBytes: 64 * 1024,
+    });
+    const sshTarget = colimaSshTarget(sshConfig.stdout);
+    await writeFile(sshConfigPath, sshConfig.stdout, { mode: 0o600 });
+    const execution = await runBounded(
       "ssh",
-      "--",
-      "bash",
-      "-lc",
-      command,
-    ]);
-    await runBounded("colima", [
-      "ssh",
-      "--",
-      "bash",
-      "-lc",
-      `test ! -e /tmp/${runName}`,
-    ]);
+      colimaSshArguments(sshConfigPath, sshTarget),
+      { stdin: `${command}\n` },
+    );
+    await runBounded("ssh", colimaSshArguments(sshConfigPath, sshTarget), {
+      stdin: `test ! -e /tmp/${runName}\n`,
+    });
     let guest;
     try {
       guest = JSON.parse(execution.stdout);
@@ -159,10 +159,7 @@ export async function sourceSnapshotPaths(repoRoot) {
     try {
       metadata = await lstat(path.join(repoRoot, candidate));
     } catch (error) {
-      if (
-        error?.code === "ENOENT" &&
-        !requiredPaths.has(candidate)
-      ) {
+      if (error?.code === "ENOENT" && !requiredPaths.has(candidate)) {
         continue;
       }
       throw error;
@@ -179,13 +176,19 @@ export async function sourceSnapshotPaths(repoRoot) {
 }
 
 export function includeLinuxHostSourceSnapshotPath(candidate) {
-  return !["goal.md", STAGE19_ARTIFACT, RELEASE_ARTIFACT].includes(candidate);
+  return ![
+    "goal.md",
+    "pre.md",
+    "next.md",
+    STAGE19_ARTIFACT,
+    RELEASE_ARTIFACT,
+  ].includes(candidate);
 }
 
 export async function writeSourceArchive(repoRoot, paths, archivePath) {
   const child = spawn(
     "tar",
-    ["-cf", archivePath, "-C", repoRoot, "--null", "-T", "-"],
+    linuxSourceArchiveArguments(repoRoot, archivePath),
     {
       env: { ...process.env, COPYFILE_DISABLE: "1" },
       stdio: ["pipe", "pipe", "pipe"],
@@ -216,6 +219,20 @@ export async function writeSourceArchive(repoRoot, paths, archivePath) {
   ) {
     throw new Error("Linux host source archive failed");
   }
+}
+
+export function linuxSourceArchiveArguments(repoRoot, archivePath) {
+  return [
+    "--no-mac-metadata",
+    "--no-xattrs",
+    "-cf",
+    archivePath,
+    "-C",
+    repoRoot,
+    "--null",
+    "-T",
+    "-",
+  ];
 }
 
 export function linuxGuestCommand(input) {
@@ -261,13 +278,34 @@ export function linuxGuestCommand(input) {
   ].join("\n");
 }
 
+export function colimaSshTarget(config) {
+  const match = /^Host ([A-Za-z0-9._-]+)$/mu.exec(config);
+  if (!match) throw new Error("Colima SSH config has no safe host target");
+  return match[1];
+}
+
+export function colimaSshArguments(configPath, target) {
+  return [
+    "-T",
+    "-F",
+    configPath,
+    "-o",
+    "ControlMaster=no",
+    "-o",
+    "ControlPath=none",
+    target,
+    "bash",
+    "-s",
+  ];
+}
+
 async function runBounded(command, args, options = {}) {
   const startedAt = Date.now();
   const maxOutputBytes = options.maxOutputBytes ?? MAX_OUTPUT_BYTES;
   const child = spawn(command, args, {
     cwd: options.cwd,
     env: process.env,
-    stdio: ["ignore", "pipe", "pipe"],
+    stdio: [options.stdin === undefined ? "ignore" : "pipe", "pipe", "pipe"],
     windowsHide: true,
   });
   const stdout = [];
@@ -285,6 +323,7 @@ async function runBounded(command, args, options = {}) {
   };
   child.stdout.on("data", observe(stdout));
   child.stderr.on("data", observe(stderr));
+  if (options.stdin !== undefined) child.stdin.end(options.stdin);
   const outcome = await waitForChild(child, COMMAND_TIMEOUT_MS);
   const stdoutBuffer = Buffer.concat(stdout);
   const stderrBuffer = Buffer.concat(stderr);
@@ -312,10 +351,7 @@ function linuxFailureStage(stderr) {
   for (const line of lines.reverse()) {
     try {
       const value = JSON.parse(line);
-      if (
-        value?.status === "failed" &&
-        /^[a-z_]{1,40}$/u.test(value.stage)
-      ) {
+      if (value?.status === "failed" && /^[a-z_]{1,40}$/u.test(value.stage)) {
         return value.stage;
       }
     } catch {
@@ -332,7 +368,7 @@ function waitForChild(child, timeoutMs) {
       clearTimeout(timer);
       reject(error);
     });
-    child.once("exit", (code, signal) => {
+    child.once("close", (code, signal) => {
       clearTimeout(timer);
       resolve({ code, signal });
     });

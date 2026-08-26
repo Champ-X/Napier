@@ -5,6 +5,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { verifySandboxAcquisition } from "./check-sandbox-acquisition.mjs";
+import { ensurePinnedRegistryImage } from "./sandbox-acquisition-acceptance.mjs";
 
 const roots = [];
 
@@ -15,6 +16,45 @@ afterEach(async () => {
 });
 
 describe("Sandbox acquisition artifact", () => {
+  it("reuses the exact pinned registry fixture when it is already local", async () => {
+    const calls = [];
+    await ensurePinnedRegistryImage("docker", {}, async (...args) => {
+      calls.push(args);
+      return "present";
+    });
+
+    expect(calls).toEqual([
+      [
+        "docker",
+        [
+          "image",
+          "inspect",
+          "registry:2.8.3@sha256:a3d8aaa63ed8681a604f1dea0aa03f100d5895b6a58ace528858a7b332415373",
+        ],
+        {},
+      ],
+    ]);
+  });
+
+  it("pulls the exact pinned registry fixture when it is absent", async () => {
+    const calls = [];
+    await ensurePinnedRegistryImage("docker", {}, async (...args) => {
+      calls.push(args);
+      if (args[1][0] === "image") throw new Error("not present");
+      return "pulled";
+    });
+
+    expect(calls.at(-1)).toEqual([
+      "docker",
+      [
+        "pull",
+        "registry:2.8.3@sha256:a3d8aaa63ed8681a604f1dea0aa03f100d5895b6a58ace528858a7b332415373",
+      ],
+      {},
+      5 * 60_000,
+    ]);
+  });
+
   it("accepts the current real Docker acquisition receipt", async () => {
     await expect(verifySandboxAcquisition()).resolves.toEqual(
       expect.objectContaining({

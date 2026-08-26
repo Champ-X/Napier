@@ -1,11 +1,11 @@
 {
   "kind": "napier.sandbox-portable-dap-stage17",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-11T13:31:00.617Z",
+  "generatedAt": "2026-08-26T01:20:39.572Z",
   "image": {
-    "id": "sha256:aac9f04b81bf3994d8c4629381ff11eb728094c7a2facd452d7ff99e224ec662",
+    "id": "sha256:7dfe2fa46ceb6051d06e4b510e202cc4cbbf8c1eb435c7b21ed22f5cbe480405",
     "platform": "linux/arm64",
-    "provenanceSha256": "644470d4c5d573eacbe0ec3d95c0584090dc4e24e9d7c6af89f1ae95419fa6fb"
+    "provenanceSha256": "2d089e12974793ffce17b89caf4a9ebce7fa4724d7732c2c57478feea38a5c18"
   },
   "implementation": {
     "sandboxTypesSha256": "25d245175a09bc35305f8899eeeeec04b520a7862efe8ee386503fd267d7c8ff",
@@ -44,9 +44,9 @@
     "frameProjectionSha256": "b6dff0b2388cf02863c102bb7ac440f94d9f8cb528b6889cb4cb4e6bd3846252",
     "evaluationProjectionSha256": "2ff2be401e4b07e2e537dd20c44e8a44876b3ed98c3b7ba9755e5565ef823024",
     "completionProjectionSha256": "60595e3a619f73e475af799c7d194d0570275068364e2eb5345c1e65c38718fe",
-    "hostResultSetSha256": "ad5bc6fefddc52fff7134d9767a26494ae20f77fef176452c974d5e4a7ff37cf",
-    "portableResultSetSha256": "8b16209efcdfbbd2532bcce3f0101ac410dcbca9e2ec81d699bf5c5d92585298",
-    "evidenceSha256": "963e32573e545412d6edbaddf681c77f2922664cfc89e8369ed81a23b4eb1357"
+    "hostResultSetSha256": "3ffef88c5d385487c2ce7f23366573b9062bd0c8dac1dea92b0568cb23e76d16",
+    "portableResultSetSha256": "fa35d879e6528a129a6cd4c638ca0129726b5570c6b8f90bec60d3ca502c6fbd",
+    "evidenceSha256": "6b004ae9077bd51123a89010e2c93c97288c383eb55682f437659958ed244412"
   },
   "resourceClosure": {
     "exactBaselineRestored": true,
@@ -77,5 +77,5 @@
       "image signature and external attestation"
     ]
   },
-  "contentSha256": "a544e88978437bfc483e7aec4a864d9f0289133774db6b37354db4c01ae09f14"
+  "contentSha256": "980be1de0b003a2f45fe9bd758f147b2fc9799ddcc4e2ef29fc2ea7945fdaabf"
 }

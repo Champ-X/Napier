@@ -1,11 +1,11 @@
 {
   "kind": "napier.sandbox-portable-lsp-stage16",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-11T13:30:56.390Z",
+  "generatedAt": "2026-08-26T01:20:23.136Z",
   "image": {
-    "id": "sha256:aac9f04b81bf3994d8c4629381ff11eb728094c7a2facd452d7ff99e224ec662",
+    "id": "sha256:7dfe2fa46ceb6051d06e4b510e202cc4cbbf8c1eb435c7b21ed22f5cbe480405",
     "platform": "linux/arm64",
-    "provenanceSha256": "644470d4c5d573eacbe0ec3d95c0584090dc4e24e9d7c6af89f1ae95419fa6fb"
+    "provenanceSha256": "2d089e12974793ffce17b89caf4a9ebce7fa4724d7732c2c57478feea38a5c18"
   },
   "implementation": {
     "sandboxTypesSha256": "25d245175a09bc35305f8899eeeeec04b520a7862efe8ee386503fd267d7c8ff",
@@ -19,7 +19,7 @@
     "locationsSha256": "2afd498635157e2726541737ba3f2782763560be3c9fa49422760e15ca83ced0",
     "checkScriptSha256": "52d3d5898b57d7c3df7fa31ba1f2547feda646d728dbfa84ad201690ec45eec4",
     "artifactVerifierSha256": "e7d4c0e822b5115d84d4e0ba08154845543ab08f1937d69a7995c0827702a93a",
-    "liveHarnessSha256": "ce89d05a7f88ca94c618b557c1ee2e8679fe39d673662c2a2a020326111ded5d"
+    "liveHarnessSha256": "b8365f68c5903bb4a05566cd8d131265aee3337b874357b347d791417f47971d"
   },
   "protocolBinding": {
     "protocolWorkspaceRoot": "/workspace",
@@ -39,28 +39,28 @@
       "hostStatus": "clean",
       "portableStatus": "clean",
       "equal": true,
-      "hostResultSha256": "7f9f37598901226df537cd8d5076090870465aa5fd72ed3761fb283dc89dbc09",
-      "portableResultSha256": "95a096e8010eb233c7e05c2cee5b75b8ec695699e222c1c4373550c298980654",
+      "hostResultSha256": "36fb8670b8082c93a48e235a1d8c96c43e3a96dc64beb29e94877a6a98c54dae",
+      "portableResultSha256": "a5b625e44706557869cdfe6db8c10c9cc2c9c302dedc459f5ddf88825b1f152e",
       "projectionSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "symbols": {
       "hostStatus": "found",
       "portableStatus": "found",
       "equal": true,
-      "hostResultSha256": "8534b93ccab606e04c22f06d01fb6a47a1c2871bc766422c8d640acf2f5b3a4c",
-      "portableResultSha256": "de50616b5d1a955b3fd7b6415ce10b883c5c908eb56dd50c70667644f04802b8",
-      "projectionSha256": "ff8bde65f43f72ad69b0165d3c0cf5364b59fd08586fbf8c4cafc363865c2f98"
+      "hostResultSha256": "e691a8a4a61452cf954fd4d241f524ebbab992ed48eb8d23d23139488dd7e525",
+      "portableResultSha256": "08824f5fda36a3bebfc4a5f35cdb7c713797eb217606c7034c09409d545963e8",
+      "projectionSha256": "7981adfad191c06a771df419237588a8056ac15fbf56ee43085c5e46913b5f02"
     },
     "definition": {
       "hostStatus": "found",
       "portableStatus": "found",
       "equal": true,
-      "hostResultSha256": "54814ba9f6fdbc3057d51f1919b159c4cb5b5e15de46e4b95641f43be093cea9",
-      "portableResultSha256": "964ec07171a0b75aa455a53059b556f4369e00b009d89705feff4912a94c2ba0",
-      "projectionSha256": "1b55452dd4c7d8ab244f134aae5e0a331851cc50bb6a1c0f0f6ed75a0fc82427"
+      "hostResultSha256": "fefc02f5df6373d3295593deff1a4a9e84a0a62c1c9f8839746a1923f325f392",
+      "portableResultSha256": "59478ab15b87115c25a469ee81a91468ba38e2bf9ecce91aee04c075855b19e6",
+      "projectionSha256": "caf56e3d5c48d0d4b7a0d18896fb7b06fbfcf6fd978d7347a029071373547d87"
     },
     "allEqual": true,
-    "evidenceSha256": "9778d01876c2575feee1f30ab6b52915485a4f6ee4ed522be7f15f397dfe790a"
+    "evidenceSha256": "c66f70fe9aa8ff1d94f4fc693ddf5219dbb301934f8f48ff4768286062f95111"
   },
   "resourceClosure": {
     "exactBaselineRestored": true,
@@ -91,5 +91,5 @@
       "image signature and external attestation"
     ]
   },
-  "contentSha256": "45682d98605f1acac8246b20fc6f1aa1ca0a8fe2bd115fb78b3ae0223cb417bf"
+  "contentSha256": "4bf3261738895273b9281814b6ea57075aab655807f54a12f658b2a86ce2122b"
 }

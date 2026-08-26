@@ -6,54 +6,54 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "ac82961e89cc49ccfc178d638e2b7ca98e17162b530de9711a47b1ccd6602d66",
+  "artifactSetSha256": "72d8ded3f958a9a0ba63e52f804c28b3128f4276c96b9b6fdd6942b3fdd1fdd4",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "7bb2161d800250bc98308ef4833c85f9f90964c4370c975d4197cdfdf35600d9",
+      "sha256": "2ab91bc99a87b832dadcdfe61c6cba43068ec534d40b3cb0cd5182f60852dc1a",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "1307002b22f89baf748c98bdab44f28a5981f143ecd2521f9f8aa7087d1d0d67",
+      "sha256": "3dd7074f0642ce3e21b9f83b25b58a098a296b361c94e9a2840d3403baa33089",
       "valid": true
     },
     {
       "kind": "sandbox-image-sbom",
       "path": "docs/artifacts/sandbox-image-sbom-0.1.0.cdx.json",
-      "sha256": "9f72a127622af642911b0b33720dc9de9b5447569a1b339ce0d2fc48de7ec76f",
+      "sha256": "17a307a8e4e177e3fc6f6955968e8d51f79d34f9603b6e9acc8cbbc63268b4f8",
       "valid": true
     },
     {
       "kind": "sandbox-image-provenance",
       "path": "docs/artifacts/sandbox-image-provenance-0.1.0.json",
-      "sha256": "644470d4c5d573eacbe0ec3d95c0584090dc4e24e9d7c6af89f1ae95419fa6fb",
+      "sha256": "2d089e12974793ffce17b89caf4a9ebce7fa4724d7732c2c57478feea38a5c18",
       "valid": true
     },
     {
       "kind": "oci-resource-limits-stage10",
       "path": "docs/artifacts/oci-resource-limits-stage10.json",
-      "sha256": "6e93e44d4289ad091f044b64d754c30032aace1441c08bb7fb4c75fcee0cc247",
+      "sha256": "9d49784cc69094a47693d8ff277b917011dcbeab34900960b118856d0badc894",
       "valid": true
     },
     {
       "kind": "oci-crash-recovery-stage11",
       "path": "docs/artifacts/oci-crash-recovery-stage11.json",
-      "sha256": "4636c4aab0662ed531acc9d9c5c8e81d6063d5a834ec7f50a566f0d2f4e6cf53",
+      "sha256": "794559d4d9aa89007d3376b412908ed9203f91f1af05b0dfc5d5c643216d50f6",
       "valid": true
     },
     {
       "kind": "sandbox-security-casebook-stage12",
       "path": "docs/artifacts/sandbox-security-casebook-stage12.json",
-      "sha256": "9b63ca42947482d82ccb52937e8a5189ea5e30f447641339fcba8f43e90fee55",
+      "sha256": "a01874fa8b4bb1fec3730dbb79bad3bde0b84f96e1b9337965c0f8bee9ac8970",
       "valid": true
     },
     {
       "kind": "sandbox-product-acceptance-stage13",
       "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-      "sha256": "136d0b2428c6b7e4aee645c60e68519a5671d2eab4ecd22b2b36f5d0354ba514",
+      "sha256": "8303c1d3f5f43a2e99f7612dc231d95cd2f1ee54b2c83ca7bb3b1e6abaaed3f2",
       "valid": true
     },
     {
@@ -65,19 +65,19 @@
     {
       "kind": "sandbox-portable-process-stage15",
       "path": "docs/artifacts/sandbox-portable-process-stage15.json",
-      "sha256": "1e2b0fb1004019b7b7038c20f756f49730daa7c07bd97773f54fe086f53f79e9",
+      "sha256": "009b74d8712e48b940f72fc1268fd8679f8c144d8a8d7d76b23337b58545d6f7",
       "valid": true
     },
     {
       "kind": "sandbox-portable-lsp-stage16",
       "path": "docs/artifacts/sandbox-portable-lsp-stage16.json",
-      "sha256": "2499d25a235ca84f065cfcb9ec8a6dc14be4411813ba900fbf82c4c7fafe6582",
+      "sha256": "ada65ff5049c7b15351cd3fb85515365a32784e1684726d14fdd1734bd5fe0ed",
       "valid": true
     },
     {
       "kind": "sandbox-portable-dap-stage17",
       "path": "docs/artifacts/sandbox-portable-dap-stage17.json",
-      "sha256": "40bc0330248d0dbd698ccdab7d45493a417f59643d3de2ea8b0d795b09b54ea0",
+      "sha256": "76b1b815daf215ebd4ffe47b8d61ebf0259cc7e002cb5ffbb3f29f1f3f1dfc8d",
       "valid": true
     },
     {
@@ -89,25 +89,25 @@
     {
       "kind": "linux-host-product-acceptance-stage19",
       "path": "docs/artifacts/linux-host-product-acceptance-stage19.json",
-      "sha256": "91aaf9292efd2cfe642f73557ddaee7a9be3042a02e31ba13dc40e10a0793808",
+      "sha256": "b38816ca8dda255f7d542509fe87d56aaf08e6541da6bed898f8f0e64aaf8bd0",
       "valid": true
     },
     {
       "kind": "sandbox-acquisition-stage20",
       "path": "docs/artifacts/sandbox-acquisition-stage20.json",
-      "sha256": "110bc8b1f3dfaf539e6fa188fbab500ada27315ac8171d4b55789816dda4f7d5",
+      "sha256": "c6c05b5cbb7482573715bfe7373a47e72536ecdae084a681c6eb2f52716a8c65",
       "valid": true
     },
     {
       "kind": "profile-upgrade-stage21",
       "path": "docs/artifacts/profile-upgrade-stage21.json",
-      "sha256": "b6e50e18865f39fb47eb1bb0cc1d5f0986742efd9bb0d2d88e631ea210613d13",
+      "sha256": "c75f39c9da542516f93c59ac97e7a20a9b73c719bcbfa6ce71ae2570fd2b978b",
       "valid": true
     },
     {
       "kind": "s1-shell-sandbox-readiness-stage22",
       "path": "docs/artifacts/s1-shell-sandbox-readiness-stage22.json",
-      "sha256": "377e81074560db4524c5ae1c9f00afa723cb85fc7157fd57f9c5351d1552de7a",
+      "sha256": "24bb1d1fcda60757f68f81e9b49383debcab36dd742bed6b79356e1700592b1d",
       "valid": true
     },
     {
@@ -119,19 +119,19 @@
     {
       "kind": "web-dist-audit",
       "path": "docs/artifacts/web-dist-audit-0.1.0.json",
-      "sha256": "c56339766a9036fef938e18359336cee71f4b38966dc2f17b6620c449f3efa07",
+      "sha256": "a1bf5546b413a892123c1dc814ea888a2120651f28d2b43d46856f68e45a6978",
       "valid": true
     },
     {
       "kind": "web-dist-manifest",
       "path": "docs/artifacts/web-dist-0.1.0.sha256",
-      "sha256": "3d3e0d1581b5eafd2b76d04694cdee96efc7daec49941b81f92fc96360272d1f",
+      "sha256": "e6d0816bf6022244e01daad3c84607c07d001b9b2ef841d154e647f11a286cfd",
       "valid": true
     },
     {
       "kind": "management-openapi",
       "path": "docs/artifacts/management-openapi-0.1.0.json",
-      "sha256": "68f94a5357a19be1e81c4ea89eff1767477f1cc519cb5ce0567b22d4b81fbcfc",
+      "sha256": "bf2963c8eea67937e3aceddad2055cb5055c2bc18c76992cb6d9106b466c36fc",
       "valid": true
     },
     {
@@ -155,25 +155,25 @@
     {
       "kind": "harness-experiment-release-evidence",
       "path": "docs/artifacts/harness-experiment-release-evidence-0.1.3.json",
-      "sha256": "d2d9937ac4ea5a0f8327c9c7dff73d0f722cd7b5bc8119484a1451ba539d73f7",
+      "sha256": "21d47a0b313a0f0c54cc7cc68dbd7fa11e5484656b54fa3b3bdfb74d526abd81",
       "valid": true
     },
     {
       "kind": "agent-harness-acceptance-evidence",
       "path": "docs/artifacts/agent-harness-acceptance-evidence-0.1.3.json",
-      "sha256": "9493acb0834f78e21d1c48a73c6b0559e1ee9a8257c56161f1e0394d427d4118",
+      "sha256": "befe146461156a8692e5006fbedc14ab9f02dcc398b7ba4631ebedcb399028e2",
       "valid": true
     },
     {
       "kind": "default-product-source-bound-smoke",
       "path": "docs/artifacts/default-product-source-bound-smoke-m4-0.1.3.json",
-      "sha256": "f50dc68356d4a811e9a43486013af2ca834dcc5f548fd2243c675543cbbbe4ac",
+      "sha256": "05d00a230553d887807f32f5896195d12e365f42c8b009faf16e533bc3b3a4b6",
       "valid": true
     },
     {
       "kind": "default-product-source-manifest",
       "path": "docs/artifacts/default-product-source-manifest-0.1.3.json",
-      "sha256": "0b47fa1440aa196a720a4cb970347bf92c778fa9cffef15e3023ab045b5a0cc0",
+      "sha256": "5989bf3e8a20570dc4657b8a177efe488641f15d5588d6cc533655f27080deec",
       "valid": true
     },
     {

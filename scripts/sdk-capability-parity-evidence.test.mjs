@@ -43,6 +43,8 @@ describe("SDK capability parity evidence verifier", () => {
       true,
     );
     expect(isProtectedExcludedPath("goal.md")).toBe(true);
+    expect(isProtectedExcludedPath("pre.md")).toBe(true);
+    expect(isProtectedExcludedPath("next.md")).toBe(true);
     expect(isProtectedExcludedPath("ai-news-weekly/index.html")).toBe(true);
     expect(isProtectedExcludedPath("kakeya/.verify-harness.cjs")).toBe(true);
     expect(isProtectedExcludedPath("apps/web/src/App.tsx")).toBe(false);
@@ -53,31 +55,31 @@ describe("SDK capability parity evidence verifier", () => {
     const { fourStateParity, productionServerTrace } =
       evidence.identity.executionClosure.groups;
     expect(fourStateParity.counts).toEqual({
-      executionFiles: 1132,
-      sourceCounterparts: 1127,
+      executionFiles: 1145,
+      sourceCounterparts: 1140,
       packageManifests: 2,
-      allFiles: 2261,
+      allFiles: 2287,
     });
     expect(fourStateParity.executionAreaCounts).toEqual({
       "apps/cli/dist": 67,
       "apps/server/dist": 133,
-      "packages/contracts/dist": 47,
-      "packages/runtime/dist": 877,
+      "packages/contracts/dist": 54,
+      "packages/runtime/dist": 883,
       "packages/runtime/test/fixtures": 3,
       "packages/sdk/dist": 3,
       scripts: 2,
     });
     expect(productionServerTrace.counts).toEqual({
-      executionFiles: 1066,
-      sourceCounterparts: 1060,
+      executionFiles: 1078,
+      sourceCounterparts: 1072,
       packageManifests: 3,
-      allFiles: 2129,
+      allFiles: 2153,
     });
     expect(productionServerTrace.executionAreaCounts).toEqual({
       "apps/server/dist": 135,
       other: 1,
-      "packages/contracts/dist": 47,
-      "packages/runtime/dist": 875,
+      "packages/contracts/dist": 54,
+      "packages/runtime/dist": 880,
       "packages/sdk/dist": 3,
       scripts: 5,
     });

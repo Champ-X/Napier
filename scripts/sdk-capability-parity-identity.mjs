@@ -26,6 +26,8 @@ export const CAPTURE_OUTPUT_PATHS = [
 ];
 export const PROTECTED_EXCLUDED_PATHS = [
   "goal.md",
+  "pre.md",
+  "next.md",
   "docs/napier-interview-deep-dive.zh-CN.md",
 ];
 export const PROTECTED_EXCLUDED_PREFIXES = [
@@ -82,7 +84,7 @@ export const EXCLUDED_CATEGORIES = [
   {
     category: "protected_user_files",
     reason:
-      ".env, .claude/, goal.md, the interview document, ai-news-weekly/, and kakeya/ are outside the repair and evidence boundary.",
+      ".env, .claude/, goal.md, pre.md, next.md, the interview document, ai-news-weekly/, and kakeya/ are outside the repair and evidence boundary.",
   },
   {
     category: "evidence_self_content_hash",

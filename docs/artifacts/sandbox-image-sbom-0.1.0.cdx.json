@@ -7,7 +7,7 @@
       "type": "container",
       "name": "napier-sandbox",
       "version": "0.1.0",
-      "bom-ref": "pkg:oci/napier-sandbox@sha256%3Aaac9f04b81bf3994d8c4629381ff11eb728094c7a2facd452d7ff99e224ec662",
+      "bom-ref": "pkg:oci/napier-sandbox@sha256%3A7dfe2fa46ceb6051d06e4b510e202cc4cbbf8c1eb435c7b21ed22f5cbe480405",
       "properties": [
         {
           "name": "napier.image.reference",

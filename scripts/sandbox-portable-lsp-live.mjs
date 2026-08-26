@@ -67,7 +67,7 @@ async function runArm(repoRoot, imageId, userIds) {
     sandbox,
   }).run({
     path: TARGET,
-    line: 23,
+    line: 29,
     character: 11,
     timeoutMs: TIMEOUT_MS,
   });

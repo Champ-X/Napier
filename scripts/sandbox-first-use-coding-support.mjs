@@ -1,5 +1,14 @@
 import { execFile as execFileWithCallback } from "node:child_process";
-import { access, mkdir, readdir, writeFile } from "node:fs/promises";
+import { constants } from "node:fs";
+import {
+  access,
+  mkdir,
+  readdir,
+  stat,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
+import { homedir } from "node:os";
 import { Writable } from "node:stream";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -35,6 +44,7 @@ export async function createSandboxFirstUseEnvironment(
     flag: "wx",
     mode: 0o600,
   });
+  await exposeDockerBuildxPlugin(environment, dockerConfig);
   const inherited = [
     "ComSpec",
     "LANG",
@@ -233,6 +243,39 @@ function environmentValue(environment, name) {
     (candidate) => candidate.toLowerCase() === name.toLowerCase(),
   );
   return key ? environment[key] : undefined;
+}
+
+async function exposeDockerBuildxPlugin(environment, dockerConfig) {
+  const configured = environmentValue(environment, "DOCKER_CONFIG")?.trim();
+  const sourceRoots = [
+    ...(configured ? [path.resolve(configured)] : []),
+    path.join(homedir(), ".docker"),
+  ].filter((value, index, values) => values.indexOf(value) === index);
+  const names =
+    process.platform === "win32"
+      ? ["docker-buildx.exe", "docker-buildx"]
+      : ["docker-buildx"];
+  for (const sourceRoot of sourceRoots) {
+    for (const name of names) {
+      const source = path.join(sourceRoot, "cli-plugins", name);
+      if (!(await isExecutableFile(source))) continue;
+      const destinationRoot = path.join(dockerConfig, "cli-plugins");
+      await mkdir(destinationRoot, { recursive: true });
+      await symlink(source, path.join(destinationRoot, name), "file");
+      return;
+    }
+  }
+}
+
+async function isExecutableFile(candidate) {
+  try {
+    const value = await stat(candidate);
+    if (!value.isFile()) return false;
+    await access(candidate, constants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function replaceProcessEnvironment(environment) {

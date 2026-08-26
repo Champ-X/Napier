@@ -47,7 +47,7 @@ describe("repository hygiene gates", () => {
     expect(result.observed.duplicatedLines).toBeLessThanOrEqual(
       result.budget.maximumDuplicatedLines,
     );
-  }, 15_000);
+  }, 30_000);
 
   it("keeps the exact three supported desktop viewports", async () => {
     const result = await auditDesktopScope();

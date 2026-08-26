@@ -1,9 +1,9 @@
 {
   "kind": "napier.oci-resource-limits-stage10",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-11T13:47:25.182Z",
+  "generatedAt": "2026-08-26T01:18:08.524Z",
   "observedProductionProcess": {
-    "imageIdSha256": "aac9f04b81bf3994d8c4629381ff11eb728094c7a2facd452d7ff99e224ec662",
+    "imageIdSha256": "7dfe2fa46ceb6051d06e4b510e202cc4cbbf8c1eb435c7b21ed22f5cbe480405",
     "platform": "linux/arm64",
     "cgroupVersion": 2,
     "pidsMax": 256,
@@ -58,5 +58,5 @@
       "Windows host product acceptance"
     ]
   },
-  "contentSha256": "00abf6b7f273de2a0d5adbfc9cd1d93249ddc7aeb850435268afb781bcdee251"
+  "contentSha256": "811068da496e2e338e6280689a65c97991599da7da2c2d5d0625834539d6091d"
 }

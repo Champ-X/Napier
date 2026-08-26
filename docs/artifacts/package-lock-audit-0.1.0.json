@@ -6,15 +6,15 @@
   "rootPackage": {
     "name": "napier",
     "version": "0.1.0",
-    "packageJsonSha256": "7fc03aeb6a9b19921ae43de9e2ca6350f4f8a1312d6710c28ce71c2b280e7f48",
-    "packageLockSha256": "c864637c7a1918cc6190cb8bff5470462819d77d3e77f0c43c35b634cc61b26e"
+    "packageJsonSha256": "b6398eababb6513f1752a4ca06293cbfa8d483a305837cfbe15c5d9a860a3307",
+    "packageLockSha256": "8b8a70a094360dd4a6b24d9600ee433aa2176ce9240962af2c457742fc1bc8b9"
   },
   "counts": {
-    "workspaces": 6,
-    "packages": 293,
-    "externalPackages": 280,
-    "integrityEntries": 280,
-    "links": 6
+    "workspaces": 8,
+    "packages": 357,
+    "externalPackages": 340,
+    "integrityEntries": 340,
+    "links": 8
   },
   "errors": []
 }

@@ -213,12 +213,7 @@ async function runLocalAnonymousArm(input) {
     ["image", "tag", OFFICIAL_IMAGE, backupTag],
     input.environment,
   );
-  await dockerOutput(
-    input.executable,
-    ["pull", REGISTRY_IMAGE],
-    input.environment,
-    5 * 60_000,
-  );
+  await ensurePinnedRegistryImage(input.executable, input.environment);
   await dockerOutput(
     input.executable,
     [
@@ -413,4 +408,25 @@ async function runPrivateFallbackArm(input) {
 
 function backupReference(label) {
   return `napier-sandbox:stage20-${label}-${randomBytes(8).toString("hex")}`;
+}
+
+export async function ensurePinnedRegistryImage(
+  executable,
+  environment,
+  runDocker = dockerOutput,
+) {
+  try {
+    await runDocker(
+      executable,
+      ["image", "inspect", REGISTRY_IMAGE],
+      environment,
+    );
+  } catch {
+    await runDocker(
+      executable,
+      ["pull", REGISTRY_IMAGE],
+      environment,
+      5 * 60_000,
+    );
+  }
 }

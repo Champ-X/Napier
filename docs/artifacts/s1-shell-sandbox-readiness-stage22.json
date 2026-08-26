@@ -1,7 +1,7 @@
 {
   "kind": "napier.s1-shell-sandbox-readiness-stage22",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-25T05:26:20.981Z",
+  "generatedAt": "2026-08-26T01:21:03.848Z",
   "implementation": {
     "modelSha256": "5adf9c20cd914638326e744b7a90ab9d9e956240fa24adb3b34994401d46691d",
     "checkerSha256": "174fb44f4e628224815d34d92e06407f8aa6831d89dd8d7ac8cefd6c65c0d065",
@@ -39,13 +39,13 @@
         {
           "kind": "sandbox-image-sbom",
           "path": "docs/artifacts/sandbox-image-sbom-0.1.0.cdx.json",
-          "sha256": "9f72a127622af642911b0b33720dc9de9b5447569a1b339ce0d2fc48de7ec76f",
+          "sha256": "17a307a8e4e177e3fc6f6955968e8d51f79d34f9603b6e9acc8cbbc63268b4f8",
           "verifierSha256": "22eec18355acf5e557c2edcb11697573c55443e3385adacecd990f47874d0a88"
         },
         {
           "kind": "sandbox-image-provenance",
           "path": "docs/artifacts/sandbox-image-provenance-0.1.0.json",
-          "sha256": "644470d4c5d573eacbe0ec3d95c0584090dc4e24e9d7c6af89f1ae95419fa6fb",
+          "sha256": "2d089e12974793ffce17b89caf4a9ebce7fa4724d7732c2c57478feea38a5c18",
           "verifierSha256": "22eec18355acf5e557c2edcb11697573c55443e3385adacecd990f47874d0a88"
         },
         {
@@ -61,7 +61,7 @@
           "verifierSha256": "7b11e003c4666979f6567408c02d97a65a269806deae82d0bb3450a042b29408"
         }
       ],
-      "evidenceSetSha256": "22b820c242614ca7726102993537c341df0b49ca611c7050297891348c5d399b"
+      "evidenceSetSha256": "19a13b373359091355b2d72d7615f61f2a5a9615e013d7b5afb347bdea056708"
     },
     {
       "id": "setup_doctor_lifecycle",
@@ -70,23 +70,23 @@
         {
           "kind": "sandbox-product-acceptance-stage13",
           "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-          "sha256": "136d0b2428c6b7e4aee645c60e68519a5671d2eab4ecd22b2b36f5d0354ba514",
+          "sha256": "8303c1d3f5f43a2e99f7612dc231d95cd2f1ee54b2c83ca7bb3b1e6abaaed3f2",
           "verifierSha256": "0ab91832a93c9a7bbddc676d8d516c9fa5923f1666a5742b59a1da3d29bc892e"
         },
         {
           "kind": "sandbox-acquisition-stage20",
           "path": "docs/artifacts/sandbox-acquisition-stage20.json",
-          "sha256": "110bc8b1f3dfaf539e6fa188fbab500ada27315ac8171d4b55789816dda4f7d5",
+          "sha256": "c6c05b5cbb7482573715bfe7373a47e72536ecdae084a681c6eb2f52716a8c65",
           "verifierSha256": "f4c5da21639fa64ed673df066c39d903e0539eb955639fdbbbc350741e274881"
         },
         {
           "kind": "linux-host-product-acceptance-stage19",
           "path": "docs/artifacts/linux-host-product-acceptance-stage19.json",
-          "sha256": "91aaf9292efd2cfe642f73557ddaee7a9be3042a02e31ba13dc40e10a0793808",
+          "sha256": "b38816ca8dda255f7d542509fe87d56aaf08e6541da6bed898f8f0e64aaf8bd0",
           "verifierSha256": "e1272cfa34b7bc00913198faf222007b9403b3ce799d9cfd918b68920bcab386"
         }
       ],
-      "evidenceSetSha256": "a851cded1e36e17eb603eb8fe862db3a08f39419a8024ef40b93ef888f2d5a99"
+      "evidenceSetSha256": "da357aacbeb66c3ed7fb07fc09e572cb1288880591254525e6fe6e78ee2cec0e"
     },
     {
       "id": "daemon_execution_recovery",
@@ -95,41 +95,41 @@
         {
           "kind": "sandbox-product-acceptance-stage13",
           "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-          "sha256": "136d0b2428c6b7e4aee645c60e68519a5671d2eab4ecd22b2b36f5d0354ba514",
+          "sha256": "8303c1d3f5f43a2e99f7612dc231d95cd2f1ee54b2c83ca7bb3b1e6abaaed3f2",
           "verifierSha256": "0ab91832a93c9a7bbddc676d8d516c9fa5923f1666a5742b59a1da3d29bc892e"
         },
         {
           "kind": "oci-crash-recovery-stage11",
           "path": "docs/artifacts/oci-crash-recovery-stage11.json",
-          "sha256": "4636c4aab0662ed531acc9d9c5c8e81d6063d5a834ec7f50a566f0d2f4e6cf53",
+          "sha256": "794559d4d9aa89007d3376b412908ed9203f91f1af05b0dfc5d5c643216d50f6",
           "verifierSha256": "d733b13f7da23d1397d236cdb55ffcca108b7a696e5b89d94f2f94a1fc503946"
         },
         {
           "kind": "sandbox-portable-process-stage15",
           "path": "docs/artifacts/sandbox-portable-process-stage15.json",
-          "sha256": "1e2b0fb1004019b7b7038c20f756f49730daa7c07bd97773f54fe086f53f79e9",
+          "sha256": "009b74d8712e48b940f72fc1268fd8679f8c144d8a8d7d76b23337b58545d6f7",
           "verifierSha256": "733858d0eb96f0e06835aa02ef0e35c8186d5affe3e4fbb22b253a3621934a4a"
         },
         {
           "kind": "sandbox-portable-lsp-stage16",
           "path": "docs/artifacts/sandbox-portable-lsp-stage16.json",
-          "sha256": "2499d25a235ca84f065cfcb9ec8a6dc14be4411813ba900fbf82c4c7fafe6582",
+          "sha256": "ada65ff5049c7b15351cd3fb85515365a32784e1684726d14fdd1734bd5fe0ed",
           "verifierSha256": "52d3d5898b57d7c3df7fa31ba1f2547feda646d728dbfa84ad201690ec45eec4"
         },
         {
           "kind": "sandbox-portable-dap-stage17",
           "path": "docs/artifacts/sandbox-portable-dap-stage17.json",
-          "sha256": "40bc0330248d0dbd698ccdab7d45493a417f59643d3de2ea8b0d795b09b54ea0",
+          "sha256": "76b1b815daf215ebd4ffe47b8d61ebf0259cc7e002cb5ffbb3f29f1f3f1dfc8d",
           "verifierSha256": "6dd8d682244a82fede81893c68f6c94652b89f23a8d5d2ccc2e7d3c619a9beb5"
         },
         {
           "kind": "linux-host-product-acceptance-stage19",
           "path": "docs/artifacts/linux-host-product-acceptance-stage19.json",
-          "sha256": "91aaf9292efd2cfe642f73557ddaee7a9be3042a02e31ba13dc40e10a0793808",
+          "sha256": "b38816ca8dda255f7d542509fe87d56aaf08e6541da6bed898f8f0e64aaf8bd0",
           "verifierSha256": "e1272cfa34b7bc00913198faf222007b9403b3ce799d9cfd918b68920bcab386"
         }
       ],
-      "evidenceSetSha256": "ca9fd18801390a418019acd5d8164aa44bd0c169500829db8a68c852fc8d56e5"
+      "evidenceSetSha256": "b3b283dd2519e0e1b025a9fbec97ddf50e0bb9843f65db1c83446f68d04805fd"
     },
     {
       "id": "isolation_and_fail_closed_limits",
@@ -138,35 +138,35 @@
         {
           "kind": "sandbox-image-provenance",
           "path": "docs/artifacts/sandbox-image-provenance-0.1.0.json",
-          "sha256": "644470d4c5d573eacbe0ec3d95c0584090dc4e24e9d7c6af89f1ae95419fa6fb",
+          "sha256": "2d089e12974793ffce17b89caf4a9ebce7fa4724d7732c2c57478feea38a5c18",
           "verifierSha256": "22eec18355acf5e557c2edcb11697573c55443e3385adacecd990f47874d0a88"
         },
         {
           "kind": "oci-resource-limits-stage10",
           "path": "docs/artifacts/oci-resource-limits-stage10.json",
-          "sha256": "6e93e44d4289ad091f044b64d754c30032aace1441c08bb7fb4c75fcee0cc247",
+          "sha256": "9d49784cc69094a47693d8ff277b917011dcbeab34900960b118856d0badc894",
           "verifierSha256": "b599a2d4371a140d80a40dc2c6f2cf5884685a8254ef64bfd73f1a42ea6b7f4a"
         },
         {
           "kind": "sandbox-security-casebook-stage12",
           "path": "docs/artifacts/sandbox-security-casebook-stage12.json",
-          "sha256": "9b63ca42947482d82ccb52937e8a5189ea5e30f447641339fcba8f43e90fee55",
+          "sha256": "a01874fa8b4bb1fec3730dbb79bad3bde0b84f96e1b9337965c0f8bee9ac8970",
           "verifierSha256": "c355fb89806073b5ce0e3c09be26e0c0451a1b387d68e452432b82734edbf603"
         },
         {
           "kind": "sandbox-product-acceptance-stage13",
           "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-          "sha256": "136d0b2428c6b7e4aee645c60e68519a5671d2eab4ecd22b2b36f5d0354ba514",
+          "sha256": "8303c1d3f5f43a2e99f7612dc231d95cd2f1ee54b2c83ca7bb3b1e6abaaed3f2",
           "verifierSha256": "0ab91832a93c9a7bbddc676d8d516c9fa5923f1666a5742b59a1da3d29bc892e"
         },
         {
           "kind": "oci-crash-recovery-stage11",
           "path": "docs/artifacts/oci-crash-recovery-stage11.json",
-          "sha256": "4636c4aab0662ed531acc9d9c5c8e81d6063d5a834ec7f50a566f0d2f4e6cf53",
+          "sha256": "794559d4d9aa89007d3376b412908ed9203f91f1af05b0dfc5d5c643216d50f6",
           "verifierSha256": "d733b13f7da23d1397d236cdb55ffcca108b7a696e5b89d94f2f94a1fc503946"
         }
       ],
-      "evidenceSetSha256": "6258d24878ef48416e0626127ae487e8837d5a2f0232fad2c412f894397cec41"
+      "evidenceSetSha256": "e242beb90179b4b041934659dedae4eee075ebef6a7fe93ecd6c8d1ef0f66600"
     },
     {
       "id": "run_scoped_mode_and_profile_upgrade",
@@ -175,14 +175,14 @@
         {
           "kind": "profile-upgrade-stage21",
           "path": "docs/artifacts/profile-upgrade-stage21.json",
-          "sha256": "b6e50e18865f39fb47eb1bb0cc1d5f0986742efd9bb0d2d88e631ea210613d13",
+          "sha256": "c75f39c9da542516f93c59ac97e7a20a9b73c719bcbfa6ce71ae2570fd2b978b",
           "verifierSha256": "fa2ee85bfb674ee0bc27af7ec1f98395af42bd266d39a2cd4d4de25b0802d9bb"
         }
       ],
-      "evidenceSetSha256": "a6858bc018a0611b379039ab1f95c411e70e36767660dee52c68a8629458b61e"
+      "evidenceSetSha256": "57e962f677a19d948d5db3a3a1d39698b8f64ada5ff5b7a7ef1922a9ad8039f4"
     }
   ],
-  "requirementSetSha256": "5df12369d5a3e2d68025e4c040cd531358c0d6907aba5b8d9568c0fb6bd5df58",
+  "requirementSetSha256": "7ca4ed81df02fd26255a4397c177645c43a4e25814637d258dd4081115bd22e8",
   "externalRequirements": [
     {
       "id": "public_signed_external_release",
@@ -222,5 +222,5 @@
       "windows_host_product_acceptance"
     ]
   },
-  "contentSha256": "b27e0e6f82b052d73cc000f21ac38130992259001ced4b4c563da1edbc81f793"
+  "contentSha256": "280f3960f1303f6047724828e37cad960079bb8272449b51e563c4385511b182"
 }

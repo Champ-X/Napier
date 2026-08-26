@@ -19,9 +19,9 @@
   },
   "image": {
     "reference": "napier-sandbox:0.1.0",
-    "id": "sha256:aac9f04b81bf3994d8c4629381ff11eb728094c7a2facd452d7ff99e224ec662",
+    "id": "sha256:7dfe2fa46ceb6051d06e4b510e202cc4cbbf8c1eb435c7b21ed22f5cbe480405",
     "repoDigests": [
-      "napier-sandbox@sha256:aac9f04b81bf3994d8c4629381ff11eb728094c7a2facd452d7ff99e224ec662"
+      "napier-sandbox@sha256:7dfe2fa46ceb6051d06e4b510e202cc4cbbf8c1eb435c7b21ed22f5cbe480405"
     ],
     "os": "linux",
     "arch": "arm64",
@@ -62,7 +62,7 @@
     "path": "docs/artifacts/sandbox-image-sbom-0.1.0.cdx.json",
     "format": "CycloneDX",
     "specVersion": "1.5",
-    "sha256": "9f72a127622af642911b0b33720dc9de9b5447569a1b339ce0d2fc48de7ec76f",
+    "sha256": "17a307a8e4e177e3fc6f6955968e8d51f79d34f9603b6e9acc8cbbc63268b4f8",
     "componentCount": 198,
     "debianComponentCount": 126,
     "npmComponentCount": 71,
@@ -70,5 +70,5 @@
     "componentSetSha256": "417dd46f69220660c55e5cb8a79d69e99af603e54535011fb9ab1c5a9384cec2"
   },
   "errors": [],
-  "contentSha256": "edbb324b157427b58d8056af5ef457aea362a89c0584e39d82e7e2717cb9a531"
+  "contentSha256": "94b91c194c5782396b3fd8101a1bdd9d44f216ce0eeaeeb958313c46e2643a41"
 }

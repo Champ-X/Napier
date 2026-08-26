@@ -1,7 +1,7 @@
 {
   "kind": "napier.sandbox-acquisition-stage20",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-19T13:29:01.407Z",
+  "generatedAt": "2026-08-26T00:37:07.069Z",
   "implementation": {
     "contractSha256": "4cf4b250ddb61db85d2d80a5dd599397fc7133947bde1bf0a603159abaebce10",
     "releaseModelSha256": "70311542f797838f6014580533bb96c8e37f977596f7ca5b0c0ca4d8846a77f1",
@@ -11,11 +11,11 @@
     "setupServiceSha256": "7c5be55ca635d378e90be5df59ea4584979c32c29bbdb8f2d11c5d9f50209d2e",
     "setupVerificationSha256": "b107e8b5b438f404e26eaa810979f285caf9fac4de4ffef15bc7a6150d509f76",
     "installationSha256": "ea369e0c5d61e358ec9f0db90f92333e58215c4e549bf0281bf459087034085d",
-    "cliSetupSha256": "6003fde01bf80fa25692996e9536a23e3a48425e894786964d9123dd52e86755",
-    "webSetupCardSha256": "9228fcbc9b4526ddbcfae702641fe28c5c5464a3d232f6e465d6b3a5c98ed98f",
+    "cliSetupSha256": "cee0ef73202ea4da01b3c836d196044ff92a84526a72db898cb9b8e4f4be4a5c",
+    "webSetupCardSha256": "20743841b0b64cda30dfdf4f514286f640b8a73c27b2bbb1a020edfb22ce53dc",
     "webSetupViewModelSha256": "1cc05f5511ccdaf7511a1cac07923a7d2339e8f75093a45dd0c5638dd749baf3",
     "copyAssetSha256": "da53ca0dbb60230242bce709a2557c9031dbdf57dcb1cc6477205866a7fe4ab4",
-    "harnessSha256": "c8d5dd03eae90a52a0bbf1e3142e60e85bea23f0e47a96c2acc8973f0570ed4f",
+    "harnessSha256": "602c6b96f702cdd7907f0630058b2cff6a4ecba89943d0237afe2131aefc71d3",
     "supportSha256": "ee3dfac38f3ac96049854de4a718abfb93331ff342a898c876771c736f8b22be",
     "verifierSha256": "bfd8eb3d46b726be46cdce8f2583e8edae303c94ff03cd3d5a408362a18dbebe",
     "checkSha256": "f4c5da21639fa64ed673df066c39d903e0539eb955639fdbbbc350741e274881"
@@ -41,8 +41,8 @@
       "service_ready"
     ],
     "bindingSchemaVersion": 2,
-    "installationSha256": "b61a0861b05359d5cd7e5519564b59251945af4dba4be152e492027c6c4731b4",
-    "resultSha256": "43476a314cab863ed074db86d8fa77d931118bea8fd59b61f5f8ae034edf5564",
+    "installationSha256": "90f94df5fd34295ae0a635531f012a2c260bf8d803525112c79f9b169ea7cfd9",
+    "resultSha256": "0017275f9c741ce8a103bc6ffe9c799909f4316f9b4b80b2e9309e8287d1dd9e",
     "uninstallStatus": "removed",
     "bindingRemoved": true
   },
@@ -65,8 +65,8 @@
       "service_ready"
     ],
     "bindingSchemaVersion": 2,
-    "installationSha256": "047a58139cbbd9e6adcced255b948397ae9e446ca02aa533a908e548c0816cd3",
-    "resultSha256": "ff5b67f77acb7fb6a7c12c0759b5727ff70cf4bb300d0a185701fd1e60ceb6b3",
+    "installationSha256": "42b0e3bd35b0e2cae2f7691ffc4c9e479dfbfc45e1e862f0f74c754f19aefe08",
+    "resultSha256": "c362014e246525894e8c7d3b7b3849603da9470544d2fcb32305ce0d12a5625b",
     "uninstallStatus": "removed",
     "bindingRemoved": true,
     "candidateDigest": "sha256:df6b275b52a031272b20361d7d0674823533d5bcf1cb1be64ee3553935e61207",
@@ -109,5 +109,5 @@
       "Windows host product acceptance"
     ]
   },
-  "contentSha256": "7a42b9f67ae3d696528a784ae1434306597d786f1966fc8cdad060233dc2cdca"
+  "contentSha256": "cef221cf18cddca3143c704d338d26f0dcc93d3219c1f3fe00917d21f27f5ab8"
 }

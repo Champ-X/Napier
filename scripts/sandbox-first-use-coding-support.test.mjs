@@ -1,4 +1,12 @@
-import { readFile, rm } from "node:fs/promises";
+import {
+  lstat,
+  mkdir,
+  readFile,
+  readdir,
+  readlink,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -102,5 +110,55 @@ describe("Sandbox first-use Coding support", () => {
         DOCKER_HOST: "npipe:////./pipe/docker_engine",
       }),
     );
+  });
+
+  it("exposes only the inherited buildx executable in the empty Docker config", async () => {
+    const root = path.join(
+      tmpdir(),
+      `napier-first-use-buildx-environment-${process.pid}-${roots.length}`,
+    );
+    roots.push(root);
+    const inheritedDockerConfig = path.join(root, "inherited-docker");
+    const inheritedPlugins = path.join(inheritedDockerConfig, "cli-plugins");
+    const buildx = path.join(inheritedPlugins, "docker-buildx");
+    await mkdir(inheritedPlugins, { recursive: true });
+    await Promise.all([
+      writeFile(
+        path.join(inheritedDockerConfig, "config.json"),
+        '{"auths":{"registry.example":{"auth":"secret"}}}\n',
+        { mode: 0o600 },
+      ),
+      writeFile(buildx, "#!/bin/sh\nexit 0\n", { mode: 0o755 }),
+      writeFile(path.join(inheritedPlugins, "docker-compose"), "secret\n", {
+        mode: 0o755,
+      }),
+    ]);
+
+    const environment = await createSandboxFirstUseEnvironment(
+      { PATH: "/usr/bin", DOCKER_CONFIG: inheritedDockerConfig },
+      path.join(root, "isolated"),
+      "unix:///local/docker.sock",
+    );
+    const isolatedPlugin = path.join(
+      environment.DOCKER_CONFIG,
+      "cli-plugins",
+      "docker-buildx",
+    );
+
+    expect(
+      await readFile(
+        path.join(environment.DOCKER_CONFIG, "config.json"),
+        "utf8",
+      ),
+    ).toBe('{"auths":{}}\n');
+    expect(await readdir(environment.DOCKER_CONFIG)).toEqual([
+      "cli-plugins",
+      "config.json",
+    ]);
+    expect(await readdir(path.dirname(isolatedPlugin))).toEqual([
+      "docker-buildx",
+    ]);
+    expect((await lstat(isolatedPlugin)).isSymbolicLink()).toBe(true);
+    expect(await readlink(isolatedPlugin)).toBe(buildx);
   });
 });

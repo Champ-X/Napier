@@ -136,6 +136,8 @@ export async function runSandboxImageRepairAcceptance(input) {
             "sandbox",
             "--expected-preview",
             preview.value.contentSha256,
+            "--timeout-ms",
+            String(15 * 60_000),
             "--apply",
             "--jsonl",
           ],
