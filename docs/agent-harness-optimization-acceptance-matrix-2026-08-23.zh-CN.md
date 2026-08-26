@@ -121,10 +121,10 @@
 | Provider Endpoint Profile | HTTPS/loopback HTTP 限制；拒绝 URL credential/query/fragment；gateway/model/dialect/non-secret headers；真实 provider 调用接收 endpoint、header 与 credential；Ledger 仅保存哈希 slot ID | **verified** |
 | Web Route 控制面 | role/path/subagent binding、endpoint、round-robin pool、retry envelope、中文文案、修订历史与显式清除；三档桌面视口完成浏览器验收 | **verified** |
 | 原生 Tool Protocol v2 | 单一 Registry 拥有 definition / invocation / UI projection；原生 `read_file`、workspace preview/apply、Browser；其余工具显式走兼容适配层；definition/implementation hash 分离；canonical/model-visible schema、动态副作用、审批、并发、重试、回放与 Code Bridge 统一消费协议；旧 Browser v2 receipt 与历史 implementation hash 保持兼容 | **verified** |
-| Context Projection Service | 尚未进入本轮实现与回归 | **pending** |
+| Context Projection Service | 统一服务以 prepare `order=-400` 先裁剪 tool result，再以 finalize `order=10000` 执行 provider-aware token 治理；durable messages、system prompt、skills、tool definitions、memory、compaction checkpoint、cache boundary 与 token accounting 均写入 hash-only `context.projected` v1 receipt，并与前置 pruning/token receipts、后继 envelope/adapter/prompt package 逐段对账；旧 pruning/token-pressure 事件与 installer 保持兼容。Contracts `126/126`、Runtime `2017/2017`、专项 `50/50` 通过，14 个 live-only files / 32 tests 按环境跳过；architecture、dead-code、duplicates、dependency ownership 门禁全绿 | **verified** |
 | Subagent Hub 与监督 UI | 冻结 Route 已传入现有 Subagent 执行路径；Hub 产品面与实时监督尚未完成 | **pending** |
 | Phase 4 与最终发布证据 | 尚未开始；必须在后续实现后刷新全仓门禁、E2E、dist、acceptance、release audit | **pending** |
 
 ## 10. 当前判定
 
-历史 A1–A8 基线继续有效；当前 `next.md` 的 Model Route v2、Provider Endpoint Profile 与原生 Tool Protocol v2 已由实现、完整 Runtime/Web/Contracts 回归、源码身份及对应专项证据共同验证。Context Projection Service、Subagent Hub、Phase 4 与最终发布证据仍为 `pending`，因此本矩阵不把总目标标记为完成。S1 的外部签名发布及 Windows 主机验收继续独立保持 `blocked`。
+历史 A1–A8 基线继续有效；当前 `next.md` 的 Model Route v2、Provider Endpoint Profile、原生 Tool Protocol v2 与 Context Projection Service 已由实现、完整 Runtime/Contracts 回归、源码身份及对应专项证据共同验证。Subagent Hub、Phase 4 与最终发布证据仍为 `pending`，因此本矩阵不把总目标标记为完成。S1 的外部签名发布及 Windows 主机验收继续独立保持 `blocked`。

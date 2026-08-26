@@ -177,6 +177,7 @@ export const RUN_EVENT_DEFINITION_GROUPS_V1 = [
       "context.model_envelope",
       "context.model_invocation",
       "context.model_invocation_unavailable",
+      "context.projected",
       "context.prepared",
       "context.prompt_package",
       "harness.experiment.profile.applied",

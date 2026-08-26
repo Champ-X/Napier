@@ -32,6 +32,6 @@ export * from "./execution-runs.js";
 export * from "./execution-workflows.js";
 export * from "./experiment-protocol.js";
 export * from "./subagent-supervisor.js";
-export type * from "./model-context-envelope.js";
+export type * from "./model-context.js";
 export * from "./workflow-experiments.js";
 export * from "./rpc.js";

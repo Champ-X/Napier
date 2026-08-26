@@ -1,8 +1,7 @@
 import type { ComposableAgentModelCallPipeline } from "./kernel-model-call-pipeline.js";
 import type { LocalStore } from "./store.js";
+import { installContextProjectionService } from "./context-projection-service.js";
 import { installModelHarnessExtension } from "./model-harness-extension.js";
-import { installModelContextTokenExtension } from "./model-context-token-extension.js";
-import { installToolResultContextExtension } from "./tool-result-context-extension.js";
 import type { TokenMeterRegistry } from "./token-meter-provider.js";
 
 interface BuiltinModelCallExtensionHost {
@@ -15,10 +14,5 @@ export function installBuiltinModelCallExtensions(
   runtime: BuiltinModelCallExtensionHost,
 ): void {
   installModelHarnessExtension(pipeline, runtime.store);
-  installToolResultContextExtension(pipeline, runtime.store);
-  installModelContextTokenExtension(
-    pipeline,
-    runtime.store,
-    runtime.tokenMeters,
-  );
+  installContextProjectionService(pipeline, runtime.store, runtime.tokenMeters);
 }

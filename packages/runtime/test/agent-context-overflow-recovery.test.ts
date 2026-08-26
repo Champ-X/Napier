@@ -5,6 +5,7 @@ import path from "node:path";
 import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { canonicalJson, sha256 } from "../src/ed25519.js";
 import { assertModelRequestEvidenceBindings } from "../src/model-prompt-evidence-bindings.js";
 import { ModelRegistry } from "../src/models.js";
 import { LocalStore } from "../src/store.js";
@@ -99,6 +100,9 @@ describe("Agent context overflow recovery", () => {
     const pressures = runEvents.filter(
       (event) => event.type === "model.context.token_pressure",
     );
+    const projections = runEvents.filter(
+      (event) => event.type === "context.projected",
+    );
     expect(agentInvocations).toHaveLength(2);
     expect(overflow).toHaveLength(1);
     expect(overflow[0]!.payload).toEqual(
@@ -116,11 +120,45 @@ describe("Agent context overflow recovery", () => {
         removedUnitCount: 1,
       }),
     ]);
+    expect(projections.map((event) => event.payload)).toEqual([
+      expect.objectContaining({
+        recoveryAttempt: 0,
+        status: "within_budget",
+      }),
+      expect.objectContaining({
+        recoveryAttempt: 1,
+        status: "projected",
+        removedUnitCount: 1,
+      }),
+    ]);
     expect(() =>
       assertModelRequestEvidenceBindings(runEvents, {
         knownRunIds: new Set([run.id]),
       }),
     ).not.toThrow();
+    const tamperedPressure = rehash({
+      ...(pressures[1]!.payload as Record<string, unknown>),
+      activeMessageSetSha256: "0".repeat(64),
+    });
+    const tampered = runEvents.map((event) => {
+      if (event.id === pressures[1]!.id) {
+        return { ...event, payload: tamperedPressure };
+      }
+      if (event.id === projections[1]!.id) {
+        return {
+          ...event,
+          payload: rehash({
+            ...(event.payload as Record<string, unknown>),
+            activeMessageSetSha256: "0".repeat(64),
+            tokenPressureReceiptSha256: tamperedPressure["contentSha256"],
+          }),
+        };
+      }
+      return event;
+    });
+    expect(() => assertModelRequestEvidenceBindings(tampered)).toThrow(
+      "envelope binding is invalid",
+    );
     expect(JSON.stringify(overflow)).not.toContain("Maximum context");
     fixture.store.close();
   });
@@ -181,6 +219,15 @@ describe("Agent context overflow recovery", () => {
         failureReason: "provider_overflow_without_removable_history",
       }),
     ]);
+    expect(
+      events
+        .filter((event) => event.type === "context.projected")
+        .map((event) => event.payload),
+    ).toEqual([
+      expect.objectContaining({ recoveryAttempt: 0, status: "within_budget" }),
+      expect.objectContaining({ recoveryAttempt: 1, status: "unavailable" }),
+    ]);
+    expect(() => assertModelRequestEvidenceBindings(events)).not.toThrow();
     fixture.store.close();
   });
 });
@@ -200,4 +247,9 @@ async function createFixture() {
     agentId: store.listAgents()[0]!.id,
   });
   return { store, models: new ModelRegistry(), threadId: thread.id };
+}
+
+function rehash(payload: Record<string, unknown>): Record<string, unknown> {
+  const { contentSha256: _contentSha256, ...content } = payload;
+  return { ...content, contentSha256: sha256(canonicalJson(content)) };
 }

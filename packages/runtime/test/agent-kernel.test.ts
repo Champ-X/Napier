@@ -69,9 +69,16 @@ describe("Agent Kernel", () => {
     roots.push(root);
     const workspaceRoot = path.join(root, "workspace");
     await mkdir(workspaceRoot);
+    const omittedToolResultMarker = "private middle must be pruned";
     await writeFile(
       path.join(workspaceRoot, "evidence.txt"),
-      "kernel evidence\n",
+      [
+        "kernel evidence",
+        "x".repeat(20_000),
+        omittedToolResultMarker,
+        "y".repeat(20_000),
+        "retained tail",
+      ].join("\n"),
     );
     const services = await createLocalAgentRuntime({
       workspaceRoot,
@@ -107,6 +114,9 @@ describe("Agent Kernel", () => {
         },
         (context) => {
           expect(JSON.stringify(context.messages)).toContain("kernel evidence");
+          expect(JSON.stringify(context.messages)).not.toContain(
+            omittedToolResultMarker,
+          );
           return fauxAssistantMessage("Kernel read verified.");
         },
         fauxAssistantMessage('{"facts":[]}'),
@@ -164,11 +174,17 @@ describe("Agent Kernel", () => {
         "active",
       );
       const modelCallPhases: string[] = [];
+      const modelCallSawOmittedToolResult: boolean[] = [];
       const lifecyclePhases: string[] = [];
       plugin.interceptModelCall({
         id: "test.context-marker",
         prepare: (call) => {
           modelCallPhases.push(`prepare:${call.attempt}`);
+          modelCallSawOmittedToolResult.push(
+            JSON.stringify(call.context.messages).includes(
+              omittedToolResultMarker,
+            ),
+          );
           return {
             context: {
               ...call.context,
@@ -242,6 +258,7 @@ describe("Agent Kernel", () => {
         "prepare:1",
         "around",
       ]);
+      expect(modelCallSawOmittedToolResult).toEqual([false, false]);
       expect(lifecyclePhases).toEqual([
         "step:1:enter:true",
         "step:1:exit",
@@ -323,12 +340,13 @@ describe("Agent Kernel", () => {
             prepare: true,
           }),
           expect.objectContaining({
-            id: "napier.tool-result-context-pruner",
+            id: "napier.context-projection-service.prepare",
             owner: "kernel.context",
+            order: -400,
             prepare: true,
           }),
           expect.objectContaining({
-            id: "napier.model-context-token-governor",
+            id: "napier.context-projection-service",
             owner: "kernel.context",
             order: 10_000,
             finalize: true,
@@ -427,11 +445,12 @@ describe("Agent Kernel", () => {
           owner: "kernel.harness",
         }),
         expect.objectContaining({
-          id: "napier.tool-result-context-pruner",
+          id: "napier.context-projection-service.prepare",
           owner: "kernel.context",
+          order: -400,
         }),
         expect.objectContaining({
-          id: "napier.model-context-token-governor",
+          id: "napier.context-projection-service",
           owner: "kernel.context",
           order: 10_000,
         }),
@@ -474,6 +493,26 @@ describe("Agent Kernel", () => {
           contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
         }),
       );
+      const projectionEvents = (
+        await services.store.listEvents(thread.id)
+      ).filter((event) => event.type === "context.projected");
+      expect(projectionEvents).toHaveLength(2);
+      expect(projectionEvents[1]?.payload).toEqual(
+        expect.objectContaining({
+          kind: "napier.context-projection",
+          status: "projected",
+          durableMessageSource: "durable_run_context",
+          skillCatalog: "absent",
+          memory: "absent",
+          compactionCheckpoint: "absent",
+          cacheRetention: "provider_default",
+          toolResultPruning: "applied",
+          prunedToolResultCount: 1,
+          activeMessageSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+          contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        }),
+      );
+      expect(JSON.stringify(projectionEvents)).not.toContain("kernel evidence");
 
       const firstProvider = fauxProvider({ provider: "faux-replaceable" });
       firstProvider.setResponses([
@@ -564,9 +603,7 @@ describe("Agent Kernel", () => {
         narrowedEvents.filter((event) => event.type === "tool.completed"),
       ).toHaveLength(0);
       expect(
-        narrowedEvents.find(
-          (event) => event.type === "tool.failed",
-        )?.payload,
+        narrowedEvents.find((event) => event.type === "tool.failed")?.payload,
       ).toEqual(expect.objectContaining({ toolName: "read_file" }));
       expect(
         narrowedEvents.find((event) => event.type === "tool.blocked")?.payload,
@@ -609,6 +646,15 @@ describe("Agent Kernel", () => {
         agentId: agent.id,
       });
       const unsafe = services.kernel.scope("plugin.unsafe-fixture");
+      expect(() =>
+        unsafe.interceptModelCall({
+          id: "test.before-context-pruning",
+          order: -401,
+          prepare: () => undefined,
+        }),
+      ).toThrow(
+        "Early model-call order is reserved for the model harness and context pruner",
+      );
       unsafe.interceptModelCall({
         id: "test.raise-token-limit",
         prepare: (call) => ({

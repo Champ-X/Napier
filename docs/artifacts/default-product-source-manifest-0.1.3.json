@@ -5,13 +5,13 @@
   "predecessor": {
     "productVersion": "0.1.2",
     "commit": "45c736f0b426db5d03f88adbb17acb8df32e7703",
-    "changedPathCount": 1292,
-    "changedPathsSha256": "eb2dc0a227fdac763734ddbe5be2645e14187a567b5384c63cdd595066292139"
+    "changedPathCount": 1297,
+    "changedPathsSha256": "4b6cde63dac4db680490b7ba3347e99a28bc991d2651ea2ff717e9ff5643d4c2"
   },
   "identityDeclarationPath": "packages/runtime/src/release-product-identity.ts",
   "identityDeclarationSha256": "5a8dada43a7d464d3de4e65cc7c556def3391ef59f674cdb6949a1ce5362b62d",
-  "fileCount": 2043,
-  "totalBytes": 14497438,
+  "fileCount": 2048,
+  "totalBytes": 14531268,
   "files": [
     {
       "path": "apps/server/package.json",
@@ -5074,6 +5074,11 @@
       "sha256": "cab0edbeae6557ebaa69b07b80edd80808e7e879e57fbcde85e06c94521e7f3f"
     },
     {
+      "path": "packages/contracts/src/context-projection-v1.ts",
+      "bytes": 1918,
+      "sha256": "53c6bfadc8be3f749e06adbd1b830d48771afbd3f4d67ce665e0b908d4bb3532"
+    },
+    {
       "path": "packages/contracts/src/controlled-harness-evidence.ts",
       "bytes": 3257,
       "sha256": "a81adab0017f93a6c44bd894c3b759ee88b71f1eeb9bfaee04cb0aaeb3858bfa"
@@ -5155,8 +5160,8 @@
     },
     {
       "path": "packages/contracts/src/index.ts",
-      "bytes": 1696,
-      "sha256": "378c6f48caff86d9a1eecd4ca23fab2cd649a622e82569f243fea98271fbd62d"
+      "bytes": 1687,
+      "sha256": "f724b3ee7c11dd52cbd52975cec7edc7f693b6a6877c00178c1147f1f9488ecd"
     },
     {
       "path": "packages/contracts/src/kernel-plugins.ts",
@@ -5187,6 +5192,11 @@
       "path": "packages/contracts/src/model-context-envelope.ts",
       "bytes": 918,
       "sha256": "da22b7e54bda888f2d34ed9b9e1fe63c90fd7d41d6ff6b01dfc6aa67afe234d9"
+    },
+    {
+      "path": "packages/contracts/src/model-context.ts",
+      "bytes": 99,
+      "sha256": "4ef69e6cfaf4ac8d49e1978113f59911d7a09dbdc561a0bc3bc81dfdb1d9342c"
     },
     {
       "path": "packages/contracts/src/model-invocation-experiment-comparison-validation.ts",
@@ -5265,8 +5275,8 @@
     },
     {
       "path": "packages/contracts/src/run-event-v1.ts",
-      "bytes": 10070,
-      "sha256": "b40056b792a193817bed18ddc660638976ff8755a87962568d6b89fbe58faa6b"
+      "bytes": 10097,
+      "sha256": "ada9156548693cd72b4c64991bd375c97d4d8fa82c797cf342aa40ea4187eb8b"
     },
     {
       "path": "packages/contracts/src/run-harness-effects.ts",
@@ -6115,8 +6125,8 @@
     },
     {
       "path": "packages/runtime/src/builtin-model-call-extensions.ts",
-      "bytes": 929,
-      "sha256": "ab7280f5d4258cd62a04332c38fe18d91c9341e4c3be74ce8916a9b6d244df47"
+      "bytes": 755,
+      "sha256": "9d92ee1a29edc3054cdb57c23727df7b7671a5017445b85a9ba6349320852e19"
     },
     {
       "path": "packages/runtime/src/capability-catalog.ts",
@@ -6197,6 +6207,21 @@
       "path": "packages/runtime/src/context-event-read-model.ts",
       "bytes": 4531,
       "sha256": "b24abe7f7cceea6c0be56adc42cd71dd3c35b4ede487835812ede901a59509e5"
+    },
+    {
+      "path": "packages/runtime/src/context-projection-evidence.ts",
+      "bytes": 5605,
+      "sha256": "8590ad5064709e1b57bfbd5a3fb3acc86858e2a6208b6b473d53b1684e1b583a"
+    },
+    {
+      "path": "packages/runtime/src/context-projection-receipt.ts",
+      "bytes": 12149,
+      "sha256": "458fd2f419c86a66deb7dd0f8e6f299ffdb5cb295a1c707971ee04c9b876465c"
+    },
+    {
+      "path": "packages/runtime/src/context-projection-service.ts",
+      "bytes": 6034,
+      "sha256": "737a510e36403c211ea20df62406f5bf78711195e51eb32521e0c3d759ce5625"
     },
     {
       "path": "packages/runtime/src/controlled-harness-evidence.ts",
@@ -7065,8 +7090,8 @@
     },
     {
       "path": "packages/runtime/src/kernel-model-call-pipeline.ts",
-      "bytes": 9791,
-      "sha256": "016852b1a9e82d6d11401e810974777e01a8f2e0fb2e0ed9fa134acd94f66c66"
+      "bytes": 10425,
+      "sha256": "ab007ee5d1392522a4c5bdb3325e84d9553efadc2eb20e09f125ce5ede9c096a"
     },
     {
       "path": "packages/runtime/src/kernel-plugin-manifest.ts",
@@ -7505,8 +7530,8 @@
     },
     {
       "path": "packages/runtime/src/model-prompt-evidence-bindings.ts",
-      "bytes": 6031,
-      "sha256": "c480a999d353653f530191ca60594a17d90e228181c4e30907e14510efa57e5d"
+      "bytes": 13013,
+      "sha256": "c488d249baefc09543a5315e4a7a0a8f4da52cee83b7cf48687f152bf475da5d"
     },
     {
       "path": "packages/runtime/src/model-route-evidence.ts",
@@ -7915,8 +7940,8 @@
     },
     {
       "path": "packages/runtime/src/public/model.ts",
-      "bytes": 331,
-      "sha256": "5dc3e70bdc339825987f31108a1b3acf9586529dd7ffdf8f2a4b8198d946a311"
+      "bytes": 896,
+      "sha256": "33fb4201e2a0f2708a6c3f9eba57650079e069d9bbe25572ac1c301358ba95f6"
     },
     {
       "path": "packages/runtime/src/public/store.ts",
@@ -10229,5 +10254,5 @@
       "sha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c"
     }
   ],
-  "contentSha256": "fe4cdd7d23281130355d7f3672592fcff306b00bc2e537ea3f6ed1aa5c5a84ff"
+  "contentSha256": "890b96c05f7602f5692804dc6d74c7edef226ca7a0a8d4ee67027ebe08fae179"
 }

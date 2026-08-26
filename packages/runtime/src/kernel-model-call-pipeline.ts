@@ -95,10 +95,19 @@ export class ComposableAgentModelCallPipeline implements AgentTurnModelCallPipel
       throw new Error(`Model-call extension order is invalid: ${order}`);
     }
     if (
+      extension.prepare &&
+      order <= -400 &&
+      EARLY_PREPARE_EXTENSION_ORDERS.get(`${owner}:${extension.id}`) !== order
+    ) {
+      throw new Error(
+        "Early model-call order is reserved for the model harness and context pruner",
+      );
+    }
+    if (
       extension.finalize &&
       order === 10_000 &&
       (owner !== "kernel.context" ||
-        extension.id !== "napier.model-context-token-governor")
+        !FINAL_CONTEXT_EXTENSION_IDS.has(extension.id))
     ) {
       throw new Error(
         "Final model-call order is reserved for the context governor",
@@ -233,6 +242,16 @@ export class ComposableAgentModelCallPipeline implements AgentTurnModelCallPipel
     if (this.closed) throw new Error("Model-call pipeline is closed");
   }
 }
+
+const FINAL_CONTEXT_EXTENSION_IDS = new Set([
+  "napier.context-projection-service",
+  "napier.model-context-token-governor",
+]);
+const EARLY_PREPARE_EXTENSION_ORDERS = new Map([
+  ["kernel.harness:napier.model-aware-harness", -500],
+  ["kernel.context:napier.context-projection-service.prepare", -400],
+  ["kernel.context:napier.tool-result-context-pruner", -400],
+]);
 
 export function createStandaloneAgentModelCallPipeline(): AgentTurnModelCallPipeline {
   return new ComposableAgentModelCallPipeline();

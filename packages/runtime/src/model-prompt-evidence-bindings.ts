@@ -10,6 +10,15 @@ import {
   validateModelContextEnvelopeReceipt,
 } from "./model-context-envelope.js";
 import { validateModelAdapterReceipt } from "./model-adapters.js";
+import {
+  CONTEXT_PROJECTION_EVENT,
+  validateContextProjectionReceipt,
+} from "./context-projection-receipt.js";
+import {
+  projectionInvocationEvents,
+  projectionPromptSourcesMatch,
+  projectionSourceReceiptsMatch,
+} from "./context-projection-evidence.js";
 
 export const MODEL_ADAPTER_EVENT = "context.model_adapter";
 
@@ -25,10 +34,226 @@ export function assertModelRequestEvidenceBindings(
     ...options,
     label: `${label} Model Context Envelope`,
   });
+  assertContextProjectionEventBindings(events, {
+    ...options,
+    label: `${label} Context Projection`,
+  });
   assertModelPromptEvidenceBindings(events, {
     ...options,
     label: `${label} Model Prompt evidence`,
   });
+}
+
+export function assertContextProjectionEventBindings(
+  events: readonly RunEvent[],
+  options: { knownRunIds?: ReadonlySet<string>; label?: string } = {},
+): void {
+  const label = options.label ?? "Context Projection";
+  for (const [index, event] of events.entries()) {
+    if (event.type !== CONTEXT_PROJECTION_EVENT) continue;
+    assertContextProjectionEventBinding(events, index, event, {
+      ...(options.knownRunIds ? { knownRunIds: options.knownRunIds } : {}),
+      label,
+    });
+  }
+}
+
+type ProjectionReceipt = ReturnType<typeof validateContextProjectionReceipt>;
+
+interface ProjectionInvocationEvidence {
+  envelope: RunEvent | undefined;
+  adapter: RunEvent | undefined;
+  promptPackage: RunEvent | undefined;
+  envelopeReceipt:
+    | ReturnType<typeof validateModelContextEnvelopeReceipt>
+    | undefined;
+  adapterReceipt: ReturnType<typeof validateModelAdapterReceipt> | undefined;
+  packageReceipt:
+    | ReturnType<typeof validateCompiledPromptPackageReceipt>
+    | undefined;
+}
+
+interface CompleteProjectionInvocationEvidence extends ProjectionInvocationEvidence {
+  envelope: RunEvent;
+  adapter: RunEvent;
+  promptPackage: RunEvent;
+  envelopeReceipt: ReturnType<typeof validateModelContextEnvelopeReceipt>;
+  adapterReceipt: ReturnType<typeof validateModelAdapterReceipt>;
+  packageReceipt: ReturnType<typeof validateCompiledPromptPackageReceipt>;
+}
+
+function assertContextProjectionEventBinding(
+  events: readonly RunEvent[],
+  index: number,
+  event: RunEvent,
+  options: { knownRunIds?: ReadonlySet<string>; label: string },
+): void {
+  if (options.knownRunIds && !options.knownRunIds.has(event.runId)) {
+    throw new Error(`${options.label} references unknown Run: ${event.runId}`);
+  }
+  const receipt = validateContextProjectionReceipt(event.payload);
+  assertProjectionSourceBinding(events, index, event, receipt, options.label);
+  if (receipt.status === "unavailable") return;
+  assertProjectionOutputBinding(events, index, event, receipt, options.label);
+}
+
+function assertProjectionSourceBinding(
+  events: readonly RunEvent[],
+  index: number,
+  event: RunEvent,
+  receipt: ProjectionReceipt,
+  label: string,
+): void {
+  const pruning = latestPriorEvent(
+    events,
+    index,
+    event.runId,
+    "model.context.tool-results.pruned",
+  );
+  const pressure = latestPriorEvent(
+    events,
+    index,
+    event.runId,
+    "model.context.token_pressure",
+  );
+  if (
+    !validProjectionSourceSequence(event, pruning, pressure) ||
+    !projectionSourceReceiptsMatch(receipt, pruning?.payload, pressure?.payload)
+  ) {
+    throw new Error(
+      `${label} source receipt binding is invalid: ${event.runId}`,
+    );
+  }
+}
+
+function latestPriorEvent(
+  events: readonly RunEvent[],
+  index: number,
+  runId: string,
+  type: string,
+): RunEvent | undefined {
+  for (let cursor = index - 1; cursor >= 0; cursor -= 1) {
+    const candidate = events[cursor]!;
+    if (candidate.runId === runId && candidate.type === type) return candidate;
+  }
+  return undefined;
+}
+
+function validProjectionSourceSequence(
+  event: RunEvent,
+  pruning: RunEvent | undefined,
+  pressure: RunEvent | undefined,
+): boolean {
+  if (!pruning || !pressure) return false;
+  return pruning.seq < pressure.seq && pressure.seq < event.seq;
+}
+
+function assertProjectionOutputBinding(
+  events: readonly RunEvent[],
+  index: number,
+  event: RunEvent,
+  receipt: ProjectionReceipt,
+  label: string,
+): void {
+  const evidence = collectProjectionInvocationEvidence(
+    events,
+    index,
+    event.runId,
+  );
+  if (
+    !completeProjectionInvocationEvidence(evidence) ||
+    evidence.adapterReceipt.schemaVersion !== 2 ||
+    evidence.packageReceipt.schemaVersion !== 3 ||
+    !projectionOutputSequenceMatches(event, evidence) ||
+    !projectionEnvelopeMatches(receipt, evidence) ||
+    !projectionAdapterMatches(receipt, evidence) ||
+    !projectionPromptSourcesMatch(receipt, evidence.packageReceipt)
+  ) {
+    throw new Error(`${label} envelope binding is invalid: ${event.runId}`);
+  }
+}
+
+function collectProjectionInvocationEvidence(
+  events: readonly RunEvent[],
+  index: number,
+  runId: string,
+): ProjectionInvocationEvidence {
+  const invocationEvents = projectionInvocationEvents(events, runId, index);
+  const envelope = invocationEvents.find(
+    (candidate) => candidate.type === MODEL_CONTEXT_ENVELOPE_EVENT,
+  );
+  const adapter = invocationEvents.find(
+    (candidate) => candidate.type === MODEL_ADAPTER_EVENT,
+  );
+  const promptPackage = invocationEvents.find(
+    (candidate) => candidate.type === COMPILED_PROMPT_PACKAGE_EVENT,
+  );
+  return {
+    envelope,
+    adapter,
+    promptPackage,
+    envelopeReceipt: envelope
+      ? validateModelContextEnvelopeReceipt(envelope.payload)
+      : undefined,
+    adapterReceipt: adapter
+      ? validateModelAdapterReceipt(adapter.payload)
+      : undefined,
+    packageReceipt: promptPackage
+      ? validateCompiledPromptPackageReceipt(promptPackage.payload)
+      : undefined,
+  };
+}
+
+function completeProjectionInvocationEvidence(
+  evidence: ProjectionInvocationEvidence,
+): evidence is CompleteProjectionInvocationEvidence {
+  return Boolean(
+    evidence.envelope &&
+    evidence.adapter &&
+    evidence.promptPackage &&
+    evidence.envelopeReceipt &&
+    evidence.adapterReceipt &&
+    evidence.packageReceipt,
+  );
+}
+
+function projectionOutputSequenceMatches(
+  event: RunEvent,
+  evidence: CompleteProjectionInvocationEvidence,
+): boolean {
+  return (
+    evidence.envelope.seq > event.seq &&
+    evidence.adapter.seq > evidence.envelope.seq &&
+    evidence.promptPackage.seq > evidence.adapter.seq
+  );
+}
+
+function projectionEnvelopeMatches(
+  receipt: ProjectionReceipt,
+  evidence: CompleteProjectionInvocationEvidence,
+): boolean {
+  return (
+    receipt.activeMessageCount === evidence.envelopeReceipt.messageCount &&
+    receipt.activeMessageSetSha256 ===
+      evidence.envelopeReceipt.messageSetSha256 &&
+    receipt.toolCount === evidence.envelopeReceipt.toolCount &&
+    receipt.toolDefinitionSetSha256 ===
+      evidence.envelopeReceipt.toolDefinitionSetSha256 &&
+    receipt.systemPromptBytes === evidence.envelopeReceipt.systemPromptBytes &&
+    receipt.systemPromptSha256 === evidence.envelopeReceipt.systemPromptSha256
+  );
+}
+
+function projectionAdapterMatches(
+  receipt: ProjectionReceipt,
+  evidence: CompleteProjectionInvocationEvidence,
+): boolean {
+  return (
+    receipt.cacheRetention === evidence.adapterReceipt.cacheRetention &&
+    receipt.cacheRetentionSource ===
+      evidence.adapterReceipt.cacheRetentionSource &&
+    receipt.adapterContentSha256 === evidence.adapterReceipt.contentSha256
+  );
 }
 
 export function assertModelPromptEvidenceBindings(

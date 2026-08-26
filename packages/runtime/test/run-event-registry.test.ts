@@ -51,6 +51,9 @@ describe("Run event registry", () => {
     const benchmark = schemas.find(
       (candidate) => candidate.type === "benchmark.workflow.evaluated",
     );
+    const contextProjection = schemas.find(
+      (candidate) => candidate.type === "context.projected",
+    );
 
     expect(message).toEqual(
       expect.objectContaining({
@@ -73,6 +76,15 @@ describe("Run event registry", () => {
         defaultVisibility: "user",
         owner: "benchmark-kit",
         projectionOwner: "validation-matrix",
+        schemaVersion: 1,
+      }),
+    );
+    expect(contextProjection).toEqual(
+      expect.objectContaining({
+        category: "model",
+        defaultVisibility: "debug",
+        owner: "model-runtime",
+        projectionOwner: "trace-index",
         schemaVersion: 1,
       }),
     );
