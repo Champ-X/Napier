@@ -105,7 +105,7 @@ export function capabilityPresetForOriginRun(
 
 export async function resolveOperatorDecisionCapabilityContinuation(
   store: {
-    listEvents(threadId: string): Promise<RunEvent[]>;
+    listRunEvents(runId: string): Promise<RunEvent[]>;
     listRuns(threadId: string): RunRecord[];
   },
   threadId: string,
@@ -134,7 +134,7 @@ export async function resolveOperatorDecisionCapabilityContinuation(
     );
   }
   const capabilityPreset = capabilityPresetForOriginRun(
-    await store.listEvents(threadId),
+    await store.listRunEvents(originRun.id),
     originRun.id,
   );
   return {

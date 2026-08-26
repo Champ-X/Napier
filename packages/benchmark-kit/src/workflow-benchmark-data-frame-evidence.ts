@@ -6,12 +6,10 @@ import type {
   WorkflowBenchmarkLedgerBundle,
   WorkflowBenchmarkLedgerEventReceipt,
 } from "./workflow-benchmark-types.js";
+import { hasExactRunEventEnvelope } from "./run-event-envelope-shape.js";
 
 export type WorkflowBenchmarkDataFrameAction = "inspect_data" | "data_frame";
 
-const EVENT_KEYS = keySet(
-  "id threadId runId seq type category visibility createdAt payload",
-);
 const PAYLOAD_KEYS = keySet(
   "callId toolName status outputTextSha256 outputTextBytes outputSha256 outputBytes outputRedacted resultSha256 details",
 );
@@ -191,7 +189,7 @@ export function validWorkflowBenchmarkDataFrameEvidenceBinding(
 
 function dataFrameActionEventDiagnostics(value: unknown): string[] {
   const diagnostics: string[] = [];
-  if (!exactRecord(value, EVENT_KEYS)) {
+  if (!hasExactRunEventEnvelope(value)) {
     return ["envelope_invalid"];
   }
   const payload = record(value["payload"]) ? value["payload"] : {};

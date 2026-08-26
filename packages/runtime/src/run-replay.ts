@@ -53,9 +53,7 @@ export async function createRunReplaySnapshot(
     .listRuns(threadId)
     .find((candidate) => candidate.id === runId);
   if (!run) throw new Error(`Run not found in thread: ${runId}`);
-  const events = (await store.listEvents(threadId)).filter(
-    (event) => event.runId === runId,
-  );
+  const events = await store.listRunEvents(runId);
   const subagents = store.listSubagentTasks(threadId, runId);
   const content: Omit<RunReplaySnapshot, "generatedAt" | "contentSha256"> = {
     schemaVersion: 1,

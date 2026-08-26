@@ -102,7 +102,7 @@ export function createAgentToolPreflight(input: {
         return { block: true, reason: exhaustion.message };
       }
       const guard = latestActiveToolLoopGuard(
-        await input.store.listEvents(input.policy.run.threadId),
+        await input.store.listRunEvents(input.policy.run.id),
         input.policy.run.id,
         input.toolLoopGuardPolicy,
       );

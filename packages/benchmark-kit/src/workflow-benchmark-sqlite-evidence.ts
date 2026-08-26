@@ -5,12 +5,10 @@ import type {
   WorkflowBenchmarkLedgerBundle,
   WorkflowBenchmarkLedgerEventReceipt,
 } from "./workflow-benchmark-types.js";
+import { hasExactRunEventEnvelope } from "./run-event-envelope-shape.js";
 
 export type WorkflowBenchmarkSqliteAction = "schema" | "query" | "chart";
 
-const EVENT_KEYS = keySet(
-  "id threadId runId seq type category visibility createdAt payload",
-);
 const PAYLOAD_KEYS = keySet(
   "callId toolName status outputTextSha256 outputTextBytes outputSha256 outputBytes outputRedacted resultSha256 details",
 );
@@ -168,7 +166,7 @@ function receiptMatchesEvent(
 
 function validSqliteActionEvent(value: unknown): value is RunEvent {
   if (
-    !exactRecord(value, EVENT_KEYS) ||
+    !hasExactRunEventEnvelope(value) ||
     !exactRecord(value["payload"], PAYLOAD_KEYS)
   ) {
     return false;

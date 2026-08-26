@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import type {
-  JsonValue,
+  JsonObject,
   RunEvent,
   WorkspaceProcessSession,
 } from "@napier/contracts";
@@ -142,7 +142,7 @@ export async function runProcessRecoveryBenchmark(
           type: "benchmark.process.recovery.evaluated",
           category: "evaluation",
           visibility: "user",
-          payload: evaluation as unknown as JsonValue,
+          payload: evaluation as unknown as JsonObject,
         });
         const finalReplay = await exportThreadReplayBundle(store, thread.id);
         const generatedAt = dependencies.now().toISOString();

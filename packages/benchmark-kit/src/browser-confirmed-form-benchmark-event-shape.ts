@@ -1,9 +1,7 @@
 import type { RunEvent } from "@napier/contracts";
 import { parseBrowserInteractionConfirmation } from "@napier/contracts/browser-interaction-confirmation";
 
-const EVENT_KEYS = keySet(
-  "id threadId runId seq type category visibility createdAt payload",
-);
+import { hasExactRunEventEnvelope } from "./run-event-envelope-shape.js";
 const PROJECTED_TOOL_KEYS = keySet(
   "kind schemaVersion toolName status action sourcePayloadSha256 sessionOperation sessionIdSha256 currentUrlSha256 titleSha256",
 );
@@ -31,7 +29,7 @@ export function validBrowserConfirmedFormRunEvent(
   value: unknown,
 ): value is RunEvent {
   return (
-    exactRecord(value, EVENT_KEYS) &&
+    hasExactRunEventEnvelope(value) &&
     resourceId(value["id"]) &&
     resourceId(value["threadId"]) &&
     resourceId(value["runId"]) &&

@@ -56,6 +56,7 @@ import type {
   PersistedReceiptTrustAnchorDirectorySubscription,
 } from "./receipt-trust-directory-subscriptions.js";
 import type { AppendEventInput } from "./run-event-registry.js";
+import type { RunEventQueryScope } from "./run-event-query-port.js";
 
 export interface StorePersistedRunRecord extends RunRecord {
   leaseTokenSha256?: string;
@@ -122,6 +123,26 @@ export interface StoreRepositoryQueue {
 
 export interface StoreRepositoryLedger {
   listEvents(threadId: string, afterSeq?: number): RunEvent[];
+  listRunEvents(
+    runId: string,
+    afterSeq?: number,
+    types?: readonly string[],
+  ): RunEvent[];
+  listEventsRange(
+    threadId: string,
+    fromSeq: number,
+    toSeq: number,
+    types?: readonly string[],
+  ): RunEvent[];
+  findLatestEvent(query: RunEventQueryScope): RunEvent | undefined;
+  findToolTerminal(
+    callId: string,
+    scope?: Omit<RunEventQueryScope, "types">,
+  ): RunEvent | undefined;
+  listEventsByCorrelationId(
+    correlationId: string,
+    scope?: RunEventQueryScope,
+  ): RunEvent[];
 }
 
 export interface StoreExecutionPlanBlueprintPortfolioCalibrationEntry {

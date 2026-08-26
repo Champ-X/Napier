@@ -1,6 +1,7 @@
 import type {
   CreateMemoryRequest,
   MemoryFact,
+  RegisteredRunEventTypeForCategory,
   ReviewMemoryRequest,
 } from "@napier/contracts";
 import { createId } from "@napier/runtime/core";
@@ -350,15 +351,19 @@ function validMemoryId(value: unknown): value is string {
   return typeof value === "string" && /^memory_[a-z0-9]{8,80}$/.test(value);
 }
 
-function memoryReviewEventType(action: ReviewMemoryRequest["action"]): string {
-  return {
-    approve: "memory.approved",
-    reject: "memory.rejected",
-    archive: "memory.archived",
-    restore: "memory.restored",
-    refresh: "memory.refreshed",
-    mark_stale: "memory.stale",
-  }[action];
+function memoryReviewEventType(
+  action: ReviewMemoryRequest["action"],
+): RegisteredRunEventTypeForCategory<"memory"> {
+  return (
+    {
+      approve: "memory.approved",
+      reject: "memory.rejected",
+      archive: "memory.archived",
+      restore: "memory.restored",
+      refresh: "memory.refreshed",
+      mark_stale: "memory.stale",
+    } as const
+  )[action];
 }
 
 function setMemoryListHeaders(

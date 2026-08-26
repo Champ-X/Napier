@@ -1,6 +1,6 @@
 import type {
   GoalState,
-  JsonValue,
+  JsonObject,
   ModelRef,
   RunEvent,
 } from "@napier/contracts";
@@ -132,7 +132,7 @@ export async function runGoalNoProgressBenchmark(
           type: "benchmark.goal.no-progress.evaluated",
           category: "evaluation",
           visibility: "user",
-          payload: evaluation as unknown as JsonValue,
+          payload: evaluation as unknown as JsonObject,
         });
         const finalReplay = await exportThreadReplayBundle(
           runtime.store,

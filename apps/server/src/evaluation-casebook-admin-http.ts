@@ -1,6 +1,7 @@
 import type { Context, Hono } from "hono";
 
 import type { EvaluationCasebook, JsonValue } from "@napier/contracts";
+import type { RegisteredRunEventTypeForCategory } from "@napier/contracts";
 import { createId } from "@napier/runtime/core";
 import { type EvaluationCasebookQualificationService } from "@napier/runtime/evaluation";
 import { type LocalStore } from "@napier/runtime/store";
@@ -175,7 +176,7 @@ async function readBody<T>(
 async function appendCasebookEvent(
   store: EvaluationCasebookAdminStore,
   threadId: string,
-  type: string,
+  type: RegisteredRunEventTypeForCategory<"evaluation">,
   casebook: EvaluationCasebook,
 ): Promise<void> {
   await store.appendEvent({
@@ -185,7 +186,7 @@ async function appendCasebookEvent(
     category: "evaluation",
     visibility: "user",
     payload: evaluationCasebookEventPayload(casebook),
-  });
+  } as Parameters<EvaluationCasebookAdminStore["appendEvent"]>[0]);
 }
 
 function evaluationCasebookEventPayload(casebook: EvaluationCasebook): Record<string, JsonValue> {

@@ -1,6 +1,7 @@
 import type { Context, Hono } from "hono";
 
 import type { EvaluationSuite, JsonValue } from "@napier/contracts";
+import type { RegisteredRunEventTypeForCategory } from "@napier/contracts";
 import {
   createId,
 } from "@napier/runtime/core";
@@ -166,7 +167,7 @@ async function readBody<T>(
 async function appendSuiteEvent(
   store: EvaluationSuiteAdminStore,
   threadId: string,
-  type: string,
+  type: RegisteredRunEventTypeForCategory<"evaluation">,
   suite: EvaluationSuite,
 ): Promise<void> {
   await store.appendEvent({
@@ -176,7 +177,7 @@ async function appendSuiteEvent(
     category: "evaluation",
     visibility: "user",
     payload: evaluationSuiteEventPayload(suite),
-  });
+  } as Parameters<EvaluationSuiteAdminStore["appendEvent"]>[0]);
 }
 
 function evaluationSuiteEventPayload(

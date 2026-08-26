@@ -2,7 +2,7 @@ import { lstat, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
 import type {
-  JsonValue,
+  JsonObject,
   ModelRef,
   RunEvent,
   RunRecord,
@@ -170,7 +170,7 @@ export async function runUxBenchmark(
           type: "benchmark.ux.evaluated",
           category: "evaluation",
           visibility: "user",
-          payload: evaluation as unknown as JsonValue,
+          payload: evaluation as unknown as JsonObject,
         });
         const finalReplay = await exportThreadReplayBundle(
           runtime.store,

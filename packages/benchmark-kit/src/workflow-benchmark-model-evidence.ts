@@ -1,6 +1,6 @@
 import type {
   ExecutionPlanWorkflowResult,
-  JsonValue,
+  JsonObject,
   RunEvent,
   RunRecord,
 } from "@napier/contracts";
@@ -13,10 +13,8 @@ import type {
   WorkflowBenchmarkLedgerEventReceipt,
 } from "./workflow-benchmark-types.js";
 import { findWorkflowBenchmarkTerminalEvent } from "./workflow-benchmark-terminal-event.js";
+import { hasExactRunEventEnvelope } from "./run-event-envelope-shape.js";
 
-const EVENT_KEYS = keySet(
-  "id threadId runId seq type category visibility createdAt payload",
-);
 const PAYLOAD_KEYS = keySet(
   "schemaVersion sourceReplaySha256 sourceEventCount modelResponseCount modelResponseErrorCount modelResponseUsageSampleCount responseSetSha256",
 );
@@ -25,7 +23,7 @@ export function createWorkflowBenchmarkModelResponseObservation(input: {
   benchmarkCase: WorkflowBenchmarkCase;
   events: RunEvent[];
   sourceReplaySha256: string;
-}): JsonValue | undefined {
+}): JsonObject | undefined {
   if (
     input.benchmarkCase.schemaVersion !== 6 &&
     input.benchmarkCase.schemaVersion !== 7 &&
@@ -190,7 +188,7 @@ export function validWorkflowBenchmarkModelResponseBinding(
 
 function validModelResponseEvidenceEvent(value: unknown): value is RunEvent {
   if (
-    !exactRecord(value, EVENT_KEYS) ||
+    !hasExactRunEventEnvelope(value) ||
     !exactRecord(value["payload"], PAYLOAD_KEYS)
   ) {
     return false;

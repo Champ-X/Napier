@@ -13,6 +13,9 @@ import {
   LEDGER_SCHEMA_VERSION,
   migrateLedgerSchema,
 } from "./sqlite-ledger-schema.js";
+import { SqliteLedgerQuery } from "./sqlite-ledger-query.js";
+import { SqliteLedgerReadWorker } from "./sqlite-ledger-read-worker.js";
+import type { RunEventQueryScope } from "./run-event-query-port.js";
 
 export const LEDGER_DATABASE_FILENAME = "ledger.sqlite";
 export { LEDGER_SCHEMA_VERSION } from "./sqlite-ledger-schema.js";
@@ -65,6 +68,8 @@ export class ConcurrentRunLeaseUpdateError extends Error {
 
 export class SqliteLedger {
   private database: DatabaseSync | undefined;
+  private query: SqliteLedgerQuery | undefined;
+  private reader: SqliteLedgerReadWorker | undefined;
 
   constructor(readonly databasePath: string) {}
 
@@ -103,6 +108,8 @@ export class SqliteLedger {
         throw new Error("SQLite ledger integrity check failed");
       }
       this.database = database;
+      this.query = new SqliteLedgerQuery(database);
+      this.reader = new SqliteLedgerReadWorker(this.databasePath);
     } catch (error) {
       database.close();
       throw error;
@@ -113,6 +120,9 @@ export class SqliteLedger {
     const database = this.database;
     if (!database) return;
     this.database = undefined;
+    this.query = undefined;
+    this.reader?.close();
+    this.reader = undefined;
     database.close();
   }
 
@@ -309,6 +319,41 @@ export class SqliteLedger {
     return rows.map((row) => JSON.parse(row.event_json) as RunEvent);
   }
 
+  listRunEvents(
+    runId: string,
+    afterSeq = 0,
+    types?: readonly string[],
+  ): RunEvent[] {
+    return this.requireQuery().listRunEvents(runId, afterSeq, types);
+  }
+
+  listEventsRange(
+    threadId: string,
+    fromSeq: number,
+    toSeq: number,
+    types?: readonly string[],
+  ): RunEvent[] {
+    return this.requireQuery().listEventsRange(threadId, fromSeq, toSeq, types);
+  }
+
+  findLatestEvent(query: RunEventQueryScope): RunEvent | undefined {
+    return this.requireQuery().findLatestEvent(query);
+  }
+
+  findToolTerminal(
+    callId: string,
+    scope?: Omit<RunEventQueryScope, "types">,
+  ): RunEvent | undefined {
+    return this.requireQuery().findToolTerminal(callId, scope);
+  }
+
+  listEventsByCorrelationId(
+    correlationId: string,
+    scope?: RunEventQueryScope,
+  ): RunEvent[] {
+    return this.requireQuery().listEventsByCorrelationId(correlationId, scope);
+  }
+
   listEventStats(): LedgerEventStats[] {
     const rows = this.requireDatabase()
       .prepare(
@@ -392,6 +437,16 @@ export class SqliteLedger {
       throw new Error("SQLite ledger is not initialized");
     }
     return this.database;
+  }
+
+  private requireQuery(): SqliteLedgerQuery {
+    if (!this.query) throw new Error("SQLite ledger is not initialized");
+    return this.query;
+  }
+
+  eventReader(): SqliteLedgerReadWorker {
+    if (!this.reader) throw new Error("SQLite ledger is not initialized");
+    return this.reader;
   }
 }
 

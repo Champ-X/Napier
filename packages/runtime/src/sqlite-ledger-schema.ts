@@ -6,7 +6,7 @@ import {
   synchronizeRunLeases,
 } from "./sqlite-run-leases.js";
 
-export const LEDGER_SCHEMA_VERSION = 4;
+export const LEDGER_SCHEMA_VERSION = 5;
 
 export function migrateLedgerSchema(
   database: DatabaseSync,
@@ -19,12 +19,34 @@ export function migrateLedgerSchema(
     migrateEventOnlySnapshots(database, currentVersion);
     createRunLeaseSchema(database);
     migrateRunLeases(database, currentVersion);
+    createEventQueryIndexes(database);
+    migrateEventQueryIndexes(database, currentVersion);
     database.exec(`PRAGMA user_version = ${LEDGER_SCHEMA_VERSION}`);
     database.exec("COMMIT");
   } catch (error) {
     rollback(database);
     throw error;
   }
+}
+
+function createEventQueryIndexes(database: DatabaseSync): void {
+  database.exec(`
+    CREATE INDEX IF NOT EXISTS ledger_events_thread_type_seq
+      ON ledger_events (thread_id, event_type, seq);
+
+    CREATE INDEX IF NOT EXISTS ledger_events_correlation_seq
+      ON ledger_events (
+        json_extract(event_json, '$.payload.correlationId'),
+        seq
+      );
+
+    CREATE INDEX IF NOT EXISTS ledger_events_call_terminal_seq
+      ON ledger_events (
+        json_extract(event_json, '$.payload.callId'),
+        event_type,
+        seq
+      );
+  `);
 }
 
 function createBaseSchema(database: DatabaseSync): void {
@@ -51,6 +73,9 @@ function createBaseSchema(database: DatabaseSync): void {
 
     CREATE INDEX IF NOT EXISTS ledger_events_run
       ON ledger_events (run_id, seq);
+
+    CREATE INDEX IF NOT EXISTS ledger_events_run_type_seq
+      ON ledger_events (run_id, event_type, seq);
   `);
 }
 
@@ -114,6 +139,19 @@ function migrateRunLeases(
     database,
     4,
     "normalized_run_leases",
+    new Date().toISOString(),
+  );
+}
+
+function migrateEventQueryIndexes(
+  database: DatabaseSync,
+  currentVersion: number,
+): void {
+  if (currentVersion >= 5) return;
+  recordMigration(
+    database,
+    5,
+    "indexed_event_queries",
     new Date().toISOString(),
   );
 }

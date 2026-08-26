@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 
 import {
@@ -229,10 +229,7 @@ import {
 import { recordCompatibilityHit } from "./compatibility-telemetry.js";
 import { assertArtifactReceiptEventBoundary } from "./artifact-receipts.js";
 import { persistStoreMutation } from "./store-persistence.js";
-import {
-  replayThreadSummaryTails,
-  threadMessagePreview,
-} from "./store-thread-summary-projection.js";
+import { replayThreadSummaryTails } from "./store-thread-summary-projection.js";
 import { loadThreadDetail } from "./thread-detail.js";
 import {
   createThreadRecord,
@@ -300,7 +297,6 @@ import {
   type ModelInvocationExperimentExecution,
 } from "./model-invocation-experiment-execution.js";
 import { validateModelInvocationExperimentRunGate } from "./model-invocation-experiment-run-gate.js";
-import { projectOperatorDecisions } from "./operator-decisions.js";
 import { PlanBlueprintOutcomeRepository } from "./plan-blueprint-outcome-repository.js";
 import { PlanBlueprintPolicyRepository } from "./plan-blueprint-policy-repository.js";
 import { type ExecutionPlanBlueprintPortfolioCalibrationEntry } from "./plan-blueprint-portfolio-model.js";
@@ -355,7 +351,9 @@ import {
 } from "./run-lease-renewal.js";
 import { applyNormalizedRunLeases } from "./run-lease-state.js";
 import { RunLifecycleRepository } from "./run-lifecycle-repository.js";
+import { aggregateRunUsage } from "./run-replay.js";
 import { initialRunStatus } from "./run-state-machine.js";
+import { SerialQueue } from "./serial-queue.js";
 import { SignedPackageRepository } from "./signed-package-repository.js";
 import {
   ConcurrentRunLeaseUpdateError,
@@ -365,8 +363,20 @@ import {
   type LedgerSchemaReport,
 } from "./sqlite-ledger.js";
 import { storeSha256 as sha256 } from "./store-hashing.js";
+import {
+  isMissingFileError,
+  isRecord,
+  normalizeTriggerId,
+  stripRunSecrets,
+} from "./store-core-utils.js";
 import { StorePersistenceMonitor } from "./store-observability.js";
+import { readLegacyEvents } from "./store-legacy-events.js";
+import {
+  findOpenOperatorDecision,
+  parentRunStartEvents,
+} from "./store-run-query-guards.js";
 import type { ChannelDeliveryExecution } from "./store-port.js";
+import type { RunEventQueryScope } from "./run-event-query-port.js";
 import { validatePersistedStoreState } from "./store-state-validation.js";
 import { EMPTY_STORE_STATE, type PersistedStoreState } from "./store-state.js";
 import {
@@ -494,40 +504,10 @@ export type InboundExecution = ChannelDeliveryExecution;
 const EMPTY_STATE: PersistedState = EMPTY_STORE_STATE;
 
 export type { CreateSubagentTaskInput } from "./subagent-store-records.js";
-
-class SerialQueue {
-  private tail = Promise.resolve();
-
-  constructor(
-    private readonly beforeOperation?: () => void | Promise<void>,
-    private readonly maxConflictRetries = 0,
-  ) {}
-
-  run<T>(operation: () => Promise<T>): Promise<T> {
-    const execute = async (): Promise<T> => {
-      for (let attempt = 0; ; attempt += 1) {
-        await this.beforeOperation?.();
-        try {
-          return await operation();
-        } catch (error) {
-          if (
-            (!(error instanceof ConcurrentStoreUpdateError) &&
-              !(error instanceof ConcurrentRunLeaseUpdateError)) ||
-            attempt >= this.maxConflictRetries
-          ) {
-            throw error;
-          }
-        }
-      }
-    };
-    const result = this.tail.then(execute, execute);
-    this.tail = result.then(
-      () => undefined,
-      () => undefined,
-    );
-    return result;
-  }
-}
+export type {
+  RunEventQueryPort,
+  RunEventQueryScope,
+} from "./run-event-query-port.js";
 
 export interface LocalStoreOptions {
   dataRoot: string;
@@ -583,7 +563,13 @@ export class LocalStore {
     this.statePath = path.join(this.dataRoot, "workspace.json");
     this.eventsRoot = path.join(this.dataRoot, "events");
     this.databasePath = path.join(this.dataRoot, LEDGER_DATABASE_FILENAME);
-    this.stateQueue = new SerialQueue(() => this.refreshStateFromLedger(), 4);
+    this.stateQueue = new SerialQueue(
+      () => this.refreshStateFromLedger(),
+      4,
+      (error) =>
+        error instanceof ConcurrentStoreUpdateError ||
+        error instanceof ConcurrentRunLeaseUpdateError,
+    );
     this.subagentRepository = new SubagentRepository({
       assertReady: () => this.assertInitialized(),
       read: () => this.state,
@@ -692,10 +678,12 @@ export class LocalStore {
             await readFile(this.statePath, "utf8"),
           ) as PersistedState;
           this.state = this.validateState(parsed);
-          const events = await this.readLegacyEvents();
+          const events = await readLegacyEvents(this.state, this.eventsRoot);
           this.state = this.validateState(this.state, events);
           const imported = ledger.bootstrap(JSON.stringify(this.state), events);
-          this.restoreSnapshot(imported); recordCompatibilityHit("compat.store.legacy_json_read"); restored = true;
+          this.restoreSnapshot(imported);
+          recordCompatibilityHit("compat.store.legacy_json_read");
+          restored = true;
           await this.compatibilityProjections.writeAll(
             imported.stateJson,
             this.state.threads.map((thread) => thread.id),
@@ -2870,7 +2858,74 @@ export class LocalStore {
   async listEvents(threadId: string, afterSeq = 0): Promise<RunEvent[]> {
     this.assertInitialized();
     this.getThread(threadId);
-    return structuredClone(this.requireLedger().listEvents(threadId, afterSeq));
+    return this.requireLedger().eventReader().listEvents(threadId, afterSeq);
+  }
+
+  async listRunEvents(
+    runId: string,
+    afterSeq = 0,
+    types?: readonly string[],
+  ): Promise<RunEvent[]> {
+    this.assertRunQuery(runId);
+    return this.requireLedger()
+      .eventReader()
+      .listRunEvents(runId, afterSeq, types);
+  }
+
+  async listEventsRange(
+    threadId: string,
+    fromSeq: number,
+    toSeq: number,
+    types?: readonly string[],
+  ): Promise<RunEvent[]> {
+    this.assertThreadQuery(threadId);
+    return this.requireLedger()
+      .eventReader()
+      .listEventsRange(threadId, fromSeq, toSeq, types);
+  }
+
+  async findLatestEvent(
+    query: RunEventQueryScope,
+  ): Promise<RunEvent | undefined> {
+    this.assertEventQuery(query);
+    return this.requireLedger().eventReader().findLatestEvent(query);
+  }
+
+  async findToolTerminal(
+    callId: string,
+    scope?: Omit<RunEventQueryScope, "types">,
+  ): Promise<RunEvent | undefined> {
+    this.assertEventQuery(scope ?? {});
+    return this.requireLedger().eventReader().findToolTerminal(callId, scope);
+  }
+
+  async listEventsByCorrelationId(
+    correlationId: string,
+    scope?: RunEventQueryScope,
+  ): Promise<RunEvent[]> {
+    this.assertEventQuery(scope ?? {});
+    return this.requireLedger()
+      .eventReader()
+      .listEventsByCorrelationId(correlationId, scope);
+  }
+
+  async aggregateRunUsage(runId: string) {
+    const run = this.assertRunQuery(runId);
+    return aggregateRunUsage(
+      await this.requireLedger()
+        .eventReader()
+        .listRunEvents(runId, 0, [
+          "model.response",
+          "message.assistant",
+          "context.compaction.completed",
+          "context.compaction.failed",
+          "goal.evaluated",
+          "memory.extraction.completed",
+          "memory.extraction.failed",
+          "model.advisor.independent.reviewed",
+        ]),
+      this.listSubagentTasks(run.threadId, runId),
+    );
   }
 
   async createThread(input: {
@@ -3082,11 +3137,15 @@ export class LocalStore {
     return this.appendResolvedEvent(resolveRegisteredEventInput(input));
   }
 
-  async appendExtensionEvent(input: AppendExtensionEventInput): Promise<RunEvent> {
+  async appendExtensionEvent(
+    input: AppendExtensionEventInput,
+  ): Promise<RunEvent> {
     return this.appendResolvedEvent(resolveExtensionEventInput(input));
   }
 
-  async appendCompatibilityEvent(input: AppendCompatibilityEventInput): Promise<RunEvent> {
+  async appendCompatibilityEvent(
+    input: AppendCompatibilityEventInput,
+  ): Promise<RunEvent> {
     return this.appendResolvedEvent(resolveCompatibilityEventInput(input));
   }
 
@@ -3231,11 +3290,9 @@ export class LocalStore {
         `Thread reached its concurrent Workflow Run limit (${MAX_CONCURRENT_WORKFLOW_RUNS_PER_THREAD})`,
       );
     }
-    const openOperatorDecision = projectOperatorDecisions(
-      this.requireLedger().listEvents(thread.id),
-    ).find(
-      (decision) =>
-        decision.status === "pending" || decision.status === "answered",
+    const openOperatorDecision = findOpenOperatorDecision(
+      this.requireLedger(),
+      thread,
     );
     if (
       openOperatorDecision &&
@@ -3259,7 +3316,7 @@ export class LocalStore {
       agents: this.state.agents,
       revisions: this.state.agentRevisions,
       runs: this.state.runs,
-      events: this.requireLedger().listEvents(thread.id),
+      events: parentRunStartEvents(this.requireLedger(), input.parentRunId),
       threadId: thread.id,
       agentId: input.agentId,
       agentRevision: input.agentRevision,
@@ -3613,6 +3670,24 @@ export class LocalStore {
     if (this.initialized) this.refreshStateFromLedger();
   }
 
+  private assertRunQuery(runId: string): PersistedRunRecord {
+    this.assertInitialized();
+    return this.mutableRun(runId);
+  }
+
+  private assertThreadQuery(threadId: string): void {
+    this.assertInitialized();
+    this.getThread(threadId);
+  }
+
+  private assertEventQuery(
+    query: Pick<RunEventQueryScope, "threadId" | "runId">,
+  ): void {
+    this.assertInitialized();
+    if (query.threadId) this.getThread(query.threadId);
+    if (query.runId) this.mutableRun(query.runId);
+  }
+
   private refreshStateFromLedger(force = false): void {
     const snapshot = this.ledger?.readSnapshot();
     if (!snapshot) return;
@@ -3734,63 +3809,6 @@ export class LocalStore {
     );
   }
 
-  private async readLegacyEvents(): Promise<RunEvent[]> {
-    const events: RunEvent[] = [];
-    const threads = new Map(
-      this.state.threads.map((thread) => [thread.id, thread]),
-    );
-    const files = (await readdir(this.eventsRoot))
-      .filter((file) => file.endsWith(".jsonl"))
-      .sort();
-    for (const file of files) {
-      const threadId = file.slice(0, -".jsonl".length);
-      const thread = threads.get(threadId);
-      if (!thread) {
-        throw new Error(`Legacy ledger has an orphan event file: ${file}`);
-      }
-      const contents = await readFile(path.join(this.eventsRoot, file), "utf8");
-      const threadEvents = contents
-        .split("\n")
-        .filter(Boolean)
-        .map((line) => JSON.parse(line) as RunEvent);
-      for (const [index, event] of threadEvents.entries()) {
-        const expectedSeq = index + 1;
-        if (event.threadId !== threadId || event.seq !== expectedSeq) {
-          throw new Error(
-            `Legacy ledger sequence is invalid for ${threadId} at ${expectedSeq}`,
-          );
-        }
-      }
-      if (threadEvents.length < thread.eventCount) {
-        throw new Error(
-          `Legacy ledger is missing evidence for ${threadId}: expected ${thread.eventCount}, found ${threadEvents.length}`,
-        );
-      }
-      if (threadEvents.length > thread.eventCount) {
-        thread.eventCount = threadEvents.length;
-        const lastEvent = threadEvents.at(-1);
-        if (lastEvent) {
-          thread.updatedAt = lastEvent.createdAt;
-          for (let index = threadEvents.length - 1; index >= 0; index -= 1) {
-            const message = threadMessagePreview(threadEvents[index]!);
-            if (message) {
-              thread.lastMessage = message;
-              break;
-            }
-          }
-        }
-      }
-      events.push(...threadEvents);
-      threads.delete(threadId);
-    }
-    for (const thread of threads.values()) {
-      if (thread.eventCount > 0) {
-        throw new Error(`Legacy ledger event file is missing for ${thread.id}`);
-      }
-    }
-    return events;
-  }
-
   private validateLedgerConsistency(): void {
     const stats = new Map(
       this.requireLedger()
@@ -3836,30 +3854,4 @@ export class LocalStore {
       );
     }
   }
-}
-
-function stripRunSecrets(run: PersistedRunRecord): RunRecord {
-  const output = structuredClone(run);
-  delete output.leaseTokenSha256;
-  return output;
-}
-
-function normalizeTriggerId(value: string): string {
-  const normalized = value.trim();
-  if (
-    !normalized ||
-    normalized.length > 240 ||
-    /[\u0000-\u001f\u007f]/.test(normalized)
-  ) {
-    throw new Error("Run trigger ID is invalid");
-  }
-  return normalized;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function isMissingFileError(error: unknown): boolean {
-  return error instanceof Error && "code" in error && error.code === "ENOENT";
 }

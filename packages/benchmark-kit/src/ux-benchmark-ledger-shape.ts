@@ -1,12 +1,10 @@
 import type { RunEvent } from "@napier/contracts";
 
 import type { UxBenchmarkLedgerBundle } from "./ux-benchmark-types.js";
+import { hasExactRunEventEnvelope } from "./run-event-envelope-shape.js";
 
 const TOP_LEVEL_KEYS = keySet(
   "kind schemaVersion generatedAt caseId caseSha256 threadId model environment run expectedOutputSha256 actualOutputSha256 credentialVariableSha256 cliExitCode manualCommandCount firstEventMs maxFirstEventMs totalDurationMs maxDurationMs credentialReferenceCount credentialProviderMatch credentialLocatorMatch credentialAvailable threadCountAfter replayValid credentialLeakDetected credentialPersistenceLeakDetected evaluationEvent terminalEvent eventCount retainedEventCount omittedEventCount eventTypeCounts eventTypeSetSha256 sourceEventStreamSha256 sourceReplaySha256 eventReceipts receiptSetSha256 contentSha256",
-);
-const EVENT_KEYS = keySet(
-  "id threadId runId seq type category visibility createdAt payload",
 );
 const RECEIPT_KEYS = keySet(
   "id seq runId type category visibility createdAt payloadSha256 previousReceiptSha256 receiptSha256",
@@ -132,7 +130,7 @@ function validTerminalEvent(value: unknown): boolean {
 
 function validEvent(value: unknown): value is RunEvent {
   return (
-    exactRecord(value, EVENT_KEYS) &&
+    hasExactRunEventEnvelope(value) &&
     resourceId(value["id"]) &&
     resourceId(value["threadId"]) &&
     resourceId(value["runId"]) &&

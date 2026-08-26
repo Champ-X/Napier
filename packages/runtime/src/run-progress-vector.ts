@@ -98,7 +98,7 @@ export class RunProgressTracker {
     task?: { prompt: string; toolNames: string[] },
     limits?: RunLimits,
   ): Promise<RunProgressTracker> {
-    const events = await store.listEvents(run.threadId);
+    const events = await store.listRunEvents(run.id);
     const prompt = task?.prompt ?? "";
     const toolNames = task?.toolNames ?? [];
     const runLimits =
@@ -131,13 +131,12 @@ export class RunProgressTracker {
 
   async recordTurn(): Promise<RunEvent> {
     this.turnIndex += 1;
-    const events = await this.context.store.listEvents(
-      this.context.run.threadId,
+    const events = await this.context.store.listRunEvents(
+      this.context.run.id,
       this.lastSeq,
     );
     const completed = events.findLast(
-      (event) =>
-        event.runId === this.context.run.id && event.type === "turn.completed",
+      (event) => event.type === "turn.completed",
     );
     if (!completed) {
       throw new Error("Run progress vector requires a completed turn");

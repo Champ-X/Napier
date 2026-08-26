@@ -1,5 +1,9 @@
 import { readFile } from "node:fs/promises";
-import { type JsonValue, type ModelRef } from "@napier/contracts";
+import {
+  type JsonObject,
+  type JsonValue,
+  type ModelRef,
+} from "@napier/contracts";
 import { canonicalJson, sha256 } from "@napier/runtime/core";
 import {
   createLocalAgentRuntime,
@@ -299,7 +303,7 @@ export async function runWorkflowBenchmark(
           type: "benchmark.workflow.evaluated",
           category: "evaluation",
           visibility: "user",
-          payload: evaluation as unknown as JsonValue,
+          payload: evaluation as unknown as JsonObject,
         });
         const generatedAt = dependencies.now().toISOString();
         const finalReplay = await exportThreadReplayBundle(

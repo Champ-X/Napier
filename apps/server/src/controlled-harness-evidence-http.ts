@@ -1,6 +1,6 @@
 import type { Context, Hono } from "hono";
 
-import type { JsonValue } from "@napier/contracts";
+import type { JsonObject } from "@napier/contracts";
 import type {
   ControlledHarnessEvidence,
   ControlledHarnessGateProjection,
@@ -128,7 +128,7 @@ export function registerControlledHarnessEvidenceHttp(
         type: CONTROLLED_HARNESS_EVIDENCE_EVENT_TYPE,
         category: "evaluation",
         visibility: "user",
-        payload: request.evidence as unknown as JsonValue,
+        payload: request.evidence as unknown as JsonObject,
       });
       const gate = projectControlledHarnessGate(
         casebook.id,

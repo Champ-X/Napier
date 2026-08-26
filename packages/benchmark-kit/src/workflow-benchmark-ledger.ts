@@ -23,6 +23,7 @@ import {
   isWorkflowBenchmarkStatus,
   workflowBenchmarkTerminalEventType,
 } from "./workflow-benchmark-terminal-event.js";
+import { hasExactRunEventEnvelope } from "./run-event-envelope-shape.js";
 
 const TOP_LEVEL_KEYS = keySet(
   "kind schemaVersion generatedAt caseId caseSha256 threadId workflow runs evaluationEvent terminalEvent eventCount retainedEventCount omittedEventCount eventTypeCounts eventTypeSetSha256 sourceEventStreamSha256 sourceReplaySha256 eventReceipts receiptSetSha256 contentSha256",
@@ -272,17 +273,7 @@ function validRun(value: unknown): boolean {
 
 function validEvent(value: unknown): value is RunEvent {
   return (
-    exactRecord(value, [
-      "id",
-      "threadId",
-      "runId",
-      "seq",
-      "type",
-      "category",
-      "visibility",
-      "createdAt",
-      "payload",
-    ]) &&
+    hasExactRunEventEnvelope(value) &&
     resourceId(value["id"]) &&
     resourceId(value["threadId"]) &&
     resourceId(value["runId"]) &&

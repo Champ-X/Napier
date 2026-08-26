@@ -1,4 +1,5 @@
 import type { CredentialReference } from "@napier/contracts";
+import type { RegisteredRunEventTypeForCategory } from "@napier/contracts";
 import {
   createId,
 } from "@napier/runtime/core";
@@ -286,7 +287,7 @@ function setCredentialReferenceHeaders(
 async function appendCredentialEvent(
   store: CredentialHttpStore,
   threadId: string | undefined,
-  type: string,
+  type: RegisteredRunEventTypeForCategory<"credential">,
   reference: CredentialReference,
 ): Promise<void> {
   if (!threadId) return;

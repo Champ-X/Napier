@@ -48,6 +48,9 @@ describe("Run event registry", () => {
     const delta = schemas.find(
       (candidate) => candidate.type === "model.text.delta",
     );
+    const benchmark = schemas.find(
+      (candidate) => candidate.type === "benchmark.workflow.evaluated",
+    );
 
     expect(message).toEqual(
       expect.objectContaining({
@@ -61,6 +64,15 @@ describe("Run event registry", () => {
       expect.objectContaining({
         category: "model",
         defaultVisibility: "hidden",
+        schemaVersion: 1,
+      }),
+    );
+    expect(benchmark).toEqual(
+      expect.objectContaining({
+        category: "evaluation",
+        defaultVisibility: "user",
+        owner: "benchmark-kit",
+        projectionOwner: "validation-matrix",
         schemaVersion: 1,
       }),
     );
@@ -105,18 +117,21 @@ describe("Run event registry", () => {
       { payload: { role: "user", text: "Hello", invalid: undefined } },
       "payload v1 is invalid",
     ],
-  ])("rejects a registered event with an invalid %s", (_name, change, error) => {
-    const input = {
-      threadId: "thread_registry",
-      runId: "run_registry",
-      type: "message.user",
-      category: "message",
-      payload: { role: "user", text: "Hello" },
-      ...change,
-    } as unknown as AppendEventInput<"message.user">;
+  ])(
+    "rejects a registered event with an invalid %s",
+    (_name, change, error) => {
+      const input = {
+        threadId: "thread_registry",
+        runId: "run_registry",
+        type: "message.user",
+        category: "message",
+        payload: { role: "user", text: "Hello" },
+        ...change,
+      } as unknown as AppendEventInput<"message.user">;
 
-    expect(() => resolveRegisteredEventInput(input)).toThrow(error);
-  });
+      expect(() => resolveRegisteredEventInput(input)).toThrow(error);
+    },
+  );
 
   it("accepts an owned, versioned extension namespace", () => {
     expect(
@@ -145,20 +160,23 @@ describe("Run event registry", () => {
     ["payload", { payload: Number.NaN }, "payload must be a JSON object"],
     ["visibility", { visibility: "private" }, "visibility is invalid"],
     ["payload", { payload: [] }, "payload must be a JSON object"],
-  ])("rejects an extension event with an invalid %s", (_name, change, error) => {
-    const input = {
-      threadId: "thread_registry",
-      runId: "run_registry",
-      type: "extension.acme.audit.recorded",
-      category: "extension",
-      payload: { result: "accepted" },
-      schemaVersion: 1,
-      extensionId: "acme",
-      ...change,
-    } as unknown as AppendExtensionEventInput;
+  ])(
+    "rejects an extension event with an invalid %s",
+    (_name, change, error) => {
+      const input = {
+        threadId: "thread_registry",
+        runId: "run_registry",
+        type: "extension.acme.audit.recorded",
+        category: "extension",
+        payload: { result: "accepted" },
+        schemaVersion: 1,
+        extensionId: "acme",
+        ...change,
+      } as unknown as AppendExtensionEventInput;
 
-    expect(() => resolveExtensionEventInput(input)).toThrow(error);
-  });
+      expect(() => resolveExtensionEventInput(input)).toThrow(error);
+    },
+  );
 
   it("accepts an explicit compatibility boundary", () => {
     expect(
@@ -182,9 +200,21 @@ describe("Run event registry", () => {
   });
 
   it.each([
-    ["boundary", { compatibility: { boundary: "runtime", reason: "x" } }, "boundary is invalid"],
-    ["reason", { compatibility: { boundary: "test_fixture", reason: "   " } }, "reason is required"],
-    ["registered type", { type: "run.started" }, "must use the typed append path"],
+    [
+      "boundary",
+      { compatibility: { boundary: "runtime", reason: "x" } },
+      "boundary is invalid",
+    ],
+    [
+      "reason",
+      { compatibility: { boundary: "test_fixture", reason: "   " } },
+      "reason is required",
+    ],
+    [
+      "registered type",
+      { type: "run.started" },
+      "must use the typed append path",
+    ],
     ["category", { category: "unknown" }, "category is invalid"],
     ["visibility", { visibility: "private" }, "visibility is invalid"],
     ["schema", { schemaVersion: 0 }, "schemaVersion is invalid"],
@@ -220,8 +250,14 @@ describe("Run event registry", () => {
     stores.push(store);
     await store.initialize();
     const agent = store.listAgents()[0]!;
-    const thread = await store.createThread({ title: "Event boundary", agentId: agent.id });
-    const run = await store.createRun({ threadId: thread.id, agentId: agent.id });
+    const thread = await store.createThread({
+      title: "Event boundary",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
 
     const extension = await store.appendExtensionEvent({
       threadId: thread.id,
@@ -255,9 +291,8 @@ describe("Run event registry", () => {
     expect(compatibility).toEqual(
       expect.objectContaining({ type: "legacy.scalar", schemaVersion: 7 }),
     );
-    expect((await store.listEvents(thread.id)).map((event) => event.type)).toEqual([
-      "extension.a.recorded",
-      "legacy.scalar",
-    ]);
+    expect(
+      (await store.listEvents(thread.id)).map((event) => event.type),
+    ).toEqual(["extension.a.recorded", "legacy.scalar"]);
   });
 });

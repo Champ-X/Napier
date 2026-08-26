@@ -190,6 +190,10 @@ describe("transactional LocalStore", () => {
             version: 4,
             name: "normalized_run_leases",
           }),
+          expect.objectContaining({
+            version: 5,
+            name: "indexed_event_queries",
+          }),
         ],
       }),
     );
@@ -227,6 +231,10 @@ describe("transactional LocalStore", () => {
           expect.objectContaining({
             version: 4,
             name: "normalized_run_leases",
+          }),
+          expect.objectContaining({
+            version: 5,
+            name: "indexed_event_queries",
           }),
         ],
       }),

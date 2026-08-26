@@ -1,4 +1,7 @@
-import type { AutomationSchedule } from "@napier/contracts";
+import type {
+  AutomationSchedule,
+  RegisteredRunEventTypeForCategory,
+} from "@napier/contracts";
 import { createId } from "@napier/runtime/core";
 import { type LocalStore } from "@napier/runtime/store";
 import { type ModelRegistry } from "@napier/runtime/model";
@@ -201,7 +204,7 @@ export function setAutomationScheduleCountHeaders(
 async function appendAutomationEvent(
   store: ScheduleHttpStore,
   schedule: AutomationSchedule,
-  type: string,
+  type: RegisteredRunEventTypeForCategory<"automation">,
   payload: Record<string, string | number | string[]>,
 ): Promise<void> {
   await store.appendEvent({

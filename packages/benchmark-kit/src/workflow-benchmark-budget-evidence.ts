@@ -7,10 +7,8 @@ import type {
   WorkflowBenchmarkLedgerBundle,
   WorkflowBenchmarkLedgerEventReceipt,
 } from "./workflow-benchmark-types.js";
+import { hasExactRunEventEnvelope } from "./run-event-envelope-shape.js";
 
-const EVENT_KEYS = keySet(
-  "id threadId runId seq type category visibility createdAt payload",
-);
 const PAYLOAD_KEYS = keySet("status reason limit observed limits message");
 const OBSERVED_KEYS = keySet(
   "turns inFlightTurns totalTokens rawTotalTokens costUsd rawCostUsd elapsedMs usage",
@@ -228,7 +226,7 @@ function budgetEvaluation(
 
 function validBudgetEvent(value: unknown): value is RunEvent {
   if (
-    !exactRecord(value, EVENT_KEYS) ||
+    !hasExactRunEventEnvelope(value) ||
     !exactRecord(value["payload"], PAYLOAD_KEYS)
   ) {
     return false;

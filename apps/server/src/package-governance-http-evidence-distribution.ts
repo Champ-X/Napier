@@ -1,6 +1,6 @@
 import { setBodyContentSha256Header, setStableContentSha256Header, sha256Json, sha256Text } from "./http-response-evidence.js";
 import type { NapierServices } from "./server-composition-root.js";
-import type { ApplyExtensionPackageDeploymentResult, ApplyExtensionPackageRolloutChannelResult, ApplyExtensionPackageUpdateResult, ExtensionPackageChannelIndexVerification, ExtensionPackageDeploymentPreview, ExtensionPackageLockfile, ExtensionPackageLockfileVerification, ExtensionPackageRolloutChannel, ExtensionPackageRolloutPreview, ExtensionPackageUpdatePreview, ExtensionPackageVerification, InspectorPackageQualification, InspectorPackageVerification, JsonValue, SignedExtensionPackageChannelIndexEnvelope } from "@napier/contracts";
+import type { ApplyExtensionPackageDeploymentResult, ApplyExtensionPackageRolloutChannelResult, ApplyExtensionPackageUpdateResult, ExtensionPackageChannelIndexVerification, ExtensionPackageDeploymentPreview, ExtensionPackageLockfile, ExtensionPackageLockfileVerification, ExtensionPackageRolloutChannel, ExtensionPackageRolloutPreview, ExtensionPackageUpdatePreview, ExtensionPackageVerification, InspectorPackageQualification, InspectorPackageVerification, JsonValue, RegisteredRunEventTypeForCategory, SignedExtensionPackageChannelIndexEnvelope } from "@napier/contracts";
 import { createId } from "@napier/runtime/core";
 import type { Context } from "hono";
 
@@ -219,7 +219,7 @@ export function setExtensionPackageUpdateResultHeaders(context: Context, result:
   context.header("X-Napier-Extension-Revision", String(result.extension.revision));
 }
 
-export async function appendReceiptTrustEvent(services: NapierServices, threadId: string, type: string, payload: Record<string, JsonValue>): Promise<void> {
+export async function appendReceiptTrustEvent(services: NapierServices, threadId: string, type: RegisteredRunEventTypeForCategory<"evaluation">, payload: Record<string, JsonValue>): Promise<void> {
   await services.store.appendEvent({
     threadId,
     runId: createId("runctl"),
@@ -227,10 +227,10 @@ export async function appendReceiptTrustEvent(services: NapierServices, threadId
     category: "evaluation",
     visibility: "user",
     payload,
-  });
+  } as Parameters<NapierServices["store"]["appendEvent"]>[0]);
 }
 
-export async function appendExtensionEvent(services: NapierServices, threadId: string | undefined, type: string, payload: Record<string, JsonValue>): Promise<void> {
+export async function appendExtensionEvent(services: NapierServices, threadId: string | undefined, type: RegisteredRunEventTypeForCategory<"extension">, payload: Record<string, JsonValue>): Promise<void> {
   if (!threadId) return;
   await services.store.appendEvent({
     threadId,
@@ -239,5 +239,5 @@ export async function appendExtensionEvent(services: NapierServices, threadId: s
     category: "extension",
     visibility: "user",
     payload,
-  });
+  } as Parameters<NapierServices["store"]["appendEvent"]>[0]);
 }

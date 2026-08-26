@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import type {
-  JsonValue,
+  JsonObject,
   ModelRef,
   RunEvent,
   RunRecord,
@@ -290,7 +290,7 @@ async function appendCodingBenchmarkEvidence(input: {
       type: "benchmark.evaluated",
       category: "evaluation",
       visibility: "user",
-      payload: input.evaluation as unknown as JsonValue,
+      payload: input.evaluation as unknown as JsonObject,
     });
     return {
       event,

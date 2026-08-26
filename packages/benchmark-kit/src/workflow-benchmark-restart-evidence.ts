@@ -8,10 +8,8 @@ import type {
   WorkflowBenchmarkLedgerBundle,
   WorkflowBenchmarkLedgerEventReceipt,
 } from "./workflow-benchmark-types.js";
+import { hasExactRunEventEnvelope } from "./run-event-envelope-shape.js";
 
-const RESTART_EVENT_KEYS = keySet(
-  "id threadId runId seq type category visibility createdAt payload",
-);
 const RESTART_PAYLOAD_V1_KEYS = keySet(
   "schemaVersion planId manifestSha256 preRestartReplaySha256 preRestartEventCount preRestartMapRunIds decisionId decisionSha256",
 );
@@ -226,7 +224,7 @@ function validRestartEvent(value: unknown): value is RunEvent {
       ? RESTART_PAYLOAD_V2_KEYS
       : RESTART_PAYLOAD_V1_KEYS;
   if (
-    !exactRecord(value, RESTART_EVENT_KEYS) ||
+    !hasExactRunEventEnvelope(value) ||
     !exactRecord(value["payload"], payloadKeys)
   ) {
     return false;

@@ -139,11 +139,13 @@ describe("normalized Run lease persistence", () => {
 
     const migrated = await openStore(fixture);
 
-    expect(migrated.getLedgerSchemaReport().migrations.at(-1)).toEqual(
-      expect.objectContaining({
-        version: 4,
-        name: "normalized_run_leases",
-      }),
+    expect(migrated.getLedgerSchemaReport().migrations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          version: 4,
+          name: "normalized_run_leases",
+        }),
+      ]),
     );
     expect(runLeaseRow(fixture.dataRoot, leased.run.id)).toEqual(
       expect.objectContaining({

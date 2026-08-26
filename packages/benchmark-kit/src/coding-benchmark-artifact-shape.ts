@@ -6,6 +6,7 @@ import type {
   CodingBenchmarkToolMetrics,
 } from "./coding-benchmark-types.js";
 import { validCodingBenchmarkEvaluationShape } from "./coding-benchmark-evaluation-shape.js";
+import { hasExactRunEventEnvelope } from "./run-event-envelope-shape.js";
 
 const SHA256 = /^[a-f0-9]{64}$/u;
 const RESOURCE_ID = /^[a-z][a-z0-9_]{2,80}$/u;
@@ -42,9 +43,6 @@ const BUNDLE_RUN_KEYS = keySet(
 );
 const RESULT_LEDGER_KEYS = keySet(
   "eventId eventSeq eventSha256 eventStreamSha256 bundleFileName bundleSha256 bundleBytes",
-);
-const EVALUATION_EVENT_KEYS = keySet(
-  "id threadId runId seq type category visibility createdAt payload",
 );
 const USAGE_KEYS = keySet(
   "inputTokens outputTokens cacheReadTokens cacheWriteTokens costUsd",
@@ -227,7 +225,7 @@ function validResultLedger(value: unknown): boolean {
 
 function validEvaluationEvent(value: unknown): boolean {
   return (
-    exactRecord(value, EVALUATION_EVENT_KEYS) &&
+    hasExactRunEventEnvelope(value) &&
     resourceId(value["id"]) &&
     resourceId(value["threadId"]) &&
     resourceId(value["runId"]) &&

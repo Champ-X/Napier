@@ -1,6 +1,6 @@
 import type { Context, Hono } from "hono";
 
-import type { JsonValue } from "@napier/contracts";
+import type { JsonObject } from "@napier/contracts";
 import type {
   CreateReleaseProductTrialRequest,
   ReleaseProductGateProjection,
@@ -119,7 +119,7 @@ export function registerReleaseProductTrialHttp(
       type: RELEASE_PRODUCT_TRIAL_EVENT_TYPE,
       category: "evaluation",
       visibility: "user",
-      payload: trial as unknown as JsonValue,
+      payload: trial as unknown as JsonObject,
     });
     const projection = projectReleaseProductGate(
       casebook,

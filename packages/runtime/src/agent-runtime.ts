@@ -44,6 +44,7 @@ import {
 } from "./compaction.js";
 import { captureConversationSurfaceTurn } from "./conversation-surface-capture.js";
 import { ConversationSurfaceCapsuleStore } from "./conversation-surface-capsule-store.js";
+import { ContextEventReadModel } from "./context-event-read-model.js";
 import { projectConversationSurface } from "./conversation-surface.js";
 import { createDelegationLedgerProjection } from "./delegation-ledger.js";
 import type { EventSink } from "./event-sink.js";
@@ -198,7 +199,6 @@ import {
   PROMPT_VARIABLES_RESOLVED_EVENT,
   resolvePromptVariables,
 } from "./prompt-variables.js";
-import { aggregateRunUsage } from "./run-replay.js";
 import { RunBudgetTracker } from "./run-budget.js";
 import { finLife } from "./run-finalization-reserve.js";
 import { classifyFailure } from "./run-failure-classification.js";
@@ -268,6 +268,7 @@ export class AgentRuntime {
   private readonly capabilities: AgentCapabilityRuntime;
   readonly browserLiveViews: BrowserLiveViewService;
   readonly browserSessionControls: BrowserSessionControlService;
+  private readonly contextEvents: ContextEventReadModel;
   constructor(
     readonly store: LocalStore,
     readonly modelRegistry: ModelRegistry,
@@ -295,6 +296,7 @@ export class AgentRuntime {
       store.dataRoot,
     ),
   ) {
+    this.contextEvents = new ContextEventReadModel(store);
     this.modelRouter = new ModelRouter(store, modelRegistry);
     this.capabilities = new AgentCapabilityRuntime(
       store,
@@ -795,7 +797,7 @@ export class AgentRuntime {
         lifecycles: this.lifecycles.current(),
         run,
         signal: abortController.signal,
-        collectUsage: () => this.collectRunUsage(thread.id, run.id),
+        collectUsage: () => this.collectRunUsage(run.id),
       });
       return await finishSuccessfulAgentRun({
         store: this.store,
@@ -844,7 +846,7 @@ export class AgentRuntime {
           options.onEvent,
         );
         return await this.store.finishRun(run.id, "completed", {
-          usage: await this.collectRunUsage(thread.id, run.id),
+          usage: await this.collectRunUsage(run.id),
           leaseToken: leasedRun.token,
           waitForOperatorDecisionId: error.decisionId,
         });
@@ -870,7 +872,7 @@ export class AgentRuntime {
         invocationSource,
         ...(options.parentRunId ? { parentRunId: options.parentRunId } : {}),
         ...(options.recovery ? { recovery: options.recovery } : {}),
-        usage: await this.collectRunUsage(thread.id, run.id),
+        usage: await this.collectRunUsage(run.id),
         limits: budget.limits,
         leaseToken: leasedRun.token,
         ...(options.onEvent ? { onEvent: options.onEvent } : {}),
@@ -914,9 +916,7 @@ export class AgentRuntime {
         "Agent message experiment Runs must be retried from their source checkpoint",
       );
     }
-    const events = (await this.store.listEvents(thread.id)).filter(
-      (event) => event.runId === interrupted.id,
-    );
+    const events = await this.store.listRunEvents(interrupted.id);
     const recoveryOptions: RunPromptOptions = {
       threadId: thread.id,
       text: buildRunRecoveryPrompt(
@@ -1013,9 +1013,7 @@ export class AgentRuntime {
         "Interrupted Run is not eligible for safe automatic recovery",
       );
     }
-    const events = (await this.store.listEvents(thread.id)).filter(
-      (event) => event.runId === interrupted.id,
-    );
+    const events = await this.store.listRunEvents(interrupted.id);
     const recoveryOptions: RunPromptOptions = {
       threadId: thread.id,
       text: buildRunRecoveryPrompt(
@@ -1087,8 +1085,19 @@ export class AgentRuntime {
         payload: {
           messageCount: isWorkflowRunSource(source)
             ? 0
-            : (await this.store.listEvents(run.threadId)).filter(
-                (event) => event.category === "message",
+            : (
+                await this.store.listEventsRange(
+                  run.threadId,
+                  1,
+                  this.store.getThread(run.threadId).eventCount,
+                  [
+                    "message.user",
+                    "message.assistant",
+                    "run.control.queued",
+                    "run.control.delivered",
+                    "run.control.cancelled",
+                  ],
+                )
               ).length,
           skills: profile.enabledSkills,
           policy: profile.toolPolicy,
@@ -1246,7 +1255,7 @@ export class AgentRuntime {
     const threadRecord = this.store.getThread(run.threadId);
     const toolLoopGuardPolicy = effectiveToolLoopGuardPolicy(profile);
     let activeToolLoopGuard = latestActiveToolLoopGuard(
-      await this.store.listEvents(run.threadId),
+      await this.store.listRunEvents(run.id),
       run.id,
       toolLoopGuardPolicy,
     );
@@ -1649,7 +1658,7 @@ export class AgentRuntime {
             }
           }
           try {
-            let runEvents = await this.store.listEvents(run.threadId);
+            let runEvents = await this.store.listRunEvents(run.id);
             const detection = detectToolCallLoop(
               runEvents,
               run.id,
@@ -1678,7 +1687,7 @@ export class AgentRuntime {
                 },
                 onEvent,
               );
-              runEvents = await this.store.listEvents(run.threadId);
+              runEvents = await this.store.listRunEvents(run.id);
             }
             nextActiveToolLoopGuard = latestActiveToolLoopGuard(
               runEvents,
@@ -2091,9 +2100,7 @@ export class AgentRuntime {
     budget: RunBudgetTracker,
     onEvent?: EventSink,
   ): Promise<void> {
-    const runEvents = (await this.store.listEvents(run.threadId)).filter(
-      (event) => event.runId === run.id,
-    );
+    const runEvents = await this.store.listRunEvents(run.id);
     const notice = createModelAdvisorNotice({
       assistantText,
       runEvents,
@@ -2234,7 +2241,7 @@ export class AgentRuntime {
         compacted: false,
       };
     }
-    const events = await this.store.listEvents(run.threadId);
+    const events = await this.contextEvents.read(run.threadId);
     const importedEventCount = localImportedThroughSeq(
       this.store.getThread(run.threadId).importProvenance,
     );
@@ -2741,9 +2748,12 @@ export class AgentRuntime {
   private async firstUserMessageText(
     threadId: string,
   ): Promise<string | undefined> {
-    const event = (await this.store.listEvents(threadId)).find(
-      (candidate) => candidate.type === "message.user",
-    );
+    const thread = this.store.getThread(threadId);
+    const event = (
+      await this.store.listEventsRange(threadId, 1, thread.eventCount, [
+        "message.user",
+      ])
+    )[0];
     const payload = event?.payload;
     if (!payload || Array.isArray(payload) || typeof payload !== "object") {
       return undefined;
@@ -2762,7 +2772,7 @@ export class AgentRuntime {
     nextModelContextEnvelopeTurnIndex: () => number,
     onEvent?: EventSink,
   ): Promise<void> {
-    const conversation = await this.buildRunConversation(threadId, runId);
+    const conversation = await this.buildRunConversation(runId);
     if (!conversation) return;
     if (!budget.canStartOptionalAuxiliaryCall()) {
       await this.record(
@@ -3041,16 +3051,13 @@ export class AgentRuntime {
     budget.throwIfExhausted();
   }
 
-  private async buildRunConversation(
-    threadId: string,
-    runId: string,
-  ): Promise<string> {
-    return (await this.store.listEvents(threadId))
-      .filter(
-        (event) =>
-          event.runId === runId &&
-          (event.type === "message.user" || event.type === "message.assistant"),
-      )
+  private async buildRunConversation(runId: string): Promise<string> {
+    return (
+      await this.store.listRunEvents(runId, 0, [
+        "message.user",
+        "message.assistant",
+      ])
+    )
       .flatMap((event): string[] => {
         if (
           !event.payload ||
@@ -3119,7 +3126,7 @@ export class AgentRuntime {
   }
 
   private async buildVisibleConversation(threadId: string): Promise<string> {
-    const events = await this.store.listEvents(threadId);
+    const events = await this.contextEvents.read(threadId);
     const checkpoint = latestValidContextCheckpoint(events);
     const messages = events
       .filter(
@@ -3163,17 +3170,8 @@ export class AgentRuntime {
     }
     return event;
   }
-  private async collectRunUsage(
-    threadId: string,
-    runId: string,
-  ): Promise<Usage> {
-    const events = (await this.store.listEvents(threadId)).filter(
-      (event) => event.runId === runId,
-    );
-    return aggregateRunUsage(
-      events,
-      this.store.listSubagentTasks(threadId, runId),
-    );
+  private async collectRunUsage(runId: string): Promise<Usage> {
+    return this.store.aggregateRunUsage(runId);
   }
 }
 

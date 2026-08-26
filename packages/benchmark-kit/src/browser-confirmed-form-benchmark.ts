@@ -1,7 +1,7 @@
 import { lstat, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
-import type { JsonValue, RunEvent, RunRecord } from "@napier/contracts";
+import type { JsonObject, RunEvent, RunRecord } from "@napier/contracts";
 import {
   createLocalAgentRuntime,
   exportThreadReplayBundle,
@@ -201,7 +201,7 @@ export async function runBrowserConfirmedFormBenchmark(
           type: "benchmark.browser.confirmed_form.evaluated",
           category: "evaluation",
           visibility: "user",
-          payload: evaluation as unknown as JsonValue,
+          payload: evaluation as unknown as JsonObject,
         });
         const finalReplay = await exportThreadReplayBundle(
           runtime.store,

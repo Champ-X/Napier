@@ -21,6 +21,11 @@ import type {
   ThreadRecord,
 } from "@napier/contracts";
 import type { AppendEventInput } from "./run-event-registry.js";
+export type {
+  RunEventQueryPort,
+  RunEventQueryScope,
+} from "./run-event-query-port.js";
+import type { RunEventQueryPort } from "./run-event-query-port.js";
 
 export type StoreAppendEventInput = AppendEventInput;
 
@@ -30,7 +35,7 @@ export interface StoreCreateRunInput {
   model?: ModelRef;
 }
 
-export interface RuntimeStorePort {
+export interface RuntimeStorePort extends RunEventQueryPort {
   appendEvent(input: StoreAppendEventInput): Promise<RunEvent>;
   createRun(input: StoreCreateRunInput): Promise<RunRecord>;
   finishRun(
@@ -121,6 +126,7 @@ type ReplayStoreMethod =
   | "getThread"
   | "listAgentRevisions"
   | "listEvents"
+  | "listRunEvents"
   | "listRuns"
   | "listSubagentTasks";
 

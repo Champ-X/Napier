@@ -181,7 +181,7 @@ describe("Napier HTTP goal flow", () => {
     expect(response.headers.get("x-napier-store-last-event-bytes")).toBeNull();
     expect(response.headers.get("x-napier-store-last-projection-bytes")).toBeNull();
     expect(response.headers.get("x-napier-ledger-latest-migration-version")).toBe(String(LEDGER_SCHEMA_VERSION));
-    expect(response.headers.get("x-napier-ledger-latest-migration-name")).toBe("normalized_run_leases");
+    expect(response.headers.get("x-napier-ledger-latest-migration-name")).toBe("indexed_event_queries");
     expect(health).toEqual(
       expect.objectContaining({
         status: "ok",
@@ -205,7 +205,7 @@ describe("Napier HTTP goal flow", () => {
           migrations: expect.arrayContaining([
             expect.objectContaining({
               version: LEDGER_SCHEMA_VERSION,
-              name: "normalized_run_leases",
+              name: "indexed_event_queries",
             }),
           ]),
         }),
@@ -5828,7 +5828,7 @@ describe("Napier HTTP goal flow", () => {
       error: "Execution plan blueprint outcome baseline request is invalid",
     });
 
-    await services.store.appendEvent({
+    await services.store.appendCompatibilityEvent({
       threadId: created.thread.id,
       runId: "runctl_blueprint_drift",
       type: "plan.audit",
@@ -5838,6 +5838,7 @@ describe("Napier HTTP goal flow", () => {
         planId: plan.id,
         blueprintSha256: savedBlueprint.record.blueprintSha256,
       },
+      compatibility: { boundary: "test_fixture", reason: "Synthetic plan audit" },
     });
     const driftThread = (await (
       await app.request("/api/threads", {

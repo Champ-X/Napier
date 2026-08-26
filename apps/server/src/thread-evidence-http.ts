@@ -53,6 +53,7 @@ type ThreadEvidenceHttpStore = Pick<
   | "getThread"
   | "listAgentRevisions"
   | "listEvents"
+  | "listRunEvents"
   | "listRuns"
   | "listSubagentTasks"
 >;

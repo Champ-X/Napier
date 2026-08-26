@@ -195,7 +195,7 @@ function registerPlanArtifactLifecycleHttp(
 
 function planStepEventSuffix(
   action: TransitionPlanStepRequest["action"],
-): string {
+): "blocked" | "completed" | "reopened" | "skipped" | "started" {
   if (action === "start") return "started";
   if (action === "complete") return "completed";
   if (action === "block") return "blocked";
