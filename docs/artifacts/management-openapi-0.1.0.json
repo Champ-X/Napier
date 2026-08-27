@@ -16617,7 +16617,7 @@
     "apps/server/src/workspace-process-http.ts",
     "apps/server/src/workspace-root-http.ts"
   ],
-  "x-napier-source-sha256": "499c78ef7b4c4aeba2b7f173159ba28a6c1c361f1a9cddc687b504a53fc560b2",
+  "x-napier-source-sha256": "5057af966726fe3c10a631a0ccb321db1d882575e7fb45c1fd45b2e7c71db0b2",
   "x-napier-route-count": 297,
   "x-napier-route-set-sha256": "2acf796e86354233fc9b7b549d28f9a63bfd6694607dae6ecabb0eac7028f206"
 }
