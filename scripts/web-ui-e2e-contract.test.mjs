@@ -41,6 +41,15 @@ describe("Web UI E2E receipt contract", () => {
     ]);
   });
 
+  it("covers every stable workspace navigation destination", () => {
+    expect(WORKSPACE_VIEW_LABELS).toEqual([
+      "Conversation",
+      "Task",
+      "Subagents",
+      "Trajectory",
+    ]);
+  });
+
   it("rejects horizontal overflow", () => {
     const receipt = validReceipt();
     receipt.viewports[0].geometry.horizontalOverflowPx = 1;
@@ -56,6 +65,13 @@ describe("Web UI E2E receipt contract", () => {
   it("rejects an unbounded dense trajectory", () => {
     const receipt = validReceipt();
     receipt.trajectory.mountedEventRows = 181;
+    expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
+  });
+
+  it("rejects a dense trajectory without a bounded virtual window", () => {
+    const receipt = validReceipt();
+    receipt.trajectory.virtualMountedRowCount =
+      receipt.trajectory.semanticRowCount;
     expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
   });
 
@@ -232,7 +248,9 @@ function validReceipt() {
       mountedEventRows: 180,
       runCount: 2,
       keyVisible: true,
-      incrementalControlVisible: true,
+      virtualizedTimelineVisible: true,
+      semanticRowCount: 214,
+      virtualMountedRowCount: 24,
       harnessVisible: true,
       harnessFocused: true,
       contextPruningVisible: true,
@@ -271,7 +289,7 @@ function validReceipt() {
     },
     locale: {
       lang: "zh-CN",
-      workspaceLabels: ["对话", "任务", "轨迹"],
+      workspaceLabels: ["对话", "任务", "子智能体", "轨迹"],
       taskSections: ["概览", "变更", "验证"],
       settingsLabels: [
         "智能体与模型",

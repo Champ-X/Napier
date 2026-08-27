@@ -383,6 +383,19 @@ async function verifyTrajectoryScenario(browser, origin, expected) {
       const allCount = document.querySelector(
         ".trace-view-tabs button:nth-child(2) span",
       )?.textContent;
+      const virtualTables = [
+        ...document.querySelectorAll(".trace-run-turns[role='table']"),
+      ];
+      const semanticRowCount = virtualTables.reduce(
+        (total, table) =>
+          total + Number(table.getAttribute("aria-rowcount") ?? 0),
+        0,
+      );
+      const mountedRowCount = virtualTables.reduce(
+        (total, table) =>
+          total + Number(table.getAttribute("data-mounted-row-count") ?? 0),
+        0,
+      );
       return {
         title:
           document.querySelector("#trajectory-title")?.textContent?.trim() ??
@@ -393,8 +406,13 @@ async function verifyTrajectoryScenario(browser, origin, expected) {
         keyVisible: [
           ...document.querySelectorAll(".trace-view-tabs button"),
         ].some((button) => button.textContent?.trim().startsWith("Key")),
-        incrementalControlVisible:
-          document.querySelector(".trace-show-earlier") instanceof HTMLElement,
+        virtualizedTimelineVisible:
+          virtualTables.length > 0 &&
+          virtualTables.every((table) =>
+            table.querySelector(".trace-virtual-viewport"),
+          ),
+        semanticRowCount,
+        virtualMountedRowCount: mountedRowCount,
         harnessVisible:
           document.querySelector("#model-harness-title") instanceof HTMLElement,
         harnessFocused: [

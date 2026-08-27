@@ -1742,6 +1742,16 @@
 }
 
 @media (max-width: 1360px) {
+  .workspace-view-tabs > button {
+    gap: 5px;
+    padding-inline: 8px;
+  }
+
+  .workspace-view-tabs > button::after {
+    right: 7px;
+    left: 7px;
+  }
+
   .context-compaction-controls {
     grid-template-columns: minmax(140px, 0.7fr) minmax(180px, 1.3fr);
   }

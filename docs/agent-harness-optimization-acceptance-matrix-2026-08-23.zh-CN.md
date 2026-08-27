@@ -4,7 +4,7 @@
 > 唯一设计依据：`docs/agent-harness-optimization-design-2026-08-22.zh-CN.md`  
 > 产品版本：`0.1.3`  
 > 历史基线源码身份：`f79504c9ae122a9e1c77fb2ad765b762a5fe3620aa4c8d501faeb72e8090169b`<br>
-> 当前 Trace 虚拟化与规模门禁增量源码身份：`bc30ab27139b99781e946614e9bb554e227bc2ce823f7a4f01a461268d021d7f`
+> 当前 Web UI E2E 收口增量源码身份：`4ea34e6d967c46d0bdf2f20433f0e1f8572acc6de1c4d43b732fc176da13cd98`
 
 原 A1–A8 与发布证据保留为历史基线；本次 `next.md` 增量单独记录在第 9 节。除源码清单与 Route v2、Tool Protocol v2、Context Projection Service、Subagent Hub、Compaction Preview/Fork、Trace 虚拟化及规模门禁专项证据外，旧发布制品尚未按当前源码身份刷新，不得据此宣称整轮 `next.md` 已完成。
 
@@ -86,7 +86,7 @@
 
 | 层级           | 制品 / 结果                                                                                                                        | 判定                                                                                    |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| 源码身份       | `default-product-source-manifest-0.1.3.json` 与 Runtime 常量共同固定 `803773cd…d590`；manifest 纳入 Runtime internal 入口、公共 API/架构门禁及 Trace/Store 规模预算 | **verified**（当前公共 API 与架构预算增量）                                             |
+| 源码身份       | `default-product-source-manifest-0.1.3.json` 与 Runtime 常量共同固定 `4ea34e6d…cd98`；manifest 纳入 Runtime internal 入口、公共 API/架构门禁、Trace/Store 规模预算及当前 Web 布局源码 | **verified**（当前 Web UI E2E 收口增量）                                                |
 | 实验决策       | `harness-experiment-release-evidence-0.1.3.json`：content SHA `05ace12e…663c`，`promotionReady=true`；两个 execution、360 Runs     | **historical**：尚未绑定当前增量源码身份，最终阶段统一刷新                              |
 | 综合验收       | `agent-harness-acceptance-evidence-0.1.3.json`：content SHA `1c56410f…4c89`，388 Ledger Runs，`acceptanceReady=true`               | **historical**：尚未绑定当前增量源码身份，最终阶段统一刷新                              |
 | 产品路径 smoke | 历史干净 Thread/Casebook 创建 6 个 Run/Trial，6/6 passed；完整 10-case Gate 仅覆盖 6 cases                                         | **historical**：保持 `status=incomplete`、`defaultTrackReady=false`，当前源码需重新采集 |
@@ -125,7 +125,7 @@
 | Trace 6k 真实浏览器 QA           | 隔离 production build 使用 3000 对 `tool.started` / `tool.completed` 事件；浏览器真实请求独立 Worker chunk。1280×900、1440×900、1920×1080 三档均为 `aria-rowcount=3000`、底部挂载 `14` 行（上界 `32`）、末行 `aria-rowindex=3000`；末行选择与 Inspector 正常，document 横向溢出及实际可见控件越界均为 `0`，console/page error 为空；三档截图目视无重叠或裁切                                                                                                                                 | **verified**                                       |
 | 公共 API 与架构预算              | Runtime 兼容根入口从意外扩张的 `1912` 个语义符号收回至 Phase 0 边界的 `1896` 个，逐符号比对 `removed=[]`、`added=[]`；16 个后续内部符号迁入 `@napier/runtime/internal`。11 个稳定 facade、root 符号摘要、package export keys 与 internal surface 均进入 fail-closed ratchet；架构门禁新增 source fan-out、静态 `fan-in * fan-out` change coupling 与 package instability，缺失预算和增长 fixture 均被拒绝。专项 `3 files / 21 tests`、全 workspace typecheck、production build 与 Runtime 全量回归通过（`406` files、`2022` tests，另有 `14` live-only files / `32` tests 按配置跳过）；architecture `2059` source files / `865` test files / `0` cycles，dead-code `0`、duplicates `107` clones / `3751` lines、dependency ownership、desktop scope、public API、Web design 与 source manifest 门禁全绿 | **verified**                                       |
 | Root 历史证据校验                | `443` 项通过；`12` 项对旧 release/S1/SDK parity、prompt regression 与 harness acceptance 快照相对当前源码身份的漂移执行 fail closed                                                                                                                                                                                                                                                                                                                                                          | **pending**（最终证据刷新阶段）                    |
-| Web UI E2E 基线                  | 上一轮三视口基线保留；当前源码的全量 E2E 与布局基线等待最终统一刷新                                                                                                                                                                                                                                                                                                                                                                                                                          | **pending**（最终阶段）                            |
+| Web UI E2E 基线                  | production build 下完整覆盖空会话、普通/长会话、运行中、等待审批、完成产物、失败恢复、Trace 虚拟窗口、设置管理、中文核心路径及重连；1280×900、1440×900、1920×1080 三档均为 `horizontalOverflowPx=0`、console/page error `0`，导航与状态区间距分别为 `8 / 8 / 25 px`；布局基线已由正式生成器重采并只读复验 | **verified**                                       |
 
 ## 9. `next.md` Phase 3–4 当前增量
 

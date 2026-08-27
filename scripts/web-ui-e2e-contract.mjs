@@ -11,6 +11,7 @@ export const WEB_UI_E2E_VIEWPORTS = WEB_UI_LAYOUT_BASELINE_VIEWPORTS;
 export const WORKSPACE_VIEW_LABELS = Object.freeze([
   "Conversation",
   "Task",
+  "Subagents",
   "Trajectory",
 ]);
 export const DEFAULT_TASK_SECTION_LABELS = Object.freeze([
@@ -156,7 +157,14 @@ export function assertWebUiE2eReceipt(receipt) {
   assert.equal(receipt?.trajectory?.mountedEventRows > 0, true);
   assert.equal(receipt?.trajectory?.mountedEventRows <= 180, true);
   assert.equal(receipt?.trajectory?.keyVisible, true);
-  assert.equal(receipt?.trajectory?.incrementalControlVisible, true);
+  assert.equal(receipt?.trajectory?.virtualizedTimelineVisible, true);
+  assert.equal(receipt?.trajectory?.semanticRowCount > 180, true);
+  assert.equal(receipt?.trajectory?.virtualMountedRowCount > 0, true);
+  assert.equal(
+    receipt?.trajectory?.virtualMountedRowCount <
+      receipt?.trajectory?.semanticRowCount,
+    true,
+  );
   assert.equal(receipt?.trajectory?.harnessVisible, true);
   assert.equal(receipt?.trajectory?.harnessFocused, true);
   assert.equal(receipt?.trajectory?.contextPruningVisible, true);
@@ -195,7 +203,12 @@ export function assertWebUiE2eReceipt(receipt) {
   assert.equal(receipt?.settings?.packageManagementMinimumActionHeight >= 44, true);
   assert.equal(receipt?.settings?.developerEscapeRestoredTriggerFocus, true);
   assert.equal(receipt?.locale?.lang, "zh-CN");
-  assert.deepEqual(receipt?.locale?.workspaceLabels, ["对话", "任务", "轨迹"]);
+  assert.deepEqual(receipt?.locale?.workspaceLabels, [
+    "对话",
+    "任务",
+    "子智能体",
+    "轨迹",
+  ]);
   assert.deepEqual(receipt?.locale?.taskSections, ["概览", "变更", "验证"]);
   assert.deepEqual(receipt?.locale?.settingsLabels, [
     "智能体与模型",

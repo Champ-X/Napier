@@ -280,7 +280,7 @@ async function completedEvidenceRun(store, threadId, agentId, text) {
     type: "message.assistant",
     category: "message",
     visibility: "user",
-    payload: { text },
+    payload: { role: "assistant", text },
   });
   await store.finishRun(run.id, "completed");
   return run;

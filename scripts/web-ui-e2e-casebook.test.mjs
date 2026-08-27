@@ -1,8 +1,17 @@
+import { readFile } from "node:fs/promises";
+
 import { describe, expect, it, vi } from "vitest";
 
 import { qualificationTrialRequest } from "./web-ui-e2e-casebook.mjs";
 
 describe("Web UI Casebook qualification route", () => {
+  it("seeds assistant messages with the registered v1 role", async () => {
+    const source = await readFile("scripts/web-ui-e2e-casebook.mjs", "utf8");
+
+    expect(source).toContain('payload: { role: "assistant", text }');
+    expect(source).not.toContain("payload: { text },");
+  });
+
   it("lets non-POST requests continue without parsing a body", () => {
     const postDataJSON = vi.fn();
     expect(
