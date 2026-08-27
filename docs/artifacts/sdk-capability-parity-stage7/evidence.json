@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "c52d62dc76dcc170e57408bf34cff9295dfb66ee13a0ff18a5c43cc75cdc1ce9",
+      "stdoutSha256": "1d71b26b0ef36afd5f18cc8cc03e4ed20bb45cdd22b2bef6bd11d35c528a1330",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "c1c62e705368fbb378c8908dda74dda9dbf52d3c21484b5833bdd141b9b914d1",
-      "receiptSha256": "5f2b8140d8bd3e5bfe17ef3def5e4e563e7d3d252b9678899b096685e923e7fc"
+      "evidenceSha256": "f93e8cf885ed5016c6cb36c0956d73c173611bb80b01df1497c3b4d3ec81cd54",
+      "receiptSha256": "f152625edfcaa7155a80f91e326147163dfa96a1e07947c481116a62c2c8aeb2"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "d3ab147d1896785e70ea5c33dfe974007f62843f383a8da7fd559ff72c7591c6",
+      "stdoutSha256": "9a2d5e830f1e1ff9ce805c89ed1c2d71cedc38bcc983d8ad0a391c5fd977d307",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "b5647cdaea31454984f9e9797b799f2056eac064eb58fad99b6ec3a0eb8e81b3",
-      "receiptSha256": "8a1024089d65985b6bb13159d6b4266eff9504cb0ab25a684a694240d1052e0c"
+      "evidenceSha256": "4be3ebf4e0c4d77fc0e45f2b79143f7066907f9fe2e57d2e2296f3ae6ba42fe4",
+      "receiptSha256": "6865449cfae8fd2636a8ab9833dcb79ef3a2d208f0e6d70f0aaf299d51d56ef4"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -608,6 +608,8 @@
         "apps/server/src/inbound-channel-ingress-http.ts",
         "apps/server/src/index.ts",
         "apps/server/src/kernel-thread-projections.ts",
+        "apps/server/src/memory-http-provenance.ts",
+        "apps/server/src/memory-http-request.ts",
         "apps/server/src/memory-http.ts",
         "apps/server/src/model-http-availability.ts",
         "apps/server/src/model-invocation-experiment-http.ts",
@@ -684,6 +686,7 @@
         "apps/server/test/context-compaction-http.test.ts",
         "apps/server/test/controlled-harness-evidence-http.test.ts",
         "apps/server/test/evaluation-casebook-http-validation.test.ts",
+        "apps/server/test/memory-provenance-http.test.ts",
         "apps/server/test/node-debugger.test.ts",
         "apps/server/test/partial-run-recovery-http.test.ts",
         "apps/server/test/plan-artifact-diff-http.test.ts",
@@ -723,6 +726,7 @@
         "apps/web/src/AppSettingsOverlay.tsx",
         "apps/web/src/AppWorkbenchHeader.tsx",
         "apps/web/src/AppWorkspaceViews.tsx",
+        "apps/web/src/ArtifactActionBar.tsx",
         "apps/web/src/ArtifactActionSurface.tsx",
         "apps/web/src/AutomationAdapterPreviewReceipt.tsx",
         "apps/web/src/AutomationChannelCard.tsx",
@@ -1114,6 +1118,7 @@
         "apps/web/src/locale.ts",
         "apps/web/src/main.tsx",
         "apps/web/src/manual-run-recovery.ts",
+        "apps/web/src/memory-copy.ts",
         "apps/web/src/message-code-highlighting.ts",
         "apps/web/src/message-event-view.ts",
         "apps/web/src/message-markdown-parser.ts",
@@ -1303,6 +1308,7 @@
         "apps/web/src/use-evaluation-consensus.ts",
         "apps/web/src/use-evaluation-suite.ts",
         "apps/web/src/use-experiment-desk-lifecycle.ts",
+        "apps/web/src/use-memory-provenance-draft.ts",
         "apps/web/src/use-new-thread.ts",
         "apps/web/src/use-next-run-capability-preset.ts",
         "apps/web/src/use-plan-artifact-controller.ts",
@@ -1361,6 +1367,7 @@
         "apps/web/test/DisclosureRow.test.tsx",
         "apps/web/test/KernelPluginDesk.test.tsx",
         "apps/web/test/KernelPluginInspectorSlots.test.ts",
+        "apps/web/test/MemoryCards.test.tsx",
         "apps/web/test/RecoveryBanner.test.tsx",
         "apps/web/test/SandboxSetupCard.test.tsx",
         "apps/web/test/TaskChangesPanel.test.tsx",
@@ -2136,7 +2143,10 @@
         "packages/runtime/src/manual-context-compaction.ts",
         "packages/runtime/src/mcp-stdio.ts",
         "packages/runtime/src/memory-proposal-parser.ts",
+        "packages/runtime/src/memory-provenance.ts",
         "packages/runtime/src/memory-repository.ts",
+        "packages/runtime/src/memory-run-extraction.ts",
+        "packages/runtime/src/memory-source.ts",
         "packages/runtime/src/memory.ts",
         "packages/runtime/src/model-adapters.ts",
         "packages/runtime/src/model-advisor-diagnostics.ts",
@@ -2542,6 +2552,7 @@
         "packages/runtime/test/agent-python-kernel.test.ts",
         "packages/runtime/test/agent-recovery-plan-context.test.ts",
         "packages/runtime/test/agent-run-harness-evidence.test.ts",
+        "packages/runtime/test/agent-runtime-memory-provenance.test.ts",
         "packages/runtime/test/agent-runtime-utils.test.ts",
         "packages/runtime/test/agent-runtime.test.ts",
         "packages/runtime/test/agent-skill-load-vertical.test.ts",
@@ -2628,6 +2639,8 @@
         "packages/runtime/test/lsp-rename-apply-diagnostics.test.ts",
         "packages/runtime/test/lsp-symbols.test.ts",
         "packages/runtime/test/mcp-stdio.test.ts",
+        "packages/runtime/test/memory-provenance.test.ts",
+        "packages/runtime/test/memory.test.ts",
         "packages/runtime/test/model-adapter-capture.test.ts",
         "packages/runtime/test/model-adapters.test.ts",
         "packages/runtime/test/model-advisor-fixtures.ts",
@@ -3479,9 +3492,17 @@
           "sha256": "f75747fc1712671c66bce31e9ae2d0abc99c58364a1f09e060ee2ae145b43a07",
           "lines": 111
         },
+        "apps/server/src/memory-http-provenance.ts": {
+          "sha256": "ec364500e7c6e92ec1e15ad5f6b35ea2c8797c526608acf759b57cebcdcf6a6e",
+          "lines": 53
+        },
+        "apps/server/src/memory-http-request.ts": {
+          "sha256": "e681fa9078540e2d4c26d6690c48462353ecb8804ec9e5ab38d17390dd8fa024",
+          "lines": 28
+        },
         "apps/server/src/memory-http.ts": {
-          "sha256": "d2d9f931f66404f8b437bdfb880cd8ceaaa28058c7d177d413f07d5de6c2bf2c",
-          "lines": 427
+          "sha256": "6589f3a8f011d1896d649325555dff0322c36f65c1b8d6d6309d9a59b666c13c",
+          "lines": 444
         },
         "apps/server/src/model-http-availability.ts": {
           "sha256": "5cb116eaee13790ab1f6fe61033b2aa75ff0d14ee0648725f79f6a64bde6da92",
@@ -3783,6 +3804,10 @@
           "sha256": "506a198843d52c0a31dfd608370ddbf99328a1a2e9868a9ebb511d084a8f8f49",
           "lines": 96
         },
+        "apps/server/test/memory-provenance-http.test.ts": {
+          "sha256": "c76be9ef3f3d02ac5ada3b5a6887bef71196d2ea7616cfa7b8f75d9428483d36",
+          "lines": 72
+        },
         "apps/server/test/node-debugger.test.ts": {
           "sha256": "d5e0dc436ce16dee8ea5ea82566302331d6ccb01b8290daeddc4a8d0c413845d",
           "lines": 294
@@ -3872,8 +3897,8 @@
           "lines": 10
         },
         "apps/web/package.json": {
-          "sha256": "480aae54e5ea43da444236bfb6eb1958cf8501b1066a66eff65d5f6c3e49dd96",
-          "lines": 31
+          "sha256": "ab0674fac009d4004cb49fa05d8a3d22b1a4e4e1937d936fa4729e3f063cf96e",
+          "lines": 32
         },
         "apps/web/src/AgentCapabilityContractCard.tsx": {
           "sha256": "6beafcfb62e96c94b383faa54091b3f9cae8bf349c0a49b1d7ec5dda8a00b61f",
@@ -3935,9 +3960,13 @@
           "sha256": "9a6a1aa48e43e29e393a53d02f63fae19e6458b0a9b3e716593a6ae14e8489e5",
           "lines": 126
         },
+        "apps/web/src/ArtifactActionBar.tsx": {
+          "sha256": "19ca8954591d9b3fd956290a69ff2d59d6f5cba6bceba075b111f19924e861f1",
+          "lines": 79
+        },
         "apps/web/src/ArtifactActionSurface.tsx": {
-          "sha256": "7cd1aa8fef0cbc54c5f411b7199e0e8d690b0e8a5036762fd21f9d0e31b8235d",
-          "lines": 122
+          "sha256": "3a95a7c1a76ab8927ea8281cd82ee28aba76778a75f0b9bd6b93c0cc4e95ece8",
+          "lines": 156
         },
         "apps/web/src/AutomationAdapterPreviewReceipt.tsx": {
           "sha256": "5a5ab202b3e3292f4fc877ab25357f07b111b643a680f42fa4a4109cac18240c",
@@ -4412,8 +4441,8 @@
           "lines": 188
         },
         "apps/web/src/FilesPanel.tsx": {
-          "sha256": "cba11408938c6e05adceddbb96251b220a34ccf1d17801444a2ce423ae7bda8d",
-          "lines": 257
+          "sha256": "832963ce428b42145a2d25c4cab86ac42c805eb06c71beed3f0e7ba0fd706969",
+          "lines": 286
         },
         "apps/web/src/KernelPluginDesk.tsx": {
           "sha256": "183818d49276b190e3f4820cdcb7aabdcb757980ce87da95f2848b1d4522b55f",
@@ -4428,16 +4457,16 @@
           "lines": 111
         },
         "apps/web/src/MemoryCards.tsx": {
-          "sha256": "b094007886f636873ee7b9212a99a9293927e36e0ef210d943a021002e2d29c4",
-          "lines": 202
+          "sha256": "d6c31f7fe6ffc736f1b51903fbc2808b4987613f00bda60199675ee0b2106698",
+          "lines": 268
         },
         "apps/web/src/MemoryComposer.tsx": {
-          "sha256": "f64a310c7e6a7b4e7f0d3b47e7421a94265ca3416e899fd10ac52548247720ac",
-          "lines": 199
+          "sha256": "5399c1ab1c9e5d25eafe1d7c9d1726e36a56d9b80977d6fdf84bb2bffc8de0e3",
+          "lines": 231
         },
         "apps/web/src/MemoryPanel.tsx": {
-          "sha256": "0b1a96aa2efcd7249445d8f0766a266074785c7cdbe8125aa18780b30ea0f1c7",
-          "lines": 260
+          "sha256": "d12928980f5b36c8502748971174987a5bbb5be9f2bbd9e0692fd356a039b483",
+          "lines": 272
         },
         "apps/web/src/ModelAdapterLedger.tsx": {
           "sha256": "6bb2710f20476bff567e26aa000038182fadf2c6fbf3cd96032c7b210a7c6165",
@@ -4716,8 +4745,8 @@
           "lines": 129
         },
         "apps/web/src/TaskCompletionSummary.tsx": {
-          "sha256": "b5368d700fb7e0206eb97d2657a9d1b127c8e7d539e52272cf667f81b9013f86",
-          "lines": 131
+          "sha256": "0f10d3f66abd8949448458a4fe59e42edb6fae8bac32dade7f93872edeafc65c",
+          "lines": 197
         },
         "apps/web/src/TaskNarrativeBar.tsx": {
           "sha256": "a30d68681dccea02e26677a29ffcabc3ce548483d52362cef2a0dd7ba92d1ee3",
@@ -4816,8 +4845,8 @@
           "lines": 23
         },
         "apps/web/src/WorkbenchDeferredPanels.tsx": {
-          "sha256": "081a1287b02295def9c67e435eda7f431d1f04683df564d9c63d24fe943097d5",
-          "lines": 80
+          "sha256": "a004b73c055c43c12b1b75a0dbfb98e0cfe1d7e20eb93d5dc98565c45ab456d8",
+          "lines": 82
         },
         "apps/web/src/WorkbenchHeader.tsx": {
           "sha256": "6a743dfa287a794324dcbbc2b8da7d5bc2ecaf2d83a7d7263123bc41558d39d9",
@@ -4880,8 +4909,8 @@
           "lines": 91
         },
         "apps/web/src/WorkspaceSettingsSurface.tsx": {
-          "sha256": "23e837740fae8c30ad2cfb510132cc3cb9c4f2fd951fddd0a0a19951ab0afac5",
-          "lines": 237
+          "sha256": "856f7a182e05baf75e4e5f085468334133694544b5c41b822e519acaedafbee1",
+          "lines": 241
         },
         "apps/web/src/WorkspaceThreadPreviews.tsx": {
           "sha256": "9eaa1dc1104e8f7d38e89a19661e21760e34df6cec9b2c0dbcec88c494be5b0b",
@@ -4976,15 +5005,15 @@
           "lines": 1204
         },
         "apps/web/src/artifact-action-copy.ts": {
-          "sha256": "55bb674a8a4ef6d1878bc293e9e96b93c3bb5e10ba8744d07901984a21d2059d",
-          "lines": 19
+          "sha256": "73504bb68e3627940cd301c0f7487ff018081ee5e6f96e6787b01a6b7378366b",
+          "lines": 23
         },
         "apps/web/src/artifact-action-model.ts": {
-          "sha256": "ca344606dd8835c6a89baffd1fe1ef0b967c67e23751f74dcfb682d0a88a98d1",
-          "lines": 45
+          "sha256": "d8a7e3f39c134cf00a2c4f187916a3893bea4c89f16c5be885fddc4143274e07",
+          "lines": 56
         },
         "apps/web/src/artifact-action-surface.css": {
-          "sha256": "8a1810c56c4b98b33df64bf097fb6a7240221f71b3e7e7db9a55be9286b36dc0",
+          "sha256": "d1ef1da6c4e1bd5140c2635d7bddacacfd5fff938ba63d591b183a89ecd6b3d5",
           "lines": 145
         },
         "apps/web/src/artifact-file-api.ts": {
@@ -5348,7 +5377,7 @@
           "lines": 27
         },
         "apps/web/src/copy.ts": {
-          "sha256": "0f0204d3560f5a25422ae847764aa4bf23027a315ac10daf7fc7b4bae7a38359",
+          "sha256": "eaab34b5d4315f57adbe9f217d897b0e6452df582525ea5972f6d6877bb36779",
           "lines": 886
         },
         "apps/web/src/copy.zh.ts": {
@@ -5372,8 +5401,8 @@
           "lines": 270
         },
         "apps/web/src/deep-ui-copy.zh.ts": {
-          "sha256": "cfa67114dea358ff00385d80dd2eac92134e04e713495e3492783aab388047e4",
-          "lines": 153
+          "sha256": "ef5ca25b7b06b702073ae395a3b331048ef7681e30581fa8622279ffe621370e",
+          "lines": 164
         },
         "apps/web/src/desktop-workbench-copy.ts": {
           "sha256": "7dac2fcbfa6740cce77a2f485618a422b2ec90024cd7c8c999b814068df624a1",
@@ -5444,8 +5473,8 @@
           "lines": 33
         },
         "apps/web/src/goal-copy.ts": {
-          "sha256": "833f40244af8570c5a649e9315fc1a0754b06c2059c4b41654f7b6edbd0e3f50",
-          "lines": 49
+          "sha256": "f885d2ba91c49ba56eb663def3d51b761c74c35a0e5ee1e15a08a2b50d3ca664",
+          "lines": 50
         },
         "apps/web/src/goal-memory-event-view.ts": {
           "sha256": "cd22a0e049c76c40f612dac9668c994d025075df1c62deb725d12c9c4ffc2f4c",
@@ -5494,6 +5523,10 @@
         "apps/web/src/manual-run-recovery.ts": {
           "sha256": "2682f3e72dd46ca5d2486e4ae8108d9e5f8a1809a214be372ae9079d54609654",
           "lines": 19
+        },
+        "apps/web/src/memory-copy.ts": {
+          "sha256": "332de7d388e96f95c1a8f338289cddff5a536ee48d03030cc3b272548bdfd104",
+          "lines": 14
         },
         "apps/web/src/message-code-highlighting.ts": {
           "sha256": "57648dafe432f6e14af8fa6d130058ff9895b968a3e0becd2ca7b7e65d952e4c",
@@ -5888,8 +5921,8 @@
           "lines": 133
         },
         "apps/web/src/styles/goals-memory.css": {
-          "sha256": "269c280ee7c6a259c47ae5cac1a008aef47b600f9e3f2a2e09da23f2dfd76a67",
-          "lines": 496
+          "sha256": "beaec5f96ea0022f7de0cfb607097adc464390c920dd06179b3ab2818bfc8417",
+          "lines": 555
         },
         "apps/web/src/styles/inspector.css": {
           "sha256": "da102aa25a551f9c11bba2e34d6667d42c13cded095ee9cfa88c94d7a352fb22",
@@ -5952,8 +5985,8 @@
           "lines": 49
         },
         "apps/web/src/task-completion-output-paths.ts": {
-          "sha256": "d491295caa47aa09d588dd374921d7acf63bdcf316ef0d159e69ef19e72aa055",
-          "lines": 24
+          "sha256": "c25c972340ea74d20a073fa93eba6f5a5838cb0ffe822df4fe347dede91ba918",
+          "lines": 64
         },
         "apps/web/src/task-narrative-protocol.ts": {
           "sha256": "e2d512560d6e8c84f2333c85161e636b1be46be70bacc9be3b6b7c36c9106cfe",
@@ -5964,8 +5997,8 @@
           "lines": 482
         },
         "apps/web/src/task-narrative.css": {
-          "sha256": "57ffade7076c58c100c13999df126cfae5ae4101d12e8531ed044dc9e4c86ba9",
-          "lines": 460
+          "sha256": "b79f88fb763f6f5e2b51adf6d5905c4d29818410078861584ec63b6f4136c35d",
+          "lines": 494
         },
         "apps/web/src/task-overview-view-model.ts": {
           "sha256": "97b46759f3f1075d5a9e4ac92da5d2ea6903bf93360563068d58262dc3dca541",
@@ -5988,8 +6021,8 @@
           "lines": 193
         },
         "apps/web/src/thread-detail-view-state.ts": {
-          "sha256": "e23c15f17bb0a6573886aa5fbd80694ec04776b20940f7782c03a0aa66cbea4f",
-          "lines": 41
+          "sha256": "7c7ca108d007a7da9ca83fafb3ef7533c18caadfbf7744acd407067fa9f1bd24",
+          "lines": 43
         },
         "apps/web/src/thread-location.ts": {
           "sha256": "6b7267d982ea96b13581d3b3d1a0ad7c9238d3cc479830fa080dd1746441257e",
@@ -6239,6 +6272,10 @@
           "sha256": "35db2bfdc1905037076b9b54156a1ceb0ac017338aab9ed750ca6234284e2506",
           "lines": 224
         },
+        "apps/web/src/use-memory-provenance-draft.ts": {
+          "sha256": "f00cfff5c95f335bf673dc39af63466574a95fd5d5b79fbd07dafdbd7812ffbb",
+          "lines": 42
+        },
         "apps/web/src/use-new-thread.ts": {
           "sha256": "d1e3abcd451e3de92f58f837f7ede9398d68d06ab6dd3933e427ee2f4ba113fb",
           "lines": 31
@@ -6320,7 +6357,7 @@
           "lines": 193
         },
         "apps/web/src/use-workspace-view-model.ts": {
-          "sha256": "05cd16300c39d6e85509e3772d5116d6698571c7821b748ab719f53eee9fe186",
+          "sha256": "38e14cc650a9fe0e94bd129c131e4409bd42c494fee40da64396757e36fe2fa9",
           "lines": 1909
         },
         "apps/web/src/workflow-breakpoint-copy.ts": {
@@ -6388,8 +6425,8 @@
           "lines": 434
         },
         "apps/web/src/workspace-shell.css": {
-          "sha256": "38c18ec4ddfa108cf36ab2cb84e2037404c4b4402fff53970f85ed3120c5e1af",
-          "lines": 2343
+          "sha256": "d88c43062b4fa6ae4d0f4883fb22e9aa1086a6eb4a731f5ea8342e0f95677a5f",
+          "lines": 2347
         },
         "apps/web/src/workspace-thread-presentation.ts": {
           "sha256": "ea2fe9943705ade8640e2eec05859dbf8cb7c383bf2fa9dd4ee51a02c2e35883",
@@ -6412,8 +6449,8 @@
           "lines": 347
         },
         "apps/web/test/ArtifactActionSurface.test.tsx": {
-          "sha256": "687346abdd3af29c8e857f3eb980a41c7dd37e9237e19f2442934f0c0d462b92",
-          "lines": 243
+          "sha256": "bae40d646a03df461f3503cb0285b08987b3decc672dd9c7aa11997d4316c16b",
+          "lines": 295
         },
         "apps/web/test/ComposerCapabilityControl.test.tsx": {
           "sha256": "7eb2e3a7998fbefd5d6f8e63dfe5051d09a04f9cd85bf48ab09f6ec735044ae0",
@@ -6471,6 +6508,10 @@
           "sha256": "153b65b34bc628fa67b52f7c328e11fe46c680837d69822fd50344ecbc275818",
           "lines": 165
         },
+        "apps/web/test/MemoryCards.test.tsx": {
+          "sha256": "88a02f85df2aac01ebc2ee55de75cdecf1a5bc9c4bc7cf80805401963d6e9031",
+          "lines": 63
+        },
         "apps/web/test/RecoveryBanner.test.tsx": {
           "sha256": "5699f879cfcf379b2675d322ceaa0b1acf4eda924929d4abd23e0f3aa08634b7",
           "lines": 117
@@ -6480,8 +6521,8 @@
           "lines": 369
         },
         "apps/web/test/TaskChangesPanel.test.tsx": {
-          "sha256": "dd3eee6fbdd33e10894ae3e931f3db787faec5a41078eb2cb9d30139efd212f6",
-          "lines": 207
+          "sha256": "db4ab72ddb212cd0324fed80715698308b683d119de1cddb9c0aca2bfdddd538",
+          "lines": 212
         },
         "apps/web/test/active-plan-protocol.test.ts": {
           "sha256": "74377bd400e7dd336ecbefbfe6bb2d018918cda9f838b97dbdce89aa0f531d6c",
@@ -6516,8 +6557,8 @@
           "lines": 2488
         },
         "apps/web/test/artifact-action-model.test.ts": {
-          "sha256": "91496832e013af54a1e1e16cf4b1eba9014e579c6622de64733fb278568e72f8",
-          "lines": 82
+          "sha256": "1b29d285d4eaba55280a297f102d3897da1d41f813229681140c40865b2d159c",
+          "lines": 95
         },
         "apps/web/test/artifact-manifest-view-model.test.ts": {
           "sha256": "7b440e0f9947e202f34cae173545aa38c217433dbc26d267129e8a67c5e29ea8",
@@ -6944,8 +6985,8 @@
           "lines": 318
         },
         "apps/web/test/task-completion-summary.test.ts": {
-          "sha256": "4ad916ac9b64b3107fdfcbbc9e65cd89fd2427d12600e9b2096c803ea1dbb3bb",
-          "lines": 76
+          "sha256": "7a9d8689c34f01841501e68d3ce3f276d4fd9f8c01ec00f007fc27cc96feafda",
+          "lines": 100
         },
         "apps/web/test/task-narrative-protocol.test.ts": {
           "sha256": "15ac342f105fa49cad76ac0f9c0fb9d43aae5a936b559510fcd4bacf3fc2cae5",
@@ -6972,8 +7013,8 @@
           "lines": 26
         },
         "apps/web/test/task-surface-components.zh.test.tsx": {
-          "sha256": "136590e5c24a724da05c0f85ab616aebe329074b93d257cd4eeb1464158971c7",
-          "lines": 243
+          "sha256": "fffd6d6bf57559b5066cc645b3ad2688a35cd1799dfd6642143f8aa963e13662",
+          "lines": 313
         },
         "apps/web/test/task-validation-matrix.test.ts": {
           "sha256": "ec0261070c13c09edae4a0b066ccc859dd9bda53c6ad95281f3e56f6543f8e45",
@@ -7060,8 +7101,8 @@
           "lines": 208
         },
         "apps/web/test/workbench-layout.test.ts": {
-          "sha256": "3136c36bdef631b256085646e89d3dacccd6bb2e656d6390546d17add61408e2",
-          "lines": 441
+          "sha256": "e99cba79307a1162e5f11230d4c3bd37dc2f36151a03af47e421385ee3950ec1",
+          "lines": 455
         },
         "apps/web/test/workspace-process-event-view.test.ts": {
           "sha256": "30e7067e65bcbaa5d46d71b1814d97b9b1b10fbdaf472205a6075619abedcb05",
@@ -7168,7 +7209,7 @@
           "lines": 629
         },
         "docs/architecture-budget.json": {
-          "sha256": "20a6b01297c981126e18ea70aa57bad75114868cf972677123b780b8a10f2245",
+          "sha256": "59ef41912ab3c067f9a034f30b69d2b43976632373e77623d16a6404dbc5eab3",
           "lines": 249
         },
         "docs/architecture.md": {
@@ -7372,8 +7413,8 @@
           "lines": 174
         },
         "docs/artifacts/default-product-source-manifest-0.1.3.json": {
-          "sha256": "9289acf98f97a5803000282dff1eec19d0b8cca653c6773454debb743c24bc42",
-          "lines": 10423
+          "sha256": "1be274948724016efb9b472b0312536a3904b798e0b8b61c7bfed6e02b6d3e2f",
+          "lines": 10463
         },
         "docs/artifacts/default-product-trial-m4-0.1.2.json": {
           "sha256": "f83a7edbc673388806d5f58f4e6faf2f7e1e9d9ccfec16bdcb96705f3bde38c4",
@@ -7388,7 +7429,7 @@
           "lines": 556
         },
         "docs/artifacts/management-openapi-0.1.0.json": {
-          "sha256": "21b9ae5bf8387544d0ed21bfc2df655f4064c5e9ae570d290efbf4d804313130",
+          "sha256": "328cedf3aab7038b6a80166a25fa35185c6e6b4912f5fef7fc548befb03ae171",
           "lines": 16623
         },
         "docs/artifacts/management-openapi-compatibility-0.1.0.json": {
@@ -7436,7 +7477,7 @@
           "lines": 62
         },
         "docs/artifacts/package-lock-audit-0.1.0.json": {
-          "sha256": "0e52276740cc1909ff051e8c5cf12b00262bddc2ab0ed3a24b9d7ee917eff5ea",
+          "sha256": "89e56689d2b746dca2a1fceec6a534e200318ff8570b42ae00157735de3b78b0",
           "lines": 20
         },
         "docs/artifacts/product-performance-baseline-0.1.0.json": {
@@ -7508,11 +7549,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "c1c62e705368fbb378c8908dda74dda9dbf52d3c21484b5833bdd141b9b914d1",
+          "sha256": "f93e8cf885ed5016c6cb36c0956d73c173611bb80b01df1497c3b4d3ec81cd54",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "b5647cdaea31454984f9e9797b799f2056eac064eb58fad99b6ec3a0eb8e81b3",
+          "sha256": "4be3ebf4e0c4d77fc0e45f2b79143f7066907f9fe2e57d2e2296f3ae6ba42fe4",
           "lines": 71
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -7548,11 +7589,11 @@
           "lines": 179
         },
         "docs/artifacts/web-dist-0.1.0.sha256": {
-          "sha256": "ec13555e1acca7b1476609cf43e9a5f2349532cb786fee1c23be3fad66ccd950",
-          "lines": 321
+          "sha256": "d596cc742427ea4d53bd8f3b13232015380ecce0dcc2ac45dd574e96dd26b273",
+          "lines": 327
         },
         "docs/artifacts/web-dist-audit-0.1.0.json": {
-          "sha256": "335ea1e4e58ffe908d02c7ae6adab1580b33c4470051e527370c7ec50fd4f3a4",
+          "sha256": "cec8dd0c8f3c67aacfb4998b34f239a65e4a0a91058e7d5a31c32d12daa358a1",
           "lines": 18
         },
         "docs/artifacts/web-ui-layout-baseline-0.1.0.json": {
@@ -7628,8 +7669,8 @@
           "lines": 78
         },
         "package-lock.json": {
-          "sha256": "8b8a70a094360dd4a6b24d9600ee433aa2176ce9240962af2c457742fc1bc8b9",
-          "lines": 5376
+          "sha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+          "lines": 5387
         },
         "package.json": {
           "sha256": "108ac94b73101f81cd670d23e3359b59263523c9a950ace91e23de4042bd53b4",
@@ -8312,8 +8353,8 @@
           "lines": 71
         },
         "packages/contracts/src/memory-credential-v1.ts": {
-          "sha256": "f36e6f17ad4dcc9319e09c3a682011c5334953ba9722858a40e011077433b348",
-          "lines": 104
+          "sha256": "54caee628f2649455c1bbc2be66e1e3b80586cca85b05a29d2ee106060bedbdc",
+          "lines": 145
         },
         "packages/contracts/src/model-context-envelope.ts": {
           "sha256": "da22b7e54bda888f2d34ed9b9e1fe63c90fd7d41d6ff6b01dfc6aa67afe234d9",
@@ -8704,8 +8745,8 @@
           "lines": 148
         },
         "packages/runtime/src/agent-runtime.ts": {
-          "sha256": "4812de817f9bc1398a2c73eaccc83c6c700d627aa92ff013c185e3835ce69bc9",
-          "lines": 3205
+          "sha256": "2662a04519007722676cba2878650b57b3b8c2fffc2796ed962fcbc05b0dc0f8",
+          "lines": 3194
         },
         "packages/runtime/src/agent-sessions.ts": {
           "sha256": "1e15dbac094ac6d2c3fa664099b24c2e029f2c75e19c16f72e5a2188a2984d6f",
@@ -9516,16 +9557,28 @@
           "lines": 384
         },
         "packages/runtime/src/memory-proposal-parser.ts": {
-          "sha256": "7258d10ee411a8dbad5b91efb5cfa8ad7e528849812bcf4bc0307ab402ee9e90",
-          "lines": 186
+          "sha256": "e9c06500b08330ad190f341e8c5937f54b7151ceabf9121201c63ae386745060",
+          "lines": 272
+        },
+        "packages/runtime/src/memory-provenance.ts": {
+          "sha256": "7a0c81e3bfcdea564269f843e118b5ae9263d46b2b3268adab80bb75044ecd0e",
+          "lines": 86
         },
         "packages/runtime/src/memory-repository.ts": {
           "sha256": "d0de49a9ab92e7429ff359cf0bfe3c75600c7807d0e24e4778a75ee0afe52592",
           "lines": 246
         },
+        "packages/runtime/src/memory-run-extraction.ts": {
+          "sha256": "8224e4d1a15f0bbc6a2d12f7b64f7c8fca4aab8da67828102ec3c65e24cd26be",
+          "lines": 11
+        },
+        "packages/runtime/src/memory-source.ts": {
+          "sha256": "ac9af2dc267a78672f260d68fbf27ed1d0cb67487320fe6a80a9dd98671e8c5c",
+          "lines": 62
+        },
         "packages/runtime/src/memory.ts": {
-          "sha256": "da3092580c3b98cacbc3ca6cce2ac70b827a165a3bf20bb2692cce87e0932a6a",
-          "lines": 386
+          "sha256": "d8ad94a89096b0d8492e6cd5e3ffc463ef67bc2819adcdb7810e6b956ed9172a",
+          "lines": 418
         },
         "packages/runtime/src/model-adapters.ts": {
           "sha256": "a3678ce8d6371e271b7d69d1faef52871241701fad0f1c35fc086283fc1a0ae8",
@@ -10008,7 +10061,7 @@
           "lines": 121
         },
         "packages/runtime/src/release-product-identity.ts": {
-          "sha256": "9441f391c497a66c80bb4eb1333a685f71af2df0752999352f9fef623aec0d92",
+          "sha256": "fe302137fc992ff9bccad464ea49f5e9af41a088b80f013c2860e857787d813f",
           "lines": 3
         },
         "packages/runtime/src/release-product-trial-adoption.ts": {
@@ -10440,8 +10493,8 @@
           "lines": 288
         },
         "packages/runtime/src/store-state-normalization.ts": {
-          "sha256": "fffe69f88539107817118a1ab92db64dae3459e13d3bb405b4f6e9aaad1a4586",
-          "lines": 403
+          "sha256": "9bb0b643aeb99e6d2de9259ecc144fe1fb3e84d7f4f533252aae6fd5d13fb709",
+          "lines": 405
         },
         "packages/runtime/src/store-state-receipt-validation.ts": {
           "sha256": "27beadf3efa5feb74ae64cf8b97bb1cf79eca098205eae80f5e35cff274dcd49",
@@ -11143,6 +11196,10 @@
           "sha256": "9b102c5ed2721edf9ead6d28894959c8f0f58fd70edb19e9b10f61123d144a5f",
           "lines": 143
         },
+        "packages/runtime/test/agent-runtime-memory-provenance.test.ts": {
+          "sha256": "41b8daf9cb3320030f849a02ec63b4a4cd593342f1608bf5ce6d049960ff66b9",
+          "lines": 80
+        },
         "packages/runtime/test/agent-runtime-utils.test.ts": {
           "sha256": "6467aa0bc2add1257a3af5070cfc97ff036afd21363ad2ffb8cf55ff9ece97cf",
           "lines": 50
@@ -11486,6 +11543,14 @@
         "packages/runtime/test/mcp-stdio.test.ts": {
           "sha256": "a003177bc067d243ff1de4ff627b7de492a9b9f029c216385b465eb3230f1ff1",
           "lines": 259
+        },
+        "packages/runtime/test/memory-provenance.test.ts": {
+          "sha256": "fe7f34dec7a9248aa54379c3dad982fbb0e5f715e7e23d1c8529100ddeb1495e",
+          "lines": 87
+        },
+        "packages/runtime/test/memory.test.ts": {
+          "sha256": "ca169f4b0ccf19638b1e2e4831ec6ae0c2766114b7d7df9d6b9fd712ac283f08",
+          "lines": 538
         },
         "packages/runtime/test/model-adapter-capture.test.ts": {
           "sha256": "8f410456dfefd80431b6ee5f5ac948ffa337b4a0467e357ea31f94c1c8f24498",
@@ -12824,7 +12889,7 @@
           "lines": 487
         },
         "scripts/sdk-capability-parity-evidence.test.mjs": {
-          "sha256": "357dfacda26c6bb7dcf63b59d205ad29bfa52f0204095a680c6224861857cba2",
+          "sha256": "fa710cec02ab1ddaaf9513dd6f9d0883690d6dea671830b91f026e6d1ebc4f34",
           "lines": 313
         },
         "scripts/sdk-capability-parity-identity.mjs": {
@@ -12928,8 +12993,8 @@
           "lines": 726
         },
         "scripts/web-ui-e2e-narrative.mjs": {
-          "sha256": "62bab5bbcb9aa3e19173b71cf269daae968b644ad177d421c0777579c4e2b840",
-          "lines": 396
+          "sha256": "a505cfd4dec8ea1c10be35fe759a9d66383019c349728301cd3334e323bfc7c9",
+          "lines": 410
         },
         "scripts/web-ui-e2e-runtime.mjs": {
           "sha256": "1e9de3b667f27c6fded75cd9d688bc6ae72c920e8d5ba1cec3d41bf3874b9d91",
@@ -13032,7 +13097,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "622a17cdea437d995d5a6988acd6608debda03c72b5060cacec5142bb0ca837c"
+      "manifestSha256": "55b9e9742d7f6a752da162b8a915b351d42b54585669070bf8c7fd5ce952d199"
     },
     "executionClosure": {
       "algorithm": {
@@ -13181,6 +13246,8 @@
             "apps/server/dist/inbound-channel-ingress-http.js",
             "apps/server/dist/inbound-channel-qualification.js",
             "apps/server/dist/kernel-thread-projections.js",
+            "apps/server/dist/memory-http-provenance.js",
+            "apps/server/dist/memory-http-request.js",
             "apps/server/dist/memory-http.js",
             "apps/server/dist/model-http-availability.js",
             "apps/server/dist/model-invocation-experiment-http.js",
@@ -13691,7 +13758,10 @@
             "packages/runtime/dist/mcp-stdio.js",
             "packages/runtime/dist/mcp.js",
             "packages/runtime/dist/memory-proposal-parser.js",
+            "packages/runtime/dist/memory-provenance.js",
             "packages/runtime/dist/memory-repository.js",
+            "packages/runtime/dist/memory-run-extraction.js",
+            "packages/runtime/dist/memory-source.js",
             "packages/runtime/dist/memory.js",
             "packages/runtime/dist/model-adapters.js",
             "packages/runtime/dist/model-advisor-diagnostics.js",
@@ -14364,6 +14434,8 @@
             "apps/server/src/inbound-channel-ingress-http.ts",
             "apps/server/src/inbound-channel-qualification.ts",
             "apps/server/src/kernel-thread-projections.ts",
+            "apps/server/src/memory-http-provenance.ts",
+            "apps/server/src/memory-http-request.ts",
             "apps/server/src/memory-http.ts",
             "apps/server/src/model-http-availability.ts",
             "apps/server/src/model-invocation-experiment-http.ts",
@@ -14874,7 +14946,10 @@
             "packages/runtime/src/mcp-stdio.ts",
             "packages/runtime/src/mcp.ts",
             "packages/runtime/src/memory-proposal-parser.ts",
+            "packages/runtime/src/memory-provenance.ts",
             "packages/runtime/src/memory-repository.ts",
+            "packages/runtime/src/memory-run-extraction.ts",
+            "packages/runtime/src/memory-source.ts",
             "packages/runtime/src/memory.ts",
             "packages/runtime/src/model-adapters.ts",
             "packages/runtime/src/model-advisor-diagnostics.ts",
@@ -15465,16 +15540,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 1181,
-            "sourceCounterparts": 1176,
+            "executionFiles": 1186,
+            "sourceCounterparts": 1181,
             "packageManifests": 2,
-            "allFiles": 2359
+            "allFiles": 2369
           },
           "executionAreaCounts": {
             "apps/cli/dist": 67,
-            "apps/server/dist": 135,
+            "apps/server/dist": 137,
             "packages/contracts/dist": 57,
-            "packages/runtime/dist": 914,
+            "packages/runtime/dist": 917,
             "packages/runtime/test/fixtures": 3,
             "packages/sdk/dist": 3,
             "scripts": 2
@@ -16236,9 +16311,17 @@
               "sha256": "44c04ee628b3591fdd1975a6df7ec5673803bfbe4fdc3fe348464cb3d7b745cc",
               "lines": 52
             },
+            "apps/server/dist/memory-http-provenance.js": {
+              "sha256": "396c10acf12db91ea0a8bce5b4a9901f2004c2e95edc5e9d6c6d572745a2cfb3",
+              "lines": 44
+            },
+            "apps/server/dist/memory-http-request.js": {
+              "sha256": "1f2348b64a4c39290499024a455b0ff4342972c2edf35af8b3660fd76fb7f189",
+              "lines": 19
+            },
             "apps/server/dist/memory-http.js": {
-              "sha256": "bcaccdfda90d99156c018e4b664265a5e200adfa596d4ae52e22a47ad6d2cc46",
-              "lines": 315
+              "sha256": "0c12e3815307ee4d23016c53bcabd1f58467ec59d289162beeb8d54fbac5ee76",
+              "lines": 322
             },
             "apps/server/dist/model-http-availability.js": {
               "sha256": "198fb4f3d5b62b13d773556160a339127d88a923c77a5efb5db1b2b557c986d8",
@@ -16776,9 +16859,17 @@
               "sha256": "f75747fc1712671c66bce31e9ae2d0abc99c58364a1f09e060ee2ae145b43a07",
               "lines": 111
             },
+            "apps/server/src/memory-http-provenance.ts": {
+              "sha256": "ec364500e7c6e92ec1e15ad5f6b35ea2c8797c526608acf759b57cebcdcf6a6e",
+              "lines": 53
+            },
+            "apps/server/src/memory-http-request.ts": {
+              "sha256": "e681fa9078540e2d4c26d6690c48462353ecb8804ec9e5ab38d17390dd8fa024",
+              "lines": 28
+            },
             "apps/server/src/memory-http.ts": {
-              "sha256": "d2d9f931f66404f8b437bdfb880cd8ceaaa28058c7d177d413f07d5de6c2bf2c",
-              "lines": 427
+              "sha256": "6589f3a8f011d1896d649325555dff0322c36f65c1b8d6d6309d9a59b666c13c",
+              "lines": 444
             },
             "apps/server/src/model-http-availability.ts": {
               "sha256": "5cb116eaee13790ab1f6fe61033b2aa75ff0d14ee0648725f79f6a64bde6da92",
@@ -17433,8 +17524,8 @@
               "lines": 71
             },
             "packages/contracts/src/memory-credential-v1.ts": {
-              "sha256": "f36e6f17ad4dcc9319e09c3a682011c5334953ba9722858a40e011077433b348",
-              "lines": 104
+              "sha256": "54caee628f2649455c1bbc2be66e1e3b80586cca85b05a29d2ee106060bedbdc",
+              "lines": 145
             },
             "packages/contracts/src/model-invocation-experiment-comparison-validation.ts": {
               "sha256": "5363f35d89e3e62ee92b3ef8e8dfc62cb1edb239a7b6220b12bfaa529332658e",
@@ -17721,8 +17812,8 @@
               "lines": 101
             },
             "packages/runtime/dist/agent-runtime.js": {
-              "sha256": "cd62b734db474c1efa33a74df0896810433ae663cdfe9b8d191260ac967545b4",
-              "lines": 2249
+              "sha256": "30f67338dd25ef45cc965cf0b6ef0be0546cf4817d97182d876cc2ee649c44fe",
+              "lines": 2238
             },
             "packages/runtime/dist/agent-sessions.js": {
               "sha256": "2c95da89c9200780365123b3413e94905ba324c2f382d1f58395074ca199945b",
@@ -19045,16 +19136,28 @@
               "lines": 679
             },
             "packages/runtime/dist/memory-proposal-parser.js": {
-              "sha256": "618873e6f96943edab912ba30e7c9cbedd9d8c34a6f00c4fc364f8a5f3614225",
-              "lines": 140
+              "sha256": "2db54d8ccd09839266d09b15175ec35f7dbeca48d8f2fdf6f49e57e3df7828ff",
+              "lines": 189
+            },
+            "packages/runtime/dist/memory-provenance.js": {
+              "sha256": "98f7f9e283077f48ccd2ed27ac40582d57e50399148728121fab14c79d5aca41",
+              "lines": 68
             },
             "packages/runtime/dist/memory-repository.js": {
               "sha256": "7ae109a9277057a5f66bcfbe01c347071ab017ad9f7ca8d350250eac89b73001",
               "lines": 155
             },
+            "packages/runtime/dist/memory-run-extraction.js": {
+              "sha256": "fc4297da446556515b197c4c4fc8fbce2bd8e7106331793bdf34e6ab714deca7",
+              "lines": 2
+            },
+            "packages/runtime/dist/memory-source.js": {
+              "sha256": "a2b5efdb11360f0ba3807bc4c48144645079be9cfc98747a2dc0817bdb72be52",
+              "lines": 52
+            },
             "packages/runtime/dist/memory.js": {
-              "sha256": "53e5e04d74e8731d0be98b65c359694c563369ca623c7f522f8d875a8dde98f2",
-              "lines": 270
+              "sha256": "2c2ff41648c5c6c94fff937568ed9349d1191f54abf5126e0d21546eda918792",
+              "lines": 295
             },
             "packages/runtime/dist/model-adapters.js": {
               "sha256": "65f725a468e3d2dbd80851c722d7da94c8e1acc8c8953ef9c355725149f6458f",
@@ -19601,7 +19704,7 @@
               "lines": 86
             },
             "packages/runtime/dist/release-product-identity.js": {
-              "sha256": "65334fe314d39c3016c97a4779cce4fe9377fcd22e3c927f181ee5063ac5c1c9",
+              "sha256": "2fce02b4f9c9c68f063b4f684a88ea50345050850b2ba6ef85ab38e130c3c0e0",
               "lines": 2
             },
             "packages/runtime/dist/release-product-trial-adoption.js": {
@@ -20113,8 +20216,8 @@
               "lines": 188
             },
             "packages/runtime/dist/store-state-normalization.js": {
-              "sha256": "00f94e4643d5ac4637cefc5907f488bf059a501a3cdd825b0c1abd075a1f4daf",
-              "lines": 283
+              "sha256": "1563a15fcacae5f9bbe9594fb59d0aac6f5e7ff3c4140745f705561068d081e9",
+              "lines": 285
             },
             "packages/runtime/dist/store-state-receipt-validation.js": {
               "sha256": "8437e38f1b0334c0e34d152aab416f52a42cb8ffda39ed0a6ae2cf90adb0a2a4",
@@ -21381,8 +21484,8 @@
               "lines": 148
             },
             "packages/runtime/src/agent-runtime.ts": {
-              "sha256": "4812de817f9bc1398a2c73eaccc83c6c700d627aa92ff013c185e3835ce69bc9",
-              "lines": 3205
+              "sha256": "2662a04519007722676cba2878650b57b3b8c2fffc2796ed962fcbc05b0dc0f8",
+              "lines": 3194
             },
             "packages/runtime/src/agent-sessions.ts": {
               "sha256": "1e15dbac094ac6d2c3fa664099b24c2e029f2c75e19c16f72e5a2188a2984d6f",
@@ -22705,16 +22808,28 @@
               "lines": 949
             },
             "packages/runtime/src/memory-proposal-parser.ts": {
-              "sha256": "7258d10ee411a8dbad5b91efb5cfa8ad7e528849812bcf4bc0307ab402ee9e90",
-              "lines": 186
+              "sha256": "e9c06500b08330ad190f341e8c5937f54b7151ceabf9121201c63ae386745060",
+              "lines": 272
+            },
+            "packages/runtime/src/memory-provenance.ts": {
+              "sha256": "7a0c81e3bfcdea564269f843e118b5ae9263d46b2b3268adab80bb75044ecd0e",
+              "lines": 86
             },
             "packages/runtime/src/memory-repository.ts": {
               "sha256": "d0de49a9ab92e7429ff359cf0bfe3c75600c7807d0e24e4778a75ee0afe52592",
               "lines": 246
             },
+            "packages/runtime/src/memory-run-extraction.ts": {
+              "sha256": "8224e4d1a15f0bbc6a2d12f7b64f7c8fca4aab8da67828102ec3c65e24cd26be",
+              "lines": 11
+            },
+            "packages/runtime/src/memory-source.ts": {
+              "sha256": "ac9af2dc267a78672f260d68fbf27ed1d0cb67487320fe6a80a9dd98671e8c5c",
+              "lines": 62
+            },
             "packages/runtime/src/memory.ts": {
-              "sha256": "da3092580c3b98cacbc3ca6cce2ac70b827a165a3bf20bb2692cce87e0932a6a",
-              "lines": 386
+              "sha256": "d8ad94a89096b0d8492e6cd5e3ffc463ef67bc2819adcdb7810e6b956ed9172a",
+              "lines": 418
             },
             "packages/runtime/src/model-adapters.ts": {
               "sha256": "a3678ce8d6371e271b7d69d1faef52871241701fad0f1c35fc086283fc1a0ae8",
@@ -23261,7 +23376,7 @@
               "lines": 121
             },
             "packages/runtime/src/release-product-identity.ts": {
-              "sha256": "9441f391c497a66c80bb4eb1333a685f71af2df0752999352f9fef623aec0d92",
+              "sha256": "fe302137fc992ff9bccad464ea49f5e9af41a088b80f013c2860e857787d813f",
               "lines": 3
             },
             "packages/runtime/src/release-product-trial-adoption.ts": {
@@ -23773,8 +23888,8 @@
               "lines": 288
             },
             "packages/runtime/src/store-state-normalization.ts": {
-              "sha256": "fffe69f88539107817118a1ab92db64dae3459e13d3bb405b4f6e9aaad1a4586",
-              "lines": 403
+              "sha256": "9bb0b643aeb99e6d2de9259ecc144fe1fb3e84d7f4f533252aae6fd5d13fb709",
+              "lines": 405
             },
             "packages/runtime/src/store-state-receipt-validation.ts": {
               "sha256": "27beadf3efa5feb74ae64cf8b97bb1cf79eca098205eae80f5e35cff274dcd49",
@@ -24917,7 +25032,7 @@
               "lines": 32
             }
           },
-          "manifestSha256": "eac58c180b8fff47a0070cdea999d18d82efd94468e418f79623dcb9134466f4"
+          "manifestSha256": "976cefb7db9573ca31e02993c89e9b995b753646d4f79ae1f576a9ac2afa2fed"
         },
         "productionServerTrace": {
           "roots": [
@@ -24986,6 +25101,8 @@
             "apps/server/dist/inbound-channel-qualification.js",
             "apps/server/dist/index.js",
             "apps/server/dist/kernel-thread-projections.js",
+            "apps/server/dist/memory-http-provenance.js",
+            "apps/server/dist/memory-http-request.js",
             "apps/server/dist/memory-http.js",
             "apps/server/dist/model-http-availability.js",
             "apps/server/dist/model-invocation-experiment-http.js",
@@ -25495,7 +25612,10 @@
             "packages/runtime/dist/mcp-stdio.js",
             "packages/runtime/dist/mcp.js",
             "packages/runtime/dist/memory-proposal-parser.js",
+            "packages/runtime/dist/memory-provenance.js",
             "packages/runtime/dist/memory-repository.js",
+            "packages/runtime/dist/memory-run-extraction.js",
+            "packages/runtime/dist/memory-source.js",
             "packages/runtime/dist/memory.js",
             "packages/runtime/dist/model-adapters.js",
             "packages/runtime/dist/model-advisor-diagnostics.js",
@@ -26102,6 +26222,8 @@
             "apps/server/src/inbound-channel-qualification.ts",
             "apps/server/src/index.ts",
             "apps/server/src/kernel-thread-projections.ts",
+            "apps/server/src/memory-http-provenance.ts",
+            "apps/server/src/memory-http-request.ts",
             "apps/server/src/memory-http.ts",
             "apps/server/src/model-http-availability.ts",
             "apps/server/src/model-invocation-experiment-http.ts",
@@ -26611,7 +26733,10 @@
             "packages/runtime/src/mcp-stdio.ts",
             "packages/runtime/src/mcp.ts",
             "packages/runtime/src/memory-proposal-parser.ts",
+            "packages/runtime/src/memory-provenance.ts",
             "packages/runtime/src/memory-repository.ts",
+            "packages/runtime/src/memory-run-extraction.ts",
+            "packages/runtime/src/memory-source.ts",
             "packages/runtime/src/memory.ts",
             "packages/runtime/src/model-adapters.ts",
             "packages/runtime/src/model-advisor-diagnostics.ts",
@@ -27202,16 +27327,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 1114,
-            "sourceCounterparts": 1108,
+            "executionFiles": 1119,
+            "sourceCounterparts": 1113,
             "packageManifests": 3,
-            "allFiles": 2225
+            "allFiles": 2235
           },
           "executionAreaCounts": {
-            "apps/server/dist": 137,
+            "apps/server/dist": 139,
             "other": 1,
             "packages/contracts/dist": 57,
-            "packages/runtime/dist": 911,
+            "packages/runtime/dist": 914,
             "packages/sdk/dist": 3,
             "scripts": 5
           },
@@ -27440,9 +27565,17 @@
               "sha256": "44c04ee628b3591fdd1975a6df7ec5673803bfbe4fdc3fe348464cb3d7b745cc",
               "lines": 52
             },
+            "apps/server/dist/memory-http-provenance.js": {
+              "sha256": "396c10acf12db91ea0a8bce5b4a9901f2004c2e95edc5e9d6c6d572745a2cfb3",
+              "lines": 44
+            },
+            "apps/server/dist/memory-http-request.js": {
+              "sha256": "1f2348b64a4c39290499024a455b0ff4342972c2edf35af8b3660fd76fb7f189",
+              "lines": 19
+            },
             "apps/server/dist/memory-http.js": {
-              "sha256": "bcaccdfda90d99156c018e4b664265a5e200adfa596d4ae52e22a47ad6d2cc46",
-              "lines": 315
+              "sha256": "0c12e3815307ee4d23016c53bcabd1f58467ec59d289162beeb8d54fbac5ee76",
+              "lines": 322
             },
             "apps/server/dist/model-http-availability.js": {
               "sha256": "198fb4f3d5b62b13d773556160a339127d88a923c77a5efb5db1b2b557c986d8",
@@ -27988,9 +28121,17 @@
               "sha256": "f75747fc1712671c66bce31e9ae2d0abc99c58364a1f09e060ee2ae145b43a07",
               "lines": 111
             },
+            "apps/server/src/memory-http-provenance.ts": {
+              "sha256": "ec364500e7c6e92ec1e15ad5f6b35ea2c8797c526608acf759b57cebcdcf6a6e",
+              "lines": 53
+            },
+            "apps/server/src/memory-http-request.ts": {
+              "sha256": "e681fa9078540e2d4c26d6690c48462353ecb8804ec9e5ab38d17390dd8fa024",
+              "lines": 28
+            },
             "apps/server/src/memory-http.ts": {
-              "sha256": "d2d9f931f66404f8b437bdfb880cd8ceaaa28058c7d177d413f07d5de6c2bf2c",
-              "lines": 427
+              "sha256": "6589f3a8f011d1896d649325555dff0322c36f65c1b8d6d6309d9a59b666c13c",
+              "lines": 444
             },
             "apps/server/src/model-http-availability.ts": {
               "sha256": "5cb116eaee13790ab1f6fe61033b2aa75ff0d14ee0648725f79f6a64bde6da92",
@@ -28649,8 +28790,8 @@
               "lines": 71
             },
             "packages/contracts/src/memory-credential-v1.ts": {
-              "sha256": "f36e6f17ad4dcc9319e09c3a682011c5334953ba9722858a40e011077433b348",
-              "lines": 104
+              "sha256": "54caee628f2649455c1bbc2be66e1e3b80586cca85b05a29d2ee106060bedbdc",
+              "lines": 145
             },
             "packages/contracts/src/model-invocation-experiment-comparison-validation.ts": {
               "sha256": "5363f35d89e3e62ee92b3ef8e8dfc62cb1edb239a7b6220b12bfaa529332658e",
@@ -28937,8 +29078,8 @@
               "lines": 101
             },
             "packages/runtime/dist/agent-runtime.js": {
-              "sha256": "cd62b734db474c1efa33a74df0896810433ae663cdfe9b8d191260ac967545b4",
-              "lines": 2249
+              "sha256": "30f67338dd25ef45cc965cf0b6ef0be0546cf4817d97182d876cc2ee649c44fe",
+              "lines": 2238
             },
             "packages/runtime/dist/agent-sessions.js": {
               "sha256": "2c95da89c9200780365123b3413e94905ba324c2f382d1f58395074ca199945b",
@@ -30253,16 +30394,28 @@
               "lines": 679
             },
             "packages/runtime/dist/memory-proposal-parser.js": {
-              "sha256": "618873e6f96943edab912ba30e7c9cbedd9d8c34a6f00c4fc364f8a5f3614225",
-              "lines": 140
+              "sha256": "2db54d8ccd09839266d09b15175ec35f7dbeca48d8f2fdf6f49e57e3df7828ff",
+              "lines": 189
+            },
+            "packages/runtime/dist/memory-provenance.js": {
+              "sha256": "98f7f9e283077f48ccd2ed27ac40582d57e50399148728121fab14c79d5aca41",
+              "lines": 68
             },
             "packages/runtime/dist/memory-repository.js": {
               "sha256": "7ae109a9277057a5f66bcfbe01c347071ab017ad9f7ca8d350250eac89b73001",
               "lines": 155
             },
+            "packages/runtime/dist/memory-run-extraction.js": {
+              "sha256": "fc4297da446556515b197c4c4fc8fbce2bd8e7106331793bdf34e6ab714deca7",
+              "lines": 2
+            },
+            "packages/runtime/dist/memory-source.js": {
+              "sha256": "a2b5efdb11360f0ba3807bc4c48144645079be9cfc98747a2dc0817bdb72be52",
+              "lines": 52
+            },
             "packages/runtime/dist/memory.js": {
-              "sha256": "53e5e04d74e8731d0be98b65c359694c563369ca623c7f522f8d875a8dde98f2",
-              "lines": 270
+              "sha256": "2c2ff41648c5c6c94fff937568ed9349d1191f54abf5126e0d21546eda918792",
+              "lines": 295
             },
             "packages/runtime/dist/model-adapters.js": {
               "sha256": "65f725a468e3d2dbd80851c722d7da94c8e1acc8c8953ef9c355725149f6458f",
@@ -30809,7 +30962,7 @@
               "lines": 86
             },
             "packages/runtime/dist/release-product-identity.js": {
-              "sha256": "65334fe314d39c3016c97a4779cce4fe9377fcd22e3c927f181ee5063ac5c1c9",
+              "sha256": "2fce02b4f9c9c68f063b4f684a88ea50345050850b2ba6ef85ab38e130c3c0e0",
               "lines": 2
             },
             "packages/runtime/dist/release-product-trial-adoption.js": {
@@ -31321,8 +31474,8 @@
               "lines": 188
             },
             "packages/runtime/dist/store-state-normalization.js": {
-              "sha256": "00f94e4643d5ac4637cefc5907f488bf059a501a3cdd825b0c1abd075a1f4daf",
-              "lines": 283
+              "sha256": "1563a15fcacae5f9bbe9594fb59d0aac6f5e7ff3c4140745f705561068d081e9",
+              "lines": 285
             },
             "packages/runtime/dist/store-state-receipt-validation.js": {
               "sha256": "8437e38f1b0334c0e34d152aab416f52a42cb8ffda39ed0a6ae2cf90adb0a2a4",
@@ -32585,8 +32738,8 @@
               "lines": 148
             },
             "packages/runtime/src/agent-runtime.ts": {
-              "sha256": "4812de817f9bc1398a2c73eaccc83c6c700d627aa92ff013c185e3835ce69bc9",
-              "lines": 3205
+              "sha256": "2662a04519007722676cba2878650b57b3b8c2fffc2796ed962fcbc05b0dc0f8",
+              "lines": 3194
             },
             "packages/runtime/src/agent-sessions.ts": {
               "sha256": "1e15dbac094ac6d2c3fa664099b24c2e029f2c75e19c16f72e5a2188a2984d6f",
@@ -33901,16 +34054,28 @@
               "lines": 949
             },
             "packages/runtime/src/memory-proposal-parser.ts": {
-              "sha256": "7258d10ee411a8dbad5b91efb5cfa8ad7e528849812bcf4bc0307ab402ee9e90",
-              "lines": 186
+              "sha256": "e9c06500b08330ad190f341e8c5937f54b7151ceabf9121201c63ae386745060",
+              "lines": 272
+            },
+            "packages/runtime/src/memory-provenance.ts": {
+              "sha256": "7a0c81e3bfcdea564269f843e118b5ae9263d46b2b3268adab80bb75044ecd0e",
+              "lines": 86
             },
             "packages/runtime/src/memory-repository.ts": {
               "sha256": "d0de49a9ab92e7429ff359cf0bfe3c75600c7807d0e24e4778a75ee0afe52592",
               "lines": 246
             },
+            "packages/runtime/src/memory-run-extraction.ts": {
+              "sha256": "8224e4d1a15f0bbc6a2d12f7b64f7c8fca4aab8da67828102ec3c65e24cd26be",
+              "lines": 11
+            },
+            "packages/runtime/src/memory-source.ts": {
+              "sha256": "ac9af2dc267a78672f260d68fbf27ed1d0cb67487320fe6a80a9dd98671e8c5c",
+              "lines": 62
+            },
             "packages/runtime/src/memory.ts": {
-              "sha256": "da3092580c3b98cacbc3ca6cce2ac70b827a165a3bf20bb2692cce87e0932a6a",
-              "lines": 386
+              "sha256": "d8ad94a89096b0d8492e6cd5e3ffc463ef67bc2819adcdb7810e6b956ed9172a",
+              "lines": 418
             },
             "packages/runtime/src/model-adapters.ts": {
               "sha256": "a3678ce8d6371e271b7d69d1faef52871241701fad0f1c35fc086283fc1a0ae8",
@@ -34457,7 +34622,7 @@
               "lines": 121
             },
             "packages/runtime/src/release-product-identity.ts": {
-              "sha256": "9441f391c497a66c80bb4eb1333a685f71af2df0752999352f9fef623aec0d92",
+              "sha256": "fe302137fc992ff9bccad464ea49f5e9af41a088b80f013c2860e857787d813f",
               "lines": 3
             },
             "packages/runtime/src/release-product-trial-adoption.ts": {
@@ -34969,8 +35134,8 @@
               "lines": 288
             },
             "packages/runtime/src/store-state-normalization.ts": {
-              "sha256": "fffe69f88539107817118a1ab92db64dae3459e13d3bb405b4f6e9aaad1a4586",
-              "lines": 403
+              "sha256": "9bb0b643aeb99e6d2de9259ecc144fe1fb3e84d7f4f533252aae6fd5d13fb709",
+              "lines": 405
             },
             "packages/runtime/src/store-state-receipt-validation.ts": {
               "sha256": "27beadf3efa5feb74ae64cf8b97bb1cf79eca098205eae80f5e35cff274dcd49",
@@ -36117,7 +36282,7 @@
               "lines": 99
             }
           },
-          "manifestSha256": "6b582806f065bc75cf576cddfa2f1a8addc42e4ce998c967d118dc4dca65b1b9"
+          "manifestSha256": "bb19b3f569371f07b4d76adc6e1ed58b6388ddc76699ab7d40aefc4b3f2271ab"
         }
       },
       "excludedCategories": [
@@ -36146,9 +36311,9 @@
           "reason": "evidence.json cannot contain its own content hash; the external Stage 8 repair commit binds that blob."
         }
       ],
-      "manifestSha256": "7780883aff7c6930499e45c7575686fe17249894c634043437ea6f291bbd5fa4"
+      "manifestSha256": "5ba8ecac1f984e9eead8819d41bdb8d9d9692078b6776eced7c485e6452d3a6f"
     },
-    "manifestSha256": "43af7a782e74114b2fe2074a4a68887da51acf206cf83d673e04ad5a05d73867"
+    "manifestSha256": "efa63f099ec0899b362f9dadff913f1a528cec52740b88972da825212043aba3"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -36341,11 +36506,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "c1c62e705368fbb378c8908dda74dda9dbf52d3c21484b5833bdd141b9b914d1"
+      "sha256": "f93e8cf885ed5016c6cb36c0956d73c173611bb80b01df1497c3b4d3ec81cd54"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "b5647cdaea31454984f9e9797b799f2056eac064eb58fad99b6ec3a0eb8e81b3"
+      "sha256": "4be3ebf4e0c4d77fc0e45f2b79143f7066907f9fe2e57d2e2296f3ae6ba42fe4"
     }
   }
 }
