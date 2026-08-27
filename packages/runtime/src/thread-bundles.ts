@@ -112,7 +112,7 @@ const RUN_SOURCES = new Set([
   "channel",
   "workflow",
   "workflow_reuse",
-  "workflow_simulation",
+  "workflow_simulation", "context_compaction",
   "model_experiment",
   "tool_experiment",
 ]);

@@ -157,6 +157,8 @@ export const RUN_EVENT_DEFINITION_GROUPS_V1 = [
       "agent.experiment.started",
       "context.compaction.completed",
       "context.compaction.failed",
+      "context.compaction.forked",
+      "context.compaction.previewed",
       "model.experiment.compared",
       "model.experiment.failed",
       "model.experiment.started",

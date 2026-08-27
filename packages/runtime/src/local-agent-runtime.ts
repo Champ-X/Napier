@@ -10,6 +10,7 @@ import { AgentRuntime } from "./agent-runtime.js";
 import { BrowserInteractionConfirmationManager } from "./browser-interaction-confirmations.js";
 import { RunBrowserSessionManager } from "./browser-session.js";
 import { BrowserSessionPauseManager } from "./browser-session-pause.js";
+import { ContextCompactionWorkbenchService } from "./context-compaction-workbench.js";
 import { AgentMessageExperimentRuntime } from "./agent-message-experiments.js";
 import { EmbeddedAgentService } from "./embedded-agents.js";
 import { EmbeddedWorkflowService } from "./embedded-workflows.js";
@@ -79,6 +80,7 @@ export interface LocalAgentRuntimeServices {
   providerSetup: ProviderSetupService;
   sandboxSetup: SandboxSetupService;
   runtime: AgentRuntime;
+  contextCompactionWorkbench: ContextCompactionWorkbenchService;
   subagentHubControls: SubagentHubControlService;
   kernel: AgentKernel;
   agentCapabilities: AgentCapabilityService;
@@ -222,6 +224,11 @@ export async function createLocalAgentRuntime(
       undefined,
       subagentHubControls,
     );
+    const contextCompactionWorkbench = new ContextCompactionWorkbenchService(
+      store,
+      models,
+      runtime.modelInvocationCapsules,
+    );
     const kernel = await createPersistedAgentKernel(dataRoot, {
       profile: options.kernelProfile ?? "base",
       runtime,
@@ -266,6 +273,7 @@ export async function createLocalAgentRuntime(
       providerSetup,
       sandboxSetup,
       runtime,
+      contextCompactionWorkbench,
       subagentHubControls,
       kernel,
       agentCapabilities,

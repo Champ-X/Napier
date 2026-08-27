@@ -1486,12 +1486,269 @@
 .developer-tool > .run-lab,
 .developer-tool > .plan-inspector-surface,
 .developer-tool > .default-product-trial,
+.developer-tool > .context-compaction-workbench,
 .developer-tool > .context-loading {
   margin: 0;
   border: 0;
   border-top: 1px solid var(--color-border-subtle);
   border-radius: 0;
   box-shadow: none;
+}
+
+.context-compaction-workbench {
+  display: grid;
+  gap: var(--stack-md);
+  padding: var(--inset-lg);
+  background: var(--color-surface);
+}
+
+.context-compaction-heading,
+.context-compaction-preview-heading,
+.context-compaction-apply {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--stack-md);
+}
+
+.context-compaction-heading > div {
+  min-width: 0;
+}
+
+.context-compaction-heading span,
+.context-compaction-controls label > span,
+.context-compaction-source > span,
+.context-compaction-apply label > span,
+.context-compaction-preview-heading span {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.context-compaction-heading h2 {
+  margin: var(--space-1) 0;
+  font-size: var(--text-lg);
+}
+
+.context-compaction-heading p,
+.context-compaction-footnote {
+  max-width: 680px;
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-compact);
+  color: var(--color-fg-muted);
+}
+
+.context-compaction-safety {
+  display: inline-flex !important;
+  min-height: 28px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--inline-xs);
+  padding: 0 var(--space-2);
+  color: var(--color-success) !important;
+  letter-spacing: 0 !important;
+  background: var(--color-success-surface);
+  border: 1px solid color-mix(in srgb, var(--color-success) 35%, transparent);
+  border-radius: 999px;
+}
+
+.context-compaction-controls {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.7fr) minmax(220px, 1.3fr) auto;
+  gap: var(--space-3);
+  align-items: end;
+  padding: var(--space-3);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.context-compaction-controls label,
+.context-compaction-apply label {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-1);
+}
+
+.context-compaction-controls select,
+.context-compaction-apply input {
+  width: 100%;
+  min-height: var(--control-target-primary);
+  padding: 0 var(--space-3);
+  font: inherit;
+  color: var(--color-fg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.context-compaction-source {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.context-compaction-source strong {
+  font-size: var(--text-sm);
+}
+
+.context-compaction-source code,
+.context-compaction-preview-heading code,
+.context-compaction-evidence code {
+  overflow: hidden;
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.context-compaction-notice,
+.context-compaction-error {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+}
+
+.context-compaction-notice {
+  color: var(--color-fg-muted);
+  background: var(--color-bg-subtle);
+}
+
+.context-compaction-error {
+  color: var(--color-danger);
+  background: var(--color-danger-surface);
+}
+
+.context-compaction-preview {
+  display: grid;
+  gap: var(--stack-sm);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.context-compaction-preview-heading {
+  align-items: center;
+}
+
+.context-compaction-preview-heading strong {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--text-sm);
+}
+
+.context-compaction-summary {
+  padding: var(--space-3);
+  background: var(--color-accent-subtle);
+  border-left: 3px solid var(--color-accent);
+}
+
+.context-compaction-summary h3,
+.context-compaction-ledgers h3 {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-sm);
+}
+
+.context-compaction-summary p,
+.context-compaction-ledgers p,
+.context-compaction-ledgers ul {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-compact);
+}
+
+.context-compaction-ledgers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.context-compaction-ledgers > section {
+  min-width: 0;
+  padding: var(--space-3);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.context-compaction-ledgers ul {
+  display: grid;
+  gap: var(--space-1);
+  padding-left: var(--space-4);
+}
+
+.context-compaction-evidence {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.context-compaction-evidence > div {
+  min-width: 0;
+  padding: var(--space-2);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.context-compaction-evidence dt {
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+}
+
+.context-compaction-evidence dd {
+  margin: 2px 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.context-compaction-apply {
+  align-items: end;
+}
+
+.context-compaction-apply label {
+  flex: 1 1 auto;
+}
+
+.context-compaction-apply-action {
+  display: inline-flex;
+  min-height: var(--control-target-primary);
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: var(--inline-sm);
+  padding: 0 var(--inset-md);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-accent);
+  cursor: pointer;
+  background: var(--color-surface);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+}
+
+.context-compaction-apply-action:hover:not(:disabled) {
+  color: var(--color-fg-on-accent);
+  background: var(--color-accent);
+}
+
+.context-compaction-apply-action:disabled {
+  color: var(--color-fg-disabled);
+  cursor: not-allowed;
+  border-color: var(--color-border);
+}
+
+@media (max-width: 1360px) {
+  .context-compaction-controls {
+    grid-template-columns: minmax(140px, 0.7fr) minmax(180px, 1.3fr);
+  }
+
+  .context-compaction-controls .task-primary-action {
+    grid-column: 1 / -1;
+  }
 }
 
 .workspace-settings-button {

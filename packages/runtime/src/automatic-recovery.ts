@@ -141,7 +141,7 @@ export function assessAutomaticRecovery(
   if (
     options.run.source === "workflow" ||
     options.run.source === "workflow_reuse" ||
-    options.run.source === "workflow_simulation" ||
+    options.run.source === "workflow_simulation" || options.run.source === "context_compaction" ||
     options.run.source === "model_experiment" ||
     options.run.source === "tool_experiment"
   ) {

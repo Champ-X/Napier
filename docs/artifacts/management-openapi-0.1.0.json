@@ -8185,6 +8185,106 @@
         "x-napier-source-route": "GET /api/threads/:threadId/context-checkpoint-calibration"
       }
     },
+    "/api/threads/{threadId}/context-compaction/forks": {
+      "post": {
+        "operationId": "post-threads-by-threadId-context-compaction-forks",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/context-compaction/forks",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/context-compaction/forks"
+      }
+    },
+    "/api/threads/{threadId}/context-compaction/preview": {
+      "post": {
+        "operationId": "post-threads-by-threadId-context-compaction-preview",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/context-compaction/preview",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/context-compaction/preview"
+      }
+    },
     "/api/threads/{threadId}/controlled-harness-evidence": {
       "post": {
         "operationId": "post-threads-by-threadId-controlled-harness-evidence",
@@ -12538,6 +12638,64 @@
         "x-napier-source-route": "POST /api/threads/:threadId/stop"
       }
     },
+    "/api/threads/{threadId}/subagents/{taskId}/cancel": {
+      "post": {
+        "operationId": "post-threads-by-threadId-subagents-by-taskId-cancel",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/subagents/{taskId}/cancel",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/subagents/:taskId/cancel"
+      }
+    },
     "/api/threads/{threadId}/subagents/{taskId}/outcome/review": {
       "post": {
         "operationId": "post-threads-by-threadId-subagents-by-taskId-outcome-review",
@@ -12657,6 +12815,122 @@
         "x-napier-promoted-response-schema-refs": {
           "200": "#/components/schemas/SubagentOutcomeEvidenceVerification"
         }
+      }
+    },
+    "/api/threads/{threadId}/subagents/{taskId}/revive": {
+      "post": {
+        "operationId": "post-threads-by-threadId-subagents-by-taskId-revive",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/subagents/{taskId}/revive",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/subagents/:taskId/revive"
+      }
+    },
+    "/api/threads/{threadId}/subagents/{taskId}/steer": {
+      "post": {
+        "operationId": "post-threads-by-threadId-subagents-by-taskId-steer",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/subagents/{taskId}/steer",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/subagents/:taskId/steer"
       }
     },
     "/api/threads/{threadId}/tool-invocation-experiments": {
@@ -16303,6 +16577,7 @@
     "apps/server/src/browser-live-view-http.ts",
     "apps/server/src/browser-session-control-http.ts",
     "apps/server/src/browser-task-http.ts",
+    "apps/server/src/context-compaction-http.ts",
     "apps/server/src/controlled-harness-evidence-http.ts",
     "apps/server/src/credential-http.ts",
     "apps/server/src/evaluation-casebook-admin-http.ts",
@@ -16342,7 +16617,7 @@
     "apps/server/src/workspace-process-http.ts",
     "apps/server/src/workspace-root-http.ts"
   ],
-  "x-napier-source-sha256": "1cd4249dcfe16ea613c331710fa7a0cc5fa513eda8513a7a76149f172e04c996",
-  "x-napier-route-count": 292,
-  "x-napier-route-set-sha256": "aad048744e85b51893d8e6d26e023cf87b0d79b035a90fe9bc0dde7fa54d8265"
+  "x-napier-source-sha256": "499c78ef7b4c4aeba2b7f173159ba28a6c1c361f1a9cddc687b504a53fc560b2",
+  "x-napier-route-count": 297,
+  "x-napier-route-set-sha256": "2acf796e86354233fc9b7b549d28f9a63bfd6694607dae6ecabb0eac7028f206"
 }

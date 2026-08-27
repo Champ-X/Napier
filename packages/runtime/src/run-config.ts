@@ -77,7 +77,7 @@ const EXECUTION_MODES = new Set<RunExecutionMode>([
   "safe_read_only_recovery",
   "workflow_map_read_only",
   "workflow_loop_read_only",
-  "agent_experiment_read_only",
+  "agent_experiment_read_only", "context_compaction_single_call",
   "model_experiment_single_call",
   "tool_experiment_read_only",
 ]);

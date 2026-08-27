@@ -8,6 +8,7 @@ export type ManualRunRecoveryThreadStatus =
 
 export type ManualRunRecoveryBlockReason =
   | "workflow_managed"
+  | "context_compaction"
   | "model_experiment"
   | "tool_experiment"
   | "agent_experiment";
@@ -47,6 +48,7 @@ export function manualRunRecoveryBlockReason(
     return "workflow_managed";
   }
   if (run.source === "model_experiment") return "model_experiment";
+  if (run.source === "context_compaction") return "context_compaction";
   if (run.source === "tool_experiment") return "tool_experiment";
   if (
     run.configuration &&

@@ -50,7 +50,8 @@ export function projectRunExecutionCapabilitySurface(
   return {
     toolPolicy: restricted || degraded ? "observe" : profile.toolPolicy,
     enabledTools:
-      mode === "model_experiment_single_call"
+      mode === "model_experiment_single_call" ||
+      mode === "context_compaction_single_call"
         ? []
         : restricted || degraded
           ? profile.enabledTools.filter((tool) => allowedTools.has(tool))

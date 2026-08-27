@@ -1,7 +1,8 @@
-import { FlaskConical, Gauge, Workflow } from "lucide-react";
+import { FlaskConical, Gauge, GitFork, Workflow } from "lucide-react";
 import { lazy, Suspense } from "react";
 
 import { copy } from "./copy";
+import { ContextCompactionWorkbenchPanel } from "./ContextCompactionWorkbenchPanel";
 import { PlanInspectorSurface } from "./PlanInspectorSurface";
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
 
@@ -80,6 +81,26 @@ export function DeveloperToolsPanel({
             }}
           />
         </Suspense>
+      </details>
+
+      <details className="developer-tool">
+        <summary>
+          <GitFork size={16} aria-hidden="true" />
+          {copy.settingsSurface.contextCompaction.title}
+        </summary>
+        <ContextCompactionWorkbenchPanel
+          {...(vm.detail
+            ? {
+                threadId: vm.detail.thread.id,
+                threadTitle: vm.detail.thread.title,
+              }
+            : {})}
+          messageCount={vm.messages.length}
+          model={activeModel}
+          running={vm.isRunning}
+          onOpenThread={vm.selectThread}
+          onRefresh={vm.refreshActiveThread}
+        />
       </details>
 
       <details className="developer-tool">

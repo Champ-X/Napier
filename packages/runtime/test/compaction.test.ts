@@ -10,6 +10,7 @@ import {
   parseContextCompactionResponse,
   planContextProjection,
 } from "../src/compaction.js";
+import { planManualContextCompaction } from "../src/manual-context-compaction.js";
 import { createContextCheckpointCalibrationReport } from "../src/checkpoint-calibration.js";
 
 function messageEvents(count: number, startSeq = 1): RunEvent[] {
@@ -34,6 +35,24 @@ function messageEvents(count: number, startSeq = 1): RunEvent[] {
 }
 
 describe("context compaction", () => {
+  it("plans an explicit retained window without mutating source evidence", () => {
+    const events = messageEvents(8);
+    const snapshot = structuredClone(events);
+    const plan = planManualContextCompaction(events, 3);
+
+    expect(plan.compactEvents.map((event) => event.seq)).toEqual([
+      1, 2, 3, 4, 5,
+    ]);
+    expect(plan.recentEvents.map((event) => event.seq)).toEqual([6, 7, 8]);
+    expect(events).toEqual(snapshot);
+    expect(() => planManualContextCompaction(events, 1)).toThrow(
+      "between 2 and 24",
+    );
+    expect(() => planManualContextCompaction(events, 8)).toThrow(
+      "requires more source messages",
+    );
+  });
+
   it("plans a checkpoint while retaining the newest raw messages", () => {
     const events = messageEvents(30);
     const plan = planContextProjection(events, undefined, {
@@ -151,12 +170,16 @@ describe("context compaction", () => {
         status: "passed",
       }),
     ];
-    const events = [...messages, ...continuity].sort((left, right) => left.seq - right.seq);
+    const events = [...messages, ...continuity].sort(
+      (left, right) => left.seq - right.seq,
+    );
     const plan = planContextProjection(events, undefined, {
       maxHistoryCharacters: 100_000,
     });
 
-    expect(plan.compactContinuityEvents.map((event) => event.seq)).toEqual([15, 25, 35]);
+    expect(plan.compactContinuityEvents.map((event) => event.seq)).toEqual([
+      15, 25, 35,
+    ]);
     expect(plan.deltaContinuityEvents).toEqual(plan.compactContinuityEvents);
     const prompt = buildContextCompactionMessages(
       undefined,
@@ -183,28 +206,43 @@ describe("context compaction", () => {
         artifacts: ["packages/runtime/src/compaction.ts"],
       },
     });
-    expect(checkpoint).toEqual(expect.objectContaining({
-      continuityProjectionVersion: 1,
-      continuityEventCount: 3,
-      continuitySha256: hashContextEvents(plan.compactContinuityEvents),
-    }));
-    const checkpointEvent = continuityEvent(61, "context.compaction.completed", checkpoint as unknown as JsonValue);
+    expect(checkpoint).toEqual(
+      expect.objectContaining({
+        continuityProjectionVersion: 1,
+        continuityEventCount: 3,
+        continuitySha256: hashContextEvents(plan.compactContinuityEvents),
+      }),
+    );
+    const checkpointEvent = continuityEvent(
+      61,
+      "context.compaction.completed",
+      checkpoint as unknown as JsonValue,
+    );
     checkpointEvent.category = "model";
-    expect(latestValidContextCheckpoint([...events, checkpointEvent])).toEqual(checkpoint);
+    expect(latestValidContextCheckpoint([...events, checkpointEvent])).toEqual(
+      checkpoint,
+    );
 
     const tampered = structuredClone(events);
     const toolEvent = tampered.find((event) => event.seq === 15)!;
-    toolEvent.payload = { ...toolEvent.payload as Record<string, JsonValue>, status: "failed" };
-    expect(latestValidContextCheckpoint([...tampered, checkpointEvent])).toBeUndefined();
+    toolEvent.payload = {
+      ...(toolEvent.payload as Record<string, JsonValue>),
+      status: "failed",
+    };
+    expect(
+      latestValidContextCheckpoint([...tampered, checkpointEvent]),
+    ).toBeUndefined();
     const report = createContextCheckpointCalibrationReport(
       "thread-context",
       [...tampered, checkpointEvent],
       new Date("2026-08-19T00:00:00.000Z"),
     );
-    expect(report.samples.at(-1)).toEqual(expect.objectContaining({
-      state: "drifted",
-      reason: "continuity_hash_mismatch",
-    }));
+    expect(report.samples.at(-1)).toEqual(
+      expect.objectContaining({
+        state: "drifted",
+        reason: "continuity_hash_mismatch",
+      }),
+    );
   });
 
   it("parses strict structured summaries and neutralizes evidence delimiters", () => {

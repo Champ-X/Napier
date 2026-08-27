@@ -7,6 +7,11 @@ export {
   installContextProjectionService,
 } from "../context-projection-service.js";
 export {
+  ContextCompactionPreviewChangedError,
+  ContextCompactionPreviewUnavailableError,
+  ContextCompactionWorkbenchService,
+} from "../context-compaction-workbench.js";
+export {
   MODEL_CONTEXT_TOKEN_EXTENSION_ID,
   MODEL_CONTEXT_TOKEN_EXTENSION_OWNER,
   installModelContextTokenExtension,

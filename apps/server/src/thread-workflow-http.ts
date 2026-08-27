@@ -1,4 +1,8 @@
 import { Hono, type Context } from "hono";
+import {
+  registerContextCompactionHttp,
+  type ContextCompactionHttpServices,
+} from "./context-compaction-http.js";
 
 import {
   executeAgentMessageExperimentHttp,
@@ -36,7 +40,8 @@ export interface ThreadWorkflowHttpServices
     AgentMessageExperimentHttpServices,
     ModelInvocationExperimentHttpServices,
     ToolInvocationExperimentHttpServices,
-    WorkflowExperimentHttpServices {}
+    WorkflowExperimentHttpServices,
+    ContextCompactionHttpServices {}
 
 const HTTP_HELPERS = {
   readJson: readLimitedJson,
@@ -53,6 +58,7 @@ export function registerThreadWorkflowHttp(
   app: Hono,
   services: ThreadWorkflowHttpServices,
 ): void {
+  registerContextCompactionHttp(app, services);
   app.post("/api/threads/:threadId/workflows", (context) =>
     executeWorkflowHttp(context, services, HTTP_HELPERS),
   );

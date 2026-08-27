@@ -1,12 +1,12 @@
 # Napier Agent Harness 优化验收矩阵
 
-> 验收日期：2026-08-26<br>
+> 验收日期：2026-08-27<br>
 > 唯一设计依据：`docs/agent-harness-optimization-design-2026-08-22.zh-CN.md`  
 > 产品版本：`0.1.3`  
 > 历史基线源码身份：`f79504c9ae122a9e1c77fb2ad765b762a5fe3620aa4c8d501faeb72e8090169b`<br>
-> 当前 Subagent Hub 增量源码身份：`bb2558fd0e864ada6bf0ada13f3901fdfdf5b4f52ea91e678b4eee3bd8427a25`
+> 当前 Compaction Preview/Fork 增量源码身份：`516f537607b4cc3aef8a5c7d3c922b95aa129cf58c739b6a4d8d81b77f663752`
 
-原 A1–A8 与发布证据保留为历史基线；本次 `next.md` 增量单独记录在第 9 节。除源码清单与 Route v2、Tool Protocol v2、Context Projection Service、Subagent Hub 专项证据外，旧发布制品尚未按当前源码身份刷新，不得据此宣称整轮 `next.md` 已完成。
+原 A1–A8 与发布证据保留为历史基线；本次 `next.md` 增量单独记录在第 9 节。除源码清单与 Route v2、Tool Protocol v2、Context Projection Service、Subagent Hub、Compaction Preview/Fork 专项证据外，旧发布制品尚未按当前源码身份刷新，不得据此宣称整轮 `next.md` 已完成。
 
 ## 1. 判定口径
 
@@ -81,7 +81,7 @@
 
 | 层级 | 制品 / 结果 | 判定 |
 | --- | --- | --- |
-| 源码身份 | `default-product-source-manifest-0.1.3.json` 与 Runtime 常量共同固定 `bb2558fd…7a25`；manifest 覆盖 2063 个文件、14642510 bytes | **verified**（当前 Subagent Hub 增量） |
+| 源码身份 | `default-product-source-manifest-0.1.3.json` 与 Runtime 常量共同固定 `516f5376…3752`；manifest 覆盖 2072 个文件、14702996 bytes | **verified**（当前 Compaction Preview/Fork 增量） |
 | 实验决策 | `harness-experiment-release-evidence-0.1.3.json`：content SHA `05ace12e…663c`，`promotionReady=true`；两个 execution、360 Runs | **historical**：尚未绑定当前增量源码身份，最终阶段统一刷新 |
 | 综合验收 | `agent-harness-acceptance-evidence-0.1.3.json`：content SHA `1c56410f…4c89`，388 Ledger Runs，`acceptanceReady=true` | **historical**：尚未绑定当前增量源码身份，最终阶段统一刷新 |
 | 产品路径 smoke | 历史干净 Thread/Casebook 创建 6 个 Run/Trial，6/6 passed；完整 10-case Gate 仅覆盖 6 cases | **historical**：保持 `status=incomplete`、`defaultTrackReady=false`，当前源码需重新采集 |
@@ -113,10 +113,12 @@
 | Subagent Hub 专项回归 | Contracts build、Runtime/Web/Server typecheck 通过；Runtime Hub `17/17`、Web `23/23`、Server HTTP/validation `7/7` 通过；architecture、Web design、desktop scope、dead-code、duplicates、dependency ownership、public API 门禁全绿 | **verified** |
 | Subagent Hub 全 workspace 回归 | 单一 `npm run test --workspaces --if-present` 命令以 `0` 退出：CLI `194/194`、Server `270/270`、Web `966/966`、Benchmark Kit `90/90`、Contracts `126/126`、Harness Eval `10/10`（含 180 Runs）、Runtime `2019/2019`、SDK `80/80`；live-only tests 按环境跳过。全产品 build 通过；architecture `2045` source files / `858` test files / `0` cycles，dead-code `0`，duplicates `107` clones / `3751` lines，dependency ownership、desktop scope、public API、Web design 全绿 | **verified** |
 | Subagent Hub 桌面 QA | 隔离 fixture 在 1280×900、1440×900、1920×1080 三档桌面视口验证三栏监督布局、会话卡直达聚焦、terminal outcome、typed output 与 worktree preview；各档 document 横向溢出均为 `0`，private prompt 未泄漏，console/page error 为空 | **verified** |
+| Compaction Preview/Fork 专项回归 | 正式 versioned contract、Runtime 单次模型调用与 CAS、HTTP no-store/hash binding、Web 严格校验及 UI 流程均已接通；专项 6 files / 20 tests、Contracts `129/129`、Server `272/272`、Web `972/972`、Runtime `2021/2021` 通过，32 个 live tests 按配置跳过；Runtime/Server TypeScript 编译与 Web production build 通过；architecture `2054` source files / `863` test files / `0` cycles，dead-code、duplicates、dependency ownership、desktop scope、public API、Web design 全绿 | **verified** |
+| Compaction Preview/Fork 桌面 QA | 在 1280×900、1440×900、1920×1080 三档真实产品页确认入口仅存在于 Developer Workbench；无活动会话时显示 `0` 条消息、禁用保留窗口和 Preview，并给出“请先打开一个会话”；各档 document 横向溢出及可见控件越界均为 `0`，无重叠、遮挡或 console/page error。当前 provider 未配置，浏览器未伪造模型调用；Preview 内容、Apply、目标 Thread 导航、重复 Apply 与源漂移 fail-closed 由 Runtime/HTTP/Web 自动化测试覆盖 | **verified**（无 provider 环境下的布局与可用状态） |
 | Root 历史证据校验 | `443` 项通过；`12` 项对旧 release/S1/SDK parity、prompt regression 与 harness acceptance 快照相对当前源码身份的漂移执行 fail closed | **pending**（最终证据刷新阶段） |
 | Web UI E2E 基线 | 上一轮三视口基线保留；当前源码的全量 E2E 与布局基线等待最终统一刷新 | **pending**（最终阶段） |
 
-## 9. `next.md` Phase 3 当前增量
+## 9. `next.md` Phase 3–4 当前增量
 
 | 交付单元 | 当前事实 | 结论 |
 | --- | --- | --- |
@@ -126,8 +128,9 @@
 | 原生 Tool Protocol v2 | 单一 Registry 拥有 definition / invocation / UI projection；原生 `read_file`、workspace preview/apply、Browser；其余工具显式走兼容适配层；definition/implementation hash 分离；canonical/model-visible schema、动态副作用、审批、并发、重试、回放与 Code Bridge 统一消费协议；旧 Browser v2 receipt 与历史 implementation hash 保持兼容 | **verified** |
 | Context Projection Service | 统一服务以 prepare `order=-400` 先裁剪 tool result，再以 finalize `order=10000` 执行 provider-aware token 治理；durable messages、system prompt、skills、tool definitions、memory、compaction checkpoint、cache boundary 与 token accounting 均写入 hash-only `context.projected` v1 receipt，并与前置 pruning/token receipts、后继 envelope/adapter/prompt package 逐段对账；旧 pruning/token-pressure 事件与 installer 保持兼容。Contracts `126/126`、Runtime `2017/2017`、专项 `50/50` 通过，14 个 live-only files / 32 tests 按环境跳过；architecture、dead-code、duplicates、dependency ownership 门禁全绿 | **verified** |
 | Subagent Hub 与监督 UI | 保留 `subagents.current@1` 并新增 `subagents.hub@1` durable read model；投影 task/transcript/mailbox/lineage/outcome/typed output/worktree 且不暴露 prompt；公开 ThreadDetail/SSE 同时移除 durable coder `writePaths`，HTTP/SSE 出口仅叠加 process-local control availability；steer/cancel/revive 使用 revision fail-closed 控制与权威 Hub 原子响应；桌面工作台新增三栏监督视图及会话卡直达聚焦。Runtime `17/17`、Web `23/23`、Server `7/7` 专项测试通过；全 workspace 回归以 `0` 退出（CLI `194`、Server `270`、Web `966`、Benchmark `90`、Contracts `126`、Harness `10`、Runtime `2019`、SDK `80`），三档桌面浏览器 QA 无溢出、无私密 prompt/路径泄漏、无 console/page error | **verified** |
-| Phase 4 与最终发布证据 | 尚未开始；必须在后续实现后刷新全仓门禁、E2E、dist、acceptance、release audit | **pending** |
+| Compaction Preview/Fork | Developer Workbench 支持保留窗口选择、单次模型 Preview、决策/路径/错误/open loops 复核与命名 Apply；Preview 绑定 source event-set hash，Apply 以 CAS 创建新 Thread，不覆盖源消息；目标消息重编号后重新计算 checkpoint，并持久化 continuity/source/preview hash；缓存缺失、重复 Apply、源漂移均 fail closed；Run、context、model 与 compaction 事件保持可审计。专项 20 tests 与全量 Contracts/Runtime/Server/Web 回归通过，三档桌面 QA 无溢出或页面错误 | **verified** |
+| Phase 4 剩余项与最终发布证据 | 10k/100k 事件基准、Trace 虚拟化、公共 API 与架构预算收紧尚未交付；全量 E2E、dist、acceptance 与 release audit 必须在后续统一刷新 | **pending** |
 
 ## 10. 当前判定
 
-历史 A1–A8 基线继续有效；当前 `next.md` 的 Model Route v2、Provider Endpoint Profile、原生 Tool Protocol v2、Context Projection Service 与 Subagent Hub 已由实现、回归、源码身份及对应专项证据共同验证。Phase 4 与最终发布证据仍为 `pending`，因此本矩阵不把总目标标记为完成。S1 的外部签名发布及 Windows 主机验收继续独立保持 `blocked`。
+历史 A1–A8 基线继续有效；当前 `next.md` 的 Model Route v2、Provider Endpoint Profile、原生 Tool Protocol v2、Context Projection Service、Subagent Hub 与 Compaction Preview/Fork 已由实现、回归、源码身份及对应专项证据共同验证。Phase 4 的规模门禁、Trace 虚拟化、公共 API 收紧与最终发布证据仍为 `pending`，因此本矩阵不把总目标标记为完成。S1 的外部签名发布及 Windows 主机验收继续独立保持 `blocked`。

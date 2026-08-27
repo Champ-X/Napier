@@ -88,6 +88,10 @@
       "types": "./dist/subagent-supervisor.d.ts",
       "import": "./dist/subagent-supervisor.js"
     },
+    "./context-compaction": {
+      "types": "./dist/context-compaction-v1.d.ts",
+      "import": "./dist/context-compaction-v1.js"
+    },
     "./subagent-hub": {
       "types": "./dist/subagent-hub-v1.d.ts",
       "import": "./dist/subagent-hub-v1.js"

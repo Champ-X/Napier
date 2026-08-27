@@ -1,12 +1,9 @@
 import type { en } from "./copy";
-import {
-  deepTraceCopyZh,
-  delegationCopyZh,
-  memoryCopyZh,
-} from "./deep-ui-copy.zh";
+import { deepTraceCopyZh, delegationCopyZh, memoryCopyZh } from "./deep-ui-copy.zh";
 import { goalCopyZh } from "./goal-copy";
 import { labCopyZh } from "./lab-copy.zh";
 import type { LocaleOverride } from "./locale";
+import { contextCompactionCopyZh } from "./context-compaction-copy.zh";
 
 /** Complete Chinese overrides for every string in the root application copy. */
 export const zh: LocaleOverride<typeof en> = {
@@ -377,6 +374,7 @@ export const zh: LocaleOverride<typeof en> = {
     developerSectionDescription: "实验、Fixture、试用与工作流工具",
     developerIntro: "高级诊断和治理能力保留在普通任务路径之外。",
     runLab: "运行实验室与评测",
+    contextCompaction: contextCompactionCopyZh,
     workflowStudio: "工作流工作室",
     productTrial: "产品试用记录器",
     designSection: "设计系统",
