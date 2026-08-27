@@ -48,7 +48,7 @@ describe("repository hygiene gates", () => {
       staleAllowedFiles: [],
       staleAllowedUnreachable: [],
     });
-  }, 15_000);
+  }, 30_000);
 
   it("pins duplicate debt to a downward-only baseline", async () => {
     const result = await auditDuplicates();

@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "44b5f4c414ae569c5a16462abcb3ecbd2a06f823e99df9874e9928eb210fcd63",
+      "stdoutSha256": "c52d62dc76dcc170e57408bf34cff9295dfb66ee13a0ff18a5c43cc75cdc1ce9",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "219ff3abdc2f9df8cb64ab0b3d3b2edf2ed6f15d56a9bf9ea200e800f55b7394",
-      "receiptSha256": "a445866e3ce89b06e18e928422561ce575fbf2ec2be64d1080525fb15fa337d3"
+      "evidenceSha256": "c1c62e705368fbb378c8908dda74dda9dbf52d3c21484b5833bdd141b9b914d1",
+      "receiptSha256": "5f2b8140d8bd3e5bfe17ef3def5e4e563e7d3d252b9678899b096685e923e7fc"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "fc0101a2aaf7ffa06fc87863d7b9c1f59e1f9ab1aaaa616051a1e6fcbda13520",
+      "stdoutSha256": "d3ab147d1896785e70ea5c33dfe974007f62843f383a8da7fd559ff72c7591c6",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "4930f89116c3ec2fee3ce474d7c46fafeff61664c6c7f06be4fc18bfd6a1fc68",
-      "receiptSha256": "50876f97336774a92c47e13c5887e58bcd9fccad53849f14cf4835e5c49549b1"
+      "evidenceSha256": "b5647cdaea31454984f9e9797b799f2056eac064eb58fad99b6ec3a0eb8e81b3",
+      "receiptSha256": "8a1024089d65985b6bb13159d6b4266eff9504cb0ab25a684a694240d1052e0c"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -7508,11 +7508,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "219ff3abdc2f9df8cb64ab0b3d3b2edf2ed6f15d56a9bf9ea200e800f55b7394",
+          "sha256": "c1c62e705368fbb378c8908dda74dda9dbf52d3c21484b5833bdd141b9b914d1",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "4930f89116c3ec2fee3ce474d7c46fafeff61664c6c7f06be4fc18bfd6a1fc68",
+          "sha256": "b5647cdaea31454984f9e9797b799f2056eac064eb58fad99b6ec3a0eb8e81b3",
           "lines": 71
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -12544,7 +12544,7 @@
           "lines": 509
         },
         "scripts/repository-hygiene.test.mjs": {
-          "sha256": "5bc577cef5f7570404763a24af6b513c67b42ff0d71f23c1aa4314a1a047a959",
+          "sha256": "586b8ec256d973faebf6c16cd6adb6853d1c512e8d98d27abbdee2f46f4d8f12",
           "lines": 299
         },
         "scripts/run-browser-autonomy-comparison.mjs": {
@@ -13032,7 +13032,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "0b7cc5beec9c587aff83fc7269d7e6779882e3aaf2202e5564b8a803ef66e986"
+      "manifestSha256": "622a17cdea437d995d5a6988acd6608debda03c72b5060cacec5142bb0ca837c"
     },
     "executionClosure": {
       "algorithm": {
@@ -36148,7 +36148,7 @@
       ],
       "manifestSha256": "7780883aff7c6930499e45c7575686fe17249894c634043437ea6f291bbd5fa4"
     },
-    "manifestSha256": "4afb8ec98f6b6d3d4976635b48853c0a1f31479a327259a917681a93030b2084"
+    "manifestSha256": "43af7a782e74114b2fe2074a4a68887da51acf206cf83d673e04ad5a05d73867"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -36341,11 +36341,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "219ff3abdc2f9df8cb64ab0b3d3b2edf2ed6f15d56a9bf9ea200e800f55b7394"
+      "sha256": "c1c62e705368fbb378c8908dda74dda9dbf52d3c21484b5833bdd141b9b914d1"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "4930f89116c3ec2fee3ce474d7c46fafeff61664c6c7f06be4fc18bfd6a1fc68"
+      "sha256": "b5647cdaea31454984f9e9797b799f2056eac064eb58fad99b6ec3a0eb8e81b3"
     }
   }
 }
