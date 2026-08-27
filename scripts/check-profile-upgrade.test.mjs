@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+
 import { describe, expect, it } from "vitest";
 
 import { canonicalJson, sha256 } from "../packages/runtime/dist/index.js";
@@ -7,6 +9,21 @@ const digest = "a".repeat(64);
 const implementation = { contractSha256: digest };
 
 describe("Profile upgrade Stage21 artifact", () => {
+  it("targets the uniquely named settings control in the Web acceptance arm", async () => {
+    const source = await readFile(
+      "scripts/profile-upgrade-acceptance.mjs",
+      "utf8",
+    );
+
+    expect(source).toContain('.getByRole("main")');
+    expect(source).toContain(
+      '.getByRole("button", { name: "设置", exact: true })',
+    );
+    expect(source).not.toContain(
+      'page.locator(".workbench-settings").click()',
+    );
+  });
+
   it("accepts the strict current receipt", () => {
     expect(validateProfileUpgradeArtifact(artifact(), implementation)).toEqual(
       [],

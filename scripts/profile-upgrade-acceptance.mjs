@@ -145,7 +145,10 @@ async function runWebArm(browser, origin, root) {
   page.on("pageerror", (error) => consoleErrors.push(error.message));
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(origin, { waitUntil: "domcontentloaded" });
-  await page.locator(".workbench-settings").click();
+  await page
+    .getByRole("main")
+    .getByRole("button", { name: "设置", exact: true })
+    .click();
   await page.locator("#settings-section-context").waitFor({
     state: "visible",
   });
