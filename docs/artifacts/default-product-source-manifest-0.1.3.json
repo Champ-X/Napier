@@ -11,7 +11,7 @@
   "identityDeclarationPath": "packages/runtime/src/release-product-identity.ts",
   "identityDeclarationSha256": "5a8dada43a7d464d3de4e65cc7c556def3391ef59f674cdb6949a1ce5362b62d",
   "fileCount": 2081,
-  "totalBytes": 14749091,
+  "totalBytes": 14749204,
   "files": [
     {
       "path": "apps/server/package.json",
@@ -10360,8 +10360,8 @@
     },
     {
       "path": "scripts/check-release-artifacts.mjs",
-      "bytes": 84386,
-      "sha256": "3d687661bd1245d740aadfff71ee2259f94e826c4f8143b8f5a606d56c879260"
+      "bytes": 84499,
+      "sha256": "1d459deffb99c0364093df8defd93515e6a40c9d655ad6ab166706e7a859c34e"
     },
     {
       "path": "scripts/copy-sandbox-image.mjs",
@@ -10419,5 +10419,5 @@
       "sha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c"
     }
   ],
-  "contentSha256": "4ea34e6d967c46d0bdf2f20433f0e1f8572acc6de1c4d43b732fc176da13cd98"
+  "contentSha256": "f06c4b48409392861057f962dceab890d939e9ce7e00ebeb8bc50cbce50ac160"
 }

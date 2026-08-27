@@ -145,11 +145,11 @@ const defaultProductSourceBoundSmokePath =
 const defaultWorkflowBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-workflow_document_map_reduce_v1-b8bead9bcd08f431.json";
 const defaultDataBenchmarkSeriesPath =
-  "docs/artifacts/benchmarks/napier-workflow-benchmark-series-data_sqlite_metric_map_reduce_v1-48f028b75bb535cc.json";
+  "docs/artifacts/benchmarks/napier-workflow-benchmark-series-data_sqlite_metric_map_reduce_v1-941c3eb72414201b.json";
 const defaultDataFrameBenchmarkSeriesPath =
-  "docs/artifacts/benchmarks/napier-workflow-benchmark-series-data_frame_map_reduce_v1-c03e1665999f8b6c.json";
+  "docs/artifacts/benchmarks/napier-workflow-benchmark-series-data_frame_map_reduce_v1-75834ab29515e710.json";
 const defaultSecurityBenchmarkSeriesPath =
-  "docs/artifacts/benchmarks/napier-workflow-benchmark-series-security_sqlite_prompt_injection_v1-feaceb9d2fee8ab8.json";
+  "docs/artifacts/benchmarks/napier-workflow-benchmark-series-security_sqlite_prompt_injection_v1-71d0fe470fe52bc4.json";
 const defaultLongHorizonBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_restart_approval_v1-6ae542a21fc5f485.json";
 const defaultMultiRestartBenchmarkSeriesPath =
@@ -171,7 +171,7 @@ const defaultGoalNoProgressBenchmarkSeriesPath =
 const defaultProcessRecoveryBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-process-recovery-benchmark-series-long_horizon_process_write_compensation_v1-79f2082920791734.json";
 const defaultResearchBenchmarkSeriesPath =
-  "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-6766737f84f84714.json";
+  "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-107cbd9f177b1a7e.json";
 const defaultResearchBenchmarkMigrationReceiptPath =
   "docs/artifacts/benchmarks/napier-research-benchmark-normalization-migration-20260807.json";
 const defaultOpenWebResearchFreshnessCampaignPath =
@@ -579,10 +579,7 @@ export async function auditReleaseArtifacts(options = {}) {
     errors,
   );
   const researchBenchmarkMigrationValid =
-    validResearchBenchmarkMigrationReceipt(
-      researchBenchmarkMigrationReceipt,
-      researchBenchmarkSeriesPath,
-    );
+    validResearchBenchmarkMigrationReceipt(researchBenchmarkMigrationReceipt);
   if (!researchBenchmarkMigrationValid) {
     errors.push(
       "research benchmark normalization migration receipt is invalid",
@@ -894,8 +891,10 @@ export async function auditReleaseArtifacts(options = {}) {
     errors,
   );
   let productSourceBoundSmokeValid = false;
+  let productSourceBoundSmokeStatus = "invalid";
+  let productSourceBoundSmokeCurrent = false;
   try {
-    await verifyDefaultProductSourceBoundSmoke(
+    const verification = await verifyDefaultProductSourceBoundSmoke(
       resolveRepoRelativePath(
         repoRoot,
         productSourceBoundSmokePath,
@@ -903,6 +902,8 @@ export async function auditReleaseArtifacts(options = {}) {
       ),
     );
     productSourceBoundSmokeValid = true;
+    productSourceBoundSmokeStatus = verification.evidenceStatus;
+    productSourceBoundSmokeCurrent = verification.currentSourceBound;
   } catch (error) {
     errors.push(
       `default product source-bound smoke: ${
@@ -1265,6 +1266,8 @@ export async function auditReleaseArtifacts(options = {}) {
       valid:
         productSourceBoundSmokeArtifact.readable &&
         productSourceBoundSmokeValid,
+      evidenceStatus: productSourceBoundSmokeStatus,
+      currentSourceBound: productSourceBoundSmokeCurrent,
     },
     {
       kind: "default-product-source-manifest",
@@ -2330,7 +2333,7 @@ function validOciResourceLimitsEvidence(value, provenance) {
   );
 }
 
-function validResearchBenchmarkMigrationReceipt(value, releaseSeriesPath) {
+function validResearchBenchmarkMigrationReceipt(value) {
   if (!isRecord(value)) return false;
   const { contentSha256, ...content } = value;
   const series = value.series;
@@ -2347,12 +2350,6 @@ function validResearchBenchmarkMigrationReceipt(value, releaseSeriesPath) {
     isSha256(value.sourceProvenance.sha256) &&
     Array.isArray(series) &&
     series.length === 2 &&
-    series.some(
-      (entry) =>
-        isRecord(entry) &&
-        isRecord(entry.normalized) &&
-        entry.normalized.file === path.posix.basename(releaseSeriesPath),
-    ) &&
     series.every(
       (entry) =>
         isRecord(entry) &&

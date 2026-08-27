@@ -63,7 +63,7 @@ describe("terminal Browser interaction confirmation", () => {
       "approve",
     );
     expect(parseTerminalBrowserInteractionDecision("yes")).toBeUndefined();
-    expect(controller.submit("approve")).resolves.toBe("not_pending");
+    await expect(controller.submit("approve")).resolves.toBe("not_pending");
 
     expect(controller.applyEvent(confirmationEvent(confirmation))).toEqual(
       confirmation,

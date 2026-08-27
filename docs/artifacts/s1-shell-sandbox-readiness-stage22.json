@@ -1,7 +1,7 @@
 {
   "kind": "napier.s1-shell-sandbox-readiness-stage22",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-26T01:21:03.848Z",
+  "generatedAt": "2026-08-27T10:34:33.241Z",
   "implementation": {
     "modelSha256": "5adf9c20cd914638326e744b7a90ab9d9e956240fa24adb3b34994401d46691d",
     "checkerSha256": "174fb44f4e628224815d34d92e06407f8aa6831d89dd8d7ac8cefd6c65c0d065",
@@ -70,7 +70,7 @@
         {
           "kind": "sandbox-product-acceptance-stage13",
           "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-          "sha256": "8303c1d3f5f43a2e99f7612dc231d95cd2f1ee54b2c83ca7bb3b1e6abaaed3f2",
+          "sha256": "bb67f449ceeedcf632660b91b28e259abb22737d0fd6610e8f3644906cef446b",
           "verifierSha256": "0ab91832a93c9a7bbddc676d8d516c9fa5923f1666a5742b59a1da3d29bc892e"
         },
         {
@@ -86,7 +86,7 @@
           "verifierSha256": "e1272cfa34b7bc00913198faf222007b9403b3ce799d9cfd918b68920bcab386"
         }
       ],
-      "evidenceSetSha256": "da357aacbeb66c3ed7fb07fc09e572cb1288880591254525e6fe6e78ee2cec0e"
+      "evidenceSetSha256": "a9a832bc1890dca34c2f921aeb59fcfe32dc8bcf761499c083a1e6ffb02a7d89"
     },
     {
       "id": "daemon_execution_recovery",
@@ -95,7 +95,7 @@
         {
           "kind": "sandbox-product-acceptance-stage13",
           "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-          "sha256": "8303c1d3f5f43a2e99f7612dc231d95cd2f1ee54b2c83ca7bb3b1e6abaaed3f2",
+          "sha256": "bb67f449ceeedcf632660b91b28e259abb22737d0fd6610e8f3644906cef446b",
           "verifierSha256": "0ab91832a93c9a7bbddc676d8d516c9fa5923f1666a5742b59a1da3d29bc892e"
         },
         {
@@ -129,7 +129,7 @@
           "verifierSha256": "e1272cfa34b7bc00913198faf222007b9403b3ce799d9cfd918b68920bcab386"
         }
       ],
-      "evidenceSetSha256": "b3b283dd2519e0e1b025a9fbec97ddf50e0bb9843f65db1c83446f68d04805fd"
+      "evidenceSetSha256": "88e298c64b47db635da82b736c84d9b4d156ede4169b946a001ac0f5d4fb02a4"
     },
     {
       "id": "isolation_and_fail_closed_limits",
@@ -156,7 +156,7 @@
         {
           "kind": "sandbox-product-acceptance-stage13",
           "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-          "sha256": "8303c1d3f5f43a2e99f7612dc231d95cd2f1ee54b2c83ca7bb3b1e6abaaed3f2",
+          "sha256": "bb67f449ceeedcf632660b91b28e259abb22737d0fd6610e8f3644906cef446b",
           "verifierSha256": "0ab91832a93c9a7bbddc676d8d516c9fa5923f1666a5742b59a1da3d29bc892e"
         },
         {
@@ -166,7 +166,7 @@
           "verifierSha256": "d733b13f7da23d1397d236cdb55ffcca108b7a696e5b89d94f2f94a1fc503946"
         }
       ],
-      "evidenceSetSha256": "e242beb90179b4b041934659dedae4eee075ebef6a7fe93ecd6c8d1ef0f66600"
+      "evidenceSetSha256": "964646985ad145da07ecd6a80b0df94a2914801f51ea4ff07031d52760bd1221"
     },
     {
       "id": "run_scoped_mode_and_profile_upgrade",
@@ -175,14 +175,14 @@
         {
           "kind": "profile-upgrade-stage21",
           "path": "docs/artifacts/profile-upgrade-stage21.json",
-          "sha256": "c75f39c9da542516f93c59ac97e7a20a9b73c719bcbfa6ce71ae2570fd2b978b",
+          "sha256": "234ac6cb13c55ab92f5dcd6c4d352ed13b20c090b23bbe76eb82f06c27b48e3c",
           "verifierSha256": "fa2ee85bfb674ee0bc27af7ec1f98395af42bd266d39a2cd4d4de25b0802d9bb"
         }
       ],
-      "evidenceSetSha256": "57e962f677a19d948d5db3a3a1d39698b8f64ada5ff5b7a7ef1922a9ad8039f4"
+      "evidenceSetSha256": "1d710dd0e1f1a01ce904866558781605cec21abb2df16c0e17b6729c7232513e"
     }
   ],
-  "requirementSetSha256": "7ca4ed81df02fd26255a4397c177645c43a4e25814637d258dd4081115bd22e8",
+  "requirementSetSha256": "e5a3d0e2dbd5126ea06372475d9e420a06d7119e47b324d4073704cc7ffe57ed",
   "externalRequirements": [
     {
       "id": "public_signed_external_release",
@@ -222,5 +222,5 @@
       "windows_host_product_acceptance"
     ]
   },
-  "contentSha256": "280f3960f1303f6047724828e37cad960079bb8272449b51e563c4385511b182"
+  "contentSha256": "765481995d59498f835a99dc842aa15d3024a2c061a11e67af6a93189633823d"
 }

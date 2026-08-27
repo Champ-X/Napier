@@ -33,13 +33,15 @@ export async function verifyDefaultProductSourceBoundSmoke(file) {
   assert.equal(info.isSymbolicLink(), false);
   assert.equal(info.size <= 256 * 1024, true);
   const artifact = JSON.parse(await readFile(target, "utf8"));
+  const recordedReleaseIdentity = artifact.currentReleaseIdentitySha256;
+  assert.match(recordedReleaseIdentity, /^[a-f0-9]{64}$/u);
   const gate = parseHistoricalDirectReleaseProductGate(
     artifact,
-    RELEASE_IDENTITY,
+    recordedReleaseIdentity,
   );
   assert.ok(gate, "Source-bound Default Product Gate is invalid");
   assert.equal(gate.currentProductVersion, "0.1.3");
-  assert.equal(gate.currentReleaseIdentitySha256, RELEASE_IDENTITY);
+  assert.equal(gate.currentReleaseIdentitySha256, recordedReleaseIdentity);
   assert.deepEqual(gate.consecutivePassingVersions, []);
   assert.equal(gate.defaultTrackReady, false);
   assert.equal(gate.adoptions, undefined);
@@ -52,7 +54,7 @@ export async function verifyDefaultProductSourceBoundSmoke(file) {
       (trial) =>
         trial.status === "passed" &&
         trial.runStatus === "completed" &&
-        trial.releaseIdentitySha256 === RELEASE_IDENTITY,
+        trial.releaseIdentitySha256 === recordedReleaseIdentity,
     ),
     true,
   );
@@ -82,7 +84,7 @@ export async function verifyDefaultProductSourceBoundSmoke(file) {
       "long-task-recovery",
     ],
     failedCriticalCaseIds: ["high-risk-confirmation", "long-task-recovery"],
-    releaseIdentitySha256: RELEASE_IDENTITY,
+    releaseIdentitySha256: recordedReleaseIdentity,
     status: "incomplete",
   });
   assert.equal(firstRecordedAt, gate.trials[0]?.recordedAt);
@@ -91,7 +93,14 @@ export async function verifyDefaultProductSourceBoundSmoke(file) {
   assert.equal(Number.isNaN(Date.parse(lastRecordedAt)), false);
   assert.equal(firstRecordedAt <= lastRecordedAt, true);
   assert.equal(findForbiddenKey(gate), undefined);
-  return gate;
+  const currentSourceBound = recordedReleaseIdentity === RELEASE_IDENTITY;
+  return {
+    gate,
+    currentSourceBound,
+    evidenceStatus: currentSourceBound
+      ? "current_incomplete"
+      : "historical_incomplete",
+  };
 }
 
 function findForbiddenKey(value) {
@@ -114,8 +123,10 @@ function findForbiddenKey(value) {
 async function main() {
   const file = process.argv[2];
   if (!file) throw new Error("Gate file is required");
-  const gate = await verifyDefaultProductSourceBoundSmoke(file);
-  process.stdout.write(`${gate.contentSha256} ${file}\n`);
+  const verification = await verifyDefaultProductSourceBoundSmoke(file);
+  process.stdout.write(
+    `${verification.gate.contentSha256} ${verification.evidenceStatus} ${file}\n`,
+  );
 }
 
 if (

@@ -20,15 +20,26 @@ describe("source-bound Default Product smoke verifier", () => {
     const { root, target, gate } = await writeCurrentGate();
     try {
       const verified = await verifyDefaultProductSourceBoundSmoke(target);
-      expect(verified.versions[0].firstRecordedAt).toBe(
+      expect(verified.gate.versions[0].firstRecordedAt).toBe(
         gate.trials[0].recordedAt,
       );
-      expect(verified.versions[0].lastRecordedAt).toBe(
+      expect(verified.gate.versions[0].lastRecordedAt).toBe(
         gate.trials.at(-1).recordedAt,
       );
+      expect(verified.currentSourceBound).toBe(true);
+      expect(verified.evidenceStatus).toBe("current_incomplete");
     } finally {
       await rm(root, { recursive: true, force: true });
     }
+  });
+
+  it("retains an authentic old source binding as historical incomplete evidence", async () => {
+    const verified = await verifyDefaultProductSourceBoundSmoke(fixturePath);
+
+    expect(verified.currentSourceBound).toBe(false);
+    expect(verified.evidenceStatus).toBe("historical_incomplete");
+    expect(verified.gate.defaultTrackReady).toBe(false);
+    expect(verified.gate.versions[0]?.status).toBe("incomplete");
   });
 
   it("rejects a version whose first timestamp is not the first trial", async () => {

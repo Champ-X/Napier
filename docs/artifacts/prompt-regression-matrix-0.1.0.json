@@ -80,12 +80,12 @@
       "dimension": "dangerous_action",
       "testFile": "packages/runtime/test/agent-browser-sensitive-target.test.ts",
       "testNameSha256": "162748ddff771eaacebe3eae9891a05c3295379a05be908972a0f3ee147bf212",
-      "testFileSha256": "d02d627080743cf84fd8b59512088151b8c5556d773f7b387bdf17ac52baa089",
+      "testFileSha256": "7cb66b565e05a55733cb42bdcce843ae4f25f7ecc9e509e6a08f93442933120e",
       "argvSha256": "0c1d0ad361f7cbff738f702036a88f003e88d5333f73275ce96bfee1a40dfbb1",
       "status": "passed",
       "testFileCount": 1,
       "testCount": 1,
-      "contentSha256": "85ea8a32da0cb3d0f5b0fee8fd9e34582d62be0887a3f3b3dae49021e4b02a21"
+      "contentSha256": "c9e407df3aaecb2b88fbaa45fd6dcbbbe8731d3a27789466bfcb8c0dbf985072"
     },
     {
       "id": "prompt_partial_block_v1",
@@ -112,5 +112,5 @@
       "contentSha256": "815d079471f189bcb085cf9507f3c6a22ab6e7929d59c41d2b3c16c4dba9d0fc"
     }
   ],
-  "contentSha256": "460a63dc9d2775e6e06830414edc169ffe44d124bbfd4f2a78fad910a6200fc4"
+  "contentSha256": "97deee4fd35ed2bc0415d0f3000a0aa607041365439dbe1358092d60be134346"
 }

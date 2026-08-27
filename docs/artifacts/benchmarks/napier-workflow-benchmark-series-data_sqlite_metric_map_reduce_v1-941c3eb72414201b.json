@@ -1,0 +1,91 @@
+{
+  "kind": "napier.workflow-benchmark-series",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-27T11:16:12.708Z",
+  "caseId": "data_sqlite_metric_map_reduce_v1",
+  "caseSha256": "1a4df6578a0ed27b1928d1725611d4a3396b9b60570c8f49c115b25b375ac96b",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cliVersion": "0.1.0"
+  },
+  "status": "completed",
+  "requestedTrialCount": 2,
+  "completedTrialCount": 2,
+  "scoredTrialCount": 2,
+  "passedTrialCount": 2,
+  "failedTrialCount": 0,
+  "inconclusiveTrialCount": 0,
+  "usageSampleCount": 2,
+  "metrics": {
+    "durationMs": {
+      "total": 18585,
+      "min": 7881,
+      "p50": 7881,
+      "p95": 10704,
+      "max": 10704,
+      "mean": 9292.5
+    },
+    "costUsd": {
+      "total": 0.0034244336,
+      "min": 0.0016409568000000001,
+      "p50": 0.0016409568000000001,
+      "p95": 0.0017834767999999998,
+      "max": 0.0017834767999999998,
+      "mean": 0.0017122168
+    },
+    "inputTokens": {
+      "total": 16422,
+      "min": 8082,
+      "p50": 8082,
+      "p95": 8340,
+      "max": 8340,
+      "mean": 8211
+    },
+    "outputTokens": {
+      "total": 3662,
+      "min": 1657,
+      "p50": 1657,
+      "p95": 2005,
+      "max": 2005,
+      "mean": 1831
+    },
+    "runCount": {
+      "total": 10,
+      "min": 5,
+      "p50": 5,
+      "p95": 5,
+      "max": 5,
+      "mean": 5
+    }
+  },
+  "successRate": 1,
+  "completionRate": 1,
+  "passRate": 1,
+  "trials": [
+    {
+      "index": 1,
+      "threadId": "thread_e9efdc24ecb74554a0a7",
+      "status": "passed",
+      "resultFileName": "napier-workflow-benchmark-result-data_sqlite_metric_map_reduce_v1-41be4ebda0b61bf8.json",
+      "resultSha256": "41be4ebda0b61bf815908f004b364008d30a27224855b424c92725bef50fbaaa",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-data_sqlite_metric_map_reduce_v1-92d3ebe8237c0df1.json",
+      "ledgerSha256": "92d3ebe8237c0df144c48e0277767c291299781bf3f8efa38bc7f64e53ba6de0"
+    },
+    {
+      "index": 2,
+      "threadId": "thread_5f1dd883f8b8420ea99f",
+      "status": "passed",
+      "resultFileName": "napier-workflow-benchmark-result-data_sqlite_metric_map_reduce_v1-0d30745f9319ee50.json",
+      "resultSha256": "0d30745f9319ee504bb15b579a141b522044e310af36b56696b87784d705ef04",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-data_sqlite_metric_map_reduce_v1-531c417332b274a1.json",
+      "ledgerSha256": "531c417332b274a1664763cfbc5e697b3f570b4b8d4485e8820667fff65c64c5"
+    }
+  ],
+  "contentSha256": "941c3eb72414201bfa16bf260e8cddad2ca983475166993db6f56860178a0441"
+}

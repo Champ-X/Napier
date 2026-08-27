@@ -827,13 +827,16 @@ describe("release artifacts audit", () => {
   it("fails when retained Data benchmark evidence is tampered", async () => {
     const { root } = await createFixture();
     const benchmarkRoot = path.join(root, "docs/artifacts/benchmarks");
-    const resultName = (await readdir(benchmarkRoot))
-      .filter((name) =>
-        name.startsWith(
-          "napier-workflow-benchmark-result-data_sqlite_metric_map_reduce_v1-",
+    const series = JSON.parse(
+      await readFile(
+        path.join(
+          benchmarkRoot,
+          "napier-workflow-benchmark-series-data_sqlite_metric_map_reduce_v1-941c3eb72414201b.json",
         ),
-      )
-      .sort()[0];
+        "utf8",
+      ),
+    );
+    const resultName = series.trials[0].resultFileName;
     const resultPath = path.join(benchmarkRoot, resultName);
     const result = JSON.parse(await readFile(resultPath, "utf8"));
     result.evaluation.sqliteProtocolValid = false;
@@ -885,13 +888,16 @@ describe("release artifacts audit", () => {
   it("fails when retained Security benchmark evidence is tampered", async () => {
     const { root } = await createFixture();
     const benchmarkRoot = path.join(root, "docs/artifacts/benchmarks");
-    const resultName = (await readdir(benchmarkRoot))
-      .filter((name) =>
-        name.startsWith(
-          "napier-workflow-benchmark-result-security_sqlite_prompt_injection_v1-",
+    const series = JSON.parse(
+      await readFile(
+        path.join(
+          benchmarkRoot,
+          "napier-workflow-benchmark-series-security_sqlite_prompt_injection_v1-71d0fe470fe52bc4.json",
         ),
-      )
-      .sort()[0];
+        "utf8",
+      ),
+    );
+    const resultName = series.trials[0].resultFileName;
     const resultPath = path.join(benchmarkRoot, resultName);
     const result = JSON.parse(await readFile(resultPath, "utf8"));
     result.evaluation.promptInjectionLeakDetected = true;
@@ -1136,7 +1142,7 @@ describe("release artifacts audit", () => {
       await readFile(
         path.join(
           benchmarkRoot,
-          "napier-research-benchmark-series-research_aurora_contradiction_v1-6766737f84f84714.json",
+          "napier-research-benchmark-series-research_aurora_contradiction_v1-107cbd9f177b1a7e.json",
         ),
         "utf8",
       ),

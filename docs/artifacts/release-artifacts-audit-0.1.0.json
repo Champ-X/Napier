@@ -6,18 +6,18 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "69a9e2891a6babcd04054d6ec0ae09635a16fff26d7bd4abab002731e42d5f85",
+  "artifactSetSha256": "677ee8ca737b0f2ba257e4abda93993033072fbdd7157a11562a26677855b52a",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "2ab91bc99a87b832dadcdfe61c6cba43068ec534d40b3cb0cd5182f60852dc1a",
+      "sha256": "0e52276740cc1909ff051e8c5cf12b00262bddc2ab0ed3a24b9d7ee917eff5ea",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "3dd7074f0642ce3e21b9f83b25b58a098a296b361c94e9a2840d3403baa33089",
+      "sha256": "7841aee2c65c93a8d4613ca7e383c2b78ab59b60aed324a6e794c4e2655ccb80",
       "valid": true
     },
     {
@@ -53,7 +53,7 @@
     {
       "kind": "sandbox-product-acceptance-stage13",
       "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-      "sha256": "8303c1d3f5f43a2e99f7612dc231d95cd2f1ee54b2c83ca7bb3b1e6abaaed3f2",
+      "sha256": "bb67f449ceeedcf632660b91b28e259abb22737d0fd6610e8f3644906cef446b",
       "valid": true
     },
     {
@@ -101,13 +101,13 @@
     {
       "kind": "profile-upgrade-stage21",
       "path": "docs/artifacts/profile-upgrade-stage21.json",
-      "sha256": "c75f39c9da542516f93c59ac97e7a20a9b73c719bcbfa6ce71ae2570fd2b978b",
+      "sha256": "234ac6cb13c55ab92f5dcd6c4d352ed13b20c090b23bbe76eb82f06c27b48e3c",
       "valid": true
     },
     {
       "kind": "s1-shell-sandbox-readiness-stage22",
       "path": "docs/artifacts/s1-shell-sandbox-readiness-stage22.json",
-      "sha256": "24bb1d1fcda60757f68f81e9b49383debcab36dd742bed6b79356e1700592b1d",
+      "sha256": "a0583bc9a548e76836f5dcd638768d42b6324c26aa92c46a6ad976410442dff3",
       "valid": true
     },
     {
@@ -119,19 +119,19 @@
     {
       "kind": "web-dist-audit",
       "path": "docs/artifacts/web-dist-audit-0.1.0.json",
-      "sha256": "211ae37f11bf8d17751c98c5bf875d230e09d57fe12d73169c6d6826f068f476",
+      "sha256": "335ea1e4e58ffe908d02c7ae6adab1580b33c4470051e527370c7ec50fd4f3a4",
       "valid": true
     },
     {
       "kind": "web-dist-manifest",
       "path": "docs/artifacts/web-dist-0.1.0.sha256",
-      "sha256": "a5ca2ffe813e40330eae03ea8708767b255e0162561e22b22845fba567470db5",
+      "sha256": "ec13555e1acca7b1476609cf43e9a5f2349532cb786fee1c23be3fad66ccd950",
       "valid": true
     },
     {
       "kind": "management-openapi",
       "path": "docs/artifacts/management-openapi-0.1.0.json",
-      "sha256": "e6c99b58b4ac3f02cbfe067e3cf873c2ce358c041f7d53072a8689b40316ef7e",
+      "sha256": "21b9ae5bf8387544d0ed21bfc2df655f4064c5e9ae570d290efbf4d804313130",
       "valid": true
     },
     {
@@ -155,25 +155,27 @@
     {
       "kind": "harness-experiment-release-evidence",
       "path": "docs/artifacts/harness-experiment-release-evidence-0.1.3.json",
-      "sha256": "ee491524f1169a66cf86d9d26abeb0123b00ecb724eef36cbcfc250a35d4fc58",
+      "sha256": "13c3a533192ac6cc828d8c01093b99b9ee1696940d9e4ebb753f32700eb66f5a",
       "valid": true
     },
     {
       "kind": "agent-harness-acceptance-evidence",
       "path": "docs/artifacts/agent-harness-acceptance-evidence-0.1.3.json",
-      "sha256": "5e14c8515d3a2951abbd349ff71eb7968d54d173c6fa2e64de683d72c92b2fb6",
+      "sha256": "9a9229702c6b5b664346b102ef5dcce34afa05804453c241acc12a2d468938a2",
       "valid": true
     },
     {
       "kind": "default-product-source-bound-smoke",
       "path": "docs/artifacts/default-product-source-bound-smoke-m4-0.1.3.json",
       "sha256": "242e7664551f38d9f6bc12fa62d8f450e940eb3e64a65b211b5f335eb68995ed",
-      "valid": true
+      "valid": true,
+      "evidenceStatus": "historical_incomplete",
+      "currentSourceBound": false
     },
     {
       "kind": "default-product-source-manifest",
       "path": "docs/artifacts/default-product-source-manifest-0.1.3.json",
-      "sha256": "74ef79c0ee8b470b4c5bcbf360d71fb46e67de9a6d44c6e8393fd839326402ad",
+      "sha256": "9289acf98f97a5803000282dff1eec19d0b8cca653c6773454debb743c24bc42",
       "valid": true
     },
     {
@@ -238,92 +240,92 @@
     },
     {
       "kind": "data-benchmark-series",
-      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-series-data_sqlite_metric_map_reduce_v1-48f028b75bb535cc.json",
-      "sha256": "c20ccd01746d978bf3f1cb14423471cab81c6f9e2fe9d174444b7d753607dcac",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-series-data_sqlite_metric_map_reduce_v1-941c3eb72414201b.json",
+      "sha256": "7e6817326b5a2f8c37c0945f012cdf76159989e0acd740f16427cd3bc24134e5",
       "valid": true
     },
     {
       "kind": "data-benchmark-result-1",
-      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_sqlite_metric_map_reduce_v1-7a630af246e43dca.json",
-      "sha256": "c3a2a71da04e9720e6d2b9146b5d54eb1ba561c9c7707ad64f7ac8bd8c6e4092",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_sqlite_metric_map_reduce_v1-41be4ebda0b61bf8.json",
+      "sha256": "6ad066b13040eeb2aabd59070cb7b429ed1925b3ed8a2fe58b12130d56d1f572",
       "valid": true
     },
     {
       "kind": "data-benchmark-ledger-1",
-      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-data_sqlite_metric_map_reduce_v1-11e31cc3feb965d5.json",
-      "sha256": "8a3cb41c09a885369fe9eb8212387278be6c8a99b29b570aa41b3d591f299828",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-data_sqlite_metric_map_reduce_v1-92d3ebe8237c0df1.json",
+      "sha256": "b75e72025a0b50ac67eaf15429f9e220fcbab8b591f23f930518b9c0c342ca74",
       "valid": true
     },
     {
       "kind": "data-benchmark-result-2",
-      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_sqlite_metric_map_reduce_v1-e64a0aac17d7e17a.json",
-      "sha256": "b530fc6cd61a15454060c1af186244a91cf7462b0decb0fc269676430fc7b1e8",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_sqlite_metric_map_reduce_v1-0d30745f9319ee50.json",
+      "sha256": "f9aa5c10a1d4e5da506f5fd2fa53d16e2037146899d56fdb041f07ee21e6fc71",
       "valid": true
     },
     {
       "kind": "data-benchmark-ledger-2",
-      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-data_sqlite_metric_map_reduce_v1-9b2579178df01989.json",
-      "sha256": "71d9b5e37d6f72d97550e192cf202c7bd36a88812ec90ecd7df6b4df50fb7591",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-data_sqlite_metric_map_reduce_v1-531c417332b274a1.json",
+      "sha256": "dfa36182532a11b7152cf673b8eecc0e14e15cff6a38683f69c58e48948b5baf",
       "valid": true
     },
     {
       "kind": "data-frame-benchmark-series",
-      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-series-data_frame_map_reduce_v1-c03e1665999f8b6c.json",
-      "sha256": "8c9962a5fae0ab220238bfe9d92caef76632ecea699a2051ed68f5a86be93a58",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-series-data_frame_map_reduce_v1-75834ab29515e710.json",
+      "sha256": "882d3004a80b6623ebe9657fcf8e837698c29cc05c43262c7a252b808a22a611",
       "valid": true
     },
     {
       "kind": "data-frame-benchmark-result-1",
-      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_frame_map_reduce_v1-e356824b823045cf.json",
-      "sha256": "5f0ff1258b11609c8b016c333c4cd499129ad5822e6fa79134014dcfe8e5388c",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_frame_map_reduce_v1-0b1a0534f04e3d03.json",
+      "sha256": "0adb81c909a1132e23ce57991f02d6458ee8c180f1b7c8e824e87e54badbebb9",
       "valid": true
     },
     {
       "kind": "data-frame-benchmark-ledger-1",
-      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-data_frame_map_reduce_v1-5b0462aabb5c5f59.json",
-      "sha256": "3f253ad4af269b576efacdc8c2bf6acb2e7e1dad670a257fc0fc76b9e25f1b6d",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-data_frame_map_reduce_v1-bb133911ac96a6fd.json",
+      "sha256": "46fb363c23f57fe5d03f086418f9d55048969f4c891b3d92f6826d3a709fca04",
       "valid": true
     },
     {
       "kind": "data-frame-benchmark-result-2",
-      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_frame_map_reduce_v1-1cf66961a4a18da1.json",
-      "sha256": "089d1175bd742117611b068da0c9d8874efb5727388a829f49f5940d9425a9db",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_frame_map_reduce_v1-7b173e330b4293a0.json",
+      "sha256": "11672ccba9744dd8403c863cfef5a5fc5ffd0e012030ca782f9982c84b4c9e7e",
       "valid": true
     },
     {
       "kind": "data-frame-benchmark-ledger-2",
-      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-data_frame_map_reduce_v1-76c75dcc6457a21e.json",
-      "sha256": "e8e407a04b26b4e50e92035c247925637629e23dbd07a4ca474ed150f04192fc",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-data_frame_map_reduce_v1-30256308a79e627f.json",
+      "sha256": "11d6b08ebf50b0299d483cf606a761c713d202551da1f186159135a137fb6038",
       "valid": true
     },
     {
       "kind": "security-benchmark-series",
-      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-series-security_sqlite_prompt_injection_v1-feaceb9d2fee8ab8.json",
-      "sha256": "17b3512dd2a5edd8b325401345f95d4402a3ece32cdcf9dcc83284c1879350c3",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-series-security_sqlite_prompt_injection_v1-71d0fe470fe52bc4.json",
+      "sha256": "a8701fc728a053a1d37ab24c096696af3fd3a953f48128207eebd4ba643c15ff",
       "valid": true
     },
     {
       "kind": "security-benchmark-result-1",
-      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-security_sqlite_prompt_injection_v1-21bca63fb2188c11.json",
-      "sha256": "73e69f38ceea90735162d40ab6475d8fc5b99be0f2a38ff0cf0c18797ef782e2",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-security_sqlite_prompt_injection_v1-32ed0111f3e98b93.json",
+      "sha256": "b12a9527129bbaea0cd63481950ff258dcd7d43f707af72ba563df2f11227e03",
       "valid": true
     },
     {
       "kind": "security-benchmark-ledger-1",
-      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-security_sqlite_prompt_injection_v1-6263c9426c1f7a28.json",
-      "sha256": "95e572cee86bc45a90ac6d5eef07a1420099644ed1b595705d337603e79ccb8e",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-security_sqlite_prompt_injection_v1-9893b71d52a05111.json",
+      "sha256": "a08a88018a911fe044f91f3509daac6d4ff229f66587dfe4f2f9cd3fa8fcb848",
       "valid": true
     },
     {
       "kind": "security-benchmark-result-2",
-      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-security_sqlite_prompt_injection_v1-f82824fbd7094e72.json",
-      "sha256": "d7671da9adac92ce0beb8513f0a048d5277f23269a1d60c2a65ce43659c21668",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-security_sqlite_prompt_injection_v1-63656242e145093b.json",
+      "sha256": "72b28d727500cc45583b05ff56b1dac24f61a58da5c7fec20e2647f40acddf1f",
       "valid": true
     },
     {
       "kind": "security-benchmark-ledger-2",
-      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-security_sqlite_prompt_injection_v1-97a9259591c27cb7.json",
-      "sha256": "3b71d2f56b418ef82bc21cf91b941dd0ac74e51289f278caf9a09e18edc66898",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-security_sqlite_prompt_injection_v1-207dc4aececfe092.json",
+      "sha256": "862a5a67b15b0a99db983c0718c0f226ad4d2da66d5c624fe70d346a570c567f",
       "valid": true
     },
     {
@@ -808,32 +810,32 @@
     },
     {
       "kind": "research-benchmark-series",
-      "path": "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-6766737f84f84714.json",
-      "sha256": "53c3f66f1f09b328bc1c1e526807c7a5f4aa1b573c646871300161e8f89eab82",
+      "path": "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-107cbd9f177b1a7e.json",
+      "sha256": "493b7b4e7591489a606f4a8ca7952b586e3506d778a22f0aacca5a21b5ac367b",
       "valid": true
     },
     {
       "kind": "research-benchmark-result-1",
-      "path": "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-b53a5d0ccacf7d98.json",
-      "sha256": "e7352ca41e50cca41fad419056bf83cbc5ac742451df4a96d7e405fa12abbf4b",
+      "path": "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-72416b77e3386dcd.json",
+      "sha256": "894e4ba573d3d3d98e52d2630f46a5668e311219d3194dcaf3e66c3cb0085253",
       "valid": true
     },
     {
       "kind": "research-benchmark-ledger-1",
-      "path": "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-4ceddccb91ca8223.json",
-      "sha256": "31a0da2b6f78e7f478dd41358d49e814dd31a333bc2dd661be0782a40322826e",
+      "path": "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-c7abc38b9f938801.json",
+      "sha256": "16047385bef608e70cfffcf41b3beb0121265117d5b1e5b23eb5bb60fea2caf4",
       "valid": true
     },
     {
       "kind": "research-benchmark-result-2",
-      "path": "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-b3e34c7d47a04e11.json",
-      "sha256": "b63c4577ed551cc86ad3485c4591dd9d6f6931af4067402c5e615483a88b9292",
+      "path": "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-fa104057e60d835e.json",
+      "sha256": "9e4f4a8106a0f6cec127fca46904bbfdddce5e1688585b8cd93dd835123a51d8",
       "valid": true
     },
     {
       "kind": "research-benchmark-ledger-2",
-      "path": "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-ee8237d8588e6be5.json",
-      "sha256": "b9d1f1fc1af90da78af6c39b46bb07de30b04f1a35687bf14c647568b2f5b549",
+      "path": "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-e465db0b69cb20e1.json",
+      "sha256": "724b49440eac4d940c94cabea5927a6be9edcd9bd3c82a4ba9d886e4ef5b6b58",
       "valid": true
     },
     {
