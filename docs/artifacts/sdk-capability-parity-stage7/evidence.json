@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "ec03379e6ab059a85e2581743fe27221b4a84891df3c6174a293fb274df70c5c",
+      "stdoutSha256": "44b5f4c414ae569c5a16462abcb3ecbd2a06f823e99df9874e9928eb210fcd63",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "9ba2f3b001f6bd46303dfa58158dfed58d252d676b0c5b889d6b4397f985af7d",
-      "receiptSha256": "3dcaff924881a3a48ad37d767ed826ff95568e55f3f8b67536e0443d419b5ce4"
+      "evidenceSha256": "219ff3abdc2f9df8cb64ab0b3d3b2edf2ed6f15d56a9bf9ea200e800f55b7394",
+      "receiptSha256": "a445866e3ce89b06e18e928422561ce575fbf2ec2be64d1080525fb15fa337d3"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "18ac163a92ae8b3d6596c5156feae703358bb9ba870b3429dc322e822ab911f9",
+      "stdoutSha256": "fc0101a2aaf7ffa06fc87863d7b9c1f59e1f9ab1aaaa616051a1e6fcbda13520",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "07181154aca574170876e3038690a5dc8ebdc320cbdf143ffdfd1a54f1aa2f70",
-      "receiptSha256": "f1630469e109c7ff41daec08782074a2cb32b7aa4c8ca822bdd87ba86241eef5"
+      "evidenceSha256": "4930f89116c3ec2fee3ce474d7c46fafeff61664c6c7f06be4fc18bfd6a1fc68",
+      "receiptSha256": "50876f97336774a92c47e13c5887e58bcd9fccad53849f14cf4835e5c49549b1"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -1576,17 +1576,11 @@
         "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-security_sqlite_prompt_injection_v1-97a9259591c27cb7.json",
         "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-security_sqlite_prompt_injection_v1-9893b71d52a05111.json",
         "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_frame_map_reduce_v1-0b1a0534f04e3d03.json",
-        "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_frame_map_reduce_v1-1cf66961a4a18da1.json",
         "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_frame_map_reduce_v1-7b173e330b4293a0.json",
-        "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_frame_map_reduce_v1-e356824b823045cf.json",
         "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_sqlite_metric_map_reduce_v1-0d30745f9319ee50.json",
         "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_sqlite_metric_map_reduce_v1-41be4ebda0b61bf8.json",
-        "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_sqlite_metric_map_reduce_v1-7a630af246e43dca.json",
-        "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_sqlite_metric_map_reduce_v1-e64a0aac17d7e17a.json",
-        "docs/artifacts/benchmarks/napier-workflow-benchmark-result-security_sqlite_prompt_injection_v1-21bca63fb2188c11.json",
         "docs/artifacts/benchmarks/napier-workflow-benchmark-result-security_sqlite_prompt_injection_v1-32ed0111f3e98b93.json",
         "docs/artifacts/benchmarks/napier-workflow-benchmark-result-security_sqlite_prompt_injection_v1-63656242e145093b.json",
-        "docs/artifacts/benchmarks/napier-workflow-benchmark-result-security_sqlite_prompt_injection_v1-f82824fbd7094e72.json",
         "docs/artifacts/benchmarks/napier-workflow-benchmark-series-data_frame_map_reduce_v1-75834ab29515e710.json",
         "docs/artifacts/benchmarks/napier-workflow-benchmark-series-data_frame_map_reduce_v1-c03e1665999f8b6c.json",
         "docs/artifacts/benchmarks/napier-workflow-benchmark-series-data_sqlite_metric_map_reduce_v1-48f028b75bb535cc.json",
@@ -7514,11 +7508,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "9ba2f3b001f6bd46303dfa58158dfed58d252d676b0c5b889d6b4397f985af7d",
+          "sha256": "219ff3abdc2f9df8cb64ab0b3d3b2edf2ed6f15d56a9bf9ea200e800f55b7394",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "07181154aca574170876e3038690a5dc8ebdc320cbdf143ffdfd1a54f1aa2f70",
+          "sha256": "4930f89116c3ec2fee3ce474d7c46fafeff61664c6c7f06be4fc18bfd6a1fc68",
           "lines": 71
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -13015,12 +13009,6 @@
         "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-data_sqlite_metric_map_reduce_v1-9b2579178df01989.json",
         "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-security_sqlite_prompt_injection_v1-6263c9426c1f7a28.json",
         "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-security_sqlite_prompt_injection_v1-97a9259591c27cb7.json",
-        "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_frame_map_reduce_v1-1cf66961a4a18da1.json",
-        "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_frame_map_reduce_v1-e356824b823045cf.json",
-        "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_sqlite_metric_map_reduce_v1-7a630af246e43dca.json",
-        "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_sqlite_metric_map_reduce_v1-e64a0aac17d7e17a.json",
-        "docs/artifacts/benchmarks/napier-workflow-benchmark-result-security_sqlite_prompt_injection_v1-21bca63fb2188c11.json",
-        "docs/artifacts/benchmarks/napier-workflow-benchmark-result-security_sqlite_prompt_injection_v1-f82824fbd7094e72.json",
         "docs/artifacts/benchmarks/napier-workflow-benchmark-series-data_frame_map_reduce_v1-c03e1665999f8b6c.json",
         "docs/artifacts/benchmarks/napier-workflow-benchmark-series-data_sqlite_metric_map_reduce_v1-48f028b75bb535cc.json",
         "docs/artifacts/benchmarks/napier-workflow-benchmark-series-security_sqlite_prompt_injection_v1-feaceb9d2fee8ab8.json",
@@ -13044,7 +13032,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "7943a7802dffcc65d482a9f2a261d74a99b2f90ffcddca0eb3a6d0447bd2cdfb"
+      "manifestSha256": "0b7cc5beec9c587aff83fc7269d7e6779882e3aaf2202e5564b8a803ef66e986"
     },
     "executionClosure": {
       "algorithm": {
@@ -36160,7 +36148,7 @@
       ],
       "manifestSha256": "7780883aff7c6930499e45c7575686fe17249894c634043437ea6f291bbd5fa4"
     },
-    "manifestSha256": "8a328054807abde8e1465e4d4dd5e250f58ae147f32d9526f320b83d3cd8fcbe"
+    "manifestSha256": "4afb8ec98f6b6d3d4976635b48853c0a1f31479a327259a917681a93030b2084"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -36353,11 +36341,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "9ba2f3b001f6bd46303dfa58158dfed58d252d676b0c5b889d6b4397f985af7d"
+      "sha256": "219ff3abdc2f9df8cb64ab0b3d3b2edf2ed6f15d56a9bf9ea200e800f55b7394"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "07181154aca574170876e3038690a5dc8ebdc320cbdf143ffdfd1a54f1aa2f70"
+      "sha256": "4930f89116c3ec2fee3ce474d7c46fafeff61664c6c7f06be4fc18bfd6a1fc68"
     }
   }
 }
