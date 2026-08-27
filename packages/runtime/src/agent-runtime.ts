@@ -141,11 +141,14 @@ import {
   effectiveToolLoopGuardPolicy,
 } from "./agents.js";
 import {
+  buildMemoryRunConversation,
   buildMemoryExtractorMessages,
+  createMemorySourceProvenance,
   formatMemoryContext,
+  memoryRunMessageIds,
   memoryReplacementTargetIds,
   parseMemoryProposalResponse,
-} from "./memory.js";
+} from "./memory-run-extraction.js";
 import {
   buildThreadTitleMessages,
   deriveThreadTitleFromPrompt,
@@ -2772,7 +2775,8 @@ export class AgentRuntime {
     nextModelContextEnvelopeTurnIndex: () => number,
     onEvent?: EventSink,
   ): Promise<void> {
-    const conversation = await this.buildRunConversation(runId);
+    const runEvents = await this.store.listRunEvents(runId);
+    const conversation = buildMemoryRunConversation(runEvents);
     if (!conversation) return;
     if (!budget.canStartOptionalAuxiliaryCall()) {
       await this.record(
@@ -2935,6 +2939,7 @@ export class AgentRuntime {
       const proposals = parseMemoryProposalResponse(
         responseText,
         prompt.replacementCandidateIds,
+        memoryRunMessageIds(runEvents),
       );
       const correctionTargets = new Map(
         correctionCandidates.map((fact) => [fact.id, fact]),
@@ -2968,14 +2973,23 @@ export class AgentRuntime {
             "Memory consolidation targets must share scope and Agent",
           );
         }
+        const { sourceMessageIds, ...memoryProposal } = proposal;
+        const source = createMemorySourceProvenance({
+          type: "conversation",
+          threadId,
+          runId,
+          taskTitle: this.store.getThread(threadId).title,
+          ...(sourceMessageIds ? { messageIds: sourceMessageIds } : {}),
+          events: runEvents,
+        });
         const fact = await this.store.proposeMemory(
           {
-            ...proposal,
+            ...memoryProposal,
             scope,
             ...(effectiveAgentId ? { agentId: effectiveAgentId } : {}),
             threadId,
           },
-          { type: "conversation", threadId, runId },
+          source,
         );
         if (knownIds.has(fact.id)) continue;
         knownIds.add(fact.id);
@@ -3049,31 +3063,6 @@ export class AgentRuntime {
       );
     }
     budget.throwIfExhausted();
-  }
-
-  private async buildRunConversation(runId: string): Promise<string> {
-    return (
-      await this.store.listRunEvents(runId, 0, [
-        "message.user",
-        "message.assistant",
-      ])
-    )
-      .flatMap((event): string[] => {
-        if (
-          !event.payload ||
-          Array.isArray(event.payload) ||
-          typeof event.payload !== "object"
-        ) {
-          return [];
-        }
-        const text = event.payload["text"];
-        if (typeof text !== "string" || !text.trim()) return [];
-        return [
-          `${event.type === "message.user" ? "User" : "Assistant"}: ${text.trim()}`,
-        ];
-      })
-      .join("\n\n")
-      .slice(-12_000);
   }
 
   private async blockGoalForRunFailure(

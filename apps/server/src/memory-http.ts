@@ -17,6 +17,8 @@ import {
   readLimitedJson,
   RequestBodyTooLargeError,
 } from "./http-request-body.js";
+import { createManualMemorySource } from "./memory-http-provenance.js";
+import { parseMemoryProvenanceFields } from "./memory-http-request.js";
 
 const MAX_MEMORY_REQUEST_BYTES = 16 * 1024;
 
@@ -24,6 +26,7 @@ type MemoryHttpStore = Pick<
   LocalStore,
   | "appendEvent"
   | "getThread"
+  | "listEvents"
   | "listAgents"
   | "listMemories"
   | "proposeMemory"
@@ -67,10 +70,10 @@ export function registerMemoryHttp(app: Hono, store: MemoryHttpStore): void {
         ...body,
         ...(agentId ? { agentId } : {}),
       },
-      {
-        type: "manual",
-        ...(body.threadId ? { threadId: body.threadId } : {}),
-      },
+      createManualMemorySource(
+        thread,
+        thread ? await store.listEvents(thread.id) : [],
+      ),
     );
     if (body.threadId) {
       await store.appendEvent({
@@ -172,6 +175,8 @@ function parseCreateMemoryRequest(
     "scope",
     "agentId",
     "confidence",
+    "persistenceReason",
+    "differenceSummary",
     "reviewIntervalDays",
     "supersedesMemoryId",
     "consolidatesMemoryIds",
@@ -189,6 +194,7 @@ function parseCreateMemoryRequest(
   const agentId = record?.["agentId"];
   const threadId = record?.["threadId"];
   const confidence = record?.["confidence"];
+  const provenance = parseMemoryProvenanceFields(record);
   const reviewIntervalDays = record?.["reviewIntervalDays"];
   const supersedesMemoryId = record?.["supersedesMemoryId"];
   const consolidatesMemoryIds =
@@ -200,13 +206,13 @@ function parseCreateMemoryRequest(
     !content ||
     (record["category"] !== undefined && !category) ||
     (record["scope"] !== undefined && !scope) ||
-    (agentId !== undefined && !validAgentId(agentId)) ||
-    (threadId !== undefined && !validThreadId(threadId)) ||
+    !validOptionalMemoryIdentity(agentId, threadId) ||
     (confidence !== undefined &&
       (typeof confidence !== "number" ||
         !Number.isFinite(confidence) ||
         confidence < 0 ||
         confidence > 1)) ||
+    !provenance ||
     (reviewIntervalDays !== undefined &&
       (typeof reviewIntervalDays !== "number" ||
         !Number.isInteger(reviewIntervalDays) ||
@@ -225,6 +231,7 @@ function parseCreateMemoryRequest(
     ...(scope ? { scope } : {}),
     ...(typeof agentId === "string" ? { agentId } : {}),
     ...(typeof confidence === "number" ? { confidence } : {}),
+    ...provenance,
     ...(typeof reviewIntervalDays === "number" ? { reviewIntervalDays } : {}),
     ...(typeof supersedesMemoryId === "string" ? { supersedesMemoryId } : {}),
     ...(consolidatesMemoryIds ? { consolidatesMemoryIds } : {}),
@@ -254,6 +261,19 @@ function parseReviewMemoryRequest(
   };
 }
 
+function parseMemoryReviewAction(
+  input: unknown,
+): ReviewMemoryRequest["action"] | undefined {
+  return input === "approve" ||
+    input === "reject" ||
+    input === "archive" ||
+    input === "restore" ||
+    input === "refresh" ||
+    input === "mark_stale"
+    ? input
+    : undefined;
+}
+
 function parseMemoryCategory(
   input: unknown,
 ): NonNullable<CreateMemoryRequest["category"]> | undefined {
@@ -274,19 +294,6 @@ function parseMemoryScope(
   input: unknown,
 ): NonNullable<CreateMemoryRequest["scope"]> | undefined {
   return input === "workspace" || input === "agent" ? input : undefined;
-}
-
-function parseMemoryReviewAction(
-  input: unknown,
-): ReviewMemoryRequest["action"] | undefined {
-  return input === "approve" ||
-    input === "reject" ||
-    input === "archive" ||
-    input === "restore" ||
-    input === "refresh" ||
-    input === "mark_stale"
-    ? input
-    : undefined;
 }
 
 function parseMemoryIdArray(
@@ -349,6 +356,16 @@ function validAgentId(value: unknown): value is string {
 
 function validMemoryId(value: unknown): value is string {
   return typeof value === "string" && /^memory_[a-z0-9]{8,80}$/.test(value);
+}
+
+function validOptionalMemoryIdentity(
+  agentId: unknown,
+  threadId: unknown,
+): boolean {
+  return (
+    (agentId === undefined || validAgentId(agentId)) &&
+    (threadId === undefined || validThreadId(threadId))
+  );
 }
 
 function memoryReviewEventType(

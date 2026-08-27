@@ -72,6 +72,30 @@
   font-style: italic;
 }
 
+.memory-provenance-inputs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding-top: 9px;
+}
+
+.memory-provenance-inputs label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+  text-transform: uppercase;
+}
+
+.memory-provenance-inputs textarea {
+  min-height: 52px;
+  padding-top: 5px;
+  font-family: var(--sans);
+  text-transform: none;
+}
+
 .memory-correction-ticket {
   display: flex;
   gap: 10px;
@@ -360,6 +384,41 @@
 .memory-rejected > p,
 .memory-archived > p {
   color: var(--ink-faint);
+}
+
+.memory-provenance {
+  display: grid;
+  gap: 5px;
+  margin: 10px 0 0;
+  padding: 8px;
+  background: color-mix(in srgb, var(--color-paper) 55%, transparent);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
+
+.memory-provenance > div {
+  display: grid;
+  grid-template-columns: minmax(104px, 0.32fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.memory-provenance dt,
+.memory-provenance dd {
+  min-width: 0;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+
+.memory-provenance dt {
+  color: var(--ink-faint);
+  text-transform: uppercase;
+}
+
+.memory-provenance dd {
+  overflow-wrap: anywhere;
+  color: var(--ink-soft);
 }
 
 .memory-evidence {

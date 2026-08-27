@@ -2,7 +2,7 @@ import { deepMergeCopy, getLocale } from "./locale";
 import { zh } from "./copy.zh";
 import { narrativeCopy } from "./copy-narrative";
 import { desktopWorkbenchCopy } from "./desktop-workbench-copy";
-import { goalCopyEn } from "./goal-copy";
+import { goalCopyEn, memoryProvenanceCopyEn } from "./goal-copy";
 import { recoveryCopy } from "./recovery-copy";
 import { runEvidenceComparisonCopy } from "./run-evidence-comparison-copy";
 
@@ -773,8 +773,7 @@ export const en = {
       timed_out: "Timed out",
     },
   },
-  goal: goalCopyEn,
-  memory: {
+  goal: goalCopyEn, memory: {
     title: "Reviewed memory",
     eyebrow: "CONTEXT VAULT",
     loading: "Opening reviewed memory...",
@@ -820,6 +819,7 @@ export const en = {
     review: "Review due",
     uses: "Runs used",
     lastUsed: "Last used",
+    ...memoryProvenanceCopyEn,
     notScheduled: "On approval",
     never: "Never",
     corrects: "Corrects",

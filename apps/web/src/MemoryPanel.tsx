@@ -28,12 +28,16 @@ import {
 export default function MemoryPanel({
   memories,
   draft,
+  persistenceReason,
+  differenceSummary,
   category,
   scope,
   reviewIntervalDays,
   supersedesMemoryId,
   consolidatesMemoryIds,
   onDraft,
+  onPersistenceReason,
+  onDifferenceSummary,
   onCategory,
   onScope,
   onReviewIntervalDays,
@@ -46,12 +50,16 @@ export default function MemoryPanel({
 }: {
   memories: MemoryFact[];
   draft: string;
+  persistenceReason: string;
+  differenceSummary: string;
   category: MemoryCategory;
   scope: MemoryScope;
   reviewIntervalDays: number;
   supersedesMemoryId: string | undefined;
   consolidatesMemoryIds: string[];
   onDraft: (value: string) => void;
+  onPersistenceReason: (value: string) => void;
+  onDifferenceSummary: (value: string) => void;
   onCategory: (value: MemoryCategory) => void;
   onScope: (value: MemoryScope) => void;
   onReviewIntervalDays: (value: number) => void;
@@ -108,6 +116,8 @@ export default function MemoryPanel({
 
       <MemoryComposer
         draft={draft}
+        persistenceReason={persistenceReason}
+        differenceSummary={differenceSummary}
         category={category}
         scope={scope}
         reviewIntervalDays={reviewIntervalDays}
@@ -117,6 +127,8 @@ export default function MemoryPanel({
         consolidationIncomplete={consolidationIncomplete}
         scopeLocked={scopeLocked}
         onDraft={onDraft}
+        onPersistenceReason={onPersistenceReason}
+        onDifferenceSummary={onDifferenceSummary}
         onCategory={onCategory}
         onScope={onScope}
         onReviewIntervalDays={onReviewIntervalDays}

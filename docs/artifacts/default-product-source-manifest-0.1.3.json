@@ -5,13 +5,13 @@
   "predecessor": {
     "productVersion": "0.1.2",
     "commit": "45c736f0b426db5d03f88adbb17acb8df32e7703",
-    "changedPathCount": 1333,
-    "changedPathsSha256": "3556b04dfcbe5261da20e2b4d982ec49f6358a4504745c97a47a8547854940ff"
+    "changedPathCount": 1341,
+    "changedPathsSha256": "b7769adeefc7712a2acf1373e377b615c3d30ebe31c4145990a369bc0362a309"
   },
   "identityDeclarationPath": "packages/runtime/src/release-product-identity.ts",
   "identityDeclarationSha256": "5a8dada43a7d464d3de4e65cc7c556def3391ef59f674cdb6949a1ce5362b62d",
-  "fileCount": 2081,
-  "totalBytes": 14749204,
+  "fileCount": 2088,
+  "totalBytes": 14769893,
   "files": [
     {
       "path": "apps/server/package.json",
@@ -304,9 +304,19 @@
       "sha256": "f75747fc1712671c66bce31e9ae2d0abc99c58364a1f09e060ee2ae145b43a07"
     },
     {
+      "path": "apps/server/src/memory-http-provenance.ts",
+      "bytes": 1576,
+      "sha256": "ec364500e7c6e92ec1e15ad5f6b35ea2c8797c526608acf759b57cebcdcf6a6e"
+    },
+    {
+      "path": "apps/server/src/memory-http-request.ts",
+      "bytes": 969,
+      "sha256": "e681fa9078540e2d4c26d6690c48462353ecb8804ec9e5ab38d17390dd8fa024"
+    },
+    {
       "path": "apps/server/src/memory-http.ts",
-      "bytes": 12939,
-      "sha256": "d2d9f931f66404f8b437bdfb880cd8ceaaa28058c7d177d413f07d5de6c2bf2c"
+      "bytes": 13417,
+      "sha256": "6589f3a8f011d1896d649325555dff0322c36f65c1b8d6d6309d9a59b666c13c"
     },
     {
       "path": "apps/server/src/model-http-availability.ts",
@@ -1430,18 +1440,18 @@
     },
     {
       "path": "apps/web/src/MemoryCards.tsx",
-      "bytes": 5931,
-      "sha256": "b094007886f636873ee7b9212a99a9293927e36e0ef210d943a021002e2d29c4"
+      "bytes": 8098,
+      "sha256": "d6c31f7fe6ffc736f1b51903fbc2808b4987613f00bda60199675ee0b2106698"
     },
     {
       "path": "apps/web/src/MemoryComposer.tsx",
-      "bytes": 6213,
-      "sha256": "f64a310c7e6a7b4e7f0d3b47e7421a94265ca3416e899fd10ac52548247720ac"
+      "bytes": 7287,
+      "sha256": "5399c1ab1c9e5d25eafe1d7c9d1726e36a56d9b80977d6fdf84bb2bffc8de0e3"
     },
     {
       "path": "apps/web/src/MemoryPanel.tsx",
-      "bytes": 8163,
-      "sha256": "0b1a96aa2efcd7249445d8f0766a266074785c7cdbe8125aa18780b30ea0f1c7"
+      "bytes": 8597,
+      "sha256": "d12928980f5b36c8502748971174987a5bbb5be9f2bbd9e0692fd356a039b483"
     },
     {
       "path": "apps/web/src/ModelAdapterLedger.tsx",
@@ -2125,8 +2135,8 @@
     },
     {
       "path": "apps/web/src/WorkspaceSettingsSurface.tsx",
-      "bytes": 8881,
-      "sha256": "23e837740fae8c30ad2cfb510132cc3cb9c4f2fd951fddd0a0a19951ab0afac5"
+      "bytes": 9143,
+      "sha256": "856f7a182e05baf75e4e5f085468334133694544b5c41b822e519acaedafbee1"
     },
     {
       "path": "apps/web/src/WorkspaceThreadPreviews.tsx",
@@ -2840,8 +2850,8 @@
     },
     {
       "path": "apps/web/src/copy.ts",
-      "bytes": 36106,
-      "sha256": "0f0204d3560f5a25422ae847764aa4bf23027a315ac10daf7fc7b4bae7a38359"
+      "bytes": 36159,
+      "sha256": "eaab34b5d4315f57adbe9f217d897b0e6452df582525ea5972f6d6877bb36779"
     },
     {
       "path": "apps/web/src/copy.zh.ts",
@@ -2880,8 +2890,8 @@
     },
     {
       "path": "apps/web/src/deep-ui-copy.zh.ts",
-      "bytes": 5073,
-      "sha256": "cfa67114dea358ff00385d80dd2eac92134e04e713495e3492783aab388047e4"
+      "bytes": 5629,
+      "sha256": "ef5ca25b7b06b702073ae395a3b331048ef7681e30581fa8622279ffe621370e"
     },
     {
       "path": "apps/web/src/desktop-workbench-copy.ts",
@@ -3020,8 +3030,8 @@
     },
     {
       "path": "apps/web/src/goal-copy.ts",
-      "bytes": 1455,
-      "sha256": "833f40244af8570c5a649e9315fc1a0754b06c2059c4b41654f7b6edbd0e3f50"
+      "bytes": 1511,
+      "sha256": "f885d2ba91c49ba56eb663def3d51b761c74c35a0e5ee1e15a08a2b50d3ca664"
     },
     {
       "path": "apps/web/src/goal-memory-event-view.ts",
@@ -3122,6 +3132,11 @@
       "path": "apps/web/src/manual-run-recovery.ts",
       "bytes": 575,
       "sha256": "2682f3e72dd46ca5d2486e4ae8108d9e5f8a1809a214be372ae9079d54609654"
+    },
+    {
+      "path": "apps/web/src/memory-copy.ts",
+      "bytes": 591,
+      "sha256": "332de7d388e96f95c1a8f338289cddff5a536ee48d03030cc3b272548bdfd104"
     },
     {
       "path": "apps/web/src/message-code-highlighting.ts",
@@ -3715,8 +3730,8 @@
     },
     {
       "path": "apps/web/src/styles/goals-memory.css",
-      "bytes": 9868,
-      "sha256": "269c280ee7c6a259c47ae5cac1a008aef47b600f9e3f2a2e09da23f2dfd76a67"
+      "bytes": 10983,
+      "sha256": "beaec5f96ea0022f7de0cfb607097adc464390c920dd06179b3ab2818bfc8417"
     },
     {
       "path": "apps/web/src/styles/inspector.css",
@@ -3850,8 +3865,8 @@
     },
     {
       "path": "apps/web/src/thread-detail-view-state.ts",
-      "bytes": 1130,
-      "sha256": "e23c15f17bb0a6573886aa5fbd80694ec04776b20940f7782c03a0aa66cbea4f"
+      "bytes": 1205,
+      "sha256": "7c7ca108d007a7da9ca83fafb3ef7533c18caadfbf7744acd407067fa9f1bd24"
     },
     {
       "path": "apps/web/src/thread-imported-view.ts",
@@ -4204,6 +4219,11 @@
       "sha256": "35db2bfdc1905037076b9b54156a1ceb0ac017338aab9ed750ca6234284e2506"
     },
     {
+      "path": "apps/web/src/use-memory-provenance-draft.ts",
+      "bytes": 1284,
+      "sha256": "f00cfff5c95f335bf673dc39af63466574a95fd5d5b79fbd07dafdbd7812ffbb"
+    },
+    {
       "path": "apps/web/src/use-new-thread.ts",
       "bytes": 1246,
       "sha256": "d1e3abcd451e3de92f58f837f7ede9398d68d06ab6dd3933e427ee2f4ba113fb"
@@ -4310,8 +4330,8 @@
     },
     {
       "path": "apps/web/src/use-workspace-view-model.ts",
-      "bytes": 72333,
-      "sha256": "05cd16300c39d6e85509e3772d5116d6698571c7821b748ab719f53eee9fe186"
+      "bytes": 72454,
+      "sha256": "38e14cc650a9fe0e94bd129c131e4409bd42c494fee40da64396757e36fe2fa9"
     },
     {
       "path": "apps/web/src/verification-event-view.ts",
@@ -5295,8 +5315,8 @@
     },
     {
       "path": "packages/contracts/src/memory-credential-v1.ts",
-      "bytes": 2497,
-      "sha256": "f36e6f17ad4dcc9319e09c3a682011c5334953ba9722858a40e011077433b348"
+      "bytes": 3000,
+      "sha256": "54caee628f2649455c1bbc2be66e1e3b80586cca85b05a29d2ee106060bedbdc"
     },
     {
       "path": "packages/contracts/src/model-context-envelope.ts",
@@ -5800,8 +5820,8 @@
     },
     {
       "path": "packages/runtime/src/agent-runtime.ts",
-      "bytes": 111925,
-      "sha256": "4812de817f9bc1398a2c73eaccc83c6c700d627aa92ff013c185e3835ce69bc9"
+      "bytes": 111770,
+      "sha256": "2662a04519007722676cba2878650b57b3b8c2fffc2796ed962fcbc05b0dc0f8"
     },
     {
       "path": "packages/runtime/src/agent-sessions.ts",
@@ -7525,8 +7545,13 @@
     },
     {
       "path": "packages/runtime/src/memory-proposal-parser.ts",
-      "bytes": 6071,
-      "sha256": "7258d10ee411a8dbad5b91efb5cfa8ad7e528849812bcf4bc0307ab402ee9e90"
+      "bytes": 8633,
+      "sha256": "e9c06500b08330ad190f341e8c5937f54b7151ceabf9121201c63ae386745060"
+    },
+    {
+      "path": "packages/runtime/src/memory-provenance.ts",
+      "bytes": 2794,
+      "sha256": "7a0c81e3bfcdea564269f843e118b5ae9263d46b2b3268adab80bb75044ecd0e"
     },
     {
       "path": "packages/runtime/src/memory-repository.ts",
@@ -7534,9 +7559,19 @@
       "sha256": "d0de49a9ab92e7429ff359cf0bfe3c75600c7807d0e24e4778a75ee0afe52592"
     },
     {
+      "path": "packages/runtime/src/memory-run-extraction.ts",
+      "bytes": 274,
+      "sha256": "8224e4d1a15f0bbc6a2d12f7b64f7c8fca4aab8da67828102ec3c65e24cd26be"
+    },
+    {
+      "path": "packages/runtime/src/memory-source.ts",
+      "bytes": 2288,
+      "sha256": "ac9af2dc267a78672f260d68fbf27ed1d0cb67487320fe6a80a9dd98671e8c5c"
+    },
+    {
       "path": "packages/runtime/src/memory.ts",
-      "bytes": 11790,
-      "sha256": "da3092580c3b98cacbc3ca6cce2ac70b827a165a3bf20bb2692cce87e0932a6a"
+      "bytes": 13284,
+      "sha256": "d8ad94a89096b0d8492e6cd5e3ffc463ef67bc2819adcdb7810e6b956ed9172a"
     },
     {
       "path": "packages/runtime/src/model-adapters.ts",
@@ -8905,8 +8940,8 @@
     },
     {
       "path": "packages/runtime/src/store-state-normalization.ts",
-      "bytes": 13655,
-      "sha256": "fffe69f88539107817118a1ab92db64dae3459e13d3bb405b4f6e9aaad1a4586"
+      "bytes": 13773,
+      "sha256": "9bb0b643aeb99e6d2de9259ecc144fe1fb3e84d7f4f533252aae6fd5d13fb709"
     },
     {
       "path": "packages/runtime/src/store-state-receipt-validation.ts",
@@ -10419,5 +10454,5 @@
       "sha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c"
     }
   ],
-  "contentSha256": "f06c4b48409392861057f962dceab890d939e9ce7e00ebeb8bc50cbce50ac160"
+  "contentSha256": "ea4f2b73a4efaab4a62551768f43e41f73e7b84151df55f7639fcb29187b2bcf"
 }

@@ -64,6 +64,29 @@ export function MemoryCard({
         ) : null}
       </div>
       <p>{memory.content}</p>
+      <dl className="memory-provenance">
+        <MemoryProvenanceItem label={copy.memory.source}>
+          {memory.source.taskTitle ?? sourceLocation(memory)}
+        </MemoryProvenanceItem>
+        <MemoryProvenanceItem label={copy.memory.sourceMessages}>
+          {memory.source.messageIds?.length ? (
+            <span title={memory.source.messageIds.join(", ")}>
+              {memory.source.messageIds.length} {copy.memory.messages}
+            </span>
+          ) : (
+            copy.memory.sourceNotRecorded
+          )}
+        </MemoryProvenanceItem>
+        <MemoryProvenanceItem label={copy.memory.persistenceReason}>
+          {memory.source.persistenceReason ?? copy.memory.sourceNotRecorded}
+        </MemoryProvenanceItem>
+        <MemoryProvenanceItem label={copy.memory.difference}>
+          {memory.source.differenceSummary ?? copy.memory.sourceNotRecorded}
+        </MemoryProvenanceItem>
+        <MemoryProvenanceItem label={copy.memory.repositoryEvidence}>
+          {repositoryEvidenceLabel(memory)}
+        </MemoryProvenanceItem>
+      </dl>
       <dl className="memory-evidence">
         <div>
           <dt>{copy.memory.review}</dt>
@@ -163,6 +186,49 @@ export function MemoryCard({
         </div>
       </footer>
     </article>
+  );
+}
+
+function MemoryProvenanceItem({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div>
+      <dt>{label}</dt>
+      <dd>{children}</dd>
+    </div>
+  );
+}
+
+function sourceLocation(memory: MemoryFact): ReactNode {
+  const identifiers = [memory.source.threadId, memory.source.runId].filter(
+    (value): value is string => Boolean(value),
+  );
+  if (identifiers.length === 0) return copy.memory.sourceNotRecorded;
+  return identifiers.map((identifier, index) => (
+    <code key={identifier} title={identifier}>
+      {index > 0 ? " / " : ""}
+      {shortIdentifier(identifier)}
+    </code>
+  ));
+}
+
+function repositoryEvidenceLabel(memory: MemoryFact): ReactNode {
+  const evidence = memory.source.repositoryEvidence;
+  if (evidence?.status !== "linked") {
+    return copy.memory.repositoryEvidenceUnavailable;
+  }
+  return (
+    <span title={evidence.workspaceSnapshotSha256}>
+      {copy.memory.repositoryEvidenceLinked}
+      {evidence.workspaceSnapshotSha256
+        ? ` · ${evidence.workspaceSnapshotSha256.slice(0, 10)}`
+        : ""}
+    </span>
   );
 }
 

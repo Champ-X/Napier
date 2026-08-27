@@ -1,24 +1,25 @@
 import { createHash } from "node:crypto";
 
 import type {
-CreateMemoryRequest,
-MemoryCategory,
-MemoryFact,
-MemorySource,
-ReviewMemoryRequest,
+  CreateMemoryRequest,
+  MemoryCategory,
+  MemoryFact,
+  MemorySource,
+  ReviewMemoryRequest,
 } from "@napier/contracts";
 
-import { createId,nowIso } from "./ids.js";
+import { createId, nowIso } from "./ids.js";
+import { normalizeMemorySource } from "./memory-source.js";
 import {
-clampConfidence,
-normalizeMemoryConsolidationIds,
-normalizeMemoryId
+  clampConfidence,
+  normalizeMemoryConsolidationIds,
+  normalizeMemoryId,
 } from "./memory-proposal-parser.js";
 
 export {
-memoryReplacementTargetIds,
-normalizeMemoryConsolidationIds,
-parseMemoryProposalResponse
+  memoryReplacementTargetIds,
+  normalizeMemoryConsolidationIds,
+  parseMemoryProposalResponse,
 } from "./memory-proposal-parser.js";
 
 export const DEFAULT_MEMORY_REVIEW_INTERVAL_DAYS = 90;
@@ -48,6 +49,17 @@ export function createMemoryFact(
   const consolidatesMemoryIds = input.consolidatesMemoryIds
     ? normalizeMemoryConsolidationIds(input.consolidatesMemoryIds)
     : undefined;
+  const normalizedSource = normalizeMemorySource({
+    ...source,
+    persistenceReason:
+      input.persistenceReason ??
+      source.persistenceReason ??
+      defaultMemoryPersistenceReason(source.type),
+    differenceSummary:
+      input.differenceSummary ??
+      source.differenceSummary ??
+      memoryDifferenceSummary(input, consolidatesMemoryIds),
+  });
   return {
     id: createId("memory"),
     content,
@@ -56,7 +68,7 @@ export function createMemoryFact(
     ...(scope === "agent" && input.agentId ? { agentId: input.agentId } : {}),
     status: "proposed",
     confidence: clampConfidence(input.confidence ?? 1),
-    source,
+    source: normalizedSource,
     reviewIntervalDays,
     useCount: 0,
     ...(input.supersedesMemoryId
@@ -67,6 +79,25 @@ export function createMemoryFact(
     createdAt: timestamp,
     updatedAt: timestamp,
   };
+}
+
+function defaultMemoryPersistenceReason(type: MemorySource["type"]): string {
+  return type === "conversation"
+    ? "Proposed as a durable fact established by the completed run."
+    : "Explicitly proposed by the operator for long-term review.";
+}
+
+function memoryDifferenceSummary(
+  input: CreateMemoryRequest,
+  consolidatesMemoryIds: string[] | undefined,
+): string {
+  if (input.supersedesMemoryId) {
+    return `Corrects reviewed memory ${input.supersedesMemoryId}.`;
+  }
+  if (consolidatesMemoryIds) {
+    return `Consolidates ${consolidatesMemoryIds.length} reviewed memories without deleting their evidence.`;
+  }
+  return "Adds a new fact without replacing an existing reviewed memory.";
 }
 
 export function reviewMemoryFact(
@@ -278,7 +309,8 @@ export function buildMemoryExtractorMessages(
       "Set supersedesMemoryId only when new evidence explicitly corrects one listed reviewed fact. Never invent an ID, and do not mark compatible or merely related facts as corrections.",
       "Set consolidatesMemoryIds to 2-8 listed IDs only when one new fact faithfully combines redundant or fragmented compatible facts. Use supersedesMemoryId instead for a conflict.",
       "Proposals will require human approval before use.",
-      'Return exactly one JSON object: {"facts":[{"content":string,"category":string,"confidence":number,"supersedesMemoryId"?:string,"consolidatesMemoryIds"?:string[]}]}.',
+      'Return exactly one JSON object: {"facts":[{"content":string,"category":string,"confidence":number,"persistenceReason":string,"differenceSummary":string,"sourceMessageIds":string[],"supersedesMemoryId"?:string,"consolidatesMemoryIds"?:string[]}]}.',
+      "For each fact, include persistenceReason explaining why it will remain useful, differenceSummary explaining how it differs from the reviewed inventory, and sourceMessageIds containing only the bracketed message IDs that establish it.",
       "Return at most 3 concise facts. Return an empty facts array when nothing durable was learned.",
     ].join("\n"),
     user: [

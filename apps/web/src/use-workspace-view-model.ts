@@ -110,7 +110,7 @@ import { messagePayload } from "./message-payload";
 import { commitThreadLocation, threadIdFromLocation } from "./thread-location";
 import { useBrowserInteractionConfirmation } from "./use-browser-interaction-confirmation";
 import { executeLoadedNextRunPrompt, useNextRunCapabilityPreset } from "./use-next-run-capability-preset";
-import { upsertThreadControlMessage } from "./thread-detail-view-state";
+import { upsertThreadControlMessage, useMemoryProvenanceDraft } from "./thread-detail-view-state";
 import { useRecoveredActiveRun } from "./use-active-run-state";
 import { useThreadNavigation } from "./use-thread-navigation";
 import { useSubagentHubActions } from "./use-subagent-hub-actions";
@@ -171,7 +171,7 @@ export function useWorkspaceViewModel() {
   const [threadRunSessions, setThreadRunSessions] = useState<ThreadRunSessions>({});
   const [controlMessageMode, setControlMessageMode] = useState<RunControlMessageMode>("steering");
   const [goalDraft, setGoalDraft] = useState("");
-  const [memoryDraft, setMemoryDraft] = useState("");
+  const [memoryDraft, setMemoryDraft, memoryProvenance] = useMemoryProvenanceDraft(proposeMemory);
   const [memoryCategory, setMemoryCategory] = useState<MemoryCategory>("context");
   const [memoryScope, setMemoryScope] = useState<MemoryScope>("workspace");
   const [memoryReviewIntervalDays, setMemoryReviewIntervalDays] = useState(90);
@@ -666,7 +666,7 @@ export function useWorkspaceViewModel() {
       const replacementTarget = correctionTarget ?? consolidationTargets[0];
       const effectiveScope = replacementTarget?.scope ?? memoryScope;
       const effectiveAgentId = effectiveScope === "agent" ? (replacementTarget?.agentId ?? detail.agent.id) : undefined;
-      const fact = await proposeMemory({
+      const fact = await memoryProvenance.propose({
         content: memoryDraft.trim(),
         category: memoryCategory,
         scope: effectiveScope,
@@ -703,7 +703,7 @@ export function useWorkspaceViewModel() {
     detail,
     memoryCategory,
     memoryConsolidatesIds,
-    memoryDraft,
+    memoryDraft, memoryProvenance,
     memoryReviewIntervalDays,
     memoryScope,
     memorySupersedesId,
@@ -1721,7 +1721,7 @@ export function useWorkspaceViewModel() {
     activeRunId,
     controlMessageMode,
     goalDraft,
-    memoryDraft,
+    memoryDraft, ...memoryProvenance,
     memoryCategory,
     memoryScope,
     memoryReviewIntervalDays,

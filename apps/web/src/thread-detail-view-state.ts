@@ -39,3 +39,5 @@ export function upsertThreadControlMessage(
       }
     : detail;
 }
+
+export { useMemoryProvenanceDraft } from "./use-memory-provenance-draft";

@@ -183,12 +183,16 @@ export function WorkspaceSettingsSurface({
                     memory.agentId === activeAgent?.id,
                 )}
                 draft={vm.memoryDraft}
+                persistenceReason={vm.memoryPersistenceReason}
+                differenceSummary={vm.memoryDifferenceSummary}
                 category={vm.memoryCategory}
                 scope={vm.memoryScope}
                 reviewIntervalDays={vm.memoryReviewIntervalDays}
                 supersedesMemoryId={vm.memorySupersedesId}
                 consolidatesMemoryIds={vm.memoryConsolidatesIds}
                 onDraft={vm.setMemoryDraft}
+                onPersistenceReason={vm.setMemoryPersistenceReason}
+                onDifferenceSummary={vm.setMemoryDifferenceSummary}
                 onCategory={vm.setMemoryCategory}
                 onScope={vm.setMemoryScope}
                 onReviewIntervalDays={vm.setMemoryReviewIntervalDays}

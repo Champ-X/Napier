@@ -1,13 +1,42 @@
-export type MemoryCategory = "preference" | "context" | "goal" | "constraint" | "decision" | "identity" | "behavior" | "correction" | "other";
+export type MemoryCategory =
+  | "preference"
+  | "context"
+  | "goal"
+  | "constraint"
+  | "decision"
+  | "identity"
+  | "behavior"
+  | "correction"
+  | "other";
 
 export type MemoryScope = "workspace" | "agent";
 
-export type MemoryStatus = "proposed" | "active" | "stale" | "rejected" | "archived";
+export type MemoryStatus =
+  | "proposed"
+  | "active"
+  | "stale"
+  | "rejected"
+  | "archived";
+
+export type MemoryRepositoryEvidence =
+  | {
+      status: "linked";
+      eventId: string;
+      eventSeq: number;
+      workspaceSnapshotSha256: string;
+      capturedAt: string;
+    }
+  | { status: "unavailable" };
 
 export interface MemorySource {
   type: "manual" | "conversation";
   threadId?: string;
   runId?: string;
+  taskTitle?: string;
+  messageIds?: string[];
+  persistenceReason?: string;
+  differenceSummary?: string;
+  repositoryEvidence?: MemoryRepositoryEvidence;
 }
 
 export interface MemoryFact {
@@ -40,6 +69,8 @@ export interface CreateMemoryRequest {
   scope?: MemoryScope;
   agentId?: string;
   confidence?: number;
+  persistenceReason?: string;
+  differenceSummary?: string;
   reviewIntervalDays?: number;
   supersedesMemoryId?: string;
   consolidatesMemoryIds?: string[];
@@ -47,7 +78,13 @@ export interface CreateMemoryRequest {
 }
 
 export interface ReviewMemoryRequest {
-  action: "approve" | "reject" | "archive" | "restore" | "refresh" | "mark_stale";
+  action:
+    | "approve"
+    | "reject"
+    | "archive"
+    | "restore"
+    | "refresh"
+    | "mark_stale";
   note?: string;
   threadId?: string;
 }
@@ -65,7 +102,11 @@ export type CredentialReferenceSource =
 
 export type CredentialReferenceStatus = "active" | "disabled";
 
-export type CredentialAvailability = "unknown" | "available" | "missing" | "error";
+export type CredentialAvailability =
+  | "unknown"
+  | "available"
+  | "missing"
+  | "error";
 
 export interface CredentialReference {
   id: string;

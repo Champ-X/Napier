@@ -22,6 +22,8 @@ const MEMORY_CATEGORIES: MemoryCategory[] = [
 
 export interface MemoryComposerProps {
   draft: string;
+  persistenceReason: string;
+  differenceSummary: string;
   category: MemoryCategory;
   scope: MemoryScope;
   reviewIntervalDays: number;
@@ -31,6 +33,8 @@ export interface MemoryComposerProps {
   consolidationIncomplete: boolean;
   scopeLocked: boolean;
   onDraft(value: string): void;
+  onPersistenceReason(value: string): void;
+  onDifferenceSummary(value: string): void;
   onCategory(value: MemoryCategory): void;
   onScope(value: MemoryScope): void;
   onReviewIntervalDays(value: number): void;
@@ -113,6 +117,32 @@ export function MemoryComposer(props: MemoryComposerProps) {
         }
         onChange={(event) => props.onDraft(event.target.value)}
       />
+      <div className="memory-provenance-inputs">
+        <label>
+          <span>{copy.memory.persistenceReason}</span>
+          <textarea
+            rows={2}
+            maxLength={500}
+            value={props.persistenceReason}
+            placeholder={copy.memory.persistenceReasonPlaceholder}
+            onChange={(event) =>
+              props.onPersistenceReason(event.currentTarget.value)
+            }
+          />
+        </label>
+        <label>
+          <span>{copy.memory.difference}</span>
+          <textarea
+            rows={2}
+            maxLength={500}
+            value={props.differenceSummary}
+            placeholder={copy.memory.differencePlaceholder}
+            onChange={(event) =>
+              props.onDifferenceSummary(event.currentTarget.value)
+            }
+          />
+        </label>
+      </div>
       <div className="memory-compose-controls">
         <select
           aria-label={copy.memory.categoryLabel}
@@ -172,6 +202,8 @@ export function MemoryComposer(props: MemoryComposerProps) {
         type="button"
         disabled={
           !props.draft.trim() ||
+          !props.persistenceReason.trim() ||
+          !props.differenceSummary.trim() ||
           props.correctionUnchanged ||
           props.consolidationIncomplete
         }

@@ -47,3 +47,4 @@ export const goalCopyZh = {
   },
   guardrail: "证据不足时 Napier 会安全终止。",
 } as const;
+export { memoryProvenanceCopyEn } from "./memory-copy";

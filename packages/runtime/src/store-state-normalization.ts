@@ -24,6 +24,7 @@ import {
   normalizeMemoryConsolidationIds,
   normalizeMemoryReviewInterval,
 } from "./memory.js";
+import { normalizeMemorySource } from "./memory-source.js";
 import { refreshPlanProjection } from "./plans.js";
 import type { PersistedStoreState } from "./store-state.js";
 
@@ -271,6 +272,7 @@ function validateMemoryRecords(state: PersistedStoreState): void {
     memory.reviewIntervalDays = normalizeMemoryReviewInterval(
       memory.reviewIntervalDays ?? DEFAULT_MEMORY_REVIEW_INTERVAL_DAYS,
     );
+    memory.source = normalizeMemorySource(memory.source);
     if (memory.consolidatesMemoryIds !== undefined) {
       if (!Array.isArray(memory.consolidatesMemoryIds)) {
         throw new Error(`Invalid persisted memory consolidation: ${memory.id}`);

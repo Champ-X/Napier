@@ -110,6 +110,74 @@ describe("reviewed memory contract", () => {
     ]);
   });
 
+  it("binds extractor provenance to allowed source messages", () => {
+    expect(
+      parseMemoryProposalResponse(
+        JSON.stringify({
+          facts: [
+            {
+              content: "The project requires release checks.",
+              category: "constraint",
+              confidence: 0.9,
+              persistenceReason: "This constraint applies to future runs.",
+              differenceSummary: "Adds a release constraint.",
+              sourceMessageIds: ["event_allowed1"],
+            },
+          ],
+        }),
+        [],
+        ["event_allowed1"],
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        persistenceReason: "This constraint applies to future runs.",
+        differenceSummary: "Adds a release constraint.",
+        sourceMessageIds: ["event_allowed1"],
+      }),
+    ]);
+    expect(() =>
+      parseMemoryProposalResponse(
+        '{"facts":[{"content":"Unbound","sourceMessageIds":["event_invented"]}]}',
+        [],
+        ["event_allowed1"],
+      ),
+    ).toThrow("unavailable source message");
+  });
+
+  it("normalizes provenance while retaining legacy source compatibility", () => {
+    const fact = createMemoryFact(
+      {
+        content: "Keep provenance bounded.",
+        persistenceReason: "  Useful for future reviews.  ",
+        differenceSummary: " Adds a new review rule. ",
+      },
+      {
+        type: "conversation",
+        threadId: "thread_source",
+        messageIds: ["event_source1", "event_source1"],
+      },
+    );
+
+    expect(fact.source).toEqual(
+      expect.objectContaining({
+        persistenceReason: "Useful for future reviews.",
+        differenceSummary: "Adds a new review rule.",
+        messageIds: ["event_source1"],
+      }),
+    );
+    expect(
+      createMemoryFact(
+        { content: "Legacy source remains readable." },
+        { type: "manual", threadId: "thread_legacy" },
+      ).source,
+    ).toEqual(
+      expect.objectContaining({
+        type: "manual",
+        threadId: "thread_legacy",
+      }),
+    );
+  });
+
   it("binds correction proposals to the reviewed extraction inventory", () => {
     const target = reviewMemoryFact(
       createMemoryFact(
