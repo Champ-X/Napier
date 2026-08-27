@@ -11,7 +11,10 @@ import {
   verifyProductPerformanceReport,
   verifyProductPerformanceReportFile,
 } from "./product-performance.mjs";
-import { createLongThreadPerformanceMeasurement } from "./product-performance-long-thread.mjs";
+import {
+  createLongThreadPerformanceMeasurement,
+  measureLongThreadPerformance,
+} from "./product-performance-long-thread.mjs";
 
 const temporaryRoots = [];
 
@@ -24,6 +27,41 @@ afterEach(async () => {
 });
 
 describe("product performance budget", () => {
+  it("measures long Threads with registered hidden model events", async () => {
+    const events = [];
+    const measurement = await measureLongThreadPerformance({
+      iterations: 1,
+      eventCount: 2,
+      store: {
+        listAgents: () => [{ id: "agent_performance" }],
+        createThread: async () => ({ id: "thread_performance" }),
+        createRun: async () => ({ id: "run_performance" }),
+        appendEvent: async (event) => {
+          events.push(event);
+          return event;
+        },
+        finishRun: async () => undefined,
+        getDetail: async () => ({ events }),
+      },
+    });
+
+    expect(measurement.totalEventCount).toBe(2);
+    expect(events).toEqual(
+      Array.from({ length: 2 }, () =>
+        expect.objectContaining({
+          type: "model.text.delta",
+          category: "model",
+          visibility: "hidden",
+          payload: {
+            chunkCount: 1,
+            deltaBytes: 128,
+            delta: "x".repeat(128),
+          },
+        }),
+      ),
+    );
+  });
+
   it("builds and verifies one complete passing report", () => {
     const budget = fixtureBudget();
     const report = createProductPerformanceReport({

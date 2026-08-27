@@ -22,12 +22,13 @@ export async function measureLongThreadPerformance(input) {
       await input.store.appendEvent({
         threadId: thread.id,
         runId: run.id,
-        type: "performance.benchmark.event",
-        category: "lifecycle",
-        visibility: "debug",
+        type: "model.text.delta",
+        category: "model",
+        visibility: "hidden",
         payload: {
-          sequence: index + 1,
-          padding: "x".repeat(128),
+          chunkCount: 1,
+          deltaBytes: 128,
+          delta: "x".repeat(128),
         },
       });
       appendDurations.push(round(performance.now() - appendStartedAt));
