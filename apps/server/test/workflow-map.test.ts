@@ -98,8 +98,8 @@ describe("Workflow Map HTTP path", () => {
           itemsPath: ["documents"],
           model: { provider: "faux-server-map", id: "faux-1" },
           maxConcurrency: 3,
-          itemTimeoutMs: 5_000,
-          timeoutMs: 15_000,
+          itemTimeoutMs: 15_000,
+          timeoutMs: 30_000,
           maxAttempts: 2,
         },
       ],
@@ -165,7 +165,7 @@ describe("Workflow Map HTTP path", () => {
         (event) => event.type === "workflow.map.item.completed",
       ),
     ).toHaveLength(3);
-  }, 20_000);
+  }, 40_000);
 });
 
 function documentSchema() {

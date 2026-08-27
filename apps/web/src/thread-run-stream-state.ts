@@ -306,6 +306,9 @@ function appendEvent(
     ...(projections?.subagentCards
       ? { subagentCards: projections.subagentCards }
       : {}),
+    ...(projections?.subagentHub
+      ? { subagentHub: projections.subagentHub }
+      : {}),
     ...(projections?.operatorDecisions
       ? { operatorDecisions: projections.operatorDecisions }
       : {}),

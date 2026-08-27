@@ -291,6 +291,7 @@ export interface SubagentTask {
   output?: JsonValue;
   outputSchema?: WorkflowValueSchema;
   outputSchemaSha256?: string;
+  writePaths?: string[];
   routePlanId?: string;
   revivedFromTaskId?: string;
   failureContextSha256?: string;

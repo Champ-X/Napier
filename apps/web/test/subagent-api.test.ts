@@ -8,13 +8,90 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  cancelSubagentHubTask,
+  reviveSubagentHubTask,
   reviewSubagentOutcome,
+  steerSubagentHubTask,
   verifySubagentOutcomeEvidence,
 } from "../src/subagent-api";
 
 describe("subagent API", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it.each([
+    {
+      action: "steer" as const,
+      invoke: () =>
+        steerSubagentHubTask("thread_fixture", "task_fixture", {
+          kind: "napier.subagent-hub-steer-request",
+          schemaVersion: 1,
+          expectedTaskRevision: 2,
+          messageKind: "steering",
+          text: "Verify the boundary.",
+        }),
+    },
+    {
+      action: "cancel" as const,
+      invoke: () =>
+        cancelSubagentHubTask("thread_fixture", "task_fixture", {
+          kind: "napier.subagent-hub-cancel-request",
+          schemaVersion: 1,
+          expectedTaskRevision: 2,
+          reason: "No longer required.",
+        }),
+    },
+    {
+      action: "revive" as const,
+      invoke: () =>
+        reviveSubagentHubTask("thread_fixture", "task_fixture", {
+          kind: "napier.subagent-hub-revive-request",
+          schemaVersion: 1,
+          expectedTaskRevision: 2,
+        }),
+    },
+  ])(
+    "validates the $action Hub action response before returning it",
+    async ({ action, invoke }) => {
+      const response = hubActionResponse(action);
+      const fetchMock = vi.fn(
+        async (requestPath: string, init?: RequestInit) => {
+          expect(requestPath).toBe(
+            `/api/threads/thread_fixture/subagents/task_fixture/${action}`,
+          );
+          expect(init?.method).toBe("POST");
+          return hashedResponse(response);
+        },
+      );
+      vi.stubGlobal("fetch", fetchMock);
+
+      await expect(invoke()).resolves.toEqual(response);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it("rejects a hash-valid action response with an unknown Hub field", async () => {
+    const response = {
+      ...hubActionResponse("cancel"),
+      hub: {
+        ...hubActionResponse("cancel").hub,
+        privatePrompt: "must not cross the projection boundary",
+      },
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => hashedResponse(response)),
+    );
+
+    await expect(
+      cancelSubagentHubTask("thread_fixture", "task_fixture", {
+        kind: "napier.subagent-hub-cancel-request",
+        schemaVersion: 1,
+        expectedTaskRevision: 2,
+        reason: "No longer required.",
+      }),
+    ).rejects.toThrow("Subagent Hub action response is invalid");
   });
 
   it("verifies stored outcome evidence through the task-scoped no-store route", async () => {
@@ -148,6 +225,78 @@ describe("subagent API", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
+
+function hubActionResponse(action: "steer" | "cancel" | "revive") {
+  const resultTaskId = action === "revive" ? "task_revived" : "task_fixture";
+  return {
+    kind: "napier.subagent-hub-action-response" as const,
+    schemaVersion: 1 as const,
+    result: {
+      kind: "napier.subagent-hub-action-result" as const,
+      schemaVersion: 1 as const,
+      action,
+      sourceTaskId: "task_fixture",
+      sourceTaskRevision: 2,
+      taskId: resultTaskId,
+      ...(action === "steer" ? { messageId: "submsg_fixture" } : {}),
+      ...(action === "revive" ? { executionId: "subexec_fixture" } : {}),
+      acceptedAt: "2026-08-26T00:00:00.000Z",
+    },
+    hub: {
+      kind: "napier.subagent-hub-projection" as const,
+      schemaVersion: 1 as const,
+      threadId: "thread_fixture",
+      taskCount: 1,
+      selectedTaskCount: 1,
+      activeTaskCount: 1,
+      terminalTaskCount: 0,
+      orphanedTaskCount: 0,
+      omittedTaskCount: 0,
+      eventWatermark: 4,
+      tasks: [
+        {
+          taskId: resultTaskId,
+          runId: "run_fixture",
+          role: "researcher" as const,
+          description: "Verify the boundary",
+          status: "running" as const,
+          taskStatus: "running" as const,
+          model: { provider: "napier", id: "demo" },
+          stepCount: 1,
+          turnCount: 1,
+          usage: {
+            inputTokens: 10,
+            outputTokens: 5,
+            cacheReadTokens: 0,
+            cacheWriteTokens: 0,
+            costUsd: 0,
+          },
+          revision: 3,
+          createdAt: "2026-08-26T00:00:00.000Z",
+          mailbox: { acceptedCount: 0, deliveredCount: 0, pendingCount: 0 },
+          lineage: { childTaskIds: [] },
+          transcript: [],
+          worktree: { state: "none" as const },
+          control: { steer: true, cancel: true, revive: false },
+        },
+      ],
+    },
+  };
+}
+
+function hashedResponse(value: unknown): Response {
+  const text = JSON.stringify(value);
+  return new Response(JSON.stringify(value), {
+    status: 202,
+    headers: {
+      "Content-Type": "application/json",
+      "X-Napier-Content-SHA256": createHash("sha256")
+        .update(text)
+        .digest("hex"),
+      "X-Napier-Content-SHA256-Mode": "body",
+    },
+  });
+}
 
 function sha256Canonical(value: unknown): string {
   return createHash("sha256").update(canonicalJson(value)).digest("hex");

@@ -9,13 +9,16 @@ import {
 import type { ConversationSubagent } from "./conversation-subagent-view-model";
 import { conversationDetailCopy } from "./conversation-detail-copy";
 import { getLocale } from "./locale";
+import { subagentHubCopy } from "./subagent-hub-copy";
 
 export interface ConversationSubagentCardProps {
   item: ConversationSubagent;
+  onOpenHub(taskId: string): void;
 }
 
 export function ConversationSubagentCard({
   item,
+  onOpenHub,
 }: ConversationSubagentCardProps) {
   const copy = conversationDetailCopy.subagent;
   const Icon =
@@ -95,6 +98,15 @@ export function ConversationSubagentCard({
           </div>
         ) : null}
       </dl>
+      <div className="conversation-subagent-actions">
+        <button
+          type="button"
+          onClick={() => onOpenHub(item.task.id)}
+        >
+          <Bot size={13} aria-hidden="true" />
+          {subagentHubCopy.openHub}
+        </button>
+      </div>
       {item.task.outcome ? (
         <section className="conversation-subagent-outcome">
           <strong>{copy.outcomeSummary}</strong>

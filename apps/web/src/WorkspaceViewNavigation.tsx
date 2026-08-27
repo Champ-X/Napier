@@ -1,10 +1,14 @@
-import { Activity, Layers3, MessageSquareText } from "lucide-react";
+import { Activity, Bot, Layers3, MessageSquareText } from "lucide-react";
 import type { KeyboardEvent } from "react";
 
 import { advancedSurfaceCopy } from "./advanced-surface-copy";
 import { copy } from "./copy";
 
-export type WorkspaceView = "conversation" | "task" | "trajectory";
+export type WorkspaceView =
+  | "conversation"
+  | "task"
+  | "subagents"
+  | "trajectory";
 
 export const workspaceViews: ReadonlyArray<{
   id: WorkspaceView;
@@ -22,6 +26,11 @@ export const workspaceViews: ReadonlyArray<{
     icon: Layers3,
   },
   {
+    id: "subagents",
+    label: copy.tabs.subagents,
+    icon: Bot,
+  },
+  {
     id: "trajectory",
     label: copy.tabs.trace,
     icon: Activity,
@@ -32,6 +41,7 @@ export interface WorkspaceViewNavigationProps {
   activeView: WorkspaceView;
   eventCount: number;
   runCount: number;
+  subagentCount: number;
   onChange(view: WorkspaceView): void;
 }
 
@@ -39,6 +49,7 @@ export function WorkspaceViewNavigation({
   activeView,
   eventCount,
   runCount,
+  subagentCount,
   onChange,
 }: WorkspaceViewNavigationProps) {
   return (
@@ -54,6 +65,8 @@ export function WorkspaceViewNavigation({
               ? eventCount
               : view.id === "task"
                 ? runCount
+                : view.id === "subagents"
+                  ? subagentCount
                 : undefined;
           return (
             <button

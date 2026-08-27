@@ -59,6 +59,10 @@ export interface ThreadLifecycleHttpServices {
     | "operatorDecisions"
     | "taskNarratives"
   >;
+  subagentHubControls: Pick<
+    import("@napier/runtime/subagents").SubagentHubControlService,
+    "availability"
+  >;
 }
 
 export function registerThreadLifecycleHttp(
@@ -142,7 +146,11 @@ export function registerThreadLifecycleHttp(
       bundle,
       request.title,
     );
-    await attachKernelThreadProjections(detail, services.kernel);
+    await attachKernelThreadProjections(
+      detail,
+      services.kernel,
+      services.subagentHubControls,
+    );
     setThreadDetailProjectionHeaders(context, detail);
     return context.json(detail, 201);
   });
@@ -253,5 +261,9 @@ async function projectDetail(
   const detail = await services.store.getDetail(threadId, {
     kernelProjections: false,
   });
-  return attachKernelThreadProjections(detail, services.kernel);
+  return attachKernelThreadProjections(
+    detail,
+    services.kernel,
+    services.subagentHubControls,
+  );
 }

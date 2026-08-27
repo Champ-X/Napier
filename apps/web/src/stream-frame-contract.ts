@@ -10,6 +10,7 @@ import { isConversationMessages } from "./conversation-messages-protocol";
 import { isConversationPlans } from "./conversation-plans-protocol";
 import { isConversationRecoveries } from "./conversation-recoveries-protocol";
 import { isConversationSubagents } from "./conversation-subagents-protocol";
+import { isSubagentHubProjection } from "./subagent-hub-protocol";
 import { isOperatorDecisions } from "./operator-decisions-protocol";
 import { isRunEventRecord } from "./run-event-contract";
 import { isTaskNarrativeProjection } from "./task-narrative-protocol";
@@ -59,7 +60,7 @@ function runEventFrame(frame: Record<string, unknown>): boolean {
   );
 }
 
-function projectionBundle(value: unknown): boolean {
+function projectionBundle(value: unknown, threadId?: string): boolean {
   if (!record(value)) return false;
   return (
     (value["taskNarrative"] === undefined ||
@@ -82,6 +83,8 @@ function projectionBundle(value: unknown): boolean {
       isConversationRecoveries(value["recoveries"])) &&
     (value["subagentCards"] === undefined ||
       isConversationSubagents(value["subagentCards"])) &&
+    (value["subagentHub"] === undefined ||
+      isSubagentHubProjection(value["subagentHub"], threadId)) &&
     (value["operatorDecisions"] === undefined ||
       isOperatorDecisions(value["operatorDecisions"]))
   );
@@ -93,31 +96,11 @@ function snapshotFrame(
 ): boolean {
   if (!validate(frame)) return false;
   const detail = frame["detail"];
-  return (
-    record(detail) &&
-    (detail["taskNarrative"] === undefined ||
-      isTaskNarrativeProjection(detail["taskNarrative"])) &&
-    (detail["activePlan"] === undefined ||
-      isActivePlanProjection(detail["activePlan"])) &&
-    (detail["messages"] === undefined ||
-      isConversationMessages(detail["messages"])) &&
-    (detail["conversationPlans"] === undefined ||
-      isConversationPlans(detail["conversationPlans"])) &&
-    (detail["artifacts"] === undefined ||
-      isConversationArtifacts(detail["artifacts"])) &&
-    (detail["activityEvents"] === undefined ||
-      isConversationActivityEvents(detail["activityEvents"])) &&
-    (detail["activityCandidates"] === undefined ||
-      isConversationActivityCandidates(detail["activityCandidates"])) &&
-    (detail["citations"] === undefined ||
-      isConversationCitations(detail["citations"])) &&
-    (detail["recoveries"] === undefined ||
-      isConversationRecoveries(detail["recoveries"])) &&
-    (detail["subagentCards"] === undefined ||
-      isConversationSubagents(detail["subagentCards"])) &&
-    (detail["operatorDecisions"] === undefined ||
-      isOperatorDecisions(detail["operatorDecisions"]))
-  );
+  if (!record(detail)) return false;
+  const thread = detail["thread"];
+  const threadId = record(thread) && typeof thread["id"] === "string"
+    ? thread["id"] : undefined;
+  return projectionBundle(detail, threadId);
 }
 
 function record(value: unknown): value is Record<string, unknown> {

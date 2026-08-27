@@ -220,6 +220,7 @@ import { recordActiveSkillLifecycles } from "./skill-lifecycle-projection.js";
 import type { SkillSnapshot } from "./standard-skill-snapshot.js";
 import { LocalStore } from "./store.js";
 import { SubagentCoordinator } from "./subagents.js";
+import type { SubagentHubControlService } from "./subagent-hub-control.js";
 import { createUsageAccounting } from "./token-accounting.js";
 import { TokenMeterRegistry } from "./token-meter-provider.js";
 import { calibrateResponse } from "./model-context-token-calibration.js";
@@ -279,15 +280,9 @@ export class AgentRuntime {
     readonly workspaceFileMutations?: WorkspaceFileMutationManager,
     readonly browserSessions?: BrowserSessionPort,
     readonly researchSourceCaptures?: BrowserSourceCaptureProvider,
-    readonly modelInvocationCapsules = new ModelInvocationCapsuleStore(
-      store.dataRoot,
-    ),
-    readonly toolInvocationCapsules = new ToolInvocationCapsuleStore(
-      store.dataRoot,
-    ),
-    readonly toolInvocationResultCapsules = new ToolInvocationResultCapsuleStore(
-      store.dataRoot,
-    ),
+    readonly modelInvocationCapsules = new ModelInvocationCapsuleStore(store.dataRoot),
+    readonly toolInvocationCapsules = new ToolInvocationCapsuleStore(store.dataRoot),
+    readonly toolInvocationResultCapsules = new ToolInvocationResultCapsuleStore(store.dataRoot),
     readonly networkCapabilities: AgentNetworkCapabilities = {},
     readonly browserInteractionConfirmations = new BrowserInteractionConfirmationManager(
       store,
@@ -296,6 +291,7 @@ export class AgentRuntime {
     readonly conversationSurfaceCapsules = new ConversationSurfaceCapsuleStore(
       store.dataRoot,
     ),
+    private readonly subagentHubControls?: Pick<SubagentHubControlService, "register">,
   ) {
     this.contextEvents = new ContextEventReadModel(store);
     this.modelRouter = new ModelRouter(store, modelRegistry);
@@ -472,8 +468,8 @@ export class AgentRuntime {
         .catch(() => abortController.abort());
     }, RUN_LEASE_HEARTBEAT_MS);
     let modelContextEnvelopeTurnIndex = 0;
-    const nextModelContextEnvelopeTurnIndex = (): number =>
-      modelContextEnvelopeTurnIndex++;
+    let unregisterSubagentHub: (() => void) | undefined;
+    const nextModelContextEnvelopeTurnIndex = (): number => modelContextEnvelopeTurnIndex++;
     try {
       await options.onRunCreated?.(run);
       await this.record(
@@ -587,6 +583,9 @@ export class AgentRuntime {
               ...(options.onEvent ? { onEvent: options.onEvent } : {}),
             })
           : undefined;
+      unregisterSubagentHub = this.subagentHubControls?.register(
+        thread.id, run.id, subagents,
+      );
       const modelAdvisorPolicy = effectiveModelAdvisorPolicy(agentProfile);
       const privateSourceContent = new PrivateSourceModelContentBoundary();
       const invokeTurn = async (
@@ -879,6 +878,7 @@ export class AgentRuntime {
         ...(options.onEvent ? { onEvent: options.onEvent } : {}),
       });
     } finally {
+      unregisterSubagentHub?.();
       clearTimeout(budgetTimeout);
       clearInterval(heartbeat);
       options.signal?.removeEventListener("abort", forwardAbort);

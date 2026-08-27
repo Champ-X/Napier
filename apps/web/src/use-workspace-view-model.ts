@@ -18,17 +18,14 @@ import type {
   MemoryScope,
   McpToolEffect,
   OpenTelemetryTraceArtifact,
-  OpenTelemetryTraceArtifactVerification,
   OperatorDecision,
   ReviewExtensionRequest,
   ReviewMemoryRequest,
   RunControlMessageMode,
   RunComparison,
   RunReplaySnapshot,
-  RunReplaySnapshotVerification,
   StreamFrame,
   ThreadReplayBundle,
-  ThreadReplayBundleVerification,
 } from "@napier/contracts";
 import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
 import {
@@ -116,6 +113,16 @@ import { executeLoadedNextRunPrompt, useNextRunCapabilityPreset } from "./use-ne
 import { upsertThreadControlMessage } from "./thread-detail-view-state";
 import { useRecoveredActiveRun } from "./use-active-run-state";
 import { useThreadNavigation } from "./use-thread-navigation";
+import { useSubagentHubActions } from "./use-subagent-hub-actions";
+import {
+  summarizeThreadReplayBundleCoverage,
+  type FixtureTransferReceipt,
+  type OpenTelemetryTraceReceipt,
+  type OpenTelemetryTraceVerificationReceipt,
+  type RunReplayVerificationReceipt,
+} from "./run-lab-receipts";
+export { importProvenanceReceiptView, summarizeThreadReplayBundleCoverage } from "./run-lab-receipts";
+export type { FixtureTransferReceipt, OpenTelemetryTraceReceipt, OpenTelemetryTraceVerificationReceipt, RunReplayVerificationReceipt } from "./run-lab-receipts";
 export type InspectorTab =
   | "browser"
   | "trace"
@@ -146,61 +153,6 @@ export interface MessageView {
   createdAt: string;
 }
 
-export interface FixtureCoverageSummary {
-  eventCount: number;
-  runCount: number;
-  planCount: number;
-  evaluationCount: number;
-  modelContextEnvelopeCount: number;
-  embeddedModelContextEnvelopeCount: number;
-}
-
-export type FixtureTransferReceipt =
-  | ({
-      action: "exported" | "imported";
-      contentSha256: string;
-    } & FixtureCoverageSummary)
-  | ({
-      action: "verified";
-      status: ThreadReplayBundleVerification["status"];
-      diagnostics: string[];
-      contentSha256?: string;
-      eventStreamSha256?: string;
-    } & FixtureCoverageSummary);
-
-export interface RunReplayVerificationReceipt {
-  status: RunReplaySnapshotVerification["status"];
-  diagnostics: string[];
-  runId?: string;
-  contentSha256?: string;
-  eventStreamSha256?: string;
-  assistantTextSha256?: string;
-  eventCount: number;
-  subagentCount: number;
-  modelContextEnvelopeCount: number;
-  embeddedModelContextEnvelopeCount: number;
-}
-
-export interface OpenTelemetryTraceReceipt {
-  scope: "thread" | "run";
-  traceId: string;
-  contentSha256: string;
-  eventAnchorSetSha256?: string;
-  eventCount: number;
-  spanCount: number;
-}
-
-export interface OpenTelemetryTraceVerificationReceipt {
-  status: OpenTelemetryTraceArtifactVerification["status"];
-  diagnostics: string[];
-  traceId?: string;
-  contentSha256?: string;
-  eventStreamSha256?: string;
-  eventAnchorSetSha256?: string;
-  eventCount: number;
-  spanCount: number;
-}
-
 const MAX_THREAD_REPLAY_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_RUN_REPLAY_SNAPSHOT_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_OTLP_TRACE_ARTIFACT_FILE_BYTES = 10 * 1024 * 1024;
@@ -209,52 +161,6 @@ const MAX_EXTENSION_PACKAGE_DEPLOYMENT_FILES = 8;
 const MAX_EXTENSION_PACKAGE_DEPLOYMENT_FILE_BYTES = 16 * 1024 * 1024;
 const MAX_EXTENSION_PACKAGE_LOCKFILE_FILE_BYTES = MAX_EXTENSION_PACKAGE_DEPLOYMENT_FILE_BYTES + 256 * 1024;
 const MAX_EXTENSION_PACKAGE_CHANNEL_INDEX_FILE_BYTES = 1 * 1024 * 1024;
-const MODEL_CONTEXT_ENVELOPE_EVENT = "context.model_envelope";
-
-type FixtureCoverageSource = {
-  events: readonly { type: string }[];
-  runs: readonly unknown[];
-  plans: readonly unknown[];
-  evaluations: readonly unknown[];
-};
-
-export function summarizeThreadReplayBundleCoverage(bundle: FixtureCoverageSource): FixtureCoverageSummary {
-  return {
-    eventCount: bundle.events.length,
-    runCount: bundle.runs.length,
-    planCount: bundle.plans.length,
-    evaluationCount: bundle.evaluations.length,
-    modelContextEnvelopeCount: bundle.events.filter((event) => event.type === MODEL_CONTEXT_ENVELOPE_EVENT).length,
-    embeddedModelContextEnvelopeCount: countEmbeddedModelContextEnvelopes(bundle),
-  };
-}
-
-export interface ImportProvenanceReceiptView {
-  seq: number;
-  payloadSha256: string;
-}
-
-export function importProvenanceReceiptView(detail: WebThreadDetail): ImportProvenanceReceiptView | undefined {
-  const receipt = detail.importReceipt;
-  const provenance = detail.thread.importProvenance;
-  if (!receipt || !provenance) return undefined;
-  if (provenance.localImportedThroughSeq !== receipt.seq) return undefined;
-  return receipt;
-}
-
-function countEmbeddedModelContextEnvelopes(value: unknown): number {
-  if (!value || typeof value !== "object") return 0;
-  if (Array.isArray(value)) {
-    return value.reduce((total, item) => total + countEmbeddedModelContextEnvelopes(item), 0);
-  }
-  const record = value as Record<string, unknown>;
-  const current = Object.prototype.hasOwnProperty.call(record, "modelContextEnvelope") ? 1 : 0;
-  return Object.entries(record).reduce((total, [key, child]) => {
-    if (key === "modelContextEnvelope") return total;
-    return total + countEmbeddedModelContextEnvelopes(child);
-  }, current);
-}
-
 export function useWorkspaceViewModel() {
   const [bootstrap, setBootstrap] = useState<LiveReadyBootstrapResponse>();
   const [detail, setDetail] = useState<WebThreadDetail>();
@@ -501,6 +407,15 @@ export function useWorkspaceViewModel() {
     setBootstrap((current) => mergeBackgroundThreadDetail(current, refreshed));
     if (selectedThreadIdRef.current === threadId) setDetail(refreshed);
   }, []);
+
+  const subagentHubActions = useSubagentHubActions({
+    detail,
+    detailCache: threadDetailCacheRef,
+    selectedThreadId: selectedThreadIdRef,
+    setBootstrap,
+    setDetail,
+    errorMessage: toErrorMessage,
+  });
 
   const refreshActiveThread = useCallback(async (): Promise<void> => {
     if (!detail) return;
@@ -1828,6 +1743,7 @@ export function useWorkspaceViewModel() {
     labBusyAction,
     labFixtureReceipt,
     operatorDecisionBusy,
+    ...subagentHubActions,
     ...threadNavigation,
     ...browserInteraction,
     streamingText,

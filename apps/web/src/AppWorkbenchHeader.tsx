@@ -55,6 +55,7 @@ export function AppWorkbenchHeader({
         activeView={shell.workspaceView}
         eventCount={vm.visibleTrace.length}
         runCount={vm.detail?.runs.length ?? 0}
+        subagentCount={vm.detail?.subagentHub?.taskCount ?? vm.detail?.subagents.length ?? 0}
         onChange={shell.setWorkspaceView}
       />
     </WorkbenchHeader>

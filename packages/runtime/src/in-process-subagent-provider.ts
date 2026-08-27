@@ -86,6 +86,7 @@ export class InProcessSubagentProvider implements SubagentProvider {
             outputSchemaSha256: subagentOutputSchemaSha256(outputSchema),
           }
         : {}),
+      ...(request.writePaths ? { writePaths: [...request.writePaths] } : {}),
       ...(route ? { routePlanId: route.plan.id } : {}),
       ...(request.revivedFromTaskId
         ? { revivedFromTaskId: request.revivedFromTaskId }

@@ -88,6 +88,10 @@
       "types": "./dist/subagent-supervisor.d.ts",
       "import": "./dist/subagent-supervisor.js"
     },
+    "./subagent-hub": {
+      "types": "./dist/subagent-hub-v1.d.ts",
+      "import": "./dist/subagent-hub-v1.js"
+    },
     "./sandbox-setup": {
       "types": "./dist/sandbox-setup.d.ts",
       "import": "./dist/sandbox-setup.js"

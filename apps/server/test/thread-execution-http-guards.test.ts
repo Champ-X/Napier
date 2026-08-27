@@ -53,7 +53,9 @@ describe("Thread execution HTTP guards", () => {
     expect(
       execution.indexOf("const detail = await services.store.getDetail(threadId"),
     ).toBeGreaterThanOrEqual(0);
-    expect(execution).toContain("attachKernelThreadProjections(detail, services.kernel)");
+    expect(execution).toMatch(
+      /attachKernelThreadProjections\(\s*detail,\s*services\.kernel,\s*services\.subagentHubControls,?\s*\)/u,
+    );
     expect(execution).toContain(
       "const snapshotFrame = streamSnapshotFrame(detail);",
     );

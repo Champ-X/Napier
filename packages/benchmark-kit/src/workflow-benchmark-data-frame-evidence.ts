@@ -7,14 +7,15 @@ import type {
   WorkflowBenchmarkLedgerEventReceipt,
 } from "./workflow-benchmark-types.js";
 import { hasExactRunEventEnvelope } from "./run-event-envelope-shape.js";
+import { validCompletedToolProtocolProjection } from "./tool-protocol-event-shape.js";
 
 export type WorkflowBenchmarkDataFrameAction = "inspect_data" | "data_frame";
 
 const PAYLOAD_KEYS = keySet(
-  "callId toolName status outputTextSha256 outputTextBytes outputSha256 outputBytes outputRedacted resultSha256 details",
+  "callId toolName status outputTextSha256 outputTextBytes outputSha256 outputBytes outputRedacted resultSha256 details toolProtocol",
 );
 const INSPECT_PAYLOAD_KEYS = keySet(
-  "callId toolName status outputTextSha256 outputTextBytes outputSha256 outputBytes outputRedacted details",
+  "callId toolName status outputTextSha256 outputTextBytes outputSha256 outputBytes outputRedacted details toolProtocol",
 );
 const INSPECT_DETAILS_KEYS = keySet(
   "pathSha256 format sha256 sizeBytes rowCount columnCount truncated columnSetSha256 sampleSha256",
@@ -257,6 +258,8 @@ function validToolPayload(
     digest(payload["outputSha256"]) &&
     nonNegativeInteger(payload["outputBytes"]) &&
     payload["outputRedacted"] === true &&
+    typeof action === "string" &&
+    validCompletedToolProtocolProjection(payload["toolProtocol"], action) &&
     record(payload["details"]) !== undefined &&
     (action === "inspect_data" ||
       (digest(payload["resultSha256"]) &&

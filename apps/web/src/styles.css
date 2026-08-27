@@ -1,6 +1,7 @@
 @import "./styles/global.css";
 @import "./styles/shell-navigation.css";
 @import "./styles/task-workbench.css";
+@import "./styles/subagent-hub.css";
 @import "./styles/conversation.css";
 @import "./styles/inspector.css";
 @import "./styles/context-inspector.css";

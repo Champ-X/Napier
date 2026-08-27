@@ -1,5 +1,6 @@
 import type { ThreadDetail } from "@napier/contracts";
 import type { AgentKernel } from "@napier/runtime/agent";
+import type { SubagentHubControlService } from "@napier/runtime/subagents";
 
 export type KernelThreadProjectionServices = {
   conversationActivityCandidates: Pick<
@@ -19,7 +20,10 @@ export type KernelThreadProjectionServices = {
     AgentKernel["conversationRecoveries"],
     "project"
   >;
-  conversationSubagents: Pick<AgentKernel["conversationSubagents"], "project">;
+  conversationSubagents: Pick<
+    AgentKernel["conversationSubagents"],
+    "project" | "projectHub"
+  >;
   operatorDecisions: Pick<AgentKernel["operatorDecisions"], "project">;
   taskNarratives: Pick<AgentKernel["taskNarratives"], "project">;
 };
@@ -27,6 +31,7 @@ export type KernelThreadProjectionServices = {
 export async function projectKernelThreadProjections(
   threadId: string,
   kernel: KernelThreadProjectionServices,
+  subagentHubControls?: Pick<SubagentHubControlService, "availability">,
 ) {
   const [
     taskNarrative,
@@ -39,6 +44,7 @@ export async function projectKernelThreadProjections(
     citations,
     recoveries,
     subagents,
+    subagentHub,
     operatorDecisions,
   ] = await Promise.all([
     kernel.taskNarratives.project(threadId),
@@ -51,6 +57,12 @@ export async function projectKernelThreadProjections(
     kernel.conversationCitations.project(threadId),
     kernel.conversationRecoveries.project(threadId),
     kernel.conversationSubagents.project(threadId),
+    kernel.conversationSubagents.projectHub(
+      threadId,
+      subagentHubControls
+        ? (task) => subagentHubControls.availability(task)
+        : undefined,
+    ),
     kernel.operatorDecisions.project(threadId),
   ]);
   return {
@@ -63,6 +75,7 @@ export async function projectKernelThreadProjections(
     citations: citations.view,
     recoveries: recoveries.view,
     subagentCards: subagents.view,
+    subagentHub: subagentHub.view,
     operatorDecisions: operatorDecisions.view,
     ...(activePlan.view ? { activePlan: activePlan.view } : {}),
   };
@@ -71,10 +84,12 @@ export async function projectKernelThreadProjections(
 export async function attachKernelThreadProjections(
   detail: ThreadDetail,
   kernel: KernelThreadProjectionServices,
+  subagentHubControls?: Pick<SubagentHubControlService, "availability">,
 ): Promise<ThreadDetail> {
   const projections = await projectKernelThreadProjections(
     detail.thread.id,
     kernel,
+    subagentHubControls,
   );
   detail.taskNarrative = projections.taskNarrative;
   detail.messages = projections.messages;
@@ -85,6 +100,10 @@ export async function attachKernelThreadProjections(
   detail.citations = projections.citations;
   detail.recoveries = projections.recoveries;
   detail.subagentCards = projections.subagentCards;
+  detail.subagentHub = projections.subagentHub;
+  detail.subagents = detail.subagents.map(({ writePaths: _writePaths, ...task }) =>
+    task,
+  );
   detail.operatorDecisions = projections.operatorDecisions;
   if (projections.activePlan) detail.activePlan = projections.activePlan;
   else delete detail.activePlan;

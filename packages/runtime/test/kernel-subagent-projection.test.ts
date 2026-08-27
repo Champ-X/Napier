@@ -5,6 +5,63 @@ import { KernelProjectionRegistry } from "../src/kernel-projections.js";
 import { ConversationSubagentsProjectionService } from "../src/kernel-subagent-projection.js";
 
 describe("Kernel Subagent projection", () => {
+  it("projects the durable Hub without leaking prompts", async () => {
+    const registry = new KernelProjectionRegistry();
+    const thread = projectionThread();
+    const events = [
+      event(1, "subagent.started"),
+      {
+        ...event(2, "subagent.message.accepted"),
+        payload: {
+          taskId: "task_fixture0001",
+          messageKind: "steering",
+          text: "Focus on evidence.",
+          contentSha256: "a".repeat(64),
+        },
+      },
+    ];
+    const tasks = [task("running", { revision: 3 })];
+    thread.eventCount = 2;
+    const service = new ConversationSubagentsProjectionService(registry, {
+      getThread: () => structuredClone(thread),
+      listEvents: async (_threadId, afterSeq = 0) =>
+        events.filter((eventRecord) => eventRecord.seq > afterSeq),
+      listSubagentTasks: () => structuredClone(tasks),
+    });
+
+    const receipt = await service.projectHub(thread.id, () => ({
+      steer: true,
+      cancel: true,
+      revive: false,
+    }));
+
+    expect(receipt.view).toEqual(
+      expect.objectContaining({
+        kind: "napier.subagent-hub-projection",
+        schemaVersion: 1,
+        threadId: thread.id,
+        taskCount: 1,
+        activeTaskCount: 1,
+        eventWatermark: 2,
+        tasks: [
+          expect.objectContaining({
+            taskId: "task_fixture0001",
+            revision: 3,
+            mailbox: expect.objectContaining({ acceptedCount: 1, pendingCount: 1 }),
+            transcript: expect.arrayContaining([
+              expect.objectContaining({
+                kind: "message",
+                text: "Focus on evidence.",
+              }),
+            ]),
+            control: { steer: true, cancel: true, revive: false },
+          }),
+        ],
+      }),
+    );
+    expect(JSON.stringify(receipt.view)).not.toContain("PRIVATE_PROMPT");
+  });
+
   it("reuses event state while joining current task progress", async () => {
     const registry = new KernelProjectionRegistry();
     const thread = projectionThread();

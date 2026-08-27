@@ -228,6 +228,21 @@ describe("Bootstrap HTTP", () => {
         },
       ],
     }));
+    const projectSubagentHub = vi.fn(async () => ({
+      view: {
+        kind: "napier.subagent-hub-projection" as const,
+        schemaVersion: 1 as const,
+        threadId: projectedThread.id,
+        taskCount: 0,
+        selectedTaskCount: 0,
+        activeTaskCount: 0,
+        terminalTaskCount: 0,
+        orphanedTaskCount: 0,
+        omittedTaskCount: 0,
+        eventWatermark: 0,
+        tasks: [],
+      },
+    }));
     const projectOperatorDecisions = vi.fn(async () => ({ view: [] }));
     const inspectPlugins = vi.fn(() => [
       {
@@ -313,7 +328,10 @@ describe("Bootstrap HTTP", () => {
         conversationActivityEvents: { project: projectActivityEvents },
         conversationCitations: { project: projectCitations },
         conversationRecoveries: { project: projectRecoveries },
-        conversationSubagents: { project: projectSubagents },
+        conversationSubagents: {
+          project: projectSubagents,
+          projectHub: projectSubagentHub,
+        },
         operatorDecisions: { project: projectOperatorDecisions },
         plugins: { inspect: inspectPlugins },
       },
@@ -341,6 +359,10 @@ describe("Bootstrap HTTP", () => {
     expect(projectCitations).toHaveBeenCalledWith(projectedThread.id);
     expect(projectRecoveries).toHaveBeenCalledWith(projectedThread.id);
     expect(projectSubagents).toHaveBeenCalledWith(projectedThread.id);
+    expect(projectSubagentHub).toHaveBeenCalledWith(
+      projectedThread.id,
+      undefined,
+    );
     expect(projectOperatorDecisions).toHaveBeenCalledWith(projectedThread.id);
     expect(inspectPlugins).toHaveBeenCalledOnce();
     expect(store.listThreads).not.toHaveBeenCalled();

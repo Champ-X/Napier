@@ -32,6 +32,7 @@ import {
 } from "./sandbox-setup-service.js";
 import { SwitchableSandboxAdapter } from "./sandbox-switchable.js";
 import { LocalStore } from "./store.js";
+import { SubagentHubControlService } from "./subagent-hub-control.js";
 import type { WebSearchExecutor } from "./web-search-model.js";
 import { WebSearchProviderRegistry } from "./web-search-providers.js";
 import { DynamicWebSearchExecutor } from "./kernel-search-plugin.js";
@@ -78,6 +79,7 @@ export interface LocalAgentRuntimeServices {
   providerSetup: ProviderSetupService;
   sandboxSetup: SandboxSetupService;
   runtime: AgentRuntime;
+  subagentHubControls: SubagentHubControlService;
   kernel: AgentKernel;
   agentCapabilities: AgentCapabilityService;
   embeddedAgents: EmbeddedAgentService;
@@ -201,6 +203,7 @@ export async function createLocalAgentRuntime(
       sandbox,
       capabilityRuntime,
     );
+    const subagentHubControls = new SubagentHubControlService(store);
     const runtime = new AgentRuntime(
       store,
       models,
@@ -216,6 +219,8 @@ export async function createLocalAgentRuntime(
       network,
       browserInteractionConfirmations,
       browserSessionPauses,
+      undefined,
+      subagentHubControls,
     );
     const kernel = await createPersistedAgentKernel(dataRoot, {
       profile: options.kernelProfile ?? "base",
@@ -261,6 +266,7 @@ export async function createLocalAgentRuntime(
       providerSetup,
       sandboxSetup,
       runtime,
+      subagentHubControls,
       kernel,
       agentCapabilities,
       embeddedAgents,

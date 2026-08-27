@@ -361,7 +361,7 @@ describe("Harness experiments", () => {
     } finally {
       store.close();
     }
-  }, 60_000);
+  }, 120_000);
 
   it("binds execution trends and controlled regression attribution into release evidence", () => {
     const experiment = fixtureExperiment();

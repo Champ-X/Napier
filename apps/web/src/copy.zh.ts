@@ -192,6 +192,7 @@ export const zh: LocaleOverride<typeof en> = {
     conversation: "对话",
     session: "任务",
     trace: "轨迹",
+    subagents: "子智能体",
     processes: "进程",
     files: "文件",
     lab: "实验室",

@@ -111,6 +111,25 @@ function sha256(value: string): string {
 }
 
 describe("SubagentCoordinator", () => {
+  it("fails closed when direct control targets a terminal task", async () => {
+    const { coordinator, faux, store, thread } = await createHarness();
+    faux.setResponses([
+      fauxAssistantMessage(typedResult("Terminal evidence collected.")),
+    ]);
+    await coordinator.createTool().execute("delegate-terminal-control", delegatedTask);
+    const task = store.listSubagentTasks(thread.id)[0]!;
+
+    await expect(
+      coordinator.steerTask(task.id, task.revision, {
+        kind: "steering",
+        text: "Continue after completion.",
+      }),
+    ).rejects.toThrow("Subagent task is not active");
+    await expect(
+      coordinator.cancelTask(task.id, task.revision, "Cancel after completion."),
+    ).rejects.toThrow("Subagent task is not active");
+  });
+
   it("exposes async supervisor tools with durable steering and collection", async () => {
     const { coordinator, faux, store, thread } = await createHarness();
     faux.setResponses([

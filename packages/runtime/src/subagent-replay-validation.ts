@@ -44,6 +44,23 @@ export function validateSubagentSupervisorReplayTask(
   if (task["revivedFromTaskId"] !== undefined) {
     assertResourceId(task["revivedFromTaskId"], `${label}.revivedFromTaskId`);
   }
+  if (task["writePaths"] !== undefined) {
+    const writePaths = task["writePaths"];
+    if (
+      !Array.isArray(writePaths) ||
+      writePaths.length < 1 ||
+      writePaths.length > 8 ||
+      writePaths.some(
+        (value) =>
+          typeof value !== "string" || !value.trim() || value.length > 500,
+      )
+    ) {
+      invalid(`${label}.writePaths is invalid`);
+    }
+    if (task["role"] !== "coder") {
+      invalid(`${label}.writePaths requires coder role`);
+    }
+  }
   validateTypedOutputBinding(task, label);
   assertSubagentFailureContext(task, label);
 }

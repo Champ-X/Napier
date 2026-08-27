@@ -44,6 +44,10 @@ export interface WorkflowHttpServices {
     | "taskNarratives"
   >;
   workflows: ExecutionPlanWorkflowRuntime;
+  subagentHubControls: Pick<
+    import("@napier/runtime/subagents").SubagentHubControlService,
+    "availability"
+  >;
 }
 
 export interface WorkflowHttpHelpers {
@@ -135,7 +139,11 @@ export async function executeWorkflowHttp(
       threadId,
       services.store.getThread(threadId).eventCount + 1,
       async (event) =>
-        projectKernelThreadProjections(threadId, services.kernel).then(
+        projectKernelThreadProjections(
+          threadId,
+          services.kernel,
+          services.subagentHubControls,
+        ).then(
           (projections) =>
             writeFrame(streamEventFrame(event, projections), String(event.seq)),
         ),
@@ -150,7 +158,11 @@ export async function executeWorkflowHttp(
       const detail = await services.store.getDetail(threadId, {
         kernelProjections: false,
       });
-      await attachKernelThreadProjections(detail, services.kernel);
+      await attachKernelThreadProjections(
+        detail,
+        services.kernel,
+        services.subagentHubControls,
+      );
       await eventWriter.reconcile(detail.events);
       await eventWriter.finish(detail.thread.eventCount);
       const snapshot = streamSnapshotFrame(detail);

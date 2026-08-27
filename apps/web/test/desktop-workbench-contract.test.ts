@@ -8,10 +8,11 @@ import {
 } from "../src/WorkspaceViewNavigation";
 
 describe("Desktop workbench information architecture", () => {
-  it("uses Conversation, Task, Trajectory order", () => {
+  it("uses Conversation, Task, Subagents, Trajectory order", () => {
     expect(workspaceViews.map((view) => view.id)).toEqual([
       "conversation",
       "task",
+      "subagents",
       "trajectory",
     ]);
   });
@@ -23,7 +24,7 @@ describe("Desktop workbench information architecture", () => {
     expect(adjacentWorkspaceView("trajectory", "ArrowRight")).toBe(
       "conversation",
     );
-    expect(adjacentWorkspaceView("task", "ArrowDown")).toBe("trajectory");
+    expect(adjacentWorkspaceView("task", "ArrowDown")).toBe("subagents");
     expect(adjacentWorkspaceView("task", "ArrowUp")).toBe("conversation");
     expect(adjacentWorkspaceView("trajectory", "Home")).toBe("conversation");
     expect(adjacentWorkspaceView("conversation", "End")).toBe("trajectory");

@@ -76,7 +76,7 @@ export const en = {
   tabs: {
     conversation: "Conversation",
     session: "Task",
-    trace: "Trajectory",
+    trace: "Trajectory", subagents: "Subagents",
     processes: "Processes",
     files: "Files",
     lab: "Lab",

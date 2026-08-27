@@ -27,6 +27,7 @@ export interface NapierServices extends Pick<
   | "models"
   | "extensions"
   | "runtime"
+  | "subagentHubControls"
   | "kernel"
   | "agentCapabilities"
   | "workflows"
@@ -84,6 +85,7 @@ export async function createServices(
     workspaceProcesses,
     workspaceFileMutations,
     runtime,
+    subagentHubControls,
     kernel,
     workflows,
     workflowExperiments,
@@ -116,6 +118,7 @@ export async function createServices(
     models,
     extensions,
     runtime,
+    subagentHubControls,
     kernel,
     workflows,
     workflowExperiments,

@@ -23,6 +23,7 @@ export interface CreateSubagentTaskInput {
   executionId?: string;
   outputSchema?: WorkflowValueSchema;
   outputSchemaSha256?: string;
+  writePaths?: string[];
   routePlanId?: string;
   revivedFromTaskId?: string;
   failureContextSha256?: string;
@@ -61,6 +62,7 @@ export function createSubagentTaskRecord(
     ...(input.outputSchemaSha256
       ? { outputSchemaSha256: input.outputSchemaSha256 }
       : {}),
+    ...(input.writePaths ? { writePaths: [...input.writePaths] } : {}),
     ...(input.routePlanId ? { routePlanId: input.routePlanId } : {}),
     ...(input.revivedFromTaskId
       ? { revivedFromTaskId: input.revivedFromTaskId }

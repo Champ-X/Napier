@@ -82,11 +82,15 @@ type BootstrapServices = {
     >;
     conversationSubagents: Pick<
       AgentKernel["conversationSubagents"],
-      "project"
+      "project" | "projectHub"
     >;
     operatorDecisions: Pick<AgentKernel["operatorDecisions"], "project">;
     plugins?: Pick<AgentKernel["plugins"], "inspect">;
   };
+  subagentHubControls?: Pick<
+    import("@napier/runtime/subagents").SubagentHubControlService,
+    "availability"
+  >;
   skillUserHome?: string;
 };
 
@@ -118,7 +122,11 @@ async function createBootstrapResponse(
       })
     : undefined;
   if (activeThread && services.kernel) {
-    await attachKernelThreadProjections(activeThread, services.kernel);
+    await attachKernelThreadProjections(
+      activeThread,
+      services.kernel,
+      services.subagentHubControls,
+    );
   }
   const agents = services.store.listAgents();
   const credentials = services.store.listCredentialReferences();

@@ -32,6 +32,7 @@ export interface ConversationLedgerProps {
   endRef: React.RefObject<HTMLDivElement | null>;
   onBranch(seq: number): void;
   onLedgerChanged(): Promise<void>;
+  onOpenSubagentHub(taskId?: string): void;
 }
 
 export function ConversationLedger({
@@ -41,6 +42,7 @@ export function ConversationLedger({
   endRef,
   onBranch,
   onLedgerChanged,
+  onOpenSubagentHub,
 }: ConversationLedgerProps) {
   const projection = useMemo(
     () => conversationFeedProjection(messages, detail),
@@ -75,7 +77,13 @@ export function ConversationLedger({
         </button>
       ) : null}
       {visibleFeed.map((item) =>
-        renderFeedItem(item, projection, onBranch, onLedgerChanged),
+        renderFeedItem(
+          item,
+          projection,
+          onBranch,
+          onLedgerChanged,
+          onOpenSubagentHub,
+        ),
       )}
       {streamingText ? (
         <ConversationStreamingCard
@@ -94,6 +102,7 @@ function renderFeedItem(
   projection: ReturnType<typeof conversationFeedProjection>,
   onBranch: ConversationLedgerProps["onBranch"],
   onLedgerChanged: ConversationLedgerProps["onLedgerChanged"],
+  onOpenSubagentHub: ConversationLedgerProps["onOpenSubagentHub"],
 ) {
   if (item.kind === "activity-group") {
     return <ConversationActivityGroupCard key={item.id} group={item} />;
@@ -142,7 +151,7 @@ function renderFeedItem(
       />
     );
   }
-  return renderExecutionFeedItem(item);
+  return renderExecutionFeedItem(item, onOpenSubagentHub);
 }
 
 type ExecutionFeedItem = Exclude<
@@ -154,7 +163,10 @@ type ExecutionFeedItem = Exclude<
   | { kind: "citation" }
 >;
 
-function renderExecutionFeedItem(item: ExecutionFeedItem) {
+function renderExecutionFeedItem(
+  item: ExecutionFeedItem,
+  onOpenSubagentHub: ConversationLedgerProps["onOpenSubagentHub"],
+) {
   if (item.kind === "network") {
     return (
       <ConversationNetworkActivityCard
@@ -192,6 +204,7 @@ function renderExecutionFeedItem(item: ExecutionFeedItem) {
       <ConversationSubagentCard
         key={`subagent-${item.subagent.task.id}`}
         item={item.subagent}
+        onOpenHub={onOpenSubagentHub}
       />
     );
   }

@@ -71,6 +71,10 @@ export interface ThreadExecutionHttpServices {
     | "taskNarratives"
   >;
   models: ModelRegistry;
+  subagentHubControls: Pick<
+    import("@napier/runtime/subagents").SubagentHubControlService,
+    "availability"
+  >;
   agentCapabilities: Pick<
     import("@napier/runtime/agent").LocalAgentRuntimeServices["agentCapabilities"],
     "blockedRunReadinessProjection"
@@ -275,6 +279,7 @@ function streamAgentRun(
         const projections = await projectKernelThreadProjections(
           threadId,
           services.kernel,
+          services.subagentHubControls,
         );
         await writeFrame(
           streamEventFrame(event, projections),
@@ -284,7 +289,11 @@ function streamAgentRun(
       const detail = await services.store.getDetail(threadId, {
         kernelProjections: false,
       });
-      await attachKernelThreadProjections(detail, services.kernel);
+      await attachKernelThreadProjections(
+        detail,
+        services.kernel,
+        services.subagentHubControls,
+      );
       const snapshotFrame = streamSnapshotFrame(detail);
       const doneFrame = streamRunDoneFrame(
         threadId,

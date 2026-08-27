@@ -2,6 +2,8 @@ import {
   reviewSubagentOutcome,
   verifySubagentOutcomeEvidence,
 } from "@napier/runtime/subagents";
+import type { SubagentHubActionResponseV1 } from "@napier/contracts/subagent-hub";
+import type { AgentKernel } from "@napier/runtime/agent";
 import {
   type LocalStore,
 } from "@napier/runtime/store";
@@ -11,9 +13,13 @@ import {
 import {
   type WorkspaceFileMutationManager,
 } from "@napier/runtime/code";
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 
-import { errorMessage, jsonError } from "./http-response-evidence.js";
+import {
+  errorMessage,
+  jsonError,
+  setBodyContentSha256Header,
+} from "./http-response-evidence.js";
 import {
   readLimitedJson,
   RequestBodyTooLargeError,
@@ -29,8 +35,14 @@ import {
   parseReviewSubagentOutcomeRequest,
   validWorkspaceTrashId,
 } from "./thread-operations-http-validation.js";
+import {
+  parseCancelSubagentHubTaskRequest,
+  parseReviveSubagentHubTaskRequest,
+  parseSteerSubagentHubTaskRequest,
+} from "./subagent-hub-http-validation.js";
 
 const MAX_SUBAGENT_REVIEW_REQUEST_BYTES = 8 * 1024;
+const MAX_SUBAGENT_CONTROL_REQUEST_BYTES = 16 * 1024;
 
 type ThreadOperationsHttpStore = Pick<
   LocalStore,
@@ -45,15 +57,170 @@ export interface ThreadOperationsHttpServices {
   store: ThreadOperationsHttpStore;
   models: ModelRegistry;
   workspaceFileMutations: WorkspaceFileMutationManager;
+  kernel: Pick<AgentKernel, "conversationSubagents">;
+  subagentHubControls: Pick<
+    import("@napier/runtime/subagents").SubagentHubControlService,
+    "availability" | "cancel" | "revive" | "steer"
+  >;
 }
 
 export function registerThreadOperationsHttp(
   app: Hono,
   services: ThreadOperationsHttpServices,
 ): void {
+  registerSubagentHubControlHttp(app, services);
   registerSubagentOutcomeHttp(app, services);
   registerRecoveryHttp(app, services.store);
   registerWorkspaceTrashHttp(app, services.workspaceFileMutations);
+}
+
+function registerSubagentHubControlHttp(
+  app: Hono,
+  services: ThreadOperationsHttpServices,
+): void {
+  app.post(
+    "/api/threads/:threadId/subagents/:taskId/steer",
+    async (context) => {
+      const request = await readSubagentControlRequest(
+        context,
+        "steer",
+        parseSteerSubagentHubTaskRequest,
+      );
+      if (request instanceof Response) return request;
+      try {
+        return subagentHubActionResponse(
+          context,
+          services,
+          context.req.param("threadId"),
+          await services.subagentHubControls.steer(
+            context.req.param("threadId"),
+            context.req.param("taskId"),
+            request,
+          ),
+        );
+      } catch (error) {
+        return subagentHubControlError(context, error);
+      }
+    },
+  );
+  app.post(
+    "/api/threads/:threadId/subagents/:taskId/cancel",
+    async (context) => {
+      const request = await readSubagentControlRequest(
+        context,
+        "cancel",
+        parseCancelSubagentHubTaskRequest,
+      );
+      if (request instanceof Response) return request;
+      try {
+        return subagentHubActionResponse(
+          context,
+          services,
+          context.req.param("threadId"),
+          await services.subagentHubControls.cancel(
+            context.req.param("threadId"),
+            context.req.param("taskId"),
+            request,
+          ),
+        );
+      } catch (error) {
+        return subagentHubControlError(context, error);
+      }
+    },
+  );
+  app.post(
+    "/api/threads/:threadId/subagents/:taskId/revive",
+    async (context) => {
+      const request = await readSubagentControlRequest(
+        context,
+        "revive",
+        parseReviveSubagentHubTaskRequest,
+      );
+      if (request instanceof Response) return request;
+      try {
+        return subagentHubActionResponse(
+          context,
+          services,
+          context.req.param("threadId"),
+          await services.subagentHubControls.revive(
+            context.req.param("threadId"),
+            context.req.param("taskId"),
+            request,
+          ),
+        );
+      } catch (error) {
+        return subagentHubControlError(context, error);
+      }
+    },
+  );
+}
+
+async function readSubagentControlRequest<T>(
+  context: Context,
+  action: "steer" | "cancel" | "revive",
+  parse: (input: unknown) => T | undefined,
+): Promise<T | Response> {
+  let input: unknown;
+  try {
+    input = await readLimitedJson(
+      context.req.raw,
+      MAX_SUBAGENT_CONTROL_REQUEST_BYTES,
+      `Subagent Hub ${action} request`,
+    );
+  } catch (error) {
+    return jsonError(
+      context,
+      errorMessage(error),
+      error instanceof RequestBodyTooLargeError ? 413 : 400,
+    );
+  }
+  const request = parse(input);
+  return request ??
+    jsonError(context, `Subagent Hub ${action} request is invalid`, 400);
+}
+
+async function subagentHubActionResponse(
+  context: Context,
+  services: ThreadOperationsHttpServices,
+  threadId: string,
+  result: SubagentHubActionResponseV1["result"],
+): Promise<Response> {
+  const hub = (await services.kernel.conversationSubagents.projectHub(
+    threadId,
+    (task) => services.subagentHubControls.availability(task),
+  )).view;
+  const response: SubagentHubActionResponseV1 = {
+    kind: "napier.subagent-hub-action-response",
+    schemaVersion: 1,
+    result,
+    hub,
+  };
+  context.header("Cache-Control", "no-store");
+  setBodyContentSha256Header(context, response);
+  context.header("X-Napier-Subagent-Action", result.action);
+  context.header("X-Napier-Subagent-Task-Id", result.taskId);
+  return context.json(response, 202);
+}
+
+function subagentHubControlError(
+  context: Context,
+  error: unknown,
+): Response {
+  const message = errorMessage(error);
+  return jsonError(
+    context,
+    message,
+    message.includes("not found")
+      ? 404
+      : message.includes("revision changed") ||
+          message.includes("unavailable") ||
+          message.includes("not active") ||
+          message.includes("not terminal") ||
+          message.includes("budget exhausted") ||
+          message.includes("role is disabled")
+        ? 409
+        : 400,
+  );
 }
 
 function registerSubagentOutcomeHttp(

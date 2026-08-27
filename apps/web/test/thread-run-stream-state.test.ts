@@ -304,6 +304,7 @@ describe("Thread Run stream state", () => {
             warningCount: 0,
           },
         ],
+        subagentHub: hubProjection("thread_a"),
         operatorDecisions: [],
       },
     });
@@ -323,6 +324,9 @@ describe("Thread Run stream state", () => {
     expect(updated?.citations?.[0]?.callId).toBe("call_research");
     expect(updated?.recoveries?.[0]?.status).toBe("skipped");
     expect(updated?.subagentCards?.[0]?.task.status).toBe("completed");
+    expect(updated?.subagentHub?.tasks[0]?.description).toBe(
+      "Review projected evidence",
+    );
   });
 
   it("does not roll back another Thread when concurrent final refreshes arrive out of order", () => {
@@ -437,6 +441,40 @@ function frame(runEvent: RunEvent): Extract<StreamFrame, { type: "event" }> {
     type: "event",
     event: runEvent,
     eventSha256: "c".repeat(64),
+  };
+}
+
+function hubProjection(threadId: string) {
+  return {
+    kind: "napier.subagent-hub-projection" as const,
+    schemaVersion: 1 as const,
+    threadId,
+    taskCount: 1,
+    selectedTaskCount: 1,
+    activeTaskCount: 0,
+    terminalTaskCount: 1,
+    orphanedTaskCount: 0,
+    omittedTaskCount: 0,
+    eventWatermark: 1,
+    tasks: [{
+      taskId: "task_fixture0001",
+      runId: "run_thread_a",
+      role: "reviewer" as const,
+      description: "Review projected evidence",
+      status: "completed" as const,
+      taskStatus: "completed" as const,
+      model: { provider: "napier", id: "demo" },
+      stepCount: 2,
+      turnCount: 1,
+      usage: { inputTokens: 100, outputTokens: 20, cacheReadTokens: 0, cacheWriteTokens: 0, costUsd: 0 },
+      revision: 3,
+      createdAt: "2026-08-07T00:00:00.000Z",
+      mailbox: { acceptedCount: 0, deliveredCount: 0, pendingCount: 0 },
+      lineage: { childTaskIds: [] },
+      transcript: [],
+      worktree: { state: "none" as const },
+      control: { steer: false, cancel: false, revive: false, unavailableReason: "parent_run_not_running" as const },
+    }],
   };
 }
 

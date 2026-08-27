@@ -3,6 +3,7 @@ import { parseResearchSourceEvidenceV1 } from "@napier/contracts/skill-load";
 
 import type { ResearchBenchmarkLedgerBundle } from "./research-benchmark-types.js";
 import { hasExactRunEventEnvelope } from "./run-event-envelope-shape.js";
+import { validCompletedToolProtocolProjection } from "./tool-protocol-event-shape.js";
 
 const TOP_LEVEL_KEYS = keySet(
   "kind schemaVersion generatedAt caseId caseSha256 threadId run expectedClaimsSha256 actualClaimsSha256 contradictionClaimSha256 expectedCitationEvidenceSha256 expectedSourceSetSha256 sourceAuthorities report evaluationEvent terminalEvent researchEvents eventCount retainedEventCount omittedEventCount eventTypeCounts eventTypeSetSha256 sourceEventStreamSha256 sourceReplaySha256 eventReceipts receiptSetSha256 contentSha256",
@@ -11,7 +12,7 @@ const RECEIPT_KEYS = keySet(
   "id seq runId type category visibility createdAt payloadSha256 previousReceiptSha256 receiptSha256",
 );
 const TOOL_PAYLOAD_KEYS = keySet(
-  "callId toolName status outputTextSha256 outputTextBytes outputSha256 outputBytes outputRedacted resultSha256 details",
+  "callId toolName status outputTextSha256 outputTextBytes outputSha256 outputBytes outputRedacted resultSha256 details toolProtocol",
 );
 
 export function validResearchBenchmarkLedgerShape(
@@ -147,7 +148,11 @@ function validResearchEvent(value: unknown): boolean {
     !digest(value.payload["outputSha256"]) ||
     !nonNegativeInteger(value.payload["outputBytes"]) ||
     value.payload["outputRedacted"] !== true ||
-    !digest(value.payload["resultSha256"])
+    !digest(value.payload["resultSha256"]) ||
+    !validCompletedToolProtocolProjection(
+      value.payload["toolProtocol"],
+      "research_source",
+    )
   ) {
     return false;
   }

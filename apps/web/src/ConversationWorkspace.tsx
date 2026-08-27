@@ -18,6 +18,7 @@ export function ConversationWorkspace({
   vm,
   endRef,
   viewportRef,
+  onOpenSubagentHub,
 }: ConversationWorkspaceProps) {
   const accessibilityCopy = advancedSurfaceCopy.accessibility;
   const follow = useConversationFollow({
@@ -49,6 +50,7 @@ export function ConversationWorkspace({
             endRef={endRef}
             onBranch={(seq) => void vm.branchFrom(seq)}
             onLedgerChanged={vm.refreshActiveThread}
+            onOpenSubagentHub={onOpenSubagentHub}
           />
         </Suspense>
       )}
@@ -73,6 +75,7 @@ export interface ConversationWorkspaceProps {
   >;
   endRef: React.RefObject<HTMLDivElement | null>;
   viewportRef: React.RefObject<HTMLElement | null>;
+  onOpenSubagentHub(taskId?: string): void;
 }
 
 export function shouldShowConversationWelcome(

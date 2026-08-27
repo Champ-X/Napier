@@ -51,6 +51,8 @@ export function useWorkspaceShell(
 ) {
   const [workspaceView, setWorkspaceView] =
     useState<WorkspaceView>("conversation");
+  const [focusedSubagentTaskId, setFocusedSubagentTaskId] =
+    useState<string>();
   const [taskSection, setTaskSectionState] =
     useState<TaskSection>("overview");
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -146,6 +148,12 @@ export function useWorkspaceShell(
     () => setDeveloperWorkbenchOpen(false),
     [],
   );
+  const openSubagentHub = useCallback((taskId?: string) => {
+    setFocusedSubagentTaskId(taskId);
+    setWorkspaceView("subagents");
+    setSettingsOpen(false);
+    setDeveloperWorkbenchOpen(false);
+  }, []);
 
   useEffect(() => {
     const shortcut = (event: KeyboardEvent) => {
@@ -165,6 +173,8 @@ export function useWorkspaceShell(
   return {
     workspaceView,
     setWorkspaceView,
+    focusedSubagentTaskId,
+    openSubagentHub,
     taskSection,
     setTaskSection,
     settingsOpen,

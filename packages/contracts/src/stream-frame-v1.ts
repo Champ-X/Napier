@@ -18,6 +18,7 @@ export type StreamFrame =
         citations?: NonNullable<ThreadDetail["citations"]>;
         recoveries?: NonNullable<ThreadDetail["recoveries"]>;
         subagentCards?: NonNullable<ThreadDetail["subagentCards"]>;
+        subagentHub?: NonNullable<ThreadDetail["subagentHub"]>;
         activityCandidates?: NonNullable<ThreadDetail["activityCandidates"]>;
         conversationPlans?: NonNullable<ThreadDetail["conversationPlans"]>;
         operatorDecisions?: OperatorDecision[];

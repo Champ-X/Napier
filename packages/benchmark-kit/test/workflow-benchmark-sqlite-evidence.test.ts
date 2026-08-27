@@ -15,6 +15,27 @@ describe("Workflow benchmark SQLite evidence", () => {
         databaseAfterSha256: "2".repeat(64),
       }),
     ).toBe(true);
+    expect(
+      validWorkflowBenchmarkSqliteFields({
+        sqliteActionEvents: [
+          {
+            ...valid,
+            payload: {
+              ...valid.payload,
+              toolProtocol: {
+                ...(valid.payload["toolProtocol"] as Record<
+                  string,
+                  JsonValue
+                >),
+                toolId: "read_file",
+              },
+            },
+          },
+        ],
+        databaseBeforeSha256: "2".repeat(64),
+        databaseAfterSha256: "2".repeat(64),
+      }),
+    ).toBe(false);
     for (const details of [
       { ...chartDetails(), pointCount: 5 },
       { ...chartDetails(), rowCount: 4 },
@@ -84,6 +105,18 @@ function chartEvent(details: Record<string, JsonValue>): RunEvent {
     outputSha256: "1".repeat(64),
     outputBytes: 1_024,
     outputRedacted: true,
+    toolProtocol: {
+      kind: "napier.tool-ui-projection",
+      schemaVersion: 2,
+      toolId: "sqlite_query",
+      semanticVersion: "1.0.0-compat.1",
+      definitionSha256: "2".repeat(64),
+      implementationSha256: "3".repeat(64),
+      status: "completed",
+      sideEffect: "none",
+      concurrency: "safe",
+      compatibilityMode: "compatibility",
+    },
     resultSha256: sha256(canonicalJson(details)),
     details,
   };

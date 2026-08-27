@@ -22,6 +22,11 @@ const LazyTraceWorkspace = lazy(() =>
     default: TraceWorkspace,
   })),
 );
+const LazySubagentHubWorkspace = lazy(() =>
+  import("./SubagentHubWorkspace").then(({ SubagentHubWorkspace }) => ({
+    default: SubagentHubWorkspace,
+  })),
+);
 
 type WorkspaceViewModel = ReturnType<typeof useWorkspaceViewModel>;
 
@@ -61,6 +66,7 @@ export function AppWorkspaceViews({
             vm={vm}
             endRef={conversationEnd}
             viewportRef={conversationViewport}
+            onOpenSubagentHub={shell.openSubagentHub}
           />
           <WorkbenchDeferredTaskResult
             vm={vm}
@@ -85,6 +91,16 @@ export function AppWorkspaceViews({
       {shell.workspaceView === "trajectory" ? (
         <Suspense fallback={null}>
           <LazyTraceWorkspace vm={vm} activeModel={activeModel} />
+        </Suspense>
+      ) : null}
+      {shell.workspaceView === "subagents" ? (
+        <Suspense fallback={null}>
+          <LazySubagentHubWorkspace
+            vm={vm}
+            {...(shell.focusedSubagentTaskId
+              ? { focusedTaskId: shell.focusedSubagentTaskId }
+              : {})}
+          />
         </Suspense>
       ) : null}
       {shell.workspaceView === "task" ? (

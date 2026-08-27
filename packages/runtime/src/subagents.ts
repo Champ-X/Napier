@@ -210,6 +210,64 @@ export class SubagentCoordinator {
       });
   }
 
+  async steerTask(
+    taskId: string,
+    expectedTaskRevision: number,
+    input: { kind: "steering" | "input"; text: string },
+  ) {
+    const task = this.boundTask(taskId, expectedTaskRevision);
+    return this.supervisor.send(taskHandle(task), input);
+  }
+
+  async cancelTask(
+    taskId: string,
+    expectedTaskRevision: number,
+    reason: string,
+  ): Promise<void> {
+    const task = this.boundTask(taskId, expectedTaskRevision);
+    await this.supervisor.cancel(taskHandle(task), reason);
+  }
+
+  async reviveTask(source: SubagentTask, expectedTaskRevision: number) {
+    const current = this.options.store
+      .listSubagentTasks(source.threadId)
+      .find((task) => task.id === source.id);
+    if (!current || current.revision !== expectedTaskRevision) {
+      throw new Error("Subagent task revision changed; refresh and retry");
+    }
+    if (current.status === "pending" || current.status === "running") {
+      throw new Error("Subagent task is not terminal");
+    }
+    if (current.role === "coder" && !current.writePaths) {
+      throw new Error("Coder Subagent write scope is unavailable");
+    }
+    return this.startTask({
+      role: current.role,
+      description: current.description,
+      task: current.prompt,
+      ...(current.writePaths ? { writePaths: [...current.writePaths] } : {}),
+      ...(current.outputSchema ? { outputSchema: current.outputSchema } : {}),
+      revivedFromTaskId: current.id,
+    });
+  }
+
+  reviveUnavailableReason(
+    source: SubagentTask,
+  ):
+    | "delegation_budget_exhausted"
+    | "role_disabled"
+    | "coder_write_scope_unavailable"
+    | undefined {
+    if (!this.enabledRoles.has(source.role)) return "role_disabled";
+    if (this.totalDelegations >= this.limits.maxTotal) {
+      return "delegation_budget_exhausted";
+    }
+    if (source.role === "coder" && !source.writePaths) {
+      return "coder_write_scope_unavailable";
+    }
+    return undefined;
+  }
+
   createTool(): AgentTool<typeof delegateTaskSchema, DelegationDetails> {
     return {
       name: "delegate_task",
@@ -295,6 +353,20 @@ export class SubagentCoordinator {
     }
   }
 
+  private boundTask(taskId: string, expectedTaskRevision: number) {
+    const task = this.options.store
+      .listSubagentTasks(this.options.run.threadId, this.options.run.id)
+      .find((candidate) => candidate.id === taskId);
+    if (!task) throw new Error("Subagent execution is unavailable");
+    if (task.revision !== expectedTaskRevision) {
+      throw new Error("Subagent task revision changed; refresh and retry");
+    }
+    if (task.status !== "pending" && task.status !== "running") {
+      throw new Error("Subagent task is not active");
+    }
+    return task;
+  }
+
   private subagentModel(role: SubagentRole) {
     return resolveModelRouteSelection({
       agentDefault: {
@@ -311,6 +383,19 @@ export class SubagentCoordinator {
       subagentRole: role,
     }).targets[0]!.model;
   }
+}
+
+function taskHandle(task: SubagentTask) {
+  if (!task.providerId || !task.executionId) {
+    throw new Error("Subagent execution is unavailable");
+  }
+  return {
+    kind: "napier.subagent-handle" as const,
+    schemaVersion: 1 as const,
+    providerId: task.providerId,
+    taskId: task.id,
+    executionId: task.executionId,
+  };
 }
 
 export function coderFailureContextSha256(

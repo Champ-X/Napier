@@ -893,6 +893,32 @@
   white-space: nowrap;
 }
 
+.conversation-subagent-actions {
+  display: flex;
+  padding: 0 12px 10px;
+}
+
+.conversation-subagent-actions button {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  color: var(--ledger);
+  cursor: pointer;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+}
+
+.conversation-subagent-actions button:hover {
+  color: var(--paper-bright);
+  background: var(--ledger);
+  border-color: var(--ledger);
+}
+
 .conversation-subagent-outcome {
   padding: 0 12px 10px;
 }

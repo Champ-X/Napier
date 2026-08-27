@@ -12,6 +12,7 @@ import type { ModelSummary } from "./prompt-inspector-package-v1.js";
 import type { UsagePriceTableCatalog } from "./protocol-v1-core.js";
 import type { SkillPackageInstallation, SkillSummary } from "./skill-package-v1.js";
 import type { SubagentOutcomeItemKind, SubagentOutcomeSeverity, SubagentStopReason, SubagentTask, SubagentTaskStatus } from "./subagent-supervisor.js";
+import type { SubagentHubProjectionV1 } from "./subagent-hub-v1.js";
 import type { AutomationSchedule, ContextCheckpointCalibrationReport } from "./workspace-control-v1.js";
 
 export interface WorkspaceSummary {
@@ -248,6 +249,7 @@ export interface ThreadDetail {
     blockerCount: number;
     warningCount: number;
   }>;
+  subagentHub?: SubagentHubProjectionV1;
   activityCandidates?: Array<{
     id: string;
     seq: number;
