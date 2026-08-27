@@ -11,7 +11,7 @@
   "identityDeclarationPath": "packages/runtime/src/release-product-identity.ts",
   "identityDeclarationSha256": "5a8dada43a7d464d3de4e65cc7c556def3391ef59f674cdb6949a1ce5362b62d",
   "fileCount": 2089,
-  "totalBytes": 14779271,
+  "totalBytes": 14779346,
   "files": [
     {
       "path": "apps/server/package.json",
@@ -4525,8 +4525,8 @@
     },
     {
       "path": "apps/web/src/workspace-shell.css",
-      "bytes": 49323,
-      "sha256": "38c18ec4ddfa108cf36ab2cb84e2037404c4b4402fff53970f85ed3120c5e1af"
+      "bytes": 49398,
+      "sha256": "d88c43062b4fa6ae4d0f4883fb22e9aa1086a6eb4a731f5ea8342e0f95677a5f"
     },
     {
       "path": "apps/web/src/workspace-thread-presentation.ts",
@@ -10459,5 +10459,5 @@
       "sha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c"
     }
   ],
-  "contentSha256": "9ba8b53b48b41d1fef28c1daf7e893aa9f2079b40d9c73cbb1e40e9afb67287f"
+  "contentSha256": "5005cf378523c25edff68d021a1858566319a338cec242528566ac59928f784f"
 }

@@ -788,6 +788,10 @@
   color: var(--color-fg-muted);
 }
 
+.task-artifact-card > .artifact-action-surface {
+  grid-column: 2 / -1;
+}
+
 .task-status-badge {
   display: inline-flex;
   min-height: var(--control-target);

@@ -86,6 +86,18 @@ describe("Workbench layout", () => {
     expect(task).toContain("<TaskChangesPanel");
   });
 
+  it("keeps Artifact actions on their own card row", async () => {
+    const styles = await readFile(
+      new URL("../src/workspace-shell.css", import.meta.url),
+      "utf8",
+    );
+
+    expect(styles).toContain(
+      ".task-artifact-card > .artifact-action-surface",
+    );
+    expect(styles).toContain("grid-column: 2 / -1;");
+  });
+
   it("keeps environment setup styles feature-owned and state-complete", async () => {
     const [provider, sandbox, providerStyles, sandboxStyles, globalStyles] =
       await Promise.all([

@@ -327,48 +327,62 @@ export async function verifyWebUiArtifactNavigation(browser, origin, expected) {
       expected.title,
       { timeout: WEB_UI_START_TIMEOUT_MS },
     );
+    const primaryOutput = page.locator(".task-completion-primary-output");
+    const primaryTitle = await primaryOutput.getAttribute("title");
+    const primaryPath = expected.paths.find(
+      (path) => primaryTitle?.endsWith(path),
+    );
+    assert.ok(primaryPath, "Primary Artifact is not an expected output");
+    await primaryOutput.locator('[data-artifact-action="open"]').click();
+    await page.waitForFunction(
+      (targetPath) =>
+        document.activeElement instanceof HTMLElement &&
+        document.activeElement.dataset["artifactPath"] === targetPath &&
+        document.activeElement.querySelector(
+          ".artifact-action-inspection",
+        ) !== null,
+      primaryPath,
+      { timeout: WEB_UI_START_TIMEOUT_MS },
+    );
+    const primaryCard = page.locator(
+      `.conversation-artifact[data-artifact-path="${primaryPath}"]`,
+    );
+    await primaryCard
+      .getByRole("button", {
+        name: `Close artifact inspection ${primaryPath}`,
+      })
+      .click();
     const completionToggle = page.locator(".task-completion-toggle");
     if ((await completionToggle.getAttribute("aria-expanded")) === "false") {
       await completionToggle.click();
     }
     await page.waitForFunction(
       (count) =>
-        document.querySelectorAll(".task-narrative-completed nav button")
-          .length === count,
+        document.querySelectorAll(
+          '.task-completion-details .task-completion-output',
+        ).length === count,
       expected.paths.length,
       { timeout: WEB_UI_START_TIMEOUT_MS },
     );
     const previews = [];
     for (const path of expected.paths) {
-      await page
-        .locator(`.task-completion-details nav button[title="Open ${path}"]`)
-        .click();
-      await page.waitForFunction(
-        (targetPath) =>
-          document.activeElement instanceof HTMLElement &&
-          document.activeElement.dataset["artifactPath"] === targetPath &&
-          document.activeElement.querySelector(
-            '.artifact-action-inspection',
-          ) !== null,
-        path,
-        { timeout: WEB_UI_START_TIMEOUT_MS },
-      );
-      const card = page.locator(
-        `.conversation-artifact[data-artifact-path="${path}"]`,
-      );
-      await card.locator(".artifact-action-inspection").waitFor({
+      const output = page.locator(".task-completion-output").filter({
+        has: page.locator(`code[title="${path}"]`),
+      });
+      await output.locator('[data-artifact-action="preview"]').click();
+      const inspection = output.locator(".artifact-action-inspection");
+      await inspection.waitFor({
         state: "visible",
         timeout: WEB_UI_START_TIMEOUT_MS,
       });
+      assert.equal(await inspection.count(), 1);
       previews.push({
         path,
         focused: true,
         openedInOneClick: true,
-        preview: await card
-          .locator(".artifact-action-inspection pre")
-          .textContent(),
+        preview: await inspection.locator("pre").textContent(),
       });
-      await card
+      await output
         .getByRole("button", { name: `Close artifact inspection ${path}` })
         .click();
     }
