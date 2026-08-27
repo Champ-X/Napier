@@ -10,3 +10,8 @@ export type WorkspaceProcessSessionInput = Omit<
   | "workspaceCompensationStatus"
   | "contentSha256"
 > & { schemaVersion?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 };
+
+export type WorkspaceProcessSessionEventType =
+  | "workspace.process.interrupted"
+  | "workspace.process.settled"
+  | "workspace.process.started";

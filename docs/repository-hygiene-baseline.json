@@ -1,6 +1,6 @@
 {
   "kind": "napier.repository-hygiene-baseline",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "capturedAtCommit": "610e57c",
   "deadCode": {
     "allowedUnusedFiles": [],
@@ -24,6 +24,38 @@
   },
   "publicApi": {
     "maximumRuntimeRootExports": 199,
+    "maximumRuntimeRootSemanticExports": 1896,
+    "runtimeRootSemanticExportSha256": "8be2c3a9341c07a60b8fbb333dacef42f5008b41a2602745eea9f786e4ac6806",
+    "maximumRuntimePackageExportKeys": 47,
+    "runtimePackageExportKeysSha256": "6fbd5c469031bb9c4801751764533a7893d610cfc3c9b8ad7416ff67605d1677",
+    "maximumRuntimeInternalSemanticExports": 16,
+    "runtimeInternalSemanticExportSha256": "5c079b4a87242bc3a9b2a639dc3b6069e9f79b924052ac44a8837d7ff6e8c1dc",
+    "runtimeFacadeSemanticExports": {
+      "agent": 26,
+      "browser": 22,
+      "code": 15,
+      "core": 17,
+      "evaluation": 20,
+      "governance": 43,
+      "model": 20,
+      "store": 1,
+      "subagents": 5,
+      "tools": 3,
+      "workflow": 35
+    },
+    "runtimeFacadeSemanticExportSha256": {
+      "agent": "b491f9729eb62b25b806d3b0f39b84d9e2dcca0eb0547f840aff653b7a0e9c7c",
+      "browser": "daa19f64b83774ec01b9bf7cf740dc4e042cb2c05c8f96f034deda37d25b4362",
+      "code": "79a6d7a2e88558973cef285f02adafcbfcf2eddccef7f318bb4d97303b11c6cc",
+      "core": "b8c97af4ef4f4e7c695e6033df788852e1b9b1c4326f7038260462db1892215a",
+      "evaluation": "c94fd8b69d23ee10647b8d0122c332a7dd97ce6bd76f0dade13c355a1c86134e",
+      "governance": "99e96c4908d1c050a389751a2b6a66dae53be08f548926c8dab4803bc16f32f0",
+      "model": "d3047b406ba05d607fb060af869799599999cab6bd0521b46cc9babf7e8321f9",
+      "store": "2e19eae2256904bb4d7c27d64f167201bec2aa89171c85ece719b2f54e6fefec",
+      "subagents": "a17f36573a9c9eb78ba998174b7f0b251509d4bdb330c44ac2b1d852f83b0c71",
+      "tools": "0e58005223c3a3de54a7c0e48d2fa851a5998f8b9d7637b8dcdcfea50937567f",
+      "workflow": "8059051faf24e85633d17e6fae41ee2b4283ff77b358f5405007a8828e578f41"
+    },
     "maximumInternalRuntimeRootImportFiles": 0,
     "maximumWebDuplicateDefaultExports": 0
   }

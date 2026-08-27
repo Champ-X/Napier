@@ -53,6 +53,72 @@ export async function analyzeRepository(repoRoot) {
   };
 }
 
+export function collectDependencyMetrics(analysis) {
+  const fanIn = new Map(
+    [...analysis.graph.keys()].map((filePath) => [filePath, 0]),
+  );
+  for (const dependencies of analysis.graph.values()) {
+    for (const dependency of dependencies) {
+      fanIn.set(dependency, (fanIn.get(dependency) ?? 0) + 1);
+    }
+  }
+  const sourceFiles = Object.fromEntries(
+    analysis.sourceFiles
+      .map((file) => {
+        const sourceFanIn = fanIn.get(file.path) ?? 0;
+        const sourceFanOut = (analysis.graph.get(file.path) ?? []).length;
+        return [
+          file.path,
+          {
+            fanIn: sourceFanIn,
+            fanOut: sourceFanOut,
+            changeCoupling: sourceFanIn * sourceFanOut,
+          },
+        ];
+      })
+      .sort(([left], [right]) => left.localeCompare(right)),
+  );
+  const workspaceGraph = new Map(
+    analysis.workspacePackages.map((workspace) => [
+      workspace.name,
+      { afferent: new Set(), efferent: new Set() },
+    ]),
+  );
+  for (const file of analysis.sourceFiles) {
+    if (!file.workspace) continue;
+    for (const specifier of file.moduleSpecifiers) {
+      const dependency = napierPackageName(specifier);
+      if (
+        !dependency ||
+        dependency === file.workspace.name ||
+        !workspaceGraph.has(dependency)
+      ) {
+        continue;
+      }
+      workspaceGraph.get(file.workspace.name).efferent.add(dependency);
+      workspaceGraph.get(dependency).afferent.add(file.workspace.name);
+    }
+  }
+  const workspaces = Object.fromEntries(
+    [...workspaceGraph.entries()]
+      .map(([name, dependencies]) => {
+        const afferent = dependencies.afferent.size;
+        const efferent = dependencies.efferent.size;
+        const total = afferent + efferent;
+        return [
+          name,
+          {
+            afferent,
+            efferent,
+            instability: total === 0 ? 0 : efferent / total,
+          },
+        ];
+      })
+      .sort(([left], [right]) => left.localeCompare(right)),
+  );
+  return { sourceFiles, workspaces };
+}
+
 async function discoverWorkspacePackages(repoRoot) {
   const packages = [];
   for (const root of ["apps", "packages"]) {
@@ -310,6 +376,10 @@ function countLines(source) {
 
 function workspaceForPath(filePath, packages) {
   return packages.find((workspace) => filePath.startsWith(workspace.path));
+}
+
+function napierPackageName(specifier) {
+  return specifier.match(/^(@napier\/[^/]+)/u)?.[1];
 }
 
 export function cycleKey(cycle) {

@@ -29,7 +29,6 @@ import {
   effectiveModelRoutePolicy,
   normalizedModelRouteUpdate,
 } from "./agent-model-route-profile.js";
-export { effectiveModelRoutePolicy } from "./agent-model-route-profile.js";
 
 const THINKING_LEVELS = new Set<AgentProfile["thinkingLevel"]>([
   "off",

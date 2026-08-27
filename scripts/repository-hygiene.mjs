@@ -1,4 +1,5 @@
 import { execFile as execFileCallback } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -13,6 +14,19 @@ const BASELINE_PATH = "docs/repository-hygiene-baseline.json";
 const REGISTRY_PATH = "scripts/registry.json";
 const SOURCE_EXTENSIONS = /\.(?:c|m)?(?:js|ts)x?$/u;
 const NODE_BUILTIN = /^(?:node:|bun:)/u;
+const RUNTIME_FACADE_ENTRIES = [
+  "agent",
+  "browser",
+  "code",
+  "core",
+  "evaluation",
+  "governance",
+  "model",
+  "store",
+  "subagents",
+  "tools",
+  "workflow",
+];
 
 export async function readHygieneBaseline(repoRoot = process.cwd()) {
   const value = JSON.parse(
@@ -21,7 +35,7 @@ export async function readHygieneBaseline(repoRoot = process.cwd()) {
   if (value?.kind !== "napier.repository-hygiene-baseline") {
     throw new Error("Repository hygiene baseline has an invalid kind");
   }
-  if (value?.schemaVersion !== 1) {
+  if (value?.schemaVersion !== 2) {
     throw new Error("Repository hygiene baseline has an invalid schemaVersion");
   }
   return value;
@@ -286,12 +300,40 @@ export async function collectDependencyOwnershipIssues(
   );
 }
 
-export async function collectPublicApi(repoRoot = process.cwd()) {
+export async function collectPublicApi(
+  repoRoot = process.cwd(),
+  facadeEntries = RUNTIME_FACADE_ENTRIES,
+) {
   const runtimeIndex = await readFile(
     path.join(repoRoot, "packages/runtime/src/index.ts"),
     "utf8",
   );
   const analysis = await analyzeRepository(repoRoot);
+  const runtimeManifest = await manifest(
+    path.join(repoRoot, "packages/runtime"),
+  );
+  const runtimePackageExportNames = Object.keys(
+    runtimeManifest.exports ?? {},
+  ).sort();
+  const runtimeProgram = await createRuntimeProgram(repoRoot);
+  const runtimeRootSemanticExportNames = semanticExportNames(
+    runtimeProgram,
+    path.join(repoRoot, "packages/runtime/src/index.ts"),
+  );
+  const runtimeFacadeSemanticExports = {};
+  const runtimeFacadeSemanticExportSha256 = {};
+  for (const entry of facadeEntries) {
+    const names = semanticExportNames(
+      runtimeProgram,
+      path.join(repoRoot, `packages/runtime/src/public/${entry}.ts`),
+    );
+    runtimeFacadeSemanticExports[entry] = names.length;
+    runtimeFacadeSemanticExportSha256[entry] = sha256(names.join("\n"));
+  }
+  const runtimeInternalSemanticExportNames = semanticExportNames(
+    runtimeProgram,
+    path.join(repoRoot, "packages/runtime/src/internal.ts"),
+  );
   const internalRuntimeRootImportFiles = analysis.sourceFiles.filter((file) =>
     file.moduleSpecifiers.includes("@napier/runtime"),
   ).length;
@@ -315,9 +357,82 @@ export async function collectPublicApi(repoRoot = process.cwd()) {
   }
   return {
     runtimeRootExports: [...runtimeIndex.matchAll(/^export\s+\*/gmu)].length,
+    runtimeRootSemanticExports: runtimeRootSemanticExportNames.length,
+    runtimeRootSemanticExportSha256: sha256(
+      runtimeRootSemanticExportNames.join("\n"),
+    ),
+    runtimePackageExportKeys: runtimePackageExportNames.length,
+    runtimePackageExportKeysSha256: sha256(
+      runtimePackageExportNames.join("\n"),
+    ),
+    runtimeInternalSemanticExports: runtimeInternalSemanticExportNames.length,
+    runtimeInternalSemanticExportSha256: sha256(
+      runtimeInternalSemanticExportNames.join("\n"),
+    ),
+    runtimeFacadeSemanticExports,
+    runtimeFacadeSemanticExportSha256,
     internalRuntimeRootImportFiles,
     webDuplicateDefaultExports,
   };
+}
+
+async function createRuntimeProgram(repoRoot) {
+  const configPath = path.join(repoRoot, "packages/runtime/tsconfig.json");
+  let parsed;
+  if (ts.sys.fileExists(configPath)) {
+    const config = ts.readConfigFile(configPath, ts.sys.readFile);
+    if (config.error) {
+      throw new Error(
+        `Runtime TypeScript config is invalid: ${ts.flattenDiagnosticMessageText(config.error.messageText, "\n")}`,
+      );
+    }
+    parsed = ts.parseJsonConfigFileContent(
+      config.config,
+      ts.sys,
+      path.dirname(configPath),
+    );
+    if (parsed.errors.length > 0) {
+      throw new Error(
+        `Runtime TypeScript config is invalid: ${parsed.errors
+          .map((error) =>
+            ts.flattenDiagnosticMessageText(error.messageText, "\n"),
+          )
+          .join("; ")}`,
+      );
+    }
+  } else {
+    parsed = {
+      fileNames: await collectFiles(
+        path.join(repoRoot, "packages/runtime/src"),
+        /\.tsx?$/u,
+      ),
+      options: {
+        module: ts.ModuleKind.NodeNext,
+        moduleResolution: ts.ModuleResolutionKind.NodeNext,
+        target: ts.ScriptTarget.ES2023,
+      },
+    };
+  }
+  return ts.createProgram(parsed.fileNames, parsed.options);
+}
+
+function semanticExportNames(program, absolutePath) {
+  const sourceFile = program.getSourceFile(path.resolve(absolutePath));
+  const symbol = sourceFile
+    ? program.getTypeChecker().getSymbolAtLocation(sourceFile)
+    : undefined;
+  if (!sourceFile || !symbol) {
+    throw new Error(`Runtime public entry cannot be analyzed: ${absolutePath}`);
+  }
+  return program
+    .getTypeChecker()
+    .getExportsOfModule(symbol)
+    .map((entry) => entry.getName())
+    .sort();
+}
+
+function sha256(value) {
+  return createHash("sha256").update(value).digest("hex");
 }
 
 function graphClosure(graph, entries) {

@@ -25,4 +25,7 @@ export * from "./kernel-profile.js";
 export * from "./kernel-projections.js";
 export * from "./kernel-recovery-projection.js";
 export * from "./kernel-service-registry.js";
-export * from "./kernel-subagent-projection.js";
+export {
+  CONVERSATION_SUBAGENTS_PROJECTION,
+  ConversationSubagentsProjectionService,
+} from "./kernel-subagent-projection.js";

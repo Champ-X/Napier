@@ -8,11 +8,11 @@ import {
   createRunConfigurationFingerprint,
   fingerprintAutomaticRecovery,
   fingerprintExecutionMode,
-  fingerprintModelRoute,
   fingerprintModelAdvisor,
   fingerprintSkillCatalogSha256,
   validateRunConfigurationFingerprint,
 } from "../src/run-config.js";
+import { fingerprintModelRoute } from "../src/run-config-accessors.js";
 import { createPromptVariableCatalog } from "../src/prompt-variables.js";
 
 const PROFILE: AgentProfile = {

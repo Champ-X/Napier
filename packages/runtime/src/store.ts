@@ -412,7 +412,7 @@ export {
   DEFAULT_INBOUND_RETRY_POLICY,
   DEFAULT_INBOUND_SIGNATURE_POLICY,
 } from "./inbound-channel-policy.js";
-export type * from "./run-event-registry.js";
+export type { AppendEventInput } from "./run-event-registry.js";
 export type { RunLeaseOptions } from "./run-lease-renewal.js";
 const MAX_CONCURRENT_WORKFLOW_RUNS_PER_THREAD = 4;
 type PersistedRunRecord = PersistedStoreState["runs"][number];
@@ -500,11 +500,6 @@ export type InboundExecution = ChannelDeliveryExecution;
 const EMPTY_STATE: PersistedState = EMPTY_STORE_STATE;
 
 export type { CreateSubagentTaskInput } from "./subagent-store-records.js";
-export type {
-  RunEventQueryPort,
-  RunEventQueryScope,
-} from "./run-event-query-port.js";
-
 export interface LocalStoreOptions {
   dataRoot: string;
   workspaceRoot: string;

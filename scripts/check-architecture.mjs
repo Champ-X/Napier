@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import {
   analyzeRepository,
+  collectDependencyMetrics,
   cycleKey,
   toRepoPath,
 } from "./architecture-analysis.mjs";
@@ -15,6 +16,8 @@ const defaultPolicy = {
   sourceMaxLines: 500,
   testMaxLines: 1_000,
   maxFunctionComplexity: 25,
+  maxSourceFanOut: 25,
+  maxSourceChangeCoupling: 100,
 };
 const defaultPublicEntries = [
   "packages/contracts/src/index.ts",
@@ -51,10 +54,16 @@ export async function createArchitectureBaseline(options = {}) {
     testMaxLines: options.testMaxLines ?? defaultPolicy.testMaxLines,
     maxFunctionComplexity:
       options.maxFunctionComplexity ?? defaultPolicy.maxFunctionComplexity,
+    maxSourceFanOut: options.maxSourceFanOut ?? defaultPolicy.maxSourceFanOut,
+    maxSourceChangeCoupling:
+      options.maxSourceChangeCoupling ?? defaultPolicy.maxSourceChangeCoupling,
   };
   const analysis = await analyzeRepository(repoRoot);
+  const dependencyMetrics = collectDependencyMetrics(analysis);
   const lineOverrides = {};
   const complexityOverrides = {};
+  const sourceFanOutOverrides = {};
+  const sourceChangeCouplingOverrides = {};
 
   for (const file of analysis.files) {
     const defaultMaximum =
@@ -66,6 +75,14 @@ export async function createArchitectureBaseline(options = {}) {
     ) {
       complexityOverrides[file.path] = file.maxFunctionComplexity;
     }
+    if (file.kind !== "source") continue;
+    const metrics = dependencyMetrics.sourceFiles[file.path];
+    if (metrics.fanOut > policy.maxSourceFanOut) {
+      sourceFanOutOverrides[file.path] = metrics.fanOut;
+    }
+    if (metrics.changeCoupling > policy.maxSourceChangeCoupling) {
+      sourceChangeCouplingOverrides[file.path] = metrics.changeCoupling;
+    }
   }
 
   const publicExports = {};
@@ -75,10 +92,18 @@ export async function createArchitectureBaseline(options = {}) {
   }
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     policy,
     lineOverrides: sortRecord(lineOverrides),
     complexityOverrides: sortRecord(complexityOverrides),
+    sourceFanOutOverrides: sortRecord(sourceFanOutOverrides),
+    sourceChangeCouplingOverrides: sortRecord(sourceChangeCouplingOverrides),
+    workspaceInstability: Object.fromEntries(
+      Object.entries(dependencyMetrics.workspaces).map(([name, metrics]) => [
+        name,
+        metrics.instability,
+      ]),
+    ),
     publicExports: sortRecord(publicExports),
     allowedCycles: analysis.cycles,
     allowedWorkspaceImports: sortRecord(
@@ -105,10 +130,79 @@ export async function auditArchitecture(options = {}) {
 
   auditLineBudgets(analysis, config, errors);
   auditComplexityBudgets(analysis, config, errors);
+  auditDependencyBudgets(analysis, config, errors);
   auditPublicExports(analysis, config, errors);
   auditCycles(analysis, config, errors);
   auditWorkspaceImports(analysis, config, errors);
   return createResult(analysis, errors, configPath, repoRoot);
+}
+
+function auditDependencyBudgets(analysis, config, errors) {
+  const metrics = collectDependencyMetrics(analysis);
+  auditSourceMetric(
+    metrics.sourceFiles,
+    "fanOut",
+    "fan-out",
+    config.policy.maxSourceFanOut,
+    config.sourceFanOutOverrides,
+    analysis,
+    errors,
+  );
+  auditSourceMetric(
+    metrics.sourceFiles,
+    "changeCoupling",
+    "change coupling (fan-in * fan-out)",
+    config.policy.maxSourceChangeCoupling,
+    config.sourceChangeCouplingOverrides,
+    analysis,
+    errors,
+  );
+  const expectedWorkspaces = new Set(Object.keys(config.workspaceInstability));
+  for (const [name, observed] of Object.entries(metrics.workspaces)) {
+    const maximum = config.workspaceInstability[name];
+    if (maximum === undefined) {
+      errors.push(`workspace instability budget is missing: ${name}`);
+      continue;
+    }
+    expectedWorkspaces.delete(name);
+    if (observed.instability > maximum + Number.EPSILON) {
+      errors.push(
+        `${name} has instability ${formatMetric(observed.instability)}, exceeding the ${formatMetric(maximum)} budget`,
+      );
+    } else if (observed.instability < maximum - Number.EPSILON) {
+      errors.push(
+        `${name} instability budget is stale: lower ${formatMetric(maximum)} to ${formatMetric(observed.instability)}`,
+      );
+    }
+  }
+  for (const name of [...expectedWorkspaces].sort()) {
+    errors.push(`workspace instability budget is stale: ${name}`);
+  }
+}
+
+function auditSourceMetric(
+  sourceMetrics,
+  field,
+  label,
+  defaultMaximum,
+  overrides,
+  analysis,
+  errors,
+) {
+  for (const [filePath, metrics] of Object.entries(sourceMetrics)) {
+    const override = overrides[filePath];
+    const maximum = override ?? defaultMaximum;
+    if (metrics[field] > maximum) {
+      errors.push(
+        `${filePath} has ${label} ${metrics[field]}, exceeding the ${maximum} budget`,
+      );
+    } else if (override !== undefined && metrics[field] < override) {
+      errors.push(
+        `${filePath} ${label} override is stale: lower ${override} to ${metrics[field]}`,
+      );
+    }
+  }
+  auditKnownPaths(analysis, overrides, `${label} override`, errors);
 }
 
 function auditLineBudgets(analysis, config, errors) {
@@ -221,13 +315,15 @@ function auditKnownPaths(analysis, record, label, errors) {
 }
 
 function validateConfig(config, errors) {
-  if (config.schemaVersion !== 1) {
-    errors.push("architecture budget schemaVersion must be 1");
+  if (config.schemaVersion !== 2) {
+    errors.push("architecture budget schemaVersion must be 2");
   }
   for (const field of [
     "sourceMaxLines",
     "testMaxLines",
     "maxFunctionComplexity",
+    "maxSourceFanOut",
+    "maxSourceChangeCoupling",
   ]) {
     const value = config.policy?.[field];
     if (!Number.isSafeInteger(value) || value < 1) {
@@ -237,6 +333,9 @@ function validateConfig(config, errors) {
   for (const field of [
     "lineOverrides",
     "complexityOverrides",
+    "sourceFanOutOverrides",
+    "sourceChangeCouplingOverrides",
+    "workspaceInstability",
     "publicExports",
     "allowedWorkspaceImports",
   ]) {
@@ -244,8 +343,33 @@ function validateConfig(config, errors) {
       errors.push(`architecture budget ${field} must be an object`);
     }
   }
+  for (const field of [
+    "lineOverrides",
+    "complexityOverrides",
+    "sourceFanOutOverrides",
+    "sourceChangeCouplingOverrides",
+    "publicExports",
+  ]) {
+    if (!isRecord(config[field])) continue;
+    for (const [entry, value] of Object.entries(config[field])) {
+      if (!Number.isSafeInteger(value) || value < 0) {
+        errors.push(
+          `architecture budget ${field}.${entry} must be a non-negative integer`,
+        );
+      }
+    }
+  }
   if (!Array.isArray(config.allowedCycles)) {
     errors.push("architecture budget allowedCycles must be an array");
+  }
+  if (isRecord(config.workspaceInstability)) {
+    for (const [name, value] of Object.entries(config.workspaceInstability)) {
+      if (typeof value !== "number" || value < 0 || value > 1) {
+        errors.push(
+          `workspace instability budget ${name} must be between 0 and 1`,
+        );
+      }
+    }
   }
 }
 
@@ -285,6 +409,10 @@ function sortRecord(record) {
   return Object.fromEntries(
     Object.entries(record).sort(([left], [right]) => left.localeCompare(right)),
   );
+}
+
+function formatMetric(value) {
+  return Number(value.toFixed(6)).toString();
 }
 
 function isRecord(value) {

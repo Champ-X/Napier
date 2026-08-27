@@ -1,9 +1,11 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "policy": {
     "sourceMaxLines": 500,
     "testMaxLines": 1000,
-    "maxFunctionComplexity": 25
+    "maxFunctionComplexity": 25,
+    "maxSourceFanOut": 25,
+    "maxSourceChangeCoupling": 100
   },
   "lineOverrides": {
     "apps/cli/test/workflow-cli.test.ts": 2912,
@@ -28,7 +30,7 @@
     "apps/web/test/stream-api.test.ts": 2372,
     "apps/web/test/tool-event-view.test.ts": 1690,
     "packages/runtime/src/agent-runtime.ts": 3205,
-    "packages/runtime/src/agents.ts": 803,
+    "packages/runtime/src/agents.ts": 802,
     "packages/runtime/src/automatic-recovery.ts": 807,
     "packages/runtime/src/evaluation-casebooks.ts": 727,
     "packages/runtime/src/extension-packages.ts": 3720,
@@ -42,9 +44,9 @@
     "packages/runtime/src/plans.ts": 1412,
     "packages/runtime/src/receipt-trust-directory-subscriptions.ts": 8392,
     "packages/runtime/src/receipt-trust.ts": 1524,
-    "packages/runtime/src/run-config.ts": 928,
+    "packages/runtime/src/run-config.ts": 927,
     "packages/runtime/src/skill-packages.ts": 754,
-    "packages/runtime/src/store.ts": 3794,
+    "packages/runtime/src/store.ts": 3789,
     "packages/runtime/src/thread-bundles.ts": 2418,
     "packages/runtime/src/tools.ts": 1778,
     "packages/runtime/src/workflow-experiment-comparison-protocol.ts": 720,
@@ -170,6 +172,51 @@
     "packages/runtime/src/workspace-process-tool-result.ts": 53,
     "packages/runtime/src/workspace-process-tool.ts": 31,
     "packages/runtime/src/write-linked-resolution-config.ts": 42
+  },
+  "sourceFanOutOverrides": {
+    "apps/server/src/app.ts": 56,
+    "apps/web/src/trace-event-summary-view.ts": 27,
+    "packages/contracts/src/index.ts": 35,
+    "packages/runtime/src/agent-capability-runtime.ts": 30,
+    "packages/runtime/src/agent-runtime.ts": 92,
+    "packages/runtime/src/index.ts": 199,
+    "packages/runtime/src/kernel.ts": 28,
+    "packages/runtime/src/local-agent-runtime.ts": 35,
+    "packages/runtime/src/stateless-agent-tools.ts": 39,
+    "packages/runtime/src/store.ts": 83,
+    "packages/runtime/src/thread-bundles.ts": 27
+  },
+  "sourceChangeCouplingOverrides": {
+    "apps/web/src/api.ts": 102,
+    "apps/web/src/copy.ts": 588,
+    "apps/web/src/trace-event-summary-view.ts": 135,
+    "apps/web/src/use-context-panel-controller.ts": 171,
+    "apps/web/src/use-receipt-trust-controller.ts": 144,
+    "apps/web/src/use-workspace-view-model.ts": 704,
+    "packages/contracts/src/index.ts": 105,
+    "packages/runtime/src/agent-capability-runtime.ts": 180,
+    "packages/runtime/src/agent-runtime.ts": 828,
+    "packages/runtime/src/agent-tool-ledger.ts": 147,
+    "packages/runtime/src/browser-session-model.ts": 180,
+    "packages/runtime/src/sandbox.ts": 440,
+    "packages/runtime/src/stateless-agent-tools.ts": 117,
+    "packages/runtime/src/store-repository-host.ts": 160,
+    "packages/runtime/src/store.ts": 10541,
+    "packages/runtime/src/subagent-worktree-mutation.ts": 140,
+    "packages/runtime/src/thread-bundles.ts": 108,
+    "packages/runtime/src/workflow-ledger.ts": 528,
+    "packages/runtime/src/workflow-runtime.ts": 114,
+    "packages/runtime/src/workspace-processes.ts": 396
+  },
+  "workspaceInstability": {
+    "@napier/benchmark-kit": 1,
+    "@napier/cli": 0.6666666666666666,
+    "@napier/contracts": 0,
+    "@napier/harness-eval": 1,
+    "@napier/runtime": 0.16666666666666666,
+    "@napier/sdk": 1,
+    "@napier/server": 1,
+    "@napier/web": 1
   },
   "publicExports": {
     "packages/contracts/src/execution-channels.ts": 37,

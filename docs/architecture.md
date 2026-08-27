@@ -152,6 +152,11 @@ under `apps/*` and `packages/*`. The checked
   ratchet-only overrides for existing debt;
 - cyclomatic complexity 25 by default, with exact per-file overrides for
   existing complex functions;
+- source fan-out 25 and static change coupling 100 by default. Change coupling
+  is deliberately defined as `fan-in * fan-out` over the checked relative
+  TypeScript dependency graph; it is not presented as Git-history co-change;
+- exact, ratchet-only workspace package instability, calculated as
+  `efferent / (afferent + efferent)` over unique `@napier/*` dependencies;
 - exact public export ceilings for Contracts, Runtime, and SDK root entries;
 - no new relative-import strongly connected components;
 - one-way workspace dependencies: Contracts depends on no Napier package,
@@ -163,6 +168,15 @@ the baseline is lowered with `npm run write:architecture-baseline`. This makes
 debt reduction sticky while preventing routine checks from silently accepting
 growth. The baseline currently documents legacy debt; it is not an assertion
 that the allowed oversized modules or cycles are desirable.
+
+`npm run check:public-api` separately compiles the Runtime TypeScript graph and
+checks semantic exports rather than only counting barrel declarations. The
+legacy root is frozen at the exact 1,896-symbol compatibility set, including a
+SHA-256 digest of the sorted symbol names. Eleven supported domain facades have
+individual semantic-export budgets, while new runtime-only capabilities use
+`@napier/runtime/internal`. Package export keys and that internal surface are
+also ratcheted, and production code in this monorepo may not import the legacy
+Runtime root.
 
 The first ratchet extracted the branded `NapierWorkflow` and
 `DefineNapierWorkflowInput` types into `packages/sdk/src/workflow.ts`. Both the

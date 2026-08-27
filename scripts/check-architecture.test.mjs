@@ -132,6 +132,77 @@ describe("architecture growth gate", () => {
     );
   });
 
+  it("rejects source fan-out and static change-coupling growth", async () => {
+    const root = await createFixture();
+    await writeBaseline(root, {
+      maxSourceFanOut: 1,
+      maxSourceChangeCoupling: 1,
+    });
+    await writeFile(
+      path.join(root, "packages/runtime/src/helper.ts"),
+      "export const helper = true;\n",
+    );
+    await writeFile(
+      path.join(root, "packages/runtime/src/value.ts"),
+      [
+        'import type { Contract } from "@napier/contracts";',
+        'import { adjust } from "./complex.js";',
+        'import { helper } from "./helper.js";',
+        "export const value: Contract = { value: String(adjust(Number(helper))) };",
+        "",
+      ].join("\n"),
+    );
+
+    const result = await auditArchitecture({ repoRoot: root });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          "packages/runtime/src/value.ts has fan-out 2, exceeding the 1 budget",
+        ),
+        expect.stringContaining(
+          "packages/runtime/src/value.ts has change coupling (fan-in * fan-out) 2",
+        ),
+      ]),
+    );
+  });
+
+  it("fails closed on workspace instability growth and missing budgets", async () => {
+    const root = await createFixture();
+    await writeBaseline(root);
+    await writeFile(
+      path.join(root, "packages/contracts/src/index.ts"),
+      [
+        'import type { RuntimeValue } from "@napier/runtime";',
+        "export interface Contract extends RuntimeValue {}",
+        "",
+      ].join("\n"),
+    );
+
+    const growth = await auditArchitecture({ repoRoot: root });
+
+    expect(growth.ok).toBe(false);
+    expect(growth.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          "@napier/contracts has instability 0.333333, exceeding the 0 budget",
+        ),
+      ]),
+    );
+
+    const baseline = await createArchitectureBaseline({ repoRoot: root });
+    delete baseline.sourceFanOutOverrides;
+    await writeFile(
+      path.join(root, "docs/architecture-budget.json"),
+      `${JSON.stringify(baseline, null, 2)}\n`,
+    );
+    const missing = await auditArchitecture({ repoRoot: root });
+    expect(missing.errors).toContain(
+      "architecture budget sourceFanOutOverrides must be an object",
+    );
+  });
+
   it("keeps the SDK management subpath isolated from embedded application code", async () => {
     const repoRoot = path.resolve(import.meta.dirname, "..");
     const analysis = await analyzeRepository(repoRoot);
@@ -245,12 +316,13 @@ async function createFixture() {
   return root;
 }
 
-async function writeBaseline(root) {
+async function writeBaseline(root, options = {}) {
   const baseline = await createArchitectureBaseline({
     repoRoot: root,
     sourceMaxLines: 6,
     testMaxLines: 3,
     maxFunctionComplexity: 2,
+    ...options,
   });
   await writeFile(
     path.join(root, "docs/architecture-budget.json"),

@@ -5,13 +5,13 @@
   "predecessor": {
     "productVersion": "0.1.2",
     "commit": "45c736f0b426db5d03f88adbb17acb8df32e7703",
-    "changedPathCount": 1331,
-    "changedPathsSha256": "e222571e141dec876df325910e737e0b7a56054d741f00a0be7889f7ebe9667b"
+    "changedPathCount": 1333,
+    "changedPathsSha256": "3556b04dfcbe5261da20e2b4d982ec49f6358a4504745c97a47a8547854940ff"
   },
   "identityDeclarationPath": "packages/runtime/src/release-product-identity.ts",
   "identityDeclarationSha256": "5a8dada43a7d464d3de4e65cc7c556def3391ef59f674cdb6949a1ce5362b62d",
-  "fileCount": 2080,
-  "totalBytes": 14748047,
+  "fileCount": 2081,
+  "totalBytes": 14748936,
   "files": [
     {
       "path": "apps/server/package.json",
@@ -5540,8 +5540,8 @@
     },
     {
       "path": "packages/runtime/package.json",
-      "bytes": 9034,
-      "sha256": "c064de3ae20b14a31cafa1969aa807825d5d29243581d0af7c6ef132d2a1d83f"
+      "bytes": 9137,
+      "sha256": "e5e1fe9629f5f6dc06e234be98cfc6080b458c09108967e903ad247ec3ba0337"
     },
     {
       "path": "packages/runtime/src/active-plan-projection.ts",
@@ -5880,8 +5880,8 @@
     },
     {
       "path": "packages/runtime/src/agents.ts",
-      "bytes": 25276,
-      "sha256": "0719ed59fab6f5670e88d1479f9d49c96fea3398a0edbb45de85dd2966c55949"
+      "bytes": 25200,
+      "sha256": "b257f9fa980e4de79128fcc6b1896868e3ac8b20a706b8b5dfb3070725a7417e"
     },
     {
       "path": "packages/runtime/src/artifact-receipts.ts",
@@ -7154,6 +7154,11 @@
       "sha256": "b8ce7121ab8b0d9d2bca8a15f31883b306f656130d61091cce77bf08fca4f128"
     },
     {
+      "path": "packages/runtime/src/internal.ts",
+      "bytes": 830,
+      "sha256": "9fd305914ebd4aa19b84f669b1f7f66c994e141755fd315df2b44e3d8d372bd9"
+    },
+    {
       "path": "packages/runtime/src/javascript-kernel-code-bridge.ts",
       "bytes": 2823,
       "sha256": "42d817469831b112f173ec3cf6c08e2231d4891cfbd0fa0611adeeedc60c56af"
@@ -7280,8 +7285,8 @@
     },
     {
       "path": "packages/runtime/src/kernel.ts",
-      "bytes": 1261,
-      "sha256": "0786f0e97840e578b6ff1f5b68a14b0ba4d37e8475108be72ea2e9080e847e5a"
+      "bytes": 1342,
+      "sha256": "7ebe630143d97c02deec8af006fa8760279ae26a3e2118c1c45e72ea2518869d"
     },
     {
       "path": "packages/runtime/src/lifecycle-extension-pipeline.ts",
@@ -7630,8 +7635,8 @@
     },
     {
       "path": "packages/runtime/src/model-invocation-experiment-comparison-protocol.ts",
-      "bytes": 174,
-      "sha256": "1b4bd12b04dcc09ca6b83e35fef4ca0084c14d464466263925b7eb2c1d7068c2"
+      "bytes": 132,
+      "sha256": "91225646cdb4ce4a516d97e3f078eca1c016aa5951a76e76e58e679610abf8bf"
     },
     {
       "path": "packages/runtime/src/model-invocation-experiment-execution.ts",
@@ -8365,8 +8370,8 @@
     },
     {
       "path": "packages/runtime/src/run-config.ts",
-      "bytes": 27555,
-      "sha256": "044a949e0caa33cd9d19f968f19d2425ff9a356316184e5463e62de3d15bc6c3"
+      "bytes": 27530,
+      "sha256": "8d519e8275d9e0471a645d7f729da140c901bc0df5c70a6f5941d473c607c36c"
     },
     {
       "path": "packages/runtime/src/run-control-messages.ts",
@@ -8930,8 +8935,8 @@
     },
     {
       "path": "packages/runtime/src/store.ts",
-      "bytes": 133365,
-      "sha256": "c22895a267fb41f0fd0f88ed980f476a7225075fe0c4bdefc664a456c6d7b81f"
+      "bytes": 133290,
+      "sha256": "f862f1cab6a3132f98019e2aca58c1a3197d478354c29e7b4ef6eac415437620"
     },
     {
       "path": "packages/runtime/src/structured-data-parser.ts",
@@ -10075,8 +10080,8 @@
     },
     {
       "path": "packages/runtime/src/workspace-process-event-model.ts",
-      "bytes": 368,
-      "sha256": "bd338399d444f8ad9757e57741007e0d6a2e136ef485b561c5c8ed13ce3de0c5"
+      "bytes": 517,
+      "sha256": "45b4254d6d2060a9daed08f8a0179fef7fe169fe4a20e52c15b532bfed5c265c"
     },
     {
       "path": "packages/runtime/src/workspace-process-event-parsing.ts",
@@ -10085,8 +10090,8 @@
     },
     {
       "path": "packages/runtime/src/workspace-process-events.ts",
-      "bytes": 5019,
-      "sha256": "f9ad016e72ab1eaa866d79ef68d031462b8a1da08dfa34e98fb292606fdb3d02"
+      "bytes": 4838,
+      "sha256": "9bd68554706b4aedd0d2857f014f5631276b966c6a1dc44a0984a4f188c907f1"
     },
     {
       "path": "packages/runtime/src/workspace-process-input.ts",
@@ -10235,8 +10240,8 @@
     },
     {
       "path": "packages/runtime/src/workspace-processes.ts",
-      "bytes": 30718,
-      "sha256": "372f56504b200ce8113375207a578f3874ab7e51fba3d04bd1f2d0549aee1c0c"
+      "bytes": 30843,
+      "sha256": "81ad17c9951d10769bde6d7832ca8c6a2d2d958417115c310a376c9d6bb68a29"
     },
     {
       "path": "packages/runtime/src/workspace-seed.ts",
@@ -10414,5 +10419,5 @@
       "sha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c"
     }
   ],
-  "contentSha256": "bc30ab27139b99781e946614e9bb554e227bc2ce823f7a4f01a461268d021d7f"
+  "contentSha256": "803773cdd010c750590893968562510413129049ea35d18b6ed9d3b22616d590"
 }

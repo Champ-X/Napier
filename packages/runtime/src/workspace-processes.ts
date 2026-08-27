@@ -37,8 +37,8 @@ import {
   workspaceProcessInputReceiptPayload,
   workspaceProcessSessionPayload,
   workspaceProcessStableSessionInput as stableSessionInput,
-  type WorkspaceProcessSessionEventType,
 } from "./workspace-process-events.js";
+type WorkspaceProcessSessionEventType = typeof WORKSPACE_PROCESS_INTERRUPTED_EVENT | typeof WORKSPACE_PROCESS_SETTLED_EVENT | typeof WORKSPACE_PROCESS_STARTED_EVENT;
 import {
   type ResizeWorkspaceProcessRequest,
   type WorkspaceProcessControlEntry,

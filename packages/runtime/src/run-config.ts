@@ -46,7 +46,6 @@ export {
   fingerprintAutomaticRecovery,
   fingerprintExecutionMode,
   fingerprintModelAdvisor,
-  fingerprintModelRoute,
   fingerprintSkillCatalogSha256,
 } from "./run-config-accessors.js";
 import { createPromptVariableCatalog } from "./prompt-variables.js";
