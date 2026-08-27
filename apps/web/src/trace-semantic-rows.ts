@@ -58,6 +58,11 @@ export interface TraceRunSemanticView {
   hiddenEventCount: number;
 }
 
+export interface TraceRunSemanticCollection {
+  turns: TraceRunSemanticTurn[];
+  totalRowCount: number;
+}
+
 export interface TraceRunSemanticOptions {
   /** Hard cap on mounted semantic rows; the newest rows are kept. */
   maxRows?: number;
@@ -83,6 +88,32 @@ export function buildTraceRunSemanticView(
   options: TraceRunSemanticOptions = {},
 ): TraceRunSemanticView {
   const maxRows = Math.max(1, options.maxRows ?? TRACE_SEMANTIC_ROW_BUDGET);
+  const collection = buildTraceRunSemanticCollection(turns, options);
+  const flat = collection.turns.flatMap((turn) =>
+    turn.rows.map((row) => ({ turnIndex: turn.index, row })),
+  );
+  const totalRowCount = collection.totalRowCount;
+  const hiddenRowCount = Math.max(0, totalRowCount - maxRows);
+  const dropped = flat.slice(0, hiddenRowCount);
+  const kept = flat.slice(hiddenRowCount);
+  const hiddenEventCount = dropped.reduce(
+    (total, entry) => total + rawCount(entry.row),
+    0,
+  );
+
+  return {
+    turns: groupTaggedRows(kept, collection.turns, hiddenRowCount),
+    mountedRowCount: kept.length,
+    totalRowCount,
+    hiddenRowCount,
+    hiddenEventCount,
+  };
+}
+
+export function buildTraceRunSemanticCollection(
+  turns: readonly TraceTrajectoryTurn[],
+  options: Omit<TraceRunSemanticOptions, "maxRows"> = {},
+): TraceRunSemanticCollection {
   const minFoldRun = Math.max(2, options.minFoldRun ?? DEFAULT_MIN_FOLD_RUN);
   const eventCountByTurn = new Map<number, number>();
   const flat: TaggedRow[] = [];
@@ -99,37 +130,41 @@ export function buildTraceRunSemanticView(
     }
   }
 
-  const totalRowCount = flat.length;
-  const hiddenRowCount = Math.max(0, totalRowCount - maxRows);
-  const dropped = flat.slice(0, hiddenRowCount);
-  const kept = flat.slice(hiddenRowCount);
-  const hiddenEventCount = dropped.reduce(
-    (total, entry) => total + rawCount(entry.row),
-    0,
-  );
+  return {
+    turns: groupTaggedRows(
+      flat,
+      [...eventCountByTurn].map(([index, eventCount]) => ({
+        index,
+        eventCount,
+      })),
+      0,
+    ),
+    totalRowCount: flat.length,
+  };
+}
 
-  const turnsOut: TraceRunSemanticTurn[] = [];
-  for (const [offset, entry] of kept.entries()) {
-    const indexedRow = { ...entry.row, rowIndex: hiddenRowCount + offset + 1 };
-    const last = turnsOut.at(-1);
-    if (last && last.index === entry.turnIndex) {
-      last.rows.push(indexedRow);
-    } else {
-      turnsOut.push({
+function groupTaggedRows(
+  entries: readonly TaggedRow[],
+  sourceTurns: readonly Pick<TraceRunSemanticTurn, "index" | "eventCount">[],
+  rowIndexOffset: number,
+): TraceRunSemanticTurn[] {
+  const eventCountByTurn = new Map(
+    sourceTurns.map((turn) => [turn.index, turn.eventCount]),
+  );
+  const output: TraceRunSemanticTurn[] = [];
+  for (const [offset, entry] of entries.entries()) {
+    const indexedRow = { ...entry.row, rowIndex: rowIndexOffset + offset + 1 };
+    const last = output.at(-1);
+    if (last && last.index === entry.turnIndex) last.rows.push(indexedRow);
+    else {
+      output.push({
         index: entry.turnIndex,
         eventCount: eventCountByTurn.get(entry.turnIndex) ?? 0,
         rows: [indexedRow],
       });
     }
   }
-
-  return {
-    turns: turnsOut,
-    mountedRowCount: kept.length,
-    totalRowCount,
-    hiddenRowCount,
-    hiddenEventCount,
-  };
+  return output;
 }
 
 /**
@@ -190,20 +225,25 @@ function eventRow(event: TraceTrajectoryEvent): TraceSemanticEventRow {
 }
 
 function foldRow(events: TraceTrajectoryEvent[]): TraceSemanticFoldRow {
-  const timestamps = events.map((event) => event.timestampMs);
+  let startMs = Number.POSITIVE_INFINITY;
+  let endMs = Number.NEGATIVE_INFINITY;
   const laneCounts: Record<TraceTrajectoryLane, number> = {
     input: 0,
     model: 0,
     tools: 0,
   };
-  for (const event of events) laneCounts[event.lane] += 1;
+  for (const event of events) {
+    laneCounts[event.lane] += 1;
+    startMs = Math.min(startMs, event.timestampMs);
+    endMs = Math.max(endMs, event.timestampMs);
+  }
   return {
     kind: "fold",
     key: `fold:${events[0]!.event.id}:${events.at(-1)!.event.id}`,
     rowIndex: 0,
     count: events.length,
-    startMs: Math.min(...timestamps),
-    endMs: Math.max(...timestamps),
+    startMs,
+    endMs,
     laneCounts,
   };
 }

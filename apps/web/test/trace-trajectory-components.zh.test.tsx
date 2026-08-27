@@ -114,6 +114,40 @@ describe("trajectory Chinese copy", () => {
     expect(container.textContent ?? "").not.toContain("events folded");
   });
 
+  it("mounts only the virtual window for a dense trace", async () => {
+    const container = installChineseDom();
+    const { TraceTrajectoryRunSection } =
+      await import("../src/TraceTrajectoryLedger");
+    const events = Array.from({ length: 500 }, (_, index) =>
+      keyEventWithSequence(index + 1),
+    );
+
+    render(
+      <TraceTrajectoryRunSection
+        run={{
+          id: "run_dense_trace",
+          ordinal: 1,
+          status: "completed",
+          durationMs: 500_000,
+          events,
+          turns: [{ index: 1, label: "Turn 1", events }],
+        }}
+        selectedEventId={undefined}
+        visibleEventIds={new Set(events.map((event) => event.event.id))}
+        forceOpen
+        latest
+        onSelect={vi.fn()}
+      />,
+      container,
+    );
+
+    const table = container.querySelector('[role="table"]');
+    expect(table?.getAttribute("aria-rowcount")).toBe("500");
+    expect(Number(table?.getAttribute("data-mounted-row-count"))).toBeLessThan(
+      24,
+    );
+  });
+
   it("renders a four-section event inspector with bounded evidence", async () => {
     const container = installChineseDom();
     const { TraceTrajectoryEventDetail } =
@@ -255,4 +289,18 @@ function lowValueEvent(seq: number): TraceTrajectoryEvent {
     timestampMs: Date.parse("2026-08-19T08:00:00.000Z") + seq * 1_000,
     status: "neutral",
   };
+}
+
+function keyEventWithSequence(seq: number): TraceTrajectoryEvent {
+  const event = trajectoryEvent();
+  event.event = {
+    ...event.event,
+    id: `event_dense_${String(seq)}`,
+    seq,
+    createdAt: new Date(
+      Date.parse("2026-08-19T08:00:00.000Z") + seq * 1_000,
+    ).toISOString(),
+  };
+  event.timestampMs = Date.parse(event.event.createdAt);
+  return event;
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Layers } from "lucide-react";
 
 import type {
@@ -6,15 +6,18 @@ import type {
   TraceTrajectoryLane,
   TraceTrajectoryRun,
 } from "./trace-trajectory-model";
-import { copy } from "./copy";
 import { getLocale } from "./locale";
 import { traceTrajectoryCopy } from "./trace-trajectory-copy";
 import { traceTrajectorySummarySegments } from "./trace-trajectory-presentation";
 import {
-  buildTraceRunSemanticView,
-  TRACE_SEMANTIC_ROW_BUDGET,
+  buildTraceRunSemanticCollection,
   type TraceSemanticFoldRow,
 } from "./trace-semantic-rows";
+import {
+  createTraceVirtualLayout,
+  createTraceVirtualWindow,
+  TRACE_VIRTUAL_VIEWPORT_PX,
+} from "./trace-virtual-window";
 
 export interface TraceTrajectoryRunSectionProps {
   run: TraceTrajectoryRun;
@@ -36,30 +39,24 @@ export function TraceTrajectoryRunSection({
   const [collapsed, setCollapsed] = useState(
     !latest && run.status !== "running",
   );
-  const [rowLimit, setRowLimit] = useState(TRACE_SEMANTIC_ROW_BUDGET);
-  const matchingTurns = run.turns
-    .map((turn) => ({
-      ...turn,
-      events: turn.events.filter((event) =>
-        visibleEventIds.has(event.event.id),
-      ),
-    }))
-    .filter((turn) => turn.events.length > 0);
-  const view = buildTraceRunSemanticView(matchingTurns, {
-    maxRows: rowLimit,
-    selectedEventId,
-  });
-  const open = forceOpen ? true : !collapsed;
-  const selectedInRun = Boolean(
-    selectedEventId &&
-    matchingTurns.some((turn) =>
-      turn.events.some((event) => event.event.id === selectedEventId),
-    ),
+  const matchingTurns = useMemo(
+    () =>
+      run.turns
+        .map((turn) => ({
+          ...turn,
+          events: turn.events.filter((event) =>
+            visibleEventIds.has(event.event.id),
+          ),
+        }))
+        .filter((turn) => turn.events.length > 0),
+    [run.turns, visibleEventIds],
   );
-  useEffect(() => setRowLimit(TRACE_SEMANTIC_ROW_BUDGET), [run.id]);
-  useEffect(() => {
-    if (selectedInRun) setRowLimit(view.totalRowCount);
-  }, [selectedInRun, view.totalRowCount]);
+  const collection = useMemo(
+    () =>
+      buildTraceRunSemanticCollection(matchingTurns, { selectedEventId }),
+    [matchingTurns, selectedEventId],
+  );
+  const open = forceOpen ? true : !collapsed;
   if (matchingTurns.length === 0) return null;
   return (
     <article className={`trace-run status-${run.status}`}>
@@ -85,64 +82,112 @@ export function TraceTrajectoryRunSection({
         <ChevronDown size={13} aria-hidden="true" />
       </button>
       {open ? (
-        <div
-          className="trace-run-turns"
-          role="table"
-          aria-label={traceTrajectoryCopy.rows}
-          aria-rowcount={view.totalRowCount}
-        >
-          {view.hiddenRowCount > 0 ? (
-            <button
-              className="trace-show-earlier"
-              type="button"
-              onClick={() =>
-                setRowLimit((current) => current + TRACE_SEMANTIC_ROW_BUDGET)
-              }
-            >
-              {copy.trace.showEarlier} · {formatNumber(view.hiddenEventCount)}
-            </button>
-          ) : null}
-          {view.turns.map((turn) => (
-            <section className="trace-turn" role="presentation" key={turn.index}>
-              <header>
-                <span>
-                  {turn.index === 0
-                    ? traceTrajectoryCopy.setup
-                    : `${traceTrajectoryCopy.turn} ${formatNumber(turn.index)}`}
-                </span>
-                <small>
-                  {formatNumber(turn.eventCount)}{" "}
-                  {traceTrajectoryCopy.events}
-                </small>
-              </header>
-              <ol
-                role="rowgroup"
-                aria-label={
-                  turn.index === 0
-                    ? traceTrajectoryCopy.setup
-                    : `${traceTrajectoryCopy.turn} ${formatNumber(turn.index)}`
-                }
-              >
-                {turn.rows.map((row) =>
-                  row.kind === "fold" ? (
-                    <TraceTrajectoryFoldRow key={row.key} row={row} />
-                  ) : (
-                    <TraceTrajectoryEventRow
-                      key={row.key}
-                      rowIndex={row.rowIndex}
-                      event={row.event}
-                      selected={row.event.event.id === selectedEventId}
-                      onSelect={onSelect}
-                    />
-                  ),
-                )}
-              </ol>
-            </section>
-          ))}
-        </div>
+        <TraceVirtualizedRunRows
+          collection={collection}
+          selectedEventId={selectedEventId}
+          onSelect={onSelect}
+        />
       ) : null}
     </article>
   );
+}
+
+function TraceVirtualizedRunRows({
+  collection,
+  selectedEventId,
+  onSelect,
+}: {
+  collection: ReturnType<typeof buildTraceRunSemanticCollection>;
+  selectedEventId: string | undefined;
+  onSelect: (eventId: string) => void;
+}) {
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const [scrollTop, setScrollTop] = useState(0);
+  const layout = useMemo(
+    () => createTraceVirtualLayout(collection),
+    [collection],
+  );
+  const window = createTraceVirtualWindow(
+    layout,
+    scrollTop,
+    TRACE_VIRTUAL_VIEWPORT_PX,
+  );
+  useEffect(() => {
+    if (!selectedEventId) return;
+    const eventTop = layout.eventTopById.get(selectedEventId);
+    const viewport = viewportRef.current;
+    if (eventTop === undefined || !viewport) return;
+    const viewportHeight = viewport.clientHeight || TRACE_VIRTUAL_VIEWPORT_PX;
+    if (eventTop >= viewport.scrollTop && eventTop < viewport.scrollTop + viewportHeight) {
+      return;
+    }
+    const nextTop = Math.max(0, eventTop - Math.round(viewportHeight * 0.35));
+    viewport.scrollTop = nextTop;
+    setScrollTop(nextTop);
+  }, [layout, selectedEventId]);
+  return (
+    <div
+      className="trace-run-turns"
+      role="table"
+      aria-label={traceTrajectoryCopy.rows}
+      aria-rowcount={layout.totalRowCount}
+      data-mounted-row-count={window.mountedRowCount}
+    >
+      <div
+        className="trace-virtual-viewport"
+        ref={viewportRef}
+        tabIndex={0}
+        style={{ height: `${String(Math.min(layout.totalHeight, TRACE_VIRTUAL_VIEWPORT_PX))}px` }}
+        onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
+      >
+        <div
+          className="trace-virtual-canvas"
+          style={{ height: `${String(layout.totalHeight)}px` }}
+        >
+          {window.items.map((item) =>
+            item.kind === "turn" ? (
+              <section
+                className="trace-turn trace-virtual-turn"
+                role="presentation"
+                key={item.key}
+                style={{ height: item.height, transform: `translateY(${String(item.top)}px)` }}
+              >
+                <header>
+                  <span>{turnLabel(item.turnIndex)}</span>
+                  <small>{formatNumber(item.eventCount)} {traceTrajectoryCopy.events}</small>
+                </header>
+              </section>
+            ) : (
+              <ol
+                className="trace-turn trace-virtual-rowgroup"
+                role="rowgroup"
+                aria-label={turnLabel(item.turnIndex)}
+                key={item.key}
+                style={{ height: item.height, transform: `translateY(${String(item.top)}px)` }}
+              >
+                {item.row.kind === "fold" ? (
+                  <TraceTrajectoryFoldRow row={item.row} />
+                ) : (
+                  <TraceTrajectoryEventRow
+                    rowIndex={item.row.rowIndex}
+                    event={item.row.event}
+                    selected={item.row.event.event.id === selectedEventId}
+                    onSelect={onSelect}
+                  />
+                )}
+              </ol>
+            ),
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function turnLabel(index: number): string {
+  return index === 0
+    ? traceTrajectoryCopy.setup
+    : `${traceTrajectoryCopy.turn} ${formatNumber(index)}`;
 }
 
 function TraceTrajectoryFoldRow({ row }: { row: TraceSemanticFoldRow }) {

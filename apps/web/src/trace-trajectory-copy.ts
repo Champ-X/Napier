@@ -2,6 +2,8 @@ import { deepMergeCopy, getLocale, type LocaleOverride } from "./locale";
 
 export const traceTrajectoryCopyEn = {
   executionMap: "Execution map",
+  projecting: "Projecting trajectory",
+  projectingEvents: "Indexing {count} events off the main thread…",
   runs: "runs",
   visibleLanes: "Visible action lanes",
   eventDetailLevel: "Event detail level",
@@ -184,6 +186,8 @@ export const traceTrajectoryCopyEn = {
 
 export const traceTrajectoryZh: LocaleOverride<typeof traceTrajectoryCopyEn> = {
   executionMap: "执行图谱",
+  projecting: "正在生成运行轨迹",
+  projectingEvents: "正在主线程外索引 {count} 个事件…",
   runs: "次运行",
   visibleLanes: "可见动作层",
   eventDetailLevel: "事件详细程度",

@@ -29,6 +29,7 @@ const FILES = [
   "docker/napier-sandbox/Dockerfile",
   "docker/napier-sandbox/package-lock.json",
   "docker/napier-sandbox/package.json",
+  "docs/long-run-scale-budget.json",
   "package-lock.json",
   "package.json",
   "packages/benchmark-kit/package.json",
@@ -44,11 +45,14 @@ const FILES = [
   "scripts/agent-harness-acceptance-route-tools.mjs",
   "scripts/agent-harness-acceptance-subagents.mjs",
   "scripts/agent-harness-acceptance-token.mjs",
+  "scripts/benchmark-store-scale.mjs",
+  "scripts/benchmark-trace-scale.mjs",
   "scripts/check-release-artifacts.mjs",
   "scripts/copy-sandbox-image.mjs",
   "scripts/create-agent-harness-acceptance-evidence.mjs",
   "scripts/create-harness-experiment-release-evidence.mjs",
   "scripts/release-product-source-manifest.mjs",
+  "scripts/long-run-scale.test.mjs",
   "tsconfig.base.json",
 ];
 const IDENTITY_PATTERN =

@@ -1,12 +1,11 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
-import type { RunEvent, RunRecord } from "@napier/contracts";
 import {
-  createTraceTrajectoryModel,
   traceTrajectoryIsKeyEvent,
   traceTrajectoryMatches,
   type TraceTrajectoryLane,
   type TraceTrajectoryMetric,
+  type TraceTrajectoryModel,
 } from "./trace-trajectory-model";
 import {
   TRACE_TRAJECTORY_LANES,
@@ -15,13 +14,8 @@ import {
 import { motionScrollBehavior } from "./reduced-motion";
 
 export function useTraceTrajectoryController(
-  events: RunEvent[],
-  runs: RunRecord[],
+  model: TraceTrajectoryModel,
 ) {
-  const model = useMemo(
-    () => createTraceTrajectoryModel(events, runs),
-    [events, runs],
-  );
   const [metric, setMetric] = useState<TraceTrajectoryMetric>("duration");
   const [viewMode, setViewMode] = useState<TraceTrajectoryViewMode>("key");
   const [activeLanes, setActiveLanes] = useState<TraceTrajectoryLane[]>(
@@ -51,7 +45,7 @@ export function useTraceTrajectoryController(
     [visibleEvents],
   );
   const selectedEvent = selectedEventId
-    ? model.events.find((event) => event.event.id === selectedEventId)
+    ? model.index.byId.get(selectedEventId)
     : undefined;
 
   useOverviewTrackWidth(overviewTrackRef, setOverviewTrackWidth);
@@ -59,9 +53,7 @@ export function useTraceTrajectoryController(
   useTrajectorySearchShortcut(searchInputRef);
 
   function selectOverviewEvent(eventId: string, segmentLabel: string): void {
-    const event = model.events.find(
-      (candidate) => candidate.event.id === eventId,
-    );
+    const event = model.index.byId.get(eventId);
     if (event && !traceTrajectoryIsKeyEvent(event)) setViewMode("all");
     if (event && !activeLanes.includes(event.lane)) {
       setActiveLanes((current) => [...current, event.lane]);

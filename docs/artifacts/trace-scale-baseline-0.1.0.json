@@ -1,0 +1,179 @@
+{
+  "kind": "napier.trace-scale-benchmark",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-27T08:16:40.242Z",
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "budgetSha256": "03f48a1121ec3239c73c723ac666531f46205edd02f2f5b95c8af62a67fbafb3",
+  "status": "passed",
+  "samples": [
+    {
+      "eventCount": 10000,
+      "generationMs": 5.969,
+      "projectionMs": 82.432,
+      "searchMs": 2.096,
+      "searchMatches": 2500,
+      "filterMs": 0.341,
+      "filteredEventCount": 1250,
+      "inspectorLookupMs": 1.444,
+      "semanticRowsMs": 4.441,
+      "semanticRowCount": 8750,
+      "virtualLayoutMs": 1.196,
+      "virtualHeightPx": 516250,
+      "mountedRows": 14,
+      "overviewSegments": 599,
+      "indexedRuns": 1,
+      "indexedTypes": 8,
+      "rssBytes": 174882816
+    },
+    {
+      "eventCount": 100000,
+      "generationMs": 53.5,
+      "projectionMs": 459.705,
+      "searchMs": 19.534,
+      "searchMatches": 25000,
+      "filterMs": 2.899,
+      "filteredEventCount": 12500,
+      "inspectorLookupMs": 1.294,
+      "semanticRowsMs": 23.37,
+      "semanticRowCount": 87500,
+      "virtualLayoutMs": 8.922,
+      "virtualHeightPx": 5162500,
+      "mountedRows": 14,
+      "overviewSegments": 599,
+      "indexedRuns": 1,
+      "indexedTypes": 8,
+      "rssBytes": 412598272
+    }
+  ],
+  "memory": {
+    "initialRssBytes": 94814208,
+    "maximumRssBytes": 412598272,
+    "rssGrowthBytes": 317784064
+  },
+  "checks": [
+    {
+      "metric": "trace.10000.projectionMs",
+      "observed": 82.432,
+      "limit": 1500,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "trace.10000.searchMs",
+      "observed": 2.096,
+      "limit": 150,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "trace.10000.filterMs",
+      "observed": 0.341,
+      "limit": 150,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "trace.10000.inspectorLookupMs",
+      "observed": 1.444,
+      "limit": 20,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "trace.10000.semanticRowsMs",
+      "observed": 4.441,
+      "limit": 500,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "trace.10000.virtualLayoutMs",
+      "observed": 1.196,
+      "limit": 500,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "trace.10000.mountedRows",
+      "observed": 14,
+      "limit": 32,
+      "unit": "rows",
+      "passed": true
+    },
+    {
+      "metric": "trace.10000.overviewSegments",
+      "observed": 599,
+      "limit": 600,
+      "unit": "segments",
+      "passed": true
+    },
+    {
+      "metric": "trace.100000.projectionMs",
+      "observed": 459.705,
+      "limit": 12000,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "trace.100000.searchMs",
+      "observed": 19.534,
+      "limit": 1200,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "trace.100000.filterMs",
+      "observed": 2.899,
+      "limit": 1200,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "trace.100000.inspectorLookupMs",
+      "observed": 1.294,
+      "limit": 20,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "trace.100000.semanticRowsMs",
+      "observed": 23.37,
+      "limit": 4000,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "trace.100000.virtualLayoutMs",
+      "observed": 8.922,
+      "limit": 4000,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "trace.100000.mountedRows",
+      "observed": 14,
+      "limit": 32,
+      "unit": "rows",
+      "passed": true
+    },
+    {
+      "metric": "trace.100000.overviewSegments",
+      "observed": 599,
+      "limit": 600,
+      "unit": "segments",
+      "passed": true
+    },
+    {
+      "metric": "trace.rssGrowthBytes",
+      "observed": 317784064,
+      "limit": 1073741824,
+      "unit": "bytes",
+      "passed": true
+    }
+  ],
+  "contentSha256": "cfb22a24c7b6a840dac7e44e1e9ef54cb96c3dc5ec7770bed6923427f176e57b"
+}

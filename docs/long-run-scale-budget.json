@@ -1,0 +1,32 @@
+{
+  "kind": "napier.long-run-scale-budget",
+  "schemaVersion": 1,
+  "profile": "local_ci_v1",
+  "eventCounts": [10000, 100000],
+  "trace": {
+    "projectionMs": { "10000": 1500, "100000": 12000 },
+    "searchMs": { "10000": 150, "100000": 1200 },
+    "filterMs": { "10000": 150, "100000": 1200 },
+    "inspectorLookupMs": { "10000": 20, "100000": 20 },
+    "semanticRowsMs": { "10000": 500, "100000": 4000 },
+    "virtualLayoutMs": { "10000": 500, "100000": 4000 },
+    "maximumMountedRows": 32,
+    "maximumOverviewSegments": 600,
+    "maximumRssGrowthBytes": 1073741824
+  },
+  "store": {
+    "batchDurationMs": { "10000": 15000, "100000": 120000 },
+    "appendP95Ms": { "10000": 5, "100000": 5 },
+    "detailMs": { "10000": 750, "100000": 7500 },
+    "incrementalQueryMs": { "10000": 150, "100000": 500 },
+    "typedQueryMs": { "10000": 750, "100000": 7500 },
+    "maximumDatabaseBytesPerEvent": 2048,
+    "maximumRssGrowthBytes": 1073741824
+  },
+  "concurrentRuns": {
+    "threadCount": 4,
+    "totalEventCount": 10000,
+    "batchDurationMs": 20000,
+    "projectionMs": 1500
+  }
+}

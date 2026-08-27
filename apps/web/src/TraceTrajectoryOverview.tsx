@@ -2,7 +2,10 @@ import type { RefObject } from "react";
 import { ChevronDown } from "lucide-react";
 
 import { getLocale } from "./locale";
-import { layoutTraceTrajectoryLane } from "./trace-trajectory-layout";
+import {
+  layoutTraceTrajectoryLane,
+  sampleTraceTrajectorySegments,
+} from "./trace-trajectory-layout";
 import type {
   TraceTrajectoryEvent,
   TraceTrajectoryMetric,
@@ -138,8 +141,14 @@ function TrajectoryLane({
   onSelect,
 }: TrajectoryLaneProps) {
   const copy = traceTrajectoryCopy;
+  const laneEventIds = new Set(
+    (model.index.byLane.get(lane.id) ?? []).map((event) => event.event.id),
+  );
+  const laneSegments = model.segments.filter((segment) =>
+    laneEventIds.has(segment.eventId),
+  );
   const layout = layoutTraceTrajectoryLane(
-    model.segments.filter((segment) => segment.lane === lane.id),
+    sampleTraceTrajectorySegments(laneSegments, selectedEventId),
     model,
     metric,
     overviewTrackWidth,

@@ -741,6 +741,43 @@
   border-top: 1px solid var(--rule);
 }
 
+.trace-virtual-viewport {
+  position: relative;
+  z-index: 2;
+  min-height: 58px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  background: var(--color-paper);
+}
+
+.trace-virtual-viewport:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.trace-virtual-canvas {
+  position: relative;
+  min-width: 0;
+}
+
+.trace-virtual-turn,
+.trace-virtual-rowgroup {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  overflow: hidden;
+  contain: layout paint;
+}
+
+.trace-virtual-rowgroup {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
 .trace-run-turns::before {
   position: absolute;
   z-index: 1;
@@ -1545,6 +1582,17 @@
   font-size: 13px;
 }
 
+.trace-trajectory-projecting svg {
+  animation: trace-projecting-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes trace-projecting-pulse {
+  50% {
+    opacity: 0.36;
+    transform: scale(0.94);
+  }
+}
+
 @container (max-width: 820px) {
   .trace-command-bar {
     align-items: stretch;
@@ -1668,6 +1716,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .trace-trajectory-projecting svg,
   .trace-trajectory-state.is-live i {
     animation: none;
   }

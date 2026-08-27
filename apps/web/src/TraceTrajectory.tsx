@@ -5,12 +5,14 @@ import { ContextInspector } from "./ContextInspector";
 import { copy } from "./copy";
 import { getLocale } from "./locale";
 import { traceTrajectoryCopy } from "./trace-trajectory-copy";
+import type { TraceTrajectoryModel } from "./trace-trajectory-model";
 import { TraceTrajectoryControls } from "./TraceTrajectoryControls";
 import { TraceTrajectoryEventDetail } from "./TraceTrajectoryEventDetail";
 import { formatTraceDuration } from "./TraceTrajectoryLedger";
 import { TraceTrajectoryOverview } from "./TraceTrajectoryOverview";
 import { TraceTrajectoryRunIndex } from "./TraceTrajectoryRunIndex";
 import { useTraceTrajectoryController } from "./use-trace-trajectory-controller";
+import { useTraceTrajectoryModel } from "./use-trace-trajectory-model";
 import "./trace-trajectory.css";
 
 export interface TraceTrajectoryProps {
@@ -24,7 +26,21 @@ export function TraceTrajectory({
   runs,
   running,
 }: TraceTrajectoryProps) {
-  const state = useTraceTrajectoryController(events, runs);
+  const projection = useTraceTrajectoryModel(events, runs);
+  if (projection.pending || !projection.model) {
+    return <ProjectingTrajectory eventCount={events.length} />;
+  }
+  return <ProjectedTrajectory model={projection.model} running={running} />;
+}
+
+function ProjectedTrajectory({
+  model,
+  running,
+}: {
+  model: TraceTrajectoryModel;
+  running: boolean;
+}) {
+  const state = useTraceTrajectoryController(model);
   if (state.model.events.length === 0) return <EmptyTrajectory />;
   return (
     <section className="trace-trajectory" aria-labelledby="trajectory-title">
@@ -109,6 +125,29 @@ export function TraceTrajectory({
           }
           onClose={() => state.setSelectedEventId(undefined)}
         />
+      </div>
+    </section>
+  );
+}
+
+function ProjectingTrajectory({ eventCount }: { eventCount: number }) {
+  return (
+    <section
+      className="trace-trajectory trace-trajectory-empty trace-trajectory-projecting"
+      aria-busy="true"
+      aria-live="polite"
+      role="status"
+    >
+      <Activity size={18} aria-hidden="true" />
+      <div>
+        <span>{traceTrajectoryCopy.executionMap}</span>
+        <h3>{traceTrajectoryCopy.projecting}</h3>
+        <p>
+          {traceTrajectoryCopy.projectingEvents.replace(
+            "{count}",
+            formatNumber(eventCount),
+          )}
+        </p>
       </div>
     </section>
   );

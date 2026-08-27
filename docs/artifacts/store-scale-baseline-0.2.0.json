@@ -1,0 +1,203 @@
+{
+  "kind": "napier.store-scale-benchmark",
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-27T08:17:34.141Z",
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "budgetSha256": "03f48a1121ec3239c73c723ac666531f46205edd02f2f5b95c8af62a67fbafb3",
+  "eventCounts": [
+    10000,
+    100000
+  ],
+  "status": "passed",
+  "samples": [
+    {
+      "targetEventCount": 10000,
+      "appendedInBatch": 10000,
+      "batchDurationMs": 4192.327,
+      "averageAppendMs": 0.419,
+      "p50AppendMs": 0.219,
+      "p95AppendMs": 0.324,
+      "incrementalQueryMs": 1.196,
+      "incrementalEventCount": 100,
+      "typedQueryMs": 24.319,
+      "typedEventCount": 10000,
+      "detailDurationMs": 88.055,
+      "detailEventCount": 10000,
+      "detailBytes": 4153205,
+      "eventBytes": 4147789,
+      "databaseBytes": 12943128,
+      "databaseBytesPerEvent": 1294.313,
+      "rssBytes": 424132608
+    },
+    {
+      "targetEventCount": 100000,
+      "appendedInBatch": 90000,
+      "batchDurationMs": 41331.319,
+      "averageAppendMs": 0.459,
+      "p50AppendMs": 0.223,
+      "p95AppendMs": 0.332,
+      "incrementalQueryMs": 0.554,
+      "incrementalEventCount": 100,
+      "typedQueryMs": 269.948,
+      "typedEventCount": 100000,
+      "detailDurationMs": 765.334,
+      "detailEventCount": 100000,
+      "detailBytes": 41683208,
+      "eventBytes": 41677791,
+      "databaseBytes": 92774240,
+      "databaseBytesPerEvent": 927.742,
+      "rssBytes": 936673280
+    }
+  ],
+  "concurrent": {
+    "threadCount": 4,
+    "totalEventCount": 10000,
+    "eventCountPerThread": 2500,
+    "batchDurationMs": 6198.191,
+    "projectionMs": 61.505
+  },
+  "memory": {
+    "initialRssBytes": 263323648,
+    "maximumRssBytes": 903020544,
+    "rssGrowthBytes": 639696896
+  },
+  "checks": [
+    {
+      "metric": "store.10000.batchDurationMs",
+      "observed": 4192.327,
+      "limit": 15000,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "store.10000.appendP95Ms",
+      "observed": 0.324,
+      "limit": 5,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "store.10000.detailMs",
+      "observed": 88.055,
+      "limit": 750,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "store.10000.incrementalQueryMs",
+      "observed": 1.196,
+      "limit": 150,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "store.10000.typedQueryMs",
+      "observed": 24.319,
+      "limit": 750,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "store.10000.databaseBytesPerEvent",
+      "observed": 1294.313,
+      "limit": 2048,
+      "unit": "bytes/event",
+      "passed": true
+    },
+    {
+      "metric": "store.100000.batchDurationMs",
+      "observed": 41331.319,
+      "limit": 120000,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "store.100000.appendP95Ms",
+      "observed": 0.332,
+      "limit": 5,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "store.100000.detailMs",
+      "observed": 765.334,
+      "limit": 7500,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "store.100000.incrementalQueryMs",
+      "observed": 0.554,
+      "limit": 500,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "store.100000.typedQueryMs",
+      "observed": 269.948,
+      "limit": 7500,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "store.100000.databaseBytesPerEvent",
+      "observed": 927.742,
+      "limit": 2048,
+      "unit": "bytes/event",
+      "passed": true
+    },
+    {
+      "metric": "store.concurrent.batchDurationMs",
+      "observed": 6198.191,
+      "limit": 20000,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "store.concurrent.projectionMs",
+      "observed": 61.505,
+      "limit": 1500,
+      "unit": "ms",
+      "passed": true
+    },
+    {
+      "metric": "store.rssGrowthBytes",
+      "observed": 639696896,
+      "limit": 1073741824,
+      "unit": "bytes",
+      "passed": true
+    }
+  ],
+  "persistence": {
+    "schemaVersion": 1,
+    "startedAt": "2026-08-27T08:16:40.963Z",
+    "commitCount": 110010,
+    "failedCommitCount": 0,
+    "projectionFailureCount": 0,
+    "stateBytesWritten": 19788462,
+    "eventBytesWritten": 44398934,
+    "projectionBytesWritten": 73515490,
+    "maxCommitDurationMs": 15.07,
+    "last": {
+      "status": "committed",
+      "revision": 110011,
+      "stateBytes": 0,
+      "eventCount": 1,
+      "eventBytes": 283,
+      "touchedThreadCount": 1,
+      "stateProjectionBytes": 0,
+      "eventProjectionBytes": 0,
+      "serializationDurationMs": 0,
+      "ledgerCommitDurationMs": 0.277,
+      "projectionDurationMs": 0.001,
+      "totalDurationMs": 0.278,
+      "projectionFailureCount": 0,
+      "recordedAt": "2026-08-27T08:17:34.080Z"
+    }
+  },
+  "contentSha256": "40ed8251bc5fede8ce5ee9cb780c9bb125c0f6699f4b2965173f5c3ef1fbf4b8"
+}

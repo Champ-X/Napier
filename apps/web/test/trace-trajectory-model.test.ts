@@ -8,6 +8,7 @@ import {
   traceTrajectoryPosition,
 } from "../src/trace-trajectory-model";
 import { layoutTraceTrajectoryLane } from "../src/trace-trajectory-layout";
+import { sampleTraceTrajectorySegments } from "../src/trace-trajectory-layout";
 
 describe("Trace trajectory model", () => {
   it("projects chronological lanes, turns, calls, and paired spans", () => {
@@ -46,6 +47,14 @@ describe("Trace trajectory model", () => {
       "read_file · started",
       "Assistant result",
     ]);
+    expect(model.index.byRun.get("run_trace0001")).toHaveLength(10);
+    expect(model.index.byType.get("tool.completed")?.[0]?.event.id).toBe(
+      "event_7",
+    );
+    expect(model.index.bySeq.get(9)?.event.type).toBe("message.assistant");
+    expect(model.index.byCall.get("tool:run_trace0001:call_read")).toHaveLength(
+      2,
+    );
     expect(
       model.segments.find((segment) => segment.label === "read_file · started"),
     ).toMatchObject({
@@ -115,6 +124,29 @@ describe("Trace trajectory model", () => {
 
     expect(layout.rowCount).toBe(1);
     expect(layout.items.map((item) => item.row)).toEqual([0]);
+  });
+
+  it("samples dense overview segments while retaining the selected event", () => {
+    const source = Array.from({ length: 10_000 }, (_, index) => ({
+      id: `segment_${String(index)}`,
+      eventId: `event_${String(index)}`,
+      runId: "run_scale",
+      lane: "model" as const,
+      status: "completed" as const,
+      label: "Assistant result",
+      startMs: index,
+      endMs: index,
+      turnIndex: 1,
+      seq: index + 1,
+    }));
+    const sampled = sampleTraceTrajectorySegments(source, "event_4321", 100);
+
+    expect(sampled.length).toBeLessThanOrEqual(100);
+    expect(sampled.some((segment) => segment.eventId === "event_4321")).toBe(
+      true,
+    );
+    expect(sampled[0]?.eventId).toBe("event_0");
+    expect(sampled.at(-1)?.eventId).toBe("event_9999");
   });
 
   it("searches only privacy-bounded labels and summaries", () => {

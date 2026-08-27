@@ -7,9 +7,14 @@ import {
 import {
   attachTraceTrajectoryEventDurations,
   traceTrajectoryCallKey,
-  traceTrajectoryStartEvent,
   traceTrajectoryTerminalEvent,
 } from "./trace-trajectory-events";
+import {
+  createTraceTrajectoryEventIndex,
+  createTraceTrajectorySourceIndex,
+  type TraceTrajectoryCallPairs,
+  type TraceTrajectoryEventIndex,
+} from "./trace-trajectory-index";
 
 export { traceTrajectoryIsKeyEvent } from "./trace-trajectory-events";
 
@@ -74,6 +79,7 @@ export interface TraceTrajectoryModel {
   callCount: number;
   eventCount: number;
   events: TraceTrajectoryEvent[];
+  index: TraceTrajectoryEventIndex<TraceTrajectoryEvent>;
   segments: TraceTrajectorySegment[];
   runs: TraceTrajectoryRun[];
 }
@@ -89,46 +95,42 @@ export function createTraceTrajectoryModel(
 ): TraceTrajectoryModel {
   const events = eventsInput.slice().sort(compareEvents);
   const runsById = new Map(runsInput.map((run) => [run.id, run]));
-  const runIds = orderedRunIds(events, runsInput);
-  const turnIndexByEvent = indexTurns(events);
-  const callOrdinalByKey = indexCalls(events);
+  const sourceIndex = createTraceTrajectorySourceIndex(events, runsInput);
   const projectedEvents = attachTraceTrajectoryEventDurations(
     events,
     events.map((event) =>
       projectEvent(
         event,
-        turnIndexByEvent.get(event.id) ?? 0,
-        callOrdinalByKey.get(traceTrajectoryCallKey(event) ?? ""),
+        sourceIndex.turnIndexByEvent.get(event.id) ?? 0,
+        sourceIndex.callOrdinalByKey.get(traceTrajectoryCallKey(event) ?? ""),
       ),
     ),
   );
-  const startedAtMs = timelineStart(events, runsInput);
-  const endedAtMs = timelineEnd(events, runsInput, startedAtMs);
+  const startedAtMs = sourceIndex.startedAtMs;
+  const endedAtMs = sourceIndex.endedAtMs;
   const durationMs = Math.max(1, endedAtMs - startedAtMs);
-  const turnCount = Math.max(0, ...turnIndexByEvent.values());
-  const callCount = callOrdinalByKey.size;
-  const projectedById = new Map(
-    projectedEvents.map((event) => [event.event.id, event]),
-  );
+  const projectedIndex = createTraceTrajectoryEventIndex(projectedEvents);
   return {
     startedAtMs,
     endedAtMs,
     durationMs,
-    turnCount,
-    callCount,
+    turnCount: sourceIndex.turnCount,
+    callCount: sourceIndex.callOrdinalByKey.size,
     eventCount: projectedEvents.length,
     events: projectedEvents,
+    index: projectedIndex,
     segments: createSegments(
       events,
-      projectedById,
-      turnIndexByEvent,
-      callOrdinalByKey,
+      projectedIndex.byId,
+      sourceIndex.turnIndexByEvent,
+      sourceIndex.callOrdinalByKey,
+      sourceIndex.callPairs,
     ),
-    runs: runIds.map((runId, index) =>
+    runs: sourceIndex.runIds.map((runId, index) =>
       projectRun(
         runId,
         index + 1,
-        projectedEvents.filter((event) => event.event.runId === runId),
+        projectedIndex.byRun.get(runId) ?? [],
         runsById.get(runId),
       ),
     ),
@@ -203,14 +205,8 @@ function createSegments(
   projectedById: Map<string, TraceTrajectoryEvent>,
   turnIndexByEvent: Map<string, number>,
   callOrdinalByKey: Map<string, number>,
+  callPairs: TraceTrajectoryCallPairs,
 ): TraceTrajectorySegment[] {
-  const terminalByCall = new Map<string, RunEvent>();
-  for (const event of events) {
-    const key = traceTrajectoryCallKey(event);
-    if (key && traceTrajectoryTerminalEvent(event)) {
-      terminalByCall.set(key, event);
-    }
-  }
   const segments: TraceTrajectorySegment[] = [];
   for (const event of events) {
     if (!overviewEvent(event)) continue;
@@ -220,11 +216,11 @@ function createSegments(
     if (
       key &&
       traceTrajectoryTerminalEvent(event) &&
-      pairedStart(events, event, key)
+      callPairs.pairedTerminalIds.has(event.id)
     ) {
       continue;
     }
-    const terminal = key ? terminalByCall.get(key) : undefined;
+    const terminal = key ? callPairs.terminalByCall.get(key) : undefined;
     const startMs = timestamp(event.createdAt);
     const endMs =
       terminal && timestamp(terminal.createdAt) >= startMs
@@ -255,11 +251,16 @@ function projectRun(
   events: TraceTrajectoryEvent[],
   run: RunRecord | undefined,
 ): TraceTrajectoryRun {
-  const turnIndexes = [...new Set(events.map((event) => event.turnIndex))];
-  const turns = turnIndexes.map((index) => ({
+  const eventsByTurn = new Map<number, TraceTrajectoryEvent[]>();
+  for (const event of events) {
+    const turnEvents = eventsByTurn.get(event.turnIndex);
+    if (turnEvents) turnEvents.push(event);
+    else eventsByTurn.set(event.turnIndex, [event]);
+  }
+  const turns = [...eventsByTurn].map(([index, turnEvents]) => ({
     index,
     label: index === 0 ? "Setup" : `Turn ${String(index)}`,
-    events: events.filter((event) => event.turnIndex === index),
+    events: turnEvents,
   }));
   const firstEvent = events[0];
   const lastEvent = events.at(-1);
@@ -278,62 +279,6 @@ function projectRun(
     events,
     turns,
   };
-}
-
-function orderedRunIds(
-  events: RunEvent[],
-  runs: readonly RunRecord[],
-): string[] {
-  const ids = new Set<string>();
-  for (const run of runs) ids.add(run.id);
-  for (const event of events) ids.add(event.runId);
-  return [...ids].sort((left, right) => {
-    const leftRun = runs.find((run) => run.id === left);
-    const rightRun = runs.find((run) => run.id === right);
-    const leftTime =
-      leftRun?.startedAt ??
-      events.find((event) => event.runId === left)?.createdAt ??
-      "";
-    const rightTime =
-      rightRun?.startedAt ??
-      events.find((event) => event.runId === right)?.createdAt ??
-      "";
-    return leftTime.localeCompare(rightTime);
-  });
-}
-
-function indexTurns(events: RunEvent[]): Map<string, number> {
-  const currentByRun = new Map<string, number>();
-  const output = new Map<string, number>();
-  for (const event of events) {
-    if (event.type === "turn.started") {
-      currentByRun.set(event.runId, (currentByRun.get(event.runId) ?? 0) + 1);
-    }
-    output.set(event.id, currentByRun.get(event.runId) ?? 0);
-  }
-  return output;
-}
-
-function indexCalls(events: RunEvent[]): Map<string, number> {
-  const output = new Map<string, number>();
-  for (const event of events) {
-    const key = traceTrajectoryCallKey(event);
-    if (key && !output.has(key)) output.set(key, output.size + 1);
-  }
-  return output;
-}
-
-function pairedStart(
-  events: RunEvent[],
-  event: RunEvent,
-  key: string,
-): boolean {
-  return events.some(
-    (candidate) =>
-      candidate.seq < event.seq &&
-      traceTrajectoryCallKey(candidate) === key &&
-      traceTrajectoryStartEvent(candidate),
-  );
 }
 
 function overviewEvent(event: RunEvent): boolean {
@@ -445,28 +390,6 @@ function segmentStatus(event: RunEvent): TraceTrajectoryStatus {
     return "completed";
   }
   return "neutral";
-}
-
-function timelineStart(events: RunEvent[], runs: readonly RunRecord[]): number {
-  const values = [
-    ...events.map((event) => timestamp(event.createdAt)),
-    ...runs.map((run) => timestamp(run.startedAt)),
-  ].filter(Number.isFinite);
-  return values.length > 0 ? Math.min(...values) : 0;
-}
-
-function timelineEnd(
-  events: RunEvent[],
-  runs: readonly RunRecord[],
-  start: number,
-): number {
-  const values = [
-    ...events.map((event) => timestamp(event.createdAt)),
-    ...runs.flatMap((run) =>
-      run.finishedAt ? [timestamp(run.finishedAt)] : [],
-    ),
-  ].filter(Number.isFinite);
-  return values.length > 0 ? Math.max(...values) : start + 1;
 }
 
 function boundedPosition(leftInput: number, widthInput: number) {
