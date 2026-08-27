@@ -1,7 +1,10 @@
 import type { ExecutionPlan } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
 
-import { taskArtifactPaths } from "../src/task-completion-output-paths";
+import {
+  taskArtifactPaths,
+  taskArtifactTargets,
+} from "../src/task-completion-output-paths";
 
 describe("Task completion summary", () => {
   it("shows recent authoritative outputs without missing artifacts", () => {
@@ -27,6 +30,27 @@ describe("Task completion summary", () => {
         outputPaths: ["projected/report.md"],
       }),
     ).toEqual(["projected/report.md"]);
+  });
+
+  it("binds projected paths back to their Artifact and plan when available", () => {
+    const current = plan("completed");
+    current.artifacts = [
+      artifact("report", "verified", "artifacts/report.md", 1),
+    ];
+
+    expect(
+      taskArtifactTargets([current], {
+        planId: "plan_1",
+        outputPaths: ["artifacts/report.md", "legacy/output.txt"],
+      }),
+    ).toEqual([
+      {
+        path: "artifacts/report.md",
+        planId: "plan_1",
+        artifact: current.artifacts[0],
+      },
+      { path: "legacy/output.txt" },
+    ]);
   });
 });
 

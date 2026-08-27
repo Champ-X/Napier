@@ -14,21 +14,19 @@ export interface ArtifactActionAvailability {
   actions: ArtifactActionId[];
 }
 
+export type ArtifactActionCapabilities = Partial<
+  Record<"reveal" | "restore" | "apply", boolean>
+>;
+
 export function artifactActionAvailability(
   artifact: Pick<ArtifactManifestEntry, "kind" | "path" | "status">,
-  capabilities: {
-    reveal?: boolean;
-    restore?: boolean;
-    apply?: boolean;
-  } = {},
+  capabilities: ArtifactActionCapabilities = {},
 ): ArtifactActionAvailability {
   if (artifact.status === "superseded") return { actions: ["copy_path"] };
   const available =
     artifact.status === "produced" || artifact.status === "verified";
   const safeUrl =
-    available &&
-    artifact.kind === "url" &&
-    /^https?:\/\//u.test(artifact.path);
+    available && artifact.kind === "url" && /^https?:\/\//u.test(artifact.path);
   const previewable = available && artifact.kind === "file";
   const actions: ArtifactActionId[] = [
     ...(safeUrl || previewable ? (["open"] as const) : []),
@@ -40,6 +38,19 @@ export function artifactActionAvailability(
   ];
   return {
     ...(actions.includes("open") ? { primary: "open" as const } : {}),
+    actions,
+  };
+}
+
+export function workspaceTrashActionAvailability(
+  capabilities: Pick<ArtifactActionCapabilities, "restore"> = {},
+): ArtifactActionAvailability {
+  const actions: ArtifactActionId[] = [
+    "copy_path",
+    ...(capabilities.restore ? (["restore"] as const) : []),
+  ];
+  return {
+    ...(capabilities.restore ? { primary: "restore" as const } : {}),
     actions,
   };
 }

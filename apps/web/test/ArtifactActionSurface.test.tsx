@@ -88,6 +88,50 @@ describe("ArtifactActionSurface", () => {
       "noopener,noreferrer",
     );
   });
+
+  it("delegates Open when the host owns one-click navigation", async () => {
+    const { container } = installDom();
+    const onOpen = vi.fn();
+    const previewArtifact = vi.fn(async () => preview());
+    await renderSurface(container, { onOpen, previewArtifact });
+
+    await click(button(container, "Open"));
+
+    expect(onOpen).toHaveBeenCalledOnce();
+    expect(previewArtifact).not.toHaveBeenCalled();
+  });
+
+  it("exposes host actions only when executable callbacks are supplied", async () => {
+    const { container } = installDom();
+    const onReveal = vi.fn();
+    const onRestore = vi.fn(async () => undefined);
+    const onApply = vi.fn(async () => undefined);
+    const onLedgerChanged = vi.fn(async () => undefined);
+    await renderSurface(container, {
+      onReveal,
+      onRestore,
+      onApply,
+      onLedgerChanged,
+    });
+
+    expect(buttonLabels(container)).toEqual([
+      "Open",
+      "Preview",
+      "Diff",
+      "Reveal",
+      "Copy path",
+      "Restore",
+      "Apply",
+    ]);
+    await click(button(container, "Reveal"));
+    await click(button(container, "Restore"));
+    await click(button(container, "Apply"));
+
+    expect(onReveal).toHaveBeenCalledOnce();
+    expect(onRestore).toHaveBeenCalledOnce();
+    expect(onApply).toHaveBeenCalledOnce();
+    expect(onLedgerChanged).toHaveBeenCalledTimes(2);
+  });
 });
 
 async function renderSurface(
@@ -97,6 +141,10 @@ async function renderSurface(
     previewArtifact?: () => Promise<PlanArtifactTextPreviewReceipt>;
     previewDiff?: () => Promise<PlanArtifactDiffPreviewReceipt>;
     onLedgerChanged?: () => Promise<void>;
+    onOpen?: () => void | Promise<void>;
+    onReveal?: () => void | Promise<void>;
+    onRestore?: () => void | Promise<void>;
+    onApply?: () => void | Promise<void>;
   },
 ) {
   await act(async () => {
@@ -112,6 +160,10 @@ async function renderSurface(
         {...(options.onLedgerChanged
           ? { onLedgerChanged: options.onLedgerChanged }
           : {})}
+        {...(options.onOpen ? { onOpen: options.onOpen } : {})}
+        {...(options.onReveal ? { onReveal: options.onReveal } : {})}
+        {...(options.onRestore ? { onRestore: options.onRestore } : {})}
+        {...(options.onApply ? { onApply: options.onApply } : {})}
       />,
       container,
     );

@@ -53,6 +53,8 @@ export function WorkbenchDeferredTaskResult({
           completedItems={narrative.completedItems}
           plans={vm.detail.plans}
           activePlan={vm.detail.activePlan}
+          threadId={vm.detail.thread.id}
+          onLedgerChanged={vm.refreshActiveThread}
           onOpenArtifact={onOpenArtifact}
         />
       </Suspense>

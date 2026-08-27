@@ -6,6 +6,9 @@ import type {
   WorkspaceTrashRestoreResult,
 } from "@napier/contracts";
 
+import { ArtifactActionBar } from "./ArtifactActionBar";
+import { workspaceTrashActionAvailability } from "./artifact-action-model";
+import { artifactActionCopy } from "./artifact-action-copy";
 import {
   listWorkspaceTrash,
   restoreWorkspaceTrashItem,
@@ -17,11 +20,16 @@ import {
   workspaceTrashCardView,
 } from "./workspace-file-view-model";
 
+const trashActionAvailability = workspaceTrashActionAvailability({
+  restore: true,
+});
+
 export default function FilesPanel({ threadId }: { threadId: string }) {
   const [items, setItems] = useState<WorkspaceTrashItem[]>([]);
   const [loadedThreadId, setLoadedThreadId] = useState<string>();
   const [busyId, setBusyId] = useState<string>();
   const [restored, setRestored] = useState<WorkspaceTrashRestoreResult>();
+  const [copiedId, setCopiedId] = useState<string>();
   const [error, setError] = useState<string>();
   const activeThreadIdRef = useRef(threadId);
   const loadSequenceRef = useRef(0);
@@ -71,6 +79,7 @@ export default function FilesPanel({ threadId }: { threadId: string }) {
     setItems([]);
     setLoadedThreadId(undefined);
     setRestored(undefined);
+    setCopiedId(undefined);
     setError(undefined);
     void load();
     return () => {
@@ -138,6 +147,15 @@ export default function FilesPanel({ threadId }: { threadId: string }) {
       ) {
         setBusyId(undefined);
       }
+    }
+  };
+  const copyPath = async (trashId: string, path: string) => {
+    try {
+      await navigator.clipboard.writeText(path);
+      setCopiedId(trashId);
+      window.setTimeout(() => setCopiedId(undefined), 1600);
+    } catch {
+      setError(artifactActionCopy.copyFailed);
     }
   };
 
@@ -231,15 +249,26 @@ export default function FilesPanel({ threadId }: { threadId: string }) {
                     <dd>{card.snapshotHash}</dd>
                   </div>
                 </dl>
-                <button
-                  type="button"
-                  className="secondary-button files-restore-button"
-                  disabled={busyId === card.id}
-                  onClick={() => void restore(card.id)}
-                >
-                  <ArchiveRestore size={12} aria-hidden="true" />
-                  {busyId === card.id ? copy.restoring : copy.restore}
-                </button>
+                <ArtifactActionBar
+                  {...(trashActionAvailability.primary
+                    ? { primaryAction: trashActionAvailability.primary }
+                    : {})}
+                  controls={trashActionAvailability.actions.map((action) => ({
+                    action,
+                    busy: action === "restore" && busyId === card.id,
+                    complete: action === "copy_path" && copiedId === card.id,
+                    disabled:
+                      Boolean(busyId) &&
+                      (action !== "restore" || busyId !== card.id),
+                    ...(action === "restore"
+                      ? { className: "files-restore-button" }
+                      : {}),
+                    onAction: () => {
+                      if (action === "restore") void restore(card.id);
+                      else void copyPath(card.id, card.originalPath);
+                    },
+                  }))}
+                />
               </article>
             ))}
           </div>

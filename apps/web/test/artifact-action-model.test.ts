@@ -1,7 +1,10 @@
 import type { ArtifactManifestEntry } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
 
-import { artifactActionAvailability } from "../src/artifact-action-model";
+import {
+  artifactActionAvailability,
+  workspaceTrashActionAvailability,
+} from "../src/artifact-action-model";
 
 describe("artifactActionAvailability", () => {
   it("offers one shared inspect flow for produced and verified files", () => {
@@ -62,6 +65,16 @@ describe("artifactActionAvailability", () => {
       "restore",
       "apply",
     ]);
+  });
+
+  it("uses the shared action vocabulary for reversible workspace trash", () => {
+    expect(workspaceTrashActionAvailability()).toEqual({
+      actions: ["copy_path"],
+    });
+    expect(workspaceTrashActionAvailability({ restore: true })).toEqual({
+      primary: "restore",
+      actions: ["copy_path", "restore"],
+    });
   });
 });
 

@@ -5,13 +5,13 @@
   "predecessor": {
     "productVersion": "0.1.2",
     "commit": "45c736f0b426db5d03f88adbb17acb8df32e7703",
-    "changedPathCount": 1341,
-    "changedPathsSha256": "b7769adeefc7712a2acf1373e377b615c3d30ebe31c4145990a369bc0362a309"
+    "changedPathCount": 1342,
+    "changedPathsSha256": "85346c38bf2a9fd6589b01b358bc11897ba5834ea87a5a0a8d07d0a8e2d7f170"
   },
   "identityDeclarationPath": "packages/runtime/src/release-product-identity.ts",
   "identityDeclarationSha256": "5a8dada43a7d464d3de4e65cc7c556def3391ef59f674cdb6949a1ce5362b62d",
-  "fileCount": 2088,
-  "totalBytes": 14769893,
+  "fileCount": 2089,
+  "totalBytes": 14779271,
   "files": [
     {
       "path": "apps/server/package.json",
@@ -740,8 +740,8 @@
     },
     {
       "path": "apps/web/package.json",
-      "bytes": 767,
-      "sha256": "480aae54e5ea43da444236bfb6eb1958cf8501b1066a66eff65d5f6c3e49dd96"
+      "bytes": 808,
+      "sha256": "ab0674fac009d4004cb49fa05d8a3d22b1a4e4e1937d936fa4729e3f063cf96e"
     },
     {
       "path": "apps/web/src/AgentCapabilityContractCard.tsx",
@@ -824,9 +824,14 @@
       "sha256": "9a6a1aa48e43e29e393a53d02f63fae19e6458b0a9b3e716593a6ae14e8489e5"
     },
     {
+      "path": "apps/web/src/ArtifactActionBar.tsx",
+      "bytes": 2422,
+      "sha256": "19ca8954591d9b3fd956290a69ff2d59d6f5cba6bceba075b111f19924e861f1"
+    },
+    {
       "path": "apps/web/src/ArtifactActionSurface.tsx",
-      "bytes": 4802,
-      "sha256": "7cd1aa8fef0cbc54c5f411b7199e0e8d690b0e8a5036762fd21f9d0e31b8235d"
+      "bytes": 5395,
+      "sha256": "3a95a7c1a76ab8927ea8281cd82ee28aba76778a75f0b9bd6b93c0cc4e95ece8"
     },
     {
       "path": "apps/web/src/AutomationAdapterPreviewReceipt.tsx",
@@ -1420,8 +1425,8 @@
     },
     {
       "path": "apps/web/src/FilesPanel.tsx",
-      "bytes": 7526,
-      "sha256": "cba11408938c6e05adceddbb96251b220a34ccf1d17801444a2ce423ae7bda8d"
+      "bytes": 8728,
+      "sha256": "832963ce428b42145a2d25c4cab86ac42c805eb06c71beed3f0e7ba0fd706969"
     },
     {
       "path": "apps/web/src/KernelPluginDesk.tsx",
@@ -1910,8 +1915,8 @@
     },
     {
       "path": "apps/web/src/TaskCompletionSummary.tsx",
-      "bytes": 4573,
-      "sha256": "b5368d700fb7e0206eb97d2657a9d1b127c8e7d539e52272cf667f81b9013f86"
+      "bytes": 6537,
+      "sha256": "0f10d3f66abd8949448458a4fe59e42edb6fae8bac32dade7f93872edeafc65c"
     },
     {
       "path": "apps/web/src/TaskNarrativeBar.tsx",
@@ -2035,8 +2040,8 @@
     },
     {
       "path": "apps/web/src/WorkbenchDeferredPanels.tsx",
-      "bytes": 2354,
-      "sha256": "081a1287b02295def9c67e435eda7f431d1f04683df564d9c63d24fe943097d5"
+      "bytes": 2446,
+      "sha256": "a004b73c055c43c12b1b75a0dbfb98e0cfe1d7e20eb93d5dc98565c45ab456d8"
     },
     {
       "path": "apps/web/src/WorkbenchHeader.tsx",
@@ -2295,18 +2300,18 @@
     },
     {
       "path": "apps/web/src/artifact-action-copy.ts",
-      "bytes": 1093,
-      "sha256": "55bb674a8a4ef6d1878bc293e9e96b93c3bb5e10ba8744d07901984a21d2059d"
+      "bytes": 1449,
+      "sha256": "73504bb68e3627940cd301c0f7487ff018081ee5e6f96e6787b01a6b7378366b"
     },
     {
       "path": "apps/web/src/artifact-action-model.ts",
-      "bytes": 1332,
-      "sha256": "ca344606dd8835c6a89baffd1fe1ef0b967c67e23751f74dcfb682d0a88a98d1"
+      "bytes": 1756,
+      "sha256": "d8a7e3f39c134cf00a2c4f187916a3893bea4c89f16c5be885fddc4143274e07"
     },
     {
       "path": "apps/web/src/artifact-action-surface.css",
-      "bytes": 3243,
-      "sha256": "8a1810c56c4b98b33df64bf097fb6a7240221f71b3e7e7db9a55be9286b36dc0"
+      "bytes": 3246,
+      "sha256": "d1ef1da6c4e1bd5140c2635d7bddacacfd5fff938ba63d591b183a89ecd6b3d5"
     },
     {
       "path": "apps/web/src/artifact-data-profile-view-model.ts",
@@ -3820,8 +3825,8 @@
     },
     {
       "path": "apps/web/src/task-completion-output-paths.ts",
-      "bytes": 788,
-      "sha256": "d491295caa47aa09d588dd374921d7acf63bdcf316ef0d159e69ef19e72aa055"
+      "bytes": 1886,
+      "sha256": "c25c972340ea74d20a073fa93eba6f5a5838cb0ffe822df4fe347dede91ba918"
     },
     {
       "path": "apps/web/src/task-narrative-protocol.ts",
@@ -3835,8 +3840,8 @@
     },
     {
       "path": "apps/web/src/task-narrative.css",
-      "bytes": 10212,
-      "sha256": "57ffade7076c58c100c13999df126cfae5ae4101d12e8531ed044dc9e4c86ba9"
+      "bytes": 10918,
+      "sha256": "b79f88fb763f6f5e2b51adf6d5905c4d29818410078861584ec63b6f4136c35d"
     },
     {
       "path": "apps/web/src/task-overview-view-model.ts",
@@ -4575,8 +4580,8 @@
     },
     {
       "path": "package-lock.json",
-      "bytes": 181668,
-      "sha256": "8b8a70a094360dd4a6b24d9600ee433aa2176ce9240962af2c457742fc1bc8b9"
+      "bytes": 182145,
+      "sha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041"
     },
     {
       "path": "package.json",
@@ -10454,5 +10459,5 @@
       "sha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c"
     }
   ],
-  "contentSha256": "ea4f2b73a4efaab4a62551768f43e41f73e7b84151df55f7639fcb29187b2bcf"
+  "contentSha256": "9ba8b53b48b41d1fef28c1daf7e893aa9f2079b40d9c73cbb1e40e9afb67287f"
 }

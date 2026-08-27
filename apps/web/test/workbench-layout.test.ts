@@ -73,6 +73,8 @@ describe("Workbench layout", () => {
       ),
     ]);
 
+    expect(summary).toContain("<ArtifactActionSurface");
+    expect(summary).toContain('displayActions={["open"]}');
     expect(summary).toContain("onClick={() => onOpenArtifact(path)}");
     expect(navigation).toContain('candidate.dataset["artifactPath"] === path');
     expect(navigation).toContain('[data-artifact-action="open"]');

@@ -74,6 +74,11 @@ describe("TaskChangesPanel recovery disclosure", () => {
 
     expect(container.querySelector(".task-recovery-disclosure")).not.toBeNull();
     expect(container.textContent).toContain("artifacts/report.md");
+    expect(
+      [...container.querySelectorAll("[data-artifact-action]")].map((button) =>
+        button.getAttribute("data-artifact-action"),
+      ),
+    ).toEqual(["copy_path", "restore"]);
   });
 
   it("reports availability errors without inventing a recovery action", async () => {

@@ -2,6 +2,7 @@ import { parseHTML } from "linkedom";
 import { render } from "preact";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import type { ExecutionPlan } from "@napier/contracts";
 import type { ConversationApproval } from "../src/conversation-approval-view-model";
 import type { ConversationPlan } from "../src/conversation-plan-view-model";
 
@@ -110,6 +111,41 @@ describe("ordinary task surface Chinese copy", () => {
     expect(progress?.textContent).not.toContain("%");
     expect(container.innerHTML).not.toContain("width:");
   });
+
+  it("renders the shared Artifact actions when an output resolves to a plan entry", async () => {
+    const container = installChineseDom();
+    const { default: TaskCompletionSummary } =
+      await import("../src/TaskCompletionSummary");
+    const plan = completionPlan();
+
+    render(
+      <TaskCompletionSummary
+        completedItems={["已验证交付"]}
+        plans={[plan]}
+        activePlan={{ planId: plan.id, outputPaths: ["artifacts/report.md"] }}
+        threadId="thread_1"
+        onOpenArtifact={vi.fn()}
+      />,
+      container,
+    );
+
+    expect(
+      container
+        .querySelector(".task-completion-primary-output")
+        ?.querySelector('[data-artifact-action="open"]'),
+    ).not.toBeNull();
+    click(container.querySelector(".task-completion-toggle")!);
+    await Promise.resolve();
+    expect(
+      [
+        ...container.querySelectorAll(
+          ".task-completion-output [data-artifact-action]",
+        ),
+      ].map((button) => button.getAttribute("data-artifact-action")),
+    ).toEqual(["open", "preview", "diff", "copy_path"]);
+    expect(container.textContent).not.toContain("恢复");
+    expect(container.textContent).not.toContain("应用");
+  });
 });
 
 function installChineseDom(): HTMLElement {
@@ -169,6 +205,40 @@ function taskOverviewDetail() {
       producedArtifactCount: 1,
     },
   } as never;
+}
+
+function completionPlan(): ExecutionPlan {
+  return {
+    id: "plan_1",
+    threadId: "thread_1",
+    objective: "交付报告",
+    status: "completed",
+    steps: [],
+    artifacts: [
+      {
+        id: "artifact_report",
+        path: "artifacts/report.md",
+        kind: "file",
+        description: "交付报告",
+        status: "verified",
+        evidence: "已验证",
+        createdAt: "2026-08-26T00:00:00.000Z",
+        updatedAt: "2026-08-26T00:00:00.000Z",
+      },
+    ],
+    replans: [],
+    replanRecommendation: null,
+    criticalPathStepIds: [],
+    readyStepIds: [],
+    blockedStepIds: [],
+    phaseWaves: [],
+    activePhaseIndex: null,
+    parallelReadyStepIds: [],
+    phaseProjectionSha256: "a".repeat(64),
+    revision: 1,
+    createdAt: "2026-08-26T00:00:00.000Z",
+    updatedAt: "2026-08-26T00:00:00.000Z",
+  };
 }
 
 function planItem(): ConversationPlan {

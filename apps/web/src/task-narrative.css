@@ -331,15 +331,30 @@
   border-radius: var(--radius-full);
 }
 
-.task-completion-details nav {
+.task-completion-outputs {
   display: grid;
   min-width: 0;
   max-width: 100%;
   gap: var(--stack-xs);
-  justify-items: start;
 }
 
-.task-completion-details nav button {
+.task-completion-output {
+  display: grid;
+  min-width: 0;
+  gap: var(--stack-xs);
+  padding: var(--space-2);
+  border: 1px solid var(--color-success-border);
+  border-radius: var(--radius-sm);
+}
+
+.task-completion-output > code {
+  overflow: hidden;
+  color: var(--color-fg);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-completion-output button {
   max-width: 100%;
 }
 
@@ -371,6 +386,28 @@
 
 .task-completion-primary-output {
   max-width: 180px !important;
+}
+
+div.task-completion-primary-output .artifact-action-bar {
+  flex: 0 0 auto;
+  margin-top: 0;
+}
+
+div.task-completion-primary-output {
+  display: flex;
+  min-width: 0;
+  flex: 0 1 240px;
+  align-items: center;
+  gap: var(--inline-xs);
+}
+
+div.task-completion-primary-output > code {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  color: var(--color-fg);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .task-completion-toggle {
@@ -420,9 +457,6 @@
 .task-narrative.phase-completed .task-narrative-current > span {
   color: var(--color-success);
 }
-
-
-
 
 @container (max-width: 460px) {
   .task-completion-strip {

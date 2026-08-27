@@ -24,7 +24,7 @@
   border-radius: 2px;
 }
 
-.artifact-action-bar button[data-artifact-action="open"] {
+.artifact-action-bar button[data-artifact-primary="true"] {
   color: var(--color-surface-muted);
   background: var(--ledger);
   border-color: var(--ledger);
@@ -37,8 +37,8 @@
   outline: none;
 }
 
-.artifact-action-bar button[data-artifact-action="open"]:hover:not(:disabled),
-.artifact-action-bar button[data-artifact-action="open"]:focus-visible {
+.artifact-action-bar button[data-artifact-primary="true"]:hover:not(:disabled),
+.artifact-action-bar button[data-artifact-primary="true"]:focus-visible {
   color: var(--color-paper);
   background: var(--color-green-26);
   border-color: var(--color-green-26);
