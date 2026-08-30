@@ -59,6 +59,20 @@
 
 .model-picker.is-compact .model-picker-trigger {
   border-color: transparent;
+  overflow: hidden;
+}
+
+.model-picker.is-compact .model-chip-copy {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.model-picker.is-compact .model-chip-copy > small,
+.model-picker.is-compact .model-chip-copy > strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .model-picker-popover {

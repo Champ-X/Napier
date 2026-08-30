@@ -1,115 +1,94 @@
 import { useState } from "react";
-import { RotateCcw, Trash2, X } from "lucide-react";
+import { Archive, Ellipsis } from "lucide-react";
 
 import type { ThreadSummary } from "@napier/contracts";
 import { copy } from "./copy";
-import type { TrashedThreadReceipt } from "./use-thread-trash";
 import { WorkspaceThreadRow } from "./WorkspaceThreadRow";
 
 const trashCopy = copy.trash;
+const menuLabel = copy.recentThreads;
 
 export function ThreadList({
   threads,
   selectedThreadId,
   busyThreadId,
-  trashedThread,
   onSelect,
   onTrash,
-  onRestore,
 }: {
   threads: ThreadSummary[];
   selectedThreadId: string | undefined;
   busyThreadId: string | undefined;
-  trashedThread: TrashedThreadReceipt | undefined;
   onSelect(threadId: string): void;
   onTrash(threadId: string): void;
-  onRestore(): void;
 }) {
-  const [confirmingThreadId, setConfirmingThreadId] = useState<string>();
+  const [menuThreadId, setMenuThreadId] = useState<string>();
 
   return (
-    <>
-      <div className="thread-list">
-        {threads.length === 0 ? (
-          <p className="quiet-copy">{copy.noThreads}</p>
-        ) : null}
-        {threads.map((thread, index) => {
-          const active = thread.id === selectedThreadId;
-          const busy = thread.id === busyThreadId;
-          const confirming = thread.id === confirmingThreadId;
-          const running = thread.status === "running";
-          return (
+    <div className="thread-list">
+      {threads.length === 0 ? (
+        <p className="quiet-copy">{copy.noThreads}</p>
+      ) : null}
+      {threads.map((thread) => {
+        const active = thread.id === selectedThreadId;
+        const busy = thread.id === busyThreadId;
+        const menuOpen = thread.id === menuThreadId;
+        const running = thread.status === "running";
+        return (
+          <div
+            className={`thread-row-shell ${active ? "is-active" : ""} ${
+              menuOpen ? "has-open-menu" : ""
+            }`}
+            key={thread.id}
+          >
+            <WorkspaceThreadRow
+              thread={thread}
+              active={active}
+              onSelect={onSelect}
+            />
             <div
-              className={`thread-row-shell ${active ? "is-active" : ""} ${
-                confirming ? "is-confirming" : ""
-              }`}
-              key={thread.id}
+              className="thread-actions"
+              onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget)) {
+                  setMenuThreadId(undefined);
+                }
+              }}
             >
-              <WorkspaceThreadRow
-                thread={thread}
-                index={index}
-                active={active}
-                onSelect={onSelect}
-              />
               <button
-                className="thread-trash-button"
+                className="thread-menu-trigger"
                 type="button"
-                disabled={running || busy}
-                title={running ? trashCopy.activeRun : trashCopy.action}
-                aria-label={`${trashCopy.action}: ${thread.title}`}
+                aria-label={`${menuLabel}: ${thread.title}`}
+                aria-expanded={menuOpen}
+                aria-haspopup="menu"
                 onClick={() =>
-                  setConfirmingThreadId((current) =>
+                  setMenuThreadId((current) =>
                     current === thread.id ? undefined : thread.id,
                   )
                 }
               >
-                <Trash2 size={12} aria-hidden="true" />
+                <Ellipsis size={16} aria-hidden="true" />
               </button>
-              {confirming ? (
-                <div className="thread-trash-confirm" role="alert">
-                  <span>{trashCopy.confirm}</span>
+              {menuOpen ? (
+                <div className="thread-action-menu" role="menu">
                   <button
                     type="button"
-                    onClick={() => setConfirmingThreadId(undefined)}
-                    aria-label={trashCopy.cancel}
-                  >
-                    <X size={11} aria-hidden="true" />
-                  </button>
-                  <button
-                    className="confirm-trash"
-                    type="button"
-                    disabled={busy}
+                    role="menuitem"
+                    disabled={running || busy}
+                    title={running ? trashCopy.activeRun : trashCopy.action}
                     onClick={() => {
-                      setConfirmingThreadId(undefined);
+                      setMenuThreadId(undefined);
                       onTrash(thread.id);
                     }}
                   >
+                    <Archive size={16} aria-hidden="true" />
                     {busy ? trashCopy.trashing : trashCopy.confirmAction}
                   </button>
+                  {running ? <small>{trashCopy.activeRun}</small> : null}
                 </div>
               ) : null}
             </div>
-          );
-        })}
-      </div>
-      {trashedThread ? (
-        <div className="thread-undo" role="status" aria-live="polite">
-          <div>
-            <span>{trashCopy.trashed}</span>
-            <strong>{trashedThread.title}</strong>
           </div>
-          <button
-            type="button"
-            disabled={busyThreadId === trashedThread.threadId}
-            onClick={onRestore}
-          >
-            <RotateCcw size={12} aria-hidden="true" />
-            {busyThreadId === trashedThread.threadId
-              ? trashCopy.restoring
-              : trashCopy.undo}
-          </button>
-        </div>
-      ) : null}
-    </>
+        );
+      })}
+    </div>
   );
 }

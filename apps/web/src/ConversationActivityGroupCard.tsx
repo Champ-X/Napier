@@ -1,12 +1,10 @@
-import { Layers3 } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { useState } from "react";
 
 import type {
   ConversationActivityGroup,
   ConversationGroupedActivityItem,
 } from "./conversation-feed-grouping";
-import { conversationActivityCopy } from "./conversation-activity-copy";
-import { getLocale } from "./locale";
 import { ConversationBrowserActivityCard } from "./ConversationBrowserActivityCard";
 import { ConversationNetworkActivityCard } from "./ConversationNetworkActivityCard";
 import { ConversationToolActivityCard } from "./ConversationToolActivityCard";
@@ -26,19 +24,8 @@ export function ConversationActivityGroupCard({
       onToggle={(event) => setExpanded(event.currentTarget.open)}
     >
       <summary>
-        <Layers3 size={15} aria-hidden="true" />
-        <div>
-          <span>
-            {group.label} · {conversationActivityCopy.group.grouped}
-          </span>
-          <strong>{group.summary}</strong>
-        </div>
-        <small>
-          {expanded
-            ? conversationActivityCopy.group.hideEvidence
-            : conversationActivityCopy.group.showEvidence}
-        </small>
-        <time dateTime={group.createdAt}>{formatTime(group.createdAt)}</time>
+        <ChevronRight size={15} aria-hidden="true" />
+        <strong>{group.summary}</strong>
       </summary>
       {expanded ? (
         <div className="conversation-activity-group-items">
@@ -72,12 +59,4 @@ function renderGroupedItem(item: ConversationGroupedActivityItem) {
       activity={item.activity}
     />
   );
-}
-
-function formatTime(value: string): string {
-  return new Intl.DateTimeFormat(getLocale() === "zh" ? "zh-CN" : "en", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(new Date(value));
 }

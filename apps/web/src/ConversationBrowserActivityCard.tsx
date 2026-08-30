@@ -8,6 +8,7 @@ import {
 import type { ConversationBrowserActivity } from "./conversation-browser-activity-view-model";
 import { conversationActivityCopy } from "./conversation-activity-copy";
 import { getLocale } from "./locale";
+import { ConversationToolContent } from "./ConversationToolContent";
 
 export interface ConversationBrowserActivityCardProps {
   activity: ConversationBrowserActivity;
@@ -33,16 +34,12 @@ export function ConversationBrowserActivityCard({
     >
       <summary>
         <MonitorSmartphone size={15} aria-hidden="true" />
-        <div>
-          <span>
-            {copy.browser.label} · {copy.statuses[activity.status]}
-          </span>
-          <strong>{activitySummary(activity)}</strong>
-        </div>
+        <strong>{activitySummary(activity)}</strong>
         <StatusIcon
           className={activity.status === "working" ? "is-spinning" : ""}
           size={14}
-          aria-hidden="true"
+          role="img"
+          aria-label={copy.statuses[activity.status]}
         />
         <time dateTime={activity.createdAt}>
           {formatTime(activity.createdAt)}
@@ -57,6 +54,12 @@ export function ConversationBrowserActivityCard({
             </div>
           ))}
         </dl>
+      ) : null}
+      {activity.display ? (
+        <ConversationToolContent
+          display={activity.display}
+          toolName="browser"
+        />
       ) : null}
       <p>
         {activity.takeoverRecommended
@@ -73,15 +76,35 @@ function activitySummary(activity: ConversationBrowserActivity): string {
     return actionLabel(activity.action, copy.working);
   }
   if (activity.status === "failed") {
-    return `${actionLabel(activity.action, copy.action)} ${copy.failedSuffix}`;
+    return failedActionLabel(activity.action, copy.actionFailed);
   }
   if (
     activity.pageDiagnosis === "login_required" ||
     activity.pageDiagnosis === "challenge_detected"
   ) {
-    return `${actionLabel(activity.action, copy.inspected)} · ${copy.diagnoses[activity.pageDiagnosis]}`;
+    return `${completedActionLabel(activity.action, copy.inspected)} · ${copy.diagnoses[activity.pageDiagnosis]}`;
   }
-  return actionLabel(activity.action, copy.actionCompleted);
+  return completedActionLabel(activity.action, copy.actionCompleted);
+}
+
+function completedActionLabel(
+  action: string | undefined,
+  fallback: string,
+): string {
+  const actions = conversationActivityCopy.browser.completedActions;
+  return action && action in actions
+    ? actions[action as keyof typeof actions]
+    : fallback;
+}
+
+function failedActionLabel(
+  action: string | undefined,
+  fallback: string,
+): string {
+  const actions = conversationActivityCopy.browser.failedActions;
+  return action && action in actions
+    ? actions[action as keyof typeof actions]
+    : fallback;
 }
 
 function activityDetails(
@@ -238,6 +261,8 @@ function actionLabel(action: string | undefined, fallback: string): string {
       return actions.download;
     case "screenshot":
       return actions.screenshot;
+    case "keypress":
+      return actions.keypress;
     case "close":
       return actions.close;
     default:

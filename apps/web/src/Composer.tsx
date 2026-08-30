@@ -126,23 +126,33 @@ export function Composer({
         />
         {vm.isRunning ? (
           <div className="composer-run-actions">
-            <button
-              className="run-button control"
-              type="submit"
-              disabled={!vm.composer.trim() || !vm.activeRunId}
-            >
-              <Send size={13} aria-hidden="true" />
-              {vm.controlMessageMode === "steering"
-                ? copy.steer
-                : copy.queueFollowUp}
-            </button>
+            {vm.composer.trim() ? (
+              <button
+                className="run-button control"
+                type="submit"
+                disabled={!vm.activeRunId}
+                aria-label={
+                  vm.controlMessageMode === "steering"
+                    ? copy.steer
+                    : copy.queueFollowUp
+                }
+              >
+                <Send size={15} aria-hidden="true" />
+                <span>
+                  {vm.controlMessageMode === "steering"
+                    ? copy.steer
+                    : copy.queueFollowUp}
+                </span>
+              </button>
+            ) : null}
             <button
               className="run-button stop"
               type="button"
+              aria-label={copy.stop}
               onClick={() => void vm.stop()}
             >
-              <Square size={13} fill="currentColor" aria-hidden="true" />
-              {copy.stop}
+              <Square size={14} fill="currentColor" aria-hidden="true" />
+              <span>{copy.stop}</span>
             </button>
           </div>
         ) : (

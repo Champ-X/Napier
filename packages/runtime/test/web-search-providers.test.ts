@@ -266,6 +266,46 @@ describe("WebSearchProviderRegistry", () => {
       ),
     ).rejects.not.toThrow(testApiKey);
   });
+
+  it("accepts the legacy TAVILY_API_KRY name and prefers the standard name", async () => {
+    const observed: string[] = [];
+    const http = requester(async (request) => {
+      observed.push(request.headers?.["authorization"] ?? "");
+      return response(
+        200,
+        JSON.stringify({
+          results: [
+            {
+              title: "Napier result",
+              url: "https://example.com/result",
+              content: "Current result.",
+            },
+          ],
+        }),
+        "application/json",
+      );
+    });
+
+    await new WebSearchProviderRegistry({
+      env: { TAVILY_API_KRY: "LEGACY_KEY" },
+      http,
+    }).search(
+      normalizeWebSearchRequest({ query: "legacy", provider: "tavily" }),
+      AbortSignal.timeout(1_000),
+    );
+    await new WebSearchProviderRegistry({
+      env: {
+        TAVILY_API_KEY: "STANDARD_KEY",
+        TAVILY_API_KRY: "LEGACY_KEY",
+      },
+      http,
+    }).search(
+      normalizeWebSearchRequest({ query: "standard", provider: "tavily" }),
+      AbortSignal.timeout(1_000),
+    );
+
+    expect(observed).toEqual(["Bearer LEGACY_KEY", "Bearer STANDARD_KEY"]);
+  });
   it("prefers Firecrawl when its key is configured and maps web results", async () => {
     const http = requester(async (request) => {
       expect(request.url).toBe("https://api.firecrawl.dev/v2/search");

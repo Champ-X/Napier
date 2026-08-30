@@ -13,6 +13,7 @@ import { copy } from "./copy";
 import { getLocale } from "./locale";
 import { shellCopy } from "./shell-copy";
 import type { ConversationActivity } from "./conversation-activity-view-model";
+import type { ArtifactInspection } from "./artifact-inspection";
 import {
   MessageMarkdown,
   type MessageCitationLink,
@@ -58,6 +59,7 @@ export interface ConversationMessageCardProps {
   onBranch?: () => void;
   workspaceLinks: readonly MessageWorkspaceLink[];
   citationLinks: readonly MessageCitationLink[];
+  onInspectArtifact?(inspection: ArtifactInspection): void;
 }
 
 export function ConversationMessageCard({
@@ -65,6 +67,7 @@ export function ConversationMessageCard({
   onBranch,
   workspaceLinks,
   citationLinks,
+  onInspectArtifact,
 }: ConversationMessageCardProps) {
   const anchorId = `message-${String(message.seq)}`;
   return (
@@ -95,6 +98,7 @@ export function ConversationMessageCard({
             text={message.text}
             workspaceLinks={workspaceLinks}
             citationLinks={citationLinks}
+            {...(onInspectArtifact ? { onInspectArtifact } : {})}
           />
         </div>
       </div>
@@ -141,12 +145,14 @@ export interface ConversationStreamingCardProps {
   text: string;
   workspaceLinks: readonly MessageWorkspaceLink[];
   citationLinks: readonly MessageCitationLink[];
+  onInspectArtifact?(inspection: ArtifactInspection): void;
 }
 
 export function ConversationStreamingCard({
   text,
   workspaceLinks,
   citationLinks,
+  onInspectArtifact,
 }: ConversationStreamingCardProps) {
   return (
     <article
@@ -167,6 +173,7 @@ export function ConversationStreamingCard({
             text={text}
             workspaceLinks={workspaceLinks}
             citationLinks={citationLinks}
+            {...(onInspectArtifact ? { onInspectArtifact } : {})}
           />
           <span className="ink-caret" aria-hidden="true" />
         </div>

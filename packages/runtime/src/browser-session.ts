@@ -1,4 +1,5 @@
 import { PersistentBrowserSession } from "./browser-page-session.js";
+import { BrowserNavigationPolicyError } from "./browser-session-navigation.js";
 import {
   BrowserConfirmationPageChangedError,
   type BrowserConfirmationPageState,
@@ -310,8 +311,13 @@ export class RunBrowserSessionManager {
           request.action === "start" ||
           request.action === "preview_workspace"
         ) {
-          if (this.sessions.has(key)) {
-            throw new Error("Browser Session is already active for this Run");
+          const active = this.sessions.get(key);
+          if (active?.healthy) {
+            return await this.runOperation(key, active, request, true, signal);
+          }
+          if (active) {
+            this.sessions.delete(key);
+            await active.close();
           }
           await this.pruneClosedSessions();
           if (
@@ -400,7 +406,12 @@ export class RunBrowserSessionManager {
       }
       return result;
     } catch (error) {
-      if (error instanceof BrowserConfirmationPageChangedError) throw error;
+      if (
+        error instanceof BrowserConfirmationPageChangedError ||
+        error instanceof BrowserNavigationPolicyError
+      ) {
+        throw error;
+      }
       this.sessions.delete(key);
       await session.close();
       throw error;

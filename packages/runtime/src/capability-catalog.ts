@@ -54,13 +54,14 @@ export function createCapabilityCatalogTool(
     name: CAPABILITY_TOOL_NAME,
     label: "Capability catalog",
     description:
-      "Discover configured first-party and approved extension tools by query or cap://tools URI. Discovery is read-only and is not authorization; matched tool schemas become visible on the next step and still pass normal policy, approval, sandbox, receipt, and ledger gates.",
+      "Discover configured first-party and approved extension tools by query or cap://tools URI. The cap://tools root only lists tools; specific matches become visible on the next step. Discovery is read-only and is not authorization; tools still pass normal policy, approval, sandbox, receipt, and ledger gates.",
     parameters: capabilitySchema,
     execute: async (_toolCallId, input) => {
       const query = "uri" in input ? input.uri : input.query;
-      const matched = "uri" in input
-        ? selectByUri(descriptors, input.uri)
-        : selectByQuery(descriptors, input.query, input.limit ?? 8);
+      const matched =
+        "uri" in input
+          ? selectByUri(descriptors, input.uri)
+          : selectByQuery(descriptors, input.query, input.limit ?? 8);
       const details: CapabilityCatalogDetails = {
         kind: "napier.capability-catalog-result",
         schemaVersion: 1,
@@ -72,7 +73,8 @@ export function createCapabilityCatalogTool(
       return {
         content: [{ type: "text", text: formatCapabilityResult(details) }],
         details,
-        ...(matched.length > 0
+        ...(matched.length > 0 &&
+        !("uri" in input && input.uri === CAPABILITY_ROOT_URI)
           ? { addedToolNames: matched.map(({ toolId }) => toolId) }
           : {}),
       };
@@ -87,7 +89,9 @@ export function createCapabilityDescriptors(
   const expected = new Set<string>();
   for (const tool of candidates) {
     if (expected.has(tool.name)) {
-      throw new Error(`Capability Catalog tool name is duplicated: ${tool.name}`);
+      throw new Error(
+        `Capability Catalog tool name is duplicated: ${tool.name}`,
+      );
     }
     if (tool.name !== CAPABILITY_TOOL_NAME) expected.add(tool.name);
   }

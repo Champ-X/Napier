@@ -43,9 +43,7 @@ export const zh: LocaleOverride<typeof en> = {
   trash: {
     action: "移至回收站",
     activeRun: "删除前请先停止正在进行的运行",
-    confirm: "将此会话移至回收站？",
-    confirmAction: "删除",
-    cancel: "取消删除",
+    confirmAction: "移至回收站",
     trashing: "正在删除……",
     trashed: "已移至回收站",
     undo: "撤销",
@@ -149,7 +147,8 @@ export const zh: LocaleOverride<typeof en> = {
       diagnostics: "诊断",
       errors: "错误",
       warnings: "警告",
-      artifactCounts: "已验证 {verified} · 已产出 {produced} · 缺失 {missing} · 总计 {total}",
+      artifactCounts:
+        "已验证 {verified} · 已产出 {produced} · 缺失 {missing} · 总计 {total}",
     },
     status: {
       queued: "排队中",
@@ -431,10 +430,12 @@ export const zh: LocaleOverride<typeof en> = {
     designSectionDescription: "Token、组件与交互状态",
     extensionPublishingEyebrow: "扩展交付",
     extensionPublishingTitle: "扩展发布治理",
-    extensionPublishingBody: "通过明确的复核门禁签名、验证、发布、更新与部署扩展包。",
+    extensionPublishingBody:
+      "通过明确的复核门禁签名、验证、发布、更新与部署扩展包。",
     agentPublishingEyebrow: "智能体交付",
     agentPublishingTitle: "智能体包发布",
-    agentPublishingBody: "在普通智能体配置之外创建并检查签名的 Skill 与 Prompt 包。",
+    agentPublishingBody:
+      "在普通智能体配置之外创建并检查签名的 Skill 与 Prompt 包。",
   },
   modelPicker: {
     title: "选择模型",

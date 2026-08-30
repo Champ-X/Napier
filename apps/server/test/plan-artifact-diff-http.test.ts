@@ -6,10 +6,7 @@ import { PassThrough } from "node:stream";
 import { promisify } from "node:util";
 
 import type { ExecutionPlan, RunEvent } from "@napier/contracts";
-import type {
-  OsSandboxAdapter,
-  SandboxedProcess,
-} from "@napier/runtime/code";
+import type { OsSandboxAdapter, SandboxedProcess } from "@napier/runtime/code";
 import { Hono } from "hono";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -26,6 +23,50 @@ afterEach(async () => {
 });
 
 describe("Plan Artifact diff HTTP", () => {
+  it("peeks at a produced artifact without appending a Ledger event", async () => {
+    const workspaceRoot = await createRepository();
+    const events: RunEvent[] = [];
+    const plan = executionPlan();
+    plan.artifacts[0]!.status = "produced";
+    const app = new Hono();
+    registerPlanArtifactInspectionHttp(
+      app,
+      {
+        workspaceRoot,
+        getPlan: () => plan,
+        appendEvent: async (input) => {
+          const event = {
+            id: "event_unexpected",
+            seq: 1,
+            createdAt: "2026-08-30T00:00:00.000Z",
+            visibility: input.visibility ?? "user",
+            ...input,
+          } as RunEvent;
+          events.push(event);
+          return event;
+        },
+      },
+      directSandbox(),
+    );
+
+    const response = await app.request(
+      `/api/threads/${plan.threadId}/plans/${plan.id}/artifacts/report/peek`,
+    );
+    const body = (await response.json()) as Record<string, unknown>;
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(response.headers.get("X-Napier-Read-Mode")).toBe("peek");
+    expect(body).toEqual(
+      expect.objectContaining({
+        kind: "napier.plan-artifact-text-peek",
+        artifactId: "report",
+        text: expect.stringContaining("PRIVATE_HTTP_DIFF_BEFORE"),
+      }),
+    );
+    expect(events).toEqual([]);
+  });
+
   it("returns the diff while persisting only bounded hash and count evidence", async () => {
     const workspaceRoot = await createRepository();
     await writeFile(

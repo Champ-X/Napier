@@ -1,5 +1,7 @@
+import { execFile as execFileCallback } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { promisify } from "node:util";
 
 import {
   canonicalJson,
@@ -7,13 +9,17 @@ import {
   LocalStore,
   sha256,
 } from "../packages/runtime/dist/index.js";
+import { AgentToolDisplayStore } from "../packages/runtime/dist/agent-tool-display-store.js";
 import { BrowserTaskJournal } from "../apps/server/dist/browser-task-journal.js";
 import { seedWebUiCasebook } from "./web-ui-e2e-casebook.mjs";
+
+const execFile = promisify(execFileCallback);
 
 export async function seedWebUiNarrativeFixture(root) {
   const dataRoot = path.join(root, "state");
   const workspaceRoot = path.join(root, "workspace");
   const store = new LocalStore({ dataRoot, workspaceRoot });
+  const toolDisplays = new AgentToolDisplayStore(dataRoot);
   await store.initialize();
   try {
     const browserTask = await seedBrowserTaskHistory(dataRoot);
@@ -43,8 +49,12 @@ export async function seedWebUiNarrativeFixture(root) {
     });
     await appendConversationMessages(store, thread.id, run.id, [
       ["user", "Prepare and verify the research brief."],
+    ]);
+    await appendThinkingSummaryFixture(store, thread.id, run.id);
+    await appendConversationMessages(store, thread.id, run.id, [
       ["assistant", "The brief is ready for final approval."],
     ]);
+    await appendReadableToolFixture(store, toolDisplays, thread.id, run.id);
     await appendModelHarnessResolution(
       store,
       thread.id,
@@ -227,6 +237,13 @@ export async function seedWebUiNarrativeFixture(root) {
           verification: "The browser result is recorded.",
         },
       ],
+      artifacts: [
+        {
+          id: "live-preview",
+          path: "artifacts/running-preview.html",
+          description: "HTML output available while the Run is active.",
+        },
+      ],
     });
     await store.transitionPlanStep(runningPlan.id, "browse", {
       action: "start",
@@ -235,6 +252,32 @@ export async function seedWebUiNarrativeFixture(root) {
     await appendConversationMessages(store, runningThread.id, runningRun.id, [
       ["user", "Verify the active browser result."],
     ]);
+    const runningArtifactText =
+      "<!doctype html><html><body><main><h1>Running artifact preview</h1><p>Available before the task completes.</p></main></body></html>\n";
+    await writeFile(
+      path.join(workspaceRoot, "artifacts", "running-preview.html"),
+      runningArtifactText,
+    );
+    const runningArtifactPlan = await store.updatePlanArtifact(
+      runningPlan.id,
+      "live-preview",
+      {
+        status: "produced",
+        sourceRunId: runningRun.id,
+        evidence: "The active Run produced a reviewable HTML file.",
+      },
+    );
+    await store.appendEvent({
+      threadId: runningThread.id,
+      runId: runningRun.id,
+      type: "plan.artifact.produced",
+      category: "plan",
+      visibility: "user",
+      payload: createPlanArtifactEventPayload(
+        runningArtifactPlan,
+        runningArtifactPlan.artifacts[0],
+      ),
+    });
     await store.appendEvent({
       threadId: runningThread.id,
       runId: runningRun.id,
@@ -290,7 +333,11 @@ export async function seedWebUiNarrativeFixture(root) {
     );
     await appendToolResultContextPruning(store, longRunThread.id, longRun.id);
     await appendEnvironmentDegradation(store, longRunThread.id, longRun.id);
-    await appendContextContinuityCheckpoint(store, longRunThread.id, longRun.id);
+    await appendContextContinuityCheckpoint(
+      store,
+      longRunThread.id,
+      longRun.id,
+    );
     await store.finishRun(longRun.id, "completed", {
       usage: {
         inputTokens: 18_000,
@@ -322,8 +369,8 @@ export async function seedWebUiNarrativeFixture(root) {
       artifacts: [
         {
           id: "report",
-          path: "artifacts/output-report.md",
-          description: "Final output report.",
+          path: "artifacts/interactive-report.html",
+          description: "Interactive final output report.",
         },
         {
           id: "notes",
@@ -340,12 +387,30 @@ export async function seedWebUiNarrativeFixture(root) {
       action: "complete",
       evidence: "Both outputs were produced for review.",
     });
+    const interactiveReportBefore =
+      '<!doctype html><html><body><main><h1>Output report</h1><p id="stage">Step 1</p><button type="button" onclick="document.querySelector(\'#stage\').textContent=\'Step 2\'">Advance preview</button></main></body></html>\n';
+    const interactiveReportAfter = interactiveReportBefore.replace(
+      "Output report",
+      "Interactive output report",
+    );
+    await writeFile(
+      path.join(workspaceRoot, "artifacts", "interactive-report.html"),
+      interactiveReportBefore,
+    );
+    await git(workspaceRoot, ["init", "--quiet"]);
+    await git(workspaceRoot, ["add", "artifacts/interactive-report.html"]);
+    await git(workspaceRoot, [
+      "-c",
+      "user.name=Napier Test",
+      "-c",
+      "user.email=napier@example.invalid",
+      "commit",
+      "--quiet",
+      "-m",
+      "fixture baseline",
+    ]);
     const artifactFiles = [
-      [
-        "report",
-        "artifacts/output-report.md",
-        "# Output report\nVerified delivery.\n",
-      ],
+      ["report", "artifacts/interactive-report.html", interactiveReportAfter],
       [
         "notes",
         "artifacts/source-notes.md",
@@ -385,6 +450,12 @@ export async function seedWebUiNarrativeFixture(root) {
         payload: createPlanArtifactEventPayload(verifiedPlan, verifiedArtifact),
       });
     }
+    await appendConversationMessages(store, artifactThread.id, artifactRun.id, [
+      [
+        "assistant",
+        "Done. Open **`artifacts/interactive-report.html`** to review the interactive result.",
+      ],
+    ]);
     await store.finishRun(artifactRun.id, "completed", {
       usage: {
         inputTokens: 2_000,
@@ -417,6 +488,7 @@ export async function seedWebUiNarrativeFixture(root) {
         threadId: runningThread.id,
         runId: runningRun.id,
         title: runningThread.title,
+        artifactPath: "artifacts/running-preview.html",
       },
       recovery: {
         threadId: recoveryThread.id,
@@ -447,6 +519,17 @@ export async function seedWebUiNarrativeFixture(root) {
   } finally {
     store.close();
   }
+}
+
+async function git(cwd, args) {
+  await execFile("/usr/bin/git", args, {
+    cwd,
+    env: {
+      ...process.env,
+      GIT_CONFIG_NOSYSTEM: "1",
+      GIT_TERMINAL_PROMPT: "0",
+    },
+  });
 }
 
 async function seedBrowserTaskHistory(dataRoot) {
@@ -530,6 +613,61 @@ async function appendCompletedToolCalls(store, threadId, runId, groups) {
       }
     }
   }
+}
+
+async function appendThinkingSummaryFixture(store, threadId, runId) {
+  await store.appendEvent({
+    threadId,
+    runId,
+    type: "model.thinking.delta",
+    category: "model",
+    visibility: "hidden",
+    payload: {
+      chunkCount: 8,
+      deltaBytes: 212,
+      delta: "PRIVATE_FIXTURE_REASONING",
+    },
+  });
+}
+
+async function appendReadableToolFixture(store, toolDisplays, threadId, runId) {
+  const callId = "call_fixture_patch";
+  const owner = { threadId, runId, callId, toolName: "apply_patch" };
+  await toolDisplays.recordInput(owner, {
+    patch:
+      "*** Begin Patch\n*** Update File: artifacts/research-brief.md\n@@\n- Draft\n+ Verified\n*** End Patch",
+  });
+  await store.appendEvent({
+    threadId,
+    runId,
+    type: "tool.started",
+    category: "tool",
+    visibility: "user",
+    payload: {
+      callId,
+      toolName: "apply_patch",
+      status: "started",
+      effect: "write",
+    },
+  });
+  await toolDisplays.recordOutput(
+    owner,
+    "Done!\nValidated artifacts/research-brief.md",
+    false,
+  );
+  await store.appendEvent({
+    threadId,
+    runId,
+    type: "tool.completed",
+    category: "tool",
+    visibility: "user",
+    payload: {
+      callId,
+      toolName: "apply_patch",
+      status: "completed",
+      effect: "write",
+    },
+  });
 }
 
 async function appendConversationMessages(store, threadId, runId, messages) {
@@ -710,7 +848,9 @@ async function appendContextContinuityCheckpoint(store, threadId, runId) {
       toSeq,
       retainedFromSeq: toSeq + 1,
       sourceEventCount: sourceEvents.length,
-      sourceSha256: sha256(sourceEvents.map((event) => JSON.stringify(event)).join("\n")),
+      sourceSha256: sha256(
+        sourceEvents.map((event) => JSON.stringify(event)).join("\n"),
+      ),
       summarySha256: sha256(summary),
       summary,
       decisions: ["Keep the degraded read-only environment boundary."],

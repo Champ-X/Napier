@@ -245,7 +245,6 @@ function selectTools(
   const protectedNames = unique([
     ...CONTROL_TOOLS,
     ...names.filter((name) => name.startsWith("mcp__")).sort(),
-    ...usedToolNames(messages),
     ...PHASE_REQUIRED_TOOLS[resolution.taskPhase],
   ]).filter((name) => available.has(name));
   if (protectedNames.length > resolution.maxActiveTools) {
@@ -255,6 +254,7 @@ function selectTools(
   }
   const ranked = unique([
     ...protectedNames,
+    ...usedToolNames(messages),
     ...TOOL_PRIORITY[resolution.taskPhase],
     ...TOOL_PRIORITY.general,
     ...names.slice().sort((left, right) => left.localeCompare(right)),

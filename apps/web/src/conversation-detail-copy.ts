@@ -63,6 +63,10 @@ export const conversationDetailCopyEn = {
     download: "Download",
     lines: "lines",
     previewLabel: "Preview",
+    livePreview: "Live preview",
+    loadingPreview: "Rendering preview…",
+    previewUnavailable: "Preview unavailable",
+    openPreview: "Open preview",
     closePreview: "Close preview",
     statuses: {
       expected: "Expected",
@@ -226,6 +230,10 @@ export const conversationDetailZh: LocaleOverride<
     download: "下载",
     lines: "行",
     previewLabel: "预览",
+    livePreview: "实时预览",
+    loadingPreview: "正在生成预览…",
+    previewUnavailable: "暂时无法预览",
+    openPreview: "打开预览",
     closePreview: "关闭预览",
     statuses: {
       expected: "预期",

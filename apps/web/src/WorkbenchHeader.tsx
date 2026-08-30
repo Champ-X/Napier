@@ -45,10 +45,7 @@ export function WorkbenchHeader({
     <header className="workbench-header">
       <div className="thread-heading">
         {title ? (
-          <>
-            <small>{contextLabel}</small>
-            <h1>{title}</h1>
-          </>
+          <h1 title={`${contextLabel} · ${title}`}>{title}</h1>
         ) : (
           <span className="thread-heading-idle">
             <strong>{copy.appName}</strong>

@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { useState } from "react";
 
 import { ArtifactActionBar } from "./ArtifactActionBar";
+import type { ArtifactInspection } from "./artifact-inspection";
 import { formatApiErrorMessage } from "./api-error";
 import {
   previewPlanArtifactDiff,
@@ -25,6 +26,7 @@ export function ArtifactActionSurface({
   onReveal,
   onRestore,
   onApply,
+  onInspect,
   displayActions,
   previewArtifact = previewPlanArtifactText,
   previewDiff = previewPlanArtifactDiff,
@@ -37,6 +39,7 @@ export function ArtifactActionSurface({
   onReveal?(): void | Promise<void>;
   onRestore?(): void | Promise<void>;
   onApply?(): void | Promise<void>;
+  onInspect?(inspection: ArtifactInspection): void;
   displayActions?: readonly ArtifactActionId[];
   previewArtifact?: typeof previewPlanArtifactText;
   previewDiff?: typeof previewPlanArtifactDiff;
@@ -46,7 +49,9 @@ export function ArtifactActionSurface({
     restore: Boolean(onRestore),
     apply: Boolean(onApply),
   });
-  const [busy, setBusy] = useState<"open" | "preview" | "diff" | "reveal" | "restore" | "apply">();
+  const [busy, setBusy] = useState<
+    "open" | "preview" | "diff" | "reveal" | "restore" | "apply"
+  >();
   const [preview, setPreview] = useState<PlanArtifactTextPreviewReceipt>();
   const [diff, setDiff] = useState<PlanArtifactDiffPreviewReceipt>();
   const [error, setError] = useState<string>();
@@ -58,10 +63,22 @@ export function ArtifactActionSurface({
     setError(undefined);
     try {
       if (mode === "preview") {
-        setPreview(await previewArtifact(threadId, planId, artifact.id));
+        const receipt = await previewArtifact(threadId, planId, artifact.id);
+        if (onInspect) {
+          onInspect({ artifact, mode, planId, threadId, receipt });
+          setPreview(undefined);
+        } else {
+          setPreview(receipt);
+        }
         setDiff(undefined);
       } else {
-        setDiff(await previewDiff(threadId, planId, artifact.id));
+        const receipt = await previewDiff(threadId, planId, artifact.id);
+        if (onInspect) {
+          onInspect({ artifact, mode, planId, threadId, receipt });
+          setDiff(undefined);
+        } else {
+          setDiff(receipt);
+        }
         setPreview(undefined);
       }
       await onLedgerChanged?.();
@@ -130,15 +147,34 @@ export function ArtifactActionSurface({
 
   return (
     <div className="artifact-action-surface">
-      <ArtifactActionBar controls={controls} {...(availability.primary ? { primaryAction: availability.primary } : {})} />
-      {error ? <p className="artifact-action-error" role="alert">{error}</p> : null}
+      <ArtifactActionBar
+        controls={controls}
+        {...(availability.primary
+          ? { primaryAction: availability.primary }
+          : {})}
+      />
+      {error ? (
+        <p className="artifact-action-error" role="alert">
+          {error}
+        </p>
+      ) : null}
       {preview ? (
-        <ArtifactInspection title={copy.previewTitle} path={artifact.path} meta={`${preview.lineCount} ${copy.lines} · ${preview.sizeBytes} ${copy.bytes}`} onClose={() => setPreview(undefined)}>
+        <ArtifactInspection
+          title={copy.previewTitle}
+          path={artifact.path}
+          meta={`${preview.lineCount} ${copy.lines} · ${preview.sizeBytes} ${copy.bytes}`}
+          onClose={() => setPreview(undefined)}
+        >
           <pre>{preview.text}</pre>
         </ArtifactInspection>
       ) : null}
       {diff ? (
-        <ArtifactInspection title={copy.diffTitle} path={artifact.path} meta={`${diff.hunkCount} ${copy.hunks} · +${diff.addedLineCount} / −${diff.deletedLineCount}`} onClose={() => setDiff(undefined)}>
+        <ArtifactInspection
+          title={copy.diffTitle}
+          path={artifact.path}
+          meta={`${diff.hunkCount} ${copy.hunks} · +${diff.addedLineCount} / −${diff.deletedLineCount}`}
+          onClose={() => setDiff(undefined)}
+        >
           <pre>{diff.text || copy.noDiff}</pre>
         </ArtifactInspection>
       ) : null}
@@ -146,10 +182,34 @@ export function ArtifactActionSurface({
   );
 }
 
-function ArtifactInspection({ title, path, meta, onClose, children }: { title: string; path: string; meta: string; onClose(): void; children: React.ReactNode }) {
+function ArtifactInspection({
+  title,
+  path,
+  meta,
+  onClose,
+  children,
+}: {
+  title: string;
+  path: string;
+  meta: string;
+  onClose(): void;
+  children: React.ReactNode;
+}) {
   return (
     <section className="artifact-action-inspection" aria-label={title}>
-      <header><div><strong>{title}</strong><span>{meta}</span></div><button type="button" aria-label={`${copy.close} ${path}`} onClick={onClose}><X size={12} aria-hidden="true" /></button></header>
+      <header>
+        <div>
+          <strong>{title}</strong>
+          <span>{meta}</span>
+        </div>
+        <button
+          type="button"
+          aria-label={`${copy.close} ${path}`}
+          onClick={onClose}
+        >
+          <X size={12} aria-hidden="true" />
+        </button>
+      </header>
       {children}
     </section>
   );

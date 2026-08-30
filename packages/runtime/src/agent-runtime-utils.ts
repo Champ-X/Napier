@@ -36,7 +36,7 @@ export function formatPlanToolGuidance(tools: readonly AgentTool[]): string {
   }
   if (hasArtifactUpdate) {
     lines.push(
-      "For planned file or directory artifacts, record produced evidence after the workspace bytes exist, then verify so Napier computes the digest; do not provide your own artifact hash.",
+      "For planned file or directory artifacts, record produced evidence immediately after the workspace bytes exist so the operator can preview work in progress, then verify so Napier computes the digest; do not provide your own artifact hash.",
       "Do not claim a plan is complete until every required step is settled and every required artifact is verified or explicitly superseded.",
     );
   }

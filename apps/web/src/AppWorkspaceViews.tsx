@@ -1,11 +1,19 @@
-import { lazy, Suspense, useRef } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 
 import type { AgentProfile, BootstrapResponse } from "@napier/contracts";
 import { Composer } from "./Composer";
+import { ArtifactInspector } from "./ArtifactInspector";
+import { WorkbenchBrowserRail } from "./WorkbenchBrowserRail";
+import type { ArtifactInspection } from "./artifact-inspection";
 import { ConversationWorkspace } from "./ConversationWorkspace";
 import type { useTaskControlNavigation } from "./use-task-control-navigation";
 import type { useWorkspaceShell } from "./use-workspace-shell";
+import {
+  WORKSPACE_EVIDENCE_WIDTH,
+  type WorkspaceLayoutControls,
+} from "./use-workspace-layout";
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
+import { WorkspaceResizeHandle } from "./WorkspaceResizeHandle";
 import {
   WorkbenchDeferredDecisions,
   WorkbenchDeferredNotices,
@@ -38,6 +46,7 @@ export interface AppWorkspaceViewsProps {
   activeAgent: AgentProfile | undefined;
   activeModel: WorkspaceViewModel["selectedModel"];
   canStartRun: boolean;
+  layout: WorkspaceLayoutControls;
 }
 
 export function AppWorkspaceViews({
@@ -48,12 +57,26 @@ export function AppWorkspaceViews({
   activeAgent,
   activeModel,
   canStartRun,
+  layout,
 }: AppWorkspaceViewsProps) {
   const conversationEnd = useRef<HTMLDivElement>(null);
   const conversationViewport = useRef<HTMLElement>(null);
+  const [artifactInspection, setArtifactInspection] =
+    useState<ArtifactInspection>();
+  const showBrowserRail =
+    shell.workspaceView === "conversation" &&
+    !artifactInspection &&
+    taskControls.browserControlsAvailable;
+  const showEvidenceRail = Boolean(artifactInspection) || showBrowserRail;
+  useEffect(
+    () => setArtifactInspection(undefined),
+    [vm.detail?.thread.id, shell.workspaceView],
+  );
 
   return (
-    <div className="workspace-primary-surface">
+    <div
+      className={`workspace-primary-surface${artifactInspection ? " has-artifact-inspector" : ""}${showBrowserRail ? " has-browser-rail" : ""}`}
+    >
       {shell.workspaceView === "conversation" ? (
         <section
           id="workspace-panel-conversation"
@@ -67,15 +90,13 @@ export function AppWorkspaceViews({
             endRef={conversationEnd}
             viewportRef={conversationViewport}
             onOpenSubagentHub={shell.openSubagentHub}
+            onInspectArtifact={setArtifactInspection}
           />
           <WorkbenchDeferredTaskResult
             vm={vm}
             onOpenArtifact={taskControls.openArtifact}
           />
-          <WorkbenchDeferredDecisions
-            vm={vm}
-            browserControlsAvailable={taskControls.browserControlsAvailable}
-          />
+          <WorkbenchDeferredDecisions vm={vm} />
           <Composer
             vm={vm}
             activeAgent={activeAgent}
@@ -120,6 +141,34 @@ export function AppWorkspaceViews({
             />
           </Suspense>
         </section>
+      ) : null}
+      {showEvidenceRail ? (
+        <WorkspaceResizeHandle
+          side="evidence"
+          label="调整预览栏宽度"
+          value={layout.evidenceWidth}
+          min={WORKSPACE_EVIDENCE_WIDTH.min}
+          max={layout.evidenceMax}
+          onChange={layout.setEvidenceWidth}
+          onReset={layout.resetEvidenceWidth}
+        />
+      ) : null}
+      {shell.workspaceView === "conversation" && artifactInspection ? (
+        <ArtifactInspector
+          inspection={artifactInspection}
+          onLedgerChanged={vm.refreshActiveThread}
+          onClose={() => setArtifactInspection(undefined)}
+        />
+      ) : null}
+      {showBrowserRail && vm.activeRunId && vm.detail ? (
+        <WorkbenchBrowserRail
+          threadId={vm.detail.thread.id}
+          runId={vm.activeRunId}
+          events={vm.detail.events}
+          {...(vm.browserInteractionConfirmation
+            ? { confirmationAction: vm.browserInteractionConfirmation.action }
+            : {})}
+        />
       ) : null}
     </div>
   );

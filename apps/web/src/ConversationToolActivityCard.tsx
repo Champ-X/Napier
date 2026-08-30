@@ -9,6 +9,7 @@ import {
 import type { ConversationToolActivity } from "./conversation-tool-activity-view-model";
 import { conversationActivityCopy } from "./conversation-activity-copy";
 import { getLocale } from "./locale";
+import { ConversationToolContent } from "./ConversationToolContent";
 
 export interface ConversationToolActivityCardProps {
   activity: ConversationToolActivity;
@@ -33,17 +34,12 @@ export function ConversationToolActivityCard({
     >
       <summary>
         <ToolIcon size={15} aria-hidden="true" />
-        <div>
-          <span>
-            {activity.kind === "shell" ? copy.tool.shell : copy.tool.tool} ·{" "}
-            {copy.statuses[activity.status]}
-          </span>
-          <strong>{activitySummary(activity)}</strong>
-        </div>
+        <strong>{activitySummary(activity)}</strong>
         <StatusIcon
           className={active ? "is-spinning" : ""}
           size={14}
-          aria-hidden="true"
+          role="img"
+          aria-label={copy.statuses[activity.status]}
         />
         <time dateTime={activity.createdAt}>
           {formatTime(activity.createdAt)}
@@ -59,6 +55,12 @@ export function ConversationToolActivityCard({
           ))}
         </dl>
       ) : null}
+      {activity.display ? (
+        <ConversationToolContent
+          display={activity.display}
+          toolName={activity.toolName}
+        />
+      ) : null}
       <p>{activity.receipt}</p>
     </details>
   );
@@ -66,7 +68,15 @@ export function ConversationToolActivityCard({
 
 function activitySummary(activity: ConversationToolActivity): string {
   const copy = conversationActivityCopy.tool;
-  const toolName = displayToolName(activity.toolName);
+  if (activity.status === "completed" && activity.kind === "tool") {
+    const knownAction = knownCompletedAction(activity.toolName);
+    if (knownAction) return knownAction;
+  }
+  const toolName =
+    activity.kind === "shell"
+      ? copy.command
+      : (knownToolName(activity.toolName) ??
+        displayToolName(activity.toolName));
   if (activity.status === "working") {
     return `${toolName}${copy.runningSuffix}`;
   }
@@ -80,6 +90,32 @@ function activitySummary(activity: ConversationToolActivity): string {
     return `${copy.command} ${copy.commandStatuses[activity.evidence.commandStatus]}`;
   }
   return `${toolName}${copy.completedSuffix}`;
+}
+
+function knownCompletedAction(toolName: string): string | undefined {
+  const actions = conversationActivityCopy.tool.completedActions;
+  if (toolName === "apply_patch") return actions.apply_patch;
+  if (toolName === "capability") return actions.capability;
+  if (toolName === "update_plan_artifact") {
+    return actions.update_plan_artifact;
+  }
+  if (toolName === "update_plan_step") return actions.update_plan_step;
+  if (toolName === "record_run_milestone") {
+    return actions.record_run_milestone;
+  }
+  return undefined;
+}
+
+function knownToolName(toolName: string): string | undefined {
+  const names = conversationActivityCopy.tool.names;
+  if (toolName === "apply_patch") return names.apply_patch;
+  if (toolName === "capability") return names.capability;
+  if (toolName === "update_plan_artifact") return names.update_plan_artifact;
+  if (toolName === "update_plan_step") return names.update_plan_step;
+  if (toolName === "record_run_milestone") {
+    return names.record_run_milestone;
+  }
+  return undefined;
 }
 
 function activityDetails(

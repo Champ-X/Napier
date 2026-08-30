@@ -12,7 +12,6 @@ import type { ThreadSummary } from "@napier/contracts";
 import { listRecentWorkspaces } from "./api";
 import { copy } from "./copy";
 import { workspaceTreeCopy as t } from "./workspace-tree-copy";
-import type { TrashedThreadReceipt } from "./use-thread-trash";
 import { listWorkspaceThreads } from "./workspace-tree-api";
 import { WorkspaceThreadPreviews } from "./WorkspaceThreadPreviews";
 
@@ -42,10 +41,8 @@ export interface WorkspaceTreeProps {
   threads: ThreadSummary[];
   selectedThreadId: string | undefined;
   busyThreadId: string | undefined;
-  trashedThread: TrashedThreadReceipt | undefined;
   onSelect(threadId: string): void;
   onTrash(threadId: string): void;
-  onRestore(): void;
   onWorkspaceSwitch(root: string, threadId?: string): Promise<void>;
   onOpenWorkspaceSettings(): void;
 }
@@ -55,10 +52,8 @@ export function WorkspaceTree({
   threads,
   selectedThreadId,
   busyThreadId,
-  trashedThread,
   onSelect,
   onTrash,
-  onRestore,
   onWorkspaceSwitch,
   onOpenWorkspaceSettings,
 }: WorkspaceTreeProps) {
@@ -140,9 +135,6 @@ export function WorkspaceTree({
       <div className="nav-section-heading">
         <span>{copy.workspaceSurface.chipLabel}</span>
         <span className="workspace-tree-heading-actions">
-          <span className="workspace-tree-heading-count">
-            {String(orderedProjects.length).padStart(2, "0")}
-          </span>
           <button
             type="button"
             className="workspace-tree-add"
@@ -205,7 +197,6 @@ export function WorkspaceTree({
                     <Folder size={15} aria-hidden="true" />
                   )}
                   <span>{project.name}</span>
-                  {current ? <i>{t.currentBadge}</i> : null}
                 </button>
               </div>
               {open ? (
@@ -226,10 +217,8 @@ export function WorkspaceTree({
                         threads={projectThreads}
                         selectedThreadId={selectedThreadId}
                         busyThreadId={busyThreadId}
-                        trashedThread={trashedThread}
                         onSelect={onSelect}
                         onTrash={onTrash}
-                        onRestore={onRestore}
                       />
                     </Suspense>
                   ) : (

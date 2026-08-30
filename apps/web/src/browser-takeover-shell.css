@@ -122,7 +122,7 @@
 }
 
 .browser-takeover-tabs span {
-  max-width: var(--layout-evidence-rail);
+  max-width: var(--layout-utility-rail);
   overflow: hidden;
   font-family: var(--font-mono);
   font-size: var(--text-xs);

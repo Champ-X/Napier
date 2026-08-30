@@ -1,14 +1,30 @@
 /* Desktop application shell, navigation, and workspace selection. */
 .app-shell {
   display: grid;
-  grid-template-columns: var(--shell-nav-width) minmax(0, 1fr);
+  grid-template-columns:
+    var(--workspace-navigation-width, var(--shell-nav-width))
+    0
+    minmax(0, 1fr);
   height: 100%;
   overflow: hidden;
   background: var(--paper);
 }
 
 .app-shell:has(.ledger-nav.is-collapsed) {
-  grid-template-columns: var(--shell-nav-compact-width) minmax(0, 1fr);
+  grid-template-columns:
+    var(--shell-nav-compact-width)
+    0
+    minmax(0, 1fr);
+}
+
+.ledger-nav {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.workbench {
+  grid-column: 3;
+  grid-row: 1;
 }
 
 .ledger-nav {
@@ -163,12 +179,13 @@
 }
 
 .ledger-nav.is-collapsed .brand-lockup > div:last-of-type,
+.ledger-nav.is-collapsed .brand-lockup > strong,
 .ledger-nav.is-collapsed .new-ledger-button > span,
 .ledger-nav.is-collapsed .new-ledger-button kbd,
 .ledger-nav.is-collapsed .nav-section-heading > span:first-child,
 .ledger-nav.is-collapsed .thread-copy,
 .ledger-nav.is-collapsed .thread-row .status-dot,
-.ledger-nav.is-collapsed .thread-trash-button {
+.ledger-nav.is-collapsed .thread-actions {
   display: none;
 }
 
@@ -199,6 +216,36 @@
 
 .ledger-nav.is-collapsed .thread-index {
   padding: 0;
+}
+
+.ledger-nav.is-collapsed .workspace-tree-folder {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.ledger-nav.is-collapsed .workspace-tree-toggle,
+.ledger-nav.is-collapsed .workspace-tree-project > span,
+.ledger-nav.is-collapsed .workspace-tree-project > i,
+.ledger-nav.is-collapsed .workspace-settings-button > span {
+  display: none;
+}
+
+.ledger-nav.is-collapsed .workspace-tree-project {
+  display: grid;
+  width: var(--control-target);
+  min-width: var(--control-target);
+  padding: 0;
+  place-items: center;
+}
+
+.ledger-nav.is-collapsed .workspace-tree-threads,
+.ledger-nav.is-collapsed .workspace-tree-threads.is-preview {
+  padding-inline-start: 0;
+}
+
+.ledger-nav.is-collapsed .workspace-settings-button {
+  justify-content: center;
+  padding-inline: 0;
 }
 
 .nav-section-heading {
@@ -262,145 +309,6 @@
   background: transparent;
   border: 0;
   border-radius: 3px;
-}
-
-.thread-trash-button {
-  position: absolute;
-  top: 8px;
-  right: 6px;
-  display: grid;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  color: var(--color-navigation-fg-muted);
-  cursor: pointer;
-  visibility: hidden;
-  background: transparent;
-  border: 0;
-  border-radius: 6px;
-  opacity: 0;
-  place-items: center;
-  transition:
-    color 120ms ease,
-    background 120ms ease,
-    opacity 120ms ease;
-}
-
-.thread-row-shell:hover .thread-trash-button,
-.thread-row-shell.is-active .thread-trash-button,
-.thread-row-shell.is-confirming .thread-trash-button,
-.thread-trash-button:focus-visible {
-  visibility: visible;
-  opacity: 1;
-}
-
-.thread-trash-button:hover:not(:disabled) {
-  color: var(--color-paper);
-  background: var(--vermilion);
-}
-
-.thread-trash-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.28;
-}
-
-.thread-trash-confirm {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 22px auto;
-  gap: 5px;
-  align-items: center;
-  margin: -5px 7px 8px;
-  padding: 7px 7px 7px 9px;
-  font-family: var(--mono);
-  font-size: var(--text-xs);
-  color: var(--vermilion);
-  background: var(--vermilion-soft);
-  border: 1px solid color-mix(in srgb, var(--color-red-59) 24%, transparent);
-  border-radius: 6px;
-}
-
-.thread-trash-confirm > span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.thread-trash-confirm button {
-  display: grid;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 7px;
-  color: var(--ink-soft);
-  cursor: pointer;
-  background: transparent;
-  border: 0;
-  border-radius: 4px;
-  place-items: center;
-}
-
-.thread-trash-confirm button:hover:not(:disabled) {
-  color: var(--ink);
-  background: color-mix(in srgb, var(--color-blue-16) 6%, transparent);
-}
-
-.thread-trash-confirm .confirm-trash {
-  color: var(--color-paper);
-  background: var(--vermilion);
-}
-
-.thread-undo {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: space-between;
-  margin: 8px 4px 0;
-  padding: 9px;
-  color: var(--ink);
-  background: var(--paper);
-  border: 1px solid var(--rule);
-  border-radius: 8px;
-  box-shadow: var(--shadow);
-}
-
-.thread-undo > div {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.thread-undo span {
-  font-family: var(--mono);
-  font-size: var(--text-xs);
-  color: var(--color-navigation-fg-muted);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.thread-undo strong {
-  overflow: hidden;
-  font-family: var(--serif);
-  font-size: var(--text-xs);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.thread-undo button {
-  display: inline-flex;
-  gap: 5px;
-  align-items: center;
-  padding: 6px 7px;
-  font-family: var(--mono);
-  font-size: var(--text-xs);
-  color: var(--ink-soft);
-  cursor: pointer;
-  background: transparent;
-  border: 1px solid var(--rule-strong);
-  border-radius: 6px;
-}
-
-.thread-undo button:hover:not(:disabled) {
-  background: var(--nav-soft);
 }
 
 .thread-index {
@@ -467,13 +375,15 @@
 
 .status-running {
   background: var(--ochre);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-warning-solid) 15%, transparent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--color-warning-solid) 15%, transparent);
   animation: breathe 1.4s ease-in-out infinite;
 }
 
 .status-waiting {
   background: var(--color-gold-46);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-gold-46) 15%, transparent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--color-gold-46) 15%, transparent);
 }
 
 .status-failed {

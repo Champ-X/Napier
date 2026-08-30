@@ -9,6 +9,7 @@ import type { ConversationPlan } from "./conversation-plan-view-model";
 import type { ConversationRecovery } from "./conversation-recovery-view-model";
 import type { ConversationSubagent } from "./conversation-subagent-view-model";
 import type { ConversationToolActivity } from "./conversation-tool-activity-view-model";
+import type { ConversationThinkingActivity } from "./conversation-thinking-view-model";
 import { conversationActivityCopy } from "./conversation-activity-copy";
 
 export type ConversationGroupedActivityItem =
@@ -21,6 +22,7 @@ export type ConversationFeedItem =
   | { kind: "activity"; seq: number; activity: ConversationActivity }
   | { kind: "artifact"; seq: number; artifact: ConversationArtifact }
   | { kind: "citation"; seq: number; citation: ConversationCitation }
+  | { kind: "thinking"; seq: number; activity: ConversationThinkingActivity }
   | ConversationGroupedActivityItem
   | { kind: "plan"; seq: number; plan: ConversationPlan }
   | { kind: "approval"; seq: number; approval: ConversationApproval }

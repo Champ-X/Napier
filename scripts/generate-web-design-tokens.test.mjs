@@ -17,16 +17,18 @@ describe("Napier Web design tokens", () => {
     const css = generateWebDesignCss(markdown);
 
     expect(source.semantic.color.accent.$value).toBe("{color.brand.600}");
-    expect(css).toContain("--color-accent: #3A58EC;");
-    expect(css).toContain("--color-focus-ring: #4D6BFE;");
-    expect(css).toContain("--color-navigation-bg: #10141B;");
-    expect(css).toContain("--color-execution-spine: #4D6BFE;");
-    expect(css).toContain("--layout-command-bar: 58px;");
+    expect(css).toContain("--color-accent: #34332F;");
+    expect(css).toContain("--color-focus-ring: #5B5852;");
+    expect(css).toContain("--color-navigation-bg: #F6F4F0;");
+    expect(css).toContain("--color-execution-spine: #6F6A63;");
+    expect(css).toContain("--layout-command-bar: 52px;");
     expect(css).toContain("--layout-composer-shell: 72px;");
-    expect(css).toContain("--layout-reading-target: 800px;");
-    expect(css).toContain("--layout-sidebar-expanded: 240px;");
+    expect(css).toContain("--layout-reading-target: 760px;");
+    expect(css).toContain("--layout-sidebar-expanded: 252px;");
+    expect(css).toContain("--layout-evidence-rail: 760px;");
+    expect(css).toContain("--layout-utility-rail: 420px;");
     expect(css).toContain("--component-disclosure-row-height: 32px;");
-    expect(css).toContain("--component-inspector-width: 340px;");
+    expect(css).toContain("--component-inspector-width: 760px;");
     expect(css).toContain("--component-trajectory-preview-lines: 16;");
     expect(css).not.toContain("--color-brand-600");
   });

@@ -23,6 +23,19 @@ describe("Workbench layout", () => {
     expect(styles).toContain(".task-workspace-view");
   });
 
+  it("keeps header controls out of the workspace navigation lane", async () => {
+    const styles = await readFile(
+      new URL("../src/styles/task-workbench.css", import.meta.url),
+      "utf8",
+    );
+
+    expect(styles).toContain(
+      "grid-template-columns: minmax(0, 1fr) auto max-content;",
+    );
+    expect(styles).not.toContain("minmax(260px, 1fr)");
+    expect(styles).not.toContain("minmax(350px, 1fr)");
+  });
+
   it("keeps blockers and next actions independently visible", async () => {
     const [source, boundary, featureStyles, globalStyles] = await Promise.all([
       readFile(new URL("../src/TaskNarrativeBar.tsx", import.meta.url), "utf8"),
@@ -39,7 +52,7 @@ describe("Workbench layout", () => {
     expect(source).not.toContain(") : narrative.nextStep ? (");
     expect(source).toContain("aria-label={shellCopy.taskNarrative.controls}");
     expect(source).toContain("copy.narrative.browserControls");
-    expect(source).toContain("onClick={onStop}");
+    expect(source).not.toContain("onClick={onStop}");
     expect(boundary).toContain('import "./task-narrative.css"');
     expect(featureStyles).toContain(
       ".task-status-details > summary:focus-visible",
@@ -92,10 +105,48 @@ describe("Workbench layout", () => {
       "utf8",
     );
 
-    expect(styles).toContain(
-      ".task-artifact-card > .artifact-action-surface",
-    );
+    expect(styles).toContain(".task-artifact-card > .artifact-action-surface");
     expect(styles).toContain("grid-column: 2 / -1;");
+  });
+
+  it("shares one resizable evidence rail between artifacts and Browser", async () => {
+    const [app, artifactStyles, browserStyles] = await Promise.all([
+      readFile(
+        new URL("../src/AppWorkspaceViews.tsx", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL("../src/styles/artifact-inspector.css", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL("../src/browser-live-view.css", import.meta.url),
+        "utf8",
+      ),
+    ]);
+
+    expect(app).toContain('side="evidence"');
+    expect(app).toContain("showEvidenceRail");
+    expect(artifactStyles).toContain("var(--workspace-evidence-width");
+    expect(browserStyles).toContain("var(--workspace-evidence-width");
+    expect(artifactStyles).toContain("var(--layout-center-min)");
+    expect(browserStyles).toContain("var(--layout-center-min)");
+    expect(artifactStyles).toContain("50vw");
+    expect(browserStyles).toContain("50vw");
+    expect(artifactStyles).not.toContain("var(--layout-evidence-rail-max)");
+    expect(browserStyles).not.toContain("var(--layout-evidence-rail-max)");
+    expect(artifactStyles).toContain("grid-column: 3");
+    expect(browserStyles).toContain("grid-column: 3");
+  });
+
+  it("keeps plan cards below the preceding thinking row", async () => {
+    const styles = await readFile(
+      new URL("../src/styles/arena-conversation.css", import.meta.url),
+      "utf8",
+    );
+
+    expect(styles).toContain(".message-ledger .conversation-plan {");
+    expect(styles).toContain("margin-block: var(--space-1) var(--space-3);");
   });
 
   it("keeps environment setup styles feature-owned and state-complete", async () => {

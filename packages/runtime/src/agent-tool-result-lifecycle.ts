@@ -13,6 +13,11 @@ import type {
 import { isSkillResourceLoadFailureV1 } from "@napier/contracts/skill-resource";
 
 import type { FrozenToolResultReplayController } from "./agent-message-tool-result-replay.js";
+import {
+  agentToolDisplayOwner,
+  type AgentToolDisplayStore,
+} from "./agent-tool-display-store.js";
+import { agentToolResultText } from "./agent-tool-result-text.js";
 import { captureToolInvocation } from "./tool-invocation-capture.js";
 import { toolInvocationArgumentsSha256 } from "./tool-invocation-capsule.js";
 import type { ToolInvocationCapsuleStore } from "./tool-invocation-capsule-store.js";
@@ -37,6 +42,7 @@ export interface AgentToolResultLifecycleOptions {
   toolProtocol: ToolProtocolRegistry;
   invocationCapsules: ToolInvocationCapsuleStore;
   resultCapsules: ToolInvocationResultCapsuleStore;
+  displays: AgentToolDisplayStore;
   budget: RunBudgetTracker;
   registry: ModelRegistry;
   deferredTools: AgentTool[];
@@ -50,6 +56,7 @@ export function toolLife(
     modelRegistry: ModelRegistry;
     toolInvocationCapsules: ToolInvocationCapsuleStore;
     toolInvocationResultCapsules: ToolInvocationResultCapsuleStore;
+    toolDisplays: AgentToolDisplayStore;
   },
   values: [RunBudgetTracker, RunRecord, AgentTool[], AgentTool[], AgentTool[]],
   optional: [
@@ -65,6 +72,7 @@ export function toolLife(
     registry: host.modelRegistry,
     invocationCapsules: host.toolInvocationCapsules,
     resultCapsules: host.toolInvocationResultCapsules,
+    displays: host.toolDisplays,
     budget,
     run,
     tools,
@@ -112,6 +120,12 @@ export class AgentToolResultLifecycle {
     toolName: string,
     args: unknown,
   ): Promise<BeforeToolCallResult | undefined> {
+    await this.options.displays
+      .recordInput(
+        agentToolDisplayOwner(this.options.run, { toolCallId, toolName }),
+        args,
+      )
+      .catch(() => undefined);
     const tool = this.definitions.get(toolName);
     const protocol = this.options.toolProtocol.get(toolName);
     if (!protocol) {
@@ -172,6 +186,16 @@ export class AgentToolResultLifecycle {
       input.toolCall.id,
       input.isError || typedSkillFailure,
     ) ?? (input.isError || typedSkillFailure);
+    await this.options.displays
+      .recordOutput(
+        agentToolDisplayOwner(this.options.run, {
+          toolCallId: input.toolCall.id,
+          toolName: input.toolCall.name,
+        }),
+        agentToolResultText(input.result),
+        effectiveIsError,
+      )
+      .catch(() => undefined);
     protocol.validateCanonicalResult(input.result, effectiveIsError);
     const reused = replay?.finalize(input.toolCall.id);
     if (replay && reused) {

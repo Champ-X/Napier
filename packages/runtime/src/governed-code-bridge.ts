@@ -14,6 +14,7 @@ import {
   agentToolOutputLedgerProjection,
 } from "./agent-tool-ledger.js";
 import { builtInToolHarnessProjection } from "./agent-tool-effects.js";
+import type { AgentToolDisplayStore } from "./agent-tool-display-store.js";
 import { agentToolResultText } from "./agent-tool-result-text.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { EventSink } from "./event-sink.js";
@@ -31,6 +32,7 @@ export function createGovernedCodeBridgeDispatcher(input: {
   registry?: ToolProtocolRegistry;
   activeToolNames(): ReadonlySet<string>;
   assertBudget(): void;
+  displays?: AgentToolDisplayStore;
   preflight(
     toolCall: { id: string; name: string },
     args: unknown,
@@ -79,6 +81,7 @@ async function appendBlocked(
   reason: string,
   protocol?: OwnedToolRecordV2,
 ): Promise<void> {
+  await captureBlockedDisplay(input, request, toolName, reason);
   await append(
     input,
     "tool.blocked",
@@ -105,6 +108,23 @@ async function appendBlocked(
   );
 }
 
+async function captureBlockedDisplay(
+  input: Parameters<typeof createGovernedCodeBridgeDispatcher>[0],
+  request: Parameters<GovernedCodeBridgeDispatcher>[0],
+  toolName: string,
+  reason: string,
+): Promise<void> {
+  if (!input.displays) return;
+  const owner = {
+    threadId: input.run.threadId,
+    runId: input.run.id,
+    callId: `codebridge_${request.evaluationId}_${String(request.callId)}`,
+    toolName,
+  };
+  await input.displays.recordInput(owner, request.input).catch(() => undefined);
+  await input.displays.recordOutput(owner, reason, true).catch(() => undefined);
+}
+
 async function dispatchGovernedTool(
   input: Parameters<typeof createGovernedCodeBridgeDispatcher>[0],
   request: Parameters<GovernedCodeBridgeDispatcher>[0],
@@ -125,6 +145,7 @@ async function dispatchGovernedTool(
     input.assertBudget();
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
+    await captureBlockedDisplay(input, request, tool.name, reason);
     await append(input, "tool.blocked", toolCall, {
       status: "blocked",
       nestedDispatch: true,

@@ -39,7 +39,9 @@
   --radius-xs: var(--radius-sm);
   --shell-nav-width: var(--layout-sidebar-expanded);
   --shell-nav-compact-width: var(--layout-sidebar-compact);
-  --shell-drawer-width: var(--layout-evidence-rail);
+  --shell-drawer-width: var(--layout-utility-rail);
+  --workspace-navigation-width: var(--layout-sidebar-expanded);
+  --workspace-evidence-width: var(--layout-evidence-rail);
   --shell-gutter: clamp(18px, 3vw, 42px);
   /* Live composer height, mirrored from the rendered input by useComposerHeight
      (design §7.1). Defaults to the resting shell height before measurement. */
@@ -47,10 +49,7 @@
   /* Shared content axis (design §7.3): conversation messages, task body, empty
      state, and the composer resolve their width from this single expression so
      no feature redefines the main column. Capped at the reading max. */
-  --content-axis: min(
-    var(--layout-reading-max),
-    calc(100% - var(--space-12))
-  );
+  --content-axis: min(var(--layout-reading-max), calc(100% - var(--space-12)));
   --sans: var(--font-sans);
   --serif: var(--font-sans);
   --mono: var(--font-mono);

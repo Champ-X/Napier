@@ -9,6 +9,7 @@ import type {
   PlanArtifactTextPreviewReceipt,
 } from "../src/artifact-file-api";
 import { ArtifactActionSurface } from "../src/ArtifactActionSurface";
+import type { ArtifactInspection } from "../src/artifact-inspection";
 
 const containers: HTMLElement[] = [];
 
@@ -101,6 +102,46 @@ describe("ArtifactActionSurface", () => {
     expect(previewArtifact).not.toHaveBeenCalled();
   });
 
+  it("hands preview receipts to a host inspector without rendering inline", async () => {
+    const { container } = installDom();
+    const previewArtifact = vi.fn(async () => preview());
+    const onInspect = vi.fn<(inspection: ArtifactInspection) => void>();
+    await renderSurface(container, { previewArtifact, onInspect });
+
+    await click(button(container, "Preview"));
+    await waitFor(() => onInspect.mock.calls.length === 1);
+
+    expect(onInspect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: "preview",
+        planId: "plan_1",
+        threadId: "thread_1",
+        receipt: expect.objectContaining({ text: "# Delivery\nDone." }),
+      }),
+    );
+    expect(container.textContent).not.toContain("# Delivery");
+  });
+
+  it("hands diff receipts to a host inspector without rendering inline", async () => {
+    const { container } = installDom();
+    const previewDiff = vi.fn(async () => diff());
+    const onInspect = vi.fn<(inspection: ArtifactInspection) => void>();
+    await renderSurface(container, { previewDiff, onInspect });
+
+    await click(button(container, "Diff"));
+    await waitFor(() => onInspect.mock.calls.length === 1);
+
+    expect(onInspect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: "diff",
+        planId: "plan_1",
+        threadId: "thread_1",
+        receipt: expect.objectContaining({ text: "-Before\n+Changed" }),
+      }),
+    );
+    expect(container.textContent).not.toContain("+Changed");
+  });
+
   it("exposes host actions only when executable callbacks are supplied", async () => {
     const { container } = installDom();
     const onReveal = vi.fn();
@@ -145,6 +186,7 @@ async function renderSurface(
     onReveal?: () => void | Promise<void>;
     onRestore?: () => void | Promise<void>;
     onApply?: () => void | Promise<void>;
+    onInspect?: (inspection: ArtifactInspection) => void;
   },
 ) {
   await act(async () => {
@@ -164,6 +206,7 @@ async function renderSurface(
         {...(options.onReveal ? { onReveal: options.onReveal } : {})}
         {...(options.onRestore ? { onRestore: options.onRestore } : {})}
         {...(options.onApply ? { onApply: options.onApply } : {})}
+        {...(options.onInspect ? { onInspect: options.onInspect } : {})}
       />,
       container,
     );

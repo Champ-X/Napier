@@ -9,7 +9,7 @@ released versions remain stable.
 ## 0. Meta
 
 ```yaml
-version: 1.1.0
+version: 2.1.0
 contract_status: evolving
 framework:
   css: plain-css
@@ -28,10 +28,12 @@ reflow guarantee, not a commitment to a full mobile or touch product.
 
 ## 1. Brand
 
-Napier is a restrained, trustworthy, precise working tool. Brand blue identifies
-primary action and focus; it is not a decorative gradient. Green means success,
-amber means running/waiting/warning, and red means failure, danger, or destructive
-action. Purple and orange are restricted to Running Trajectory data classes.
+Napier is a restrained, trustworthy, precise working tool. Its workbench follows
+the calm, warm-paper character of a focused editorial workspace: dark ink carries
+primary actions, warm gray separates structure, and color appears only when it
+communicates state. Green means success, amber means running/waiting/warning, and
+red means failure, danger, or destructive action. Purple and orange are restricted
+to Running Trajectory data classes.
 
 Principles:
 
@@ -42,44 +44,54 @@ Principles:
 5. Accessibility, explicit state, and reduced motion are release gates.
 6. Conversation, Task, and Trajectory share one content axis and one shell.
 7. Process detail uses progressive disclosure; summaries stay scannable.
+8. Conversation is a document flow, not a stack of dashboard cards.
+9. Generated files remain in context and open into a dedicated evidence inspector.
+10. Completed tool activity reads as a compact verb phrase; status, time, and
+    evidence stay subordinate until the row is expanded.
+11. A file inspector keeps preview, raw source, and recorded changes in one
+    stable place. Switching views or refreshing content never closes the file.
+12. Expanded thinking rows show the complete model-provided transcript when it
+    was durably retained, after secret redaction. Historical hash-only segments
+    state that the original is unavailable and never fabricate replacement text.
 
 ## 2. Color
 
 ### 2.1 Canonical DTCG token source
 
 <!-- napier-design-tokens:start -->
+
 ```json
 {
   "$schema": "https://design-tokens.github.io/community-group/format/",
   "color": {
     "neutral": {
       "0": { "$type": "color", "$value": "#FFFFFF" },
-      "50": { "$type": "color", "$value": "#F7F8FA" },
-      "100": { "$type": "color", "$value": "#F4F6F9" },
-      "150": { "$type": "color", "$value": "#EEF0F5" },
-      "200": { "$type": "color", "$value": "#E8EBF0" },
-      "300": { "$type": "color", "$value": "#D5DAE1" },
-      "400": { "$type": "color", "$value": "#9AA2AC" },
-      "500": { "$type": "color", "$value": "#7A838D" },
-      "600": { "$type": "color", "$value": "#69717B" },
-      "700": { "$type": "color", "$value": "#596069" },
-      "900": { "$type": "color", "$value": "#1A1D1F" }
+      "50": { "$type": "color", "$value": "#FBFAF7" },
+      "100": { "$type": "color", "$value": "#F6F4F0" },
+      "150": { "$type": "color", "$value": "#F0EEE9" },
+      "200": { "$type": "color", "$value": "#E8E5DF" },
+      "300": { "$type": "color", "$value": "#D7D3CB" },
+      "400": { "$type": "color", "$value": "#AAA69E" },
+      "500": { "$type": "color", "$value": "#858078" },
+      "600": { "$type": "color", "$value": "#6F6A63" },
+      "700": { "$type": "color", "$value": "#514D47" },
+      "900": { "$type": "color", "$value": "#1F1E1B" }
     },
     "brand": {
-      "50": { "$type": "color", "$value": "#EEF1FF" },
-      "400": { "$type": "color", "$value": "#6F86FF" },
-      "500": { "$type": "color", "$value": "#4D6BFE" },
-      "600": { "$type": "color", "$value": "#3A58EC" },
-      "700": { "$type": "color", "$value": "#3A54E0" },
-      "800": { "$type": "color", "$value": "#3048C8" }
+      "50": { "$type": "color", "$value": "#F3F1ED" },
+      "400": { "$type": "color", "$value": "#77736C" },
+      "500": { "$type": "color", "$value": "#5B5852" },
+      "600": { "$type": "color", "$value": "#34332F" },
+      "700": { "$type": "color", "$value": "#292824" },
+      "800": { "$type": "color", "$value": "#1F1E1B" }
     },
     "ink": {
-      "100": { "$type": "color", "$value": "#E7ECF2" },
-      "300": { "$type": "color", "$value": "#AEB9C7" },
-      "700": { "$type": "color", "$value": "#2B3442" },
-      "800": { "$type": "color", "$value": "#202733" },
-      "900": { "$type": "color", "$value": "#171C25" },
-      "950": { "$type": "color", "$value": "#10141B" }
+      "100": { "$type": "color", "$value": "#EEECE7" },
+      "300": { "$type": "color", "$value": "#625E57" },
+      "700": { "$type": "color", "$value": "#4A4741" },
+      "800": { "$type": "color", "$value": "#35332F" },
+      "900": { "$type": "color", "$value": "#272622" },
+      "950": { "$type": "color", "$value": "#1F1E1B" }
     },
     "success": {
       "100": { "$type": "color", "$value": "#DFE9E0" },
@@ -131,14 +143,26 @@ Principles:
       "accent-active": { "$type": "color", "$value": "{color.brand.800}" },
       "accent-subtle": { "$type": "color", "$value": "{color.brand.50}" },
       "focus-ring": { "$type": "color", "$value": "{color.brand.500}" },
-      "navigation-bg": { "$type": "color", "$value": "{color.ink.950}" },
-      "navigation-surface": { "$type": "color", "$value": "{color.ink.900}" },
-      "navigation-surface-hover": { "$type": "color", "$value": "{color.ink.800}" },
-      "navigation-border": { "$type": "color", "$value": "{color.ink.700}" },
-      "navigation-fg": { "$type": "color", "$value": "{color.neutral.0}" },
+      "navigation-bg": { "$type": "color", "$value": "{color.neutral.100}" },
+      "navigation-surface": {
+        "$type": "color",
+        "$value": "{color.neutral.50}"
+      },
+      "navigation-surface-hover": {
+        "$type": "color",
+        "$value": "{color.neutral.150}"
+      },
+      "navigation-border": {
+        "$type": "color",
+        "$value": "{color.neutral.200}"
+      },
+      "navigation-fg": { "$type": "color", "$value": "{color.ink.950}" },
       "navigation-fg-muted": { "$type": "color", "$value": "{color.ink.300}" },
-      "execution-spine": { "$type": "color", "$value": "{color.brand.500}" },
-      "execution-spine-subtle": { "$type": "color", "$value": "{color.brand.50}" },
+      "execution-spine": { "$type": "color", "$value": "{color.neutral.600}" },
+      "execution-spine-subtle": {
+        "$type": "color",
+        "$value": "{color.neutral.150}"
+      },
       "success": { "$type": "color", "$value": "{color.success.700}" },
       "success-surface": { "$type": "color", "$value": "{color.success.100}" },
       "success-border": { "$type": "color", "$value": "{color.success.600}" },
@@ -151,12 +175,30 @@ Principles:
       "danger-border": { "$type": "color", "$value": "{color.danger.600}" },
       "danger-accent": { "$type": "color", "$value": "{color.danger.500}" },
       "danger-fg": { "$type": "color", "$value": "{color.danger.800}" },
-      "trajectory-input-surface": { "$type": "color", "$value": "{color.trajectory.input-surface}" },
-      "trajectory-input-fg": { "$type": "color", "$value": "{color.trajectory.input-fg}" },
-      "trajectory-model-surface": { "$type": "color", "$value": "{color.trajectory.model-surface}" },
-      "trajectory-model-fg": { "$type": "color", "$value": "{color.trajectory.model-fg}" },
-      "trajectory-tool-surface": { "$type": "color", "$value": "{color.trajectory.tool-surface}" },
-      "trajectory-tool-fg": { "$type": "color", "$value": "{color.trajectory.tool-fg}" },
+      "trajectory-input-surface": {
+        "$type": "color",
+        "$value": "{color.trajectory.input-surface}"
+      },
+      "trajectory-input-fg": {
+        "$type": "color",
+        "$value": "{color.trajectory.input-fg}"
+      },
+      "trajectory-model-surface": {
+        "$type": "color",
+        "$value": "{color.trajectory.model-surface}"
+      },
+      "trajectory-model-fg": {
+        "$type": "color",
+        "$value": "{color.trajectory.model-fg}"
+      },
+      "trajectory-tool-surface": {
+        "$type": "color",
+        "$value": "{color.trajectory.tool-surface}"
+      },
+      "trajectory-tool-fg": {
+        "$type": "color",
+        "$value": "{color.trajectory.tool-fg}"
+      },
       "blue-11": { "$type": "color", "$value": "#131823" },
       "blue-15": { "$type": "color", "$value": "#25262A" },
       "blue-16": { "$type": "color", "$value": "#17213C" },
@@ -238,8 +280,31 @@ Principles:
   },
   "font": {
     "family": {
-      "sans": { "$type": "fontFamily", "$value": ["-apple-system", "BlinkMacSystemFont", "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", "Arial", "sans-serif"] },
-      "mono": { "$type": "fontFamily", "$value": ["SFMono-Regular", "Cascadia Mono", "Roboto Mono", "Noto Sans Mono CJK SC", "Consolas", "monospace"] }
+      "sans": {
+        "$type": "fontFamily",
+        "$value": [
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "PingFang SC",
+          "Hiragino Sans GB",
+          "Noto Sans CJK SC",
+          "Microsoft YaHei",
+          "Arial",
+          "sans-serif"
+        ]
+      },
+      "mono": {
+        "$type": "fontFamily",
+        "$value": [
+          "SFMono-Regular",
+          "Cascadia Mono",
+          "Roboto Mono",
+          "Noto Sans Mono CJK SC",
+          "Consolas",
+          "monospace"
+        ]
+      }
     },
     "weight": {
       "regular": { "$type": "fontWeight", "$value": 400 },
@@ -258,7 +323,10 @@ Principles:
       "2xl": { "$type": "dimension", "$value": { "value": 30, "unit": "px" } },
       "3xl": { "$type": "dimension", "$value": { "value": 32, "unit": "px" } },
       "4xl": { "$type": "dimension", "$value": { "value": 40, "unit": "px" } },
-      "annotation": { "$type": "dimension", "$value": { "value": 12, "unit": "px" } }
+      "annotation": {
+        "$type": "dimension",
+        "$value": { "value": 12, "unit": "px" }
+      }
     },
     "line": {
       "compact": { "$type": "number", "$value": 1.45 },
@@ -310,8 +378,14 @@ Principles:
   },
   "shadow": {
     "none": { "$type": "string", "$value": "none" },
-    "raised": { "$type": "string", "$value": "0 1px 2px rgb(23 33 60 / 6%), 0 8px 24px rgb(23 33 60 / 8%)" },
-    "modal": { "$type": "string", "$value": "0 2px 6px rgb(23 33 60 / 10%), 0 24px 60px rgb(23 33 60 / 18%)" }
+    "raised": {
+      "$type": "string",
+      "$value": "0 1px 2px rgb(31 30 27 / 5%), 0 8px 28px rgb(31 30 27 / 9%)"
+    },
+    "modal": {
+      "$type": "string",
+      "$value": "0 2px 6px rgb(31 30 27 / 10%), 0 24px 64px rgb(31 30 27 / 16%)"
+    }
   },
   "duration": {
     "fast": { "$type": "duration", "$value": { "value": 120, "unit": "ms" } },
@@ -324,38 +398,110 @@ Principles:
     "standard": { "$type": "cubicBezier", "$value": [0.4, 0, 0.2, 1] }
   },
   "layout": {
-    "center-min": { "$type": "dimension", "$value": { "value": 640, "unit": "px" } },
-    "reading-min": { "$type": "dimension", "$value": { "value": 640, "unit": "px" } },
-    "reading-target": { "$type": "dimension", "$value": { "value": 800, "unit": "px" } },
-    "reading-max": { "$type": "dimension", "$value": { "value": 880, "unit": "px" } },
-    "sidebar-expanded-min": { "$type": "dimension", "$value": { "value": 224, "unit": "px" } },
-    "sidebar-expanded": { "$type": "dimension", "$value": { "value": 240, "unit": "px" } },
-    "sidebar-expanded-max": { "$type": "dimension", "$value": { "value": 280, "unit": "px" } },
-    "sidebar-compact": { "$type": "dimension", "$value": { "value": 56, "unit": "px" } },
-    "evidence-rail-min": { "$type": "dimension", "$value": { "value": 320, "unit": "px" } },
-    "evidence-rail": { "$type": "dimension", "$value": { "value": 340, "unit": "px" } },
-    "evidence-rail-max": { "$type": "dimension", "$value": { "value": 400, "unit": "px" } },
-    "topbar": { "$type": "dimension", "$value": { "value": 50, "unit": "px" } },
-    "command-bar": { "$type": "dimension", "$value": { "value": 58, "unit": "px" } },
-    "status-bar": { "$type": "dimension", "$value": { "value": 40, "unit": "px" } },
-    "settings-form": { "$type": "dimension", "$value": { "value": 800, "unit": "px" } },
-    "composer-min": { "$type": "dimension", "$value": { "value": 56, "unit": "px" } },
-    "composer-rest-max": { "$type": "dimension", "$value": { "value": 88, "unit": "px" } },
-    "composer-shell": { "$type": "dimension", "$value": { "value": 72, "unit": "px" } },
-    "composer-max": { "$type": "dimension", "$value": { "value": 160, "unit": "px" } },
-    "composer-expanded-max": { "$type": "dimension", "$value": { "value": 240, "unit": "px" } },
-    "execution-gutter": { "$type": "dimension", "$value": { "value": 40, "unit": "px" } }
+    "center-min": {
+      "$type": "dimension",
+      "$value": { "value": 640, "unit": "px" }
+    },
+    "reading-min": {
+      "$type": "dimension",
+      "$value": { "value": 640, "unit": "px" }
+    },
+    "reading-target": {
+      "$type": "dimension",
+      "$value": { "value": 760, "unit": "px" }
+    },
+    "reading-max": {
+      "$type": "dimension",
+      "$value": { "value": 820, "unit": "px" }
+    },
+    "sidebar-expanded-min": {
+      "$type": "dimension",
+      "$value": { "value": 232, "unit": "px" }
+    },
+    "sidebar-expanded": {
+      "$type": "dimension",
+      "$value": { "value": 252, "unit": "px" }
+    },
+    "sidebar-expanded-max": {
+      "$type": "dimension",
+      "$value": { "value": 480, "unit": "px" }
+    },
+    "sidebar-compact": {
+      "$type": "dimension",
+      "$value": { "value": 56, "unit": "px" }
+    },
+    "evidence-rail-min": {
+      "$type": "dimension",
+      "$value": { "value": 360, "unit": "px" }
+    },
+    "evidence-rail": {
+      "$type": "dimension",
+      "$value": { "value": 760, "unit": "px" }
+    },
+    "utility-rail": {
+      "$type": "dimension",
+      "$value": { "value": 420, "unit": "px" }
+    },
+    "topbar": { "$type": "dimension", "$value": { "value": 48, "unit": "px" } },
+    "command-bar": {
+      "$type": "dimension",
+      "$value": { "value": 52, "unit": "px" }
+    },
+    "status-bar": {
+      "$type": "dimension",
+      "$value": { "value": 40, "unit": "px" }
+    },
+    "settings-form": {
+      "$type": "dimension",
+      "$value": { "value": 800, "unit": "px" }
+    },
+    "composer-min": {
+      "$type": "dimension",
+      "$value": { "value": 56, "unit": "px" }
+    },
+    "composer-rest-max": {
+      "$type": "dimension",
+      "$value": { "value": 88, "unit": "px" }
+    },
+    "composer-shell": {
+      "$type": "dimension",
+      "$value": { "value": 72, "unit": "px" }
+    },
+    "composer-max": {
+      "$type": "dimension",
+      "$value": { "value": 160, "unit": "px" }
+    },
+    "composer-expanded-max": {
+      "$type": "dimension",
+      "$value": { "value": 240, "unit": "px" }
+    },
+    "execution-gutter": {
+      "$type": "dimension",
+      "$value": { "value": 40, "unit": "px" }
+    }
   },
   "control": {
     "target": { "$type": "dimension", "$value": { "value": 32, "unit": "px" } },
-    "target-primary": { "$type": "dimension", "$value": { "value": 40, "unit": "px" } },
-    "focus-width": { "$type": "dimension", "$value": { "value": 3, "unit": "px" } },
-    "focus-offset": { "$type": "dimension", "$value": { "value": 2, "unit": "px" } }
+    "target-primary": {
+      "$type": "dimension",
+      "$value": { "value": 40, "unit": "px" }
+    },
+    "focus-width": {
+      "$type": "dimension",
+      "$value": { "value": 3, "unit": "px" }
+    },
+    "focus-offset": {
+      "$type": "dimension",
+      "$value": { "value": 2, "unit": "px" }
+    }
   },
   "component": {
     "button": {
       "height": { "$type": "dimension", "$value": "{control.target}" },
-      "height-primary": { "$type": "dimension", "$value": "{control.target-primary}" },
+      "height-primary": {
+        "$type": "dimension",
+        "$value": "{control.target-primary}"
+      },
       "radius": { "$type": "dimension", "$value": "{radius.sm}" }
     },
     "composer": {
@@ -363,7 +509,10 @@ Principles:
       "shadow": { "$type": "string", "$value": "{shadow.raised}" }
     },
     "disclosure": {
-      "row-height": { "$type": "dimension", "$value": { "value": 32, "unit": "px" } },
+      "row-height": {
+        "$type": "dimension",
+        "$value": { "value": 32, "unit": "px" }
+      },
       "radius": { "$type": "dimension", "$value": "{radius.sm}" }
     },
     "inspector": {
@@ -371,13 +520,20 @@ Principles:
       "radius": { "$type": "dimension", "$value": "{radius.md}" }
     },
     "trajectory": {
-      "row-height": { "$type": "dimension", "$value": { "value": 30, "unit": "px" } },
-      "row-height-expanded": { "$type": "dimension", "$value": { "value": 44, "unit": "px" } },
+      "row-height": {
+        "$type": "dimension",
+        "$value": { "value": 30, "unit": "px" }
+      },
+      "row-height-expanded": {
+        "$type": "dimension",
+        "$value": { "value": 44, "unit": "px" }
+      },
       "preview-lines": { "$type": "number", "$value": 16 }
     }
   }
 }
 ```
+
 <!-- napier-design-tokens:end -->
 
 ### 2.2 Primitive palette reference
@@ -387,34 +543,34 @@ contrast. `check:web-design` rejects any drift between the two representations.
 
 ```tokens color.neutral
 - 0 (color): #FFFFFF
-- 50 (color): #F7F8FA
-- 100 (color): #F4F6F9
-- 150 (color): #EEF0F5
-- 200 (color): #E8EBF0
-- 300 (color): #D5DAE1
-- 400 (color): #9AA2AC
-- 500 (color): #7A838D
-- 600 (color): #69717B
-- 700 (color): #596069
-- 900 (color): #1A1D1F
+- 50 (color): #FBFAF7
+- 100 (color): #F6F4F0
+- 150 (color): #F0EEE9
+- 200 (color): #E8E5DF
+- 300 (color): #D7D3CB
+- 400 (color): #AAA69E
+- 500 (color): #858078
+- 600 (color): #6F6A63
+- 700 (color): #514D47
+- 900 (color): #1F1E1B
 ```
 
 ```tokens color.brand
-- 50 (color): #EEF1FF
-- 400 (color): #6F86FF
-- 500 (color): #4D6BFE
-- 600 (color): #3A58EC
-- 700 (color): #3A54E0
-- 800 (color): #3048C8
+- 50 (color): #F3F1ED
+- 400 (color): #77736C
+- 500 (color): #5B5852
+- 600 (color): #34332F
+- 700 (color): #292824
+- 800 (color): #1F1E1B
 ```
 
 ```tokens color.ink
-- 100 (color): #E7ECF2
-- 300 (color): #AEB9C7
-- 700 (color): #2B3442
-- 800 (color): #202733
-- 900 (color): #171C25
-- 950 (color): #10141B
+- 100 (color): #EEECE7
+- 300 (color): #625E57
+- 700 (color): #4A4741
+- 800 (color): #35332F
+- 900 (color): #272622
+- 950 (color): #1F1E1B
 ```
 
 ```tokens color.status
@@ -446,34 +602,34 @@ contrast. `check:web-design` rejects any drift between the two representations.
 Napier currently ships one light theme; the duplicated Dark column keeps generic
 auditors deterministic without implying a supported dark product theme.
 
-| Token | Light | Dark | Role | Required contrast |
-|---|---|---|---|---|
-| `--color-bg` | `{color.neutral.50}` | `{color.neutral.50}` | Page canvas | — |
-| `--color-bg-subtle` | `{color.neutral.100}` | `{color.neutral.100}` | Recessed canvas | — |
-| `--color-surface` | `{color.neutral.0}` | `{color.neutral.0}` | Card and panel | — |
-| `--color-surface-raised` | `{color.neutral.50}` | `{color.neutral.50}` | Elevated surface | — |
-| `--color-fg` | `{color.neutral.900}` | `{color.neutral.900}` | Primary text | 4.5:1 |
-| `--color-fg-muted` | `{color.neutral.700}` | `{color.neutral.700}` | Secondary text | 4.5:1 |
-| `--color-fg-subtle` | `{color.neutral.600}` | `{color.neutral.600}` | Help text | 4.5:1 |
-| `--color-fg-on-accent` | `{color.neutral.0}` | `{color.neutral.0}` | Primary-action text | 4.5:1 |
-| `--color-border` | `{color.neutral.300}` | `{color.neutral.300}` | Decorative border | advisory |
-| `--color-border-subtle` | `{color.neutral.200}` | `{color.neutral.200}` | Divider | — |
-| `--color-border-strong` | `{color.neutral.500}` | `{color.neutral.500}` | Sole control boundary | 3:1 |
-| `--color-accent` | `{color.brand.600}` | `{color.brand.600}` | Primary action and link | 4.5:1 on action |
-| `--color-accent-hover` | `{color.brand.700}` | `{color.brand.700}` | Hover | — |
-| `--color-accent-subtle` | `{color.brand.50}` | `{color.brand.50}` | Selected surface | — |
-| `--color-focus-ring` | `{color.brand.500}` | `{color.brand.500}` | Focus and indicator | 3:1 |
-| `--color-success` | `{color.success.700}` | `{color.success.700}` | Success | 4.5:1 on surface |
-| `--color-warning` | `{color.warning.700}` | `{color.warning.700}` | Running/waiting/warning | 4.5:1 on warning surface |
-| `--color-danger` | `{color.danger.700}` | `{color.danger.700}` | Failure and destructive | 4.5:1 with white |
+| Token                    | Light                 | Dark                  | Role                    | Required contrast        |
+| ------------------------ | --------------------- | --------------------- | ----------------------- | ------------------------ |
+| `--color-bg`             | `{color.neutral.50}`  | `{color.neutral.50}`  | Page canvas             | —                        |
+| `--color-bg-subtle`      | `{color.neutral.100}` | `{color.neutral.100}` | Recessed canvas         | —                        |
+| `--color-surface`        | `{color.neutral.0}`   | `{color.neutral.0}`   | Card and panel          | —                        |
+| `--color-surface-raised` | `{color.neutral.50}`  | `{color.neutral.50}`  | Elevated surface        | —                        |
+| `--color-fg`             | `{color.neutral.900}` | `{color.neutral.900}` | Primary text            | 4.5:1                    |
+| `--color-fg-muted`       | `{color.neutral.700}` | `{color.neutral.700}` | Secondary text          | 4.5:1                    |
+| `--color-fg-subtle`      | `{color.neutral.600}` | `{color.neutral.600}` | Help text               | 4.5:1                    |
+| `--color-fg-on-accent`   | `{color.neutral.0}`   | `{color.neutral.0}`   | Primary-action text     | 4.5:1                    |
+| `--color-border`         | `{color.neutral.300}` | `{color.neutral.300}` | Decorative border       | advisory                 |
+| `--color-border-subtle`  | `{color.neutral.200}` | `{color.neutral.200}` | Divider                 | —                        |
+| `--color-border-strong`  | `{color.neutral.500}` | `{color.neutral.500}` | Sole control boundary   | 3:1                      |
+| `--color-accent`         | `{color.brand.600}`   | `{color.brand.600}`   | Primary action and link | 4.5:1 on action          |
+| `--color-accent-hover`   | `{color.brand.700}`   | `{color.brand.700}`   | Hover                   | —                        |
+| `--color-accent-subtle`  | `{color.brand.50}`    | `{color.brand.50}`    | Selected surface        | —                        |
+| `--color-focus-ring`     | `{color.brand.500}`   | `{color.brand.500}`   | Focus and indicator     | 3:1                      |
+| `--color-success`        | `{color.success.700}` | `{color.success.700}` | Success                 | 4.5:1 on surface         |
+| `--color-warning`        | `{color.warning.700}` | `{color.warning.700}` | Running/waiting/warning | 4.5:1 on warning surface |
+| `--color-danger`         | `{color.danger.700}`  | `{color.danger.700}`  | Failure and destructive | 4.5:1 with white         |
 
 ### 2.4 Contrast and color boundaries
 
-- White on primary `#3A58EC` is 5.55:1.
-- Default text `#1A1D1F` on white is 16.94:1.
-- Muted text `#596069` on white is 6.36:1.
-- Focus `#4D6BFE` against white is 4.33:1 and is not used for normal text.
-- Decorative `#9AA2AC` and `#D5DAE1` never carry text or sole control boundaries.
+- White on primary `#34332F` is greater than 12:1.
+- Default text `#1F1E1B` on white is greater than 16:1.
+- Muted text `#514D47` on white is greater than 8:1.
+- Focus `#5B5852` against white exceeds 6:1.
+- Decorative `#AAA69E` and `#D7D3CB` never carry text or sole control boundaries.
 - Trajectory input/model/tool pairs pass 4.5:1 and are allowlisted only inside
   Running Trajectory, its legend, filters, and this design-system showcase.
 
@@ -528,9 +684,17 @@ and 220ms. `--ease-out`, `--ease-in`, and `--ease-standard` are the only
 easing curves. Only opacity and transform animate. Page changes do not use
 large translations.
 
+Conversation disclosures fade their evidence in over `--duration-base`;
+chevrons rotate over `--duration-fast`. The artifact inspector may fade its
+content when the selected view changes, but its frame and conversation column
+must not translate or resize. Refresh retains the current view and announces
+busy state without introducing a blocking overlay.
+
 ```css
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
@@ -554,11 +718,17 @@ double box-shadow above.
 
 ## 9. Layout
 
-- Sidebar: 240px default, 224px to 280px adjustable, and 56px compact.
+- Sidebar: 252px default, 232px to 272px adjustable, and 56px compact.
 - Center column: 640px hard floor.
-- Reading axis: 800px target and 880px maximum.
-- Evidence rail: 340px default, 320px to 400px adjustable.
-- Top bar: 50px. Task status: 40px and absent when it adds no new information.
+- Reading axis: 760px target and 820px maximum.
+- Artifact inspector: 760px target and 820px maximum on wide screens. It may
+  compress to 360px only to preserve the 640px center-column floor; below
+  1280px it overlays the conversation instead of shrinking that floor.
+- The inspector toolbar exposes Preview and Source for every text file, Changes
+  when a recorded diff is available, plus refresh, download, and close. HTML
+  preview remains sandboxed with scripts only; Source is always inert text.
+- Utility drawers and compact evidence surfaces remain 420px.
+- Top bar: 48px. Task status: 40px and absent when it adds no new information.
 - Composer: 56px minimum, up to 88px at rest, 160px in normal editing, and
   240px only in an explicit expanded editor.
 - Desktop controls are at least 32px and primary actions at least 40px.
@@ -581,23 +751,23 @@ Tables, timelines, code, terminal output, and diffs may scroll horizontally
 inside their own bounded surfaces. Ordinary text, navigation, forms, and the
 application shell may not.
 
-### 9.1 Retained V2 shell tokens
+### 9.1 Arena workbench shell tokens
 
-The following tokens are generated for the current V2 workbench shell and remain
-available to feature CSS during the v1.1 migration window. They are retained,
-not new surface area, and may be deprecated once the AppFrame solver and unified
-ContentAxis fully own these values:
+The shell uses a warm-white navigator, a white conversation canvas, and an
+optional bordered evidence inspector. The familiar token names remain available
+through the v2.0 migration so existing Task and Trajectory surfaces can adopt the
+new system without a flag day:
 
 - `--color-navigation-bg`, `--color-navigation-surface`,
   `--color-navigation-surface-hover`, `--color-navigation-border`,
-  `--color-navigation-fg`, and `--color-navigation-fg-muted` describe the single
-  persistent dark project navigator. No other product surface uses the ink ramp.
+  `--color-navigation-fg`, and `--color-navigation-fg-muted` now describe the
+  persistent warm-white project navigator.
 - `--color-execution-spine` and `--color-execution-spine-subtle` express causal
-  continuity shared by conversation, task, and trajectory. Trajectory
-  input/model/tool colors classify data and never replace the spine.
+  continuity in legacy Task and Trajectory surfaces. Conversation renders this
+  continuity as quiet disclosure rows rather than a visible blue rail.
 - `--color-canvas` is the main workspace background; `--color-paper` is the
   bounded reading surface inside it.
-- `--layout-command-bar` (58px) is the combined identity, view, status, model,
+- `--layout-command-bar` (52px) is the combined identity, view, status, model,
   and settings row. `--layout-composer-shell` (72px) is the composer at rest.
   `--layout-execution-gutter` (40px) is the shared spine gutter.
 
@@ -629,3 +799,21 @@ baseline requires an explicit reviewed change to this contract.
   `apps/web/src/styles/tokens.css`.
 - Feature CSS may consume semantic, layout, control, and component variables.
   Primitive color values remain unavailable outside this source file.
+
+### 11.1 v1.1 to v2.0 map
+
+| v1.1 role                         | v2.0 role                         | Migration                                                                                                                           |
+| --------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Blue primary action and focus     | Deep ink primary action and focus | Existing `--color-accent*` names resolve to the new ink values.                                                                     |
+| Dark persistent navigator         | Warm-white persistent navigator   | Existing `--color-navigation-*` names resolve to light surfaces and dark text.                                                      |
+| Blue conversation execution spine | Neutral disclosure rows           | Keep spine tokens for Task and Trajectory; new conversation CSS removes the visual rail.                                            |
+| 240px navigator                   | 252px navigator                   | Existing `--layout-sidebar-*` names adopt the new bounds.                                                                           |
+| 340px evidence rail               | 760px artifact inspector          | `--layout-evidence-rail*` and `--component-inspector-width` now define a wide preview; compact drawers use `--layout-utility-rail`. |
+| 800–880px reading axis            | 760–820px reading axis            | Existing `--layout-reading-*` names narrow the central document flow.                                                               |
+
+### 11.2 v2.0 to v2.1 map
+
+| v2.0 behavior                    | v2.1 behavior                       | Migration                                                                                                 |
+| -------------------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Inspector mode fixed at open     | In-place Preview / Source / Changes | The inspector owns view selection and refreshes through existing artifact preview APIs.                   |
+| Tool rows expose two title lines | One compact activity phrase         | Preserve full evidence inside the disclosure; keep failed and blocked rows expanded for immediate review. |

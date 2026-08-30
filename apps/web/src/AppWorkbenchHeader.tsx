@@ -13,13 +13,11 @@ export function AppWorkbenchHeader({
   shell,
   browserControlsAvailable,
   onOpenBrowserControls,
-  onStop,
 }: {
   vm: ReturnType<typeof useWorkspaceViewModel>;
   shell: ReturnType<typeof useWorkspaceShell>;
   browserControlsAvailable: boolean;
   onOpenBrowserControls(): void;
-  onStop(): void;
 }) {
   if (!vm.bootstrap) return null;
   return (
@@ -47,7 +45,6 @@ export function AppWorkbenchHeader({
           detail={vm.detail}
           browserControlsAvailable={browserControlsAvailable}
           onOpenBrowserControls={onOpenBrowserControls}
-          onStop={onStop}
         />
       }
     >

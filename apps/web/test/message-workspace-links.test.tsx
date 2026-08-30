@@ -4,6 +4,7 @@ import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { MessageMarkdown } from "../src/message-markdown";
+import type { ArtifactInspection } from "../src/artifact-inspection";
 
 const containers: HTMLElement[] = [];
 
@@ -107,6 +108,54 @@ describe("Message workspace links", () => {
     expect(links[0]?.getAttribute("aria-label")).toBe("Citation 1");
     expect(links[0]?.textContent).toBe("[1]");
     expect(container.textContent).toContain("[citation:citation_unknown0001]");
+  });
+
+  it("opens an authoritative artifact from a bold inline file chip", async () => {
+    const container = installDom();
+    const onInspectArtifact = vi.fn<(inspection: ArtifactInspection) => void>();
+    const artifact = {
+      id: "artifact_report",
+      path: "artifacts/report.html",
+      kind: "file" as const,
+      description: "Interactive report",
+      status: "verified" as const,
+      evidence: "verified",
+      createdAt: "2026-08-30T00:00:00.000Z",
+      updatedAt: "2026-08-30T00:00:00.000Z",
+    };
+    await act(async () => {
+      render(
+        <MessageMarkdown
+          text="Done: **`artifacts/report.html`**"
+          workspaceLinks={[
+            {
+              artifact,
+              path: artifact.path,
+              planId: "plan_1",
+              threadId: "thread_1",
+              targetId: "artifact-card-1",
+            },
+          ]}
+          onInspectArtifact={onInspectArtifact}
+        />,
+        container,
+      );
+    });
+
+    const chip = findElementsByLocalName(
+      container,
+      "a",
+    )[0] as HTMLAnchorElement;
+    await act(async () => chip.click());
+
+    expect(chip.getAttribute("data-artifact-path")).toBe(artifact.path);
+    expect(chip.textContent).toBe(artifact.path);
+    expect(onInspectArtifact).toHaveBeenCalledWith({
+      artifact,
+      mode: "preview",
+      planId: "plan_1",
+      threadId: "thread_1",
+    });
   });
 });
 

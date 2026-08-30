@@ -1,4 +1,9 @@
 import type { RunEvent } from "@napier/contracts";
+import {
+  conversationToolDisplay,
+  mergeConversationToolDisplay,
+  type ConversationToolDisplay,
+} from "./conversation-tool-display-view-model";
 
 export type ConversationNetworkActivity =
   | {
@@ -15,6 +20,7 @@ export type ConversationNetworkActivity =
       failedProviderCount?: number;
       unavailableProviderCount?: number;
       retrievedAt?: string;
+      display?: ConversationToolDisplay;
     }
   | {
       kind: "fetch";
@@ -38,6 +44,7 @@ export type ConversationNetworkActivity =
         | "challenge_detected";
       redirectCount?: number;
       retrievedAt?: string;
+      display?: ConversationToolDisplay;
     };
 
 const EVENT = /^tool\.(started|completed|failed)$/u;
@@ -119,7 +126,17 @@ export function conversationNetworkActivities(
   const latest = new Map<string, ConversationNetworkActivity>();
   for (const event of events) {
     const activity = conversationNetworkActivity(event);
-    if (activity) latest.set(activity.callId, activity);
+    if (activity) {
+      const prior = latest.get(activity.callId);
+      const display = mergeConversationToolDisplay(
+        prior?.display,
+        activity.display,
+      );
+      latest.set(activity.callId, {
+        ...activity,
+        ...(display ? { display } : {}),
+      });
+    }
   }
   return [...latest.values()]
     .sort((left, right) => left.seq - right.seq)
@@ -146,12 +163,14 @@ export function conversationNetworkActivity(
       : event.type === "tool.completed"
         ? "completed"
         : "failed";
+  const display = conversationToolDisplay(payload);
   const base = {
     id: event.id,
     callId,
     seq: event.seq,
     createdAt: event.createdAt,
     status,
+    ...(display ? { display } : {}),
   } as const;
   if (toolName === "web_search") {
     if (status !== "completed") return { kind: "search", ...base };

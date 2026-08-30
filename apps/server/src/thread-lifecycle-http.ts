@@ -26,6 +26,7 @@ import {
 } from "./thread-lifecycle-http-validation.js";
 import { setThreadDetailProjectionHeaders } from "./thread-lifecycle-http-response.js";
 import { attachKernelThreadProjections } from "./kernel-thread-projections.js";
+import { registerToolDisplayHttp } from "./tool-display-http.js";
 
 const MAX_THREAD_CREATE_REQUEST_BYTES = 8 * 1024;
 const MAX_GOAL_REQUEST_BYTES = 8 * 1024;
@@ -36,6 +37,7 @@ type ThreadLifecycleHttpStore = Pick<
   | "createThread"
   | "getAgent"
   | "getDetail"
+  | "getThread"
   | "importThreadReplayBundle"
   | "listAgents"
   | "restoreThread"
@@ -63,12 +65,14 @@ export interface ThreadLifecycleHttpServices {
     import("@napier/runtime/subagents").SubagentHubControlService,
     "availability"
   >;
+  toolDisplays: Parameters<typeof registerToolDisplayHttp>[1]["toolDisplays"];
 }
 
 export function registerThreadLifecycleHttp(
   app: Hono,
   services: ThreadLifecycleHttpServices,
 ): void {
+  registerToolDisplayHttp(app, services);
   app.get("/api/threads/:threadId", async (context) => {
     const detail = await projectDetail(services, context.req.param("threadId"));
     setThreadDetailProjectionHeaders(context, detail);

@@ -128,11 +128,17 @@ describe("Conversation artifacts", () => {
       ]),
     ).toEqual([
       {
+        artifact: verified.artifact,
         path: "artifacts/report.md",
+        planId: "plan_1",
+        threadId: "thread_1",
         targetId: conversationArtifactTargetId(verified),
       },
       {
+        artifact: produced.artifact,
         path: "artifacts/output.txt",
+        planId: "plan_1",
+        threadId: "thread_1",
         targetId: conversationArtifactTargetId(produced),
       },
     ]);

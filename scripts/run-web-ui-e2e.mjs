@@ -22,6 +22,7 @@ import {
 import {
   openWebUiPage,
   readWebUiNarrative,
+  readThinkingSummary,
   refreshPreservesWebUiNarrative,
   verifyWebUiArtifactNavigation,
   verifyWebUiLongRunNarrative,
@@ -205,11 +206,15 @@ async function inspectViewport(browser, origin, viewport, expected) {
     const settings = await readSettingsContract(page, initial.settingsHidden);
     const geometry = await page.evaluate(readPageGeometry);
     const screenshot = await screenshotReceipt(page);
+    const thinking = await readThinkingSummary(page);
+    const tool = await readCompleteToolContent(page);
+    const chrome = await readWorkbenchChrome(page);
 
     return {
       ...viewport,
       workspaceNavigation: initial.workspaceNavigation,
-      conversation: initial.conversation,
+      conversation: { ...initial.conversation, thinking, tool },
+      chrome,
       task,
       settings,
       geometry: {
@@ -285,6 +290,39 @@ async function verifyRuntimeScenario(browser, origin, expected) {
       state: "visible",
       timeout: WEB_UI_START_TIMEOUT_MS,
     });
+    await page.locator(".workbench-browser-rail").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    const inlineArtifact = page.locator(
+      `.conversation-artifact[data-artifact-path="${expected.artifactPath}"]`,
+    );
+    await inlineArtifact.locator(".artifact-inline-preview.is-ready").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    const runningArtifactPreview = await inlineArtifact.evaluate((element) => {
+      const frame = element.querySelector(".artifact-inline-preview iframe");
+      return {
+        visible: frame instanceof HTMLIFrameElement,
+        sandbox: frame?.getAttribute("sandbox") ?? null,
+        path: element.getAttribute("data-artifact-path"),
+      };
+    });
+    await inlineArtifact.getByRole("button", { name: "Open preview" }).click();
+    await page.locator(".artifact-inspector").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    const runningArtifactInspector =
+      (
+        await page
+          .locator(".artifact-inspector-meta span")
+          .first()
+          .textContent()
+      )?.trim() === expected.artifactPath;
+    await page.getByRole("button", { name: "Close preview" }).click();
+    const browserRail = await page.evaluate(readBrowserRailGeometry);
     const runningComposer = await page.evaluate(() => {
       const composer = document.querySelector(".composer");
       return {
@@ -319,7 +357,13 @@ async function verifyRuntimeScenario(browser, origin, expected) {
       { timeout: WEB_UI_START_TIMEOUT_MS },
     );
     return page.evaluate(
-      ({ count, runningComposer }) => {
+      ({
+        count,
+        runningArtifactInspector,
+        runningArtifactPreview,
+        runningComposer,
+        browserRail,
+      }) => {
         const isVisible = (selector) => {
           const element = document.querySelector(selector);
           return (
@@ -329,6 +373,9 @@ async function verifyRuntimeScenario(browser, origin, expected) {
         };
         return {
           ...runningComposer,
+          browserRail,
+          runningArtifactPreview,
+          runningArtifactInspector,
           runningIndicatorVisible: isVisible(
             ".task-narrative.phase-working [aria-live='polite']",
           ),
@@ -339,7 +386,13 @@ async function verifyRuntimeScenario(browser, origin, expected) {
           ].some((heading) => heading.textContent?.trim() === "Browser"),
         };
       },
-      { count: sectionCount, runningComposer },
+      {
+        count: sectionCount,
+        runningArtifactInspector,
+        runningArtifactPreview,
+        runningComposer,
+        browserRail,
+      },
     );
   } finally {
     await page.close();
@@ -631,9 +684,11 @@ async function verifySettingsScenario(browser, origin, expected) {
       timeout: WEB_UI_START_TIMEOUT_MS,
     });
     const packageManagement = await page.evaluate(() => {
-      const desks = [...document.querySelectorAll(
-        ".extension-package-desk, .skill-package-desk, .prompt-package-desk",
-      )].filter(
+      const desks = [
+        ...document.querySelectorAll(
+          ".extension-package-desk, .skill-package-desk, .prompt-package-desk",
+        ),
+      ].filter(
         (desk) => desk instanceof HTMLElement && desk.offsetParent !== null,
       );
       const visibleTextElements = desks.flatMap((desk) =>
@@ -643,7 +698,8 @@ async function verifySettingsScenario(browser, origin, expected) {
             element.offsetParent !== null &&
             (element.childNodes.length === 0 ||
               [...element.childNodes].some(
-                (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
+                (node) =>
+                  node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
               )),
         ),
       );
@@ -654,16 +710,19 @@ async function verifySettingsScenario(browser, origin, expected) {
           ),
         ])
         .filter(
-          (action) => action instanceof HTMLElement && action.offsetParent !== null,
+          (action) =>
+            action instanceof HTMLElement && action.offsetParent !== null,
         );
       return {
         count: desks.length,
-        minimumFontPx: Math.min(...visibleTextElements.map((element) =>
-          Number.parseFloat(getComputedStyle(element).fontSize),
-        )),
-        minimumActionHeight: Math.min(...actions.map((action) =>
-          action.getBoundingClientRect().height,
-        )),
+        minimumFontPx: Math.min(
+          ...visibleTextElements.map((element) =>
+            Number.parseFloat(getComputedStyle(element).fontSize),
+          ),
+        ),
+        minimumActionHeight: Math.min(
+          ...actions.map((action) => action.getBoundingClientRect().height),
+        ),
       };
     });
 
@@ -972,7 +1031,8 @@ async function waitForDeveloperWorkbenchClosed(page) {
   await page.waitForFunction(
     () =>
       document.querySelector(".developer-workbench-surface") === null &&
-      document.activeElement?.classList.contains("workbench-developer") === true,
+      document.activeElement?.classList.contains("workbench-developer") ===
+        true,
     undefined,
     { timeout: 5_000 },
   );
@@ -1069,6 +1129,132 @@ function readInitialContract() {
         ),
       ),
     },
+  };
+}
+
+async function readCompleteToolContent(page) {
+  const tool = page.locator(".conversation-tool-activity").first();
+  await tool.waitFor({ state: "visible", timeout: WEB_UI_START_TIMEOUT_MS });
+  const initiallyOpen = (await tool.getAttribute("open")) !== null;
+  if (!initiallyOpen) await tool.locator(":scope > summary").click();
+  const receipt = await tool.evaluate((root) => {
+    const sections = [
+      ...root.querySelectorAll(".conversation-tool-content > section"),
+    ];
+    const content = new Map(
+      sections.map((section) => [
+        section.querySelector(":scope > span")?.textContent?.trim() ?? "",
+        section.querySelector("pre")?.textContent ?? "",
+      ]),
+    );
+    return {
+      visible: root.getClientRects().length > 0,
+      input: content.get("Diff") ?? "",
+      output: content.get("Result") ?? "",
+      inputLabel: content.has("Diff") ? "Diff" : "",
+      outputLabel: content.has("Result") ? "Result" : "",
+      horizontalOverflowPx: Math.max(
+        0,
+        document.documentElement.scrollWidth -
+          document.documentElement.clientWidth,
+      ),
+    };
+  });
+  if (!initiallyOpen) await tool.locator(":scope > summary").click();
+  return receipt;
+}
+
+async function readWorkbenchChrome(page) {
+  return page.evaluate(() => {
+    const header = document.querySelector(".workbench-header");
+    const textarea = document.querySelector(".composer textarea");
+    const composer = document.querySelector(".composer");
+    if (
+      !(header instanceof HTMLElement) ||
+      !(textarea instanceof HTMLTextAreaElement) ||
+      !(composer instanceof HTMLElement)
+    ) {
+      throw new Error("Workbench chrome is incomplete");
+    }
+    textarea.focus();
+    const textareaStyle = getComputedStyle(textarea);
+    const composerStyle = getComputedStyle(composer);
+    const headerBounds = header.getBoundingClientRect();
+    const compactModelTrigger = header.querySelector(
+      ".model-picker.is-compact .model-picker-trigger",
+    );
+    const compactModelCopy =
+      compactModelTrigger?.querySelector(".model-chip-copy");
+    const regions = [
+      header.querySelector(".thread-heading"),
+      header.querySelector(".workspace-view-navigation"),
+      header.querySelector(".run-meta"),
+    ]
+      .filter(
+        (element) =>
+          element instanceof HTMLElement && element.getClientRects().length > 0,
+      )
+      .map((element) => element.getBoundingClientRect())
+      .sort((left, right) => left.left - right.left);
+    const receipt = {
+      headerNoOverlap: regions.every(
+        (region, index) =>
+          index === 0 || region.left >= regions[index - 1].right - 1,
+      ),
+      headerContentWithinBounds: regions.every(
+        (region) =>
+          region.left >= headerBounds.left - 1 &&
+          region.right <= headerBounds.right + 1 &&
+          region.top >= headerBounds.top - 1 &&
+          region.bottom <= headerBounds.bottom + 1,
+      ),
+      compactModelContentContained:
+        compactModelTrigger instanceof HTMLElement &&
+        compactModelCopy instanceof HTMLElement &&
+        getComputedStyle(compactModelTrigger).overflowX !== "visible" &&
+        getComputedStyle(compactModelCopy).overflowX !== "visible" &&
+        compactModelCopy.getBoundingClientRect().right <=
+          compactModelTrigger.getBoundingClientRect().right + 1,
+      textareaOutlineAbsent:
+        textareaStyle.outlineStyle === "none" ||
+        Number.parseFloat(textareaStyle.outlineWidth) === 0,
+      textareaBoxShadowAbsent: textareaStyle.boxShadow === "none",
+      composerFocusVisible:
+        composerStyle.boxShadow !== "none" ||
+        composerStyle.borderColor === composerStyle.outlineColor,
+    };
+    textarea.blur();
+    return receipt;
+  });
+}
+
+function readBrowserRailGeometry() {
+  const workspace = document.querySelector(".workspace-primary-surface");
+  const conversation = document.querySelector(".conversation-workspace-view");
+  const rail = document.querySelector(".workbench-browser-rail");
+  if (
+    !(workspace instanceof HTMLElement) ||
+    !(conversation instanceof HTMLElement) ||
+    !(rail instanceof HTMLElement)
+  ) {
+    throw new Error("Browser right rail is missing");
+  }
+  const workspaceBounds = workspace.getBoundingClientRect();
+  const conversationBounds = conversation.getBoundingClientRect();
+  const railBounds = rail.getBoundingClientRect();
+  return {
+    visible: rail.getClientRects().length > 0,
+    rightOfConversation: railBounds.left >= conversationBounds.right - 1,
+    alignedToWorkspaceRight:
+      Math.abs(railBounds.right - workspaceBounds.right) <= 1,
+    withinWorkspaceHeight:
+      railBounds.top >= workspaceBounds.top - 1 &&
+      railBounds.bottom <= workspaceBounds.bottom + 1,
+    horizontalOverflowPx: Math.max(
+      0,
+      document.documentElement.scrollWidth -
+        document.documentElement.clientWidth,
+    ),
   };
 }
 
@@ -1193,7 +1379,9 @@ function browserContext(browser) {
 async function configureBrowserLocale(browser, locale) {
   const context = browserContext(browser);
   await context.addInitScript((value) => {
-    window.localStorage.setItem("napier.locale", value);
+    if (window === window.top) {
+      window.localStorage.setItem("napier.locale", value);
+    }
   }, locale);
 }
 

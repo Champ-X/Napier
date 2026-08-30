@@ -4,6 +4,11 @@ import {
   toolProtocolEventEvidence,
   type ToolProtocolEventEvidence,
 } from "./tool-protocol-event-view";
+import {
+  conversationToolDisplay,
+  mergeConversationToolDisplay,
+  type ConversationToolDisplay,
+} from "./conversation-tool-display-view-model";
 
 export interface ConversationToolEvidence extends ToolProtocolEventEvidence {
   effect?: "read" | "write";
@@ -38,6 +43,7 @@ export interface ConversationToolActivity {
   status: "working" | "completed" | "failed" | "blocked";
   toolName: string;
   evidence: ConversationToolEvidence;
+  display?: ConversationToolDisplay;
   receipt: string;
   eventIds: string[];
 }
@@ -58,8 +64,13 @@ export function conversationToolActivities(
     const activity = conversationToolActivity(event);
     if (!activity || excludedCallIds.has(activity.callId)) continue;
     const prior = latest.get(activity.callId);
+    const display = mergeConversationToolDisplay(
+      prior?.display,
+      activity.display,
+    );
     latest.set(activity.callId, {
       ...activity,
+      ...(display ? { display } : {}),
       eventIds: [...(prior?.eventIds ?? []), event.id],
     });
   }
@@ -92,6 +103,7 @@ export function conversationToolActivity(
     return undefined;
   }
   const evidence = toolEvidence(toolName, event.payload);
+  const display = conversationToolDisplay(event.payload);
   const shellFailed =
     toolName === "run_command" &&
     evidence.commandStatus !== undefined &&
@@ -114,6 +126,7 @@ export function conversationToolActivity(
             : "failed",
     toolName,
     evidence,
+    ...(display ? { display } : {}),
     receipt: toolReceipt(toolName, event.type, evidence),
     eventIds: [event.id],
   };
@@ -124,7 +137,9 @@ function toolEvidence(
   payload: Record<string, unknown>,
 ): ConversationToolEvidence {
   const effect =
-    legacyToolEffect(toolProtocolEventEvidence(payload, toolName, statusFromPayload(payload))) ??
+    legacyToolEffect(
+      toolProtocolEventEvidence(payload, toolName, statusFromPayload(payload)),
+    ) ??
     (payload["effect"] === "read" || payload["effect"] === "write"
       ? payload["effect"]
       : undefined);

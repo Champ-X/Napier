@@ -52,6 +52,44 @@ export async function readWebUiNarrative(page, expected) {
   return narrative;
 }
 
+export async function readThinkingSummary(page) {
+  const thinking = page.locator(".conversation-thinking").first();
+  await thinking.waitFor({
+    state: "visible",
+    timeout: WEB_UI_START_TIMEOUT_MS,
+  });
+  const initiallyOpen = (await thinking.getAttribute("open")) !== null;
+  if (!initiallyOpen) {
+    await thinking.locator(":scope > summary").click();
+  }
+  const receipt = await page.evaluate(() => {
+    const root = document.querySelector(".conversation-thinking");
+    const content = root?.querySelector(".conversation-thinking-content");
+    return {
+      visible:
+        content instanceof HTMLElement && content.getClientRects().length > 0,
+      transcript:
+        content
+          ?.querySelector(".conversation-thinking-transcript")
+          ?.textContent?.trim() ?? "",
+      chromeHidden: !content?.querySelector(
+        ":scope > strong, :scope > dl, :scope > small",
+      ),
+      transcriptVisible:
+        root?.textContent?.includes("PRIVATE_FIXTURE_REASONING") ?? false,
+      horizontalOverflowPx: Math.max(
+        0,
+        document.documentElement.scrollWidth -
+          document.documentElement.clientWidth,
+      ),
+    };
+  });
+  if (!initiallyOpen) {
+    await thinking.locator(":scope > summary").click();
+  }
+  return { initiallyOpen, ...receipt };
+}
+
 export async function openWebUiPage(context, url, viewport, setup = () => {}) {
   let firstError;
   for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -314,10 +352,38 @@ export async function verifyWebUiLongRunNarrative(browser, origin, expected) {
 }
 
 export async function verifyWebUiArtifactNavigation(browser, origin, expected) {
+  const consoleErrors = [];
+  const artifactRequests = [];
   const page = await openWebUiPage(
     browserContext(browser),
     `${origin}/?thread=${encodeURIComponent(expected.threadId)}`,
-    { width: 1_440, height: 900 },
+    { width: 1_920, height: 1_080 },
+    (candidate) => {
+      candidate.on("console", (message) => {
+        if (message.type() === "error") {
+          consoleErrors.push(message.text());
+          if (process.env["NAPIER_WEB_E2E_DEBUG"] === "1") {
+            process.stderr.write(
+              `[web-ui-e2e] artifact console error: ${message.text()}\n`,
+            );
+          }
+        }
+      });
+      candidate.on("pageerror", (error) => {
+        consoleErrors.push(error.message);
+        if (process.env["NAPIER_WEB_E2E_DEBUG"] === "1") {
+          process.stderr.write(
+            `[web-ui-e2e] artifact page error: ${error.message}\n`,
+          );
+        }
+      });
+      candidate.on("request", (request) => {
+        const pathname = new URL(request.url()).pathname;
+        if (/\/artifacts\/[^/]+\/(?:preview|diff)$/u.test(pathname)) {
+          artifactRequests.push(pathname);
+        }
+      });
+    },
   );
   try {
     await page.waitForFunction(
@@ -329,8 +395,8 @@ export async function verifyWebUiArtifactNavigation(browser, origin, expected) {
     );
     const primaryOutput = page.locator(".task-completion-primary-output");
     const primaryTitle = await primaryOutput.getAttribute("title");
-    const primaryPath = expected.paths.find(
-      (path) => primaryTitle?.endsWith(path),
+    const primaryPath = expected.paths.find((path) =>
+      primaryTitle?.endsWith(path),
     );
     assert.ok(primaryPath, "Primary Artifact is not an expected output");
     await primaryOutput.locator('[data-artifact-action="open"]').click();
@@ -338,20 +404,162 @@ export async function verifyWebUiArtifactNavigation(browser, origin, expected) {
       (targetPath) =>
         document.activeElement instanceof HTMLElement &&
         document.activeElement.dataset["artifactPath"] === targetPath &&
-        document.activeElement.querySelector(
-          ".artifact-action-inspection",
-        ) !== null,
+        document.querySelector(".artifact-inspector") instanceof HTMLElement,
       primaryPath,
       { timeout: WEB_UI_START_TIMEOUT_MS },
     );
-    const primaryCard = page.locator(
-      `.conversation-artifact[data-artifact-path="${primaryPath}"]`,
+    const primaryInspection = await page.evaluate((targetPath) => {
+      const source = document.activeElement;
+      const inspector = document.querySelector(".artifact-inspector");
+      const conversation = document.querySelector(
+        ".conversation-workspace-view",
+      );
+      const workspace = document.querySelector(".workspace-primary-surface");
+      const inspectorRect = inspector?.getBoundingClientRect();
+      const conversationRect = conversation?.getBoundingClientRect();
+      const workspaceRect = workspace?.getBoundingClientRect();
+      return {
+        path: targetPath,
+        focusedSourceCard:
+          source instanceof HTMLElement &&
+          source.dataset["artifactPath"] === targetPath,
+        openedInOneClick:
+          inspector instanceof HTMLElement &&
+          inspector.getClientRects().length > 0,
+        hostedInWorkspace:
+          inspector?.parentElement?.classList.contains(
+            "workspace-primary-surface",
+          ) ?? false,
+        inspectorWidth: inspectorRect?.width ?? 0,
+        conversationWidth: conversationRect?.width ?? 0,
+        workspaceShare:
+          inspectorRect && workspaceRect && workspaceRect.width > 0
+            ? inspectorRect.width / workspaceRect.width
+            : 0,
+        horizontalOverflowPx: Math.max(
+          0,
+          document.documentElement.scrollWidth -
+            document.documentElement.clientWidth,
+        ),
+      };
+    }, primaryPath);
+    const interactivePath = expected.paths.find((path) =>
+      /\.html?$/iu.test(path),
     );
-    await primaryCard
-      .getByRole("button", {
-        name: `Close artifact inspection ${primaryPath}`,
-      })
-      .click();
+    assert.ok(interactivePath, "Interactive HTML Artifact is unavailable");
+    if (primaryPath !== interactivePath) {
+      await page.getByRole("button", { name: "Close preview" }).click();
+      await page.locator(".artifact-inspector").waitFor({
+        state: "detached",
+        timeout: WEB_UI_START_TIMEOUT_MS,
+      });
+      const interactiveArtifact = page.locator(
+        `.conversation-artifact[data-artifact-path="${interactivePath}"]`,
+      );
+      await interactiveArtifact
+        .locator('[data-artifact-action="open"]')
+        .click();
+      await page.waitForFunction(
+        (targetPath) =>
+          document
+            .querySelector(".artifact-inspector-meta span")
+            ?.textContent?.trim() === targetPath,
+        interactivePath,
+        { timeout: WEB_UI_START_TIMEOUT_MS },
+      );
+    }
+    const inspectorInteraction = await verifyArtifactInspectorInteraction(
+      page,
+      interactivePath,
+      artifactRequests,
+    );
+    const intermediateInspections = [];
+    for (const viewport of [
+      { width: 1_440, height: 900 },
+      { width: 1_280, height: 900 },
+    ]) {
+      await page.setViewportSize(viewport);
+      intermediateInspections.push(
+        await page.evaluate(() => {
+          const inspector = document
+            .querySelector(".artifact-inspector")
+            ?.getBoundingClientRect();
+          const conversation = document
+            .querySelector(".conversation-workspace-view")
+            ?.getBoundingClientRect();
+          return {
+            viewportWidth: window.innerWidth,
+            inspectorWidth: inspector?.width ?? 0,
+            conversationWidth: conversation?.width ?? 0,
+            horizontalOverflowPx: Math.max(
+              0,
+              document.documentElement.scrollWidth -
+                document.documentElement.clientWidth,
+            ),
+          };
+        }),
+      );
+    }
+    await page.getByRole("button", { name: "Close preview" }).click();
+    await page.locator(".artifact-inspector").waitFor({
+      state: "detached",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await primaryOutput.locator('[data-artifact-action="open"]').click();
+    await page.locator(".artifact-inspector").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    const compactInspection = await page.evaluate(() => {
+      const inspector = document.querySelector(".artifact-inspector");
+      const workspace = document.querySelector(".workspace-primary-surface");
+      const inspectorRect = inspector?.getBoundingClientRect();
+      const workspaceRect = workspace?.getBoundingClientRect();
+      return {
+        viewportWidth: window.innerWidth,
+        inspectorWidth: inspectorRect?.width ?? 0,
+        inspectorLeft: inspectorRect?.left ?? 0,
+        inspectorRight: inspectorRect?.right ?? 0,
+        workspaceLeft: workspaceRect?.left ?? 0,
+        workspaceWidth: workspaceRect?.width ?? 0,
+        position:
+          inspector instanceof HTMLElement
+            ? getComputedStyle(inspector).position
+            : "",
+        horizontalOverflowPx: Math.max(
+          0,
+          document.documentElement.scrollWidth -
+            document.documentElement.clientWidth,
+        ),
+      };
+    });
+    await page.getByRole("button", { name: "Close preview" }).click();
+    await page.locator(".artifact-inspector").waitFor({
+      state: "detached",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    await page.setViewportSize({ width: 1_920, height: 1_080 });
+    const answerFile = page.locator(
+      `.message-workspace-link[data-artifact-path="${interactivePath}"]`,
+    );
+    await answerFile.click();
+    await page.locator(".artifact-inspector").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    const answerFileOpenedInspector =
+      (
+        await page
+          .locator(".artifact-inspector-meta span")
+          .first()
+          .textContent()
+      )?.trim() === interactivePath;
+    await page.getByRole("button", { name: "Close preview" }).click();
+    await page.locator(".artifact-inspector").waitFor({
+      state: "detached",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
     const completionToggle = page.locator(".task-completion-toggle");
     if ((await completionToggle.getAttribute("aria-expanded")) === "false") {
       await completionToggle.click();
@@ -359,7 +567,7 @@ export async function verifyWebUiArtifactNavigation(browser, origin, expected) {
     await page.waitForFunction(
       (count) =>
         document.querySelectorAll(
-          '.task-completion-details .task-completion-output',
+          ".task-completion-details .task-completion-output",
         ).length === count,
       expected.paths.length,
       { timeout: WEB_UI_START_TIMEOUT_MS },
@@ -386,10 +594,167 @@ export async function verifyWebUiArtifactNavigation(browser, origin, expected) {
         .getByRole("button", { name: `Close artifact inspection ${path}` })
         .click();
     }
-    return { outputCount: expected.paths.length, previews };
+    return {
+      outputCount: expected.paths.length,
+      answerFileOpenedInspector,
+      primaryInspection,
+      intermediateInspections,
+      compactInspection,
+      inspectorInteraction: {
+        ...inspectorInteraction,
+        consoleErrorCount: consoleErrors.length,
+      },
+      previews,
+    };
   } finally {
     await page.close();
   }
+}
+
+async function verifyArtifactInspectorInteraction(
+  page,
+  primaryPath,
+  artifactRequests,
+) {
+  const inspector = page.locator(".artifact-inspector");
+  const preview = inspector.getByRole("button", {
+    name: "Preview",
+    exact: true,
+  });
+  const source = inspector.getByRole("button", {
+    name: "Raw source",
+    exact: true,
+  });
+  const changes = inspector.getByRole("button", {
+    name: "Changes",
+    exact: true,
+  });
+  const refresh = inspector.getByRole("button", {
+    name: "Refresh",
+    exact: true,
+  });
+  const controls = await inspector
+    .locator(".artifact-inspector-views button")
+    .allTextContents();
+  const initialView =
+    (await preview.getAttribute("aria-pressed")) === "true"
+      ? "preview"
+      : "unknown";
+  const frame = inspector.locator("iframe");
+  await frame.waitFor({ state: "visible", timeout: WEB_UI_START_TIMEOUT_MS });
+  const htmlSandbox = await frame.getAttribute("sandbox");
+  const previewRequestPath = artifactRequests.findLast((request) =>
+    request.endsWith("/preview"),
+  );
+  assert.ok(previewRequestPath, "Initial Artifact preview request is missing");
+  const previewFrame = page.frameLocator(".artifact-inspector iframe");
+  await page.waitForTimeout(250);
+  const htmlPreviewText =
+    (await previewFrame.locator("body").textContent({ timeout: 10_000 })) ?? "";
+  const frameEvidence = await Promise.all(
+    page.frames().map(async (candidate) => ({
+      url: candidate.url(),
+      readyState: await candidate
+        .evaluate(() => document.readyState)
+        .catch(() => "unavailable"),
+      body: await candidate
+        .locator("body")
+        .textContent({ timeout: 1_000 })
+        .catch(() => "unavailable"),
+    })),
+  );
+  assert.match(
+    htmlPreviewText,
+    /Advance preview/u,
+    `Interactive Artifact content is unavailable: ${String(
+      await frame.getAttribute("srcdoc"),
+    ).slice(0, 240)} · ${JSON.stringify(frameEvidence)}`,
+  );
+  await previewFrame
+    .locator("button")
+    .filter({ hasText: /^Advance preview$/u })
+    .evaluate((button) => button.click());
+  const htmlInteractionText =
+    (await previewFrame.locator("#stage").textContent())?.trim() ?? "";
+
+  await source.click();
+  await page.waitForFunction(
+    () =>
+      document
+        .querySelector('.artifact-inspector-views button[title="Raw source"]')
+        ?.getAttribute("aria-pressed") === "true" &&
+      document.querySelector(".artifact-inspector iframe") === null,
+    undefined,
+    { timeout: WEB_UI_START_TIMEOUT_MS },
+  );
+  const sourceViewActivated =
+    (await source.getAttribute("aria-pressed")) === "true";
+  const sourceText = await inspector
+    .locator(".artifact-source-preview")
+    .textContent();
+  const previewRequestsBeforeRefresh = artifactRequests.filter(
+    (request) => request === previewRequestPath,
+  ).length;
+  await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === previewRequestPath &&
+        response.ok(),
+      { timeout: WEB_UI_START_TIMEOUT_MS },
+    ),
+    refresh.click(),
+  ]);
+  const diffRequestPath = previewRequestPath.replace(/\/preview$/u, "/diff");
+  await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === diffRequestPath && response.ok(),
+      { timeout: WEB_UI_START_TIMEOUT_MS },
+    ),
+    changes.click(),
+  ]);
+  await page.waitForFunction(
+    () =>
+      document
+        .querySelector('.artifact-inspector-views button[title="Changes"]')
+        ?.getAttribute("aria-pressed") === "true" &&
+      document.querySelector(".artifact-source-preview.is-diff") !== null,
+    undefined,
+    { timeout: WEB_UI_START_TIMEOUT_MS },
+  );
+  const changesText = await inspector
+    .locator(".artifact-source-preview.is-diff")
+    .textContent();
+  await preview.click();
+  await frame.waitFor({ state: "visible", timeout: WEB_UI_START_TIMEOUT_MS });
+  return {
+    controls: controls.map((label) => label.trim()),
+    initialView,
+    htmlSandbox,
+    htmlInteractionText,
+    sourceViewActivated,
+    sourceContainsInteractiveMarkup:
+      sourceText?.includes("Advance preview") ?? false,
+    changesContainsPatch:
+      changesText?.includes("Interactive output report") ?? false,
+    previewRestored: (await preview.getAttribute("aria-pressed")) === "true",
+    pathPreserved:
+      (
+        await inspector
+          .locator(".artifact-inspector-meta span")
+          .first()
+          .textContent()
+      )?.trim() === primaryPath,
+    previewRequestCount: artifactRequests.filter(
+      (request) => request === previewRequestPath,
+    ).length,
+    refreshRequestCount:
+      artifactRequests.filter((request) => request === previewRequestPath)
+        .length - previewRequestsBeforeRefresh,
+    diffRequestCount: artifactRequests.filter(
+      (request) => request === diffRequestPath,
+    ).length,
+  };
 }
 
 async function readRecoveryNarrative(page, expected) {

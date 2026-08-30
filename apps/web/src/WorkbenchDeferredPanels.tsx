@@ -62,17 +62,9 @@ export function WorkbenchDeferredTaskResult({
   );
 }
 
-export function WorkbenchDeferredDecisions({
-  vm,
-  browserControlsAvailable,
-}: {
-  vm: WorkspaceViewModel;
-  browserControlsAvailable: boolean;
-}) {
+export function WorkbenchDeferredDecisions({ vm }: { vm: WorkspaceViewModel }) {
   const showDecisions = Boolean(
-    browserControlsAvailable ||
-    vm.openOperatorDecision ||
-    vm.browserInteractionConfirmation,
+    vm.openOperatorDecision || vm.browserInteractionConfirmation,
   );
   return showDecisions ? (
     <Suspense fallback={null}>

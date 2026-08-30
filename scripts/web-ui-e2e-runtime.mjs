@@ -84,6 +84,7 @@ export function productionWebServerEnvironment(root, port = 0) {
   return isolatedProductionServerEnvironment(root, {
     LANG: "C",
     NAPIER_E2E_MODEL_KEY: "e2e-placeholder-key",
+    NAPIER_HOST_DIRECT_SANDBOX: "1",
     NAPIER_PORT: String(port),
     NODE_ENV: "test",
     NO_PROXY: "127.0.0.1,localhost",

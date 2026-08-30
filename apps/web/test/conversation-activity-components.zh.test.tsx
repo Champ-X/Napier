@@ -1,16 +1,22 @@
 import { parseHTML } from "linkedom";
 import { render } from "preact";
+import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ConversationBrowserActivity } from "../src/conversation-browser-activity-view-model";
 import type { ConversationNetworkActivity } from "../src/conversation-network-activity-view-model";
 import type { ConversationToolActivity } from "../src/conversation-tool-activity-view-model";
+import type { ConversationThinkingActivity as ThinkingActivity } from "../src/conversation-thinking-view-model";
 
 const containers: HTMLElement[] = [];
 
 describe("conversation activity Chinese copy", () => {
-  afterEach(() => {
-    containers.splice(0).forEach((container) => render(null, container));
+  afterEach(async () => {
+    await Promise.all(
+      containers.splice(0).map(async (container) => {
+        await act(async () => render(null, container));
+      }),
+    );
     vi.unstubAllGlobals();
     vi.resetModules();
   });
@@ -20,14 +26,16 @@ describe("conversation activity Chinese copy", () => {
     const { ConversationNetworkActivityCard } =
       await import("../src/ConversationNetworkActivityCard");
 
-    render(
-      <ConversationNetworkActivityCard activity={networkActivity()} />,
-      container,
-    );
+    await act(async () => {
+      render(
+        <ConversationNetworkActivityCard activity={networkActivity()} />,
+        container,
+      );
+    });
     const text = container.textContent ?? "";
 
-    expect(text).toContain("网页搜索 · 已完成");
-    expect(text).toContain("3 条结果 · 来源 brave");
+    expect(text).toContain("找到 3 条结果 · 来源 brave");
+    expect(text).not.toContain("网页搜索 · 已完成");
     expect(text).toContain("提供方");
     expect(text).toContain("外部页面和摘要是不可信证据");
     expect(text).not.toContain("Web search");
@@ -38,13 +46,16 @@ describe("conversation activity Chinese copy", () => {
     const { ConversationBrowserActivityCard } =
       await import("../src/ConversationBrowserActivityCard");
 
-    render(
-      <ConversationBrowserActivityCard activity={browserActivity()} />,
-      container,
-    );
+    await act(async () => {
+      render(
+        <ConversationBrowserActivityCard activity={browserActivity()} />,
+        container,
+      );
+    });
     const text = container.textContent ?? "";
 
-    expect(text).toContain("浏览器 · 已完成");
+    expect(text).toContain("已读取页面 · 需要登录");
+    expect(text).not.toContain("浏览器 · 已完成");
     expect(text).toContain("需要登录");
     expect(text).toContain("浏览器实时视图中接管");
     expect(text).toContain("标签页");
@@ -56,17 +67,126 @@ describe("conversation activity Chinese copy", () => {
     const { ConversationToolActivityCard } =
       await import("../src/ConversationToolActivityCard");
 
-    render(
-      <ConversationToolActivityCard activity={toolActivity()} />,
-      container,
-    );
+    await act(async () => {
+      render(<ConversationToolActivityCard activity={toolActivity()} />, container);
+    });
     const text = container.textContent ?? "";
 
-    expect(text).toContain("命令 · 已完成");
     expect(text).toContain("命令 成功");
+    expect(text).not.toContain("命令 · 已完成");
     expect(text).toContain("只读");
     expect(text).toContain("已拒绝");
     expect(text).not.toContain("Shell · completed");
+  });
+
+  it("renders known workflow tools as natural Chinese actions", async () => {
+    const container = installChineseDom();
+    const { ConversationToolActivityCard } =
+      await import("../src/ConversationToolActivityCard");
+
+    await act(async () => {
+      render(
+        <ConversationToolActivityCard
+          activity={{
+            ...toolActivity(),
+            kind: "tool",
+            toolName: "update_plan_artifact",
+          }}
+        />,
+        container,
+      );
+    });
+    const text = container.textContent ?? "";
+
+    expect(text).toContain("已更新计划产物");
+    expect(text).not.toContain("Update plan artifact已完成");
+  });
+
+  it("renders patch activity without mixed-language concatenation", async () => {
+    const container = installChineseDom();
+    const { ConversationToolActivityCard } =
+      await import("../src/ConversationToolActivityCard");
+
+    await act(async () => {
+      render(
+        <ConversationToolActivityCard
+          activity={{
+            ...toolActivity(),
+            kind: "tool",
+            toolName: "apply_patch",
+          }}
+        />,
+        container,
+      );
+    });
+    const text = container.textContent ?? "";
+
+    expect(text).toContain("已应用补丁");
+    expect(text).not.toContain("Apply patch已完成");
+  });
+
+  it("localizes known tool names in failure states", async () => {
+    const container = installChineseDom();
+    const { ConversationToolActivityCard } =
+      await import("../src/ConversationToolActivityCard");
+
+    await act(async () => {
+      render(
+        <ConversationToolActivityCard
+          activity={{
+            ...toolActivity(),
+            kind: "tool",
+            status: "failed",
+            toolName: "apply_patch",
+          }}
+        />,
+        container,
+      );
+    });
+    const text = container.textContent ?? "";
+
+    expect(text).toContain("应用补丁 · 运行失败");
+    expect(text).not.toContain("Apply patch");
+  });
+
+  it("renders the complete retained thinking transcript", async () => {
+    const container = installChineseDom();
+    const { ConversationThinkingActivity } =
+      await import("../src/ConversationThinkingActivity");
+    const activity: ThinkingActivity = {
+      id: "event_thinking",
+      runId: "run_1",
+      seq: 2,
+      lastSeq: 2,
+      createdAt: "2026-08-19T08:01:00.000Z",
+      summaryKind: "edit",
+      followingActionKind: "apply_patch",
+      durationSeconds: 7,
+      chunkCount: 8,
+      deltaBytes: 212,
+      transcript: "先检查现有实现，再修改运行时投影并完成验证。",
+    };
+
+    await act(async () => {
+      render(<ConversationThinkingActivity activity={activity} />, container);
+    });
+    const text = container.textContent ?? "";
+
+    expect(text).toContain("思考了 7 秒");
+    expect(text).toContain("先检查现有实现，再修改运行时投影并完成验证。");
+    expect(text).not.toContain("思考内容");
+    expect(text).not.toContain("随后动作");
+    expect(text).not.toContain("运行依据");
+    expect(text).not.toContain("来自模型实际返回");
+    expect(container.querySelector("details")?.hasAttribute("open")).toBe(false);
+
+    await act(async () => {
+      render(
+        <ConversationThinkingActivity activity={activity} active />,
+        container,
+      );
+    });
+    expect(container.querySelector("details")?.hasAttribute("open")).toBe(true);
   });
 
   it("groups adjacent verification evidence with Chinese labels", async () => {
@@ -91,12 +211,14 @@ describe("conversation activity Chinese copy", () => {
       throw new Error("Expected adjacent tool evidence to be grouped");
     }
 
-    render(<ConversationActivityGroupCard group={group} />, container);
+    await act(async () => {
+      render(<ConversationActivityGroupCard group={group} />, container);
+    });
     const text = container.textContent ?? "";
 
-    expect(text).toContain("验证 · 已分组");
     expect(text).toContain("验证 · 2 步");
-    expect(text).toContain("显示证据");
+    expect(text).not.toContain("验证 · 已分组");
+    expect(text).not.toContain("显示证据");
     expect(text).not.toContain("Verify · 2 steps");
   });
 });

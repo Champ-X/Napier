@@ -1,18 +1,27 @@
+import type { CSSProperties } from "react";
+
 import { FatalState, LoadingShell } from "./AppInitialStates";
 import { AppDeveloperWorkbenchOverlay } from "./AppDeveloperWorkbenchOverlay";
 import { AppLedgerNavigation } from "./AppLedgerNavigation";
 import { AppSettingsOverlay } from "./AppSettingsOverlay";
 import { AppWorkbenchHeader } from "./AppWorkbenchHeader";
 import { AppWorkspaceViews } from "./AppWorkspaceViews";
+import { ThreadUndoToast } from "./ThreadUndoToast";
 import { composerCanStartRun } from "./composer-run-availability";
 import { copy } from "./copy";
 import { useTaskControlNavigation } from "./use-task-control-navigation";
+import {
+  WORKSPACE_NAVIGATION_WIDTH,
+  useWorkspaceLayout,
+} from "./use-workspace-layout";
 import { useWorkspaceShell } from "./use-workspace-shell";
 import { useWorkspaceViewModel } from "./use-workspace-view-model";
+import { WorkspaceResizeHandle } from "./WorkspaceResizeHandle";
 
 export function App() {
   const vm = useWorkspaceViewModel(),
-    shell = useWorkspaceShell(vm.setInspectorTab);
+    shell = useWorkspaceShell(vm.setInspectorTab),
+    layout = useWorkspaceLayout();
   const taskControls = useTaskControlNavigation({
     activeRunId: vm.activeRunId,
     events: vm.detail?.events ?? [],
@@ -31,15 +40,40 @@ export function App() {
     model: activeModel,
   });
   return (
-    <div className="app-shell" data-workspace-view={shell.workspaceView}>
-      <AppLedgerNavigation vm={vm} shell={shell} />
+    <div
+      className="app-shell"
+      data-workspace-view={shell.workspaceView}
+      style={
+        {
+          "--workspace-navigation-width": `${layout.navigationWidth}px`,
+          "--workspace-evidence-width": `${layout.evidenceWidth}px`,
+        } as CSSProperties
+      }
+    >
+      <AppLedgerNavigation vm={vm} shell={shell} layout={layout} />
+      {!layout.collapsed ? (
+        <WorkspaceResizeHandle
+          side="navigation"
+          label="调整会话导航宽度"
+          value={layout.navigationWidth}
+          min={WORKSPACE_NAVIGATION_WIDTH.min}
+          max={layout.navigationMax}
+          onChange={layout.setNavigationWidth}
+          onReset={layout.resetNavigationWidth}
+        />
+      ) : null}
+      <ThreadUndoToast
+        title={vm.trashedThreadReceipt?.title}
+        busy={vm.threadLifecycleBusyId === vm.trashedThreadReceipt?.threadId}
+        labels={copy.trash}
+        onRestore={() => void vm.restoreTrashedThread()}
+      />
       <main className="workbench">
         <AppWorkbenchHeader
           vm={vm}
           shell={shell}
           browserControlsAvailable={taskControls.browserControlsAvailable}
           onOpenBrowserControls={taskControls.openBrowserControls}
-          onStop={() => void vm.stop()}
         />
         <AppWorkspaceViews
           vm={vm}
@@ -49,6 +83,7 @@ export function App() {
           activeAgent={activeAgent}
           activeModel={activeModel}
           canStartRun={canStartRun}
+          layout={layout}
         />
       </main>
       <AppSettingsOverlay vm={vm} shell={shell} activeAgent={activeAgent} />

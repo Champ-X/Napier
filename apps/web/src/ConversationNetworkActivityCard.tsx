@@ -9,6 +9,7 @@ import {
 import type { ConversationNetworkActivity } from "./conversation-network-activity-view-model";
 import { conversationActivityCopy } from "./conversation-activity-copy";
 import { getLocale } from "./locale";
+import { ConversationToolContent } from "./ConversationToolContent";
 
 export interface ConversationNetworkActivityCardProps {
   activity: ConversationNetworkActivity;
@@ -36,19 +37,12 @@ export function ConversationNetworkActivityCard({
         ) : (
           <Globe2 size={15} aria-hidden="true" />
         )}
-        <div>
-          <span>
-            {activity.kind === "search"
-              ? copy.network.search
-              : copy.network.fetch}{" "}
-            · {copy.statuses[activity.status]}
-          </span>
-          <strong>{activitySummary(activity)}</strong>
-        </div>
+        <strong>{activitySummary(activity)}</strong>
         <StatusIcon
           className={activity.status === "working" ? "is-spinning" : ""}
           size={14}
-          aria-hidden="true"
+          role="img"
+          aria-label={copy.statuses[activity.status]}
         />
         <time dateTime={activity.createdAt}>
           {formatTime(activity.createdAt)}
@@ -63,6 +57,12 @@ export function ConversationNetworkActivityCard({
             </div>
           ))}
         </dl>
+      ) : null}
+      {activity.display ? (
+        <ConversationToolContent
+          display={activity.display}
+          toolName={activity.kind === "search" ? "web_search" : "web_fetch"}
+        />
       ) : null}
       <p>{copy.network.untrusted}</p>
     </details>
@@ -83,13 +83,13 @@ function activitySummary(activity: ConversationNetworkActivity): string {
     if (activity.resultCount === undefined || !activity.provider) {
       return `${copy.searchCompleted} · ${copy.evidenceUnavailable}`;
     }
-    return `${formatNumber(activity.resultCount)} ${copy.resultsVia} ${activity.provider}`;
+    return `${copy.found} ${formatNumber(activity.resultCount)} ${copy.resultsVia} ${activity.provider}`;
   }
   return activity.action === "fetch" && activity.format && activity.lineCount
-    ? `${activity.format.toUpperCase()} · ${formatNumber(activity.lineCount)} ${copy.lines}`
+    ? `${copy.readCompleted} ${activity.format.toUpperCase()} · ${formatNumber(activity.lineCount)} ${copy.lines}`
     : activity.action === "fetch"
       ? `${copy.fetchCompleted} · ${copy.evidenceUnavailable}`
-      : `${copy.actions[activity.action ?? "fetch"]} ${copy.completed}`;
+      : copy.completedActions[activity.action ?? "fetch"];
 }
 
 function activityDetails(

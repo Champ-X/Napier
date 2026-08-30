@@ -80,6 +80,7 @@ export interface LocalAgentRuntimeServices {
   providerSetup: ProviderSetupService;
   sandboxSetup: SandboxSetupService;
   runtime: AgentRuntime;
+  toolDisplays: AgentRuntime["toolDisplays"];
   contextCompactionWorkbench: ContextCompactionWorkbenchService;
   subagentHubControls: SubagentHubControlService;
   kernel: AgentKernel;
@@ -273,6 +274,7 @@ export async function createLocalAgentRuntime(
       providerSetup,
       sandboxSetup,
       runtime,
+      toolDisplays: runtime.toolDisplays,
       contextCompactionWorkbench,
       subagentHubControls,
       kernel,

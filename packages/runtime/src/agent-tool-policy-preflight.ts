@@ -7,6 +7,7 @@ import type {
 } from "@napier/contracts";
 
 import { agentToolInputLedgerProjection } from "./agent-tool-ledger.js";
+import type { AgentToolDisplayStore } from "./agent-tool-display-store.js";
 import {
   BrowserInteractionConfirmationManager,
   isBrowserInteractionAction,
@@ -28,6 +29,7 @@ import { toolInvocationArgumentsSha256 } from "./tool-invocation-capsule.js";
 
 export async function preflightAgentToolPolicy(input: {
   store: LocalStore;
+  displays?: AgentToolDisplayStore;
   run: RunRecord;
   profile: AgentProfile;
   extensionManager?: McpExtensionManager;
@@ -307,6 +309,7 @@ function browserPageConfirmationRequest(
 export async function recordAgentToolPolicyBlock(
   input: {
     store: LocalStore;
+    displays?: AgentToolDisplayStore;
     run: RunRecord;
     toolCall: { id: string; name: string };
     args: unknown;
@@ -319,6 +322,16 @@ export async function recordAgentToolPolicyBlock(
     | "capability_block"
     | "safety_block",
 ): Promise<BeforeToolCallResult> {
+  if (input.displays) {
+    const owner = {
+      threadId: input.run.threadId,
+      runId: input.run.id,
+      callId: input.toolCall.id,
+      toolName: input.toolCall.name,
+    };
+    await input.displays.recordInput(owner, input.args).catch(() => undefined);
+    await input.displays.recordOutput(owner, reason, true).catch(() => undefined);
+  }
   const event = await input.store.appendEvent({
     threadId: input.run.threadId,
     runId: input.run.id,

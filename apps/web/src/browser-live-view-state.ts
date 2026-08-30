@@ -13,7 +13,16 @@ export function browserLiveViewExpected(
     ) {
       continue;
     }
-    if (event.type === "tool.failed") return false;
+    if (event.type === "tool.failed") {
+      const error = event.payload["displayError"];
+      if (
+        error === "Cross-origin navigation requires allowCrossOrigin" ||
+        error === "Browser Session is already active for this Run"
+      ) {
+        continue;
+      }
+      return false;
+    }
     if (!record(event.payload["details"])) continue;
     const action = event.payload["details"]["action"];
     return typeof action === "string" && action !== "close";

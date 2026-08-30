@@ -14,14 +14,12 @@ export interface TaskNarrativeBoundaryProps {
   detail: ThreadDetail | undefined;
   browserControlsAvailable: boolean;
   onOpenBrowserControls(): void;
-  onStop(): void;
 }
 
 export function TaskNarrativeBoundary({
   detail,
   browserControlsAvailable,
   onOpenBrowserControls,
-  onStop,
 }: TaskNarrativeBoundaryProps) {
   // No active thread: skip the status strip entirely so the empty workspace
   // stays a calm, centered welcome instead of a stray "Ready" bar.
@@ -39,7 +37,6 @@ export function TaskNarrativeBoundary({
         detail={detail}
         browserControlsAvailable={browserControlsAvailable}
         onOpenBrowserControls={onOpenBrowserControls}
-        onStop={onStop}
       />
     </Suspense>
   );

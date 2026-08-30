@@ -45,9 +45,7 @@ export const en = {
   trash: {
     action: "Move ledger to trash",
     activeRun: "Stop the active run before deleting this ledger",
-    confirm: "Move this ledger to trash?",
-    confirmAction: "Trash",
-    cancel: "Cancel deletion",
+    confirmAction: "Move to trash",
     trashing: "Trashing...",
     trashed: "Moved to trash",
     undo: "Undo",
@@ -773,7 +771,8 @@ export const en = {
       timed_out: "Timed out",
     },
   },
-  goal: goalCopyEn, memory: {
+  goal: goalCopyEn,
+  memory: {
     title: "Reviewed memory",
     eyebrow: "CONTEXT VAULT",
     loading: "Opening reviewed memory...",
@@ -857,7 +856,8 @@ export const en = {
     chipLabel: "Workspace",
   },
   settingsSurface: desktopWorkbenchCopy.settingsSurface,
-  developerWorkbench: desktopWorkbenchCopy.developerWorkbench, modelPicker: desktopWorkbenchCopy.modelPicker,
+  developerWorkbench: desktopWorkbenchCopy.developerWorkbench,
+  modelPicker: desktopWorkbenchCopy.modelPicker,
   welcome: {
     eyebrow: "A glass-box agent runtime",
     title: "Work that leaves evidence.",

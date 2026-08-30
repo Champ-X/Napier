@@ -6,7 +6,6 @@ import {
   CircleDot,
   Clock3,
   Globe2,
-  Square,
 } from "lucide-react";
 
 import type { ThreadDetail } from "@napier/contracts";
@@ -30,7 +29,6 @@ export interface TaskNarrativeBarProps {
     | undefined;
   browserControlsAvailable: boolean;
   onOpenBrowserControls(): void;
-  onStop(): void;
 }
 
 // Shared CSS owns the intrinsic desktop layout and complete control states.
@@ -38,7 +36,6 @@ export function TaskNarrativeBar({
   detail,
   browserControlsAvailable,
   onOpenBrowserControls,
-  onStop,
 }: TaskNarrativeBarProps) {
   const [now, setNow] = useState(() => Date.now());
   const running = detail?.runs.some(
@@ -132,23 +129,19 @@ export function TaskNarrativeBar({
             </div>
           </details>
         ) : null}
-        {running || browserControlsAvailable ? (
+        {browserControlsAvailable ? (
           <div
             className="task-narrative-actions"
             aria-label={shellCopy.taskNarrative.controls}
           >
-            {browserControlsAvailable ? (
-              <button type="button" onClick={onOpenBrowserControls}>
-                <Globe2 size={14} aria-hidden="true" />
-                {copy.narrative.browserControls}
-              </button>
-            ) : null}
-            {running ? (
-              <button className="is-stop" type="button" onClick={onStop}>
-                <Square size={11} fill="currentColor" aria-hidden="true" />
-                {copy.narrative.stop}
-              </button>
-            ) : null}
+            <button
+              type="button"
+              aria-label={copy.narrative.browserControls}
+              title={copy.narrative.browserControls}
+              onClick={onOpenBrowserControls}
+            >
+              <Globe2 size={15} aria-hidden="true" />
+            </button>
           </div>
         ) : null}
       </div>

@@ -6,6 +6,13 @@ export interface BrowserNavigationGrant {
   initialOrigin?: string;
 }
 
+export class BrowserNavigationPolicyError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "BrowserNavigationPolicyError";
+  }
+}
+
 export class BrowserSessionNavigation {
   private readonly committedOrigins = new Map<Page, string>();
   private grant:
@@ -19,7 +26,9 @@ export class BrowserSessionNavigation {
   ): Promise<void> {
     const current = browserPageOrigin(page.url());
     if (current && current !== url.origin && !allowCrossOrigin) {
-      throw new Error("Cross-origin navigation requires allowCrossOrigin");
+      throw new BrowserNavigationPolicyError(
+        "Cross-origin navigation requires allowCrossOrigin",
+      );
     }
   }
 
@@ -45,10 +54,14 @@ export class BrowserSessionNavigation {
       try {
         result = await operation();
       } catch (error) {
-        if (this.grant.blocked) throw new Error(this.grant.blocked);
+        if (this.grant.blocked) {
+          throw new BrowserNavigationPolicyError(this.grant.blocked);
+        }
         throw error;
       }
-      if (this.grant.blocked) throw new Error(this.grant.blocked);
+      if (this.grant.blocked) {
+        throw new BrowserNavigationPolicyError(this.grant.blocked);
+      }
       const committed = browserPageOrigin(page.url());
       if (committed) this.committedOrigins.set(page, committed);
       return result;

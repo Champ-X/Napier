@@ -3,6 +3,7 @@ import type { AssistantMessage } from "@earendil-works/pi-ai";
 import type { JsonValue, ToolLoopGuardPolicy } from "@napier/contracts";
 
 import { agentToolInputLedgerProjection } from "./agent-tool-ledger.js";
+import type { AgentToolDisplayStore } from "./agent-tool-display-store.js";
 import type { AgentToolResultLifecycle } from "./agent-tool-result-lifecycle.js";
 import type { AgentTurnPipeline } from "./agent-turn-pipeline.js";
 import type { EventSink } from "./event-sink.js";
@@ -29,6 +30,7 @@ interface ToolCallContext {
 
 export function createAgentToolPreflight(input: {
   store: LocalStore;
+  displays: AgentToolDisplayStore;
   policy: PolicyContext;
   turnPipeline: AgentTurnPipeline;
   budget: RunBudgetTracker;
@@ -54,6 +56,7 @@ export function createAgentToolPreflight(input: {
     reason: string,
     evidence: Record<string, JsonValue> = {},
   ): Promise<BeforeToolCallResult> => {
+    await captureBlockDisplay(input.displays, input.policy.run, toolCall, args, reason);
     await append(input, "tool.blocked", {
       callId: toolCall.id,
       toolName: toolCall.name,
@@ -141,6 +144,20 @@ export function createAgentToolPreflight(input: {
       return governed(toolCall, args, signal);
     },
   };
+}
+
+async function captureBlockDisplay(
+  displays: AgentToolDisplayStore,
+  run: { threadId: string; id: string },
+  toolCall: { id: string; name: string },
+  args: unknown,
+  reason: string,
+): Promise<void> {
+  const owner = {
+    threadId: run.threadId, runId: run.id, callId: toolCall.id, toolName: toolCall.name,
+  };
+  await displays.recordInput(owner, args).catch(() => undefined);
+  await displays.recordOutput(owner, reason, true).catch(() => undefined);
 }
 
 async function append(

@@ -65,7 +65,10 @@ export class WebSearchProviderRegistry {
     this.providers = options.providers ?? [
       new FirecrawlWebSearchProvider(http, env["FIRECRAWL_API_KEY"]),
       new BraveWebSearchProvider(http, env["BRAVE_API_KEY"]),
-      new TavilyWebSearchProvider(http, env["TAVILY_API_KEY"]),
+      new TavilyWebSearchProvider(
+        http,
+        env["TAVILY_API_KEY"] ?? env["TAVILY_API_KRY"],
+      ),
       new BingWebSearchProvider(http),
       new DuckDuckGoWebSearchProvider(http),
     ];

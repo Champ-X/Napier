@@ -68,6 +68,13 @@ export interface PlanArtifactTextPreview {
   text: string;
 }
 
+export interface PlanArtifactTextPeek extends Omit<
+  PlanArtifactTextPreview,
+  "kind"
+> {
+  kind: "napier.plan-artifact-text-peek";
+}
+
 export type PlanArtifactTextPreviewReceipt = PlanArtifactTextPreview &
   PlanArtifactLedgerEventReceipt;
 
@@ -266,6 +273,16 @@ export function previewPlanArtifactText(
 ): Promise<PlanArtifactTextPreviewReceipt> {
   return requestJson(
     `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/artifacts/${encodeURIComponent(artifactId)}/preview`,
+  );
+}
+
+export function peekPlanArtifactText(
+  threadId: string,
+  planId: string,
+  artifactId: string,
+): Promise<PlanArtifactTextPeek> {
+  return requestJson(
+    `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/artifacts/${encodeURIComponent(artifactId)}/peek`,
   );
 }
 

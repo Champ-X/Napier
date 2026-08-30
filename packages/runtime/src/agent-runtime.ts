@@ -92,7 +92,7 @@ import {
   providerMessages,
 } from "./agent-model-projection.js";
 import { contextHistoryCharacterBudget } from "./model-context-token-meter.js";
-import { builtInToolHarnessProjection } from "./agent-tool-effects.js";
+import { AgentToolDisplayStore, builtInToolHarnessProjection } from "./agent-tool-effects.js";
 import {
   AgentToolResultLifecycle,
   toolLife,
@@ -294,7 +294,7 @@ export class AgentRuntime {
     readonly conversationSurfaceCapsules = new ConversationSurfaceCapsuleStore(
       store.dataRoot,
     ),
-    private readonly subagentHubControls?: Pick<SubagentHubControlService, "register">,
+    private readonly subagentHubControls?: Pick<SubagentHubControlService, "register">, readonly toolDisplays = new AgentToolDisplayStore(store.dataRoot),
   ) {
     this.contextEvents = new ContextEventReadModel(store);
     this.modelRouter = new ModelRouter(store, modelRegistry);
@@ -1439,9 +1439,9 @@ export class AgentRuntime {
       },
     });
     const toolPreflight = createAgentToolPreflight({
-      store: this.store,
+      store: this.store, displays: this.toolDisplays,
       policy: {
-        store: this.store, run, profile,
+        store: this.store, run, profile, displays: this.toolDisplays,
         ...(this.extensionManager ? { extensionManager: this.extensionManager } : {}),
         confirmations: this.browserInteractionConfirmations,
         browserPauses: this.browserSessionPauses,
@@ -1456,7 +1456,7 @@ export class AgentRuntime {
     });
     const afterToolCall = createAgentToolResultFinalizer(toolResultLifecycle);
     codeBridge.attach({
-      store: this.store,
+      store: this.store, displays: this.toolDisplays,
       run, tools: [...tools, ...deferredExtensionTools], registry: toolProtocol,
       activeToolNames: () => activeStepToolNames,
       assertBudget: () => budget.assertCanStartAuxiliaryCall(),
@@ -1856,9 +1856,9 @@ export class AgentRuntime {
     if (event.type === "message_update") {
       const update = event.assistantMessageEvent;
       if (update.type === "text_delta" || update.type === "thinking_delta") {
-        const redactCandidate = privateSourceContent.redact(
-          modelAdvisorPolicy.mode === "enforce",
-        );
+        const redactCandidate =
+          modelAdvisorPolicy.mode === "enforce" ||
+          (update.type !== "thinking_delta" && privateSourceContent.redact(false));
         await deltaBatcher.push(
           update.type === "text_delta"
             ? "model.text.delta"

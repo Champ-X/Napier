@@ -5,6 +5,10 @@ import { applyDocumentLocale } from "./locale";
 import "./styles/tokens.css";
 import "./styles.css";
 import "./workspace-shell.css";
+import "./styles/arena-shell.css";
+import "./styles/arena-conversation.css";
+import "./styles/thread-interactions.css";
+import "./styles/artifact-inspector.css";
 
 applyDocumentLocale();
 

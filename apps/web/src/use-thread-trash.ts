@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
 import type { ThreadDetail } from "@napier/contracts";
@@ -12,6 +12,8 @@ export interface TrashedThreadReceipt {
   title: string;
   trashedAt: string;
 }
+
+export const THREAD_UNDO_WINDOW_MS = 5_000;
 
 export function useThreadTrash(input: {
   bootstrap: LiveReadyBootstrapResponse | undefined;
@@ -35,6 +37,15 @@ export function useThreadTrash(input: {
   } = input;
   const [busyThreadId, setBusyThreadId] = useState<string>();
   const [receipt, setReceipt] = useState<TrashedThreadReceipt>();
+
+  useEffect(() => {
+    if (!receipt) return;
+    const timeout = window.setTimeout(
+      () => setReceipt(undefined),
+      THREAD_UNDO_WINDOW_MS,
+    );
+    return () => window.clearTimeout(timeout);
+  }, [receipt]);
 
   const applyBootstrap = useCallback(
     (bootstrap: LiveReadyBootstrapResponse) => {

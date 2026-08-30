@@ -1,0 +1,170 @@
+.thread-actions {
+  position: absolute;
+  top: var(--space-1);
+  right: var(--space-1);
+}
+
+.thread-row-shell.has-open-menu {
+  z-index: 21;
+}
+
+.thread-menu-trigger {
+  display: grid;
+  width: var(--control-target);
+  height: var(--control-target);
+  padding: 0;
+  color: var(--color-navigation-fg-muted);
+  cursor: pointer;
+  visibility: hidden;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  opacity: 0;
+  place-items: center;
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
+}
+
+.thread-row-shell:hover .thread-menu-trigger,
+.thread-row-shell.is-active .thread-menu-trigger,
+.thread-row-shell.has-open-menu .thread-menu-trigger,
+.thread-menu-trigger:focus-visible {
+  visibility: visible;
+  opacity: 1;
+}
+
+.thread-menu-trigger:hover,
+.thread-row-shell.has-open-menu .thread-menu-trigger {
+  color: var(--color-navigation-fg);
+  background: var(--color-navigation-surface-hover);
+}
+
+.thread-action-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + var(--space-1));
+  right: 0;
+  display: grid;
+  width: 190px;
+  padding: var(--space-1);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-raised);
+  animation: thread-menu-enter var(--duration-fast) var(--ease-out);
+}
+
+.thread-action-menu button {
+  display: flex;
+  min-height: var(--control-target-primary);
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-3);
+  color: var(--color-fg);
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+}
+
+.thread-action-menu button:hover:not(:disabled) {
+  color: var(--color-danger-fg);
+  background: var(--color-danger-surface);
+}
+
+.thread-action-menu button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.thread-action-menu small {
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-fg-subtle);
+  font-size: var(--text-xs);
+  line-height: var(--leading-body);
+}
+
+.thread-undo {
+  position: fixed;
+  z-index: 75;
+  top: var(--space-6);
+  left: 50%;
+  display: grid;
+  width: min(440px, calc(100vw - var(--space-8)));
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  margin: 0;
+  padding: var(--space-3);
+  color: var(--color-fg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-modal);
+  transform: translateX(-50%);
+  animation: thread-undo-enter var(--duration-slow) var(--ease-out);
+}
+
+.thread-undo > svg {
+  color: var(--color-danger-fg);
+}
+
+.thread-undo > div {
+  display: grid;
+  min-width: 0;
+}
+
+.thread-undo span {
+  color: var(--color-fg-muted);
+  font-size: var(--text-xs);
+}
+
+.thread-undo strong {
+  overflow: hidden;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thread-undo button {
+  min-height: var(--control-target-primary);
+  padding-inline: var(--space-4);
+  color: var(--color-fg-on-accent);
+  cursor: pointer;
+  background: var(--color-accent);
+  border: 0;
+  border-radius: var(--radius-md);
+}
+
+.thread-undo button:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+}
+
+@keyframes thread-menu-enter {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--space-1) * -1));
+  }
+}
+
+@keyframes thread-undo-enter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(var(--space-2) * -1));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thread-action-menu,
+  .thread-undo {
+    animation: none;
+  }
+}

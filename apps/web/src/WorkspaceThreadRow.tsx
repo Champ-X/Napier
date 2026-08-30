@@ -1,4 +1,5 @@
 import type { ThreadSummary } from "@napier/contracts";
+import { MessageSquareText } from "lucide-react";
 
 import {
   formatRelativeThreadTime,
@@ -8,14 +9,12 @@ import {
 
 export interface WorkspaceThreadRowProps {
   thread: ThreadSummary;
-  index: number;
   active?: boolean;
   onSelect(threadId: string): void;
 }
 
 export function WorkspaceThreadRow({
   thread,
-  index,
   active = false,
   onSelect,
 }: WorkspaceThreadRowProps) {
@@ -26,7 +25,9 @@ export function WorkspaceThreadRow({
       onClick={() => onSelect(thread.id)}
       aria-current={active ? "page" : undefined}
     >
-      <span className="thread-index">{String(index + 1).padStart(2, "0")}</span>
+      <span className="thread-icon" aria-hidden="true">
+        <MessageSquareText size={14} strokeWidth={1.8} />
+      </span>
       <span className="thread-copy">
         <span className="thread-title-line">
           <strong>{thread.title}</strong>
@@ -42,6 +43,7 @@ export function WorkspaceThreadRow({
 }
 
 function ThreadStatusDot({ status }: { status: ThreadSummary["status"] }) {
+  if (status === "idle") return null;
   const label = threadStatusLabel(status);
   return (
     <span

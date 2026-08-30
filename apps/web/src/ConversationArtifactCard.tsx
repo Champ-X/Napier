@@ -3,6 +3,8 @@ import { useState } from "react";
 
 import "./conversation-artifact-card.css";
 import { ArtifactActionSurface } from "./ArtifactActionSurface";
+import { ArtifactInlinePreview } from "./ArtifactInlinePreview";
+import type { ArtifactInspection } from "./artifact-inspection";
 import { formatApiErrorMessage } from "./api-error";
 import {
   downloadPlanArtifactFile,
@@ -24,6 +26,7 @@ export interface ConversationArtifactCardProps {
   previewArtifact?: typeof previewPlanArtifactText;
   previewDiff?: typeof previewPlanArtifactDiff;
   downloadArtifact?: typeof downloadPlanArtifactFile;
+  onInspect?(inspection: ArtifactInspection): void;
 }
 export function ConversationArtifactCard({
   item,
@@ -32,6 +35,7 @@ export function ConversationArtifactCard({
   previewArtifact = previewPlanArtifactText,
   previewDiff = previewPlanArtifactDiff,
   downloadArtifact = downloadPlanArtifactFile,
+  onInspect,
 }: ConversationArtifactCardProps) {
   const copy = conversationDetailCopy.artifact;
   const [busy, setBusy] = useState<"download">();
@@ -100,6 +104,10 @@ export function ConversationArtifactCard({
           </div>
         ) : null}
       </dl>
+      <ArtifactInlinePreview
+        item={item}
+        {...(onInspect ? { onInspect } : {})}
+      />
       <ArtifactActionSurface
         artifact={item.artifact}
         planId={item.planId}
@@ -107,6 +115,7 @@ export function ConversationArtifactCard({
         onLedgerChanged={onLedgerChanged}
         previewArtifact={previewArtifact}
         previewDiff={previewDiff}
+        {...(onInspect ? { onInspect } : {})}
       />
       {available ? (
         <div className="conversation-artifact-actions is-export-only">

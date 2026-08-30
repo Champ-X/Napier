@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 
 import { advancedSurfaceCopy } from "./advanced-surface-copy";
+import type { ArtifactInspection } from "./artifact-inspection";
 import { ConversationFollowButton } from "./ConversationFollowButton";
 import { useConversationFollow } from "./use-conversation-follow";
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
@@ -19,6 +20,7 @@ export function ConversationWorkspace({
   endRef,
   viewportRef,
   onOpenSubagentHub,
+  onInspectArtifact,
 }: ConversationWorkspaceProps) {
   const accessibilityCopy = advancedSurfaceCopy.accessibility;
   const follow = useConversationFollow({
@@ -51,6 +53,7 @@ export function ConversationWorkspace({
             onBranch={(seq) => void vm.branchFrom(seq)}
             onLedgerChanged={vm.refreshActiveThread}
             onOpenSubagentHub={onOpenSubagentHub}
+            onInspectArtifact={onInspectArtifact}
           />
         </Suspense>
       )}
@@ -76,6 +79,7 @@ export interface ConversationWorkspaceProps {
   endRef: React.RefObject<HTMLDivElement | null>;
   viewportRef: React.RefObject<HTMLElement | null>;
   onOpenSubagentHub(taskId?: string): void;
+  onInspectArtifact(inspection: ArtifactInspection): void;
 }
 
 export function shouldShowConversationWelcome(

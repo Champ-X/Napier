@@ -67,15 +67,21 @@ export function WorkspaceViewNavigation({
                 ? runCount
                 : view.id === "subagents"
                   ? subagentCount
-                : undefined;
+                  : undefined;
           return (
             <button
               id={`workspace-view-${view.id}`}
               className={activeView === view.id ? "is-active" : ""}
               type="button"
               role="tab"
+              aria-label={
+                count === undefined
+                  ? view.label
+                  : `${view.label} ${compactCount(count)}`
+              }
               aria-selected={activeView === view.id}
               aria-controls={`workspace-panel-${view.id}`}
+              title={view.label}
               tabIndex={activeView === view.id ? 0 : -1}
               key={view.id}
               onClick={() => onChange(view.id)}
@@ -83,7 +89,9 @@ export function WorkspaceViewNavigation({
             >
               <Icon size={14} aria-hidden="true" />
               <strong>{view.label}</strong>
-              {count !== undefined ? <i>{compactCount(count)}</i> : null}
+              {count !== undefined && count > 0 ? (
+                <i>{compactCount(count)}</i>
+              ) : null}
             </button>
           );
         })}

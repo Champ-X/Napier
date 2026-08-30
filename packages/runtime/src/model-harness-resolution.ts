@@ -88,7 +88,6 @@ const CAPABILITY_TOOLS: Record<
   browser: new Set(["browser"]),
   workspace_write: new Set([
     "apply_patch",
-    "ast_edit_preview",
     "lsp_rename_apply",
     "lsp_code_action_apply",
     "workspace_file_apply",

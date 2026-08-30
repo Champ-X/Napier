@@ -1,6 +1,4 @@
-import {
-  createId,
-} from "@napier/runtime/core";
+import { createId } from "@napier/runtime/core";
 import {
   inspectWorkspaceArtifactDrift,
   previewWorkspaceArtifactDiff,
@@ -31,8 +29,54 @@ export function registerPlanArtifactInspectionHttp(
   sandbox: OsSandboxAdapter,
 ): void {
   registerPlanArtifactDriftCheckHttp(app, store);
+  registerPlanArtifactTextPeekHttp(app, store);
   registerPlanArtifactTextPreviewHttp(app, store);
   registerPlanArtifactDiffHttp(app, store, sandbox);
+}
+
+function registerPlanArtifactTextPeekHttp(
+  app: Hono,
+  store: PlanArtifactHttpStore,
+): void {
+  app.get(
+    "/api/threads/:threadId/plans/:planId/artifacts/:artifactId/peek",
+    async (context) => {
+      const threadId = context.req.param("threadId");
+      const plan = getThreadPlan(store, context.req.param("planId"), threadId);
+      const artifact = plan.artifacts.find(
+        (candidate) => candidate.id === context.req.param("artifactId"),
+      );
+      if (!artifact) {
+        return jsonError(context, "Plan artifact peek is invalid", 404);
+      }
+      try {
+        const preview = await previewWorkspaceTextArtifact(
+          store.workspaceRoot,
+          artifact,
+        );
+        const payload = {
+          kind: "napier.plan-artifact-text-peek" as const,
+          schemaVersion: 1 as const,
+          planId: plan.id,
+          artifactId: artifact.id,
+          planRevision: plan.revision,
+          status: artifact.status,
+          artifactKind: artifact.kind,
+          pathSha256: sha256Text(artifact.path),
+          sha256: preview.sha256,
+          sizeBytes: preview.sizeBytes,
+          lineCount: preview.lineCount,
+          textSha256: sha256Text(preview.text),
+          text: preview.text,
+        };
+        setPlanArtifactTextPreviewHeaders(context, plan, artifact, payload);
+        context.header("X-Napier-Read-Mode", "peek");
+        return context.json(payload);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 400);
+      }
+    },
+  );
 }
 
 function registerPlanArtifactDiffHttp(

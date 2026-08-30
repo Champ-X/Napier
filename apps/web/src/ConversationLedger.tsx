@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import type { WebThreadDetail } from "./api";
+import type { ArtifactInspection } from "./artifact-inspection";
 import { clearInvalidConversationArtifactAnchor } from "./conversation-artifact-anchor";
 import { conversationFeedProjection } from "./conversation-feed-projection";
 import type { ConversationFeedEntry } from "./conversation-feed-grouping";
@@ -20,6 +21,8 @@ import { ConversationPlanCard } from "./ConversationPlanCard";
 import { ConversationRecoveryCard } from "./ConversationRecoveryCard";
 import { ConversationSubagentCard } from "./ConversationSubagentCard";
 import { ConversationToolActivityCard } from "./ConversationToolActivityCard";
+import { ConversationThinkingActivity } from "./ConversationThinkingActivity";
+import { getLocalToolDisplays } from "./local-tool-display-api";
 import type { MessageView } from "./use-workspace-view-model";
 
 const INITIAL_FEED_WINDOW = 160;
@@ -33,6 +36,7 @@ export interface ConversationLedgerProps {
   onBranch(seq: number): void;
   onLedgerChanged(): Promise<void>;
   onOpenSubagentHub(taskId?: string): void;
+  onInspectArtifact?(inspection: ArtifactInspection): void;
 }
 
 export function ConversationLedger({
@@ -43,10 +47,35 @@ export function ConversationLedger({
   onBranch,
   onLedgerChanged,
   onOpenSubagentHub,
+  onInspectArtifact,
 }: ConversationLedgerProps) {
+  const [toolDisplays, setToolDisplays] = useState<
+    Awaited<ReturnType<typeof getLocalToolDisplays>>
+  >([]);
+  const toolEventVersion = (detail?.events ?? []).filter((event) =>
+    event.type.startsWith("tool."),
+  ).length;
+  useEffect(() => {
+    const threadId = detail?.thread.id;
+    if (!threadId) {
+      setToolDisplays([]);
+      return;
+    }
+    let current = true;
+    void getLocalToolDisplays(threadId)
+      .then((records) => {
+        if (current) setToolDisplays(records);
+      })
+      .catch(() => {
+        if (current) setToolDisplays([]);
+      });
+    return () => {
+      current = false;
+    };
+  }, [detail?.thread.id, toolEventVersion]);
   const projection = useMemo(
-    () => conversationFeedProjection(messages, detail),
-    [detail, messages],
+    () => conversationFeedProjection(messages, detail, toolDisplays),
+    [detail, messages, toolDisplays],
   );
   const artifactAnchorKey = projection.artifactAnchorIds.join("|");
   const [visibleLimit, setVisibleLimit] = useState(INITIAL_FEED_WINDOW);
@@ -83,6 +112,7 @@ export function ConversationLedger({
           onBranch,
           onLedgerChanged,
           onOpenSubagentHub,
+          onInspectArtifact,
         ),
       )}
       {streamingText ? (
@@ -90,6 +120,7 @@ export function ConversationLedger({
           text={streamingText}
           workspaceLinks={projection.workspaceLinks}
           citationLinks={projection.citationLinks}
+          {...(onInspectArtifact ? { onInspectArtifact } : {})}
         />
       ) : null}
       <div ref={endRef} />
@@ -103,6 +134,7 @@ function renderFeedItem(
   onBranch: ConversationLedgerProps["onBranch"],
   onLedgerChanged: ConversationLedgerProps["onLedgerChanged"],
   onOpenSubagentHub: ConversationLedgerProps["onOpenSubagentHub"],
+  onInspectArtifact: ConversationLedgerProps["onInspectArtifact"],
 ) {
   if (item.kind === "activity-group") {
     return <ConversationActivityGroupCard key={item.id} group={item} />;
@@ -114,6 +146,7 @@ function renderFeedItem(
         message={item.message}
         workspaceLinks={projection.workspaceLinks}
         citationLinks={projection.citationLinks}
+        {...(onInspectArtifact ? { onInspectArtifact } : {})}
         {...(item.message.role === "assistant"
           ? { onBranch: () => onBranch(item.message.seq) }
           : {})}
@@ -135,6 +168,16 @@ function renderFeedItem(
         item={item.artifact}
         threadId={item.artifact.threadId}
         onLedgerChanged={onLedgerChanged}
+        {...(onInspectArtifact ? { onInspect: onInspectArtifact } : {})}
+      />
+    );
+  }
+  if (item.kind === "thinking") {
+    return (
+      <ConversationThinkingActivity
+        key={`thinking-${item.activity.id}`}
+        activity={item.activity}
+        active={projection.activeThinkingId === item.activity.id}
       />
     );
   }
@@ -161,6 +204,7 @@ type ExecutionFeedItem = Exclude<
   | { kind: "activity" }
   | { kind: "artifact" }
   | { kind: "citation" }
+  | { kind: "thinking" }
 >;
 
 function renderExecutionFeedItem(

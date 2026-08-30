@@ -91,8 +91,24 @@ describe("Capability Catalog", () => {
       }),
     );
     expect(result.content[0]).toEqual(
-      expect.objectContaining({ text: expect.stringContaining("cap://tools/apply_patch") }),
+      expect.objectContaining({
+        text: expect.stringContaining("cap://tools/apply_patch"),
+      }),
     );
+  });
+
+  it("lists the catalog root without activating every returned tool", async () => {
+    const catalog = createCapabilityCatalogTool([readTool, writeTool]);
+    const result = await catalog.execute(
+      "call_catalog",
+      { uri: "cap://tools" },
+      undefined,
+    );
+
+    expect(result.details).toEqual(
+      expect.objectContaining({ matchedCount: 2 }),
+    );
+    expect(result.addedToolNames).toBeUndefined();
   });
 
   it("rejects ambiguous duplicate tool identities", () => {

@@ -24,7 +24,10 @@ export interface ConversationArtifact {
 }
 
 export interface ConversationArtifactWorkspaceLink {
+  artifact: ArtifactManifestEntry;
   path: string;
+  planId: string;
+  threadId: string;
   targetId: string;
 }
 
@@ -92,7 +95,10 @@ export function conversationArtifactWorkspaceLinks(
     (item.artifact.status === "produced" || item.artifact.status === "verified")
       ? [
           {
+            artifact: item.artifact,
             path: item.artifact.path,
+            planId: item.planId,
+            threadId: item.threadId,
             targetId: conversationArtifactTargetId(item),
           },
         ]

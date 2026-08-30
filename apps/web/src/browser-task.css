@@ -217,7 +217,7 @@
 
 .browser-task-steps {
   display: grid;
-  max-height: var(--layout-evidence-rail);
+  max-height: var(--layout-utility-rail);
   gap: var(--stack-sm);
   padding: 0;
   margin: 0;

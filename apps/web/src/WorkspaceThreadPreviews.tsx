@@ -17,13 +17,9 @@ export function WorkspaceThreadPreviews({
   }
   return (
     <div className="thread-list workspace-thread-previews">
-      {threads.map((thread, index) => (
+      {threads.map((thread) => (
         <div className="thread-row-shell is-preview" key={thread.id}>
-          <WorkspaceThreadRow
-            thread={thread}
-            index={index}
-            onSelect={onSelect}
-          />
+          <WorkspaceThreadRow thread={thread} onSelect={onSelect} />
         </div>
       ))}
     </div>

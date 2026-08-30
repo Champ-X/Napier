@@ -37,6 +37,14 @@ import {
   conversationSubagents,
 } from "./conversation-subagent-view-model";
 import { conversationToolActivities } from "./conversation-tool-activity-view-model";
+import {
+  activeConversationThinkingId,
+  conversationThinkingActivities,
+} from "./conversation-thinking-view-model";
+import {
+  projectLocalToolDisplays,
+  type LocalConversationToolDisplay,
+} from "./conversation-tool-display-view-model";
 import type {
   MessageCitationLink,
   MessageWorkspaceLink,
@@ -44,6 +52,7 @@ import type {
 import type { MessageView } from "./use-workspace-view-model";
 
 export interface ConversationFeedProjection {
+  activeThinkingId?: string;
   artifactAnchorIds: string[];
   citationLinks: MessageCitationLink[];
   feed: ConversationFeedEntry[];
@@ -53,9 +62,13 @@ export interface ConversationFeedProjection {
 export function conversationFeedProjection(
   messages: readonly MessageView[],
   detail: WebThreadDetail | undefined,
+  toolDisplays: readonly LocalConversationToolDisplay[] = [],
 ): ConversationFeedProjection {
-  const events = detail?.events ?? [];
-  const activitySource = detail?.activityEvents ?? events;
+  const events = projectLocalToolDisplays(detail?.events ?? [], toolDisplays);
+  const activitySource = projectLocalToolDisplays(
+    detail?.activityEvents ?? events,
+    toolDisplays,
+  );
   const plans = detail?.plans ?? [];
   const runs = detail?.runs ?? [];
   const artifacts =
@@ -66,6 +79,16 @@ export function conversationFeedProjection(
   );
   const workspaceLinks = conversationArtifactWorkspaceLinks(artifacts);
   const citations = detail?.citations ?? conversationCitations(events);
+  const thinkingActivities = conversationThinkingActivities(events);
+  const currentRunId = detail?.thread.currentRunId;
+  const activeThinkingId = activeConversationThinkingId(
+    events,
+    currentRunId,
+    Boolean(
+      currentRunId &&
+        runs.some((run) => run.id === currentRunId && run.status === "running"),
+    ),
+  );
   const citationLinks = conversationCitationLinks(citations);
   const citationEventIds = new Set(citations.map((citation) => citation.id));
   const citationCallIds = new Set(citations.map((citation) => citation.callId));
@@ -166,6 +189,11 @@ export function conversationFeedProjection(
         seq: citation.seq,
         citation,
       })),
+      ...thinkingActivities.map((activity) => ({
+        kind: "thinking" as const,
+        seq: activity.seq,
+        activity,
+      })),
       ...networkActivities.map((activity) => ({
         kind: "network" as const,
         seq: activity.seq,
@@ -203,7 +231,13 @@ export function conversationFeedProjection(
       })),
     ].sort((left, right) => left.seq - right.seq) as ConversationFeedItem[],
   );
-  return { artifactAnchorIds, citationLinks, feed, workspaceLinks };
+  return {
+    ...(activeThinkingId ? { activeThinkingId } : {}),
+    artifactAnchorIds,
+    citationLinks,
+    feed,
+    workspaceLinks,
+  };
 }
 
 function eventCallId(event: RunEvent): string | undefined {

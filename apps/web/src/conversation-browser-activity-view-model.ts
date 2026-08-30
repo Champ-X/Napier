@@ -4,6 +4,11 @@ import {
   browserEventEvidence,
   type BrowserToolEventTraceView,
 } from "./browser-event-view";
+import {
+  conversationToolDisplay,
+  mergeConversationToolDisplay,
+  type ConversationToolDisplay,
+} from "./conversation-tool-display-view-model";
 
 export interface ConversationBrowserActivity {
   id: string;
@@ -28,6 +33,7 @@ export interface ConversationBrowserActivity {
   fileBytes?: number;
   findMatchCount?: number;
   scrollPositionY?: number;
+  display?: ConversationToolDisplay;
 }
 
 const EVENT = /^tool\.(started|completed|failed)$/u;
@@ -61,7 +67,17 @@ export function conversationBrowserActivities(
   const latest = new Map<string, ConversationBrowserActivity>();
   for (const event of events) {
     const activity = conversationBrowserActivity(event);
-    if (activity) latest.set(activity.callId, activity);
+    if (activity) {
+      const prior = latest.get(activity.callId);
+      const display = mergeConversationToolDisplay(
+        prior?.display,
+        activity.display,
+      );
+      latest.set(activity.callId, {
+        ...activity,
+        ...(display ? { display } : {}),
+      });
+    }
   }
   return [...latest.values()]
     .sort((left, right) => left.seq - right.seq)
@@ -84,6 +100,7 @@ export function conversationBrowserActivity(
         ? "completed"
         : "failed";
   const action = browserAction(payload["action"]);
+  const display = conversationToolDisplay(payload);
   const base = {
     id: event.id,
     callId,
@@ -91,6 +108,7 @@ export function conversationBrowserActivity(
     createdAt: event.createdAt,
     status,
     ...(action ? { action } : {}),
+    ...(display ? { display } : {}),
   } as const;
   if (status !== "completed") return base;
   const view = browserEventEvidence(payload["details"]);

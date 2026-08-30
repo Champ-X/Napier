@@ -100,6 +100,103 @@ export function assertWebUiE2eReceipt(receipt) {
     },
     WEB_UI_NARRATIVE_EXPECTATION,
   );
+  assert.equal(
+    receipt?.artifactNavigation?.primaryInspection?.inspectorWidth >= 720,
+    true,
+    `Wide-screen artifact inspector is too narrow: ${String(
+      receipt?.artifactNavigation?.primaryInspection?.inspectorWidth,
+    )}px`,
+  );
+  assert.equal(
+    receipt?.artifactNavigation?.primaryInspection?.inspectorWidth <= 820,
+    true,
+    `Wide-screen artifact inspector is too wide: ${String(
+      receipt?.artifactNavigation?.primaryInspection?.inspectorWidth,
+    )}px`,
+  );
+  assert.equal(
+    receipt?.artifactNavigation?.primaryInspection?.conversationWidth >= 640,
+    true,
+    `Artifact inspection shrank the conversation below its floor: ${String(
+      receipt?.artifactNavigation?.primaryInspection?.conversationWidth,
+    )}px`,
+  );
+  assert.equal(
+    receipt?.artifactNavigation?.primaryInspection?.workspaceShare >= 0.42,
+    true,
+    `Artifact inspector does not occupy the wide preview share: ${String(
+      receipt?.artifactNavigation?.primaryInspection?.workspaceShare,
+    )}`,
+  );
+  assert.equal(
+    receipt?.artifactNavigation?.primaryInspection?.workspaceShare <= 0.5,
+    true,
+    `Artifact inspector overwhelms the workspace: ${String(
+      receipt?.artifactNavigation?.primaryInspection?.workspaceShare,
+    )}`,
+  );
+  assert.equal(
+    receipt?.artifactNavigation?.primaryInspection?.horizontalOverflowPx,
+    0,
+  );
+  assert.deepEqual(receipt?.artifactNavigation?.inspectorInteraction, {
+    controls: ["Preview", "Raw source", "Changes"],
+    initialView: "preview",
+    htmlSandbox: "allow-scripts",
+    htmlInteractionText: "Step 2",
+    sourceViewActivated: true,
+    sourceContainsInteractiveMarkup: true,
+    changesContainsPatch: true,
+    previewRestored: true,
+    pathPreserved: true,
+    previewRequestCount: 2,
+    refreshRequestCount: 1,
+    diffRequestCount: 1,
+    consoleErrorCount: 0,
+  });
+  assert.deepEqual(receipt?.artifactNavigation?.intermediateInspections, [
+    {
+      viewportWidth: 1_440,
+      inspectorWidth: 548,
+      conversationWidth: 640,
+      horizontalOverflowPx: 0,
+    },
+    {
+      viewportWidth: 1_280,
+      inspectorWidth: 388,
+      conversationWidth: 640,
+      horizontalOverflowPx: 0,
+    },
+  ]);
+  assert.deepEqual(
+    {
+      viewportWidth:
+        receipt?.artifactNavigation?.compactInspection?.viewportWidth,
+      inspectorWidth:
+        receipt?.artifactNavigation?.compactInspection?.inspectorWidth,
+      inspectorLeft:
+        receipt?.artifactNavigation?.compactInspection?.inspectorLeft,
+      inspectorRight:
+        receipt?.artifactNavigation?.compactInspection?.inspectorRight,
+      workspaceLeft:
+        receipt?.artifactNavigation?.compactInspection?.workspaceLeft,
+      workspaceWidth:
+        receipt?.artifactNavigation?.compactInspection?.workspaceWidth,
+      position: receipt?.artifactNavigation?.compactInspection?.position,
+      horizontalOverflowPx:
+        receipt?.artifactNavigation?.compactInspection?.horizontalOverflowPx,
+    },
+    {
+      viewportWidth: 390,
+      inspectorWidth: 334,
+      inspectorLeft: 56,
+      inspectorRight: 390,
+      workspaceLeft: 56,
+      workspaceWidth: 334,
+      position: "absolute",
+      horizontalOverflowPx: 0,
+    },
+  );
   assert.deepEqual(
     receipt?.viewports?.map(({ width, height, layout }) => ({
       width,
@@ -147,6 +244,13 @@ export function assertWebUiE2eReceipt(receipt) {
   assert.equal(receipt?.runtime?.runtimeSectionVisible, true);
   assert.equal(receipt?.runtime?.sectionCount, 4);
   assert.equal(receipt?.runtime?.browserSurfaceVisible, true);
+  assert.deepEqual(receipt?.runtime?.browserRail, {
+    visible: true,
+    rightOfConversation: true,
+    alignedToWorkspaceRight: true,
+    withinWorkspaceHeight: true,
+    horizontalOverflowPx: 0,
+  });
   assert.equal(receipt?.runtime?.runningIndicatorVisible, true);
   assert.equal(receipt?.runtime?.fallbackWarningVisible, true);
   assert.equal(receipt?.runtime?.composerHeight >= 72, true);
@@ -200,7 +304,13 @@ export function assertWebUiE2eReceipt(receipt) {
   assert.equal(receipt?.settings?.receiptTrustAvailable, true);
   assert.equal(receipt?.settings?.publishingSurfaceCount, 3);
   assert.equal(receipt?.settings?.packageManagementMinimumFontPx >= 12, true);
-  assert.equal(receipt?.settings?.packageManagementMinimumActionHeight >= 44, true);
+  assert.equal(
+    receipt?.settings?.packageManagementMinimumActionHeight >= 44,
+    true,
+    `Package management action is below 44px: ${String(
+      receipt?.settings?.packageManagementMinimumActionHeight,
+    )}px`,
+  );
   assert.equal(receipt?.settings?.developerEscapeRestoredTriggerFocus, true);
   assert.equal(receipt?.locale?.lang, "zh-CN");
   assert.deepEqual(receipt?.locale?.workspaceLabels, [
@@ -242,17 +352,45 @@ export function assertWebUiE2eReceipt(receipt) {
     refresh: "刷新模板库",
   });
   assert.equal(receipt?.artifactNavigation?.outputCount, 2);
+  assert.equal(receipt?.artifactNavigation?.answerFileOpenedInspector, true);
+  assert.equal(
+    ["artifacts/interactive-report.html", "artifacts/source-notes.md"].includes(
+      receipt?.artifactNavigation?.primaryInspection?.path,
+    ),
+    true,
+  );
+  assert.deepEqual(
+    {
+      focusedSourceCard:
+        receipt?.artifactNavigation?.primaryInspection?.focusedSourceCard,
+      openedInOneClick:
+        receipt?.artifactNavigation?.primaryInspection?.openedInOneClick,
+      hostedInWorkspace:
+        receipt?.artifactNavigation?.primaryInspection?.hostedInWorkspace,
+    },
+    {
+      focusedSourceCard: true,
+      openedInOneClick: true,
+      hostedInWorkspace: true,
+    },
+  );
+  assert.deepEqual(receipt?.runtime?.runningArtifactPreview, {
+    visible: true,
+    sandbox: "",
+    path: "artifacts/running-preview.html",
+  });
+  assert.equal(receipt?.runtime?.runningArtifactInspector, true);
   assert.deepEqual(
     receipt?.artifactNavigation?.previews?.map(
       ({ path, focused, openedInOneClick }) => ({
-      path,
-      focused,
+        path,
+        focused,
         openedInOneClick,
       }),
     ),
     [
       {
-        path: "artifacts/output-report.md",
+        path: "artifacts/interactive-report.html",
         focused: true,
         openedInOneClick: true,
       },
@@ -303,6 +441,31 @@ export function assertViewportReceipt(viewport) {
   assert.equal(viewport.conversation.messageCount >= 2, true);
   assert.equal(viewport.conversation.waitingApprovalVisible, true);
   assert.equal(viewport.conversation.internalTrialControlsVisible, false);
+  assert.deepEqual(viewport.conversation.thinking, {
+    initiallyOpen: false,
+    visible: true,
+    transcript: "PRIVATE_FIXTURE_REASONING",
+    chromeHidden: true,
+    transcriptVisible: true,
+    horizontalOverflowPx: 0,
+  });
+  assert.deepEqual(viewport.conversation.tool, {
+    visible: true,
+    input:
+      '{\n  "patch": "*** Begin Patch\\n*** Update File: artifacts/research-brief.md\\n@@\\n- Draft\\n+ Verified\\n*** End Patch"\n}',
+    output: "Done!\nValidated artifacts/research-brief.md",
+    inputLabel: "Diff",
+    outputLabel: "Result",
+    horizontalOverflowPx: 0,
+  });
+  assert.deepEqual(viewport.chrome, {
+    headerNoOverlap: true,
+    headerContentWithinBounds: true,
+    compactModelContentContained: true,
+    textareaOutlineAbsent: true,
+    textareaBoxShadowAbsent: true,
+    composerFocusVisible: true,
+  });
   assert.equal(viewport.geometry.horizontalOverflowPx, 0);
   assert.equal(viewport.geometry.drawerWithinViewport, true);
   assert.equal(viewport.readingAxis.statusWidth >= 120, true);

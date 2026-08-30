@@ -56,9 +56,78 @@ describe("Web UI E2E receipt contract", () => {
     expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
   });
 
+  it("rejects an undersized wide-screen artifact inspector", () => {
+    const receipt = validReceipt();
+    receipt.artifactNavigation.primaryInspection.inspectorWidth = 560;
+    expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
+  });
+
+  it("rejects a compact artifact inspector outside the workspace", () => {
+    const receipt = validReceipt();
+    receipt.artifactNavigation.compactInspection.inspectorRight = 391;
+    expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
+  });
+
+  it("rejects an intermediate inspector that shrinks the reading floor", () => {
+    const receipt = validReceipt();
+    receipt.artifactNavigation.intermediateInspections[1].conversationWidth = 639;
+    expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
+  });
+
+  it("rejects an inspector that does not prove all in-place views", () => {
+    const receipt = validReceipt();
+    receipt.artifactNavigation.inspectorInteraction.diffRequestCount = 0;
+    expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
+  });
+
+  it("rejects an interactive preview with an expanded HTML sandbox", () => {
+    const receipt = validReceipt();
+    receipt.artifactNavigation.inspectorInteraction.htmlSandbox =
+      "allow-scripts allow-same-origin";
+    expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
+  });
+
   it("rejects internal Product Trial controls on the default task path", () => {
     const receipt = validReceipt();
     receipt.viewports[0].task.internalTrialControlsVisible = true;
+    expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
+  });
+
+  it("rejects a thinking row without readable process content", () => {
+    const receipt = validReceipt();
+    receipt.viewports[0].conversation.thinking.transcript = "";
+    expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
+  });
+
+  it("rejects a thinking row that does not visibly render the transcript", () => {
+    const receipt = validReceipt();
+    receipt.viewports[0].conversation.thinking.transcriptVisible = false;
+    expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
+  });
+
+  it("rejects a tool row without its complete readable payload", () => {
+    const receipt = validReceipt();
+    receipt.viewports[0].conversation.tool.output = "Done!";
+    expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
+  });
+
+  it("rejects overflowing header controls or a textarea focus rectangle", () => {
+    const receipt = validReceipt();
+    receipt.viewports[0].chrome.headerNoOverlap = false;
+    expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
+
+    receipt.viewports[0].chrome.headerNoOverlap = true;
+    receipt.viewports[0].chrome.compactModelContentContained = false;
+    expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
+
+    receipt.viewports[0].chrome.compactModelContentContained = true;
+    receipt.viewports[0].chrome.textareaOutlineAbsent = false;
+    expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
+  });
+
+  it("rejects an active Browser surface outside the right rail", () => {
+    const receipt = validReceipt();
+    receipt.runtime.browserRail.rightOfConversation = false;
     expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
   });
 
@@ -99,6 +168,7 @@ describe("Web UI E2E receipt contract", () => {
 
     expect(environment.NAPIER_STATE_HOME).toBe(path.join(root, "state"));
     expect(environment.NAPIER_WORKSPACE).toBe(path.join(root, "workspace"));
+    expect(environment.NAPIER_HOST_DIRECT_SANDBOX).toBe("1");
   });
 
   it("rejects unsupported runner arguments before starting the Server", async () => {
@@ -151,6 +221,31 @@ function validReceipt() {
         messageCount: 2,
         waitingApprovalVisible: true,
         internalTrialControlsVisible: false,
+        thinking: {
+          initiallyOpen: false,
+          visible: true,
+          transcript: "PRIVATE_FIXTURE_REASONING",
+          chromeHidden: true,
+          transcriptVisible: true,
+          horizontalOverflowPx: 0,
+        },
+        tool: {
+          visible: true,
+          input:
+            '{\n  "patch": "*** Begin Patch\\n*** Update File: artifacts/research-brief.md\\n@@\\n- Draft\\n+ Verified\\n*** End Patch"\n}',
+          output: "Done!\nValidated artifacts/research-brief.md",
+          inputLabel: "Diff",
+          outputLabel: "Result",
+          horizontalOverflowPx: 0,
+        },
+      },
+      chrome: {
+        headerNoOverlap: true,
+        headerContentWithinBounds: true,
+        compactModelContentContained: true,
+        textareaOutlineAbsent: true,
+        textareaBoxShadowAbsent: true,
+        composerFocusVisible: true,
       },
       task: {
         sections: [...DEFAULT_TASK_SECTION_LABELS],
@@ -241,6 +336,19 @@ function validReceipt() {
       runtimeSectionVisible: true,
       sectionCount: 4,
       browserSurfaceVisible: true,
+      runningArtifactPreview: {
+        visible: true,
+        sandbox: "",
+        path: "artifacts/running-preview.html",
+      },
+      runningArtifactInspector: true,
+      browserRail: {
+        visible: true,
+        rightOfConversation: true,
+        alignedToWorkspaceRight: true,
+        withinWorkspaceHeight: true,
+        horizontalOverflowPx: 0,
+      },
     },
     trajectory: {
       title: "Run trajectory",
@@ -291,19 +399,8 @@ function validReceipt() {
       lang: "zh-CN",
       workspaceLabels: ["对话", "任务", "子智能体", "轨迹"],
       taskSections: ["概览", "变更", "验证"],
-      settingsLabels: [
-        "智能体与模型",
-        "记忆",
-        "扩展",
-        "工作区",
-        "语言",
-      ],
-      developerLabels: [
-        "自动化工作台",
-        "实验与工作流",
-        "发布治理",
-        "设计系统",
-      ],
+      settingsLabels: ["智能体与模型", "记忆", "扩展", "工作区", "语言"],
+      developerLabels: ["自动化工作台", "实验与工作流", "发布治理", "设计系统"],
       composerPlaceholder: "给 Napier 一个任务、问题或长期目标……",
       trajectoryTitles: { page: "运行轨迹", map: "运行轨迹" },
       contextTitles: {
@@ -319,9 +416,59 @@ function validReceipt() {
     },
     artifactNavigation: {
       outputCount: 2,
+      answerFileOpenedInspector: true,
+      primaryInspection: {
+        path: "artifacts/interactive-report.html",
+        focusedSourceCard: true,
+        openedInOneClick: true,
+        hostedInWorkspace: true,
+        inspectorWidth: 760,
+        conversationWidth: 908,
+        workspaceShare: 0.456,
+        horizontalOverflowPx: 0,
+      },
+      inspectorInteraction: {
+        controls: ["Preview", "Raw source", "Changes"],
+        initialView: "preview",
+        htmlSandbox: "allow-scripts",
+        htmlInteractionText: "Step 2",
+        sourceViewActivated: true,
+        sourceContainsInteractiveMarkup: true,
+        changesContainsPatch: true,
+        previewRestored: true,
+        pathPreserved: true,
+        previewRequestCount: 2,
+        refreshRequestCount: 1,
+        diffRequestCount: 1,
+        consoleErrorCount: 0,
+      },
+      intermediateInspections: [
+        {
+          viewportWidth: 1_440,
+          inspectorWidth: 548,
+          conversationWidth: 640,
+          horizontalOverflowPx: 0,
+        },
+        {
+          viewportWidth: 1_280,
+          inspectorWidth: 388,
+          conversationWidth: 640,
+          horizontalOverflowPx: 0,
+        },
+      ],
+      compactInspection: {
+        viewportWidth: 390,
+        inspectorWidth: 334,
+        inspectorLeft: 56,
+        inspectorRight: 390,
+        workspaceLeft: 56,
+        workspaceWidth: 334,
+        position: "absolute",
+        horizontalOverflowPx: 0,
+      },
       previews: [
         {
-          path: "artifacts/output-report.md",
+          path: "artifacts/interactive-report.html",
           focused: true,
           openedInOneClick: true,
         },

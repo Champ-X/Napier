@@ -1,52 +1,52 @@
-import { ChevronLeft, ChevronRight, Plus, Settings2, Wrench } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  MessageCirclePlus,
+  Settings2,
+  Wrench,
+} from "lucide-react";
 
 import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
 import { copy } from "./copy";
-import { useWorkspaceLayout } from "./use-workspace-layout";
+import type { WorkspaceLayoutControls } from "./use-workspace-layout";
 import { WorkspaceTree } from "./WorkspaceTree";
-import type { TrashedThreadReceipt } from "./use-thread-trash";
 
 export function LedgerNavigation({
   bootstrap,
   selectedThreadId,
   busyThreadId,
-  trashedThread,
   onNewThread,
   onSelect,
   onTrash,
-  onRestore,
   onWorkspaceSwitch,
   onOpenWorkspaceSettings,
   onOpenDeveloperWorkbench,
   onOpenSettings,
+  layout,
 }: {
   bootstrap: LiveReadyBootstrapResponse;
   selectedThreadId: string | undefined;
   busyThreadId: string | undefined;
-  trashedThread: TrashedThreadReceipt | undefined;
   onNewThread(): void;
   onSelect(threadId: string): void;
   onTrash(threadId: string): void;
-  onRestore(): void;
   onWorkspaceSwitch(root: string, threadId?: string): Promise<void>;
   onOpenWorkspaceSettings(): void;
   onOpenDeveloperWorkbench(): void;
   onOpenSettings(): void;
+  layout: WorkspaceLayoutControls;
 }) {
-  const { collapsed, toggleSidebar } = useWorkspaceLayout();
+  const { collapsed, toggleSidebar } = layout;
   return (
     <nav
       className={`ledger-nav${collapsed ? " is-collapsed" : ""}`}
       aria-label={copy.recentThreads}
     >
       <div className="brand-lockup">
-        <div className="brand-mark" aria-hidden="true">
-          N
-        </div>
-        <div>
-          <strong>{copy.appName}</strong>
-          <span>{copy.appDescriptor}</span>
-        </div>
+        <span className="brand-mark-frame" aria-hidden="true">
+          <img className="brand-mark" src="/napier-mark.png" alt="" />
+        </span>
+        <strong>{copy.appName}</strong>
         <button
           className="ledger-collapse-button"
           type="button"
@@ -68,9 +68,8 @@ export function LedgerNavigation({
         aria-label={copy.newThread}
         onClick={onNewThread}
       >
-        <Plus size={15} aria-hidden="true" />
+        <MessageCirclePlus size={17} aria-hidden="true" />
         <span>{copy.newThread}</span>
-        <kbd>N</kbd>
       </button>
 
       <WorkspaceTree
@@ -78,10 +77,8 @@ export function LedgerNavigation({
         threads={bootstrap.threads}
         selectedThreadId={selectedThreadId}
         busyThreadId={busyThreadId}
-        trashedThread={trashedThread}
         onSelect={onSelect}
         onTrash={onTrash}
-        onRestore={onRestore}
         onWorkspaceSwitch={onWorkspaceSwitch}
         onOpenWorkspaceSettings={onOpenWorkspaceSettings}
       />

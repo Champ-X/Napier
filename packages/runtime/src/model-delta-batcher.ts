@@ -2,6 +2,7 @@ import type { JsonObject, RunEvent } from "@napier/contracts";
 
 import type { EventSink } from "./event-sink.js";
 import { sha256 } from "./ed25519.js";
+import { sanitizeDisplayText } from "./agent-tool-display.js";
 import { RunEventAdmissionError } from "./run-event-admission.js";
 import type { AppendEventInput } from "./store.js";
 
@@ -135,5 +136,11 @@ function deltaPayload(pending: PendingDelta, delta: string): JsonObject {
         deltaSha256: sha256(delta),
         redacted: true,
       }
-    : { ...shared, delta };
+    : {
+        ...shared,
+        delta:
+          pending.type === "model.thinking.delta"
+            ? sanitizeDisplayText(delta)
+            : delta,
+      };
 }

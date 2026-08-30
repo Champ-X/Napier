@@ -1,5 +1,8 @@
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
+import { FileCode2 } from "lucide-react";
+import type { ArtifactManifestEntry } from "@napier/contracts";
 
+import type { ArtifactInspection } from "./artifact-inspection";
 import { highlightMessageCode } from "./message-code-highlighting";
 import {
   parseMarkdownBlocks,
@@ -14,7 +17,10 @@ export {
 } from "./message-markdown-parser";
 
 export interface MessageWorkspaceLink {
+  artifact?: ArtifactManifestEntry;
   path: string;
+  planId?: string;
+  threadId?: string;
   targetId: string;
 }
 
@@ -28,15 +34,17 @@ export interface MessageMarkdownProps {
   text: string;
   workspaceLinks?: readonly MessageWorkspaceLink[];
   citationLinks?: readonly MessageCitationLink[];
+  onInspectArtifact?(inspection: ArtifactInspection): void;
 }
 
 export function MessageMarkdown({
   text,
   workspaceLinks = [],
   citationLinks = [],
+  onInspectArtifact,
 }: MessageMarkdownProps) {
   const workspaceTargets = new Map(
-    workspaceLinks.map((link) => [link.path, link.targetId]),
+    workspaceLinks.map((link) => [link.path, link]),
   );
   const citationTargets = new Map(
     citationLinks.map((link) => [link.citationId, link]),
@@ -95,14 +103,24 @@ export function MessageMarkdown({
           const Heading = `h${String(block.level + 2)}` as "h3" | "h4" | "h5";
           return (
             <Heading key={key}>
-              {inlineMarkdown(block.value, workspaceTargets, citationTargets)}
+              {inlineMarkdown(
+                block.value,
+                workspaceTargets,
+                citationTargets,
+                onInspectArtifact,
+              )}
             </Heading>
           );
         }
         if (block.kind === "quote") {
           return (
             <blockquote key={key}>
-              {inlineMarkdown(block.value, workspaceTargets, citationTargets)}
+              {inlineMarkdown(
+                block.value,
+                workspaceTargets,
+                citationTargets,
+                onInspectArtifact,
+              )}
             </blockquote>
           );
         }
@@ -112,7 +130,12 @@ export function MessageMarkdown({
             <List key={key}>
               {block.items.map((item, itemIndex) => (
                 <li key={`${key}-${String(itemIndex)}`}>
-                  {inlineMarkdown(item, workspaceTargets, citationTargets)}
+                  {inlineMarkdown(
+                    item,
+                    workspaceTargets,
+                    citationTargets,
+                    onInspectArtifact,
+                  )}
                 </li>
               ))}
             </List>
@@ -130,6 +153,7 @@ export function MessageMarkdown({
                           header,
                           workspaceTargets,
                           citationTargets,
+                          onInspectArtifact,
                         )}
                       </th>
                     ))}
@@ -146,6 +170,7 @@ export function MessageMarkdown({
                             cell,
                             workspaceTargets,
                             citationTargets,
+                            onInspectArtifact,
                           )}
                         </td>
                       ))}
@@ -158,7 +183,12 @@ export function MessageMarkdown({
         }
         return (
           <p key={key}>
-            {inlineMarkdown(block.value, workspaceTargets, citationTargets)}
+            {inlineMarkdown(
+              block.value,
+              workspaceTargets,
+              citationTargets,
+              onInspectArtifact,
+            )}
           </p>
         );
       })}
@@ -168,8 +198,9 @@ export function MessageMarkdown({
 
 function inlineMarkdown(
   value: string,
-  workspaceTargets: ReadonlyMap<string, string>,
+  workspaceTargets: ReadonlyMap<string, MessageWorkspaceLink>,
   citationTargets: ReadonlyMap<string, MessageCitationLink>,
+  onInspectArtifact?: (inspection: ArtifactInspection) => void,
 ): ReactNode[] {
   const tokens =
     /(`[^`\n]+`|\*\*[^*\n]+\*\*|\[[^\]\n]+\]\([^\s)]+\)|\[citation:citation_[a-z0-9]{8,80}\])/gu;
@@ -198,37 +229,43 @@ function inlineMarkdown(
       );
     } else if (token.startsWith("`")) {
       const code = token.slice(1, -1);
-      const targetId = workspaceTargets.get(code);
+      const target = workspaceTargets.get(code);
       output.push(
-        targetId ? (
-          <a
-            className="message-workspace-link is-code"
-            href={`#${targetId}`}
+        target ? (
+          <WorkspaceArtifactLink
+            code
             key={`${start}-workspace-code`}
-          >
-            <code>{code}</code>
-          </a>
+            label={code}
+            link={target}
+            {...(onInspectArtifact ? { onInspectArtifact } : {})}
+          />
         ) : (
           <code key={`${start}-code`}>{code}</code>
         ),
       );
     } else if (token.startsWith("**")) {
       output.push(
-        <strong key={`${start}-strong`}>{token.slice(2, -2)}</strong>,
+        <strong key={`${start}-strong`}>
+          {inlineMarkdown(
+            token.slice(2, -2),
+            workspaceTargets,
+            citationTargets,
+            onInspectArtifact,
+          )}
+        </strong>,
       );
     } else {
       const link = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/u);
       const href = link?.[2];
-      const targetId = href ? workspaceTargets.get(href) : undefined;
+      const target = href ? workspaceTargets.get(href) : undefined;
       output.push(
-        targetId ? (
-          <a
-            className="message-workspace-link"
-            href={`#${targetId}`}
+        target ? (
+          <WorkspaceArtifactLink
             key={`${start}-workspace-link`}
-          >
-            {link?.[1]}
-          </a>
+            label={link?.[1] ?? target.path}
+            link={target}
+            {...(onInspectArtifact ? { onInspectArtifact } : {})}
+          />
         ) : href && safeExternalHref(href) ? (
           <a
             href={href}
@@ -247,6 +284,43 @@ function inlineMarkdown(
   }
   if (cursor < value.length) output.push(value.slice(cursor));
   return output;
+}
+
+function WorkspaceArtifactLink({
+  code = false,
+  label,
+  link,
+  onInspectArtifact,
+}: {
+  code?: boolean;
+  label: string;
+  link: MessageWorkspaceLink;
+  onInspectArtifact?: (inspection: ArtifactInspection) => void;
+}) {
+  const inspectable =
+    link.artifact && link.planId && link.threadId && onInspectArtifact;
+  const open = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (!inspectable) return;
+    event.preventDefault();
+    onInspectArtifact({
+      artifact: link.artifact!,
+      mode: "preview",
+      planId: link.planId!,
+      threadId: link.threadId!,
+    });
+  };
+  return (
+    <a
+      className={`message-workspace-link${code ? " is-code" : ""}`}
+      href={`#${link.targetId}`}
+      onClick={open}
+      data-artifact-path={link.path}
+      aria-label={`Open preview: ${link.path}`}
+    >
+      <FileCode2 size={13} aria-hidden="true" />
+      {code ? <code>{label}</code> : label}
+    </a>
+  );
 }
 
 function safeExternalHref(value: string): boolean {

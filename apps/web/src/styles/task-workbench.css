@@ -18,7 +18,12 @@
   display: grid;
   min-width: 0;
   align-items: center;
-  grid-template-columns: minmax(180px, 1fr) auto minmax(260px, 1fr);
+  /*
+   * Keep navigation and run controls at their intrinsic widths. The title is
+   * the only intentionally lossy region, so it absorbs the remaining space
+   * and ellipsizes instead of letting run metadata paint over the tabs.
+   */
+  grid-template-columns: minmax(0, 1fr) auto max-content;
   gap: var(--space-2);
   min-height: var(--layout-command-bar);
   padding: 0 var(--space-6);
@@ -189,7 +194,6 @@
 
 @media (max-width: 1500px) {
   .workbench-header {
-    grid-template-columns: minmax(170px, 1fr) auto minmax(350px, 1fr);
     padding-inline: var(--space-4);
   }
 
@@ -262,8 +266,10 @@
   grid-column: 1 / -1;
   min-width: 0;
   background: color-mix(in srgb, var(--color-sage-91) 98%, transparent);
-  border-top: 1px solid color-mix(in srgb, var(--color-green-26) 22%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--color-green-26) 22%, transparent);
+  border-top: 1px solid
+    color-mix(in srgb, var(--color-green-26) 22%, transparent);
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--color-green-26) 22%, transparent);
 }
 
 .default-product-trial::before {
@@ -316,7 +322,8 @@
   display: grid;
   gap: 8px;
   padding: 10px 13px 12px;
-  border-top: 1px dashed color-mix(in srgb, var(--color-green-26) 28%, transparent);
+  border-top: 1px dashed
+    color-mix(in srgb, var(--color-green-26) 28%, transparent);
 }
 
 .default-product-trial > div > p {

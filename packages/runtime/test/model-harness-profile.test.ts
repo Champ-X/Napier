@@ -220,8 +220,34 @@ describe("model-aware Harness profile", () => {
 
     expect(prepared.receipt.activeToolCount).toBe(20);
     expect(prepared.receipt.activeToolNames).toContain("capability");
-    expect(prepared.receipt.activeToolNames).toContain(
-      "git_commit_apply",
+    expect(prepared.receipt.activeToolNames).toContain("git_commit_apply");
+  });
+
+  it("bounds stale first-party catalog activations instead of failing before the provider call", () => {
+    const prepared = prepareModelHarnessCall({
+      model: fauxProvider({ provider: "generic" }).getModel(),
+      context: {
+        messages: [
+          { role: "user", content: "Continue.", timestamp: 1 },
+          {
+            role: "toolResult",
+            toolCallId: "call_catalog_root",
+            toolName: "capability",
+            content: [{ type: "text", text: "Catalog root listing." }],
+            addedToolNames: TOOL_NAMES,
+            isError: false,
+            timestamp: 2,
+          },
+        ],
+        tools: tools(),
+      },
+      options: {},
+      attempt: 3,
+    });
+
+    expect(prepared.receipt.activeToolCount).toBe(20);
+    expect(prepared.receipt.activeToolNames).toEqual(
+      expect.arrayContaining(["capability", "read_file"]),
     );
   });
 
@@ -369,6 +395,16 @@ describe("model-aware Harness profile", () => {
         ],
       }),
     );
+  });
+
+  it("does not advertise workspace writes when only edit previews are available", () => {
+    const resolution = resolveModelHarnessResolution({
+      model: specificModel("unknown", "custom-api", "unknown-v1"),
+      messages: [{ role: "user", content: "Inspect the code.", timestamp: 1 }],
+      tools: namedTools(["read_file", "ast_edit_preview"]),
+    });
+
+    expect(resolution.environmentCapabilities).not.toContain("workspace_write");
   });
 
   it.each([
