@@ -1,0 +1,172 @@
+.conversation-milestone {
+  position: relative;
+  margin: var(--space-2) 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-fg);
+  background: var(--color-bg-subtle);
+  border-inline-start: 2px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  animation: entry-rise var(--duration-slow) both var(--ease-out);
+}
+
+.conversation-milestone > header {
+  display: flex;
+  min-height: 22px;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block-end: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--color-fg-subtle);
+}
+
+.conversation-milestone-icon {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  color: var(--color-accent);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  place-items: center;
+}
+
+.conversation-milestone > header > span:not(.conversation-milestone-icon) {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-fg-muted);
+}
+
+.conversation-milestone > header > small {
+  padding-inline-start: var(--space-2);
+  border-inline-start: 1px solid var(--color-border);
+  font-size: var(--text-xs);
+}
+
+.conversation-milestone > strong {
+  display: block;
+  margin-block-start: var(--space-2);
+  font-size: var(--text-base);
+  line-height: var(--leading-heading);
+}
+
+.conversation-milestone > p {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-base);
+  line-height: var(--leading-body);
+  color: var(--color-fg);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.conversation-milestone > details {
+  margin-block-start: var(--space-2);
+}
+
+.conversation-milestone > details > summary {
+  display: flex;
+  min-height: var(--control-target);
+  align-items: center;
+  gap: var(--space-2);
+  width: fit-content;
+  padding: 0 var(--space-1);
+  cursor: pointer;
+  list-style: none;
+  color: var(--color-fg-muted);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+}
+
+.conversation-milestone > details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.conversation-milestone > details > summary:hover {
+  color: var(--color-fg);
+  background: var(--color-surface);
+}
+
+.conversation-milestone > details > summary:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 var(--control-focus-offset) var(--color-surface),
+    0 0 0 calc(var(--control-focus-offset) + var(--control-focus-width))
+      var(--color-focus-ring);
+}
+
+.conversation-milestone > details > summary > svg {
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.conversation-milestone > details[open] > summary > svg {
+  transform: rotate(90deg);
+}
+
+.conversation-milestone > details > summary > small {
+  color: var(--color-fg-subtle);
+}
+
+.conversation-milestone-details {
+  display: grid;
+  gap: var(--space-3);
+  margin-block-start: var(--space-1);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  animation: conversation-evidence-reveal var(--duration-base) var(--ease-out);
+}
+
+.conversation-milestone-details section > strong {
+  display: block;
+  margin-block-end: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+}
+
+.conversation-milestone-details ul {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.conversation-milestone-details li {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: start;
+  font-size: var(--text-sm);
+  line-height: var(--leading-compact);
+  color: var(--color-fg-muted);
+}
+
+.conversation-milestone-details li > svg {
+  margin-block-start: 2px;
+  color: var(--color-accent);
+}
+
+@media (max-width: 767px) {
+  .conversation-milestone {
+    width: 100%;
+    padding: var(--space-3);
+  }
+
+  .conversation-milestone > details > summary {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}
+
+@media (forced-colors: active) {
+  .conversation-milestone,
+  .conversation-milestone-icon,
+  .conversation-milestone-details {
+    border-color: ButtonText;
+  }
+
+  .conversation-milestone > details > summary:focus-visible {
+    outline: var(--control-focus-width) solid Highlight;
+    outline-offset: var(--control-focus-offset);
+    box-shadow: none;
+  }
+}

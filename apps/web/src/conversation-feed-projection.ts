@@ -28,6 +28,10 @@ import {
 } from "./conversation-feed-grouping";
 import { conversationNetworkActivities } from "./conversation-network-activity-view-model";
 import {
+  conversationMilestones,
+  type ConversationMilestone,
+} from "./conversation-milestone-view-model";
+import {
   conversationPlanEventId,
   conversationPlans,
 } from "./conversation-plan-view-model";
@@ -36,7 +40,10 @@ import {
   conversationSubagentEventId,
   conversationSubagents,
 } from "./conversation-subagent-view-model";
-import { conversationToolActivities } from "./conversation-tool-activity-view-model";
+import {
+  conversationToolActivities,
+  type ConversationToolActivity,
+} from "./conversation-tool-activity-view-model";
 import {
   activeConversationThinkingId,
   conversationThinkingActivities,
@@ -80,13 +87,14 @@ export function conversationFeedProjection(
   const workspaceLinks = conversationArtifactWorkspaceLinks(artifacts);
   const citations = detail?.citations ?? conversationCitations(events);
   const thinkingActivities = conversationThinkingActivities(events);
+  const milestones = conversationMilestones(events);
   const currentRunId = detail?.thread.currentRunId;
   const activeThinkingId = activeConversationThinkingId(
     events,
     currentRunId,
     Boolean(
       currentRunId &&
-        runs.some((run) => run.id === currentRunId && run.status === "running"),
+      runs.some((run) => run.id === currentRunId && run.status === "running"),
     ),
   );
   const citationLinks = conversationCitationLinks(citations);
@@ -106,13 +114,19 @@ export function conversationFeedProjection(
   const browserCallIds = new Set(
     browserActivities.map((activity) => activity.callId),
   );
-  const toolItems = conversationToolActivities(
+  const projectedToolItems = conversationToolActivities(
     activitySource,
     new Set([...citationCallIds, ...networkCallIds, ...browserCallIds]),
     activitySource.length,
   );
   const toolEventIds = new Set(
-    toolItems.flatMap((activity) => activity.eventIds),
+    projectedToolItems.flatMap((activity) => activity.eventIds),
+  );
+  const toolItems = projectedToolItems.filter(
+    (activity) =>
+      activity.toolName !== "record_run_milestone" ||
+      activity.status !== "completed" ||
+      !activityRecordedMilestone(activity, milestones, events),
   );
   const planItems =
     detail?.conversationPlans ??
@@ -194,6 +208,11 @@ export function conversationFeedProjection(
         seq: activity.seq,
         activity,
       })),
+      ...milestones.map((milestone) => ({
+        kind: "milestone" as const,
+        seq: milestone.seq,
+        milestone,
+      })),
       ...networkActivities.map((activity) => ({
         kind: "network" as const,
         seq: activity.seq,
@@ -238,6 +257,26 @@ export function conversationFeedProjection(
     feed,
     workspaceLinks,
   };
+}
+
+function activityRecordedMilestone(
+  activity: ConversationToolActivity,
+  milestones: readonly ConversationMilestone[],
+  events: readonly RunEvent[],
+): boolean {
+  const ids = new Set(activity.eventIds);
+  const relatedEvents = events
+    .filter((event) => ids.has(event.id))
+    .sort((left, right) => left.seq - right.seq);
+  const first = relatedEvents[0];
+  const last = relatedEvents.at(-1);
+  if (!first || !last || first.runId !== last.runId) return false;
+  return milestones.some(
+    (milestone) =>
+      milestone.runId === first.runId &&
+      milestone.seq > first.seq &&
+      milestone.seq < last.seq,
+  );
 }
 
 function eventCallId(event: RunEvent): string | undefined {

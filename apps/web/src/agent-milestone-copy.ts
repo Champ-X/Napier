@@ -9,6 +9,14 @@ export const agentMilestoneCopyEn = {
   completed: "completed",
   open: "open loops",
   evidence: "bound events",
+  conversation: {
+    label: "Progress update",
+    details: "View progress details",
+    completedItems: "Completed",
+    openLoops: "Still to do",
+    completedCount: "completed",
+    openCount: "remaining",
+  },
   phases: {
     planning: "Planning",
     execution: "Execution",
@@ -27,6 +35,14 @@ export const agentMilestoneCopyZh: LocaleOverride<typeof agentMilestoneCopyEn> =
     completed: "已完成",
     open: "个未决事项",
     evidence: "个绑定事件",
+    conversation: {
+      label: "阶段总结",
+      details: "查看进展明细",
+      completedItems: "已完成",
+      openLoops: "接下来",
+      completedCount: "项已完成",
+      openCount: "项待处理",
+    },
     phases: {
       planning: "规划",
       execution: "执行",

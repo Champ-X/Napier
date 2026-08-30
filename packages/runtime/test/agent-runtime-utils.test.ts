@@ -1,6 +1,28 @@
 import { describe, expect, it } from "vitest";
+import type { AgentTool } from "@earendil-works/pi-agent-core";
 
-import { publicModelFailureMessage } from "../src/agent-runtime-utils.js";
+import {
+  formatPlanToolGuidance,
+  publicModelFailureMessage,
+} from "../src/agent-runtime-utils.js";
+
+describe("Agent Runtime progress guidance", () => {
+  it("asks long-running tool runs for evidence-grounded stage conclusions", () => {
+    const guidance = formatPlanToolGuidance([
+      { name: "record_run_milestone" } as AgentTool,
+    ]);
+
+    expect(guidance).toContain("record_run_milestone");
+    expect(guidance).toContain("progress conclusions during the Run");
+    expect(guidance).toContain("completed tool evidence");
+    expect(guidance).toContain("openLoops");
+    expect(guidance).toContain("Do not record milestones after minor actions");
+  });
+
+  it("does not add the protocol when no plan or milestone tools are active", () => {
+    expect(formatPlanToolGuidance([])).toBe("");
+  });
+});
 
 describe("Agent Runtime public model failure recovery", () => {
   it.each([

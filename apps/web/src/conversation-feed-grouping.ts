@@ -5,6 +5,7 @@ import type { ConversationArtifact } from "./conversation-artifact-view-model";
 import type { ConversationBrowserActivity } from "./conversation-browser-activity-view-model";
 import type { ConversationCitation } from "./conversation-citation-view-model";
 import type { ConversationNetworkActivity } from "./conversation-network-activity-view-model";
+import type { ConversationMilestone } from "./conversation-milestone-view-model";
 import type { ConversationPlan } from "./conversation-plan-view-model";
 import type { ConversationRecovery } from "./conversation-recovery-view-model";
 import type { ConversationSubagent } from "./conversation-subagent-view-model";
@@ -23,6 +24,7 @@ export type ConversationFeedItem =
   | { kind: "artifact"; seq: number; artifact: ConversationArtifact }
   | { kind: "citation"; seq: number; citation: ConversationCitation }
   | { kind: "thinking"; seq: number; activity: ConversationThinkingActivity }
+  | { kind: "milestone"; seq: number; milestone: ConversationMilestone }
   | ConversationGroupedActivityItem
   | { kind: "plan"; seq: number; plan: ConversationPlan }
   | { kind: "approval"; seq: number; approval: ConversationApproval }

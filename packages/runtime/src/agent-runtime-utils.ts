@@ -17,13 +17,22 @@ export function formatPlanToolGuidance(tools: readonly AgentTool[]): string {
   const hasStepUpdate = toolNames.has("update_plan_step");
   const hasArtifactUpdate = toolNames.has("update_plan_artifact");
   const hasReplan = toolNames.has("replan_plan");
-  if (!hasCreatePlan && !hasStepUpdate && !hasArtifactUpdate && !hasReplan) {
+  const hasMilestone = toolNames.has("record_run_milestone");
+  if (
+    !hasCreatePlan &&
+    !hasStepUpdate &&
+    !hasArtifactUpdate &&
+    !hasReplan &&
+    !hasMilestone
+  ) {
     return "";
   }
-  const lines = [
-    "<plan_tool_protocol>",
-    "Use durable plans for multi-step work, artifact delivery, or tasks where the operator needs progress and recovery evidence.",
-  ];
+  const lines = ["<plan_tool_protocol>"];
+  if (hasCreatePlan || hasStepUpdate || hasArtifactUpdate || hasReplan) {
+    lines.push(
+      "Use durable plans for multi-step work, artifact delivery, or tasks where the operator needs progress and recovery evidence.",
+    );
+  }
   if (hasCreatePlan) {
     lines.push(
       "Create one focused plan with concrete verification criteria and declared artifacts before doing substantial delivery work.",
@@ -43,6 +52,12 @@ export function formatPlanToolGuidance(tools: readonly AgentTool[]): string {
   if (hasReplan) {
     lines.push(
       "When a step is blocked, scope changes, or an artifact is missing, use replan_plan instead of silently editing the old plan shape.",
+    );
+  }
+  if (hasMilestone) {
+    lines.push(
+      "For long-running work with multiple tool phases, use record_run_milestone at meaningful planning, execution, verification, and delivery boundaries so the operator receives concise progress conclusions during the Run.",
+      "Ground each milestone in completed tool evidence, summarize what the evidence established in operator-facing language, and list every remaining check or blocker in openLoops. Do not record milestones after minor actions, invent progress, or repeat the final answer.",
     );
   }
   lines.push("</plan_tool_protocol>");

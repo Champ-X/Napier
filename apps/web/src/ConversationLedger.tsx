@@ -17,6 +17,7 @@ import {
   ConversationStreamingCard,
 } from "./ConversationMessageCards";
 import { ConversationNetworkActivityCard } from "./ConversationNetworkActivityCard";
+import { ConversationMilestoneCard } from "./ConversationMilestoneCard";
 import { ConversationPlanCard } from "./ConversationPlanCard";
 import { ConversationRecoveryCard } from "./ConversationRecoveryCard";
 import { ConversationSubagentCard } from "./ConversationSubagentCard";
@@ -181,6 +182,14 @@ function renderFeedItem(
       />
     );
   }
+  if (item.kind === "milestone") {
+    return (
+      <ConversationMilestoneCard
+        key={`milestone-${item.milestone.id}`}
+        milestone={item.milestone}
+      />
+    );
+  }
   if (item.kind === "citation") {
     return (
       <ConversationCitationCard
@@ -205,6 +214,7 @@ type ExecutionFeedItem = Exclude<
   | { kind: "artifact" }
   | { kind: "citation" }
   | { kind: "thinking" }
+  | { kind: "milestone" }
 >;
 
 function renderExecutionFeedItem(
