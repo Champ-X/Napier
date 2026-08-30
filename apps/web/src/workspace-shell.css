@@ -139,19 +139,14 @@
   grid-template-rows: auto minmax(0, 1fr) auto auto auto;
 }
 
-/*
- * Empty (no active thread) state: collapse the grid and center the hero and
- * composer as a single cluster in the viewport, mirroring the DeepSeek Harness
- * landing. `safe center` falls back to start-aligned scrolling if the stack is
- * ever taller than the viewport (small screens) so nothing is clipped.
- */
+/* Empty state: center one action-first cluster while retaining safe overflow. */
 .conversation-workspace-view:has(.welcome-panel) {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: safe center;
-  gap: clamp(20px, 4vh, 34px);
-  padding: 40px 24px 52px;
+  gap: 0;
+  padding: clamp(var(--space-8), 5vh, var(--space-12)) var(--space-6);
   overflow: hidden auto;
 }
 
@@ -167,7 +162,18 @@
 }
 
 .conversation-workspace-view:has(.welcome-panel) .composer {
-  margin: 0;
+  width: var(--content-axis);
+  margin: var(--space-6) 0 0;
+}
+
+.conversation-workspace-view:has(.welcome-panel) .welcome-starters {
+  margin-top: var(--space-4);
+}
+
+@media (max-width: 560px) {
+  .conversation-workspace-view:has(.welcome-panel) {
+    padding-inline: 0;
+  }
 }
 
 .trajectory-workspace-view,

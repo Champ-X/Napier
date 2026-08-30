@@ -57,11 +57,13 @@ export function ConversationWorkspace({
           />
         </Suspense>
       )}
-      <ConversationFollowButton
-        paused={follow.paused}
-        pendingCount={follow.pendingCount}
-        onJump={follow.jumpToLatest}
-      />
+      {showWelcome ? null : (
+        <ConversationFollowButton
+          paused={follow.paused}
+          pendingCount={follow.pendingCount}
+          onJump={follow.jumpToLatest}
+        />
+      )}
     </section>
   );
 }

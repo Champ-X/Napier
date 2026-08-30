@@ -5,7 +5,10 @@ import { Composer } from "./Composer";
 import { ArtifactInspector } from "./ArtifactInspector";
 import { WorkbenchBrowserRail } from "./WorkbenchBrowserRail";
 import type { ArtifactInspection } from "./artifact-inspection";
-import { ConversationWorkspace } from "./ConversationWorkspace";
+import {
+  ConversationWorkspace,
+  shouldShowConversationWelcome,
+} from "./ConversationWorkspace";
 import type { useTaskControlNavigation } from "./use-task-control-navigation";
 import type { useWorkspaceShell } from "./use-workspace-shell";
 import {
@@ -19,6 +22,7 @@ import {
   WorkbenchDeferredNotices,
   WorkbenchDeferredTaskResult,
 } from "./WorkbenchDeferredPanels";
+import { WelcomeStarterPrompts } from "./WelcomePanel";
 
 const LazyTaskWorkspace = lazy(() =>
   import("./TaskWorkspace").then(({ TaskWorkspace }) => ({
@@ -68,6 +72,10 @@ export function AppWorkspaceViews({
     !artifactInspection &&
     taskControls.browserControlsAvailable;
   const showEvidenceRail = Boolean(artifactInspection) || showBrowserRail;
+  const showConversationWelcome = shouldShowConversationWelcome(
+    vm.messages,
+    vm.detail?.events.length ?? 0,
+  );
   useEffect(
     () => setArtifactInspection(undefined),
     [vm.detail?.thread.id, shell.workspaceView],
@@ -107,6 +115,18 @@ export function AppWorkspaceViews({
             onOpenWorkspace={shell.openWorkspaceSettings}
             onWorkspaceSwitch={vm.switchWorkspaceRoot}
           />
+          {showConversationWelcome ? (
+            <WelcomeStarterPrompts
+              onSelect={(prompt) => {
+                vm.setComposer(prompt);
+                document
+                  .querySelector<HTMLTextAreaElement>(
+                    "#workspace-panel-conversation .composer textarea",
+                  )
+                  ?.focus();
+              }}
+            />
+          ) : null}
         </section>
       ) : null}
       {shell.workspaceView === "trajectory" ? (

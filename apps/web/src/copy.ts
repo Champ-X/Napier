@@ -859,12 +859,47 @@ export const en = {
   developerWorkbench: desktopWorkbenchCopy.developerWorkbench,
   modelPicker: desktopWorkbenchCopy.modelPicker,
   welcome: {
-    eyebrow: "A glass-box agent runtime",
-    title: "Work that leaves evidence.",
-    body: "Napier turns conversations into durable ledgers: every model call, tool action, branch, goal, and artifact stays inspectable.",
-    firstPrompt:
-      "Ask Napier to inspect this workspace and propose the highest-leverage next step.",
-    cue: "Write the task below. Evidence stays attached.",
+    title: "What would you like to accomplish?",
+    body: "Describe the outcome. Napier keeps the plan, actions, and evidence together.",
+    cue: "Start with a common task",
+    starters: {
+      inspect: {
+        title: "Understand this project",
+        body: "Map its structure, entry points, and risks",
+        prompt:
+          "Inspect this workspace and explain its architecture, primary entry points, and highest-risk areas.",
+      },
+      build: {
+        title: "Build a feature",
+        body: "Plan, implement, and verify a scoped change",
+        prompt:
+          "Help me implement a feature in this workspace. Start by understanding the existing structure, then propose a focused plan.",
+      },
+      debug: {
+        title: "Diagnose a problem",
+        body: "Reproduce the issue and confirm its cause",
+        prompt:
+          "Help me diagnose a problem in this project. Reproduce it, identify the root cause, then propose and verify a fix.",
+      },
+      review: {
+        title: "Review current changes",
+        body: "Check correctness, risks, and regressions",
+        prompt:
+          "Review the uncommitted changes in this workspace for correctness, risks, and missing test coverage.",
+      },
+      test: {
+        title: "Strengthen the tests",
+        body: "Find valuable gaps and add coverage",
+        prompt:
+          "Inspect this project's test suite, identify the most valuable coverage gaps, and add focused tests.",
+      },
+      plan: {
+        title: "Turn a goal into a plan",
+        body: "Define steps, checks, and deliverables",
+        prompt:
+          "Turn my goal into an executable plan with concrete steps, verification criteria, and final deliverables.",
+      },
+    },
   },
   notices: {
     demo: "Demo model",
