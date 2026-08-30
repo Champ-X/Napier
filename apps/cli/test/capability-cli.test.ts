@@ -27,13 +27,15 @@ afterEach(async () => {
 });
 
 describe("Agent capability presets", () => {
-  it("defines five honest presets without autonomous Browser interaction", () => {
+  it("defines legacy task presets plus three honest permission levels", () => {
     expect(AGENT_CAPABILITY_PRESETS.map((preset) => preset.id)).toEqual([
       "coding",
       "research",
       "data",
       "browser",
       "safe_automation",
+      "read_only",
+      "full_access",
     ]);
     for (const preset of AGENT_CAPABILITY_PRESETS) {
       const status = agentCapabilityStatus({
@@ -42,7 +44,7 @@ describe("Agent capability presets", () => {
       expect(status.presetId).toBe(preset.id);
       expect(status.browserInteract).toBe(false);
       expect(status.browserInteractWithConfirmation).toBe(
-        preset.id === "safe_automation",
+        preset.id === "safe_automation" || preset.id === "full_access",
       );
       expect(new Set(preset.enabledTools).size).toBe(
         preset.enabledTools.length,
@@ -78,6 +80,16 @@ describe("Agent capability presets", () => {
         browserRead: true,
         browserInteract: false,
         browserInteractWithConfirmation: true,
+        workspaceWrite: true,
+        processExecution: true,
+      }),
+    );
+    expect(
+      agentCapabilityStatus(agentCapabilityPresetUpdate("full_access")),
+    ).toEqual(
+      expect.objectContaining({
+        label: "Full access",
+        toolPolicy: "unrestricted",
         workspaceWrite: true,
         processExecution: true,
       }),

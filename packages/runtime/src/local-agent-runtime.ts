@@ -120,18 +120,19 @@ export async function createLocalAgentRuntime(
       createSandboxFallbackAdapter({
         ...(options.env ? { env: options.env } : {}),
       });
-    const configuredSandbox = options.sandbox
-      ? undefined
-      : await createConfiguredSandboxAdapter({
-          dataRoot,
-          ...(options.env ? { env: options.env } : {}),
-        }).catch(async (error) => {
-          const binding = await inspectSandboxInstallationBinding(dataRoot);
-          if (binding.status === "invalid") {
-            return createInvalidSandboxInstallationAdapter();
-          }
-          throw error;
-        });
+    const configuredSandbox =
+      options.sandbox || fallbackSandbox.id === "host-direct"
+        ? undefined
+        : await createConfiguredSandboxAdapter({
+            dataRoot,
+            ...(options.env ? { env: options.env } : {}),
+          }).catch(async (error) => {
+            const binding = await inspectSandboxInstallationBinding(dataRoot);
+            if (binding.status === "invalid") {
+              return createInvalidSandboxInstallationAdapter();
+            }
+            throw error;
+          });
     const initialSandbox =
       options.sandbox ?? configuredSandbox ?? fallbackSandbox;
     const sandbox = new SwitchableSandboxAdapter(initialSandbox);

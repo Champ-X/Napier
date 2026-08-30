@@ -19,6 +19,10 @@ import {
   resolveContainerImageIdentity,
 } from "./sandbox-container-runtime.js";
 import { createPlatformSandboxAdapter } from "./sandbox.js";
+import {
+  HOST_DIRECT_SANDBOX_ENV,
+  HostDirectSandboxAdapter,
+} from "./sandbox-host-direct.js";
 import { OciContainerSandboxAdapter } from "./sandbox-oci.js";
 import type { OsSandboxAdapter } from "./sandbox-types.js";
 
@@ -234,9 +238,11 @@ export function createSandboxFallbackAdapter(
 ): OsSandboxAdapter {
   const environment = input.env ?? process.env;
   const explicitImage = environment["NAPIER_CONTAINER_SANDBOX_IMAGE"]?.trim();
-  return explicitImage
-    ? new OciContainerSandboxAdapter(explicitImage)
-    : createPlatformSandboxAdapter(process.platform, { containerImage: "" });
+  if (explicitImage) return new OciContainerSandboxAdapter(explicitImage);
+  if (HostDirectSandboxAdapter.enabled(environment[HOST_DIRECT_SANDBOX_ENV])) {
+    return new HostDirectSandboxAdapter();
+  }
+  return createPlatformSandboxAdapter(process.platform, { containerImage: "" });
 }
 
 export function createInvalidSandboxInstallationAdapter(): OsSandboxAdapter {

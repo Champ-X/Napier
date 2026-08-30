@@ -1,5 +1,4 @@
 import {
-  AGENT_CAPABILITY_PRESETS,
   agentCapabilityPreset,
   type AgentCapabilityPresetId,
 } from "@napier/contracts/agent-capabilities";
@@ -12,7 +11,6 @@ export interface ComposerMode {
   label: string;
   summary: string;
   active: boolean;
-  temporary: boolean;
   requiresSandbox: boolean;
 }
 
@@ -26,12 +24,18 @@ export interface ComposerModeDependency {
 const SANDBOX_PRESETS = new Set<AgentCapabilityPresetId>([
   "coding",
   "safe_automation",
+  "full_access",
 ]);
+const COMPOSER_PERMISSION_PRESETS = [
+  "read_only",
+  "safe_automation",
+  "full_access",
+] as const satisfies readonly AgentCapabilityPresetId[];
 
 /**
- * Task modes surfaced next to the Composer. Each entry reuses the existing
- * capability preset definition so selection only fills already-audited policy,
- * tool, skill, and delegation fields.
+ * The Composer intentionally projects only three permission levels. Historical
+ * task presets remain valid in the shared contract for CLI, replay, and Ledger
+ * compatibility, but are not part of the primary permission decision.
  */
 export function composerModes(
   _profile:
@@ -42,13 +46,12 @@ export function composerModes(
     | undefined,
   selectedPreset?: AgentCapabilityPresetId,
 ): ComposerMode[] {
-  return AGENT_CAPABILITY_PRESETS.map((preset) => ({
-    id: preset.id,
-    label: preset.label,
-    summary: preset.summary,
-    active: preset.id === selectedPreset,
-    temporary: preset.id === selectedPreset,
-    requiresSandbox: SANDBOX_PRESETS.has(preset.id),
+  return COMPOSER_PERMISSION_PRESETS.map((id) => ({
+    id,
+    label: composerCopy.modeLabels[id],
+    summary: composerCopy.modeSummaries[id],
+    active: id === selectedPreset,
+    requiresSandbox: SANDBOX_PRESETS.has(id),
   }));
 }
 
@@ -101,5 +104,5 @@ export function composerModePolicyLabel(
     ? composerCopy.mode.policyReadOnly
     : preset.toolPolicy === "workspace"
       ? composerCopy.mode.policyWorkspace
-      : composerCopy.mode.policyExternal;
+      : composerCopy.mode.policyFullAccess;
 }

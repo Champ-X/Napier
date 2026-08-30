@@ -1,24 +1,12 @@
 .agent-capability-composer {
-  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 6px 8px;
-  background: color-mix(in srgb, var(--color-border-subtle) 62%, transparent);
+  gap: 10px;
+  padding: 10px;
+  background: color-mix(in srgb, var(--color-border-subtle) 58%, transparent);
   border: 1px solid var(--rule);
   border-left: 3px solid var(--ledger);
-}
-
-.agent-capability-composer-badge {
-  position: absolute;
-  top: 2px;
-  right: 8px;
-  padding: 0 4px;
-  font-family: var(--mono);
-  font-size: var(--text-xs);
-  color: var(--ledger);
-  letter-spacing: 0.08em;
-  background: color-mix(in srgb, var(--color-border-subtle) 92%, transparent);
+  border-radius: 10px;
 }
 
 .agent-capability-composer.state-stale,
@@ -28,176 +16,176 @@
   border-left-color: var(--vermilion);
 }
 
-.composer-mode-row {
+.agent-capability-composer-header {
   display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
 }
 
-.composer-mode {
+.agent-capability-composer-header > div {
+  display: grid;
+  gap: 2px;
+}
+
+.agent-capability-composer-header strong {
+  font-family: var(--mono);
+  font-size: var(--text-sm);
+  color: var(--ink);
+  letter-spacing: 0.04em;
+}
+
+.agent-capability-composer-header span {
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+}
+
+.agent-capability-composer-header button {
   display: inline-flex;
+  flex: 0 0 auto;
   gap: 4px;
   align-items: center;
   min-height: 28px;
-  padding: 4px 9px;
+  padding: 4px 7px;
   font-family: var(--mono);
   font-size: var(--text-xs);
-  color: var(--ink);
+  color: var(--ledger);
   cursor: pointer;
-  background: color-mix(in srgb, var(--color-paper) 55%, transparent);
+  background: transparent;
+  border: 0;
+}
+
+.agent-capability-composer-header button:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.composer-permission-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.composer-permission-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-start;
+  min-width: 0;
+  min-height: 68px;
+  padding: 9px 10px;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--color-paper) 62%, transparent);
   border: 1px solid var(--rule);
-  border-radius: 999px;
+  border-radius: 8px;
 }
 
-.composer-mode > span {
-  display: inline;
-  gap: 0;
-  font-size: var(--text-xs);
+.composer-permission-option > svg {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+}
+
+.composer-permission-label {
+  font-family: var(--mono);
+  font-size: var(--text-sm);
   font-weight: 700;
-  letter-spacing: 0;
-  text-transform: none;
 }
 
-.composer-mode:hover:not(:disabled) {
+.composer-permission-summary {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: var(--text-xs);
+  line-height: 1.35;
+  color: var(--ink-faint);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.composer-permission-option:hover:not(:disabled) {
   border-color: var(--ledger);
 }
 
-.composer-mode.is-active {
+.composer-permission-option.is-active {
   color: var(--paper);
   background: var(--ledger);
   border-color: var(--ledger);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--ledger) 18%, transparent);
 }
 
-.composer-mode.dep-blocked {
-  color: var(--vermilion);
+.composer-permission-option.is-active .composer-permission-summary {
+  color: color-mix(in srgb, var(--paper) 76%, transparent);
+}
+
+.composer-permission-option.dep-blocked,
+.composer-permission-option.dep-warn {
+  border-color: var(--ochre);
+}
+
+.composer-permission-option.is-active.dep-blocked {
+  background: var(--vermilion);
   border-color: var(--vermilion);
 }
 
-.composer-mode.is-active.dep-blocked {
-  color: var(--paper);
-  background: var(--vermilion);
-}
-
-.composer-mode:disabled {
+.composer-permission-option:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
 
-.composer-mode-dependency,
-.composer-mode-error {
-  margin: 0;
-  font-family: var(--mono);
+.composer-readiness-item.composer-runtime-status {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  min-width: 0;
+  min-height: 36px;
+  padding: 8px 9px;
   font-size: var(--text-xs);
   line-height: 1.4;
+  color: var(--ink);
+  white-space: normal;
+  background: color-mix(in srgb, var(--color-paper) 52%, transparent);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--ledger);
+  border-radius: 6px;
 }
 
-.composer-mode-dependency.dep-warn {
-  color: var(--ochre, var(--color-gold-32));
+.composer-runtime-status > svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
 }
 
-.composer-mode-dependency.dep-blocked,
-.composer-mode-error {
-  color: var(--vermilion);
-}
-
-.composer-readiness-row {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 5px;
-}
-
-.composer-readiness-item {
+.composer-runtime-status > span {
   display: grid;
   min-width: 0;
   gap: 1px;
-  min-height: 28px;
-  padding: 6px 7px;
-  overflow: hidden;
+}
+
+.composer-runtime-status strong {
   font-family: var(--mono);
   font-size: var(--text-xs);
-  color: var(--ink);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  background: color-mix(in srgb, var(--color-paper) 48%, transparent);
-  border: 1px solid var(--rule);
-  border-left: 3px solid var(--ledger);
-}
-
-.composer-readiness-item strong {
-  font-size: var(--text-xs);
   color: var(--ink-faint);
-  letter-spacing: 0.07em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
-.composer-readiness-item.manage {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  gap: 5px;
-  font-size: var(--text-xs);
-  letter-spacing: 0.05em;
-  text-align: left;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-
-.composer-readiness-item.manage:hover:not(:disabled) {
-  border-color: var(--ledger);
-}
-
-.composer-readiness-item.manage:disabled {
-  cursor: not-allowed;
-}
-
-.composer-readiness-item.state-warn {
+.composer-runtime-status.state-warn {
   border-left-color: var(--ochre);
 }
 
-.composer-readiness-item.state-blocked {
+.composer-runtime-status.state-blocked {
   color: var(--vermilion);
   border-left-color: var(--vermilion);
 }
 
-.composer-readiness-item.state-inactive {
-  color: var(--ink-faint);
-  border-left-color: var(--rule-strong);
-}
+@media (max-width: 760px) {
+  .composer-permission-grid {
+    grid-template-columns: 1fr;
+  }
 
-.agent-capability-composer-status {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 5px 10px;
-  align-items: center;
-}
-
-.composer-hints .agent-capability-composer-status > span {
-  font-size: var(--text-xs);
-  line-height: 1.35;
-}
-
-.agent-capability-composer-profile {
-  color: var(--ink) !important;
-}
-
-.agent-capability-composer-status button {
-  display: inline-flex;
-  gap: 4px;
-  align-items: center;
-  min-height: 28px;
-  padding: 5px 7px;
-  font-family: var(--mono);
-  font-size: var(--text-xs);
-  color: var(--ledger);
-  background: transparent;
-  border: 1px solid var(--ledger);
-}
-
-@media (min-width: 1400px) {
-  .agent-capability-composer-status > span {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .composer-permission-option {
+    min-height: 54px;
   }
 }

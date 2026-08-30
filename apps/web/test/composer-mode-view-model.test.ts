@@ -10,21 +10,24 @@ import {
   composerModes,
 } from "../src/composer-mode-view-model";
 
-describe("Composer task modes", () => {
-  it("lists the five one-use task modes and marks only an explicit selection active", () => {
+describe("Composer permission levels", () => {
+  it("shows only three permission levels and marks the sticky selection", () => {
     const research = agentCapabilityPreset("research");
-    const modes = composerModes(research, "research");
+    const modes = composerModes(research, "full_access");
     expect(modes.map((mode) => mode.id)).toEqual([
-      "coding",
-      "research",
-      "data",
-      "browser",
+      "read_only",
       "safe_automation",
+      "full_access",
     ]);
-    expect(modes.find((mode) => mode.active)?.id).toBe("research");
+    expect(modes.map((mode) => mode.label)).toEqual([
+      "Read only",
+      "Workspace",
+      "Full access",
+    ]);
+    expect(modes.find((mode) => mode.active)?.id).toBe("full_access");
     expect(
       modes.filter((mode) => mode.requiresSandbox).map((m) => m.id),
-    ).toEqual(["coding", "safe_automation"]);
+    ).toEqual(["safe_automation", "full_access"]);
   });
 
   it("treats a custom profile as no active mode", () => {
@@ -40,20 +43,9 @@ describe("Composer task modes", () => {
     expect(composerModes(custom).some((mode) => mode.active)).toBe(false);
   });
 
-  it("does not treat the persistent full default as an explicit one-use mode", () => {
+  it("does not gate read-only permission on the sandbox", () => {
     expect(
-      composerModes(agentCapabilityPreset("safe_automation")).some(
-        (mode) => mode.active,
-      ),
-    ).toBe(false);
-  });
-
-  it("does not gate read-only modes on the sandbox", () => {
-    expect(
-      composerModeDependency("research", projection("unavailable")),
-    ).toEqual({ level: "ready", message: "" });
-    expect(
-      composerModeDependency("browser", projection("unavailable")),
+      composerModeDependency("read_only", projection("unavailable")),
     ).toEqual({ level: "ready", message: "" });
   });
 
@@ -65,6 +57,9 @@ describe("Composer task modes", () => {
     expect(
       composerModeDependency("safe_automation", projection("unavailable"))
         .level,
+    ).toBe("warn");
+    expect(
+      composerModeDependency("full_access", projection("unavailable")).level,
     ).toBe("warn");
   });
 
@@ -90,8 +85,11 @@ describe("Composer task modes", () => {
   });
 
   it("labels mode policy from the shared preset definition", () => {
-    expect(composerModePolicyLabel("coding")).toBe("Workspace changes");
-    expect(composerModePolicyLabel("research")).toBe("Read only");
+    expect(composerModePolicyLabel("read_only")).toBe("Read only");
+    expect(composerModePolicyLabel("safe_automation")).toBe(
+      "Workspace changes",
+    );
+    expect(composerModePolicyLabel("full_access")).toBe("Full access");
   });
 });
 

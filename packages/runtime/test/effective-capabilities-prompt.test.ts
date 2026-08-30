@@ -48,6 +48,29 @@ describe("Effective Capabilities Prompt layer", () => {
     expect(prompt).toContain("Do not claim or silently substitute");
   });
 
+  it("advertises real write and command tools in full host-direct mode", () => {
+    const prompt = formatEffectiveCapabilitiesPrompt({
+      requestedTools: ["read_file", "apply_patch", "run_command"],
+      activeTools: ["read_file", "apply_patch", "run_command"],
+      toolPolicy: "unrestricted",
+      sandboxId: "host-direct",
+      restrictedReadOnlyExecution: false,
+      executionMode: "standard",
+      advisorCorrection: false,
+      browserInteractionConfirmationAvailable: true,
+    });
+
+    expect(prompt).toContain(
+      "Tool policy: unrestricted. Execution mode: standard. Sandbox: host-direct.",
+    );
+    expect(prompt).toContain(
+      "Active tools (3): apply_patch, read_file, run_command.",
+    );
+    expect(prompt).not.toContain(
+      "Workspace writes, commands, verification processes",
+    );
+  });
+
   it("explains the negotiated environment fallback without exposing withheld tools", () => {
     const prompt = formatEffectiveCapabilitiesPrompt({
       requestedTools: [

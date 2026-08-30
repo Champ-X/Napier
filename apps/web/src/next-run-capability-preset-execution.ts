@@ -13,7 +13,6 @@ export interface NextRunPromptInput {
   onError: (error: unknown) => void;
   restoreInput: (text: string) => void;
   onFinish: () => void;
-  onPresetConsumed: (preset: AgentCapabilityPresetId) => void;
   onFrame: (frame: StreamFrame) => void;
 }
 
@@ -37,9 +36,6 @@ export async function executeNextRunPrompt(
         const started =
           frame.type === "event" && frame.event.type === "run.started";
         if (started) runStarted = true;
-        if (input.capabilityPreset && started) {
-          input.onPresetConsumed(input.capabilityPreset);
-        }
         input.onFrame(frame);
       },
     );

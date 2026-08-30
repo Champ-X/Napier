@@ -8,6 +8,8 @@ export const AGENT_CAPABILITY_PRESET_IDS = [
   "data",
   "browser",
   "safe_automation",
+  "read_only",
+  "full_access",
 ] as const;
 
 export type AgentCapabilityPresetId =
@@ -95,6 +97,29 @@ const PROCESS_TOOLS: AgentToolName[] = [
   "node_debugger",
   "workspace_process",
 ];
+const FULL_CAPABILITY_TOOLS: AgentToolName[] = [
+  ...WORKSPACE_READ_TOOLS,
+  ...SKILL_TOOLS,
+  ...DATA_TOOLS,
+  ...RESEARCH_TOOLS,
+  ...RESEARCH_WRITE_TOOLS,
+  ...CODE_INTELLIGENCE_TOOLS,
+  ...CODE_WRITE_TOOLS,
+  ...PROCESS_TOOLS,
+];
+const FULL_CAPABILITY_SKILLS = [
+  "research-brief",
+  "data-analysis",
+  "software-delivery",
+  "artifact-studio",
+  "browser-automation",
+];
+const FULL_CAPABILITY_SUBAGENTS: SubagentRole[] = [
+  "researcher",
+  "reviewer",
+  "general",
+  "coder",
+];
 const WRITE_TOOLS = new Set<AgentToolName>([
   "apply_patch",
   "web_fetch_save",
@@ -159,24 +184,27 @@ export const AGENT_CAPABILITY_PRESETS: readonly AgentCapabilityPreset[] = [
     "Safe Automation",
     "Combine public research with preview-bound workspace changes and sandboxed execution.",
     "workspace",
-    [
-      ...WORKSPACE_READ_TOOLS,
-      ...SKILL_TOOLS,
-      ...DATA_TOOLS,
-      ...RESEARCH_TOOLS,
-      ...RESEARCH_WRITE_TOOLS,
-      ...CODE_INTELLIGENCE_TOOLS,
-      ...CODE_WRITE_TOOLS,
-      ...PROCESS_TOOLS,
-    ],
-    [
-      "research-brief",
-      "data-analysis",
-      "software-delivery",
-      "artifact-studio",
-      "browser-automation",
-    ],
-    ["researcher", "reviewer", "general", "coder"],
+    FULL_CAPABILITY_TOOLS,
+    FULL_CAPABILITY_SKILLS,
+    FULL_CAPABILITY_SUBAGENTS,
+  ),
+  preset(
+    "read_only",
+    "Read only",
+    "Inspect files, search, browse, and analyze without changing the workspace or running commands.",
+    "observe",
+    FULL_CAPABILITY_TOOLS,
+    FULL_CAPABILITY_SKILLS,
+    FULL_CAPABILITY_SUBAGENTS,
+  ),
+  preset(
+    "full_access",
+    "Full access",
+    "Allow workspace changes, commands, network access, browser interaction, and delegated work.",
+    "unrestricted",
+    FULL_CAPABILITY_TOOLS,
+    FULL_CAPABILITY_SKILLS,
+    FULL_CAPABILITY_SUBAGENTS,
   ),
 ];
 

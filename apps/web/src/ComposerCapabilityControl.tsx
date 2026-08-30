@@ -1,10 +1,9 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { AlertTriangle, ArrowRight, ShieldCheck } from "lucide-react";
 
 import type { AgentProfile } from "@napier/contracts";
 import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
 
-import { agentCapabilityBadgeText } from "./agent-capability-view-model";
 import { focusCapabilityContract } from "./agent-capability-composer-summary";
 import { advancedSurfaceCopy } from "./advanced-surface-copy";
 import { composerCopy } from "./composer-copy";
@@ -19,17 +18,11 @@ import {
 import { useAgentCapabilityProjection } from "./use-agent-capability-projection";
 import "./agent-capability-composer.css";
 
-const LazySandboxSetupCard = lazy(() =>
-  import("./SandboxSetupCard").then(({ SandboxSetupCard }) => ({
-    default: SandboxSetupCard,
-  })),
-);
-
 export interface ComposerCapabilityControlProps {
   agent: AgentProfile | undefined;
   disabled: boolean;
   selectedPreset: AgentCapabilityPresetId | undefined;
-  onSelectedPresetChange(preset: AgentCapabilityPresetId | undefined): void;
+  onSelectedPresetChange(preset: AgentCapabilityPresetId): void;
   onReview(): void;
   onReadinessChange(readiness: ComposerRunReadiness): void;
 }
@@ -43,7 +36,6 @@ export function ComposerCapabilityControl({
   onReadinessChange,
 }: ComposerCapabilityControlProps) {
   const accessibilityCopy = advancedSurfaceCopy.accessibility;
-  const [sandboxOpen, setSandboxOpen] = useState(false);
   const { projection, loading, error } = useAgentCapabilityProjection(
     agent?.id,
     agent?.revision,
@@ -59,13 +51,14 @@ export function ComposerCapabilityControl({
       composerRunReadiness(agent, projection, loading, error, selectedPreset),
     [agent, error, loading, projection, selectedPreset],
   );
-  const invalidSandboxBinding = Boolean(
-    projection?.readiness.some(
-      (record) =>
-        record.id === "sandbox:configured-sandbox-invalid" &&
-        record.status === "unavailable",
-    ),
-  );
+  const statusLevel =
+    activeDependency && activeDependency.level !== "ready"
+      ? activeDependency.level
+      : runReadiness.level;
+  const statusMessage =
+    activeDependency?.message ||
+    runReadiness.message ||
+    composerCopy.permission.runtimeReady;
 
   useEffect(() => {
     onReadinessChange(runReadiness);
@@ -75,14 +68,28 @@ export function ComposerCapabilityControl({
     <div
       className={`agent-capability-composer state-${projection?.driftState ?? "loading"}`}
       aria-label={accessibilityCopy.nextRunCapabilities}
-      data-scope="next-run-only"
+      data-scope="permission-level"
     >
-      <span className="agent-capability-composer-badge" aria-hidden="true">
-        {composerCopy.nextRunBadge}
-      </span>
+      <div className="agent-capability-composer-header">
+        <div>
+          <strong>{composerCopy.permission.title}</strong>
+          <span>{composerCopy.permission.defaultHint}</span>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            onReview();
+            focusCapabilityContract();
+          }}
+        >
+          {composerCopy.permission.advancedSettings}
+          <ArrowRight size={12} aria-hidden="true" />
+        </button>
+      </div>
+
       <div
-        className="composer-mode-row"
-        role="group"
+        className="composer-permission-grid"
+        role="radiogroup"
         aria-label={accessibilityCopy.nextRunMode}
       >
         {modes.map((mode) => {
@@ -91,7 +98,9 @@ export function ComposerCapabilityControl({
             <button
               key={mode.id}
               type="button"
-              className={`composer-mode${mode.active ? " is-active" : ""} dep-${dependency.level}`}
+              className={`composer-permission-option${mode.active ? " is-active" : ""} dep-${dependency.level}`}
+              role="radio"
+              aria-checked={mode.active}
               aria-pressed={mode.active}
               disabled={disabled}
               title={
@@ -102,94 +111,31 @@ export function ComposerCapabilityControl({
               onClick={() => onSelectedPresetChange(mode.id)}
             >
               {dependency.level !== "ready" ? (
-                <AlertTriangle size={11} aria-hidden="true" />
+                <AlertTriangle size={14} aria-hidden="true" />
               ) : null}
-              {mode.label}
-              {mode.temporary ? <span>1×</span> : null}
+              <span className="composer-permission-label">{mode.label}</span>
+              <span className="composer-permission-summary">
+                {mode.summary}
+              </span>
             </button>
           );
         })}
       </div>
-      {activeDependency && activeDependency.level !== "ready" ? (
-        <p
-          className={`composer-mode-dependency dep-${activeDependency.level}`}
-          role={activeDependency.level === "blocked" ? "alert" : "status"}
-        >
-          {activeDependency.message}
-        </p>
-      ) : null}
-      {sandboxOpen ? (
-        <div className="composer-sandbox-setup">
-          <Suspense fallback={<div className="sandbox-setup-card" />}>
-            <LazySandboxSetupCard
-              reviewInvalidBinding={invalidSandboxBinding}
-            />
-          </Suspense>
-        </div>
-      ) : null}
+
       <div
-        className="composer-readiness-row"
+        className={`composer-readiness-item composer-runtime-status state-${statusLevel}`}
+        role={statusLevel === "blocked" ? "alert" : "status"}
         aria-label={accessibilityCopy.currentRunReadiness}
       >
-        {runReadiness.items.map((item) =>
-          item.id === "sandbox" ? (
-            <button
-              key={item.id}
-              type="button"
-              className={`composer-readiness-item manage state-${item.state}`}
-              title={`${item.detail} ${accessibilityCopy.manageSandbox}`}
-              aria-expanded={sandboxOpen}
-              onClick={() => setSandboxOpen((current) => !current)}
-            >
-              <strong>{item.label}</strong>
-              {item.value}
-            </button>
-          ) : (
-            <span
-              key={item.id}
-              className={`composer-readiness-item state-${item.state}`}
-              title={item.detail}
-            >
-              <strong>{item.label}</strong>
-              {item.value}
-            </span>
-          ),
+        {statusLevel === "ready" ? (
+          <ShieldCheck size={15} aria-hidden="true" />
+        ) : (
+          <AlertTriangle size={15} aria-hidden="true" />
         )}
-      </div>
-      <div className="agent-capability-composer-status">
-        <span className="agent-capability-composer-profile">
-          {projection && projection.driftState !== "current" ? (
-            <AlertTriangle size={13} aria-hidden="true" />
-          ) : (
-            <ShieldCheck size={13} aria-hidden="true" />
-          )}
-          {selectedPreset
-            ? `${activeMode?.label ?? selectedPreset} 1×`
-            : agent
-              ? agentCapabilityBadgeText(agent)
-              : accessibilityCopy.readOnly}
+        <span>
+          <strong>{composerCopy.permission.runtimeStatus}</strong>
+          {statusMessage}
         </span>
-        <button
-          type="button"
-          aria-label={
-            selectedPreset
-              ? accessibilityCopy.useAgentDefault
-              : accessibilityCopy.reviewAgentSettings
-          }
-          onClick={() => {
-            if (selectedPreset) {
-              onSelectedPresetChange(undefined);
-            } else {
-              onReview();
-              focusCapabilityContract();
-            }
-          }}
-        >
-          {selectedPreset
-            ? accessibilityCopy.useDefault
-            : accessibilityCopy.agentSettings}
-          <ArrowRight size={11} aria-hidden="true" />
-        </button>
       </div>
     </div>
   );

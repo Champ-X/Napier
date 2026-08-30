@@ -24,18 +24,28 @@ type ModeId =
   | "data"
   | "browser"
   | "safe_automation"
+  | "read_only"
+  | "full_access"
   | "custom";
 
 const NETWORK_MODES = new Set<ModeId>([
   "research",
   "browser",
   "safe_automation",
+  "read_only",
+  "full_access",
 ]);
-const SANDBOX_MODES = new Set<ModeId>(["coding", "safe_automation"]);
+const SANDBOX_MODES = new Set<ModeId>([
+  "coding",
+  "safe_automation",
+  "full_access",
+]);
 const BROWSER_MODES = new Set<ModeId>([
   "research",
   "browser",
   "safe_automation",
+  "read_only",
+  "full_access",
 ]);
 const PROCESS_TOOLS = new Set([
   "run_command",
@@ -176,7 +186,8 @@ function sandboxReadiness(
   return {
     id: "sandbox",
     label: labels.sandbox,
-    value: record.status === "ready" ? values.ready : values.availableUnverified,
+    value:
+      record.status === "ready" ? values.ready : values.availableUnverified,
     state: record.status === "ready" ? "ready" : "warn",
     detail: record.detail,
   };
@@ -198,13 +209,16 @@ function browserReadiness(
       label: labels.browser,
       value: required ? values.unavailable : values.staticOnly,
       state: required ? "blocked" : "warn",
-      detail: required ? details.browserRequired : details.browserStaticFallback,
+      detail: required
+        ? details.browserRequired
+        : details.browserStaticFallback,
     };
   }
   return {
     id: "browser",
     label: labels.browser,
-    value: record.status === "ready" ? values.ready : values.availableUnverified,
+    value:
+      record.status === "ready" ? values.ready : values.availableUnverified,
     state: record.status === "ready" ? "ready" : "warn",
     detail: record.detail,
   };
@@ -232,7 +246,7 @@ function permissionReadiness(
       ? values.readOnly
       : projection.toolPolicy === "workspace"
         ? values.workspaceChanges
-        : values.externalConfirm;
+        : values.fullAccess;
   return {
     id: "permission",
     label: labels.permission,
@@ -243,7 +257,7 @@ function permissionReadiness(
         ? details.permissionObserve
         : projection.toolPolicy === "workspace"
           ? details.permissionWorkspace
-          : details.permissionExternal,
+          : details.permissionFullAccess,
   };
 }
 

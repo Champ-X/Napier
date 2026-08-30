@@ -59,6 +59,31 @@ describe("Sandbox installation", () => {
     }
   });
 
+  it("lets explicit host-direct recovery override a persisted OCI binding", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-sandbox-install-"));
+    roots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    const dataRoot = path.join(root, "data");
+    await Promise.all([mkdir(workspaceRoot), mkdir(dataRoot)]);
+    const installation = await saveSandboxInstallation(
+      dataRoot,
+      "napier-sandbox:0.1.0",
+      identity(),
+    );
+
+    const runtime = await createLocalAgentRuntime({
+      workspaceRoot,
+      dataRoot,
+      env: { NAPIER_HOST_DIRECT_SANDBOX: "1" },
+    });
+    try {
+      expect(runtime.sandbox.id).toBe("host-direct");
+      expect(await loadSandboxInstallation(dataRoot)).toEqual(installation);
+    } finally {
+      await runtime.shutdown();
+    }
+  });
+
   it("persists and reloads external release provenance without breaking schema 1", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-sandbox-install-"));
     roots.push(root);

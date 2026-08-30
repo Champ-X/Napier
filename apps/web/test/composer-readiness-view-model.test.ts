@@ -115,6 +115,34 @@ describe("Composer run readiness", () => {
     expect(hostDirect.message).toContain("without OS isolation");
   });
 
+  it("reports Full access honestly when host-direct execution is ready", () => {
+    const readiness = composerRunReadiness(
+      profile("full_access"),
+      projection({
+        policy: "unrestricted",
+        preset: "full_access",
+        tools: [
+          tool("web_search", "ready"),
+          tool("web_fetch", "ready"),
+          tool("browser", "ready"),
+          tool("apply_patch", "ready"),
+          tool("run_command", "ready"),
+        ],
+        sandbox: sandbox("available_unverified", "host-direct"),
+      }),
+      false,
+      undefined,
+      "full_access",
+    );
+
+    expect(readiness.canRun).toBe(true);
+    expect(readiness.level).toBe("warn");
+    expect(readiness.message).toContain("without OS isolation");
+    expect(readiness.items.find((item) => item.id === "permission")).toEqual(
+      expect.objectContaining({ value: "Full access", state: "ready" }),
+    );
+  });
+
   it("makes the full Agent default transparently read-only when process capability is unavailable", () => {
     const readiness = composerRunReadiness(
       profile("coding"),
@@ -178,7 +206,9 @@ describe("Composer run readiness", () => {
   });
 });
 
-function profile(mode: "coding" | "research" | "browser"): AgentProfile {
+function profile(
+  mode: "coding" | "research" | "browser" | "full_access",
+): AgentProfile {
   const preset = agentCapabilityPresetUpdate(mode);
   return {
     id: "agent_napier",

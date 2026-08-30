@@ -1,14 +1,15 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
 import type { NextRunPromptInput } from "./next-run-capability-preset-execution";
 
-export function useNextRunCapabilityPreset(threadId: string | undefined) {
-  const [preset, setPreset] = useState<AgentCapabilityPresetId>();
-  useEffect(() => setPreset(undefined), [threadId]);
-  const consumePreset = (consumed: AgentCapabilityPresetId): void =>
-    setPreset((current) => (current === consumed ? undefined : current));
-  return { preset, setPreset, consumePreset };
+export const DEFAULT_COMPOSER_PERMISSION_PRESET = "full_access" as const;
+
+export function useNextRunCapabilityPreset(_threadId: string | undefined) {
+  const [preset, setPreset] = useState<AgentCapabilityPresetId>(
+    DEFAULT_COMPOSER_PERMISSION_PRESET,
+  );
+  return { preset, setPreset };
 }
 
 export async function executeLoadedNextRunPrompt(

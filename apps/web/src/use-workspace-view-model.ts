@@ -202,7 +202,6 @@ export function useWorkspaceViewModel() {
   const {
     preset: nextRunCapabilityPreset,
     setPreset: setNextRunCapabilityPreset,
-    consumePreset: consumeNextRunCapabilityPreset,
   } = useNextRunCapabilityPreset(detail?.thread.id);
   const selectedThreadIdRef = useRef<string | undefined>(undefined);
   const threadDetailCacheRef = useRef(new Map<string, WebThreadDetail>());
@@ -474,14 +473,12 @@ export function useWorkspaceViewModel() {
         onError: (error) => setRunError(threadId, error),
         restoreInput: setComposer,
         onFinish: () => finishRunUi(threadId),
-        onPresetConsumed: consumeNextRunCapabilityPreset,
         onFrame: streamFrameHandler(threadId),
       });
     },
     [
       activeRunId,
       composer,
-      consumeNextRunCapabilityPreset,
       controlMessageMode,
       detail,
       finishRunUi,

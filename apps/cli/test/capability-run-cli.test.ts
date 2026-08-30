@@ -71,7 +71,7 @@ describe("temporary capability preset CLI", () => {
         "unrestricted",
       ]),
     ).toThrow(
-      "--preset must be one of coding, research, data, browser, safe_automation",
+      "--preset must be one of coding, research, data, browser, safe_automation, read_only, full_access",
     );
   });
 

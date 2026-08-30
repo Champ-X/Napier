@@ -1,10 +1,8 @@
 import { deepMergeCopy, getLocale, type LocaleOverride } from "./locale";
 
 /**
- * Copy registry for the Composer capability control: run-readiness labels,
- * values, detail sentences, gate messages, task-mode names, and the
- * next-run-only badge. Visible text and rendered badges resolve here so the
- * shell never depends on CSS-generated business copy and stays locale-driven.
+ * Copy registry for the Composer permission control and effective Runtime
+ * readiness. Visible text resolves here so the shell stays locale-driven.
  */
 export const composerCopyEn = {
   labels: {
@@ -23,6 +21,7 @@ export const composerCopyEn = {
     hostDirect: "Host direct",
     readOnly: "Read only",
     workspaceChanges: "Workspace changes",
+    fullAccess: "Full access",
     externalConfirm: "External confirm",
     checking: "Checking",
     searchFetch: "Search + Fetch",
@@ -44,6 +43,8 @@ export const composerCopyEn = {
       "This Run can observe but cannot mutate the workspace or perform external side effects.",
     permissionWorkspace:
       "Workspace changes are enabled; high-impact external effects still require confirmation.",
+    permissionFullAccess:
+      "Workspace changes, commands, network access, and delegated work are enabled.",
     permissionExternal: "External interaction is confirmation-bound.",
     pending: "Effective capability readiness has not loaded.",
   },
@@ -54,7 +55,7 @@ export const composerCopyEn = {
     unavailableWithReview:
       "Effective capability readiness is unavailable; review the capability contract before sending.",
     refreshing:
-      "Refreshing effective readiness for the selected task mode before sending.",
+      "Refreshing effective readiness for the selected permission before sending.",
     blockedPrefix: "Cannot start ",
     blockedSeparator: ": ",
     blockedItemJoin: "; ",
@@ -65,8 +66,16 @@ export const composerCopyEn = {
     research: "Research",
     data: "Data",
     browser: "Browser",
-    safe_automation: "Safe Automation",
+    safe_automation: "Workspace",
+    read_only: "Read only",
+    full_access: "Full access",
     custom: "Custom mode",
+  },
+  modeSummaries: {
+    read_only: "Read and analyze without changing files or running commands.",
+    safe_automation:
+      "Edit files and run commands; external effects remain confirmation-bound.",
+    full_access: "Allow files, commands, network, Browser, and Subagents.",
   },
   mode: {
     sandboxNotLoaded:
@@ -77,7 +86,15 @@ export const composerCopyEn = {
       "Sandbox is unavailable. This task can start with safe reads and static network access; editing, commands, Browser sessions, Extensions, and Subagents stay unavailable until Sandbox is ready.",
     policyReadOnly: "Read only",
     policyWorkspace: "Workspace changes",
+    policyFullAccess: "Full access",
     policyExternal: "External interaction",
+  },
+  permission: {
+    title: "Permissions",
+    defaultHint: "Full access is the default",
+    runtimeStatus: "Runtime",
+    runtimeReady: "Selected permissions are ready for the next run.",
+    advancedSettings: "Advanced settings",
   },
   nextRunBadge: "NEXT RUN ONLY",
 } as const;
@@ -99,6 +116,7 @@ export const composerCopyZh: LocaleOverride<typeof composerCopyEn> = {
     hostDirect: "主机直连",
     readOnly: "只读",
     workspaceChanges: "工作区写入",
+    fullAccess: "完全访问",
     externalConfirm: "外部需确认",
     checking: "检查中",
     searchFetch: "搜索 + 抓取",
@@ -117,6 +135,7 @@ export const composerCopyZh: LocaleOverride<typeof composerCopyEn> = {
       "已配置的写入策略保持不变，但本次运行会在 Sandbox 就绪前暂缓一切写入和进程类能力。",
     permissionObserve: "本次运行可以观察，但不能修改工作区或产生外部副作用。",
     permissionWorkspace: "已开启工作区写入；高影响的外部副作用仍需确认。",
+    permissionFullAccess: "已开启工作区写入、命令、网络访问与委派执行。",
     permissionExternal: "外部交互需要逐次确认。",
     pending: "有效能力就绪状态尚未加载。",
   },
@@ -124,7 +143,7 @@ export const composerCopyZh: LocaleOverride<typeof composerCopyEn> = {
     checking: "发送前正在检查有效的网络、Sandbox、浏览器与权限就绪状态。",
     unavailable: "有效能力就绪状态不可用。",
     unavailableWithReview: "有效能力就绪状态不可用；请在发送前检查能力契约。",
-    refreshing: "发送前正在为所选任务模式刷新有效就绪状态。",
+    refreshing: "发送前正在为所选权限刷新有效就绪状态。",
     blockedPrefix: "无法启动",
     blockedSeparator: "：",
     blockedItemJoin: "；",
@@ -135,18 +154,34 @@ export const composerCopyZh: LocaleOverride<typeof composerCopyEn> = {
     research: "研究",
     data: "数据",
     browser: "浏览器",
-    safe_automation: "安全自动化",
+    safe_automation: "工作区",
+    read_only: "只读",
+    full_access: "完全访问",
     custom: "自定义模式",
   },
+  modeSummaries: {
+    read_only: "可读取和分析，但不会修改文件或执行命令。",
+    safe_automation: "允许编辑文件和执行命令；高影响外部操作仍需确认。",
+    full_access: "允许文件、命令、网络、浏览器与子智能体。",
+  },
   mode: {
-    sandboxNotLoaded: "Sandbox 就绪状态尚未加载；进程类工具可能会直接失败关闭。",
+    sandboxNotLoaded:
+      "Sandbox 就绪状态尚未加载；进程类工具可能会直接失败关闭。",
     sandboxInvalid:
       "保存的 Sandbox 绑定无效。本任务可以仅以安全只读方式启动；请先移除该绑定，再激活 Sandbox，然后才能编辑或执行命令。",
     sandboxUnavailable:
       "Sandbox 不可用。本任务可以仅以安全只读和静态网络访问方式启动；在 Sandbox 就绪前，编辑、命令、浏览器会话、扩展与子智能体都不可用。",
     policyReadOnly: "只读",
     policyWorkspace: "工作区写入",
+    policyFullAccess: "完全访问",
     policyExternal: "外部交互",
+  },
+  permission: {
+    title: "权限",
+    defaultHint: "默认使用完全访问",
+    runtimeStatus: "运行环境",
+    runtimeReady: "所选权限已就绪，将持续用于后续运行。",
+    advancedSettings: "高级设置",
   },
   nextRunBadge: "仅下一次运行",
 };

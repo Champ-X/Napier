@@ -2,10 +2,14 @@ import type { RunEvent, StreamFrame } from "@napier/contracts";
 import { describe, expect, it, vi } from "vitest";
 
 import { executeNextRunPrompt } from "../src/next-run-capability-preset-execution";
+import { DEFAULT_COMPOSER_PERMISSION_PRESET } from "../src/use-next-run-capability-preset";
 
-describe("next-Run capability preset state machine", () => {
-  it("consumes the preset only after the matching Run starts", async () => {
-    const onPresetConsumed = vi.fn();
+describe("persistent Composer permission", () => {
+  it("defaults to full access", () => {
+    expect(DEFAULT_COMPOSER_PERMISSION_PRESET).toBe("full_access");
+  });
+
+  it("keeps sending the permission after the matching Run starts", async () => {
     const onFrame = vi.fn();
     const onRefresh = vi.fn(async () => undefined);
     const restoreInput = vi.fn();
@@ -30,21 +34,17 @@ describe("next-Run capability preset state machine", () => {
         onError: vi.fn(),
         restoreInput,
         onFinish: vi.fn(),
-        onPresetConsumed,
         onFrame,
       },
       stream,
     );
 
-    expect(onPresetConsumed).toHaveBeenCalledOnce();
-    expect(onPresetConsumed).toHaveBeenCalledWith("browser");
     expect(onFrame).toHaveBeenCalledTimes(2);
     expect(onRefresh).toHaveBeenCalledOnce();
     expect(restoreInput).not.toHaveBeenCalled();
   });
 
-  it("preserves the preset when the Run is rejected before creation", async () => {
-    const onPresetConsumed = vi.fn();
+  it("restores the prompt when the Run is rejected before creation", async () => {
     const onError = vi.fn();
     const onRefresh = vi.fn();
     const restoreInput = vi.fn();
@@ -61,7 +61,6 @@ describe("next-Run capability preset state machine", () => {
         onError,
         restoreInput,
         onFinish: vi.fn(),
-        onPresetConsumed,
         onFrame: vi.fn(),
       },
       vi.fn(async () => {
@@ -69,14 +68,13 @@ describe("next-Run capability preset state machine", () => {
       }),
     );
 
-    expect(onPresetConsumed).not.toHaveBeenCalled();
     expect(onRefresh).not.toHaveBeenCalled();
     expect(onError).toHaveBeenCalledWith(failure);
     expect(restoreInput).toHaveBeenCalledWith("Retry after setup.");
   });
 
-  it("does not consume before run.started", async () => {
-    const onPresetConsumed = vi.fn();
+  it("forwards pre-start frames without changing the selected permission", async () => {
+    const onFrame = vi.fn();
     await executeNextRunPrompt(
       {
         threadId: "thread_1",
@@ -88,14 +86,13 @@ describe("next-Run capability preset state machine", () => {
         onError: vi.fn(),
         restoreInput: vi.fn(),
         onFinish: vi.fn(),
-        onPresetConsumed,
-        onFrame: vi.fn(),
+        onFrame,
       },
       vi.fn(async (_threadId, _body, dispatch) => {
         dispatch(eventFrame("message.user", { role: "user" }));
       }),
     );
-    expect(onPresetConsumed).not.toHaveBeenCalled();
+    expect(onFrame).toHaveBeenCalledOnce();
   });
 });
 

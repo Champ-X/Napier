@@ -6,6 +6,7 @@ import { act } from "react-dom/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { AgentProfile } from "@napier/contracts";
+import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
 import type { EffectiveAgentCapabilityProjectionV1 } from "@napier/contracts/agent-capability-contract";
 
 import { ComposerCapabilityControl } from "../src/ComposerCapabilityControl";
@@ -20,11 +21,14 @@ afterEach(async () => {
 });
 
 describe("ComposerCapabilityControl", () => {
-  it("selects a temporary next-Run mode without persisting the Agent", async () => {
+  it("shows three persistent permission levels with Full access selected", async () => {
     const { container } = installDom();
+    const selected = projection("full_access");
     const fetchMock = vi.fn(async (path: string) => {
-      expect(path).toBe("/api/agents/agent_napier/capabilities");
-      return projectionResponse(projection());
+      expect(path).toBe(
+        "/api/agents/agent_napier/capabilities?preset=full_access",
+      );
+      return projectionResponse(selected, "full_access");
     });
     vi.stubGlobal("fetch", fetchMock);
     const onSelectedPresetChange = vi.fn();
@@ -36,7 +40,7 @@ describe("ComposerCapabilityControl", () => {
         <ComposerCapabilityControl
           agent={agent()}
           disabled={false}
-          selectedPreset={undefined}
+          selectedPreset="full_access"
           onSelectedPresetChange={onSelectedPresetChange}
           onReview={vi.fn()}
           onReadinessChange={vi.fn()}
@@ -44,36 +48,36 @@ describe("ComposerCapabilityControl", () => {
       );
     });
     await waitFor(() =>
-      container
-        .querySelector("[data-scope='next-run-only']")
-        ?.getAttribute("aria-label")
-        ?.startsWith("Next-run task mode"),
+      container.textContent?.includes("Host-direct execution"),
     );
 
-    findButton(container, "Browser").click();
-    expect(onSelectedPresetChange).toHaveBeenCalledWith("browser");
-    expect(findButton(container, "Agent settings")).toBeDefined();
-    expect(container.textContent).not.toContain("contract v3");
-    expect(container.textContent).not.toContain("catalog-only");
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(modeLabels(container)).toEqual([
+      "Read only",
+      "Workspace",
+      "Full access",
+    ]);
     expect(
-      fetchMock.mock.calls.every((call) => call[1]?.method !== "PUT"),
-    ).toBe(true);
+      findModeButton(container, "Full access").getAttribute("aria-pressed"),
+    ).toBe("true");
+    expect(container.textContent).not.toContain("NEXT RUN ONLY");
+    expect(container.textContent).not.toContain("1×");
+    expect(container.textContent).not.toContain("Safe Automation");
+    expect(container.textContent).toContain("Host-direct execution");
+
+    findModeButton(container, "Workspace").click();
+    expect(onSelectedPresetChange).toHaveBeenCalledWith("safe_automation");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("renders the selected preset as one-shot and can restore the Agent default", async () => {
+  it("keeps advanced Agent and Sandbox controls out of the primary choice", async () => {
     const { container } = installDom();
-    const selected = projection("browser");
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (path: string) => {
-        expect(path).toBe(
-          "/api/agents/agent_napier/capabilities?preset=browser",
-        );
-        return projectionResponse(selected, "browser");
-      }),
+      vi.fn(async () =>
+        projectionResponse(projection("read_only"), "read_only"),
+      ),
     );
-    const onSelectedPresetChange = vi.fn();
+    const onReview = vi.fn();
     const root = createRoot(container);
     roots.push(root);
 
@@ -82,17 +86,23 @@ describe("ComposerCapabilityControl", () => {
         <ComposerCapabilityControl
           agent={agent()}
           disabled={false}
-          selectedPreset="browser"
-          onSelectedPresetChange={onSelectedPresetChange}
-          onReview={vi.fn()}
+          selectedPreset="read_only"
+          onSelectedPresetChange={vi.fn()}
+          onReview={onReview}
           onReadinessChange={vi.fn()}
         />,
       );
     });
-    await waitFor(() => container.textContent?.includes("Browser 1×"));
+    await waitFor(() => container.textContent?.includes("Advanced settings"));
 
-    findButton(container, "Use default").click();
-    expect(onSelectedPresetChange).toHaveBeenCalledWith(undefined);
+    findButton(container, "Advanced settings").click();
+    expect(onReview).toHaveBeenCalledOnce();
+    expect(container.textContent).not.toContain("Install Sandbox");
+    expect(
+      findElements(container, (element) =>
+        hasClass(element, "composer-readiness-item"),
+      ),
+    ).toHaveLength(1);
   });
 });
 
@@ -117,8 +127,8 @@ function agent(): AgentProfile {
     systemPrompt: "Stay bounded.",
     model: { provider: "faux", id: "faux-1" },
     thinkingLevel: "minimal",
-    toolPolicy: "observe",
-    enabledTools: ["read_file"],
+    toolPolicy: "workspace",
+    enabledTools: ["read_file", "apply_patch", "run_command"],
     enabledSkills: [],
     enabledSubagents: [],
     createdAt: "2026-08-11T00:00:00.000Z",
@@ -128,39 +138,62 @@ function agent(): AgentProfile {
 }
 
 function projection(
-  capabilityPreset?: "browser",
+  capabilityPreset: Extract<
+    AgentCapabilityPresetId,
+    "read_only" | "safe_automation" | "full_access"
+  >,
 ): EffectiveAgentCapabilityProjectionV1 {
+  const toolPolicy =
+    capabilityPreset === "read_only"
+      ? "observe"
+      : capabilityPreset === "safe_automation"
+        ? "workspace"
+        : "unrestricted";
+  const tools = [
+    "web_search",
+    "web_fetch",
+    "browser",
+    "apply_patch",
+    "run_command",
+  ];
   return {
     kind: "napier.effective-agent-capabilities",
     schemaVersion: 1,
     agentId: "agent_napier",
     agentRevision: 1,
     contractId: "napier.default-agent.capabilities",
-    contractVersion: 3,
+    contractVersion: 4,
     recommendationSha256: "a".repeat(64),
-    driftState: "custom_unmanaged",
-    ownership: "unmanaged",
+    driftState: "current",
+    ownership: "recommended",
     explicitOverrideFields: [],
-    toolPolicy: "observe",
-    configuredTools: capabilityPreset
-      ? ["browser", "web_fetch", "web_search"]
-      : ["read_file"],
-    runtimeExposedTools: capabilityPreset
-      ? ["browser", "web_fetch", "web_search"]
-      : ["read_file"],
+    capabilityPreset,
+    toolPolicy,
+    configuredTools: tools,
+    runtimeExposedTools:
+      capabilityPreset === "read_only"
+        ? tools.filter((tool) => !["apply_patch", "run_command"].includes(tool))
+        : tools,
     configuredSkills: [],
     configuredSubagents: [],
-    ...(capabilityPreset ? { capabilityPreset } : {}),
     readiness: [
-      readiness("tool:browser", "available_unverified"),
-      readiness("tool:web_fetch", "available_unverified"),
-      readiness("tool:web_search", "available_unverified"),
-      readiness("sandbox:test", "ready"),
+      readiness("tool:web_search", "ready"),
+      readiness("tool:web_fetch", "ready"),
+      readiness("tool:browser", "ready"),
+      readiness(
+        "tool:apply_patch",
+        capabilityPreset === "read_only" ? "blocked_by_policy" : "ready",
+      ),
+      readiness(
+        "tool:run_command",
+        capabilityPreset === "read_only" ? "blocked_by_policy" : "ready",
+      ),
+      readiness("sandbox:host-direct", "available_unverified"),
     ],
     restorePreview: {
       schemaVersion: 1,
       contractId: "napier.default-agent.capabilities",
-      contractVersion: 3,
+      contractVersion: 4,
       recommendationSha256: "a".repeat(64),
       agentId: "agent_napier",
       agentRevision: 1,
@@ -177,53 +210,88 @@ function readiness(
   id: string,
   status: EffectiveAgentCapabilityProjectionV1["readiness"][number]["status"],
 ): EffectiveAgentCapabilityProjectionV1["readiness"][number] {
+  const exposed = status === "ready" || status === "available_unverified";
   return {
     id,
     status,
     configured: true,
-    allowedByPolicy: true,
-    exposed: true,
+    allowedByPolicy: exposed,
+    exposed,
     detail: "fixture",
   };
 }
 
 function projectionResponse(
   value: EffectiveAgentCapabilityProjectionV1,
-  preset?: string,
+  preset: AgentCapabilityPresetId,
 ): Response {
   const text = JSON.stringify(value);
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "X-Napier-Content-SHA256": createHash("sha256").update(text).digest("hex"),
-    "X-Napier-Content-SHA256-Mode": "body",
-  };
-  if (preset) headers["X-Napier-Capability-Preset"] = preset;
-  return new Response(text, { headers });
+  return new Response(text, {
+    headers: {
+      "Content-Type": "application/json",
+      "X-Napier-Content-SHA256": createHash("sha256")
+        .update(text)
+        .digest("hex"),
+      "X-Napier-Content-SHA256-Mode": "body",
+      "X-Napier-Capability-Preset": preset,
+    },
+  });
+}
+
+function modeLabels(container: HTMLElement): string[] {
+  return findElements(container, (element) =>
+    hasClass(element, "composer-permission-label"),
+  ).map((element) => element.textContent ?? "");
+}
+
+function findModeButton(
+  container: HTMLElement,
+  label: string,
+): HTMLButtonElement {
+  const labelElement = findElements(
+    container,
+    (element) =>
+      hasClass(element, "composer-permission-label") &&
+      element.textContent === label,
+  )[0];
+  const button = labelElement?.parentElement;
+  if (!button) throw new Error(`Mode button not found: ${label}`);
+  return button as HTMLButtonElement;
 }
 
 function findButton(container: HTMLElement, text: string): HTMLButtonElement {
-  const button = findElement<HTMLButtonElement>(
+  const button = findElements(
     container,
     (candidate) =>
       candidate.localName === "button" &&
       candidate.textContent?.trim() === text,
-  );
+  )[0];
   if (!button) throw new Error(`Button not found: ${text}`);
-  return button;
+  return button as HTMLButtonElement;
 }
 
-function findElement<T extends Element>(
+function findElements(
   root: Node,
   predicate: (element: Element) => boolean,
-): T | undefined {
+): Element[] {
+  const matches: Element[] = [];
   for (const child of Array.from(root.childNodes)) {
     if ("localName" in child && predicate(child as Element)) {
-      return child as T;
+      matches.push(child as Element);
     }
-    const nested = findElement<T>(child, predicate);
-    if (nested) return nested;
+    matches.push(...findElements(child, predicate));
   }
-  return undefined;
+  return matches;
+}
+
+function hasClass(element: Element, className: string): boolean {
+  const candidate = element as Element & {
+    getAttribute?: (name: string) => string | null;
+  };
+  return (
+    typeof candidate.getAttribute === "function" &&
+    (candidate.getAttribute("class") ?? "").split(/\s+/u).includes(className)
+  );
 }
 
 async function waitFor(check: () => boolean | undefined): Promise<void> {
