@@ -1,28 +1,36 @@
-import { defineConfig } from "vite";
+import { fileURLToPath } from "node:url";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 
-export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: [
-      { find: "react/jsx-runtime", replacement: "preact/jsx-runtime" },
-      { find: "react-dom/client", replacement: "preact/compat/client" },
-      { find: "react-dom", replacement: "preact/compat" },
-      { find: "react", replacement: "preact/compat" },
-    ],
-  },
-  server: {
-    port: 5173,
-    proxy: {
-      "/api": {
-        target: "http://127.0.0.1:8787",
-        changeOrigin: false,
+const workspaceRoot = fileURLToPath(new URL("../../", import.meta.url));
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, workspaceRoot, "NAPIER_");
+  const apiPort = env["NAPIER_PORT"] ?? "8787";
+
+  return {
+    plugins: [react()],
+    resolve: {
+      alias: [
+        { find: "react/jsx-runtime", replacement: "preact/jsx-runtime" },
+        { find: "react-dom/client", replacement: "preact/compat/client" },
+        { find: "react-dom", replacement: "preact/compat" },
+        { find: "react", replacement: "preact/compat" },
+      ],
+    },
+    server: {
+      port: 5173,
+      proxy: {
+        "/api": {
+          target: `http://127.0.0.1:${apiPort}`,
+          changeOrigin: false,
+        },
       },
     },
-  },
-  build: {
-    target: "es2022",
-    sourcemap: true,
-    reportCompressedSize: true,
-  },
+    build: {
+      target: "es2022",
+      sourcemap: true,
+      reportCompressedSize: true,
+    },
+  };
 });

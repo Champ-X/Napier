@@ -190,10 +190,12 @@ export function Composer({
                   onReview={() => onOpenInspector("context")}
                   onReadinessChange={setRunReadiness}
                 />
-                <LazyProviderSetupCard
-                  onBootstrapUpdated={vm.commitConfigurationBootstrap}
-                  threadId={vm.detail?.thread.id}
-                />
+                {!activeModel.configured ? (
+                  <LazyProviderSetupCard
+                    onBootstrapUpdated={vm.commitConfigurationBootstrap}
+                    threadId={vm.detail?.thread.id}
+                  />
+                ) : null}
               </Suspense>
             </div>
           </details>
