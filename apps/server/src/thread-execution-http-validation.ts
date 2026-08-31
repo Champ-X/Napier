@@ -11,6 +11,7 @@ import {
 } from "@napier/contracts/agent-capabilities";
 
 import { parseModelRef, requestRecord } from "./http-request-validation.js";
+import { parsePromptImages } from "./prompt-image-validation.js";
 
 export function parseResumeRunRequest(
   input: unknown,
@@ -18,18 +19,13 @@ export function parseResumeRunRequest(
   if (input === undefined) return {};
   const record = requestRecord(input, ["runId", "model"]);
   if (!record) return undefined;
-  const runId = record["runId"];
-  if (
-    runId !== undefined &&
-    (typeof runId !== "string" || !/^run_[a-z0-9]{8,80}$/u.test(runId))
-  ) {
-    return undefined;
-  }
+  const runId = parseRunId(record["runId"]);
+  if (record["runId"] !== undefined && !runId) return undefined;
   const model =
     record["model"] === undefined ? undefined : parseModelRef(record["model"]);
   if (record["model"] !== undefined && !model) return undefined;
   return {
-    ...(typeof runId === "string" ? { runId } : {}),
+    ...(runId ? { runId } : {}),
     ...(model ? { model } : {}),
   };
 }
@@ -37,6 +33,7 @@ export function parseResumeRunRequest(
 export function parsePromptRequest(input: unknown): PromptRequest | undefined {
   const record = requestRecord(input, [
     "text",
+    "images",
     "model",
     "modelRoute",
     "capabilityPreset",
@@ -55,6 +52,11 @@ export function parsePromptRequest(input: unknown): PromptRequest | undefined {
   const model =
     record["model"] === undefined ? undefined : parseModelRef(record["model"]);
   if (record["model"] !== undefined && !model) return undefined;
+  const images =
+    record["images"] === undefined
+      ? undefined
+      : parsePromptImages(record["images"]);
+  if (record["images"] !== undefined && !images) return undefined;
   const modelRoute =
     record["modelRoute"] === undefined
       ? undefined
@@ -70,25 +72,26 @@ export function parsePromptRequest(input: unknown): PromptRequest | undefined {
   ) {
     return undefined;
   }
-  const sourceContinuityRunId = record["sourceContinuityRunId"];
-  if (
-    sourceContinuityRunId !== undefined &&
-    (typeof sourceContinuityRunId !== "string" ||
-      !/^run_[a-z0-9]{8,80}$/u.test(sourceContinuityRunId))
-  ) {
+  const sourceContinuityRunId = parseRunId(record["sourceContinuityRunId"]);
+  if (record["sourceContinuityRunId"] !== undefined && !sourceContinuityRunId) {
     return undefined;
   }
   return {
     text,
+    ...(images ? { images } : {}),
     ...(model ? { model } : {}),
     ...(modelRoute ? { modelRoute } : {}),
     ...(typeof capabilityPreset === "string"
       ? { capabilityPreset: capabilityPreset as AgentCapabilityPresetId }
       : {}),
-    ...(typeof sourceContinuityRunId === "string"
-      ? { sourceContinuityRunId }
-      : {}),
+    ...(sourceContinuityRunId ? { sourceContinuityRunId } : {}),
   };
+}
+
+function parseRunId(input: unknown): string | undefined {
+  return typeof input === "string" && /^run_[a-z0-9]{8,80}$/u.test(input)
+    ? input
+    : undefined;
 }
 
 const MODEL_ROLES = new Set<ModelRole>([
@@ -115,37 +118,15 @@ export function parseModelRouteRequest(
   ) {
     return undefined;
   }
-  const rawFallbacks = record["fallbackModels"];
-  if (
-    rawFallbacks !== undefined &&
-    (!Array.isArray(rawFallbacks) || rawFallbacks.length > 4)
-  ) {
-    return undefined;
-  }
-  const fallbackModels = rawFallbacks?.map(parseModelRef);
-  if (fallbackModels?.some((candidate) => candidate === undefined)) {
-    return undefined;
-  }
-  const normalizedFallbacks = fallbackModels as
-    | NonNullable<ModelRouteRequest["fallbackModels"]>
-    | undefined;
-  if (
-    normalizedFallbacks &&
-    new Set(
-      normalizedFallbacks.map(
-        (candidate) => `${candidate.provider}/${candidate.id}`,
-      ),
-    ).size !== normalizedFallbacks.length
-  ) {
-    return undefined;
-  }
+  const fallbackModels = parseFallbackModels(record["fallbackModels"]);
+  if (!fallbackModels.valid) return undefined;
   const subagentRoles = parseSubagentRoleRoutes(record["subagentRoles"]);
   if (record["subagentRoles"] !== undefined && !subagentRoles) {
     return undefined;
   }
   return {
     ...(typeof role === "string" ? { role: role as ModelRole } : {}),
-    ...(normalizedFallbacks ? { fallbackModels: normalizedFallbacks } : {}),
+    ...(fallbackModels.value ? { fallbackModels: fallbackModels.value } : {}),
     ...(subagentRoles ? { subagentRoles } : {}),
   };
 }
@@ -157,6 +138,32 @@ const SUBAGENT_ROLES = [
   "coder",
 ] as const satisfies readonly SubagentRole[];
 
+type ParsedFallbackModels =
+  | {
+      valid: true;
+      value?: NonNullable<ModelRouteRequest["fallbackModels"]>;
+    }
+  | { valid: false };
+
+function parseFallbackModels(
+  input: unknown,
+  primary?: ModelRoleRouteBinding["model"],
+): ParsedFallbackModels {
+  if (input === undefined) return { valid: true };
+  if (!Array.isArray(input) || input.length > 4) return { valid: false };
+  const candidates = input.map(parseModelRef);
+  if (candidates.some((candidate) => candidate === undefined)) {
+    return { valid: false };
+  }
+  const value = candidates as NonNullable<ModelRouteRequest["fallbackModels"]>;
+  const keys = [primary, ...value]
+    .filter((candidate) => candidate !== undefined)
+    .map((candidate) => `${candidate.provider}/${candidate.id}`);
+  return new Set(keys).size === keys.length
+    ? { valid: true, value }
+    : { valid: false };
+}
+
 function parseSubagentRoleRoutes(
   input: unknown,
 ): ModelRouteRequest["subagentRoles"] | undefined {
@@ -167,30 +174,15 @@ function parseSubagentRoleRoutes(
   for (const [role, inputBinding] of Object.entries(roles)) {
     const binding = requestRecord(inputBinding, ["model", "fallbackModels"]);
     const model = parseModelRef(binding?.["model"]);
-    const rawFallbacks = binding?.["fallbackModels"];
-    if (
-      !binding ||
-      !model ||
-      (rawFallbacks !== undefined &&
-        (!Array.isArray(rawFallbacks) || rawFallbacks.length > 4))
-    ) {
-      return undefined;
-    }
-    const fallbackModels = rawFallbacks?.map(parseModelRef);
-    if (fallbackModels?.some((candidate) => candidate === undefined)) {
-      return undefined;
-    }
-    const normalized = fallbackModels as ModelRoleRouteBinding["fallbackModels"];
-    const keys = [
-      `${model.provider}/${model.id}`,
-      ...(normalized ?? []).map(
-        (candidate) => `${candidate.provider}/${candidate.id}`,
-      ),
-    ];
-    if (new Set(keys).size !== keys.length) return undefined;
+    if (!binding || !model) return undefined;
+    const fallbackModels = parseFallbackModels(
+      binding["fallbackModels"],
+      model,
+    );
+    if (!fallbackModels.valid) return undefined;
     parsed[role as SubagentRole] = {
       model,
-      ...(normalized ? { fallbackModels: normalized } : {}),
+      ...(fallbackModels.value ? { fallbackModels: fallbackModels.value } : {}),
     };
   }
   return parsed;

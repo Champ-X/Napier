@@ -2,6 +2,7 @@ import { AgentCapabilityContractCard } from "./AgentCapabilityContractCard";
 import { AgentCapabilityPresetControl } from "./AgentCapabilityPresetControl";
 import { contextCopy } from "./context-copy";
 import { ContextOptionGroup } from "./ContextOptionGroup";
+import { SandboxSetupCard } from "./SandboxSetupCard";
 import type { ContextPanelController } from "./use-context-panel-controller";
 
 export interface ContextCapabilityFieldsProps {
@@ -51,6 +52,7 @@ export function ContextCapabilityFields({
         disabled={configurationBusy}
         onRestored={refreshWorkspace}
       />
+      <SandboxSetupCard onActivated={refreshWorkspace} />
       <ContextOptionGroup
         legend={contextCopy.tools}
         options={toolOptions.map((tool) => ({

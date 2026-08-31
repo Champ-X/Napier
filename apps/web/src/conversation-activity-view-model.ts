@@ -87,6 +87,7 @@ export function excludeConversationActivityCandidates(
 ): ConversationActivityCandidate[] {
   return candidates.filter(
     (candidate) =>
+      candidate.type !== "run.progress.message" &&
       !exclusions.eventIds.has(candidate.id) &&
       (!candidate.callId || !exclusions.callIds.has(candidate.callId)) &&
       (!candidate.planId || !exclusions.planIds.has(candidate.planId)) &&

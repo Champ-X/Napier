@@ -1,6 +1,6 @@
 import type { ModelSummary } from "@napier/contracts";
 import { Check, ChevronDown, Search } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { copy } from "./copy";
 import {
@@ -34,7 +34,9 @@ export function ModelPicker({
   const [query, setQuery] = useState("");
   const [showUnavailable, setShowUnavailable] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const pickerId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const selected = selectedModelAvailability(models, value);
   const selectedSummary = models.find(
@@ -51,27 +53,47 @@ export function ModelPicker({
     [models, query, recommendedModelKeys, recentModelKeys, showUnavailable],
   );
   const options = groups.flatMap((group) => group.options);
+  const activeOptionId = options[activeIndex]
+    ? `${pickerId}-option-${String(activeIndex)}`
+    : undefined;
+
+  const closeAndRestoreFocus = () => {
+    setOpen(false);
+    setQuery("");
+    window.setTimeout(() => triggerRef.current?.focus(), 0);
+  };
 
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     };
+    const onFocusIn = (event: FocusEvent) => {
+      if (event.target && !rootRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
     document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("focusin", onFocusIn);
     const focusTimer = window.setTimeout(() => searchRef.current?.focus(), 0);
     return () => {
       document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("focusin", onFocusIn);
       window.clearTimeout(focusTimer);
     };
   }, [open]);
 
   useEffect(() => setActiveIndex(0), [query, showUnavailable]);
+  useEffect(() => {
+    setActiveIndex((current) =>
+      Math.min(current, Math.max(options.length - 1, 0)),
+    );
+  }, [options.length]);
 
   const choose = (key: string, configured: boolean) => {
     if (!configured) return;
     onChange(key);
-    setOpen(false);
-    setQuery("");
+    closeAndRestoreFocus();
   };
 
   return (
@@ -80,6 +102,7 @@ export function ModelPicker({
       className={`model-picker is-${variant}${open ? " is-open" : ""}`}
     >
       <button
+        ref={triggerRef}
         type="button"
         className={`model-picker-trigger${variant === "compact" ? " model-chip" : ""}${selected.configured ? "" : " is-unavailable"}`}
         aria-label={label}
@@ -96,12 +119,16 @@ export function ModelPicker({
         <span className="model-chip-copy">
           <small>
             {selected.configured
-              ? selectedSummary?.providerName ?? selected.provider
+              ? (selectedSummary?.providerName ?? selected.provider)
               : copy.modelPicker.unavailable}
           </small>
           <strong>{selectedSummary?.name ?? selected.id}</strong>
         </span>
-        <ChevronDown className="model-chip-chevron" size={12} aria-hidden="true" />
+        <ChevronDown
+          className="model-chip-chevron"
+          size={12}
+          aria-hidden="true"
+        />
       </button>
       {open ? (
         <div
@@ -111,7 +138,8 @@ export function ModelPicker({
           onKeyDown={(event) => {
             if (event.key === "Escape") {
               event.preventDefault();
-              setOpen(false);
+              event.stopPropagation();
+              closeAndRestoreFocus();
             } else if (event.key === "ArrowDown" && options.length > 0) {
               event.preventDefault();
               setActiveIndex((current) => (current + 1) % options.length);
@@ -120,6 +148,12 @@ export function ModelPicker({
               setActiveIndex(
                 (current) => (current - 1 + options.length) % options.length,
               );
+            } else if (event.key === "Home" && options.length > 0) {
+              event.preventDefault();
+              setActiveIndex(0);
+            } else if (event.key === "End" && options.length > 0) {
+              event.preventDefault();
+              setActiveIndex(options.length - 1);
             } else if (event.key === "Enter") {
               const option = options[activeIndex];
               if (option) {
@@ -134,8 +168,13 @@ export function ModelPicker({
             <input
               ref={searchRef}
               type="search"
+              role="combobox"
               value={query}
               aria-label={copy.modelPicker.searchLabel}
+              aria-expanded="true"
+              aria-controls={`${pickerId}-results`}
+              aria-activedescendant={activeOptionId}
+              aria-autocomplete="list"
               placeholder={copy.modelPicker.searchPlaceholder}
               onChange={(event) => setQuery(event.target.value)}
             />
@@ -148,16 +187,32 @@ export function ModelPicker({
             />
             <span>{copy.modelPicker.showUnavailable}</span>
           </label>
-          <div className="model-picker-results" role="listbox" aria-label={label}>
-            {groups.map((group) => (
-              <section className="model-picker-group" key={group.id}>
-                <h3>{groupLabel(group.id, group.label)}</h3>
+          <div
+            id={`${pickerId}-results`}
+            className="model-picker-results"
+            role="listbox"
+            aria-label={label}
+          >
+            {groups.map((group, groupIndex) => (
+              <section
+                className="model-picker-group"
+                role="group"
+                aria-labelledby={`${pickerId}-group-${String(groupIndex)}`}
+                key={group.id}
+              >
+                <h3 id={`${pickerId}-group-${String(groupIndex)}`}>
+                  {groupLabel(group.id, group.label)}
+                </h3>
                 {group.options.map((option) => {
-                  const index = options.findIndex((item) => item.key === option.key);
+                  const index = options.findIndex(
+                    (item) => item.key === option.key,
+                  );
                   return (
                     <button
+                      id={`${pickerId}-option-${String(index)}`}
                       type="button"
                       role="option"
+                      tabIndex={-1}
                       aria-selected={option.key === value}
                       aria-disabled={!option.configured}
                       className={index === activeIndex ? "is-active" : ""}
@@ -167,7 +222,9 @@ export function ModelPicker({
                     >
                       <span className="model-picker-option-main">
                         <strong>{option.name}</strong>
-                        <code>{option.provider}/{option.id}</code>
+                        <code>
+                          {option.provider}/{option.id}
+                        </code>
                       </span>
                       <span className="model-picker-option-meta">
                         <i className={option.configured ? "is-ready" : ""}>
@@ -176,10 +233,16 @@ export function ModelPicker({
                             : copy.modelPicker.unavailable}
                         </i>
                         <span>{formatContextWindow(option.contextWindow)}</span>
-                        {option.reasoning ? <span>{copy.modelPicker.reasoning}</span> : null}
-                        {option.vision ? <span>{copy.modelPicker.vision}</span> : null}
+                        {option.reasoning ? (
+                          <span>{copy.modelPicker.reasoning}</span>
+                        ) : null}
+                        {option.vision ? (
+                          <span>{copy.modelPicker.vision}</span>
+                        ) : null}
                       </span>
-                      {option.key === value ? <Check size={14} aria-hidden="true" /> : null}
+                      {option.key === value ? (
+                        <Check size={14} aria-hidden="true" />
+                      ) : null}
                     </button>
                   );
                 })}
@@ -202,6 +265,7 @@ function groupLabel(id: string, fallback: string): string {
 }
 
 function formatContextWindow(tokens: number): string {
-  const value = tokens >= 1_000 ? `${Math.round(tokens / 1_000)}k` : String(tokens);
+  const value =
+    tokens >= 1_000 ? `${Math.round(tokens / 1_000)}k` : String(tokens);
   return `${value} ${copy.modelPicker.context}`;
 }

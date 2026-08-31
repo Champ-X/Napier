@@ -41,6 +41,8 @@ export function ArtifactInspector({
   previewArtifact = previewPlanArtifactText,
   previewDiff = previewPlanArtifactDiff,
 }: ArtifactInspectorProps) {
+  const inspectorRef = useRef<HTMLElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string>();
   const { diff, error, load, loadingView, preview, view } =
@@ -50,6 +52,36 @@ export function ArtifactInspector({
       previewDiff,
       ...(onLedgerChanged ? { onLedgerChanged } : {}),
     });
+
+  useEffect(() => {
+    const restoreFocus =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    closeRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      const restorePreviousFocus = () => {
+        if (restoreFocus?.isConnected && restoreFocus.getClientRects().length) {
+          restoreFocus.focus();
+          return;
+        }
+        document.getElementById("workspace-rail-toggle")?.focus();
+      };
+      if (typeof window.requestAnimationFrame === "function") {
+        window.requestAnimationFrame(restorePreviousFocus);
+      } else {
+        restorePreviousFocus();
+      }
+    };
+  }, [onClose]);
 
   const download = async () => {
     if (downloading) return;
@@ -71,6 +103,7 @@ export function ArtifactInspector({
 
   return (
     <aside
+      ref={inspectorRef}
       className="artifact-inspector"
       aria-label={`${copy.preview}: ${inspection.artifact.path}`}
     >
@@ -125,7 +158,12 @@ export function ArtifactInspector({
         >
           <Download size={15} aria-hidden="true" />
         </button>
-        <button type="button" aria-label={copy.close} onClick={onClose}>
+        <button
+          ref={closeRef}
+          type="button"
+          aria-label={copy.close}
+          onClick={onClose}
+        >
           <X size={16} aria-hidden="true" />
         </button>
       </header>

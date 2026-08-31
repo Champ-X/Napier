@@ -102,41 +102,6 @@
   justify-self: end;
 }
 
-.workbench-settings {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 32px;
-  padding: 5px 8px;
-  color: var(--ink-soft);
-  cursor: pointer;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-}
-
-.workbench-settings:hover {
-  color: var(--ledger);
-  background: var(--ledger-soft);
-  border-color: var(--rule);
-}
-
-.workbench-developer {
-  color: var(--color-accent);
-  background: var(--color-accent-subtle);
-  border-color: var(--color-border-subtle);
-}
-
-.workbench-settings kbd {
-  font-family: var(--mono);
-  font-size: var(--text-xs);
-  color: var(--ink-faint);
-  text-transform: uppercase;
-  padding: 2px 4px;
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-}
-
 .model-chip {
   position: relative;
   display: flex;
@@ -197,7 +162,6 @@
     padding-inline: var(--space-4);
   }
 
-  .workbench-settings kbd,
   .model-chip small {
     display: none;
   }

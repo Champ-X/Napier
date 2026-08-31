@@ -23,7 +23,6 @@ export const SETTINGS_SECTION_LABELS = Object.freeze([
   "Agent & Model",
   "Memory",
   "Extensions",
-  "Workspace",
   "Language",
 ]);
 export const DEVELOPER_WORKBENCH_SECTION_LABELS = Object.freeze([
@@ -169,35 +168,6 @@ export function assertWebUiE2eReceipt(receipt) {
     },
   ]);
   assert.deepEqual(
-    {
-      viewportWidth:
-        receipt?.artifactNavigation?.compactInspection?.viewportWidth,
-      inspectorWidth:
-        receipt?.artifactNavigation?.compactInspection?.inspectorWidth,
-      inspectorLeft:
-        receipt?.artifactNavigation?.compactInspection?.inspectorLeft,
-      inspectorRight:
-        receipt?.artifactNavigation?.compactInspection?.inspectorRight,
-      workspaceLeft:
-        receipt?.artifactNavigation?.compactInspection?.workspaceLeft,
-      workspaceWidth:
-        receipt?.artifactNavigation?.compactInspection?.workspaceWidth,
-      position: receipt?.artifactNavigation?.compactInspection?.position,
-      horizontalOverflowPx:
-        receipt?.artifactNavigation?.compactInspection?.horizontalOverflowPx,
-    },
-    {
-      viewportWidth: 390,
-      inspectorWidth: 334,
-      inspectorLeft: 56,
-      inspectorRight: 390,
-      workspaceLeft: 56,
-      workspaceWidth: 334,
-      position: "absolute",
-      horizontalOverflowPx: 0,
-    },
-  );
-  assert.deepEqual(
     receipt?.viewports?.map(({ width, height, layout }) => ({
       width,
       height,
@@ -222,13 +192,34 @@ export function assertWebUiE2eReceipt(receipt) {
   assert.equal(receipt?.longRun?.mountedFeedItems <= 160, true);
   assert.equal(receipt?.longRun?.expandedFeedItems > 160, true);
   assert.equal(
-    receipt?.longRun?.activityAggregation?.collapsedMountedChildren,
-    0,
+    receipt?.longRun?.activityAggregation?.initialGroupCount >= 1,
+    true,
   );
   assert.equal(
-    receipt?.longRun?.activityAggregation?.expandedMountedChildren,
-    12,
+    receipt?.longRun?.activityAggregation?.initialMountedChildren >=
+      receipt?.longRun?.activityAggregation?.initialGroupCount,
+    true,
   );
+  assert.equal(
+    receipt?.longRun?.activityAggregation?.expandedGroupCount >=
+      receipt?.longRun?.activityAggregation?.initialGroupCount,
+    true,
+  );
+  assert.equal(
+    receipt?.longRun?.activityAggregation?.expandedMountedChildren >=
+      receipt?.longRun?.activityAggregation?.initialMountedChildren &&
+      receipt?.longRun?.activityAggregation?.expandedMountedChildren <= 32,
+    true,
+  );
+  assert.equal(receipt?.longRun?.activityAggregation?.directSummaryCount, 0);
+  assert.equal(
+    receipt?.longRun?.activityAggregation?.stepsDirectlyExpanded,
+    true,
+  );
+  assert.equal(receipt?.longRun?.activityAggregation?.groupsLabelled, true);
+  assert.equal(receipt?.longRun?.progressNoteVisible, true);
+  assert.equal(receipt?.longRun?.progressNoteCount, 1);
+  assert.equal(receipt?.longRun?.progressPrivateMarkerVisible, false);
   assert.equal(receipt?.longRun?.environmentFallbackVisible, true);
   assert.equal(receipt?.longRun?.environmentFallbackInitiallyHidden, true);
   assert.equal(
@@ -324,7 +315,6 @@ export function assertWebUiE2eReceipt(receipt) {
     "智能体与模型",
     "记忆",
     "扩展",
-    "工作区",
     "语言",
   ]);
   assert.deepEqual(receipt?.locale?.developerLabels, [
@@ -333,10 +323,7 @@ export function assertWebUiE2eReceipt(receipt) {
     "发布治理",
     "设计系统",
   ]);
-  assert.match(
-    receipt?.locale?.composerPlaceholder ?? "",
-    /给 Napier 一个任务/u,
-  );
+  assert.match(receipt?.locale?.composerPlaceholder ?? "", /输入任务或消息/u);
   assert.deepEqual(receipt?.locale?.trajectoryTitles, {
     page: "运行轨迹",
     map: "运行轨迹",
@@ -361,15 +348,15 @@ export function assertWebUiE2eReceipt(receipt) {
   );
   assert.deepEqual(
     {
-      focusedSourceCard:
-        receipt?.artifactNavigation?.primaryInspection?.focusedSourceCard,
+      focusedInspection:
+        receipt?.artifactNavigation?.primaryInspection?.focusedInspection,
       openedInOneClick:
         receipt?.artifactNavigation?.primaryInspection?.openedInOneClick,
       hostedInWorkspace:
         receipt?.artifactNavigation?.primaryInspection?.hostedInWorkspace,
     },
     {
-      focusedSourceCard: true,
+      focusedInspection: true,
       openedInOneClick: true,
       hostedInWorkspace: true,
     },
@@ -468,15 +455,15 @@ export function assertViewportReceipt(viewport) {
   });
   assert.equal(viewport.geometry.horizontalOverflowPx, 0);
   assert.equal(viewport.geometry.drawerWithinViewport, true);
-  assert.equal(viewport.readingAxis.statusWidth >= 120, true);
+  assert.equal(viewport.readingAxis.statusWidth >= 52, true);
   assert.equal(viewport.readingAxis.statusWidth <= 290, true);
   assert.equal(viewport.readingAxis.statusHeight <= 58, true);
   assert.equal(viewport.readingAxis.statusWithinCommandBar, true);
   assert.equal(viewport.readingAxis.navigationToStatusGapPx >= 0, true);
   assert.equal(viewport.readingAxis.statusToModelGapPx >= 0, true);
-  assert.equal(viewport.readingAxis.conversationWidth >= 760, true);
+  assert.equal(viewport.readingAxis.conversationWidth >= 640, true);
   assert.equal(viewport.readingAxis.conversationWidth <= 880, true);
-  assert.equal(viewport.readingAxis.composerWidth >= 760, true);
+  assert.equal(viewport.readingAxis.composerWidth >= 640, true);
   assert.equal(viewport.readingAxis.composerWidth <= 880, true);
   assert.equal(viewport.readingAxis.maximumCenterDeltaPx <= 2, true);
   assert.equal(viewport.readingAxis.messageFontPx >= 15, true);

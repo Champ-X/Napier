@@ -30,7 +30,7 @@ export function ConversationBrowserActivityCard({
       className={`conversation-browser-activity status-${activity.status}${
         activity.takeoverRecommended ? " takeover-recommended" : ""
       }`}
-      open={activity.status !== "completed" || activity.takeoverRecommended}
+      open={activity.status === "working" || activity.takeoverRecommended}
     >
       <summary>
         <MonitorSmartphone size={15} aria-hidden="true" />

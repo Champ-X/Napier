@@ -40,8 +40,6 @@ describe("Workbench header model selection", () => {
           title="Thread"
           contextLabel="Conversation"
           onModel={onModel}
-          onOpenDeveloperWorkbench={() => undefined}
-          onOpenSettings={() => undefined}
         />,
       );
     });
@@ -53,6 +51,13 @@ describe("Workbench header model selection", () => {
     });
     expect(container.textContent).toContain("DeepSeek V4 Flash");
     expect(container.textContent).not.toContain("GPT-4.1");
+    const search = findElements(container, "input").find(
+      (input) => input.getAttribute("type") === "search",
+    )!;
+    expect(search.getAttribute("role")).toBe("combobox");
+    const activeOptionId = search.getAttribute("aria-activedescendant");
+    expect(activeOptionId).toBeTruthy();
+    expect(container.querySelector(`[id="${activeOptionId}"]`)).toBeTruthy();
     const option = findElements(container, "button").find((button) =>
       button.textContent?.includes("DeepSeek V4 Flash"),
     )!;
@@ -83,8 +88,6 @@ describe("Workbench header model selection", () => {
           title="Thread"
           contextLabel="Conversation"
           onModel={() => undefined}
-          onOpenDeveloperWorkbench={() => undefined}
-          onOpenSettings={() => undefined}
         />,
       );
     });
@@ -104,7 +107,12 @@ describe("Workbench header model selection", () => {
       root.render(
         <WorkbenchHeader
           isRunning={false}
-          model={{ configured: true, id: "gpt-5", key: "openai/gpt-5", provider: "openai" }}
+          model={{
+            configured: true,
+            id: "gpt-5",
+            key: "openai/gpt-5",
+            provider: "openai",
+          }}
           models={[
             model("openai", "gpt-5", "GPT-5", true),
             model("openai", "gpt-4.1", "GPT-4.1", false),
@@ -114,10 +122,10 @@ describe("Workbench header model selection", () => {
           title="Thread"
           contextLabel="Conversation"
           onModel={() => undefined}
-          onOpenDeveloperWorkbench={() => undefined}
-          onOpenSettings={() => undefined}
         />,
       );
+    });
+    await act(async () => {
       findByAttribute(container, "aria-label", "Agent & Model")?.dispatchEvent(
         new Event("click", { bubbles: true }),
       );
@@ -165,7 +173,9 @@ function findByAttribute(
   name: string,
   value: string,
 ): Element | undefined {
-  return allElements(root).find((element) => element.getAttribute(name) === value);
+  return allElements(root).find(
+    (element) => element.getAttribute(name) === value,
+  );
 }
 
 function findElements(root: Element, tagName: string): Element[] {

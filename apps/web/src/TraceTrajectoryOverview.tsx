@@ -1,5 +1,10 @@
-import type { RefObject } from "react";
-import { ChevronDown } from "lucide-react";
+import {
+  useRef,
+  type KeyboardEvent,
+  type PointerEvent,
+  type RefObject,
+} from "react";
+import { RotateCcw } from "lucide-react";
 
 import { getLocale } from "./locale";
 import {
@@ -7,13 +12,12 @@ import {
   sampleTraceTrajectorySegments,
 } from "./trace-trajectory-layout";
 import type {
-  TraceTrajectoryEvent,
   TraceTrajectoryMetric,
   TraceTrajectoryModel,
+  TraceTrajectoryRange,
 } from "./trace-trajectory-model";
 import {
   TRACE_TRAJECTORY_LANES,
-  TRACE_TRAJECTORY_METRICS,
   traceTrajectoryCopy,
 } from "./trace-trajectory-copy";
 import { formatTraceDuration } from "./TraceTrajectoryLedger";
@@ -22,11 +26,11 @@ export interface TraceTrajectoryOverviewProps {
   model: TraceTrajectoryModel;
   metric: TraceTrajectoryMetric;
   visibleEventIds: Set<string>;
-  selectedEvent: TraceTrajectoryEvent | undefined;
   selectedEventId: string | undefined;
   overviewTrackRef: RefObject<HTMLDivElement | null>;
   overviewTrackWidth: number;
-  onMetric(metric: TraceTrajectoryMetric): void;
+  range: TraceTrajectoryRange | undefined;
+  onRange(range: TraceTrajectoryRange | undefined): void;
   onSelect(eventId: string, segmentLabel: string): void;
 }
 
@@ -34,89 +38,205 @@ export function TraceTrajectoryOverview({
   model,
   metric,
   visibleEventIds,
-  selectedEvent,
   selectedEventId,
   overviewTrackRef,
   overviewTrackWidth,
-  onMetric,
+  range,
+  onRange,
   onSelect,
 }: TraceTrajectoryOverviewProps) {
   const copy = traceTrajectoryCopy;
   return (
-    <details className="trace-overview-disclosure" open>
-      <summary>
+    <section className="trace-overview" aria-label={copy.timelineMap}>
+      <div className="trace-overview-axis" aria-hidden="true">
         <span>{copy.timelineMap}</span>
-        <small>{copy.metricSummary}</small>
-        <ChevronDown size={15} aria-hidden="true" />
-      </summary>
-      <div className="trace-overview">
-        <OverviewHeader metric={metric} onMetric={onMetric} />
-        <div className="trace-overview-axis" aria-hidden="true">
-          <span />
-          {axisLabels(model, metric).map((label, index) => (
-            <small key={`${label}:${String(index)}`}>{label}</small>
-          ))}
-        </div>
-        <div className="trace-overview-lanes">
-          {TRACE_TRAJECTORY_LANES.map((lane) => (
-            <TrajectoryLane
-              key={lane.id}
-              lane={lane}
-              model={model}
-              metric={metric}
-              visibleEventIds={visibleEventIds}
-              selectedEventId={selectedEventId}
-              overviewTrackRef={overviewTrackRef}
-              overviewTrackWidth={overviewTrackWidth}
-              onSelect={onSelect}
-            />
-          ))}
-        </div>
-        <footer>
-          {TRACE_TRAJECTORY_LANES.map((lane) => (
-            <span key={lane.id}>
-              <i className={`legend-${lane.id}`} /> {lane.label}
-            </span>
-          ))}
-          {selectedEvent ? (
-            <strong>
-              {copy.focused} #{padSequence(selectedEvent.event.seq)}
-            </strong>
-          ) : null}
-        </footer>
+        {axisLabels(model, metric).map((label, index) => (
+          <small key={`${label}:${String(index)}`}>{label}</small>
+        ))}
       </div>
-    </details>
+      <TraceTimeline
+        model={model}
+        metric={metric}
+        visibleEventIds={visibleEventIds}
+        selectedEventId={selectedEventId}
+        overviewTrackRef={overviewTrackRef}
+        overviewTrackWidth={overviewTrackWidth}
+        range={range}
+        onRange={onRange}
+        onSelect={onSelect}
+      />
+      <footer className="trace-overview-caption">
+        <span>
+          {range ? rangeLabel(model, metric, range, true) : copy.rangeHelp}
+        </span>
+        {range ? (
+          <button
+            type="button"
+            aria-label={copy.rangeReset}
+            title={copy.rangeReset}
+            onClick={() => onRange(undefined)}
+          >
+            <RotateCcw size={12} aria-hidden="true" />
+            {copy.rangeReset}
+          </button>
+        ) : null}
+      </footer>
+    </section>
   );
 }
 
-function OverviewHeader({
+function TraceTimeline({
+  model,
   metric,
-  onMetric,
-}: Pick<TraceTrajectoryOverviewProps, "metric" | "onMetric">) {
-  const copy = traceTrajectoryCopy;
+  visibleEventIds,
+  selectedEventId,
+  overviewTrackRef,
+  overviewTrackWidth,
+  range,
+  onRange,
+  onSelect,
+}: TraceTrajectoryOverviewProps) {
+  const originRef = useRef<number | undefined>(undefined);
+  const activeRange = range ?? { start: 0, end: 1 };
+  const label = rangeLabel(model, metric, activeRange, Boolean(range));
+
+  const ratioAt = (event: PointerEvent<HTMLDivElement>) => {
+    const bounds = overviewTrackRef.current?.getBoundingClientRect();
+    if (!bounds || bounds.width <= 0) return 0;
+    return Math.max(
+      0,
+      Math.min(1, (event.clientX - bounds.left) / bounds.width),
+    );
+  };
+  const startDrag = (event: PointerEvent<HTMLDivElement>) => {
+    if (
+      event.target instanceof Element &&
+      event.target.closest(".trace-segment")
+    ) {
+      return;
+    }
+    const origin = ratioAt(event);
+    originRef.current = origin;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    onRange({ start: origin, end: origin });
+  };
+  const moveDrag = (event: PointerEvent<HTMLDivElement>) => {
+    if (
+      originRef.current === undefined ||
+      !event.currentTarget.hasPointerCapture(event.pointerId)
+    )
+      return;
+    const current = ratioAt(event);
+    onRange({ start: originRef.current, end: current });
+  };
+  const finishDrag = (event: PointerEvent<HTMLDivElement>) => {
+    if (originRef.current === undefined) return;
+    const current = ratioAt(event);
+    const origin = originRef.current;
+    originRef.current = undefined;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    onRange(
+      Math.abs(current - origin) < 0.012
+        ? {
+            start: Math.max(0, current - 0.04),
+            end: Math.min(1, current + 0.04),
+          }
+        : { start: origin, end: current },
+    );
+  };
+  const moveRange = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return;
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    event.preventDefault();
+    const delta = event.key === "ArrowLeft" ? -0.02 : 0.02;
+    if (!range) {
+      onRange(
+        event.key === "ArrowLeft"
+          ? { start: 0.8, end: 1 }
+          : { start: 0, end: 0.2 },
+      );
+      return;
+    }
+    if (event.shiftKey) {
+      onRange({
+        start: activeRange.start,
+        end: Math.max(
+          activeRange.start + 0.02,
+          Math.min(1, activeRange.end + delta),
+        ),
+      });
+      return;
+    }
+    const width = activeRange.end - activeRange.start;
+    const start = Math.max(0, Math.min(1 - width, activeRange.start + delta));
+    onRange({ start, end: start + width });
+  };
+
   return (
-    <header>
-      <div>
-        <span>{copy.signalLayers}</span>
-        <strong>
-          {TRACE_TRAJECTORY_METRICS.find((item) => item.id === metric)?.unit}
-        </strong>
-      </div>
-      <div className="trace-metric-tabs" aria-label={copy.metricLabel}>
-        {TRACE_TRAJECTORY_METRICS.map((item) => (
-          <button
-            type="button"
-            className={metric === item.id ? "is-active" : ""}
-            aria-pressed={metric === item.id}
-            key={item.id}
-            onClick={() => onMetric(item.id)}
+    <div
+      className={`trace-overview-lanes${range ? " has-range" : ""}`}
+      role="group"
+      tabIndex={0}
+      aria-label={`${traceTrajectoryCopy.rangeHelp}. ${label}`}
+      onPointerDown={startDrag}
+      onPointerMove={moveDrag}
+      onPointerUp={finishDrag}
+      onPointerCancel={() => {
+        originRef.current = undefined;
+      }}
+      onKeyDown={moveRange}
+    >
+      {TRACE_TRAJECTORY_LANES.map((lane) => (
+        <TrajectoryLane
+          key={lane.id}
+          lane={lane}
+          model={model}
+          metric={metric}
+          visibleEventIds={visibleEventIds}
+          selectedEventId={selectedEventId}
+          overviewTrackRef={overviewTrackRef}
+          overviewTrackWidth={overviewTrackWidth}
+          onSelect={onSelect}
+        />
+      ))}
+      {range ? (
+        <span className="trace-range-overlay-track" aria-hidden="true">
+          <span
+            className="trace-range-overlay"
+            style={{
+              left: `${String(activeRange.start * 100)}%`,
+              width: `${String((activeRange.end - activeRange.start) * 100)}%`,
+            }}
           >
-            {item.label}
-          </button>
-        ))}
-      </div>
-    </header>
+            <i />
+            <output>{label}</output>
+            <i />
+          </span>
+        </span>
+      ) : null}
+    </div>
   );
+}
+
+function rangeLabel(
+  model: TraceTrajectoryModel,
+  metric: TraceTrajectoryMetric,
+  range: TraceTrajectoryRange,
+  active: boolean,
+): string {
+  if (!active) return traceTrajectoryCopy.rangeAll;
+  if (metric === "duration") {
+    return `${formatTraceDuration(model.durationMs * range.start)} - ${formatTraceDuration(model.durationMs * range.end)}`;
+  }
+  const maximum = Math.max(
+    1,
+    metric === "turns" ? model.turnCount : model.callCount,
+  );
+  const start = Math.max(1, Math.round(maximum * range.start));
+  const end = Math.max(start, Math.round(maximum * range.end));
+  return `${metric === "turns" ? traceTrajectoryCopy.turn : traceTrajectoryCopy.audit.call} ${formatNumber(start)} - ${formatNumber(end)}`;
 }
 
 interface TrajectoryLaneProps {
@@ -169,9 +289,6 @@ function TrajectoryLane({
       <div
         className="trace-lane-track"
         ref={lane.id === "input" ? overviewTrackRef : undefined}
-        style={{
-          minHeight: `${String(Math.max(27, 10 + layout.rowCount * 8))}px`,
-        }}
       >
         {layout.items.map(({ segment, left, width, row }) => {
           const concurrency =
@@ -188,7 +305,7 @@ function TrajectoryLane({
               )}
               style={{
                 left: `${String(left)}%`,
-                top: `${String(5 + row * 8)}px`,
+                top: `${String(4 + (row % 2) * 5)}px`,
                 width: `${String(width)}%`,
               }}
               title={`${segment.label} · ${copy.statuses[segment.status]}${concurrency}`}
@@ -248,8 +365,4 @@ function formatNumber(value: number): string {
   return new Intl.NumberFormat(getLocale() === "zh" ? "zh-CN" : "en").format(
     value,
   );
-}
-
-function padSequence(sequence: number): string {
-  return String(sequence).padStart(3, "0");
 }

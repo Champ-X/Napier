@@ -15,7 +15,7 @@
 
 .message-card {
   display: block;
-  margin-block-end: var(--space-6);
+  margin-block-end: var(--space-8);
 }
 
 .message-gutter {
@@ -41,6 +41,11 @@
   margin-block-end: var(--space-1);
 }
 
+.role-assistant.is-streaming .message-content > header {
+  min-height: 0;
+  margin: 0;
+}
+
 .message-content > header > span,
 .message-content > header > time,
 .message-content > header > small {
@@ -51,24 +56,6 @@
   position: absolute;
   min-height: 0;
   margin: 0;
-}
-
-.role-assistant .message-actions {
-  margin-inline-start: auto;
-  opacity: 0;
-  transition: opacity var(--duration-fast) var(--ease-out);
-}
-
-.role-assistant:hover .message-actions,
-.role-assistant .message-actions:focus-within,
-.role-assistant .message-actions[open] {
-  opacity: 1;
-}
-
-.role-user .message-actions {
-  position: absolute;
-  top: var(--space-1);
-  right: calc(100% + var(--space-1));
 }
 
 .message-text {
@@ -118,6 +105,17 @@
   animation: breathe 1.4s var(--ease-standard) infinite;
 }
 
+.conversation-thinking.is-active .conversation-thinking-transcript code::after {
+  display: inline-block;
+  width: 1px;
+  height: 0.9em;
+  margin-inline-start: 3px;
+  background: currentColor;
+  content: "";
+  vertical-align: -0.08em;
+  animation: conversation-thinking-caret 720ms steps(1, end) infinite;
+}
+
 .conversation-thinking-content {
   max-width: 100%;
   margin: 0 0 2px var(--space-2);
@@ -148,10 +146,33 @@
   color: var(--color-fg-subtle);
 }
 
+.conversation-thinking-waiting {
+  color: var(--color-fg-subtle);
+}
+
+@keyframes conversation-thinking-caret {
+  0%,
+  48% {
+    opacity: 0.82;
+  }
+  49%,
+  100% {
+    opacity: 0.12;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .conversation-thinking.is-active > summary svg,
+  .conversation-thinking.is-active
+    .conversation-thinking-transcript
+    code::after {
+    animation: none;
+  }
+}
+
 .message-ledger .activity-card,
 .message-ledger .conversation-network-activity,
-.message-ledger .conversation-browser-activity,
-.message-ledger .conversation-activity-group {
+.message-ledger .conversation-browser-activity {
   margin: 0;
   color: var(--color-fg-muted);
   background: transparent;
@@ -159,10 +180,17 @@
   border-radius: var(--radius-sm);
 }
 
+.message-ledger .conversation-activity-group {
+  margin: 0 0 var(--space-1);
+  color: var(--color-fg-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
 .message-ledger .activity-card > summary,
 .message-ledger .conversation-network-activity > summary,
-.message-ledger .conversation-browser-activity > summary,
-.message-ledger .conversation-activity-group > summary {
+.message-ledger .conversation-browser-activity > summary {
   min-height: calc(var(--control-target) - var(--space-2));
   padding: 0 var(--space-1);
   border-radius: var(--radius-sm);
@@ -188,16 +216,13 @@
 
 .message-ledger .activity-card > summary:hover,
 .message-ledger .conversation-network-activity > summary:hover,
-.message-ledger .conversation-browser-activity > summary:hover,
-.message-ledger .conversation-activity-group > summary:hover {
+.message-ledger .conversation-browser-activity > summary:hover {
   background: var(--color-bg-subtle);
 }
 
 .message-ledger .activity-card summary > span,
-.message-ledger .conversation-activity-group > summary small,
 .message-ledger .conversation-network-activity > summary time,
-.message-ledger .conversation-browser-activity > summary time,
-.message-ledger .conversation-activity-group > summary time {
+.message-ledger .conversation-browser-activity > summary time {
   color: var(--color-fg-subtle);
   text-transform: none;
   letter-spacing: 0;
@@ -205,8 +230,7 @@
 
 .message-ledger .activity-card summary > strong,
 .message-ledger .conversation-network-activity > summary strong,
-.message-ledger .conversation-browser-activity > summary strong,
-.message-ledger .conversation-activity-group > summary strong {
+.message-ledger .conversation-browser-activity > summary strong {
   min-width: 0;
   overflow: hidden;
   font-family: var(--font-sans);
@@ -277,9 +301,29 @@
 }
 
 .message-ledger .conversation-activity-group-items {
-  padding: 0 0 2px var(--space-4);
+  margin-inline-start: 0;
+  padding: 1px 0 var(--space-1) var(--space-6);
   border: 0;
-  animation: conversation-evidence-reveal var(--duration-base) var(--ease-out);
+  animation: none;
+}
+
+.message-ledger
+  .conversation-activity-group-items
+  > :is(
+    .activity-card,
+    .conversation-network-activity,
+    .conversation-browser-activity
+  )
+  > summary,
+.message-ledger
+  .conversation-activity-group-items
+  > .conversation-thinking
+  > summary {
+  min-height: calc(var(--control-target) - var(--space-3));
+}
+
+.message-ledger .conversation-activity-group-items > .status-working > summary {
+  background: var(--color-accent-subtle);
 }
 
 .message-ledger .conversation-network-activity > dl,
@@ -298,8 +342,9 @@
   }
 }
 
-.message-ledger .conversation-activity-group > summary > small {
-  font-size: var(--text-xs);
+.message-ledger .conversation-progress-note + .conversation-activity-group,
+.message-ledger .conversation-activity-group + .conversation-progress-note {
+  margin-block-start: 0;
 }
 
 .message-ledger .conversation-artifact {
@@ -367,11 +412,6 @@
   margin-block: var(--space-1) var(--space-3);
 }
 
-.task-result-summary {
-  width: min(var(--layout-reading-target), calc(100% - var(--space-12)));
-  margin-inline: auto;
-}
-
 .conversation-workspace-view .composer {
   width: min(var(--layout-reading-target), calc(100% - var(--space-12)));
   margin-block-end: var(--space-4);
@@ -402,11 +442,38 @@
 }
 
 .conversation-workspace-view .composer-footer {
+  min-height: 30px;
   padding: 0 var(--space-1) var(--space-1);
 }
 
 .conversation-workspace-view .composer-hints {
   gap: var(--space-2);
+}
+
+.conversation-workspace-view .composer-options > summary {
+  width: 30px;
+  height: 30px;
+  justify-content: center;
+  padding: 0;
+}
+
+.conversation-workspace-view .composer-readiness-warning {
+  position: absolute;
+  right: 58px;
+  bottom: 10px;
+  display: inline-flex;
+  max-width: 160px;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  padding: 4px 7px;
+  overflow: hidden;
+  font-family: var(--font-sans);
+  color: var(--color-warning);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: var(--color-warning-surface);
+  border-radius: var(--radius-full);
 }
 
 .conversation-workspace-view .composer-hints span,

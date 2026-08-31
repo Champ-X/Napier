@@ -5,8 +5,11 @@ import path from "node:path";
 import {
   fauxAssistantMessage,
   fauxProvider,
+  fauxText,
+  fauxThinking,
   fauxToolCall,
 } from "@earendil-works/pi-ai";
+import type { RunEvent } from "@napier/contracts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type {
@@ -85,24 +88,32 @@ describe("default Agent web fetch integration", () => {
           { stopReason: "toolUse" },
         ),
         fauxAssistantMessage(
-          fauxToolCall("web_fetch", {
-            action: "read",
-            sourceId,
-            sourceContentSha256,
-            startLine: 1,
-            endLine: 1,
-          }),
+          [
+            fauxText("PRIVATE_STAGE_TEXT"),
+            fauxThinking("PRIVATE_STAGE_REASONING"),
+            fauxToolCall("web_fetch", {
+              action: "read",
+              sourceId,
+              sourceContentSha256,
+              startLine: 1,
+              endLine: 1,
+            }),
+          ],
           { stopReason: "toolUse" },
         ),
         fauxAssistantMessage("FETCH_PATH_COMPLETED"),
         fauxAssistantMessage('{"facts":[]}'),
       ]);
       services.models.registerProvider(provider.provider);
+      const streamed: RunEvent[] = [];
 
       const run = await services.runtime.runPrompt({
         threadId: thread.id,
         text: "Read the public report.",
         model: { provider: "faux-web-fetch", id: "faux-1" },
+        onEvent: async (event) => {
+          streamed.push(event);
+        },
       });
 
       expect(run.status, run.error).toBe("completed");
@@ -129,6 +140,32 @@ describe("default Agent web fetch integration", () => {
         runId: run.id,
       });
       const events = await services.store.listEvents(thread.id);
+      expect(
+        events.find(
+          (event) =>
+            event.type === "model.thinking.delta" &&
+            event.payload["redacted"] === true,
+        )?.payload,
+      ).toEqual(
+        expect.objectContaining({
+          deltaSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+          redacted: true,
+        }),
+      );
+      const progress = events.filter(
+        (event) => event.type === "run.progress.message",
+      );
+      expect(progress.at(-1)?.payload).toEqual(
+        expect.objectContaining({
+          toolNames: ["web_fetch"],
+          contentRedacted: true,
+        }),
+      );
+      expect(JSON.stringify(progress)).not.toContain("PRIVATE_STAGE_TEXT");
+      expect(JSON.stringify(streamed)).not.toContain("PRIVATE_STAGE_TEXT");
+      expect(JSON.stringify(streamed)).not.toContain(
+        "PRIVATE_STAGE_REASONING",
+      );
       const completed = events.filter(
         (event) =>
           event.type === "tool.completed" &&
@@ -155,6 +192,8 @@ describe("default Agent web fetch integration", () => {
       const durable = JSON.stringify(events);
       expect(durable).not.toContain(sourceUrl);
       expect(durable).not.toContain("PRIVATE_FETCH_BODY_MARKER");
+      expect(durable).not.toContain("PRIVATE_STAGE_TEXT");
+      expect(durable).not.toContain("PRIVATE_STAGE_REASONING");
       expect(durable).not.toContain(sourceId);
       expect(durable).toContain("FETCH_PATH_COMPLETED");
     } finally {

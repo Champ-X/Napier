@@ -427,7 +427,7 @@ async function verifyTrajectoryScenario(browser, origin, expected) {
       .click();
     await page.waitForFunction(
       () =>
-        document.querySelectorAll(".trace-turn li").length > 0 &&
+        document.querySelectorAll(".trace-turn [role='listitem']").length > 0 &&
         document.querySelectorAll(".trace-run").length >= 2,
       undefined,
       { timeout: WEB_UI_START_TIMEOUT_MS },
@@ -436,17 +436,17 @@ async function verifyTrajectoryScenario(browser, origin, expected) {
       const allCount = document.querySelector(
         ".trace-view-tabs button:nth-child(2) span",
       )?.textContent;
-      const virtualTables = [
-        ...document.querySelectorAll(".trace-run-turns[role='table']"),
+      const virtualLists = [
+        ...document.querySelectorAll(".trace-run-turns[role='list']"),
       ];
-      const semanticRowCount = virtualTables.reduce(
-        (total, table) =>
-          total + Number(table.getAttribute("aria-rowcount") ?? 0),
+      const semanticRowCount = virtualLists.reduce(
+        (total, list) =>
+          total + Number(list.getAttribute("data-row-count") ?? 0),
         0,
       );
-      const mountedRowCount = virtualTables.reduce(
-        (total, table) =>
-          total + Number(table.getAttribute("data-mounted-row-count") ?? 0),
+      const mountedRowCount = virtualLists.reduce(
+        (total, list) =>
+          total + Number(list.getAttribute("data-mounted-row-count") ?? 0),
         0,
       );
       return {
@@ -454,15 +454,17 @@ async function verifyTrajectoryScenario(browser, origin, expected) {
           document.querySelector("#trajectory-title")?.textContent?.trim() ??
           "",
         eventCount: Number(allCount ?? 0),
-        mountedEventRows: document.querySelectorAll(".trace-turn li").length,
+        mountedEventRows: document.querySelectorAll(
+          ".trace-turn [role='listitem']",
+        ).length,
         runCount: document.querySelectorAll(".trace-run").length,
         keyVisible: [
           ...document.querySelectorAll(".trace-view-tabs button"),
         ].some((button) => button.textContent?.trim().startsWith("Key")),
         virtualizedTimelineVisible:
-          virtualTables.length > 0 &&
-          virtualTables.every((table) =>
-            table.querySelector(".trace-virtual-viewport"),
+          virtualLists.length > 0 &&
+          virtualLists.every((list) =>
+            list.querySelector(".trace-virtual-viewport"),
           ),
         semanticRowCount,
         virtualMountedRowCount: mountedRowCount,
@@ -521,28 +523,28 @@ async function verifySettingsScenario(browser, origin, expected) {
     });
     await settleVisuals(page);
 
+    await page
+      .locator(".context-workbench-navigation button")
+      .filter({ hasText: "Revisions" })
+      .click();
     await page.locator(".agent-history-register").waitFor({
       state: "visible",
       timeout: WEB_UI_START_TIMEOUT_MS,
     });
     await page.waitForFunction(
       () => {
-        const selectors = [
-          ".agent-history-register button",
-          ".credential-register .credential-add, .credential-register .credential-card footer button, .credential-register .context-field input, .credential-register .context-field select, .credential-register .credential-vault-check",
-        ];
-        return selectors.every((selector) => {
-          const controls = [...document.querySelectorAll(selector)].filter(
-            (control) =>
-              control instanceof HTMLElement && control.offsetParent !== null,
-          );
-          return (
-            controls.length > 0 &&
-            controls.every(
-              (control) => control.getBoundingClientRect().height >= 44,
-            )
-          );
-        });
+        const controls = [
+          ...document.querySelectorAll(".agent-history-register button"),
+        ].filter(
+          (control) =>
+            control instanceof HTMLElement && control.offsetParent !== null,
+        );
+        return (
+          controls.length > 0 &&
+          controls.every(
+            (control) => control.getBoundingClientRect().height >= 44,
+          )
+        );
       },
       undefined,
       { timeout: WEB_UI_START_TIMEOUT_MS },
@@ -587,6 +589,34 @@ async function verifySettingsScenario(browser, origin, expected) {
         ".automation-panel",
         ".receipt-trust-workbench",
       ].every((selector) => document.querySelector(selector) === null),
+    );
+    await page
+      .locator(".context-workbench-navigation button")
+      .filter({ hasText: "Evidence" })
+      .click();
+    await page.locator(".credential-register").waitFor({
+      state: "visible",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    await page.waitForFunction(
+      () => {
+        const controls = [
+          ...document.querySelectorAll(
+            ".credential-register .credential-add, .credential-register .credential-card footer button, .credential-register .context-field input, .credential-register .context-field select, .credential-register .credential-vault-check",
+          ),
+        ].filter(
+          (control) =>
+            control instanceof HTMLElement && control.offsetParent !== null,
+        );
+        return (
+          controls.length > 0 &&
+          controls.every(
+            (control) => control.getBoundingClientRect().height >= 44,
+          )
+        );
+      },
+      undefined,
+      { timeout: WEB_UI_START_TIMEOUT_MS },
     );
     const credentialRegister = await page.evaluate(() => {
       const register = document.querySelector(".credential-register");
@@ -658,7 +688,7 @@ async function verifySettingsScenario(browser, origin, expected) {
       timeout: WEB_UI_START_TIMEOUT_MS,
     });
     const developerProductTrialAvailable = await page
-      .locator(".developer-tool > summary")
+      .locator(".developer-tool-navigation button")
       .filter({ hasText: /Product trial/iu })
       .count()
       .then((count) => count === 1);
@@ -815,29 +845,35 @@ async function verifyChineseCoreLocale(browser, origin, expected) {
       state: "visible",
       timeout: WEB_UI_START_TIMEOUT_MS,
     });
+    const contextPageTitle =
+      (await page.locator("#context-title").textContent())?.trim() ?? "";
+    const contextModelTitle =
+      (await page.locator("#runtime-model-title").textContent())?.trim() ?? "";
+    await page
+      .locator(".context-workbench-navigation button")
+      .filter({ hasText: "凭据与证据" })
+      .click();
     await page.locator("#credential-register-title").waitFor({
       state: "visible",
       timeout: WEB_UI_START_TIMEOUT_MS,
     });
-    const contextTitles = await page.evaluate(() => ({
-      page: document.querySelector("#context-title")?.textContent?.trim() ?? "",
-      model:
-        document.querySelector("#runtime-model-title")?.textContent?.trim() ??
-        "",
+    const contextTitles = {
+      page: contextPageTitle,
+      model: contextModelTitle,
       credentials:
-        document
-          .querySelector("#credential-register-title")
-          ?.textContent?.trim() ?? "",
-    }));
+        (
+          await page.locator("#credential-register-title").textContent()
+        )?.trim() ?? "",
+    };
 
     await page.keyboard.press("Escape");
     await waitForSettingsClosed(page);
     await page.locator(".workbench-developer").click();
     await page.locator("#developer-section-lab").click();
-    const workflowStudio = page
-      .locator(".developer-tool")
-      .filter({ hasText: "工作流工作室" });
-    await workflowStudio.locator("summary").click();
+    await page
+      .locator(".developer-tool-navigation button")
+      .filter({ hasText: "工作流工作室" })
+      .click();
     await page.locator(".plan-studio-heading h2").waitFor({
       state: "visible",
       timeout: WEB_UI_START_TIMEOUT_MS,

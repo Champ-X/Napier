@@ -29,7 +29,7 @@ export function ConversationNetworkActivityCard({
   return (
     <details
       className={`conversation-network-activity kind-${activity.kind} status-${activity.status}`}
-      open={activity.status !== "completed"}
+      open={activity.status === "working"}
     >
       <summary>
         {activity.kind === "search" ? (

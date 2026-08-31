@@ -26,4 +26,15 @@ describe("workspace tree ordering", () => {
       ]).map((project) => project.root),
     ).toEqual(["/work/alpha", "/work/beta", "/work/new"]);
   });
+
+  it("derives missing workspace names across path separator styles", () => {
+    const windowsRoot = String.raw`C:\work\napier`;
+
+    expect(stableWorkspaceProjects(windowsRoot, [])).toEqual([
+      { root: windowsRoot, name: "napier" },
+    ]);
+    expect(stableWorkspaceProjects("/work/napier", [])).toEqual([
+      { root: "/work/napier", name: "napier" },
+    ]);
+  });
 });

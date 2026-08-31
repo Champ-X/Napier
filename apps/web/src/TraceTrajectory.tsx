@@ -71,11 +71,13 @@ function ProjectedTrajectory({
       <TraceTrajectoryControls
         events={state.model.events}
         activeLanes={state.activeLanes}
+        metric={state.metric}
         viewMode={state.viewMode}
         keyEventCount={state.keyEventCount}
         query={state.query}
         searchInputRef={state.searchInputRef}
         onToggleLane={state.toggleLane}
+        onMetric={state.setMetric}
         onViewMode={state.setViewMode}
         onQuery={state.setQuery}
       />
@@ -83,11 +85,11 @@ function ProjectedTrajectory({
         model={state.model}
         metric={state.metric}
         visibleEventIds={state.visibleEventIds}
-        selectedEvent={state.selectedEvent}
         selectedEventId={state.selectedEventId}
         overviewTrackRef={state.overviewTrackRef}
         overviewTrackWidth={state.overviewTrackWidth}
-        onMetric={state.setMetric}
+        range={state.range}
+        onRange={state.setRange}
         onSelect={state.selectOverviewEvent}
       />
       <div

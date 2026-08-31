@@ -75,9 +75,10 @@ describe("Pi built-in model catalog HTTP projection", () => {
     expect(
       bootstrap.models.find(
         (model) =>
-          model.provider === "deepseek" && model.id === "deepseek-v4-flash",
+          model.provider === "deepseek" &&
+          model.id === "deepseek-v4-flash-vision-exp",
       ),
-    ).toEqual(expect.objectContaining({ configured: false }));
+    ).toEqual(expect.objectContaining({ configured: false, vision: true }));
     expect(bootstrap.recommendedRunModel).toEqual({
       provider: "napier",
       id: "demo",
@@ -103,12 +104,13 @@ describe("Pi built-in model catalog HTTP projection", () => {
     expect(
       liveReady.models.find(
         (model) =>
-          model.provider === "deepseek" && model.id === "deepseek-v4-flash",
+          model.provider === "deepseek" &&
+          model.id === "deepseek-v4-flash-vision-exp",
       ),
-    ).toEqual(expect.objectContaining({ configured: true }));
+    ).toEqual(expect.objectContaining({ configured: true, vision: true }));
     expect(liveReady.recommendedRunModel).toEqual({
       provider: "deepseek",
-      id: "deepseek-v4-flash",
+      id: "deepseek-v4-flash-vision-exp",
     });
     expect(JSON.stringify(liveReady)).not.toContain(
       "PRIVATE_AMBIENT_SERVER_KEY",

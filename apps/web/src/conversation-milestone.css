@@ -145,18 +145,6 @@
   color: var(--color-accent);
 }
 
-@media (max-width: 767px) {
-  .conversation-milestone {
-    width: 100%;
-    padding: var(--space-3);
-  }
-
-  .conversation-milestone > details > summary {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-}
-
 @media (forced-colors: active) {
   .conversation-milestone,
   .conversation-milestone-icon,

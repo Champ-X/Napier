@@ -94,6 +94,13 @@
   font-size: var(--text-xs);
 }
 
+.artifact-inspector-header .artifact-inspector-back {
+  width: auto;
+  gap: var(--space-1);
+  padding-inline: var(--space-2);
+  font-size: var(--text-xs);
+}
+
 .artifact-inspector-views button[aria-pressed="true"] {
   color: var(--color-fg);
   background: var(--color-surface-muted);
@@ -183,6 +190,52 @@
   line-height: var(--leading-body);
 }
 
+.workspace-file-image-preview {
+  display: grid;
+  min-height: 100%;
+  padding: var(--space-6);
+  background:
+    linear-gradient(45deg, var(--color-bg-subtle) 25%, transparent 25%) 0 0 /
+      18px 18px,
+    linear-gradient(-45deg, var(--color-bg-subtle) 25%, transparent 25%) 0 9px /
+      18px 18px,
+    linear-gradient(45deg, transparent 75%, var(--color-bg-subtle) 75%)
+      9px -9px / 18px 18px,
+    linear-gradient(-45deg, transparent 75%, var(--color-bg-subtle) 75%) -9px
+      0 / 18px 18px,
+    var(--color-surface);
+  place-items: center;
+}
+
+.workspace-file-image-preview img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100vh - 150px);
+  object-fit: contain;
+  box-shadow: var(--shadow-raised);
+}
+
+.workspace-file-preview-unavailable {
+  display: grid;
+  min-height: 100%;
+  gap: var(--space-2);
+  align-content: center;
+  justify-items: center;
+  padding: var(--space-6);
+  color: var(--color-fg-subtle);
+  text-align: center;
+}
+
+.workspace-file-preview-unavailable strong {
+  color: var(--color-fg);
+}
+
+.workspace-file-preview-unavailable span {
+  max-width: 32ch;
+  font-size: var(--text-sm);
+  line-height: var(--leading-body);
+}
+
 .artifact-source-preview {
   min-width: max-content;
   min-height: 100%;
@@ -225,4 +278,23 @@
 .artifact-source-preview .is-removed {
   color: var(--color-danger);
   background: var(--color-danger-surface);
+}
+
+.workspace-primary-surface.has-artifact-inspector.has-evidence-overlay {
+  position: relative;
+  display: block;
+}
+
+.workspace-primary-surface.has-artifact-inspector.has-evidence-overlay
+  > .conversation-workspace-view {
+  visibility: hidden;
+}
+
+.workspace-primary-surface.has-artifact-inspector.has-evidence-overlay
+  > .artifact-inspector {
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  width: 100%;
+  border-inline-start: 0;
 }

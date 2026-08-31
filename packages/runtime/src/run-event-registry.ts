@@ -86,10 +86,7 @@ const EVENT_VISIBILITIES = new Set<EventVisibility>([
   "debug",
   "hidden",
 ]);
-const COMPATIBILITY_BOUNDARIES = new Set([
-  "legacy_import",
-  "test_fixture",
-]);
+const COMPATIBILITY_BOUNDARIES = new Set(["legacy_import", "test_fixture"]);
 
 export function listRunEventSchemas(): RunEventSchemaDefinition[] {
   return [...REGISTRY.values()].map((definition) => ({
@@ -238,6 +235,41 @@ function payloadValidator(
       isJsonObject(payload) &&
       payload["role"] === "assistant" &&
       typeof payload["text"] === "string";
+  }
+  if (type === "run.progress.message") {
+    return (payload): payload is JsonObject =>
+      isJsonObject(payload) &&
+      Object.keys(payload).every((key) =>
+        [
+          "sourceEventId",
+          "model",
+          "toolNames",
+          "text",
+          "contentRedacted",
+        ].includes(key),
+      ) &&
+      typeof payload["sourceEventId"] === "string" &&
+      payload["sourceEventId"].trim().length > 0 &&
+      payload["sourceEventId"].length <= 256 &&
+      typeof payload["model"] === "string" &&
+      payload["model"].trim().length > 0 &&
+      payload["model"].length <= 256 &&
+      Array.isArray(payload["toolNames"]) &&
+      payload["toolNames"].length > 0 &&
+      payload["toolNames"].length <= 64 &&
+      payload["toolNames"].every(
+        (toolName) =>
+          typeof toolName === "string" &&
+          toolName.trim().length > 0 &&
+          toolName.length <= 128,
+      ) &&
+      (payload["text"] === undefined ||
+        (typeof payload["text"] === "string" &&
+          payload["text"].trim().length > 0 &&
+          payload["text"].length <= 4_000)) &&
+      (payload["contentRedacted"] === undefined ||
+        payload["contentRedacted"] === true) &&
+      !(payload["contentRedacted"] === true && payload["text"] !== undefined);
   }
   if (
     type === "tool.started" ||

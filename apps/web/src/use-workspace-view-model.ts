@@ -77,6 +77,7 @@ import {
 } from "./api";
 import { getBootstrap, getBootstrapRestoringWorkspace } from "./bootstrap-api";
 import { contextCheckpointPayload } from "./context-checkpoint-payload";
+import { promptImagesFromAttachments, type ComposerImageAttachment } from "./composer-image-attachments";
 import { copy } from "./copy";
 import { extensionCopy } from "./extension-copy";
 import type {
@@ -122,14 +123,20 @@ import {
   type RunReplayVerificationReceipt,
 } from "./run-lab-receipts";
 export { importProvenanceReceiptView, summarizeThreadReplayBundleCoverage } from "./run-lab-receipts";
-export type { FixtureTransferReceipt, OpenTelemetryTraceReceipt, OpenTelemetryTraceVerificationReceipt, RunReplayVerificationReceipt } from "./run-lab-receipts";
+export type {
+  FixtureTransferReceipt,
+  OpenTelemetryTraceReceipt,
+  OpenTelemetryTraceVerificationReceipt,
+  RunReplayVerificationReceipt,
+} from "./run-lab-receipts";
 export type InspectorTab =
   | "browser"
   | "trace"
   | "processes"
   | "files"
   | "lab"
-  | "plan" | "studio"
+  | "plan"
+  | "studio"
   | "goal"
   | "memory"
   | "extensions"
@@ -168,6 +175,7 @@ export function useWorkspaceViewModel() {
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("plan");
   const [selectedModelKey, setSelectedModelKey] = useState("napier/demo");
   const [composer, setComposer] = useState("");
+  const [composerImages, setComposerImages] = useState<ComposerImageAttachment[]>([]);
   const [threadRunSessions, setThreadRunSessions] = useState<ThreadRunSessions>({});
   const [controlMessageMode, setControlMessageMode] = useState<RunControlMessageMode>("steering");
   const [goalDraft, setGoalDraft] = useState("");
@@ -181,10 +189,8 @@ export function useWorkspaceViewModel() {
   const [extensionPackageReceipt, setExtensionPackageReceipt] = useState<ExtensionPackageReceipt>();
   const [extensionPackageUpdatePreview, setExtensionPackageUpdatePreview] = useState<ExtensionPackageUpdatePreview>();
   const [extensionPackageUpdateEnvelope, setExtensionPackageUpdateEnvelope] = useState<unknown>();
-  const [extensionPackageDeploymentPreview, setExtensionPackageDeploymentPreview] =
-    useState<ExtensionPackageDeploymentPreview>();
-  const [extensionPackageRolloutPreview, setExtensionPackageRolloutPreview] =
-    useState<ExtensionPackageRolloutPreview>();
+  const [extensionPackageDeploymentPreview, setExtensionPackageDeploymentPreview] = useState<ExtensionPackageDeploymentPreview>();
+  const [extensionPackageRolloutPreview, setExtensionPackageRolloutPreview] = useState<ExtensionPackageRolloutPreview>();
   const [extensionPackageDeploymentEnvelopes, setExtensionPackageDeploymentEnvelopes] = useState<unknown[]>();
   const [labLeftRunId, setLabLeftRunId] = useState("");
   const [labRightRunId, setLabRightRunId] = useState("");
@@ -199,13 +205,12 @@ export function useWorkspaceViewModel() {
   const [isLoading, setIsLoading] = useState(true);
   const [operatorDecisionBusy, setOperatorDecisionBusy] = useState(false);
   const [error, setError] = useState<string>();
-  const {
-    preset: nextRunCapabilityPreset,
-    setPreset: setNextRunCapabilityPreset,
-  } = useNextRunCapabilityPreset(detail?.thread.id);
+  const { preset: nextRunCapabilityPreset, setPreset: setNextRunCapabilityPreset } = useNextRunCapabilityPreset(detail?.thread.id);
   const selectedThreadIdRef = useRef<string | undefined>(undefined);
   const threadDetailCacheRef = useRef(new Map<string, WebThreadDetail>());
   selectedThreadIdRef.current = selectedThreadId;
+
+  useEffect(() => setComposerImages([]), [detail?.thread.id]);
 
   const { activeRunId, isRunning, streamingText } = useMemo(
     () => threadRunViewState(detail, threadRunSessions),
@@ -241,7 +246,8 @@ export function useWorkspaceViewModel() {
   useEffect(() => {
     void loadBootstrap(threadIdFromLocation());
   }, [loadBootstrap]);
-  const messages = useMemo<MessageView[]>(() => { if (detail?.messages) return detail.messages;
+  const messages = useMemo<MessageView[]>(() => {
+    if (detail?.messages) return detail.messages;
     return (detail?.events ?? []).flatMap((event): MessageView[] => {
       if (event.type !== "message.user" && event.type !== "message.assistant") return [];
       const payload = messagePayload(event);
@@ -267,22 +273,13 @@ export function useWorkspaceViewModel() {
         .reverse(),
     [detail?.events],
   );
-  const resumableRun = useMemo(
-    () =>
-      detail
-        ? latestManuallyResumableRun(detail.thread.status, detail.runs)
-        : undefined,
-    [detail],
-  );
+  const resumableRun = useMemo(() => (detail ? latestManuallyResumableRun(detail.thread.status, detail.runs) : undefined), [detail]);
   const openOperatorDecision = useMemo(
-    () =>
-      detail?.operatorDecisions.findLast((decision) => decision.status === "pending" || decision.status === "answered"),
+    () => detail?.operatorDecisions.findLast((decision) => decision.status === "pending" || decision.status === "answered"),
     [detail?.operatorDecisions],
   );
   const openOperatorDecisionWorkflowOwned = useMemo(
-    () =>
-      openOperatorDecision !== undefined &&
-      detail?.runs.find((run) => run.id === openOperatorDecision.runId)?.source === "workflow",
+    () => openOperatorDecision !== undefined && detail?.runs.find((run) => run.id === openOperatorDecision.runId)?.source === "workflow",
     [detail?.runs, openOperatorDecision],
   );
   const browserInteraction = useBrowserInteractionConfirmation(detail, setError);
@@ -317,8 +314,8 @@ export function useWorkspaceViewModel() {
     setRunComparison(undefined);
   }, [detail?.thread.id, terminalRunKey]);
   const resetThreadReceipts = () =>
-    [setLabFixtureReceipt, setRunReplayVerificationReceipt, setTraceExportReceipt, setTraceVerificationReceipt].forEach(
-      (reset) => reset(undefined),
+    [setLabFixtureReceipt, setRunReplayVerificationReceipt, setTraceExportReceipt, setTraceVerificationReceipt].forEach((reset) =>
+      reset(undefined),
     );
   const switchWorkspaceRoot = useCallback(async (root: string, threadId?: string): Promise<void> => {
     setError(undefined);
@@ -333,7 +330,22 @@ export function useWorkspaceViewModel() {
       commitThreadLocation(setSelectedThreadId, result.activeThread?.thread.id);
       setSelectedModelKey(modelKey(result.recommendedRunModel));
       [setComposer, setGoalDraft, setMemoryDraft, setLabLeftRunId, setLabRightRunId].forEach((reset) => reset(""));
-      [setMemorySupersedesId, setRunComparison, setRunReplayVerificationReceipt, setLabFixtureReceipt, setTraceExportReceipt, setTraceVerificationReceipt, setExtensionBusyId, setExtensionPackageReceipt, setExtensionPackageUpdatePreview, setExtensionPackageUpdateEnvelope, setExtensionPackageDeploymentPreview, setExtensionPackageDeploymentEnvelopes, setExtensionPackageRolloutPreview, setLabBusyAction].forEach((reset) => reset(undefined));
+      [
+        setMemorySupersedesId,
+        setRunComparison,
+        setRunReplayVerificationReceipt,
+        setLabFixtureReceipt,
+        setTraceExportReceipt,
+        setTraceVerificationReceipt,
+        setExtensionBusyId,
+        setExtensionPackageReceipt,
+        setExtensionPackageUpdatePreview,
+        setExtensionPackageUpdateEnvelope,
+        setExtensionPackageDeploymentPreview,
+        setExtensionPackageDeploymentEnvelopes,
+        setExtensionPackageRolloutPreview,
+        setLabBusyAction,
+      ].forEach((reset) => reset(undefined));
       [setTraceExportBusy, setTraceVerifyBusy, setOperatorDecisionBusy].forEach((reset) => reset(false));
       setMemoryConsolidatesIds([]);
       setMemoryCategory("context");
@@ -366,11 +378,7 @@ export function useWorkspaceViewModel() {
     if (frame.type === "event") {
       setThreadRunSessions((current) => applyThreadRunEvent(current, sourceThreadId, frame.event));
     }
-    const cached = applyThreadStreamFrameToDetail(
-      threadDetailCacheRef.current.get(sourceThreadId),
-      sourceThreadId,
-      frame,
-    );
+    const cached = applyThreadStreamFrameToDetail(threadDetailCacheRef.current.get(sourceThreadId), sourceThreadId, frame);
     if (cached) threadDetailCacheRef.current.set(sourceThreadId, cached);
     if (selectedThreadIdRef.current === sourceThreadId && cached) {
       setDetail(cached);
@@ -431,10 +439,7 @@ export function useWorkspaceViewModel() {
     setError(undefined);
   }, []);
 
-  const finishRunUi = useCallback(
-    (threadId: string) => setThreadRunSessions((current) => detachThreadRun(current, threadId)),
-    [],
-  );
+  const finishRunUi = useCallback((threadId: string) => setThreadRunSessions((current) => detachThreadRun(current, threadId)), []);
 
   const submit = useCallback(
     async (override?: string) => {
@@ -462,16 +467,21 @@ export function useWorkspaceViewModel() {
       }
       const threadId = detail.thread.id;
       const capabilityPreset = nextRunCapabilityPreset;
+      const imageAttachments = composerImages;
+      const promptImages = promptImagesFromAttachments(imageAttachments);
       setComposer("");
+      setComposerImages([]);
       await executeLoadedNextRunPrompt({
         threadId,
         text,
+        ...(promptImages ? { images: promptImages } : {}),
         model: parseModelKey(selectedModelKey),
         ...(capabilityPreset ? { capabilityPreset } : {}),
         onStart: () => startRunUi(threadId, detail),
         onRefresh: () => refreshBootstrap(threadId),
         onError: (error) => setRunError(threadId, error),
         restoreInput: setComposer,
+        restoreImages: () => setComposerImages(imageAttachments),
         onFinish: () => finishRunUi(threadId),
         onFrame: streamFrameHandler(threadId),
       });
@@ -479,6 +489,7 @@ export function useWorkspaceViewModel() {
     [
       activeRunId,
       composer,
+      composerImages,
       controlMessageMode,
       detail,
       finishRunUi,
@@ -653,9 +664,7 @@ export function useWorkspaceViewModel() {
     if (!detail || !memoryDraft.trim()) return;
     if (memoryConsolidatesIds.length === 1) return;
     try {
-      const correctionTarget = memorySupersedesId
-        ? bootstrap?.memories.find((memory) => memory.id === memorySupersedesId)
-        : undefined;
+      const correctionTarget = memorySupersedesId ? bootstrap?.memories.find((memory) => memory.id === memorySupersedesId) : undefined;
       const consolidationTargets = memoryConsolidatesIds.flatMap((memoryId) => {
         const memory = bootstrap?.memories.find((candidate) => candidate.id === memoryId);
         return memory ? [memory] : [];
@@ -700,7 +709,8 @@ export function useWorkspaceViewModel() {
     detail,
     memoryCategory,
     memoryConsolidatesIds,
-    memoryDraft, memoryProvenance,
+    memoryDraft,
+    memoryProvenance,
     memoryReviewIntervalDays,
     memoryScope,
     memorySupersedesId,
@@ -745,21 +755,15 @@ export function useWorkspaceViewModel() {
       const nextIds = alreadySelected
         ? memoryConsolidatesIds.filter((memoryId) => memoryId !== memory.id)
         : [...memoryConsolidatesIds, memory.id];
-      const nextTargets = [...selected, ...(!alreadySelected ? [memory] : [])].filter((candidate) =>
-        nextIds.includes(candidate.id),
-      );
+      const nextTargets = [...selected, ...(!alreadySelected ? [memory] : [])].filter((candidate) => nextIds.includes(candidate.id));
       setMemorySupersedesId(undefined);
       setMemoryConsolidatesIds(nextIds);
       if (memoryConsolidatesIds.length === 0 || nextIds.length === 0) {
         setMemoryDraft("");
       }
       if (nextTargets[0]) {
-        const sourceCategories = nextTargets.map((candidate) =>
-          candidate.category === "correction" ? "context" : candidate.category,
-        );
-        setMemoryCategory(
-          sourceCategories.every((category) => category === sourceCategories[0]) ? sourceCategories[0]! : "context",
-        );
+        const sourceCategories = nextTargets.map((candidate) => (candidate.category === "correction" ? "context" : candidate.category));
+        setMemoryCategory(sourceCategories.every((category) => category === sourceCategories[0]) ? sourceCategories[0]! : "context");
         setMemoryScope(nextTargets[0].scope);
         setMemoryReviewIntervalDays(Math.min(...nextTargets.map((candidate) => candidate.reviewIntervalDays)));
       } else {
@@ -981,8 +985,7 @@ export function useWorkspaceViewModel() {
           ...(draft.dependencies ? { dependencies: draft.dependencies } : {}),
           ...(draft.expiresAt ? { expiresAt: draft.expiresAt } : {}),
         });
-        const normalizedName =
-          bootstrap.extensions.find((extension) => extension.id === extensionId)?.normalizedName ?? extensionId;
+        const normalizedName = bootstrap.extensions.find((extension) => extension.id === extensionId)?.normalizedName ?? extensionId;
         downloadJson(envelope, signedExtensionPackageFilename(normalizedName, envelope));
         setExtensionPackageReceipt({
           action: "signed",
@@ -1065,9 +1068,7 @@ export function useWorkspaceViewModel() {
         ...(verification.envelopeSha256 ? { envelopeSha256: verification.envelopeSha256 } : {}),
       });
     } catch (packageError) {
-      setError(
-        packageError instanceof SyntaxError ? extensionCopy.packages.errors.invalid : toErrorMessage(packageError),
-      );
+      setError(packageError instanceof SyntaxError ? extensionCopy.packages.errors.invalid : toErrorMessage(packageError));
     } finally {
       setExtensionBusyId(undefined);
     }
@@ -1112,9 +1113,7 @@ export function useWorkspaceViewModel() {
           envelopeSha256: signed.contentSha256,
         });
       } catch (packageError) {
-        setError(
-          packageError instanceof SyntaxError ? extensionCopy.packages.errors.invalid : toErrorMessage(packageError),
-        );
+        setError(packageError instanceof SyntaxError ? extensionCopy.packages.errors.invalid : toErrorMessage(packageError));
       } finally {
         setExtensionBusyId(undefined);
       }
@@ -1250,9 +1249,7 @@ export function useWorkspaceViewModel() {
       setExtensionPackageUpdateEnvelope(envelope);
       setExtensionPackageUpdatePreview(preview);
     } catch (packageError) {
-      setError(
-        packageError instanceof SyntaxError ? extensionCopy.packages.errors.invalid : toErrorMessage(packageError),
-      );
+      setError(packageError instanceof SyntaxError ? extensionCopy.packages.errors.invalid : toErrorMessage(packageError));
     } finally {
       setExtensionBusyId(undefined);
     }
@@ -1325,18 +1322,14 @@ export function useWorkspaceViewModel() {
     try {
       const parsed = await Promise.all(files.map(async (file) => JSON.parse(await file.text()) as unknown));
       const envelopes =
-        parsed.length === 1 && isExtensionPackageLockfile(parsed[0])
-          ? parsed[0].packages.map((entry) => entry.envelope)
-          : parsed;
+        parsed.length === 1 && isExtensionPackageLockfile(parsed[0]) ? parsed[0].packages.map((entry) => entry.envelope) : parsed;
       const preview = await previewExtensionPackageDeploymentApi({
         envelopes,
       });
       setExtensionPackageDeploymentEnvelopes(envelopes);
       setExtensionPackageDeploymentPreview(preview);
     } catch (packageError) {
-      setError(
-        packageError instanceof SyntaxError ? extensionCopy.packages.errors.invalid : toErrorMessage(packageError),
-      );
+      setError(packageError instanceof SyntaxError ? extensionCopy.packages.errors.invalid : toErrorMessage(packageError));
     } finally {
       setExtensionBusyId(undefined);
     }
@@ -1344,11 +1337,7 @@ export function useWorkspaceViewModel() {
 
   const applyExtensionPackageDeployment = useCallback(
     async (confirmation: ExtensionPackageDeploymentConfirmation): Promise<void> => {
-      if (
-        !detail ||
-        !extensionPackageDeploymentPreview ||
-        (!extensionPackageDeploymentEnvelopes && !extensionPackageRolloutPreview)
-      ) {
+      if (!detail || !extensionPackageDeploymentPreview || (!extensionPackageDeploymentEnvelopes && !extensionPackageRolloutPreview)) {
         return;
       }
       setExtensionBusyId("package:deployment");
@@ -1366,9 +1355,7 @@ export function useWorkspaceViewModel() {
             ...(confirmation.versionOverrides ? { confirmVersionOverrides: true } : {}),
           });
           deploymentNoChanges = result.deployment.preview.noChanges;
-          receiptReason = deploymentNoChanges
-            ? extensionCopy.packages.noUpdateChanges
-            : extensionCopy.packages.rolloutApplied;
+          receiptReason = deploymentNoChanges ? extensionCopy.packages.noUpdateChanges : extensionCopy.packages.rolloutApplied;
         } else {
           if (!extensionPackageDeploymentEnvelopes) return;
           const result = await applyExtensionPackageDeploymentApi({
@@ -1379,9 +1366,7 @@ export function useWorkspaceViewModel() {
             ...(confirmation.versionOverrides ? { confirmVersionOverrides: true } : {}),
           });
           deploymentNoChanges = result.preview.noChanges;
-          receiptReason = deploymentNoChanges
-            ? extensionCopy.packages.noUpdateChanges
-            : extensionCopy.packages.deploymentReviewReset;
+          receiptReason = deploymentNoChanges ? extensionCopy.packages.noUpdateChanges : extensionCopy.packages.deploymentReviewReset;
         }
         await refreshExtensionWorkspace();
         setExtensionPackageReceipt({
@@ -1524,9 +1509,7 @@ export function useWorkspaceViewModel() {
           spanCount: verification.spanCount,
         });
       } catch (verifyError) {
-        setError(
-          verifyError instanceof SyntaxError ? copy.trace.otel.errors.artifactInvalid : toErrorMessage(verifyError),
-        );
+        setError(verifyError instanceof SyntaxError ? copy.trace.otel.errors.artifactInvalid : toErrorMessage(verifyError));
       } finally {
         setTraceVerifyBusy(false);
       }
@@ -1638,8 +1621,7 @@ export function useWorkspaceViewModel() {
         contentSha256: provenance?.sourceContentSha256 ?? bundle.contentSha256,
         ...sourceCoverage,
         eventCount: provenance?.sourceEventCount ?? sourceCoverage.eventCount,
-        modelContextEnvelopeCount:
-          provenance?.sourceModelContextEnvelopeCount ?? sourceCoverage.modelContextEnvelopeCount,
+        modelContextEnvelopeCount: provenance?.sourceModelContextEnvelopeCount ?? sourceCoverage.modelContextEnvelopeCount,
         embeddedModelContextEnvelopeCount:
           provenance?.sourceEmbeddedModelContextEnvelopeCount ?? sourceCoverage.embeddedModelContextEnvelopeCount,
       });
@@ -1714,11 +1696,13 @@ export function useWorkspaceViewModel() {
     selectedModelKey,
     selectedModel,
     composer,
+    composerImages,
     nextRunCapabilityPreset,
     activeRunId,
     controlMessageMode,
     goalDraft,
-    memoryDraft, ...memoryProvenance,
+    memoryDraft,
+    ...memoryProvenance,
     memoryCategory,
     memoryScope,
     memoryReviewIntervalDays,
@@ -1759,6 +1743,7 @@ export function useWorkspaceViewModel() {
     setInspectorTab,
     setSelectedModelKey,
     setComposer,
+    setComposerImages,
     setNextRunCapabilityPreset,
     setControlMessageMode,
     setGoalDraft,
@@ -1864,15 +1849,11 @@ function isExtensionPackageLockfile(value: unknown): value is ExtensionPackageLo
     record["kind"] === "napier.extension-package-lockfile" &&
     Array.isArray(packages) &&
     packages.length > 0 &&
-    packages.every(
-      (entry) => Boolean(entry) && typeof entry === "object" && !Array.isArray(entry) && "envelope" in entry,
-    )
+    packages.every((entry) => Boolean(entry) && typeof entry === "object" && !Array.isArray(entry) && "envelope" in entry)
   );
 }
 
-function isSignedExtensionPackageChannelIndexEnvelope(
-  value: unknown,
-): value is SignedExtensionPackageChannelIndexEnvelope {
+function isSignedExtensionPackageChannelIndexEnvelope(value: unknown): value is SignedExtensionPackageChannelIndexEnvelope {
   if (!value || Array.isArray(value) || typeof value !== "object") {
     return false;
   }
@@ -1891,10 +1872,7 @@ function isSignedExtensionPackageChannelIndexEnvelope(
   );
 }
 
-function upsertMemory(
-  memories: BootstrapResponse["memories"],
-  fact: BootstrapResponse["memories"][number],
-): BootstrapResponse["memories"] {
+function upsertMemory(memories: BootstrapResponse["memories"], fact: BootstrapResponse["memories"][number]): BootstrapResponse["memories"] {
   return [fact, ...memories.filter((memory) => memory.id !== fact.id)];
 }
 

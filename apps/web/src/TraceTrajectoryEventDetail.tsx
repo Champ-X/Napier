@@ -1,17 +1,29 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import { ArrowRight, ShieldAlert, X } from "lucide-react";
 
 import type { TraceTrajectoryEvent } from "./trace-trajectory-model";
 import { traceTrajectoryCopy } from "./trace-trajectory-copy";
 import { traceTrajectoryEventDetailView } from "./trace-trajectory-event-detail-view";
 import { traceTrajectoryEventHighlights } from "./trace-trajectory-presentation";
+import {
+  traceTrajectoryRawEventView,
+  type TraceTrajectoryRawField,
+} from "./trace-trajectory-raw-event-view";
 
 type DetailTab =
   | "diagnosis"
   | "summary"
   | "context"
   | "evidence"
-  | "timing";
+  | "timing"
+  | "raw";
 
 export interface TraceTrajectoryEventDetailProps {
   event: TraceTrajectoryEvent;
@@ -34,11 +46,17 @@ export function TraceTrajectoryEventDetail({
   embedded = false,
 }: TraceTrajectoryEventDetailProps) {
   const [tab, setTab] = useState<DetailTab>(initialTab(event));
+  const tabGroupId = useId();
   const selectedEventId = useRef(event.event.id);
   const detail = traceTrajectoryEventDetailView(event, events);
-  const tabs: DetailTab[] = detail.diagnosis
-    ? ["diagnosis", "summary", "context", "evidence", "timing"]
-    : ["summary", "context", "evidence", "timing"];
+  const tabs: DetailTab[] = [
+    ...(detail.diagnosis ? (["diagnosis"] as const) : []),
+    "summary",
+    ...(detail.context.length > 0 ? (["context"] as const) : []),
+    ...(detail.evidence.length > 0 ? (["evidence"] as const) : []),
+    ...(detail.timing.length > 0 ? (["timing"] as const) : []),
+    "raw",
+  ];
   const highlights = traceTrajectoryEventHighlights(event, detail.evidence);
   const copy = traceTrajectoryCopy.detail;
   useEffect(() => {
@@ -46,6 +64,34 @@ export function TraceTrajectoryEventDetail({
     selectedEventId.current = event.event.id;
     setTab(initialTab(event));
   }, [event]);
+  const moveTab = (
+    keyboardEvent: KeyboardEvent<HTMLButtonElement>,
+    candidate: DetailTab,
+  ) => {
+    const current = tabs.indexOf(candidate);
+    let next = current;
+    if (
+      keyboardEvent.key === "ArrowRight" ||
+      keyboardEvent.key === "ArrowDown"
+    ) {
+      next = (current + 1) % tabs.length;
+    } else if (
+      keyboardEvent.key === "ArrowLeft" ||
+      keyboardEvent.key === "ArrowUp"
+    ) {
+      next = (current - 1 + tabs.length) % tabs.length;
+    } else if (keyboardEvent.key === "Home") {
+      next = 0;
+    } else if (keyboardEvent.key === "End") {
+      next = tabs.length - 1;
+    } else {
+      return;
+    }
+    keyboardEvent.preventDefault();
+    const nextTab = tabs[next]!;
+    setTab(nextTab);
+    document.getElementById(`${tabGroupId}-tab-${nextTab}`)?.focus();
+  };
   return (
     <section
       className={`trace-event-detail${embedded ? " is-embedded" : ""}`}
@@ -54,7 +100,10 @@ export function TraceTrajectoryEventDetail({
       {embedded ? (
         <div className="trace-event-detail-meta">
           <span>
-            {event.role} · #{String(event.event.seq).padStart(3, "0")}
+            <strong>{event.event.type}</strong>
+            <small>
+              {event.role} · #{String(event.event.seq).padStart(3, "0")}
+            </small>
           </span>
           <i className={`status-${event.status}`}>
             {traceTrajectoryCopy.statuses[event.status]}
@@ -85,12 +134,16 @@ export function TraceTrajectoryEventDetail({
       >
         {tabs.map((candidate) => (
           <button
+            id={`${tabGroupId}-tab-${candidate}`}
             type="button"
             role="tab"
             aria-selected={tab === candidate}
+            aria-controls={`${tabGroupId}-panel`}
+            tabIndex={tab === candidate ? 0 : -1}
             className={tab === candidate ? "is-active" : ""}
             key={candidate}
             onClick={() => setTab(candidate)}
+            onKeyDown={(keyboardEvent) => moveTab(keyboardEvent, candidate)}
           >
             {copy[candidate]}
             {candidate === "evidence" && detail.evidence.length > 0 ? (
@@ -99,7 +152,13 @@ export function TraceTrajectoryEventDetail({
           </button>
         ))}
       </div>
-      <div className="trace-event-detail-panel" role="tabpanel">
+      <div
+        key={`${event.event.id}:${tab}`}
+        id={`${tabGroupId}-panel`}
+        className="trace-event-detail-panel"
+        role="tabpanel"
+        aria-labelledby={`${tabGroupId}-tab-${tab}`}
+      >
         {tab === "diagnosis" && detail.diagnosis ? (
           <DiagnosisPanel
             diagnosis={detail.diagnosis}
@@ -109,10 +168,18 @@ export function TraceTrajectoryEventDetail({
         {tab === "summary" ? (
           <div className="trace-event-detail-summary">
             <div className="trace-event-detail-callout">
-              <span>{copy.atAGlance}</span>
-              <p>{event.summary}</p>
+              <span>{copy.keyPath}</span>
+              <p>{detail.keyPath}</p>
             </div>
-            <DetailGrid fields={highlights} />
+            {detail.metrics.length > 0 ? (
+              <MetricStrip fields={detail.metrics} />
+            ) : null}
+            <DetailSection title={copy.atAGlance}>
+              <p className="trace-event-detail-narrative">{event.summary}</p>
+            </DetailSection>
+            <DetailSection title={copy.eventFields}>
+              <DetailGrid fields={highlights} />
+            </DetailSection>
           </div>
         ) : null}
         {tab === "context" ? <DetailGrid fields={detail.context} /> : null}
@@ -124,8 +191,97 @@ export function TraceTrajectoryEventDetail({
           )
         ) : null}
         {tab === "timing" ? <DetailGrid fields={detail.timing} /> : null}
+        {tab === "raw" ? <RawEventPanel event={event} /> : null}
       </div>
     </section>
+  );
+}
+
+function RawEventPanel({ event }: { event: TraceTrajectoryEvent }) {
+  const raw = traceTrajectoryRawEventView(event.event);
+  const copy = traceTrajectoryCopy.detail.rawView;
+  const recorded = raw.fields.filter(
+    (field): field is TraceTrajectoryRawField & { value: string } =>
+      field.state === "recorded" && field.value !== undefined,
+  );
+  return (
+    <div className="trace-event-raw">
+      <div className="trace-event-raw-provenance">
+        <span>{copy.source}</span>
+        <strong>{copy.asReceived}</strong>
+        <small>
+          {formatRawBytes(raw.envelopeBytes)} · {raw.payloadFieldCount}{" "}
+          {copy.payloadFields}
+        </small>
+      </div>
+      {raw.fields.length > 0 ? (
+        <dl className="trace-event-raw-availability">
+          {raw.fields.map((field) => (
+            <div key={field.kind} data-state={field.state}>
+              <dt>{copy.fields[field.kind]}</dt>
+              <dd>
+                <span>{copy.states[field.state]}</span>
+                <small>{copy.stateDescriptions[field.state]}</small>
+              </dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      {recorded.map((field) => (
+        <section className="trace-event-raw-section" key={field.kind}>
+          <header>
+            <h4>{copy.fields[field.kind]}</h4>
+            <code>{field.key}</code>
+          </header>
+          <pre>{field.value}</pre>
+        </section>
+      ))}
+      <section className="trace-event-raw-section is-envelope">
+        <header>
+          <h4>{copy.envelope}</h4>
+          <code>{copy.json}</code>
+        </header>
+        <pre>{raw.envelope}</pre>
+      </section>
+      <p className="trace-event-raw-boundary">{copy.boundary}</p>
+    </div>
+  );
+}
+
+function formatRawBytes(bytes: number): string {
+  if (bytes < 1_024) return `${String(bytes)} B`;
+  return `${(bytes / 1_024).toFixed(bytes < 10_240 ? 1 : 0)} KB`;
+}
+
+function DetailSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="trace-event-detail-section">
+      <h4>{title}</h4>
+      {children}
+    </section>
+  );
+}
+
+function MetricStrip({
+  fields,
+}: {
+  fields: ReturnType<typeof traceTrajectoryEventDetailView>["metrics"];
+}) {
+  return (
+    <dl className="trace-event-detail-metrics">
+      {fields.map((item) => (
+        <div key={item.key}>
+          <dt>{fieldLabel(item.key)}</dt>
+          <dd>{item.value}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 

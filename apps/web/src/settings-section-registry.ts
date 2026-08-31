@@ -1,21 +1,10 @@
 import type { KeyboardEvent } from "react";
-import {
-  Bot,
-  Brain,
-  Cable,
-  FolderTree,
-  Languages,
-} from "lucide-react";
+import { Bot, Brain, Cable, Languages } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { copy } from "./copy";
 
-export type SettingsSection =
-  | "context"
-  | "memory"
-  | "extensions"
-  | "workspace"
-  | "language";
+export type SettingsSection = "context" | "memory" | "extensions" | "language";
 
 export interface SettingsSectionDefinition {
   id: SettingsSection;
@@ -42,12 +31,6 @@ export const SETTINGS_SECTIONS: ReadonlyArray<SettingsSectionDefinition> = [
     label: copy.settingsSurface.extensionsSection,
     description: copy.settingsSurface.extensionsSectionDescription,
     icon: Cable,
-  },
-  {
-    id: "workspace",
-    label: copy.workspaceSurface.section,
-    description: copy.workspaceSurface.sectionDescription,
-    icon: FolderTree,
   },
   {
     id: "language",

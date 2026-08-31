@@ -23,7 +23,7 @@ afterEach(async () => {
 describe("development entry", () => {
   it("loads the optional repository environment before concurrently", () => {
     expect(rootPackage.scripts.dev).toBe(
-      'npm run build:core && node --env-file-if-exists=.env node_modules/concurrently/dist/bin/concurrently.js -n server,web -c yellow,cyan "npm run dev -w @napier/server" "npm run dev -w @napier/web"',
+      'npm run build:core && node --env-file-if-exists=.env node_modules/concurrently/dist/bin/concurrently.js -n contracts,runtime,server,web -c magenta,green,yellow,cyan "npm run dev -w @napier/contracts" "npm run dev -w @napier/runtime" "npm run dev -w @napier/server" "npm run dev -w @napier/web"',
     );
   });
 

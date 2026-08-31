@@ -179,13 +179,3 @@
   color: var(--vermilion);
   border-left-color: var(--vermilion);
 }
-
-@media (max-width: 760px) {
-  .composer-permission-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .composer-permission-option {
-    min-height: 54px;
-  }
-}

@@ -5,7 +5,10 @@ export const STANDARD_PROVIDER_SETUP_DEFINITIONS = [
     providerId: "deepseek",
     environmentVariable: "DEEPSEEK_API_KEY",
     credentialLabel: "DeepSeek key",
-    model: { provider: "deepseek", id: "deepseek-v4-flash" },
+    model: {
+      provider: "deepseek",
+      id: "deepseek-v4-flash-vision-exp",
+    },
   },
   {
     providerId: "openrouter",

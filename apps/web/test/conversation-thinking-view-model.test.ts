@@ -2,6 +2,7 @@ import type { RunEvent } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
 
 import {
+  activeConversationThinkingActivity,
   activeConversationThinkingId,
   conversationThinkingActivities,
 } from "../src/conversation-thinking-view-model";
@@ -27,8 +28,10 @@ describe("conversationThinkingActivities", () => {
     expect(activities).toEqual([
       expect.objectContaining({
         runId: "run_1",
-        seq: 2,
+        seq: 1,
         lastSeq: 2,
+        turnSeq: 1,
+        startedAt: "2026-08-30T00:00:02.000Z",
         summaryKind: "edit",
         followingActionKind: "apply_patch",
         durationSeconds: 2,
@@ -63,10 +66,12 @@ describe("conversationThinkingActivities", () => {
 
     expect(activities).toEqual([
       expect.objectContaining({
-        id: "event_2",
+        id: "event_1",
         runId: "run_1",
-        seq: 2,
+        seq: 1,
         lastSeq: 3,
+        turnSeq: 1,
+        startedAt: "2026-08-30T00:00:02.000Z",
         createdAt: "2026-08-30T00:00:06.000Z",
         summaryKind: "verify",
         followingActionKind: "verify_workspace",
@@ -116,14 +121,14 @@ describe("conversationThinkingActivities", () => {
     expect(activities[0]).not.toHaveProperty("followingActionKind");
   });
 
-  it("only identifies thinking while it is the active run's latest event", () => {
+  it("keeps a stable turn-bound activity active until visible model output begins", () => {
     const thinking = [
       event(1, "turn.started", "debug", {}),
       event(2, "model.thinking.delta", "hidden", { delta: "Working" }),
     ];
 
     expect(activeConversationThinkingId(thinking, "run_1", true)).toBe(
-      "event_2",
+      "event_1",
     );
     expect(activeConversationThinkingId(thinking, "run_1", false)).toBeUndefined();
     expect(
@@ -135,6 +140,34 @@ describe("conversationThinkingActivities", () => {
             toolName: "read_file",
           }),
         ],
+        "run_1",
+        true,
+      ),
+    ).toBeUndefined();
+  });
+
+  it("shows a live placeholder before the provider returns its first delta", () => {
+    const waiting = [
+      event(1, "turn.started", "debug", {}),
+      event(2, "route_attempt_started", "debug", {}),
+      event(3, "context.model_invocation", "debug", {}),
+    ];
+
+    expect(
+      activeConversationThinkingActivity(waiting, "run_1", true),
+    ).toEqual(
+      expect.objectContaining({
+        id: "event_1",
+        seq: 1,
+        lastSeq: 1,
+        turnSeq: 1,
+        startedAt: "2026-08-30T00:00:02.000Z",
+        summaryKind: "continue",
+      }),
+    );
+    expect(
+      activeConversationThinkingId(
+        [...waiting, event(4, "model.text.delta", "hidden", { delta: "Hi" })],
         "run_1",
         true,
       ),

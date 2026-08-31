@@ -62,12 +62,6 @@ describe("Web UI E2E receipt contract", () => {
     expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
   });
 
-  it("rejects a compact artifact inspector outside the workspace", () => {
-    const receipt = validReceipt();
-    receipt.artifactNavigation.compactInspection.inspectorRight = 391;
-    expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
-  });
-
   it("rejects an intermediate inspector that shrinks the reading floor", () => {
     const receipt = validReceipt();
     receipt.artifactNavigation.intermediateInspections[1].conversationWidth = 639;
@@ -325,9 +319,17 @@ function validReceipt() {
       environmentFallbackWithinDetails: true,
       horizontalOverflowPx: 0,
       activityAggregation: {
-        collapsedMountedChildren: 0,
+        initialGroupCount: 6,
+        initialMountedChildren: 12,
+        expandedGroupCount: 6,
         expandedMountedChildren: 12,
+        directSummaryCount: 0,
+        stepsDirectlyExpanded: true,
+        groupsLabelled: true,
       },
+      progressNoteVisible: true,
+      progressNoteCount: 1,
+      progressPrivateMarkerVisible: false,
     },
     runtime: {
       composerHeight: 120,
@@ -399,9 +401,9 @@ function validReceipt() {
       lang: "zh-CN",
       workspaceLabels: ["对话", "任务", "子智能体", "轨迹"],
       taskSections: ["概览", "变更", "验证"],
-      settingsLabels: ["智能体与模型", "记忆", "扩展", "工作区", "语言"],
+      settingsLabels: ["智能体与模型", "记忆", "扩展", "语言"],
       developerLabels: ["自动化工作台", "实验与工作流", "发布治理", "设计系统"],
-      composerPlaceholder: "给 Napier 一个任务、问题或长期目标……",
+      composerPlaceholder: "输入任务或消息……",
       trajectoryTitles: { page: "运行轨迹", map: "运行轨迹" },
       contextTitles: {
         page: "智能体上下文",
@@ -419,7 +421,7 @@ function validReceipt() {
       answerFileOpenedInspector: true,
       primaryInspection: {
         path: "artifacts/interactive-report.html",
-        focusedSourceCard: true,
+        focusedInspection: true,
         openedInOneClick: true,
         hostedInWorkspace: true,
         inspectorWidth: 760,
@@ -456,16 +458,6 @@ function validReceipt() {
           horizontalOverflowPx: 0,
         },
       ],
-      compactInspection: {
-        viewportWidth: 390,
-        inspectorWidth: 334,
-        inspectorLeft: 56,
-        inspectorRight: 390,
-        workspaceLeft: 56,
-        workspaceWidth: 334,
-        position: "absolute",
-        horizontalOverflowPx: 0,
-      },
       previews: [
         {
           path: "artifacts/interactive-report.html",

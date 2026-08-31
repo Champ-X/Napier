@@ -8,6 +8,7 @@ import {
   initialConversationFollowState,
   reduceConversationFollow,
 } from "./conversation-follow-model";
+import { motionScrollBehavior } from "./reduced-motion";
 import type { WorkspaceView } from "./WorkspaceViewNavigation";
 
 export interface ConversationFollow {
@@ -34,12 +35,16 @@ export function useConversationFollow(input: {
   );
   const followingRef = useRef(state.following);
   followingRef.current = state.following;
+  const explicitJumpRef = useRef(false);
 
   useEffect(() => {
     const viewport = input.viewportRef.current;
     if (!viewport || input.view !== "conversation") return;
     const update = () =>
-      dispatch({ type: "proximity", nearBottom: conversationIsNearBottom(viewport) });
+      dispatch({
+        type: "proximity",
+        nearBottom: conversationIsNearBottom(viewport),
+      });
     update();
     viewport.addEventListener("scroll", update, { passive: true });
     return () => viewport.removeEventListener("scroll", update);
@@ -51,6 +56,10 @@ export function useConversationFollow(input: {
 
   useEffect(() => {
     if (input.view !== "conversation" || !followingRef.current) return;
+    if (explicitJumpRef.current) {
+      explicitJumpRef.current = false;
+      return;
+    }
     const frame = requestAnimationFrame(() => {
       input.endRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
     });
@@ -64,9 +73,57 @@ export function useConversationFollow(input: {
     state.following,
   ]);
 
+  useEffect(() => {
+    const viewport = input.viewportRef.current;
+    if (
+      input.view !== "conversation" ||
+      !viewport ||
+      typeof ResizeObserver === "undefined"
+    ) {
+      return;
+    }
+
+    let observedLedger: Element | null = null;
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      if (!followingRef.current) return;
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        input.endRef.current?.scrollIntoView({
+          behavior: "auto",
+          block: "end",
+        });
+      });
+    });
+    const observeLedger = () => {
+      const ledger = input.endRef.current?.parentElement ?? null;
+      if (ledger === observedLedger) return;
+      if (observedLedger) observer.unobserve(observedLedger);
+      observedLedger = ledger;
+      if (observedLedger) observer.observe(observedLedger);
+    };
+    observeLedger();
+
+    const mutationObserver =
+      typeof MutationObserver === "undefined"
+        ? null
+        : new MutationObserver(observeLedger);
+    mutationObserver?.observe(viewport, { childList: true, subtree: true });
+
+    return () => {
+      cancelAnimationFrame(frame);
+      mutationObserver?.disconnect();
+      observer.disconnect();
+    };
+  }, [input.endRef, input.view, input.viewportRef]);
+
   const jumpToLatest = useCallback(() => {
+    explicitJumpRef.current = !followingRef.current;
     dispatch({ type: "jump" });
-    input.endRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+    input.endRef.current?.scrollIntoView({
+      behavior: motionScrollBehavior(),
+      block: "end",
+    });
   }, [input.endRef]);
 
   return {

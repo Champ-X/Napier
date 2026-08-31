@@ -98,7 +98,10 @@ describe("Provider setup HTTP", () => {
     expect(result).toEqual(
       expect.objectContaining({
         providerId: "deepseek",
-        model: { provider: "deepseek", id: "deepseek-v4-flash" },
+        model: {
+          provider: "deepseek",
+          id: "deepseek-v4-flash-vision-exp",
+        },
         action: "created",
         status: "ready",
       }),
@@ -110,7 +113,7 @@ describe("Provider setup HTTP", () => {
       (await bootstrapResponse.json()) as LiveReadyBootstrapResponse;
     expect(bootstrap.recommendedRunModel).toEqual({
       provider: "deepseek",
-      id: "deepseek-v4-flash",
+      id: "deepseek-v4-flash-vision-exp",
     });
     expect(bootstrap.activeThread?.thread.id).toBe(beforeThreads[0]?.id);
     expect(services.store.listThreads()).toEqual(beforeThreads);

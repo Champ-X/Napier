@@ -5,6 +5,12 @@ import { modelEventTraceView } from "./model-event-view";
 import { modelResponseTraceView } from "./model-response-view";
 import { modelRouteEventTraceView } from "./model-route-event-view";
 import { toolEventTraceView } from "./tool-event-view";
+import {
+  traceTrajectoryEventKeyPath,
+  traceTrajectoryModelUsageEvidence,
+  traceTrajectoryRequestMetrics,
+  traceTrajectoryTimingFields,
+} from "./trace-trajectory-event-performance";
 import type { TraceTrajectoryEvent } from "./trace-trajectory-model";
 
 export interface TraceTrajectoryDetailField {
@@ -14,6 +20,8 @@ export interface TraceTrajectoryDetailField {
 }
 
 export interface TraceTrajectoryEventDetailView {
+  keyPath: string;
+  metrics: TraceTrajectoryDetailField[];
   context: TraceTrajectoryDetailField[];
   diagnosis?: TraceTrajectoryDiagnosis;
   evidence: TraceTrajectoryDetailField[];
@@ -65,13 +73,16 @@ export function traceTrajectoryEventDetailView(
   event: TraceTrajectoryEvent,
   events: readonly TraceTrajectoryEvent[] = [event],
 ): TraceTrajectoryEventDetailView {
+  const evidence = evidenceFields(event.event);
   return {
+    keyPath: traceTrajectoryEventKeyPath(event, evidence),
+    metrics: traceTrajectoryRequestMetrics(event, events, evidence),
     context: contextFields(event),
     ...(event.status === "failed"
       ? { diagnosis: diagnosisView(event, events) }
       : {}),
-    evidence: evidenceFields(event.event),
-    timing: timingFields(event),
+    evidence,
+    timing: traceTrajectoryTimingFields(event, events),
   };
 }
 
@@ -154,8 +165,7 @@ function diagnosticOutcome(
     nonNegativeNumber(payload?.["outputTextBytes"]) ??
     nonNegativeNumber(payload?.["outputBytes"]);
   const outputDigest =
-    sha256(payload?.["outputTextSha256"]) ??
-    sha256(payload?.["outputSha256"]);
+    sha256(payload?.["outputTextSha256"]) ?? sha256(payload?.["outputSha256"]);
   const errorDigest = sha256(payload?.["errorSha256"]);
   const truncated =
     evidence?.["commandStdoutTruncated"] === true ||
@@ -302,28 +312,11 @@ function evidenceFields(event: RunEvent): TraceTrajectoryDetailField[] {
         fields.set(key, field(key, String(count)));
       }
     }
+    for (const item of traceTrajectoryModelUsageEvidence(payload)) {
+      if (!fields.has(item.key)) fields.set(item.key, item);
+    }
   }
-  return [...fields.values()].slice(0, 18);
-}
-
-function timingFields(
-  event: TraceTrajectoryEvent,
-): TraceTrajectoryDetailField[] {
-  const finishedAt = event.timestampMs;
-  const startedAt =
-    event.durationMs === undefined ? undefined : finishedAt - event.durationMs;
-  return [
-    ...(startedAt !== undefined
-      ? [field("startedAt", formatTimestamp(startedAt))]
-      : []),
-    field(
-      event.durationMs === undefined ? "recordedAt" : "finishedAt",
-      formatTimestamp(finishedAt),
-    ),
-    ...(event.durationMs !== undefined
-      ? [field("duration", formatDuration(event.durationMs))]
-      : []),
-  ];
+  return [...fields.values()].slice(0, 24);
 }
 
 function dedicatedEvidenceProjection(event: RunEvent): object | undefined {
@@ -346,6 +339,8 @@ function safeEvidenceValue(
   }
   if (
     key === "durationMs" ||
+    key === "attempt" ||
+    key === "stepAttempt" ||
     key === "retryAfterMs" ||
     key === "backoffMs" ||
     key.endsWith("Tokens") ||
@@ -354,22 +349,30 @@ function safeEvidenceValue(
     key.endsWith("DurationMs") ||
     key.endsWith("AfterMs") ||
     key.endsWith("BackoffMs") ||
-    key.endsWith("CostUsd") ||
+    key.toLocaleLowerCase().endsWith("costusd") ||
     key.endsWith("ExitCode") ||
     key === "turnIndex"
   ) {
     return typeof value === "number" && Number.isFinite(value);
   }
+  if (
+    [
+      "visibleOutputProduced",
+      "outputChanged",
+      "textChanged",
+      "outputTruncated",
+    ].includes(key)
+  ) {
+    return typeof value === "boolean";
+  }
   if (key === "providerHint") {
     return (
-      typeof value === "string" &&
-      /^[A-Za-z0-9._:/ -]{1,120}$/u.test(value)
+      typeof value === "string" && /^[A-Za-z0-9._:/ -]{1,120}$/u.test(value)
     );
   }
   if (key === "candidateChain") {
     return (
-      typeof value === "string" &&
-      /^[A-Za-z0-9_.:/@ >-]{1,500}$/u.test(value)
+      typeof value === "string" && /^[A-Za-z0-9_.:/@ >-]{1,500}$/u.test(value)
     );
   }
   return (
@@ -418,23 +421,6 @@ function shortIdentifier(value: string): string {
 
 function shortDigest(value: string): string {
   return SHA256.test(value) ? `${value.slice(0, 12)}…` : value;
-}
-
-function formatTimestamp(value: number): string {
-  return new Intl.DateTimeFormat(undefined, {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    fractionalSecondDigits: 3,
-  }).format(new Date(value));
-}
-
-function formatDuration(milliseconds: number): string {
-  if (milliseconds < 1_000) return `${String(Math.round(milliseconds))} ms`;
-  return `${(milliseconds / 1_000).toFixed(milliseconds < 10_000 ? 2 : 1)} s`;
 }
 
 function record(value: unknown): Record<string, unknown> | undefined {

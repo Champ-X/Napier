@@ -2,6 +2,7 @@ import type {
   AutomaticRecoveryAssessment,
   AutomaticRecoveryAttempt,
   ModelRef,
+  PromptImageInput,
   RunExecutionMode,
   RunInvocationSource,
   RunRecord,
@@ -31,6 +32,7 @@ import {
 export interface RunPromptOptions {
   threadId: string;
   text: string;
+  images?: PromptImageInput[];
   model?: ModelRef;
   modelRoute?: ModelRouteRequest;
   harnessExperimentProfile?: ModelHarnessExperimentProfile;

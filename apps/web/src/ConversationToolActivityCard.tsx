@@ -30,7 +30,7 @@ export function ConversationToolActivityCard({
   return (
     <details
       className={`conversation-network-activity conversation-tool-activity kind-${activity.kind} status-${activity.status}`}
-      open={activity.status === "failed" || activity.status === "blocked"}
+      open={active}
     >
       <summary>
         <ToolIcon size={15} aria-hidden="true" />

@@ -11,6 +11,10 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  DEEPSEEK_API_BASE_URL,
+  DEEPSEEK_VISION_MODEL_ID,
+} from "../src/deepseek-vision-provider.js";
+import {
   MAX_MODELS_PER_PROVIDER,
   MAX_PROJECTED_LIVE_MODELS,
   ModelRegistry,
@@ -37,7 +41,78 @@ describe("Model registry", () => {
           reasoning: true,
           configured: false,
         }),
+        expect.objectContaining({
+          provider: "deepseek",
+          providerName: "DeepSeek",
+          id: DEEPSEEK_VISION_MODEL_ID,
+          reasoning: false,
+          vision: true,
+          configured: false,
+        }),
       ]),
+    );
+  });
+
+  it("serializes DeepSeek vision input as an OpenAI-compatible image_url user block", async () => {
+    const registry = new ModelRegistry(
+      credentialStore({
+        deepseek: { type: "api_key", key: "PRIVATE_DEEPSEEK_KEY" },
+      }),
+    );
+    const model = registry.resolve({
+      provider: "deepseek",
+      id: DEEPSEEK_VISION_MODEL_ID,
+    });
+    expect(model).toEqual(
+      expect.objectContaining({
+        api: "openai-completions",
+        baseUrl: DEEPSEEK_API_BASE_URL,
+        input: ["text", "image"],
+      }),
+    );
+
+    let payload: unknown;
+    const stream = registry.models.streamSimple(
+      model!,
+      {
+        messages: [
+          {
+            role: "user",
+            timestamp: 1,
+            content: [
+              { type: "text", text: "Describe this image" },
+              { type: "image", mimeType: "image/png", data: "iVBORw==" },
+            ],
+          },
+        ],
+      },
+      {
+        onPayload(value) {
+          payload = value;
+          throw new Error("payload captured before network dispatch");
+        },
+      },
+    );
+    for await (const _event of stream) {
+      // The deliberate onPayload error terminates the provider stream offline.
+    }
+
+    expect(payload).toEqual(
+      expect.objectContaining({
+        model: DEEPSEEK_VISION_MODEL_ID,
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: "Describe this image" },
+              {
+                type: "image_url",
+                image_url: { url: "data:image/png;base64,iVBORw==" },
+              },
+            ],
+          },
+        ],
+      }),
     );
   });
 
@@ -185,7 +260,7 @@ describe("Model registry", () => {
       ),
     ).resolves.toEqual({
       provider: "deepseek",
-      id: "deepseek-v4-flash",
+      id: DEEPSEEK_VISION_MODEL_ID,
     });
     expect(agent.model).toEqual({ provider: "napier", id: "demo" });
   });

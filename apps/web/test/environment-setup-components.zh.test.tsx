@@ -1,14 +1,17 @@
 import { parseHTML } from "linkedom";
-import { render } from "preact";
+import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { SandboxSetupPreview } from "@napier/contracts/sandbox-setup";
 
 let container: HTMLElement | undefined;
+let root: Root | undefined;
 
 describe("environment setup Chinese UI", () => {
-  afterEach(() => {
-    if (container) render(null, container);
+  afterEach(async () => {
+    root?.unmount();
+    await flush();
+    root = undefined;
     container = undefined;
     vi.unstubAllGlobals();
     vi.resetModules();
@@ -24,15 +27,16 @@ describe("environment setup Chinese UI", () => {
     const preview = sandboxPreview();
     const status = sandboxSetupCopy(preview);
 
-    render(
+    root = createRoot(container);
+    root.render(
       <SandboxSetupLedger
         preview={preview}
         ready={false}
         statusTitle={status.title}
         statusDetail={status.detail}
       />,
-      container,
     );
+    await flush();
 
     expect(providerSetupStatusCopy("available")).toEqual(
       expect.objectContaining({ label: "已找到" }),
@@ -61,6 +65,10 @@ function installChineseDom(): HTMLElement {
   vi.stubGlobal("HTMLElement", window.HTMLElement);
   vi.stubGlobal("Event", window.Event);
   return document.getElementById("app") as unknown as HTMLElement;
+}
+
+async function flush(): Promise<void> {
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
 }
 
 function sandboxPreview(): SandboxSetupPreview {

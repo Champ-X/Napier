@@ -6,9 +6,11 @@ import {
   traceTrajectoryIsKeyEvent,
   type TraceTrajectoryEvent,
   type TraceTrajectoryLane,
+  type TraceTrajectoryMetric,
 } from "./trace-trajectory-model";
 import {
   TRACE_TRAJECTORY_LANES,
+  TRACE_TRAJECTORY_METRICS,
   traceTrajectoryCopy,
   type TraceTrajectoryViewMode,
 } from "./trace-trajectory-copy";
@@ -16,11 +18,13 @@ import {
 export interface TraceTrajectoryControlsProps {
   events: TraceTrajectoryEvent[];
   activeLanes: TraceTrajectoryLane[];
+  metric: TraceTrajectoryMetric;
   viewMode: TraceTrajectoryViewMode;
   keyEventCount: number;
   query: string;
   searchInputRef: RefObject<HTMLInputElement | null>;
   onToggleLane(lane: TraceTrajectoryLane): void;
+  onMetric(metric: TraceTrajectoryMetric): void;
   onViewMode(viewMode: TraceTrajectoryViewMode): void;
   onQuery(query: string): void;
 }
@@ -28,17 +32,32 @@ export interface TraceTrajectoryControlsProps {
 export function TraceTrajectoryControls({
   events,
   activeLanes,
+  metric,
   viewMode,
   keyEventCount,
   query,
   searchInputRef,
   onToggleLane,
+  onMetric,
   onViewMode,
   onQuery,
 }: TraceTrajectoryControlsProps) {
   const copy = traceTrajectoryCopy;
   return (
     <div className="trace-command-bar">
+      <div className="trace-metric-tabs" aria-label={copy.metricLabel}>
+        {TRACE_TRAJECTORY_METRICS.map((item) => (
+          <button
+            type="button"
+            className={metric === item.id ? "is-active" : ""}
+            aria-pressed={metric === item.id}
+            key={item.id}
+            onClick={() => onMetric(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
       <div className="trace-lane-tabs" aria-label={copy.visibleLanes}>
         {TRACE_TRAJECTORY_LANES.map((lane) => {
           const active = activeLanes.includes(lane.id);

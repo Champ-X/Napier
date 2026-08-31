@@ -105,11 +105,12 @@ describe("trajectory Chinese copy", () => {
       container,
     );
 
-    const table = container.querySelector('[role="table"]');
-    expect(table?.getAttribute("aria-rowcount")).toBe("2");
+    const list = container.querySelector('[role="list"]');
+    expect(list?.getAttribute("data-row-count")).toBe("2");
     const foldRow = container.querySelector(".trace-fold-row");
-    expect(foldRow?.getAttribute("role")).toBe("row");
-    expect(foldRow?.getAttribute("aria-rowindex")).toBe("2");
+    expect(foldRow?.getAttribute("role")).toBe("listitem");
+    expect(foldRow?.getAttribute("aria-posinset")).toBe("2");
+    expect(foldRow?.getAttribute("aria-setsize")).toBe("2");
     expect(foldRow?.textContent ?? "").toContain("3 个事件已折叠");
     expect(container.textContent ?? "").not.toContain("events folded");
   });
@@ -141,9 +142,9 @@ describe("trajectory Chinese copy", () => {
       container,
     );
 
-    const table = container.querySelector('[role="table"]');
-    expect(table?.getAttribute("aria-rowcount")).toBe("500");
-    expect(Number(table?.getAttribute("data-mounted-row-count"))).toBeLessThan(
+    const list = container.querySelector('[role="list"]');
+    expect(list?.getAttribute("data-row-count")).toBe("500");
+    expect(Number(list?.getAttribute("data-mounted-row-count"))).toBeLessThan(
       24,
     );
   });
@@ -186,6 +187,69 @@ describe("trajectory Chinese copy", () => {
     expect(evidence).toContain("aaaaaaaaaaaa…");
     expect(evidence).not.toContain("INPUT TOKENS");
     expect(evidence).not.toContain("TOP_SECRET_MODEL_OUTPUT");
+  });
+
+  it("exposes the complete received event only in the explicit raw tab", async () => {
+    const container = installChineseDom();
+    const { TraceTrajectoryEventDetail } =
+      await import("../src/TraceTrajectoryEventDetail");
+    const event = trajectoryEvent();
+    event.event.type = "model.response";
+    event.event.visibility = "debug";
+    event.event.payload = {
+      model: "deepseek/deepseek-v4",
+      reasoning: "PROVIDER_VISIBLE_REASONING",
+      text: "MODEL_RESPONSE_ORIGINAL",
+      providerMetadata: { requestId: "req_raw_42" },
+    };
+
+    render(<TraceTrajectoryEventDetail event={event} />, container);
+    expect(container.textContent ?? "").not.toContain(
+      "PROVIDER_VISIBLE_REASONING",
+    );
+
+    const rawTab = [...container.querySelectorAll('[role="tab"]')].find(
+      (candidate) => candidate.textContent?.includes("原始数据"),
+    ) as HTMLButtonElement;
+    rawTab.dispatchEvent(new Event("click", { bubbles: true }));
+    await Promise.resolve();
+
+    const raw = container.textContent ?? "";
+    expect(raw).toContain("应用收到的原始事件");
+    expect(raw).toContain("Provider 可见推理原文");
+    expect(raw).toContain("已完整记录");
+    expect(raw).toContain("PROVIDER_VISIBLE_REASONING");
+    expect(raw).toContain("MODEL_RESPONSE_ORIGINAL");
+    expect(raw).toContain("req_raw_42");
+    expect(raw).toContain("Provider 未显式返回的内部思维链不会被推测或伪造");
+  });
+
+  it("explains receipt-only reasoning without claiming the raw text exists", async () => {
+    const container = installChineseDom();
+    const { TraceTrajectoryEventDetail } =
+      await import("../src/TraceTrajectoryEventDetail");
+    const event = trajectoryEvent();
+    event.event.type = "model.response";
+    event.event.payload = {
+      model: "deepseek/deepseek-v4",
+      reasoningSha256: "a".repeat(64),
+      reasoningBytes: 900,
+      textSha256: "b".repeat(64),
+      textBytes: 120,
+      contentRedacted: true,
+    };
+
+    render(<TraceTrajectoryEventDetail event={event} />, container);
+    const rawTab = [...container.querySelectorAll('[role="tab"]')].find(
+      (candidate) => candidate.textContent?.includes("原始数据"),
+    ) as HTMLButtonElement;
+    rawTab.dispatchEvent(new Event("click", { bubbles: true }));
+    await Promise.resolve();
+
+    const raw = container.textContent ?? "";
+    expect(raw).toContain("仅记录凭据");
+    expect(raw).toContain("原文没有送达当前界面");
+    expect(raw).not.toContain("RECOVERED_PRIVATE_REASONING");
   });
 
   it("renders an actionable, privacy-bounded diagnosis for failed events", async () => {

@@ -11,10 +11,9 @@ export const shellCopyEn = {
   },
   conversationFeed: {
     showEarlier: "Show earlier activity",
-    messageActions: "Message actions",
-    copyMessage: "Copy message",
-    copyLink: "Copy link",
+    copyMessage: "Copy",
     operator: "Operator",
+    progressUpdate: "Progress update",
   },
   taskNarrative: {
     status: "Task status",
@@ -34,10 +33,9 @@ export const shellCopyZh: LocaleOverride<typeof shellCopyEn> = {
   },
   conversationFeed: {
     showEarlier: "显示更早内容",
-    messageActions: "消息操作",
-    copyMessage: "复制消息",
-    copyLink: "复制链接",
+    copyMessage: "复制",
     operator: "操作者",
+    progressUpdate: "阶段进展",
   },
   taskNarrative: {
     status: "任务状态",

@@ -78,6 +78,7 @@ export function applyThreadRunEvent(
     else if (delta) streamingText += delta;
   } else if (
     event.type === "message.assistant" ||
+    isToolCallingModelResponse(event) ||
     event.type === "model.advisor.blocked" ||
     event.type === "model.advisor.correction.requested"
   ) {
@@ -116,6 +117,7 @@ export function activeRunStreamingText(
     }
     if (
       event.type === "message.assistant" ||
+      isToolCallingModelResponse(event) ||
       event.type === "model.advisor.blocked" ||
       event.type === "model.advisor.correction.requested"
     ) {
@@ -123,6 +125,16 @@ export function activeRunStreamingText(
     }
   }
   return text;
+}
+
+function isToolCallingModelResponse(event: RunEvent): boolean {
+  if (event.type !== "model.response") return false;
+  const payload = event.payload;
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return false;
+  }
+  const toolCalls = payload["toolCalls"];
+  return Array.isArray(toolCalls) && toolCalls.length > 0;
 }
 
 export function applyThreadStreamFrameToDetail(

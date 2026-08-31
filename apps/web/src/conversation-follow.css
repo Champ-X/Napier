@@ -9,36 +9,37 @@
   margin-block-start: calc(var(--space-6) * -1);
   padding-block-start: var(--space-6);
   pointer-events: none;
+  animation: conversation-follow-enter var(--duration-base) var(--ease-out) both;
 }
 
 .conversation-follow-button {
-  display: inline-flex;
-  gap: var(--space-1);
-  align-items: center;
-  min-height: var(--control-target);
-  padding-block: var(--space-1);
-  padding-inline: var(--space-3);
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-fg-on-accent);
+  display: grid;
+  width: 44px;
+  height: 36px;
+  padding: 0;
+  color: var(--color-fg);
   pointer-events: auto;
   cursor: pointer;
-  background: var(--color-accent);
-  border: 1px solid var(--color-accent);
-  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-raised);
+  place-items: center;
   transition:
+    color var(--duration-fast) var(--ease-out),
     background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
     transform var(--duration-fast) var(--ease-out);
 }
 
 .conversation-follow-button:hover {
-  background: var(--color-accent-hover);
-  border-color: var(--color-accent-hover);
+  color: var(--color-accent-active);
+  background: var(--color-bg-subtle);
+  border-color: var(--color-border-strong);
+  transform: translateY(-1px);
 }
 
 .conversation-follow-button:active {
-  background: var(--color-accent-active);
   transform: translateY(1px);
 }
 
@@ -50,7 +51,23 @@
       var(--color-focus-ring);
 }
 
+@keyframes conversation-follow-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .conversation-follow {
+    animation: none;
+  }
+
   .conversation-follow-button {
     transition: none;
   }

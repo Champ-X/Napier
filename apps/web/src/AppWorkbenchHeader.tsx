@@ -38,8 +38,10 @@ export function AppWorkbenchHeader({
           : []
       }
       recentModelKeys={recentModelKeysFromRuns(vm.detail?.runs ?? [])}
-      onOpenDeveloperWorkbench={shell.openDeveloperWorkbench}
-      onOpenSettings={shell.openSettings}
+      workspaceRailOpen={shell.workspaceRailOpen}
+      {...(shell.workspaceView === "conversation" && !browserControlsAvailable
+        ? { onToggleWorkspaceRail: shell.toggleWorkspaceRail }
+        : {})}
       taskStatus={
         <TaskNarrativeBoundary
           detail={vm.detail}
@@ -52,7 +54,9 @@ export function AppWorkbenchHeader({
         activeView={shell.workspaceView}
         eventCount={vm.visibleTrace.length}
         runCount={vm.detail?.runs.length ?? 0}
-        subagentCount={vm.detail?.subagentHub?.taskCount ?? vm.detail?.subagents.length ?? 0}
+        subagentCount={
+          vm.detail?.subagentHub?.taskCount ?? vm.detail?.subagents.length ?? 0
+        }
         onChange={shell.setWorkspaceView}
       />
     </WorkbenchHeader>

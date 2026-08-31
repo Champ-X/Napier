@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   createTraceTrajectoryModel,
+  traceTrajectoryEventInRange,
+  traceTrajectoryEventRatio,
   traceTrajectoryMatches,
   traceTrajectoryIsKeyEvent,
   traceTrajectoryPosition,
@@ -85,6 +87,25 @@ describe("Trace trajectory model", () => {
       left: 50,
       width: 36,
     });
+  });
+
+  it("filters events through a normalized timeline focus range", () => {
+    const model = createTraceTrajectoryModel(events(), [run()]);
+    const middle = model.events.find((event) => event.event.seq === 6)!;
+
+    expect(traceTrajectoryEventRatio(middle, model, "duration")).toBe(0.4);
+    expect(
+      traceTrajectoryEventInRange(middle, model, "duration", {
+        start: 0.35,
+        end: 0.45,
+      }),
+    ).toBe(true);
+    expect(
+      traceTrajectoryEventInRange(middle, model, "duration", {
+        start: 0.6,
+        end: 0.8,
+      }),
+    ).toBe(false);
   });
 
   it("places visually colliding events on concurrent subtracks", () => {

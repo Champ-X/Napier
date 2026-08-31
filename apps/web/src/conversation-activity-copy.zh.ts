@@ -11,10 +11,13 @@ export const conversationActivityZh: LocaleOverride<
     blocked: "已阻止",
   },
   group: {
+    execution: "执行过程",
     grouped: "已分组",
     showEvidence: "显示证据",
     hideEvidence: "隐藏证据",
+    step: "步",
     steps: "步",
+    attention: "项需关注",
     stages: {
       research: "调研",
       build: "构建",

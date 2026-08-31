@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Archive, Ellipsis } from "lucide-react";
 
 import type { ThreadSummary } from "@napier/contracts";
@@ -22,6 +22,32 @@ export function ThreadList({
   onTrash(threadId: string): void;
 }) {
   const [menuThreadId, setMenuThreadId] = useState<string>();
+  const openMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuThreadId) return;
+    const dismiss = (event: PointerEvent) => {
+      if (
+        event.target instanceof Node &&
+        !openMenuRef.current?.contains(event.target)
+      ) {
+        setMenuThreadId(undefined);
+      }
+    };
+    const dismissWithKeyboard = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setMenuThreadId(undefined);
+      openMenuRef.current
+        ?.querySelector<HTMLButtonElement>(".thread-menu-trigger")
+        ?.focus();
+    };
+    document.addEventListener("pointerdown", dismiss);
+    document.addEventListener("keydown", dismissWithKeyboard);
+    return () => {
+      document.removeEventListener("pointerdown", dismiss);
+      document.removeEventListener("keydown", dismissWithKeyboard);
+    };
+  }, [menuThreadId]);
 
   return (
     <div className="thread-list">
@@ -46,6 +72,7 @@ export function ThreadList({
               onSelect={onSelect}
             />
             <div
+              ref={menuOpen ? openMenuRef : undefined}
               className="thread-actions"
               onBlur={(event) => {
                 if (!event.currentTarget.contains(event.relatedTarget)) {

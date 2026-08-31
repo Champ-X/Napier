@@ -13,6 +13,7 @@ import { copy } from "./copy";
 import { EnvironmentDegradationNotice } from "./EnvironmentDegradationNotice";
 import { taskNarrative } from "./task-narrative-view-model";
 import { shellCopy } from "./shell-copy";
+import { useDismissableDetails } from "./use-dismissable-details";
 
 export interface TaskNarrativeBarProps {
   detail:
@@ -38,6 +39,7 @@ export function TaskNarrativeBar({
   onOpenBrowserControls,
 }: TaskNarrativeBarProps) {
   const [now, setNow] = useState(() => Date.now());
+  const detailsRef = useDismissableDetails();
   const running = detail?.runs.some(
     (run) => run.id === detail.thread.currentRunId && run.status === "running",
   );
@@ -61,15 +63,21 @@ export function TaskNarrativeBar({
       className={`task-narrative phase-${narrative.phase}`}
       aria-label={shellCopy.taskNarrative.status}
     >
-      <div className="task-status-bar" aria-live="polite">
-        <div className="task-narrative-current">
+      <div className="task-status-bar">
+        <div
+          className="task-narrative-current"
+          aria-live="polite"
+          aria-atomic="true"
+        >
           <span>
             <Icon size={16} aria-hidden="true" />
             {narrative.phaseLabel}
           </span>
-          <strong title={narrative.currentAction}>
-            {narrative.currentAction}
-          </strong>
+          {narrative.phase !== "completed" ? (
+            <strong title={narrative.currentAction}>
+              {narrative.currentAction}
+            </strong>
+          ) : null}
         </div>
         {narrative.currentAction ||
         narrative.elapsed ||
@@ -77,9 +85,11 @@ export function TaskNarrativeBar({
         narrative.blocker ||
         narrative.nextStep ||
         narrative.harness ? (
-          <details className="task-status-details">
-            <summary aria-label={copy.narrative.details}>
-              {copy.narrative.details}
+          <details ref={detailsRef} className="task-status-details">
+            <summary
+              aria-label={copy.narrative.details}
+              title={copy.narrative.details}
+            >
               <ChevronDown size={14} aria-hidden="true" />
             </summary>
             <div className="task-status-details-popover">

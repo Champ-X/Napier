@@ -77,10 +77,12 @@
 
 .task-status-details > summary {
   display: inline-flex;
+  width: 28px;
   min-height: var(--control-target);
   align-items: center;
+  justify-content: center;
   gap: var(--inline-xs);
-  padding: 0 var(--inset-xs);
+  padding: 0;
   font-size: var(--text-xs);
   color: var(--color-fg-muted);
   list-style: none;
@@ -212,15 +214,6 @@
   color: var(--color-danger-fg);
   background: var(--color-danger-surface);
   border-color: var(--color-danger-border);
-}
-
-.task-result-summary {
-  position: relative;
-  z-index: 2;
-  grid-area: results;
-  min-width: 0;
-  width: var(--content-axis);
-  margin: 0 auto var(--space-3);
 }
 
 .task-narrative-completed {
@@ -453,6 +446,11 @@ div.task-completion-primary-output > code {
 
 .task-narrative.phase-completed .task-narrative-current > span {
   color: var(--color-success);
+}
+
+.task-result-summary.is-compact-only {
+  display: none;
+  grid-area: results;
 }
 
 @container (max-width: 460px) {

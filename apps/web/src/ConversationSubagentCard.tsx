@@ -34,7 +34,7 @@ export function ConversationSubagentCard({
   return (
     <details
       className={`conversation-subagent status-${item.task.status}`}
-      open={!active && item.task.status !== "completed"}
+      open={active}
     >
       <summary>
         <Bot size={15} aria-hidden="true" />
@@ -99,10 +99,7 @@ export function ConversationSubagentCard({
         ) : null}
       </dl>
       <div className="conversation-subagent-actions">
-        <button
-          type="button"
-          onClick={() => onOpenHub(item.task.id)}
-        >
+        <button type="button" onClick={() => onOpenHub(item.task.id)}>
           <Bot size={13} aria-hidden="true" />
           {subagentHubCopy.openHub}
         </button>

@@ -2,10 +2,12 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import {
   traceTrajectoryIsKeyEvent,
+  traceTrajectoryEventInRange,
   traceTrajectoryMatches,
   type TraceTrajectoryLane,
   type TraceTrajectoryMetric,
   type TraceTrajectoryModel,
+  type TraceTrajectoryRange,
 } from "./trace-trajectory-model";
 import {
   TRACE_TRAJECTORY_LANES,
@@ -13,9 +15,7 @@ import {
 } from "./trace-trajectory-copy";
 import { motionScrollBehavior } from "./reduced-motion";
 
-export function useTraceTrajectoryController(
-  model: TraceTrajectoryModel,
-) {
+export function useTraceTrajectoryController(model: TraceTrajectoryModel) {
   const [metric, setMetric] = useState<TraceTrajectoryMetric>("duration");
   const [viewMode, setViewMode] = useState<TraceTrajectoryViewMode>("key");
   const [activeLanes, setActiveLanes] = useState<TraceTrajectoryLane[]>(
@@ -23,6 +23,7 @@ export function useTraceTrajectoryController(
   );
   const [query, setQuery] = useState("");
   const [selectedEventId, setSelectedEventId] = useState<string>();
+  const [range, setRangeState] = useState<TraceTrajectoryRange>();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const overviewTrackRef = useRef<HTMLDivElement>(null);
   const [overviewTrackWidth, setOverviewTrackWidth] = useState(0);
@@ -36,9 +37,10 @@ export function useTraceTrajectoryController(
         (event) =>
           activeLanes.includes(event.lane) &&
           (viewMode === "all" || traceTrajectoryIsKeyEvent(event)) &&
+          traceTrajectoryEventInRange(event, model, metric, range) &&
           traceTrajectoryMatches(event, query),
       ),
-    [activeLanes, model, query, viewMode],
+    [activeLanes, metric, model, query, range, viewMode],
   );
   const visibleEventIds = useMemo(
     () => new Set(visibleEvents.map((event) => event.event.id)),
@@ -58,6 +60,9 @@ export function useTraceTrajectoryController(
     if (event && !activeLanes.includes(event.lane)) {
       setActiveLanes((current) => [...current, event.lane]);
     }
+    if (event && !traceTrajectoryEventInRange(event, model, metric, range)) {
+      setRangeState(undefined);
+    }
     if (
       query &&
       event &&
@@ -67,6 +72,25 @@ export function useTraceTrajectoryController(
       setQuery("");
     }
     setSelectedEventId(eventId);
+  }
+
+  function setRange(next: TraceTrajectoryRange | undefined): void {
+    if (!next) {
+      setRangeState(undefined);
+      return;
+    }
+    const start = Math.max(0, Math.min(next.start, next.end, 1));
+    const end = Math.max(start, Math.min(Math.max(next.start, next.end), 1));
+    setRangeState(end - start >= 0.995 ? undefined : { start, end });
+    const selected = selectedEventId
+      ? model.index.byId.get(selectedEventId)
+      : undefined;
+    if (
+      selected &&
+      !traceTrajectoryEventInRange(selected, model, metric, { start, end })
+    ) {
+      setSelectedEventId(undefined);
+    }
   }
 
   function toggleLane(lane: TraceTrajectoryLane): void {
@@ -96,6 +120,8 @@ export function useTraceTrajectoryController(
     searchInputRef,
     overviewTrackRef,
     overviewTrackWidth,
+    range,
+    setRange,
     keyEventCount,
     visibleEventIds,
     selectOverviewEvent,

@@ -157,6 +157,55 @@ describe("Message workspace links", () => {
       threadId: "thread_1",
     });
   });
+
+  it("opens file references that exist in the live workspace but lack an artifact record", async () => {
+    const container = installDom();
+    const onOpenWorkspaceFile = vi.fn<(path: string) => void>();
+    await act(async () => {
+      render(
+        <MessageMarkdown
+          text={[
+            "已完成 `index.html` 的配色重写。",
+            "也可以打开 [完整页面](./slides/final.html)。",
+            "不要链接 `#f7f3ec`、`.env` 或 `npm test`。",
+          ].join("\n")}
+          onOpenWorkspaceFile={onOpenWorkspaceFile}
+        />,
+        container,
+      );
+    });
+
+    const fileButtons = findElementsByLocalName(container, "button");
+    expect(
+      fileButtons.map((button) => ({
+        path: button.getAttribute("data-workspace-path"),
+        label: button.textContent,
+        ariaLabel: button.getAttribute("aria-label"),
+      })),
+    ).toEqual([
+      {
+        path: "index.html",
+        label: "index.html",
+        ariaLabel: "Open preview: index.html",
+      },
+      {
+        path: "./slides/final.html",
+        label: "完整页面",
+        ariaLabel: "Open preview: ./slides/final.html",
+      },
+    ]);
+
+    await act(async () => fileButtons[0]?.click());
+    await act(async () => fileButtons[1]?.click());
+    expect(onOpenWorkspaceFile).toHaveBeenNthCalledWith(1, "index.html");
+    expect(onOpenWorkspaceFile).toHaveBeenNthCalledWith(
+      2,
+      "./slides/final.html",
+    );
+    expect(container.textContent).toContain("#f7f3ec");
+    expect(container.textContent).toContain(".env");
+    expect(container.textContent).toContain("npm test");
+  });
 });
 
 function installDom(): HTMLElement {

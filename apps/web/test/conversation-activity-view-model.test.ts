@@ -80,6 +80,7 @@ describe("Conversation activity", () => {
       candidate(2, "tool.started", { callId: "call_tool" }),
       candidate(3, "plan.created", { planId: "plan_fixture0001" }),
       candidate(4, "run.no_progress"),
+      candidate(5, "run.progress.message"),
     ];
     const filtered = excludeConversationActivityCandidates(candidates, {
       eventIds: new Set(),

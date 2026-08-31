@@ -48,18 +48,21 @@ describe("persistent Composer permission", () => {
     const onError = vi.fn();
     const onRefresh = vi.fn();
     const restoreInput = vi.fn();
+    const restoreImages = vi.fn();
     const failure = new Error("Model unavailable");
 
     await executeNextRunPrompt(
       {
         threadId: "thread_1",
         text: "Retry after setup.",
+        images: [{ mimeType: "image/png", data: "iVBORw==" }],
         model: { provider: "faux", id: "faux-1" },
         capabilityPreset: "coding",
         onStart: vi.fn(),
         onRefresh,
         onError,
         restoreInput,
+        restoreImages,
         onFinish: vi.fn(),
         onFrame: vi.fn(),
       },
@@ -71,6 +74,7 @@ describe("persistent Composer permission", () => {
     expect(onRefresh).not.toHaveBeenCalled();
     expect(onError).toHaveBeenCalledWith(failure);
     expect(restoreInput).toHaveBeenCalledWith("Retry after setup.");
+    expect(restoreImages).toHaveBeenCalledOnce();
   });
 
   it("forwards pre-start frames without changing the selected permission", async () => {

@@ -44,7 +44,10 @@ describe("Provider setup", () => {
       ).toEqual(
         expect.objectContaining({
           environmentVariable: "DEEPSEEK_API_KEY",
-          model: { provider: "deepseek", id: "deepseek-v4-flash" },
+          model: {
+            provider: "deepseek",
+            id: "deepseek-v4-flash-vision-exp",
+          },
           status: "available",
         }),
       );
@@ -72,7 +75,10 @@ describe("Provider setup", () => {
         expect.objectContaining({
           kind: "napier.provider-setup-result",
           providerId: "deepseek",
-          model: { provider: "deepseek", id: "deepseek-v4-flash" },
+          model: {
+            provider: "deepseek",
+            id: "deepseek-v4-flash-vision-exp",
+          },
           status: "ready",
           action: "created",
           previewSha256: preview.contentSha256,

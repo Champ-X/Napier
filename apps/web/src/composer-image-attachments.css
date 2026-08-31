@@ -1,0 +1,134 @@
+.composer-image-attachments {
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.composer-image-strip {
+  display: flex;
+  min-width: 0;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2) var(--space-2);
+  overflow-x: auto;
+}
+
+.composer-image-attachments > p {
+  margin: 0;
+  padding: 0 var(--space-2) var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-fg-subtle);
+}
+
+.composer-image-strip figure {
+  position: relative;
+  display: grid;
+  flex: 0 0 76px;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.composer-image-strip img {
+  width: 76px;
+  height: 54px;
+  object-fit: cover;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.composer-image-strip figcaption {
+  overflow: hidden;
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composer-image-strip figure > button {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  color: var(--color-fg);
+  cursor: pointer;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-raised);
+  place-items: center;
+}
+
+.composer-image-picker {
+  display: inline-grid;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--color-fg-muted);
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  place-items: center;
+}
+
+.composer-image-picker:hover:not(:disabled) {
+  color: var(--color-fg);
+  background: var(--color-surface-selected);
+  border-color: var(--color-border-subtle);
+}
+
+.composer-image-picker:disabled {
+  color: var(--color-fg-disabled);
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.composer-image-input {
+  display: none;
+}
+
+.composer-image-warning {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: var(--space-1) var(--space-2) 0;
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  color: var(--color-danger);
+}
+
+.composer-image-warning button {
+  flex: 0 0 auto;
+  padding: 2px var(--space-2);
+  font: inherit;
+  color: currentColor;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+}
+
+.composer.is-image-dragging {
+  border-color: var(--color-focus-ring);
+  box-shadow:
+    0 0 0 3px var(--color-accent-subtle),
+    var(--shadow-raised);
+}
+
+.composer.is-image-dragging::after {
+  position: absolute;
+  z-index: 4;
+  inset: var(--space-2);
+  display: grid;
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  content: attr(data-image-drop-label);
+  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+  border: 1px dashed var(--color-accent);
+  border-radius: var(--radius-lg);
+  pointer-events: none;
+  place-items: center;
+}

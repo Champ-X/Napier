@@ -1,5 +1,5 @@
 import { Brain } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { ConversationThinkingActivity as ThinkingActivity } from "./conversation-thinking-view-model";
 import { getLocale } from "./locale";
@@ -14,11 +14,16 @@ export function ConversationThinkingActivity({
   active = false,
 }: ConversationThinkingActivityProps) {
   const [expanded, setExpanded] = useState(false);
+  const elapsedSeconds = useLiveElapsedSeconds(activity.startedAt, active);
   const chinese = getLocale() === "zh";
   const title = active
     ? chinese
-      ? "正在思考…"
-      : "Thinking…"
+      ? elapsedSeconds
+        ? `正在思考 · ${formatDuration(elapsedSeconds, true)}`
+        : "正在思考…"
+      : elapsedSeconds
+        ? `Thinking · ${formatDuration(elapsedSeconds, false)}`
+        : "Thinking…"
     : activity.durationSeconds
       ? chinese
         ? `思考了 ${formatDuration(activity.durationSeconds, true)}`
@@ -30,6 +35,7 @@ export function ConversationThinkingActivity({
     <details
       className={`conversation-thinking${active ? " is-active" : ""}`}
       open={active || expanded}
+      aria-busy={active}
       onToggle={(event) => {
         if (!active) setExpanded(event.currentTarget.open);
       }}
@@ -40,9 +46,19 @@ export function ConversationThinkingActivity({
       </summary>
       <div className="conversation-thinking-content">
         {activity.transcript ? (
-          <pre className="conversation-thinking-transcript">
+          <pre
+            className="conversation-thinking-transcript"
+            aria-live={active ? "polite" : "off"}
+            aria-atomic="false"
+          >
             <code>{activity.transcript}</code>
           </pre>
+        ) : active ? (
+          <p className="conversation-thinking-waiting" role="status">
+            {chinese
+              ? "正在等待模型输出…"
+              : "Waiting for model output…"}
+          </p>
         ) : (
           <p className="conversation-thinking-redacted">
             {chinese
@@ -53,6 +69,27 @@ export function ConversationThinkingActivity({
       </div>
     </details>
   );
+}
+
+function useLiveElapsedSeconds(
+  startedAt: string,
+  active: boolean,
+): number | undefined {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (!active) return undefined;
+    setNow(Date.now());
+    const timer = window.setInterval(() => setNow(Date.now()), 1_000);
+    return () => window.clearInterval(timer);
+  }, [active, startedAt]);
+  if (!active) return undefined;
+  const start = Date.parse(startedAt);
+  const elapsed = now - start;
+  // Imported historical fixtures should not render a nonsensical live timer.
+  if (!Number.isFinite(elapsed) || elapsed < 0 || elapsed > 86_400_000) {
+    return undefined;
+  }
+  return Math.max(1, Math.floor(elapsed / 1_000));
 }
 
 function formatDuration(seconds: number, chinese: boolean): string {

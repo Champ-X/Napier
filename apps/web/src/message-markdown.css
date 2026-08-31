@@ -93,6 +93,12 @@
   border-radius: var(--radius-sm);
 }
 
+button.message-workspace-link {
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none;
+}
+
 .message-workspace-link.is-code {
   font-weight: 520;
 }

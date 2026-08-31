@@ -39,6 +39,7 @@ export function createConversationActivityCandidate(
 ): ConversationActivityCandidate | undefined {
   if (
     event.visibility !== "user" ||
+    event.type === "run.progress.message" ||
     event.type.startsWith("message.") ||
     event.type.startsWith("model.") ||
     !ACTIVITY_PREFIXES.some((prefix) => event.type.startsWith(prefix))

@@ -4,6 +4,7 @@ import type { TraceRunSemanticCollection } from "../src/trace-semantic-rows";
 import {
   createTraceVirtualLayout,
   createTraceVirtualWindow,
+  TRACE_COMPACT_EVENT_ROW_HEIGHT_PX,
   TRACE_VIRTUAL_VIEWPORT_PX,
 } from "../src/trace-virtual-window";
 import type { TraceTrajectoryEvent } from "../src/trace-trajectory-model";
@@ -40,6 +41,18 @@ describe("Trace virtual window", () => {
     expect(last?.kind).toBe("row");
     if (last?.kind !== "row") throw new Error("expected row");
     expect(last.row.rowIndex).toBe(100);
+  });
+
+  it("reserves the taller two-line row used by compact viewports", () => {
+    const rows = collection(2);
+    const regular = createTraceVirtualLayout(rows);
+    const compact = createTraceVirtualLayout(rows, {
+      eventRowHeightPx: TRACE_COMPACT_EVENT_ROW_HEIGHT_PX,
+    });
+
+    expect(compact.totalHeight - regular.totalHeight).toBe(
+      2 * (TRACE_COMPACT_EVENT_ROW_HEIGHT_PX - 58),
+    );
   });
 });
 

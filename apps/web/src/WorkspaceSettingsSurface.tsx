@@ -9,7 +9,6 @@ import {
 } from "./settings-section-registry";
 import type { SettingsSection } from "./settings-section-registry";
 import { SettingsLanguagePanel } from "./SettingsLanguagePanel";
-import { WorkspaceRootPanel } from "./WorkspaceRootPanel";
 import { recentModelKeysFromRuns } from "./model-selection-view-model";
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
 
@@ -25,7 +24,6 @@ export interface WorkspaceSettingsSurfaceProps {
   section: SettingsSection;
   onSection(section: SettingsSection): void;
   onClose(): void;
-  onWorkspaceSwitch(root: string): Promise<void>;
 }
 
 export function WorkspaceSettingsSurface({
@@ -34,7 +32,6 @@ export function WorkspaceSettingsSurface({
   section,
   onSection,
   onClose,
-  onWorkspaceSwitch,
 }: WorkspaceSettingsSurfaceProps) {
   const restoreFocusRef = useRef<HTMLElement | null>(null);
   const surfaceRef = useRef<HTMLElement | null>(null);
@@ -45,6 +42,13 @@ export function WorkspaceSettingsSurface({
         ? document.activeElement
         : null;
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
+      if (
+        event.key === "Escape" &&
+        surfaceRef.current?.querySelector('[role="dialog"]')
+      ) {
+        return;
+      }
       if (event.key === "Escape") {
         event.preventDefault();
         onClose();
@@ -82,6 +86,7 @@ export function WorkspaceSettingsSurface({
       <button
         type="button"
         className="workspace-settings-backdrop"
+        tabIndex={-1}
         aria-label={copy.settingsSurface.close}
         onClick={onClose}
       />
@@ -209,13 +214,6 @@ export function WorkspaceSettingsSurface({
           ) : null}
           {section === "extensions" && activeAgent ? (
             <ExtensionInspectorSurface vm={vm} agentId={activeAgent.id} />
-          ) : null}
-          {section === "workspace" && vm.bootstrap ? (
-            <WorkspaceRootPanel
-              root={vm.bootstrap.workspace.root}
-              dataRoot={vm.bootstrap.workspace.dataRoot}
-              onWorkspaceSwitch={onWorkspaceSwitch}
-            />
           ) : null}
           {section === "language" ? <SettingsLanguagePanel /> : null}
         </section>

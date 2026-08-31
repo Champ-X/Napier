@@ -1,7 +1,5 @@
 import type { RunEvent, RunRecord, StreamFrame } from "@napier/contracts";
-import {
-  type AgentKernel,
-} from "@napier/runtime/agent";
+import { type AgentKernel } from "@napier/runtime/agent";
 import {
   hashEventStream,
   streamEventFrame,
@@ -9,12 +7,8 @@ import {
   streamRunErrorFrame,
   streamSnapshotFrame,
 } from "@napier/runtime/core";
-import {
-  type LocalStore,
-} from "@napier/runtime/store";
-import {
-  type ModelRegistry,
-} from "@napier/runtime/model";
+import { type LocalStore } from "@napier/runtime/store";
+import { type ModelRegistry } from "@napier/runtime/model";
 import { Hono, type Context } from "hono";
 import { streamSSE } from "hono/streaming";
 
@@ -36,13 +30,13 @@ import {
   parseResumeRunRequest,
 } from "./thread-execution-http-validation.js";
 import { inspectThreadPromptReadiness } from "./thread-run-readiness.js";
+import { MAX_PROMPT_REQUEST_BYTES } from "./prompt-image-validation.js";
 import {
   attachKernelThreadProjections,
   projectKernelThreadProjections,
 } from "./kernel-thread-projections.js";
 
 const MAX_RESUME_REQUEST_BYTES = 8 * 1024;
-const MAX_PROMPT_REQUEST_BYTES = 64 * 1024;
 
 type ThreadExecutionStore = Pick<LocalStore, "getDetail" | "getThread">;
 type ThreadExecutionRuntime = Pick<
@@ -198,8 +192,8 @@ function registerPromptHttp(
         binding ? [binding.model, ...(binding.fallbackModels ?? [])] : [],
       );
       await Promise.all(
-        [...(body.modelRoute?.fallbackModels ?? []), ...subagentModels].map((candidate) =>
-          assertAvailableModel(services, candidate),
+        [...(body.modelRoute?.fallbackModels ?? []), ...subagentModels].map(
+          (candidate) => assertAvailableModel(services, candidate),
         ),
       );
     } catch (error) {
@@ -241,6 +235,7 @@ function registerPromptHttp(
       services.kernel.runPrompt({
         threadId,
         text: body.text,
+        ...(body.images ? { images: body.images } : {}),
         ...(body.model ? { model: body.model } : {}),
         ...(body.modelRoute ? { modelRoute: body.modelRoute } : {}),
         ...(body.capabilityPreset

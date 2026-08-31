@@ -28,10 +28,11 @@ export function ConversationFollowButton({
       <button
         type="button"
         className="conversation-follow-button"
+        aria-label={label}
+        title={label}
         onClick={onJump}
       >
-        <span>{label}</span>
-        <ArrowDown size={14} aria-hidden="true" />
+        <ArrowDown size={16} aria-hidden="true" />
       </button>
     </div>
   );

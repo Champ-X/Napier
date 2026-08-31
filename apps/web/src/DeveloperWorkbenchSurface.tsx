@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 
 import { AgentPackagePublishingSurface } from "./AgentPackagePublishingSurface";
@@ -43,12 +43,22 @@ export function DeveloperWorkbenchSurface({
   const restoreFocusRef = useRef<HTMLElement | null>(null);
   const surfaceRef = useRef<HTMLElement | null>(null);
   const contentRef = useRef<HTMLElement | null>(null);
+  const [developerToolsVisited, setDeveloperToolsVisited] = useState(
+    section === "lab",
+  );
   useEffect(() => {
     restoreFocusRef.current =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
+      if (
+        event.key === "Escape" &&
+        surfaceRef.current?.querySelector('[role="dialog"]')
+      ) {
+        return;
+      }
       if (event.key === "Escape") {
         event.preventDefault();
         onClose();
@@ -80,12 +90,16 @@ export function DeveloperWorkbenchSurface({
     }, 120);
     return () => window.clearTimeout(focusTimer);
   }, [section]);
+  useEffect(() => {
+    if (section === "lab") setDeveloperToolsVisited(true);
+  }, [section]);
 
   return (
     <>
       <button
         type="button"
         className="workspace-settings-backdrop"
+        tabIndex={-1}
         aria-label={copy.developerWorkbench.close}
         onClick={onClose}
       />
@@ -104,7 +118,11 @@ export function DeveloperWorkbenchSurface({
             </h2>
             <p>{copy.developerWorkbench.body}</p>
           </div>
-          <button type="button" aria-label={copy.developerWorkbench.close} onClick={onClose}>
+          <button
+            type="button"
+            aria-label={copy.developerWorkbench.close}
+            onClick={onClose}
+          >
             <X size={16} aria-hidden="true" />
           </button>
         </header>
@@ -146,17 +164,22 @@ export function DeveloperWorkbenchSurface({
           role="tabpanel"
           aria-labelledby={`developer-section-${section}`}
         >
-          {section === "automations" ? <WorkspaceAutomationSettings vm={vm} /> : null}
-          {section === "lab" ? (
+          {section === "automations" ? (
+            <WorkspaceAutomationSettings vm={vm} />
+          ) : null}
+          {section === "lab" || developerToolsVisited ? (
             <DeveloperToolsPanel
               vm={vm}
               activeModel={vm.selectedModel}
               onConversation={onConversation}
+              hidden={section !== "lab"}
             />
           ) : null}
           {section === "publishing" && vm.bootstrap ? (
             <>
-              <Suspense fallback={<div className="context-loading" role="status" />}>
+              <Suspense
+                fallback={<div className="context-loading" role="status" />}
+              >
                 <LazyPublishing vm={vm} />
               </Suspense>
               {activeAgent && vm.detail ? (
@@ -167,7 +190,9 @@ export function DeveloperWorkbenchSurface({
                   models={vm.bootstrap.models}
                   credentials={vm.bootstrap.credentials}
                   publisherAnchors={vm.bootstrap.extensionPublisherTrustAnchors}
-                  skillPackageInstallations={vm.bootstrap.skillPackageInstallations}
+                  skillPackageInstallations={
+                    vm.bootstrap.skillPackageInstallations
+                  }
                   usagePriceTableCatalog={vm.bootstrap.usagePriceTableCatalog}
                   threadId={vm.detail.thread.id}
                   selectedModelKey={vm.selectedModelKey}

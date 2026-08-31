@@ -144,6 +144,35 @@ describe("sequence-accurate Thread branches", () => {
     expect([left.run.branchFromSeq, right.run.branchFromSeq]).toEqual([2, 2]);
   });
 
+  it("does not copy user-visible run progress as conversation messages", async () => {
+    const store = await createStore();
+    const source = await store.createThread({
+      title: "Progress source",
+      agentId: store.listAgents()[0]!.id,
+    });
+    await appendRunMessages(store, source.id, [
+      ["message.user", { role: "user", text: "Inspect the project" }],
+      [
+        "run.progress.message",
+        {
+          sourceEventId: "event_source_progress",
+          model: "faux/faux-1",
+          toolNames: ["read_file"],
+          text: "I will inspect the entry points.",
+        },
+      ],
+      ["message.assistant", { role: "assistant", text: "Inspection done" }],
+    ]);
+
+    const result = await createThreadBranch(store, source.id, { fromSeq: 3 });
+
+    expect(result.detail.events.map((event) => event.type)).toEqual([
+      "branch.created",
+      "message.user",
+      "message.assistant",
+    ]);
+  });
+
   it("preserves imported provenance through the copied message boundary", async () => {
     const store = await createStore();
     const provenance: ThreadImportProvenance = {

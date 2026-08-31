@@ -68,7 +68,10 @@ describe("conversation activity Chinese copy", () => {
       await import("../src/ConversationToolActivityCard");
 
     await act(async () => {
-      render(<ConversationToolActivityCard activity={toolActivity()} />, container);
+      render(
+        <ConversationToolActivityCard activity={toolActivity()} />,
+        container,
+      );
     });
     const text = container.textContent ?? "";
 
@@ -159,6 +162,8 @@ describe("conversation activity Chinese copy", () => {
       seq: 2,
       lastSeq: 2,
       createdAt: "2026-08-19T08:01:00.000Z",
+      startedAt: "2026-08-19T08:00:53.000Z",
+      turnSeq: 1,
       summaryKind: "edit",
       followingActionKind: "apply_patch",
       durationSeconds: 7,
@@ -178,7 +183,9 @@ describe("conversation activity Chinese copy", () => {
     expect(text).not.toContain("随后动作");
     expect(text).not.toContain("运行依据");
     expect(text).not.toContain("来自模型实际返回");
-    expect(container.querySelector("details")?.hasAttribute("open")).toBe(false);
+    expect(container.querySelector("details")?.hasAttribute("open")).toBe(
+      false,
+    );
 
     await act(async () => {
       render(
@@ -187,6 +194,39 @@ describe("conversation activity Chinese copy", () => {
       );
     });
     expect(container.querySelector("details")?.hasAttribute("open")).toBe(true);
+  });
+
+  it("keeps the live waiting phase expanded before the first delta", async () => {
+    const container = installChineseDom();
+    const { ConversationThinkingActivity } =
+      await import("../src/ConversationThinkingActivity");
+    const startedAt = new Date().toISOString();
+
+    await act(async () => {
+      render(
+        <ConversationThinkingActivity
+          active
+          activity={{
+            id: "event_turn",
+            runId: "run_1",
+            seq: 1,
+            lastSeq: 1,
+            createdAt: startedAt,
+            startedAt,
+            turnSeq: 1,
+            summaryKind: "continue",
+          }}
+        />,
+        container,
+      );
+    });
+
+    expect(container.textContent).toContain("正在思考");
+    expect(container.textContent).toContain("正在等待模型输出");
+    expect(container.querySelector("details")?.hasAttribute("open")).toBe(true);
+    expect(container.querySelector("details")?.getAttribute("aria-busy")).toBe(
+      "true",
+    );
   });
 
   it("groups adjacent verification evidence with Chinese labels", async () => {
@@ -216,10 +256,58 @@ describe("conversation activity Chinese copy", () => {
     });
     const text = container.textContent ?? "";
 
-    expect(text).toContain("验证 · 2 步");
+    expect(text).not.toContain("执行过程");
+    expect(text).not.toContain("2 步");
     expect(text).not.toContain("验证 · 已分组");
     expect(text).not.toContain("显示证据");
     expect(text).not.toContain("Verify · 2 steps");
+    const groupElement = container.querySelector(
+      ".conversation-activity-group",
+    );
+    expect(groupElement?.tagName).toBe("SECTION");
+    expect(groupElement?.getAttribute("aria-label")).toContain("执行过程");
+    expect(
+      [...(groupElement?.children ?? [])].some(
+        (element) =>
+          element.tagName === "HEADER" || element.tagName === "SUMMARY",
+      ),
+    ).toBe(false);
+    expect(groupElement?.getAttribute("data-state")).toBe("complete");
+    expect(groupElement?.getAttribute("aria-busy")).toBe("false");
+    const groupItems = container.querySelector(
+      ".conversation-activity-group-items",
+    );
+    expect(groupItems?.children).toHaveLength(2);
+    expect(
+      [...(groupItems?.children ?? [])].every(
+        (element) => element.tagName === "DETAILS",
+      ),
+    ).toBe(true);
+
+    const [runningGroup] = groupConversationFeed([
+      { kind: "tool", seq: first.seq, activity: first },
+      {
+        kind: "tool",
+        seq: second.seq,
+        activity: { ...second, status: "working" },
+      },
+    ]);
+    if (!runningGroup || runningGroup.kind !== "activity-group") {
+      throw new Error("Expected working evidence to remain grouped");
+    }
+    await act(async () => {
+      render(<ConversationActivityGroupCard group={runningGroup} />, container);
+    });
+    expect(
+      container
+        .querySelector(".conversation-activity-group")
+        ?.getAttribute("data-state"),
+    ).toBe("running");
+    expect(
+      container
+        .querySelector(".conversation-activity-group")
+        ?.getAttribute("aria-busy"),
+    ).toBe("true");
   });
 });
 

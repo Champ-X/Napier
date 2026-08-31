@@ -59,19 +59,18 @@ export async function resolveRebindWorkspaceRoot(
       400,
     );
   }
-  const trimmed = rawRoot.trim();
   if (
-    trimmed.length === 0 ||
-    trimmed.length > 500 ||
+    rawRoot.trim().length === 0 ||
+    rawRoot.length > 500 ||
     // eslint-disable-next-line no-control-regex
-    /[\u0000-\u001f\u007f]/u.test(trimmed)
+    /[\u0000-\u001f\u007f]/u.test(rawRoot)
   ) {
     throw new WorkspaceRebindRequestError(
       "Workspace root is invalid",
       400,
     );
   }
-  if (!path.isAbsolute(trimmed)) {
+  if (!path.isAbsolute(rawRoot)) {
     throw new WorkspaceRebindRequestError(
       "Workspace root must be an absolute path",
       400,
@@ -79,7 +78,7 @@ export async function resolveRebindWorkspaceRoot(
   }
   let resolved: string;
   try {
-    resolved = await realpath(path.resolve(trimmed));
+    resolved = await realpath(path.resolve(rawRoot));
   } catch {
     throw new WorkspaceRebindRequestError(
       "Workspace folder does not exist",

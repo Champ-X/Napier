@@ -64,6 +64,22 @@ describe("Thread Run stream state", () => {
     expect(activeRunStreamingText(events, "run_old")).toBe("");
   });
 
+  it("hands intermediate tool-calling text to progress notes without concatenating rounds", () => {
+    const events = [
+      event("thread_a", "run_active", 1, "先检查结构"),
+      modelResponse("thread_a", "run_active", 2),
+      event("thread_a", "run_active", 3, "再修改样式"),
+    ];
+
+    let sessions: ThreadRunSessions = attachThreadRun({}, "thread_a");
+    for (const runEvent of events) {
+      sessions = applyThreadRunEvent(sessions, "thread_a", runEvent);
+    }
+
+    expect(sessions.thread_a?.streamingText).toBe("再修改样式");
+    expect(activeRunStreamingText(events, "run_active")).toBe("再修改样式");
+  });
+
   it("does not append a background Thread event to the selected detail", () => {
     const selected = detail("thread_b", []);
     const backgroundFrame = frame(event("thread_a", "run_a", 1, "A"));
@@ -436,6 +452,18 @@ function assistant(threadId: string, runId: string, seq: number): RunEvent {
   };
 }
 
+function modelResponse(threadId: string, runId: string, seq: number): RunEvent {
+  return {
+    ...event(threadId, runId, seq, ""),
+    type: "model.response",
+    visibility: "debug",
+    payload: {
+      text: "先检查结构",
+      toolCalls: [{ id: "call_read", name: "read_file" }],
+    },
+  };
+}
+
 function frame(runEvent: RunEvent): Extract<StreamFrame, { type: "event" }> {
   return {
     type: "event",
@@ -456,25 +484,38 @@ function hubProjection(threadId: string) {
     orphanedTaskCount: 0,
     omittedTaskCount: 0,
     eventWatermark: 1,
-    tasks: [{
-      taskId: "task_fixture0001",
-      runId: "run_thread_a",
-      role: "reviewer" as const,
-      description: "Review projected evidence",
-      status: "completed" as const,
-      taskStatus: "completed" as const,
-      model: { provider: "napier", id: "demo" },
-      stepCount: 2,
-      turnCount: 1,
-      usage: { inputTokens: 100, outputTokens: 20, cacheReadTokens: 0, cacheWriteTokens: 0, costUsd: 0 },
-      revision: 3,
-      createdAt: "2026-08-07T00:00:00.000Z",
-      mailbox: { acceptedCount: 0, deliveredCount: 0, pendingCount: 0 },
-      lineage: { childTaskIds: [] },
-      transcript: [],
-      worktree: { state: "none" as const },
-      control: { steer: false, cancel: false, revive: false, unavailableReason: "parent_run_not_running" as const },
-    }],
+    tasks: [
+      {
+        taskId: "task_fixture0001",
+        runId: "run_thread_a",
+        role: "reviewer" as const,
+        description: "Review projected evidence",
+        status: "completed" as const,
+        taskStatus: "completed" as const,
+        model: { provider: "napier", id: "demo" },
+        stepCount: 2,
+        turnCount: 1,
+        usage: {
+          inputTokens: 100,
+          outputTokens: 20,
+          cacheReadTokens: 0,
+          cacheWriteTokens: 0,
+          costUsd: 0,
+        },
+        revision: 3,
+        createdAt: "2026-08-07T00:00:00.000Z",
+        mailbox: { acceptedCount: 0, deliveredCount: 0, pendingCount: 0 },
+        lineage: { childTaskIds: [] },
+        transcript: [],
+        worktree: { state: "none" as const },
+        control: {
+          steer: false,
+          cancel: false,
+          revive: false,
+          unavailableReason: "parent_run_not_running" as const,
+        },
+      },
+    ],
   };
 }
 

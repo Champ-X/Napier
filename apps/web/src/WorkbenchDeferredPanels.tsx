@@ -1,8 +1,8 @@
 import { lazy, Suspense } from "react";
 
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
-import { taskNarrative } from "./task-narrative-view-model";
 import { taskArtifactPaths } from "./task-completion-output-paths";
+import { taskNarrative } from "./task-narrative-view-model";
 
 const LazyWorkbenchNotices = lazy(() =>
   import("./WorkbenchNotices").then(({ WorkbenchNotices }) => ({
@@ -33,13 +33,17 @@ export function WorkbenchDeferredNotices({ vm }: { vm: WorkspaceViewModel }) {
   ) : null;
 }
 
-export function WorkbenchDeferredTaskResult({
+/** Keeps completed outputs reachable when the desktop workspace rail is hidden. */
+export function WorkbenchDeferredCompactTaskResult({
   vm,
   onOpenArtifact,
+  suppressed = false,
 }: {
   vm: WorkspaceViewModel;
   onOpenArtifact(path: string): void;
+  suppressed?: boolean;
 }) {
+  if (suppressed) return null;
   if (!vm.detail) return null;
   const narrative = taskNarrative(vm.detail);
   if (narrative.phase !== "completed") return null;
@@ -47,7 +51,7 @@ export function WorkbenchDeferredTaskResult({
   if (narrative.completedItems.length === 0 && outputPaths.length === 0)
     return null;
   return (
-    <div className="task-result-summary">
+    <div className="task-result-summary is-compact-only">
       <Suspense fallback={null}>
         <LazyTaskCompletionSummary
           completedItems={narrative.completedItems}

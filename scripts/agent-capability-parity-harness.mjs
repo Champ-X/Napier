@@ -184,7 +184,7 @@ async function readState(input) {
     });
     sdkRead = await immutableRead(input.dataRoot, async () =>
       createNapierManagementClient({
-        baseUrl: "http://napier.local",
+        baseUrl: "http://127.0.0.1",
         fetch: (request, init) => app.fetch(new Request(request, init)),
       }).getEffectiveAgentCapabilities({ agentId: input.agentId }),
     );

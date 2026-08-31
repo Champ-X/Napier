@@ -1,4 +1,8 @@
-import type { ModelRef, StreamFrame } from "@napier/contracts";
+import type {
+  ModelRef,
+  PromptImageInput,
+  StreamFrame,
+} from "@napier/contracts";
 import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
 
 import { streamPrompt } from "./api";
@@ -6,12 +10,14 @@ import { streamPrompt } from "./api";
 export interface NextRunPromptInput {
   threadId: string;
   text: string;
+  images?: PromptImageInput[];
   model: ModelRef;
   capabilityPreset?: AgentCapabilityPresetId;
   onStart: () => void;
   onRefresh: () => Promise<void>;
   onError: (error: unknown) => void;
   restoreInput: (text: string) => void;
+  restoreImages?: () => void;
   onFinish: () => void;
   onFrame: (frame: StreamFrame) => void;
 }
@@ -27,6 +33,7 @@ export async function executeNextRunPrompt(
       input.threadId,
       {
         text: input.text,
+        ...(input.images ? { images: input.images } : {}),
         model: input.model,
         ...(input.capabilityPreset
           ? { capabilityPreset: input.capabilityPreset }
@@ -41,7 +48,10 @@ export async function executeNextRunPrompt(
     );
     await input.onRefresh();
   } catch (error) {
-    if (!runStarted) input.restoreInput(input.text);
+    if (!runStarted) {
+      input.restoreInput(input.text);
+      input.restoreImages?.();
+    }
     input.onError(error);
   } finally {
     input.onFinish();

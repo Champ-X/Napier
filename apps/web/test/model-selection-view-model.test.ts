@@ -82,7 +82,9 @@ describe("model selection view model", () => {
       "deepseek/deepseek-v4-flash",
     ]);
     expect(groups.flatMap((group) => group.options)).not.toEqual(
-      expect.arrayContaining([expect.objectContaining({ key: "openai/gpt-4.1" })]),
+      expect.arrayContaining([
+        expect.objectContaining({ key: "openai/gpt-4.1" }),
+      ]),
     );
   });
 
@@ -145,6 +147,7 @@ describe("model selection view model", () => {
       id: "demo",
       label: "napier / Deterministic demo",
       configured: true,
+      vision: false,
       known: true,
     });
     expect(
@@ -155,6 +158,7 @@ describe("model selection view model", () => {
       id: "deepseek-v4-flash",
       label: "deepseek / DeepSeek V4 Flash",
       configured: false,
+      vision: false,
       known: true,
     });
     expect(selectedModelAvailability(models, "missing/model")).toEqual({
@@ -163,6 +167,7 @@ describe("model selection view model", () => {
       id: "model",
       label: "missing/model",
       configured: false,
+      vision: false,
       known: false,
     });
   });

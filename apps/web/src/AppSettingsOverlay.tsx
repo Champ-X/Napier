@@ -22,7 +22,6 @@ export function AppSettingsOverlay({
       section={shell.settingsSection}
       onSection={shell.setSettingsSection}
       onClose={shell.closeSettings}
-      onWorkspaceSwitch={vm.switchWorkspaceRoot}
     />
   );
 }

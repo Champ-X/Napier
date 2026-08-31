@@ -75,6 +75,104 @@ describe("Trace trajectory event detail view", () => {
     expect(JSON.stringify(detail)).not.toContain("TOP_SECRET_MODEL_OUTPUT");
   });
 
+  it("derives a bounded request path, receipts, TTFT, and throughput", () => {
+    const started = timedEvent(
+      "route_attempt_started",
+      {
+        attemptId: "route_attempt_1",
+        attempt: 1,
+        stepAttempt: 1,
+        providerId: "deepseek",
+        modelId: "deepseek-v4-flash-vision-exp",
+      },
+      20,
+      0,
+    );
+    const reasoningDelta = timedEvent(
+      "model.thinking.delta",
+      { deltaBytes: 48 },
+      21,
+      1_000,
+    );
+    const contentDelta = timedEvent(
+      "model.text.delta",
+      { deltaBytes: 24 },
+      22,
+      1_200,
+    );
+    const finished = timedEvent(
+      "route_attempt_ended",
+      {
+        attemptId: "route_attempt_1",
+        attempt: 1,
+        stepAttempt: 1,
+        providerId: "deepseek",
+        modelId: "deepseek-v4-flash-vision-exp",
+        durationMs: 3_000,
+      },
+      23,
+      3_000,
+    );
+    const response = timedEvent(
+      "model.response",
+      {
+        model: "deepseek/deepseek-v4-flash-vision-exp",
+        stopReason: "toolUse",
+        text: "TOP_SECRET_VISIBLE_CONTENT",
+        reasoning: "TOP_SECRET_PRIVATE_REASONING",
+        usage: {
+          inputTokens: 800,
+          outputTokens: 120,
+          cacheReadTokens: 80,
+          cacheWriteTokens: 0,
+          costUsd: 0.0012,
+        },
+        usageAccounting: { rawTotalTokens: 1_000 },
+      },
+      24,
+      3_040,
+    );
+
+    const detail = traceTrajectoryEventDetailView(started, [
+      started,
+      reasoningDelta,
+      contentDelta,
+      finished,
+      response,
+    ]);
+
+    expect(detail.keyPath).toBe(
+      "ROUTE / attempt.started / deepseek/deepseek-v4-flash-vision-exp / attempt 1 / step 1 / turn 6 / call C7",
+    );
+    expect(detail.metrics).toEqual(
+      expect.arrayContaining([
+        { key: "totalTokens", value: "1000" },
+        expect.objectContaining({ key: "reasoningBytes" }),
+        expect.objectContaining({ key: "contentBytes" }),
+        { key: "requestDuration", value: "3.00 s" },
+      ]),
+    );
+    expect(detail.timing).toEqual(
+      expect.arrayContaining([
+        { key: "requestDuration", value: "3.00 s" },
+        { key: "ttft", value: "1.00 s" },
+        { key: "contentLatency", value: "1.20 s" },
+        { key: "generationDuration", value: "2.00 s" },
+        { key: "throughput", value: "60.0 tok/s" },
+      ]),
+    );
+    expect(detail.evidence).toEqual(
+      expect.arrayContaining([
+        { key: "action", value: "attempt.started" },
+        {
+          key: "servingModel",
+          value: "deepseek/deepseek-v4-flash-vision-exp",
+        },
+      ]),
+    );
+    expect(JSON.stringify(detail)).not.toContain("TOP_SECRET");
+  });
+
   it("diagnoses failed tools from bounded receipts and links the retry chain", () => {
     const started = event(
       "tool.started",
@@ -179,4 +277,23 @@ function event(
     status: overrides.status ?? "completed",
     durationMs: 1200,
   };
+}
+
+function timedEvent(
+  type: string,
+  payload: RunEvent["payload"],
+  seq: number,
+  offsetMs: number,
+): TraceTrajectoryEvent {
+  const projected = event(type, payload, {
+    id: `event_${String(seq)}`,
+    seq,
+    status: type.endsWith("started") ? "active" : "completed",
+  });
+  const timestampMs = Date.parse("2026-08-21T04:51:30.000Z") + offsetMs;
+  projected.event.createdAt = new Date(timestampMs).toISOString();
+  projected.timestampMs = timestampMs;
+  projected.role = type.startsWith("route_") ? "ROUTE" : "MODEL";
+  projected.lane = "model";
+  return projected;
 }

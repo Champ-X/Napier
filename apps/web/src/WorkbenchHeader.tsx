@@ -1,9 +1,10 @@
 import type { ModelSummary, ThreadStatus } from "@napier/contracts";
 import type { ReactNode } from "react";
-import { Settings2, Wrench } from "lucide-react";
+import { Folder } from "lucide-react";
 
 import { copy } from "./copy";
 import { ModelPicker } from "./ModelPicker";
+import { workspaceEvidenceCopy as workspaceCopy } from "./workspace-evidence-copy";
 
 type HeaderModel = {
   configured: boolean;
@@ -24,8 +25,8 @@ export function WorkbenchHeader({
   recommendedModelKeys,
   recentModelKeys,
   onModel,
-  onOpenDeveloperWorkbench,
-  onOpenSettings,
+  workspaceRailOpen = true,
+  onToggleWorkspaceRail,
 }: {
   isRunning: boolean;
   model: HeaderModel;
@@ -38,8 +39,8 @@ export function WorkbenchHeader({
   recommendedModelKeys?: readonly string[];
   recentModelKeys?: readonly string[];
   onModel(value: string): void;
-  onOpenDeveloperWorkbench(): void;
-  onOpenSettings(): void;
+  workspaceRailOpen?: boolean;
+  onToggleWorkspaceRail?(): void;
 }) {
   return (
     <header className="workbench-header">
@@ -75,24 +76,28 @@ export function WorkbenchHeader({
           recentModelKeys={recentModelKeys}
           onChange={onModel}
         />
-        <button
-          className="workbench-settings workbench-developer"
-          type="button"
-          onClick={onOpenDeveloperWorkbench}
-          aria-label={copy.developerWorkbench.open}
-          title={copy.developerWorkbench.open}
-        >
-          <Wrench size={15} aria-hidden="true" />
-        </button>
-        <button
-          className="workbench-settings"
-          type="button"
-          onClick={onOpenSettings}
-          aria-label={copy.settings}
-        >
-          <Settings2 size={15} aria-hidden="true" />
-          <kbd>⌘,</kbd>
-        </button>
+        {onToggleWorkspaceRail ? (
+          <button
+            id="workspace-rail-toggle"
+            className="workspace-rail-toggle"
+            type="button"
+            aria-controls="workspace-evidence-rail"
+            aria-label={
+              workspaceRailOpen
+                ? workspaceCopy.hideRail
+                : workspaceCopy.showRail
+            }
+            aria-pressed={workspaceRailOpen}
+            title={
+              workspaceRailOpen
+                ? workspaceCopy.hideRail
+                : workspaceCopy.showRail
+            }
+            onClick={onToggleWorkspaceRail}
+          >
+            <Folder size={16} aria-hidden="true" />
+          </button>
+        ) : null}
       </div>
     </header>
   );

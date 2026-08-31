@@ -16,6 +16,7 @@ import {
 import {
   createTraceVirtualLayout,
   createTraceVirtualWindow,
+  TRACE_COMPACT_EVENT_ROW_HEIGHT_PX,
   TRACE_VIRTUAL_VIEWPORT_PX,
 } from "./trace-virtual-window";
 
@@ -52,8 +53,7 @@ export function TraceTrajectoryRunSection({
     [run.turns, visibleEventIds],
   );
   const collection = useMemo(
-    () =>
-      buildTraceRunSemanticCollection(matchingTurns, { selectedEventId }),
+    () => buildTraceRunSemanticCollection(matchingTurns, { selectedEventId }),
     [matchingTurns, selectedEventId],
   );
   const open = forceOpen ? true : !collapsed;
@@ -103,9 +103,15 @@ function TraceVirtualizedRunRows({
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
+  const compactRows = useCompactTraceRows();
   const layout = useMemo(
-    () => createTraceVirtualLayout(collection),
-    [collection],
+    () =>
+      createTraceVirtualLayout(collection, {
+        ...(compactRows
+          ? { eventRowHeightPx: TRACE_COMPACT_EVENT_ROW_HEIGHT_PX }
+          : {}),
+      }),
+    [collection, compactRows],
   );
   const window = createTraceVirtualWindow(
     layout,
@@ -118,7 +124,10 @@ function TraceVirtualizedRunRows({
     const viewport = viewportRef.current;
     if (eventTop === undefined || !viewport) return;
     const viewportHeight = viewport.clientHeight || TRACE_VIRTUAL_VIEWPORT_PX;
-    if (eventTop >= viewport.scrollTop && eventTop < viewport.scrollTop + viewportHeight) {
+    if (
+      eventTop >= viewport.scrollTop &&
+      eventTop < viewport.scrollTop + viewportHeight
+    ) {
       return;
     }
     const nextTop = Math.max(0, eventTop - Math.round(viewportHeight * 0.35));
@@ -128,16 +137,18 @@ function TraceVirtualizedRunRows({
   return (
     <div
       className="trace-run-turns"
-      role="table"
+      role="list"
       aria-label={traceTrajectoryCopy.rows}
-      aria-rowcount={layout.totalRowCount}
+      data-row-count={layout.totalRowCount}
       data-mounted-row-count={window.mountedRowCount}
     >
       <div
         className="trace-virtual-viewport"
         ref={viewportRef}
         tabIndex={0}
-        style={{ height: `${String(Math.min(layout.totalHeight, TRACE_VIRTUAL_VIEWPORT_PX))}px` }}
+        style={{
+          height: `${String(Math.min(layout.totalHeight, TRACE_VIRTUAL_VIEWPORT_PX))}px`,
+        }}
         onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
       >
         <div
@@ -150,32 +161,43 @@ function TraceVirtualizedRunRows({
                 className="trace-turn trace-virtual-turn"
                 role="presentation"
                 key={item.key}
-                style={{ height: item.height, transform: `translateY(${String(item.top)}px)` }}
+                style={{
+                  height: item.height,
+                  transform: `translateY(${String(item.top)}px)`,
+                }}
               >
                 <header>
                   <span>{turnLabel(item.turnIndex)}</span>
-                  <small>{formatNumber(item.eventCount)} {traceTrajectoryCopy.events}</small>
+                  <small>
+                    {formatNumber(item.eventCount)} {traceTrajectoryCopy.events}
+                  </small>
                 </header>
               </section>
             ) : (
-              <ol
+              <div
                 className="trace-turn trace-virtual-rowgroup"
-                role="rowgroup"
-                aria-label={turnLabel(item.turnIndex)}
+                role="presentation"
                 key={item.key}
-                style={{ height: item.height, transform: `translateY(${String(item.top)}px)` }}
+                style={{
+                  height: item.height,
+                  transform: `translateY(${String(item.top)}px)`,
+                }}
               >
                 {item.row.kind === "fold" ? (
-                  <TraceTrajectoryFoldRow row={item.row} />
+                  <TraceTrajectoryFoldRow
+                    row={item.row}
+                    setSize={layout.totalRowCount}
+                  />
                 ) : (
                   <TraceTrajectoryEventRow
                     rowIndex={item.row.rowIndex}
+                    setSize={layout.totalRowCount}
                     event={item.row.event}
                     selected={item.row.event.event.id === selectedEventId}
                     onSelect={onSelect}
                   />
                 )}
-              </ol>
+              </div>
             ),
           )}
         </div>
@@ -184,27 +206,52 @@ function TraceVirtualizedRunRows({
   );
 }
 
+function useCompactTraceRows(): boolean {
+  const query = "(max-width: 520px)";
+  const [compact, setCompact] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia(query).matches,
+  );
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const media = window.matchMedia(query);
+    const update = () => setCompact(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+  return compact;
+}
+
 function turnLabel(index: number): string {
   return index === 0
     ? traceTrajectoryCopy.setup
     : `${traceTrajectoryCopy.turn} ${formatNumber(index)}`;
 }
 
-function TraceTrajectoryFoldRow({ row }: { row: TraceSemanticFoldRow }) {
-  const lanes = (Object.entries(row.laneCounts) as [
-    TraceTrajectoryLane,
-    number,
-  ][]).filter(([, count]) => count > 0);
+function TraceTrajectoryFoldRow({
+  row,
+  setSize,
+}: {
+  row: TraceSemanticFoldRow;
+  setSize: number;
+}) {
+  const lanes = (
+    Object.entries(row.laneCounts) as [TraceTrajectoryLane, number][]
+  ).filter(([, count]) => count > 0);
   return (
-    <li
+    <div
       className="trace-fold-row"
-      role="row"
-      aria-rowindex={row.rowIndex}
+      role="listitem"
+      aria-posinset={row.rowIndex}
+      aria-setsize={setSize}
     >
-      <span className="trace-fold-icon" role="cell">
+      <span className="trace-fold-icon">
         <Layers size={13} aria-hidden="true" />
       </span>
-      <span className="trace-fold-copy" role="cell">
+      <span className="trace-fold-copy">
         <strong>
           {formatNumber(row.count)} {traceTrajectoryCopy.fold.events}
         </strong>
@@ -216,7 +263,7 @@ function TraceTrajectoryFoldRow({ row }: { row: TraceSemanticFoldRow }) {
           ))}
         </small>
       </span>
-      <span className="trace-fold-range" role="cell">
+      <span className="trace-fold-range">
         <time dateTime={new Date(row.startMs).toISOString()}>
           {formatClock(row.startMs)}
         </time>
@@ -225,42 +272,48 @@ function TraceTrajectoryFoldRow({ row }: { row: TraceSemanticFoldRow }) {
           {formatClock(row.endMs)}
         </time>
       </span>
-    </li>
+    </div>
   );
 }
 
 function TraceTrajectoryEventRow({
   rowIndex,
+  setSize,
   event,
   selected,
   onSelect,
 }: {
   rowIndex: number;
+  setSize: number;
   event: TraceTrajectoryEvent;
   selected: boolean;
   onSelect: (eventId: string) => void;
 }) {
   const summarySegments = traceTrajectorySummarySegments(event.summary);
   return (
-    <li
+    <div
       id={`trace-event-${event.event.id}`}
-      role="row"
-      aria-rowindex={rowIndex}
-      aria-selected={selected}
+      role="listitem"
+      aria-posinset={rowIndex}
+      aria-setsize={setSize}
       className={[
         `lane-${event.lane}`,
         event.status === "failed" ? "is-exception" : "",
         selected ? "is-selected" : "",
       ].join(" ")}
     >
-      <button type="button" onClick={() => onSelect(event.event.id)}>
-        <span className="trace-event-identity" role="cell">
+      <button
+        type="button"
+        aria-expanded={selected}
+        onClick={() => onSelect(event.event.id)}
+      >
+        <span className="trace-event-identity">
           <span className="trace-event-role">{event.role}</span>
           <span className="trace-event-sequence">
             <i />#{String(event.event.seq).padStart(3, "0")}
           </span>
         </span>
-        <span className="trace-event-copy" role="cell">
+        <span className="trace-event-copy">
           <span className="trace-event-title">
             <strong>{event.label}</strong>
             <i className={`status-${event.status}`}>
@@ -273,7 +326,7 @@ function TraceTrajectoryEventRow({
             ))}
           </small>
         </span>
-        <span className="trace-event-meta" role="cell">
+        <span className="trace-event-meta">
           {event.durationMs !== undefined ? (
             <strong>{formatTraceDuration(event.durationMs)}</strong>
           ) : null}
@@ -283,7 +336,7 @@ function TraceTrajectoryEventRow({
           <ChevronDown size={15} aria-hidden="true" />
         </span>
       </button>
-    </li>
+    </div>
   );
 }
 

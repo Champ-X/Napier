@@ -94,7 +94,7 @@
     "check:web-design": "node scripts/check-web-design.mjs",
     "check:web-dist-manifest": "node scripts/update-web-dist-manifest.mjs --check",
     "check:web-dist-receipt": "node scripts/check-web-dist.mjs --verify-receipt-path docs/artifacts/web-dist-audit-0.1.0.json",
-    "dev": "npm run build:core && node --env-file-if-exists=.env node_modules/concurrently/dist/bin/concurrently.js -n server,web -c yellow,cyan \"npm run dev -w @napier/server\" \"npm run dev -w @napier/web\"",
+    "dev": "npm run build:core && node --env-file-if-exists=.env node_modules/concurrently/dist/bin/concurrently.js -n contracts,runtime,server,web -c magenta,green,yellow,cyan \"npm run dev -w @napier/contracts\" \"npm run dev -w @napier/runtime\" \"npm run dev -w @napier/server\" \"npm run dev -w @napier/web\"",
     "generate:web-design": "node scripts/generate-web-design-tokens.mjs",
     "format": "prettier --write .",
     "napier": "npm run build:core && npm run build -w @napier/cli && node --env-file-if-exists=.env apps/cli/dist/index.js",

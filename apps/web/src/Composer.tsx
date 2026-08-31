@@ -1,8 +1,8 @@
-import type { KeyboardEvent } from "react";
+import type { ClipboardEvent, DragEvent, KeyboardEvent } from "react";
 import { lazy, Suspense, useCallback, useRef, useState } from "react";
 import {
-  Command,
-  FolderTree,
+  AlertTriangle,
+  ImagePlus,
   Send,
   SlidersHorizontal,
   Square,
@@ -11,6 +11,12 @@ import {
 import type { AgentProfile } from "@napier/contracts";
 import type { InspectorTab } from "./use-workspace-view-model";
 import { copy } from "./copy";
+import { composerCopy } from "./composer-copy";
+import {
+  appendComposerImageFiles,
+  ComposerImageError,
+} from "./composer-image-attachments";
+import { ComposerImageAttachments } from "./ComposerImageAttachments";
 import { shellCopy } from "./shell-copy";
 import {
   initialComposerRunReadiness,
@@ -18,7 +24,9 @@ import {
 } from "./composer-readiness-types";
 import type { SelectedModelAvailability } from "./model-selection-view-model";
 import { useComposerHeight } from "./use-composer-height";
+import { useDismissableDetails } from "./use-dismissable-details";
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
+import "./composer-image-attachments.css";
 
 const LazyComposerCapabilityControl = lazy(() =>
   import("./ComposerCapabilityControl").then(
@@ -32,12 +40,6 @@ const LazyProviderSetupCard = lazy(() =>
     default: ProviderSetupCard,
   })),
 );
-const LazyWorkspaceFolderPicker = lazy(() =>
-  import("./WorkspaceFolderPicker").then(({ WorkspaceFolderPicker }) => ({
-    default: WorkspaceFolderPicker,
-  })),
-);
-
 type WorkspaceViewModel = ReturnType<typeof useWorkspaceViewModel>;
 
 const MODEL_WARNING_ID = "composer-model-unavailable";
@@ -48,15 +50,14 @@ export function Composer({
   activeAgent,
   activeModel,
   canStartRun,
-  workspaceRoot,
   onOpenInspector,
-  onOpenWorkspace,
-  onWorkspaceSwitch,
 }: {
   vm: Pick<
     WorkspaceViewModel,
     | "composer"
+    | "composerImages"
     | "setComposer"
+    | "setComposerImages"
     | "submit"
     | "stop"
     | "detail"
@@ -73,32 +74,57 @@ export function Composer({
   activeAgent: AgentProfile | undefined;
   activeModel: SelectedModelAvailability;
   canStartRun: boolean;
-  workspaceRoot: string;
   onOpenInspector: (tab: InspectorTab) => void;
-  onOpenWorkspace: () => void;
-  onWorkspaceSwitch(root: string): Promise<void>;
 }) {
   const [runReadiness, setRunReadiness] = useState<ComposerRunReadiness>(
     initialComposerRunReadiness,
   );
-  const [pickerOpen, setPickerOpen] = useState(false);
   const composerRef = useRef<HTMLFormElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [imageError, setImageError] = useState<string>();
+  const [imageDragActive, setImageDragActive] = useState(false);
+  const optionsRef = useDismissableDetails();
   useComposerHeight(composerRef);
   const readinessPending = composerReadinessPending(runReadiness);
-  const canSubmit = canStartRun && runReadiness.canRun;
+  const imagesSupported =
+    vm.composerImages.length === 0 || activeModel.vision === true;
+  const canSubmit = canStartRun && runReadiness.canRun && imagesSupported;
   const submit = useCallback(() => {
     if (vm.isRunning || canSubmit) void vm.submit();
   }, [canSubmit, vm]);
   return (
     <form
       ref={composerRef}
-      className="composer"
+      className={`composer${imageDragActive ? " is-image-dragging" : ""}`}
+      data-image-drop-label={composerCopy.images.drop}
       data-run-readiness={readinessPending ? "checking" : runReadiness.level}
       onSubmit={(event) => {
         event.preventDefault();
         submit();
       }}
+      onDragEnter={(event) =>
+        handleImageDragEnter(
+          event,
+          vm.isRunning || !activeModel.vision,
+          setImageDragActive,
+        )
+      }
+      onDragOver={(event) => handleImageDragOver(event)}
+      onDragLeave={(event) => handleImageDragLeave(event, setImageDragActive)}
+      onDrop={(event) =>
+        void handleImageDrop(
+          event,
+          vm,
+          vm.isRunning || !activeModel.vision,
+          setImageError,
+          setImageDragActive,
+        )
+      }
     >
+      <ComposerImageAttachments
+        images={vm.composerImages}
+        setImages={vm.setComposerImages}
+      />
       <div className="composer-input-row">
         <span className="composer-mode" aria-hidden="true">
           {vm.openOperatorDecision
@@ -122,6 +148,14 @@ export function Composer({
             Boolean(vm.browserInteractionConfirmation)
           }
           onChange={(event) => vm.setComposer(event.target.value)}
+          onPaste={(event) =>
+            void handleImagePaste(
+              event,
+              vm,
+              vm.isRunning || !activeModel.vision,
+              setImageError,
+            )
+          }
           onKeyDown={(event) => handleComposerKeys(event, submit)}
         />
         {vm.isRunning ? (
@@ -173,10 +207,42 @@ export function Composer({
       </div>
       <div className="composer-footer">
         <div className="composer-hints">
-          <details className="composer-options">
-            <summary>
-              <SlidersHorizontal size={12} aria-hidden="true" />
-              {shellCopy.composer.runOptions}
+          <button
+            type="button"
+            className="composer-image-picker"
+            disabled={vm.isRunning || !activeModel.vision}
+            aria-label={composerCopy.images.attach}
+            title={
+              activeModel.vision
+                ? composerCopy.images.attach
+                : composerCopy.images.visionRequired
+            }
+            onClick={() => imageInputRef.current?.click()}
+          >
+            <ImagePlus size={15} aria-hidden="true" />
+          </button>
+          <input
+            ref={imageInputRef}
+            className="composer-image-input"
+            type="file"
+            tabIndex={-1}
+            multiple
+            accept="image/jpeg,image/png,image/gif,image/webp"
+            disabled={vm.isRunning || !activeModel.vision}
+            onChange={(event) => {
+              const files = event.currentTarget.files
+                ? Array.from(event.currentTarget.files)
+                : [];
+              event.currentTarget.value = "";
+              void addComposerImages(files, vm, setImageError);
+            }}
+          />
+          <details ref={optionsRef} className="composer-options">
+            <summary
+              aria-label={shellCopy.composer.runOptions}
+              title={shellCopy.composer.runOptions}
+            >
+              <SlidersHorizontal size={14} aria-hidden="true" />
             </summary>
             <div className="composer-options-popover">
               <Suspense
@@ -199,19 +265,6 @@ export function Composer({
               </Suspense>
             </div>
           </details>
-          <span>
-            <Command size={12} aria-hidden="true" />
-            {copy.shortcut}
-          </span>
-          <button
-            type="button"
-            className="composer-workspace-chip"
-            onClick={() => setPickerOpen(true)}
-            title={workspaceRoot}
-          >
-            <FolderTree size={12} aria-hidden="true" />
-            <span>{shortWorkspacePath(workspaceRoot)}</span>
-          </button>
           {vm.isRunning ? (
             <label className="control-mode">
               <span>{copy.controlMode}</span>
@@ -239,18 +292,117 @@ export function Composer({
         readiness={runReadiness}
         pending={readinessPending}
       />
-      {pickerOpen ? (
-        <Suspense fallback={null}>
-          <LazyWorkspaceFolderPicker
-            currentRoot={workspaceRoot}
-            onClose={() => setPickerOpen(false)}
-            onManualEntry={onOpenWorkspace}
-            onWorkspaceSwitch={onWorkspaceSwitch}
-          />
-        </Suspense>
-      ) : null}
+      <ComposerImageWarning
+        error={imageError}
+        imagesSupported={imagesSupported}
+        onClear={() => vm.setComposerImages([])}
+      />
     </form>
   );
+}
+
+function ComposerImageWarning({
+  error,
+  imagesSupported,
+  onClear,
+}: {
+  error: string | undefined;
+  imagesSupported: boolean;
+  onClear: () => void;
+}) {
+  if (!error && imagesSupported) return null;
+  return (
+    <div className="composer-image-warning" role="alert">
+      <span>{error ?? composerCopy.images.visionRequired}</span>
+      {!imagesSupported ? (
+        <button type="button" onClick={onClear}>
+          {composerCopy.images.clear}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+async function addComposerImages(
+  files: readonly File[],
+  vm: Pick<WorkspaceViewModel, "composerImages" | "setComposerImages">,
+  setError: (value: string | undefined) => void,
+): Promise<void> {
+  if (files.length === 0) return;
+  setError(undefined);
+  try {
+    vm.setComposerImages(
+      await appendComposerImageFiles(vm.composerImages, files),
+    );
+  } catch (error) {
+    setError(
+      error instanceof ComposerImageError
+        ? composerCopy.images.errors[error.code]
+        : composerCopy.images.errors.unsupported,
+    );
+  }
+}
+
+async function handleImagePaste(
+  event: ClipboardEvent<HTMLTextAreaElement>,
+  vm: Pick<WorkspaceViewModel, "composerImages" | "setComposerImages">,
+  disabled: boolean,
+  setError: (value: string | undefined) => void,
+): Promise<void> {
+  const files = Array.from(event.clipboardData.files);
+  if (files.length === 0) return;
+  event.preventDefault();
+  if (disabled) {
+    setError(composerCopy.images.visionRequired);
+    return;
+  }
+  await addComposerImages(files, vm, setError);
+}
+
+function handleImageDragEnter(
+  event: DragEvent<HTMLFormElement>,
+  disabled: boolean,
+  setActive: (value: boolean) => void,
+): void {
+  if (!hasDraggedFiles(event)) return;
+  event.preventDefault();
+  if (!disabled) setActive(true);
+}
+
+function handleImageDragOver(event: DragEvent<HTMLFormElement>): void {
+  if (!hasDraggedFiles(event)) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "copy";
+}
+
+function handleImageDragLeave(
+  event: DragEvent<HTMLFormElement>,
+  setActive: (value: boolean) => void,
+): void {
+  const next = event.relatedTarget;
+  if (next && event.currentTarget.contains(next as Node)) return;
+  setActive(false);
+}
+
+async function handleImageDrop(
+  event: DragEvent<HTMLFormElement>,
+  vm: Pick<WorkspaceViewModel, "composerImages" | "setComposerImages">,
+  disabled: boolean,
+  setError: (value: string | undefined) => void,
+  setActive: (value: boolean) => void,
+): Promise<void> {
+  if (!hasDraggedFiles(event)) return;
+  event.preventDefault();
+  setActive(false);
+  if (disabled) {
+    setError(composerCopy.images.visionRequired);
+    return;
+  }
+  await addComposerImages(Array.from(event.dataTransfer.files), vm, setError);
+}
+
+function hasDraggedFiles(event: DragEvent<HTMLFormElement>): boolean {
+  return Array.from(event.dataTransfer.types).includes("Files");
 }
 
 function ComposerReadinessNotices({
@@ -284,10 +436,24 @@ function ComposerReadinessNotices({
     );
   }
   return readiness.level === "warn" && readiness.message ? (
-    <p className="composer-readiness-warning" role="status">
-      {readiness.message}
+    <p
+      className="composer-readiness-warning"
+      role="status"
+      title={readiness.message}
+    >
+      <AlertTriangle size={12} aria-hidden="true" />
+      {readinessWarningLabel(readiness)}
     </p>
   ) : null;
+}
+
+function readinessWarningLabel(readiness: ComposerRunReadiness): string {
+  const sandbox = readiness.items.find((item) => item.id === "sandbox");
+  if (sandbox?.value === composerCopy.values.hostDirect) return sandbox.value;
+  return (
+    readiness.items.find((item) => item.state === "warn")?.value ??
+    composerCopy.values.availableUnverified
+  );
 }
 
 function handleComposerKeys(
@@ -302,11 +468,6 @@ function handleComposerKeys(
 
 function composerReadinessPending(readiness: ComposerRunReadiness): boolean {
   return readiness.items.every((item) => item.pending === true);
-}
-
-function shortWorkspacePath(value: string): string {
-  const parts = value.split("/").filter(Boolean);
-  return parts.length > 2 ? `…/${parts.slice(-2).join("/")}` : value;
 }
 
 function runButtonDescription(

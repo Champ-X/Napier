@@ -18,6 +18,10 @@ import type {
 } from "@napier/contracts";
 import { recommendedDefaultRunModel } from "@napier/contracts/default-run-model";
 
+import {
+  DEEPSEEK_VISION_MODEL_ID,
+  withDeepSeekVisionModel,
+} from "./deepseek-vision-provider.js";
 import { createModelAdapterModels } from "./model-adapters.js";
 import type { ModelTurnDeadlinePolicy } from "./model-turn-deadline.js";
 import type { ToolDeadlinePolicy } from "./tool-deadline-policy.js";
@@ -45,7 +49,9 @@ export class ModelRegistry {
         authContext: explicitCredentialAuthContext(),
       }),
     );
-    for (const provider of builtinProviders()) models.setProvider(provider);
+    for (const provider of builtinProviders()) {
+      models.setProvider(withDeepSeekVisionModel(provider));
+    }
     this.models = models;
   }
 
@@ -140,12 +146,23 @@ export class ModelRegistry {
       ...liveModels.sort((left, right) => {
         if (left.configured !== right.configured)
           return left.configured ? -1 : 1;
+        const priority =
+          modelSelectionPriority(left) - modelSelectionPriority(right);
+        if (priority !== 0) return priority;
         return `${left.provider}/${left.name}`.localeCompare(
           `${right.provider}/${right.name}`,
         );
       }),
     ];
   }
+}
+
+function modelSelectionPriority(
+  model: Pick<ModelSummary, "provider" | "id">,
+): number {
+  return model.provider === "deepseek" && model.id === DEEPSEEK_VISION_MODEL_ID
+    ? -1
+    : 0;
 }
 
 function explicitCredentialAuthContext(): AuthContext {

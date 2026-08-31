@@ -1,97 +1,154 @@
 .conversation-activity-group {
-  margin-block-end: 0;
-  margin-inline-start: var(--space-10);
+  position: relative;
+  width: min(100%, var(--layout-reading-target));
+  margin: 0 0 var(--space-1);
   color: var(--color-fg-muted);
-  background: var(--color-bg-subtle);
-  border: 1px solid var(--color-border-subtle);
-  border-inline-start: var(--control-focus-width) solid var(--color-accent);
-  border-radius: var(--radius-sm);
+  animation: conversation-stage-arrive var(--duration-base) var(--ease-out) both;
 }
 
-.conversation-activity-group > summary {
-  display: grid;
-  min-height: calc(var(--control-target) - var(--space-1));
-  grid-template-columns: var(--space-4) minmax(0, 1fr);
-  gap: var(--inline-sm);
-  align-items: center;
-  padding: var(--inset-xs) var(--inset-sm);
-  cursor: pointer;
-  list-style: none;
-  border-radius: var(--radius-sm);
+.conversation-activity-group-status {
+  position: absolute;
+  z-index: 1;
+  top: calc((var(--control-target) - var(--space-3) - var(--space-2)) / 2);
+  left: var(--space-1);
+  display: block;
+  width: var(--space-2);
+  height: var(--space-2);
+  opacity: 0;
+  background: var(--color-fg);
+  border-radius: 58% 42% 63% 37% / 46% 61% 39% 54%;
+  transform: scale(0.78) rotate(-5deg);
+  transition:
+    opacity var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out);
 }
 
-.conversation-activity-group > summary > svg {
-  transition: transform var(--duration-fast) var(--ease-out);
-}
-
-.conversation-activity-group[open] > summary > svg {
-  transform: rotate(90deg);
-}
-
-.conversation-activity-group > summary::-webkit-details-marker {
-  display: none;
-}
-
-.conversation-activity-group > summary > strong {
-  min-width: 0;
-}
-
-.conversation-activity-group > summary small,
-.conversation-activity-group > summary time {
-  font-family: var(--font-sans);
-  font-size: var(--text-xs);
-  color: var(--color-fg-subtle);
-}
-
-.conversation-activity-group > summary > strong {
-  overflow: hidden;
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-fg);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.conversation-activity-group > summary:hover,
-.conversation-activity-group[open] > summary {
-  background: var(--color-accent-subtle);
-}
-
-.conversation-activity-group > summary:active {
-  color: var(--color-accent-active);
-}
-
-.conversation-activity-group > summary:focus-visible {
-  outline: none;
-  box-shadow:
-    0 0 0 var(--control-focus-offset) var(--color-surface),
-    0 0 0 calc(var(--control-focus-offset) + var(--control-focus-width))
-      var(--color-focus-ring);
+.conversation-activity-group[data-state="running"]
+  .conversation-activity-group-status {
+  animation: conversation-running-blob 640ms var(--ease-standard) infinite;
 }
 
 .conversation-activity-group-items {
-  padding: var(--inset-xs);
-  border-top: 1px solid var(--color-border-subtle);
+  padding: 1px 0 var(--space-1) var(--space-6);
 }
 
-.conversation-activity-group-items > details {
-  margin-block-end: 0;
+.conversation-activity-group-items > * {
+  margin-block: 0;
+  animation: conversation-step-arrive var(--duration-base) var(--ease-out) both;
 }
 
-.conversation-activity-group-items > details:last-child {
-  margin-bottom: 0;
+.conversation-activity-group-items > .status-working > summary {
+  background: var(--color-accent-subtle);
+  transition: background-color var(--duration-base) var(--ease-out);
+}
+
+.conversation-activity-group-items
+  > .status-completed
+  > summary
+  > [role="img"] {
+  animation: conversation-step-confirm var(--duration-base) var(--ease-out);
+}
+
+@keyframes conversation-stage-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-1));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes conversation-step-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes conversation-step-confirm {
+  from {
+    opacity: 0.45;
+    transform: scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes conversation-running-blob {
+  0%,
+  100% {
+    opacity: 0.52;
+    border-radius: 58% 42% 63% 37% / 46% 61% 39% 54%;
+    transform: translateY(1px) scale(0.78) rotate(-5deg);
+  }
+  50% {
+    opacity: 0.96;
+    border-radius: 43% 57% 38% 62% / 59% 42% 58% 41%;
+    transform: translateY(0) scale(1.04) rotate(4deg);
+  }
+}
+
+@supports selector(details::details-content) {
+  .conversation-activity-group-items {
+    interpolate-size: allow-keywords;
+  }
+
+  .conversation-activity-group-items > details::details-content {
+    height: 0;
+    overflow: clip;
+    opacity: 0;
+    transition:
+      height var(--duration-base) var(--ease-out),
+      opacity var(--duration-fast) var(--ease-out),
+      content-visibility var(--duration-base) var(--ease-out) allow-discrete;
+  }
+
+  .conversation-activity-group-items > details[open]::details-content {
+    height: auto;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .conversation-activity-group,
+  .conversation-activity-group-items > *,
+  .conversation-activity-group-items
+    > .status-completed
+    > summary
+    > [role="img"],
+  .conversation-activity-group[data-state="running"]
+    .conversation-activity-group-status {
+    animation: none;
+  }
+
+  .conversation-activity-group-status,
+  .conversation-activity-group-items > .status-working > summary {
+    transition: none;
+  }
+
+  .conversation-activity-group[data-state="running"]
+    .conversation-activity-group-status {
+    opacity: 0.82;
+    transform: none;
+  }
+
+  .conversation-activity-group-items > details::details-content {
+    transition: none;
+  }
 }
 
 @media (forced-colors: active) {
-  .conversation-activity-group,
-  .conversation-activity-group > summary {
-    border-color: ButtonText;
-  }
-
-  .conversation-activity-group > summary:focus-visible {
-    outline: var(--control-focus-width) solid Highlight;
-    outline-offset: var(--control-focus-offset);
-    box-shadow: none;
+  .conversation-activity-group[data-state="running"]
+    .conversation-activity-group-status {
+    opacity: 1;
+    background: ButtonText;
   }
 }

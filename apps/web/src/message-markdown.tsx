@@ -35,6 +35,7 @@ export interface MessageMarkdownProps {
   workspaceLinks?: readonly MessageWorkspaceLink[];
   citationLinks?: readonly MessageCitationLink[];
   onInspectArtifact?(inspection: ArtifactInspection): void;
+  onOpenWorkspaceFile?(path: string): void;
 }
 
 export function MessageMarkdown({
@@ -42,6 +43,7 @@ export function MessageMarkdown({
   workspaceLinks = [],
   citationLinks = [],
   onInspectArtifact,
+  onOpenWorkspaceFile,
 }: MessageMarkdownProps) {
   const workspaceTargets = new Map(
     workspaceLinks.map((link) => [link.path, link]),
@@ -108,6 +110,7 @@ export function MessageMarkdown({
                 workspaceTargets,
                 citationTargets,
                 onInspectArtifact,
+                onOpenWorkspaceFile,
               )}
             </Heading>
           );
@@ -120,6 +123,7 @@ export function MessageMarkdown({
                 workspaceTargets,
                 citationTargets,
                 onInspectArtifact,
+                onOpenWorkspaceFile,
               )}
             </blockquote>
           );
@@ -135,6 +139,7 @@ export function MessageMarkdown({
                     workspaceTargets,
                     citationTargets,
                     onInspectArtifact,
+                    onOpenWorkspaceFile,
                   )}
                 </li>
               ))}
@@ -154,6 +159,7 @@ export function MessageMarkdown({
                           workspaceTargets,
                           citationTargets,
                           onInspectArtifact,
+                          onOpenWorkspaceFile,
                         )}
                       </th>
                     ))}
@@ -171,6 +177,7 @@ export function MessageMarkdown({
                             workspaceTargets,
                             citationTargets,
                             onInspectArtifact,
+                            onOpenWorkspaceFile,
                           )}
                         </td>
                       ))}
@@ -188,6 +195,7 @@ export function MessageMarkdown({
               workspaceTargets,
               citationTargets,
               onInspectArtifact,
+              onOpenWorkspaceFile,
             )}
           </p>
         );
@@ -201,6 +209,7 @@ function inlineMarkdown(
   workspaceTargets: ReadonlyMap<string, MessageWorkspaceLink>,
   citationTargets: ReadonlyMap<string, MessageCitationLink>,
   onInspectArtifact?: (inspection: ArtifactInspection) => void,
+  onOpenWorkspaceFile?: (path: string) => void,
 ): ReactNode[] {
   const tokens =
     /(`[^`\n]+`|\*\*[^*\n]+\*\*|\[[^\]\n]+\]\([^\s)]+\)|\[citation:citation_[a-z0-9]{8,80}\])/gu;
@@ -239,6 +248,14 @@ function inlineMarkdown(
             link={target}
             {...(onInspectArtifact ? { onInspectArtifact } : {})}
           />
+        ) : onOpenWorkspaceFile && isWorkspaceFileReference(code) ? (
+          <WorkspaceFileLink
+            code
+            key={`${start}-workspace-file-code`}
+            label={code}
+            path={code}
+            onOpen={onOpenWorkspaceFile}
+          />
         ) : (
           <code key={`${start}-code`}>{code}</code>
         ),
@@ -251,6 +268,7 @@ function inlineMarkdown(
             workspaceTargets,
             citationTargets,
             onInspectArtifact,
+            onOpenWorkspaceFile,
           )}
         </strong>,
       );
@@ -265,6 +283,13 @@ function inlineMarkdown(
             label={link?.[1] ?? target.path}
             link={target}
             {...(onInspectArtifact ? { onInspectArtifact } : {})}
+          />
+        ) : href && onOpenWorkspaceFile && isWorkspaceFileReference(href) ? (
+          <WorkspaceFileLink
+            key={`${start}-workspace-file-link`}
+            label={link?.[1] ?? href}
+            path={href}
+            onOpen={onOpenWorkspaceFile}
           />
         ) : href && safeExternalHref(href) ? (
           <a
@@ -284,6 +309,31 @@ function inlineMarkdown(
   }
   if (cursor < value.length) output.push(value.slice(cursor));
   return output;
+}
+
+function WorkspaceFileLink({
+  code = false,
+  label,
+  path,
+  onOpen,
+}: {
+  code?: boolean;
+  label: string;
+  path: string;
+  onOpen(path: string): void;
+}) {
+  return (
+    <button
+      type="button"
+      className={`message-workspace-link is-direct${code ? " is-code" : ""}`}
+      data-workspace-path={path}
+      aria-label={`Open preview: ${path}`}
+      onClick={() => onOpen(path)}
+    >
+      <FileCode2 size={13} aria-hidden="true" />
+      {code ? <code>{label}</code> : label}
+    </button>
+  );
 }
 
 function WorkspaceArtifactLink({
@@ -330,4 +380,25 @@ function safeExternalHref(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+const WORKSPACE_FILE_EXTENSION =
+  /\.(?:c|cc|cjs|cpp|css|csv|docx?|gif|go|h|hpp|html?|java|jpe?g|js|jsx|json|kt|kts|less|markdown|md|mdx|mjs|pdf|php|png|pptx?|py|rb|rs|s?css|sh|sql|svg|toml|ts|tsx|txt|webp|xlsx?|xml|ya?ml|zsh)$/iu;
+
+export function isWorkspaceFileReference(value: string): boolean {
+  const normalized = value.trim().replaceAll("\\", "/");
+  if (
+    !normalized ||
+    /[\s<>\[\]{}|"'`]/u.test(normalized) ||
+    /^(?:data|file|https?):/iu.test(normalized) ||
+    normalized.split("/").includes("..")
+  ) {
+    return false;
+  }
+  const filename = normalized.split("/").at(-1);
+  return Boolean(
+    filename &&
+    !filename.startsWith(".") &&
+    WORKSPACE_FILE_EXTENSION.test(filename),
+  );
 }

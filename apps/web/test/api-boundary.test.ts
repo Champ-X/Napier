@@ -21,6 +21,7 @@ const allowedFetchCallers = new Set([
   "src/tool-invocation-experiment-api.ts",
   "src/workflow-api.ts",
   "src/workflow-experiment-api.ts",
+  "src/workspace-directory-api.ts",
 ]);
 
 describe("Web API boundary", () => {

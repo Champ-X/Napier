@@ -4,9 +4,6 @@ import {
   CheckCircle2,
   Clock3,
   Copy,
-  Ellipsis,
-  GitBranch,
-  Link2,
 } from "lucide-react";
 
 import { copy } from "./copy";
@@ -56,18 +53,18 @@ export function ConversationGenericActivityCard({
 
 export interface ConversationMessageCardProps {
   message: MessageView;
-  onBranch?: () => void;
   workspaceLinks: readonly MessageWorkspaceLink[];
   citationLinks: readonly MessageCitationLink[];
   onInspectArtifact?(inspection: ArtifactInspection): void;
+  onOpenWorkspaceFile?(path: string): void;
 }
 
 export function ConversationMessageCard({
   message,
-  onBranch,
   workspaceLinks,
   citationLinks,
   onInspectArtifact,
+  onOpenWorkspaceFile,
 }: ConversationMessageCardProps) {
   const anchorId = `message-${String(message.seq)}`;
   return (
@@ -87,11 +84,6 @@ export function ConversationMessageCard({
             {formatTime(message.createdAt)}
           </time>
           {message.model ? <small>{message.model}</small> : null}
-          <MessageActions
-            message={message}
-            anchorId={anchorId}
-            {...(onBranch ? { onBranch } : {})}
-          />
         </header>
         <div className="message-text">
           <MessageMarkdown
@@ -99,45 +91,32 @@ export function ConversationMessageCard({
             workspaceLinks={workspaceLinks}
             citationLinks={citationLinks}
             {...(onInspectArtifact ? { onInspectArtifact } : {})}
+            {...(onOpenWorkspaceFile ? { onOpenWorkspaceFile } : {})}
           />
         </div>
+        <MessageCopyAction message={message} />
       </div>
     </article>
   );
 }
 
-function MessageActions({
+function MessageCopyAction({
   message,
-  anchorId,
-  onBranch,
-}: Pick<ConversationMessageCardProps, "message" | "onBranch"> & {
-  anchorId: string;
-}) {
+}: Pick<ConversationMessageCardProps, "message">) {
+  const tooltipId = `message-copy-tooltip-${String(message.seq)}`;
   return (
-    <details className="message-actions">
-      <summary aria-label={shellCopy.conversationFeed.messageActions}>
-        <Ellipsis size={16} aria-hidden="true" />
-      </summary>
-      <div>
-        <button
-          type="button"
-          onClick={() => void navigator.clipboard?.writeText(message.text)}
-        >
-          <Copy size={14} aria-hidden="true" />
-          {shellCopy.conversationFeed.copyMessage}
-        </button>
-        <button type="button" onClick={() => copyMessageLink(anchorId)}>
-          <Link2 size={14} aria-hidden="true" />
-          {shellCopy.conversationFeed.copyLink}
-        </button>
-        {onBranch ? (
-          <button type="button" onClick={onBranch}>
-            <GitBranch size={14} aria-hidden="true" />
-            {copy.branch}
-          </button>
-        ) : null}
-      </div>
-    </details>
+    <button
+      type="button"
+      className="message-copy-action"
+      aria-label={shellCopy.conversationFeed.copyMessage}
+      aria-describedby={tooltipId}
+      onClick={() => void navigator.clipboard?.writeText(message.text)}
+    >
+      <Copy size={15} aria-hidden="true" />
+      <span id={tooltipId} role="tooltip">
+        {shellCopy.conversationFeed.copyMessage}
+      </span>
+    </button>
   );
 }
 
@@ -146,6 +125,7 @@ export interface ConversationStreamingCardProps {
   workspaceLinks: readonly MessageWorkspaceLink[];
   citationLinks: readonly MessageCitationLink[];
   onInspectArtifact?(inspection: ArtifactInspection): void;
+  onOpenWorkspaceFile?(path: string): void;
 }
 
 export function ConversationStreamingCard({
@@ -153,6 +133,7 @@ export function ConversationStreamingCard({
   workspaceLinks,
   citationLinks,
   onInspectArtifact,
+  onOpenWorkspaceFile,
 }: ConversationStreamingCardProps) {
   return (
     <article
@@ -174,19 +155,13 @@ export function ConversationStreamingCard({
             workspaceLinks={workspaceLinks}
             citationLinks={citationLinks}
             {...(onInspectArtifact ? { onInspectArtifact } : {})}
+            {...(onOpenWorkspaceFile ? { onOpenWorkspaceFile } : {})}
           />
           <span className="ink-caret" aria-hidden="true" />
         </div>
       </div>
     </article>
   );
-}
-
-function copyMessageLink(anchorId: string): void {
-  const url = new URL(window.location.href);
-  url.hash = anchorId;
-  window.history.replaceState(null, "", url);
-  void navigator.clipboard?.writeText(url.toString());
 }
 
 function formatTime(value: string): string {

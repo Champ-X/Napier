@@ -1,8 +1,19 @@
 import { createHash } from "node:crypto";
 
 import type { AgentTool } from "@earendil-works/pi-agent-core";
-import type { JsonObject, JsonValue } from "@napier/contracts";
+import type {
+  JsonObject,
+  JsonValue,
+  RegisteredRunEventInputFor,
+  RunInvocationSource,
+} from "@napier/contracts";
 import { isModelContextOverflowMessage } from "./model-context-overflow-recovery.js";
+import { isWorkflowRunSource } from "./workflow-node-execution.js";
+
+export {
+  assertPromptImageCapability,
+  promptUserContent,
+} from "./prompt-image-content.js";
 
 export class OperatorDecisionPendingError extends Error {
   constructor(readonly decisionId: string) {
@@ -11,13 +22,83 @@ export class OperatorDecisionPendingError extends Error {
   }
 }
 
+export function createRunProgressMessageEvent(input: {
+  threadId: string;
+  runId: string;
+  sourceEventId: string;
+  model: string;
+  toolNames: readonly string[];
+  text: string;
+  contentRedacted: boolean;
+}): {
+  threadId: string;
+  runId: string;
+} & RegisteredRunEventInputFor<"run.progress.message"> {
+  const text = input.text.trim().slice(0, 4_000);
+  return {
+    threadId: input.threadId,
+    runId: input.runId,
+    type: "run.progress.message",
+    category: "message",
+    visibility: "user",
+    payload: {
+      sourceEventId: input.sourceEventId,
+      model: input.model,
+      toolNames: [...input.toolNames],
+      ...(!input.contentRedacted && text ? { text } : {}),
+      ...(input.contentRedacted ? { contentRedacted: true as const } : {}),
+    },
+  };
+}
+
+export function turnPromptEvent(
+  source: RunInvocationSource | "goal_continuation" | "advisor_correction",
+) {
+  if (source === "user" || source === "schedule" || source === "channel") {
+    return {
+      type: "message.user",
+      category: "message",
+      visibility: "user",
+    } as const;
+  }
+  if (isWorkflowRunSource(source)) {
+    return {
+      type: "workflow.node.prompt",
+      category: "plan",
+      visibility: "hidden",
+    } as const;
+  }
+  if (source === "goal_continuation") {
+    return {
+      type: "goal.continuation.prompt",
+      category: "goal",
+      visibility: "hidden",
+    } as const;
+  }
+  return {
+    type: "run.recovery.prompt",
+    category: "lifecycle",
+    visibility: "hidden",
+  } as const;
+}
+
 export function formatPlanToolGuidance(tools: readonly AgentTool[]): string {
   const toolNames = new Set(tools.map((tool) => tool.name));
+  if (toolNames.size === 0) return "";
   const hasCreatePlan = toolNames.has("create_plan");
   const hasStepUpdate = toolNames.has("update_plan_step");
   const hasArtifactUpdate = toolNames.has("update_plan_artifact");
   const hasReplan = toolNames.has("replan_plan");
   const hasMilestone = toolNames.has("record_run_milestone");
+  const lines = [
+    "<operator_progress_protocol>",
+    "For any non-trivial tool-driven Run, keep the operator oriented with concise progress updates in normal assistant text. These updates are public narration, not hidden reasoning.",
+    "Before the first meaningful tool phase, briefly state the immediate approach. After a meaningful batch of tool results, and before starting the next tool phase, state what the evidence established, any important gap or changed assumption, and the next action.",
+    "Put each update in the same assistant response as the tool call it introduces so it can stream before the tool starts. Use the operator's language, favor concrete facts or counts, and keep the update to one or two short paragraphs.",
+    "Do not expose private chain-of-thought, narrate every minor operation, repeat tool labels, claim unverified success, or defer every progress update to the final answer.",
+    "A good cadence is one update at phase boundaries such as research to synthesis, implementation to verification, recovery to retry, and verification to delivery.",
+    "</operator_progress_protocol>",
+  ];
   if (
     !hasCreatePlan &&
     !hasStepUpdate &&
@@ -25,9 +106,9 @@ export function formatPlanToolGuidance(tools: readonly AgentTool[]): string {
     !hasReplan &&
     !hasMilestone
   ) {
-    return "";
+    return lines.join("\n");
   }
-  const lines = ["<plan_tool_protocol>"];
+  lines.push("<plan_tool_protocol>");
   if (hasCreatePlan || hasStepUpdate || hasArtifactUpdate || hasReplan) {
     lines.push(
       "Use durable plans for multi-step work, artifact delivery, or tasks where the operator needs progress and recovery evidence.",

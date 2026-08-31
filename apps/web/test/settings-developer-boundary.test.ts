@@ -10,7 +10,6 @@ describe("Settings and Developer Workbench boundary", () => {
       "context",
       "memory",
       "extensions",
-      "workspace",
       "language",
     ]);
     expect(DEVELOPER_WORKBENCH_SECTIONS.map((section) => section.id)).toEqual([
@@ -65,5 +64,29 @@ describe("Settings and Developer Workbench boundary", () => {
     expect(developer).toContain("AgentPackagePublishingSurface");
     expect(publishing).toContain("ExtensionPackageDesk");
     expect(prompt).toContain("prompt-package-desk");
+  });
+
+  it("keeps workspace switching in the primary navigation picker", async () => {
+    const [settings, tree, directoryApi, registry] = await Promise.all([
+      readFile(
+        new URL("../src/WorkspaceSettingsSurface.tsx", import.meta.url),
+        "utf8",
+      ),
+      readFile(new URL("../src/WorkspaceTree.tsx", import.meta.url), "utf8"),
+      readFile(
+        new URL("../src/workspace-directory-api.ts", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL("../src/settings-section-registry.ts", import.meta.url),
+        "utf8",
+      ),
+    ]);
+
+    expect(settings).not.toContain("WorkspaceRootPanel");
+    expect(registry).not.toContain('id: "workspace"');
+    expect(tree).toContain("pickWorkspaceDirectory()");
+    expect(tree).not.toContain("WorkspaceFolderPicker");
+    expect(directoryApi).toContain('"/api/workspace/directory-picker"');
   });
 });

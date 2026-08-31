@@ -21,6 +21,7 @@ export function ConversationWorkspace({
   viewportRef,
   onOpenSubagentHub,
   onInspectArtifact,
+  onOpenWorkspaceFile,
 }: ConversationWorkspaceProps) {
   const accessibilityCopy = advancedSurfaceCopy.accessibility;
   const follow = useConversationFollow({
@@ -54,6 +55,7 @@ export function ConversationWorkspace({
             onLedgerChanged={vm.refreshActiveThread}
             onOpenSubagentHub={onOpenSubagentHub}
             onInspectArtifact={onInspectArtifact}
+            onOpenWorkspaceFile={onOpenWorkspaceFile}
           />
         </Suspense>
       )}
@@ -82,6 +84,7 @@ export interface ConversationWorkspaceProps {
   viewportRef: React.RefObject<HTMLElement | null>;
   onOpenSubagentHub(taskId?: string): void;
   onInspectArtifact(inspection: ArtifactInspection): void;
+  onOpenWorkspaceFile(path: string): void;
 }
 
 export function shouldShowConversationWelcome(

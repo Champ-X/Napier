@@ -89,7 +89,8 @@ export const desktopWorkbenchCopy = {
       diagnostics: "diagnostics",
       errors: "errors",
       warnings: "warnings",
-      artifactCounts: "verified {verified} · produced {produced} · missing {missing} · total {total}",
+      artifactCounts:
+        "verified {verified} · produced {produced} · missing {missing} · total {total}",
     },
     status: {
       queued: "Queued",
@@ -271,7 +272,7 @@ export const desktopWorkbenchCopy = {
     },
   },
   settingsSurface: {
-    eyebrow: "Workspace configuration",
+    eyebrow: "Persistent preferences",
     title: "Settings",
     body: "Configuration that survives beyond a single conversation or Run.",
     close: "Close settings",
@@ -314,7 +315,8 @@ export const desktopWorkbenchCopy = {
       forkTitle: "New Thread title",
       applyAction: "Create compacted fork",
       applying: "Creating fork…",
-      applyNote: "Apply is single-use and fails closed if the source Ledger changed after preview.",
+      applyNote:
+        "Apply is single-use and fails closed if the source Ledger changed after preview.",
       noThread: "Open a Thread to preview compaction.",
       modelUnavailable: "Select a configured provider model.",
       notEnoughMessages: "At least three messages are required.",
@@ -374,7 +376,8 @@ export const desktopWorkbenchCopy = {
     labSection: "Lab & workflow",
     labSectionDescription: "Evaluations, fixtures, trust and product trials",
     publishingSection: "Publishing",
-    publishingSectionDescription: "Publishers, signatures, rollout and deployment",
+    publishingSectionDescription:
+      "Publishers, signatures, rollout and deployment",
     designSection: "Design system",
     designSectionDescription: "Tokens, components and interaction states",
     extensionPublishingEyebrow: "EXTENSION DELIVERY",
@@ -399,5 +402,73 @@ export const desktopWorkbenchCopy = {
     recommended: "Agent default",
     recent: "Recently used",
     empty: "No models match this search.",
+  },
+  workspaceSurface: {
+    section: "Workspace",
+    sectionDescription: "Local folder this runtime operates on",
+    currentRoot: "Active folder",
+    dataRoot: "Ledger data root",
+    inputLabel: "Switch to another folder",
+    placeholder: "/absolute/path/to/project",
+    submit: "Switch folder",
+    switching: "Switching workspace...",
+    warning:
+      "Switching rebuilds the runtime on the new folder and shows that folder's own ledgers. This folder's ledgers stay intact and return if you switch back. Not allowed while a run is active.",
+    chipLabel: "Workspace",
+  },
+  welcome: {
+    title: "What would you like to accomplish?",
+    body: "Describe the outcome. Napier keeps the plan, actions, and evidence together.",
+    cue: "Start with a common task",
+    starters: {
+      inspect: {
+        title: "Understand this project",
+        body: "Map its structure, entry points, and risks",
+        prompt:
+          "Inspect this workspace and explain its architecture, primary entry points, and highest-risk areas.",
+      },
+      build: {
+        title: "Build a feature",
+        body: "Plan, implement, and verify a scoped change",
+        prompt:
+          "Help me implement a feature in this workspace. Start by understanding the existing structure, then propose a focused plan.",
+      },
+      debug: {
+        title: "Diagnose a problem",
+        body: "Reproduce the issue and confirm its cause",
+        prompt:
+          "Help me diagnose a problem in this project. Reproduce it, identify the root cause, then propose and verify a fix.",
+      },
+      review: {
+        title: "Review current changes",
+        body: "Check correctness, risks, and regressions",
+        prompt:
+          "Review the uncommitted changes in this workspace for correctness, risks, and missing test coverage.",
+      },
+      test: {
+        title: "Strengthen the tests",
+        body: "Find valuable gaps and add coverage",
+        prompt:
+          "Inspect this project's test suite, identify the most valuable coverage gaps, and add focused tests.",
+      },
+      plan: {
+        title: "Turn a goal into a plan",
+        body: "Define steps, checks, and deliverables",
+        prompt:
+          "Turn my goal into an executable plan with concrete steps, verification criteria, and final deliverables.",
+      },
+    },
+  },
+  notices: {
+    demo: "Demo model",
+    demoDetail: "Add a provider key on the server to run a live model.",
+    disconnected: "The workspace could not be loaded.",
+  },
+  language: {
+    section: "Language",
+    sectionDescription: "Interface display language",
+    chinese: "中文",
+    english: "English",
+    current: "Current language",
   },
 } as const;

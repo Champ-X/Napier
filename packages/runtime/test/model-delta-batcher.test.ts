@@ -91,6 +91,54 @@ describe("Model delta batching", () => {
     });
   });
 
+  it("streams provider-visible thinking on the live latency boundary", async () => {
+    vi.useFakeTimers();
+    const recorded: AppendEventInput[] = [];
+    const streamed: RunEvent[] = [];
+    const batcher = fixture(recorded, streamed);
+
+    await batcher.push(
+      "model.thinking.delta",
+      "Inspecting the workspace",
+      false,
+    );
+    expect(recorded).toEqual([]);
+    await vi.advanceTimersByTimeAsync(299);
+    expect(recorded).toEqual([]);
+    await vi.advanceTimersByTimeAsync(1);
+    await batcher.flush();
+
+    expect(recorded).toHaveLength(1);
+    expect(recorded[0]?.payload).toEqual({
+      chunkCount: 1,
+      deltaBytes: 24,
+      delta: "Inspecting the workspace",
+    });
+    expect(streamed).toHaveLength(1);
+  });
+
+  it("splits a large reasoning burst into displayable bounded batches", async () => {
+    const recorded: AppendEventInput[] = [];
+    const streamed: RunEvent[] = [];
+    const batcher = fixture(recorded, streamed);
+
+    for (let index = 0; index < 2_000; index += 1) {
+      await batcher.push("model.thinking.delta", "reason ", false);
+    }
+    await batcher.flush();
+
+    expect(recorded.length).toBeGreaterThan(1);
+    expect(recorded.every((item) => item.type === "model.thinking.delta")).toBe(
+      true,
+    );
+    expect(
+      recorded
+        .map((item) => String(item.payload?.["delta"] ?? ""))
+        .join(""),
+    ).toBe("reason ".repeat(2_000));
+    expect(streamed).toHaveLength(recorded.length);
+  });
+
   it("discards a pending batch rejected after Run termination", async () => {
     const attempted: AppendEventInput[] = [];
     const batcher = new ModelDeltaBatcher(

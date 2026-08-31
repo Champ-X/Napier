@@ -63,6 +63,18 @@ describe("resolveRebindWorkspaceRoot", () => {
       await realpath(root),
     );
   });
+
+  it("preserves a legal trailing space in the selected directory name", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-rebind-"));
+    temporaryRoots.push(root);
+    const spaced = path.join(root, "project ");
+    const unspaced = path.join(root, "project");
+    await Promise.all([mkdir(spaced), mkdir(unspaced)]);
+
+    await expect(resolveRebindWorkspaceRoot(spaced)).resolves.toBe(
+      await realpath(spaced),
+    );
+  });
 });
 
 describe("workspaceRebindBusyReasons", () => {

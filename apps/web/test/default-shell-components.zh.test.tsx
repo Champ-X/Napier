@@ -48,7 +48,7 @@ describe("default shell Chinese copy", () => {
     expect(container.textContent).not.toContain("No sessions yet");
   });
 
-  it("renders the operator message identity and actions in Chinese", async () => {
+  it("renders one contextual copy action in Chinese", async () => {
     const container = installChineseDom();
     const { ConversationMessageCard } =
       await import("../src/ConversationMessageCards");
@@ -71,7 +71,10 @@ describe("default shell Chinese copy", () => {
     );
 
     expect(container.textContent).toContain("操作者");
-    expect(container.innerHTML).toContain('aria-label="消息操作"');
+    expect(container.innerHTML).not.toContain("<details");
+    expect(container.innerHTML.match(/<button\b/gu)).toHaveLength(1);
+    expect(container.innerHTML).toContain('aria-label="复制"');
+    expect(container.innerHTML).toContain('role="tooltip"');
     expect(container.textContent).not.toContain("Operator");
   });
 });

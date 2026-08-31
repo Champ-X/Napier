@@ -27,10 +27,7 @@ export type RebindWorkspace = (
 ) => Promise<WorkspaceSummary>;
 
 interface WorkspaceRootHttpServices {
-  store: Pick<
-    LocalStore,
-    "getWorkspaceSummary" | "listThreads" | "listRuns"
-  >;
+  store: Pick<LocalStore, "getWorkspaceSummary" | "listThreads" | "listRuns">;
 }
 
 export function registerWorkspaceRootHttp(
@@ -40,7 +37,11 @@ export function registerWorkspaceRootHttp(
 ): void {
   // The folder picker's directory browser shares this "change the workspace
   // root" surface, so it is mounted here rather than in app.ts.
-  registerWorkspaceDirectoriesHttp(app);
+  registerWorkspaceDirectoriesHttp(
+    app,
+    undefined,
+    () => services.store.getWorkspaceSummary().root,
+  );
   app.post("/api/workspace/root", async (context) => {
     let input: unknown;
     try {
@@ -58,7 +59,11 @@ export function registerWorkspaceRootHttp(
     }
     const body = parseRebindWorkspaceRootRequest(input);
     if (!body) {
-      return jsonError(context, "Workspace root rebind request is invalid", 400);
+      return jsonError(
+        context,
+        "Workspace root rebind request is invalid",
+        400,
+      );
     }
     if (!rebindWorkspace) {
       return jsonError(

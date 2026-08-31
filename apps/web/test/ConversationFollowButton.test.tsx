@@ -18,9 +18,8 @@ afterEach(async () => {
 describe("ConversationFollowButton", () => {
   it("stays hidden while auto-follow is active", async () => {
     const container = installChineseDom();
-    const { ConversationFollowButton } = await import(
-      "../src/ConversationFollowButton"
-    );
+    const { ConversationFollowButton } =
+      await import("../src/ConversationFollowButton");
     await act(async () => {
       render(
         <ConversationFollowButton
@@ -34,11 +33,10 @@ describe("ConversationFollowButton", () => {
     expect(container.querySelector(".conversation-follow")).toBeNull();
   });
 
-  it("shows the pending count in Chinese and resumes following on click", async () => {
+  it("keeps the pending count in the accessible label and resumes on click", async () => {
     const container = installChineseDom();
-    const { ConversationFollowButton } = await import(
-      "../src/ConversationFollowButton"
-    );
+    const { ConversationFollowButton } =
+      await import("../src/ConversationFollowButton");
     const jumps: number[] = [];
     await act(async () => {
       render(
@@ -50,22 +48,21 @@ describe("ConversationFollowButton", () => {
         container,
       );
     });
-    expect(container.textContent).toContain("新活动 · 4");
-    expect(container.textContent).not.toContain("New activity");
     const button = container.querySelector(
       ".conversation-follow-button",
     ) as HTMLButtonElement;
+    expect(button.getAttribute("aria-label")).toBe("新活动 · 4");
+    expect(button.textContent).toBe("");
     await act(async () => {
       button.click();
     });
     expect(jumps).toEqual([1]);
   });
 
-  it("offers a plain resume label when nothing is pending", async () => {
+  it("offers an icon-only resume action when nothing is pending", async () => {
     const container = installChineseDom();
-    const { ConversationFollowButton } = await import(
-      "../src/ConversationFollowButton"
-    );
+    const { ConversationFollowButton } =
+      await import("../src/ConversationFollowButton");
     await act(async () => {
       render(
         <ConversationFollowButton
@@ -76,8 +73,11 @@ describe("ConversationFollowButton", () => {
         container,
       );
     });
-    expect(container.textContent).toContain("回到最新");
-    expect(container.textContent).not.toContain("·");
+    const button = container.querySelector(
+      ".conversation-follow-button",
+    ) as HTMLButtonElement;
+    expect(button.getAttribute("aria-label")).toBe("回到最新");
+    expect(button.textContent).toBe("");
   });
 });
 

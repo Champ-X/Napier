@@ -9,10 +9,13 @@ export const conversationActivityCopyEn = {
     blocked: "Blocked",
   },
   group: {
+    execution: "Execution",
     grouped: "grouped",
     showEvidence: "Show evidence",
     hideEvidence: "Hide evidence",
+    step: "step",
     steps: "steps",
+    attention: "need attention",
     stages: {
       research: "Research",
       build: "Build",

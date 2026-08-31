@@ -27,6 +27,10 @@
   grid-row: 1;
 }
 
+.ledger-nav-backdrop {
+  display: none;
+}
+
 .ledger-nav {
   position: relative;
   display: flex;
@@ -388,123 +392,6 @@
 
 .status-failed {
   background: var(--vermilion);
-}
-
-.composer-workspace-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  min-height: 28px;
-  max-width: 220px;
-  padding: 4px 8px;
-  color: var(--ink-soft);
-  font-family: var(--mono);
-  font-size: var(--text-xs);
-  background: var(--nav-soft);
-  border: 1px solid var(--rule);
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.composer-workspace-chip:hover {
-  color: var(--ledger);
-  border-color: var(--ledger);
-}
-
-.composer-workspace-chip > span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.workspace-root-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.workspace-root-facts {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 0;
-}
-
-.workspace-root-facts dt {
-  font-size: var(--text-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--ink-faint);
-}
-
-.workspace-root-facts dd {
-  margin: 3px 0 0;
-}
-
-.workspace-root-facts code {
-  font-family: var(--mono);
-  font-size: var(--text-xs);
-  color: var(--ink);
-  overflow-wrap: anywhere;
-}
-
-.workspace-root-warning {
-  margin: 0;
-  padding: 10px 12px;
-  font-size: var(--text-xs);
-  line-height: 1.5;
-  color: var(--ink-soft);
-  background: var(--ledger-soft);
-  border: 1px solid var(--rule);
-  border-radius: 8px;
-}
-
-.workspace-root-form {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.workspace-root-form label {
-  font-size: var(--text-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--ink-faint);
-}
-
-.workspace-root-form input {
-  padding: 8px 10px;
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--ink);
-  background: var(--paper);
-  border: 1px solid var(--rule-strong);
-  border-radius: 8px;
-}
-
-.workspace-root-form button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  align-self: flex-start;
-  padding: 7px 12px;
-  font-size: 12px;
-  color: var(--color-paper);
-  background: var(--ledger);
-  border: 1px solid var(--ledger);
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.workspace-root-form button:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.workspace-root-error {
-  margin: 0;
-  font-size: var(--text-xs);
-  color: var(--vermilion);
 }
 
 .quiet-copy {

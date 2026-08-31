@@ -18,14 +18,15 @@ const SETTINGS_TAB: Partial<Record<InspectorTab, SettingsSection>> = {
   memory: "memory",
   extensions: "extensions",
 };
-const DEVELOPER_TAB: Partial<Record<InspectorTab, DeveloperWorkbenchSection>> = {
-  automations: "automations",
-  studio: "lab",
-  lab: "lab",
-};
+const DEVELOPER_TAB: Partial<Record<InspectorTab, DeveloperWorkbenchSection>> =
+  {
+    automations: "automations",
+    studio: "lab",
+    lab: "lab",
+  };
 
 // Sections that map onto a legacy InspectorTab (deep-link / roving focus).
-// "workspace" and "language" are settings-only surfaces with no InspectorTab.
+// Language is settings-only and has no InspectorTab.
 function inspectorTabForSection(
   section: SettingsSection,
 ): InspectorTab | undefined {
@@ -51,14 +52,15 @@ export function useWorkspaceShell(
 ) {
   const [workspaceView, setWorkspaceView] =
     useState<WorkspaceView>("conversation");
-  const [focusedSubagentTaskId, setFocusedSubagentTaskId] =
-    useState<string>();
-  const [taskSection, setTaskSectionState] =
-    useState<TaskSection>("overview");
+  const [focusedSubagentTaskId, setFocusedSubagentTaskId] = useState<string>();
+  const [taskSection, setTaskSectionState] = useState<TaskSection>("overview");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSection, setSettingsSectionState] =
     useState<SettingsSection>("context");
   const [developerWorkbenchOpen, setDeveloperWorkbenchOpen] = useState(false);
+  const [workspaceRailOpen, setWorkspaceRailOpen] = useState(
+    () => typeof window === "undefined" || window.innerWidth > 1_100,
+  );
   const [developerWorkbenchSection, setDeveloperWorkbenchSectionState] =
     useState<DeveloperWorkbenchSection>("lab");
 
@@ -130,11 +132,6 @@ export function useWorkspaceShell(
     },
     [setInspectorTab],
   );
-  const openWorkspaceSettings = useCallback(() => {
-    setSettingsSectionState("workspace");
-    setSettingsOpen(true);
-    setDeveloperWorkbenchOpen(false);
-  }, []);
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
   const setDeveloperWorkbenchSection = useCallback(
     (section: DeveloperWorkbenchSection) => {
@@ -154,6 +151,10 @@ export function useWorkspaceShell(
     setSettingsOpen(false);
     setDeveloperWorkbenchOpen(false);
   }, []);
+  const toggleWorkspaceRail = useCallback(
+    () => setWorkspaceRailOpen((current) => !current),
+    [],
+  );
 
   useEffect(() => {
     const shortcut = (event: KeyboardEvent) => {
@@ -188,6 +189,8 @@ export function useWorkspaceShell(
     closeDeveloperWorkbench,
     routeInspector,
     openSettings,
-    openWorkspaceSettings,
+    workspaceRailOpen,
+    setWorkspaceRailOpen,
+    toggleWorkspaceRail,
   };
 }

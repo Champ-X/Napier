@@ -48,6 +48,19 @@ describe("Conversation Activity Candidates projection", () => {
     expect(projected.at(-1)?.seq).toBe(258);
     expect(JSON.stringify(projected)).not.toContain("PRIVATE_");
   });
+
+  it("leaves progress narration to the dedicated conversation projection", () => {
+    expect(
+      createConversationActivityCandidate(
+        event(1, "run.progress.message", {
+          sourceEventId: "event_model_response",
+          model: "faux/faux-1",
+          toolNames: ["read_file"],
+          text: "Inspecting the project.",
+        }),
+      ),
+    ).toBeUndefined();
+  });
 });
 
 function event(

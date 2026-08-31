@@ -33,6 +33,51 @@ describe("Thread execution HTTP validation", () => {
     expect(parsePromptRequest({ text: " \n\t " })).toBeUndefined();
   });
 
+  it("accepts supported image bytes and rejects declared or structural spoofing", () => {
+    const png = Buffer.from([
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+    ]).toString("base64");
+    expect(
+      parsePromptRequest({
+        text: "Read the screenshot.",
+        images: [{ mimeType: "image/png", data: png }],
+        model: {
+          provider: "deepseek",
+          id: "deepseek-v4-flash-vision-exp",
+        },
+      }),
+    ).toEqual({
+      text: "Read the screenshot.",
+      images: [{ mimeType: "image/png", data: png }],
+      model: {
+        provider: "deepseek",
+        id: "deepseek-v4-flash-vision-exp",
+      },
+    });
+    for (const image of [
+      { mimeType: "image/jpeg", data: png },
+      { mimeType: "image/svg+xml", data: png },
+      { mimeType: "image/png", data: "not base64" },
+      { mimeType: "image/png", data: png, filename: "spoof.png" },
+    ]) {
+      expect(
+        parsePromptRequest({ text: "Reject spoofed input.", images: [image] }),
+      ).toBeUndefined();
+    }
+    expect(
+      parsePromptRequest({ text: "Reject empty images.", images: [] }),
+    ).toBeUndefined();
+    expect(
+      parsePromptRequest({
+        text: "Reject too many images.",
+        images: Array.from({ length: 5 }, () => ({
+          mimeType: "image/png",
+          data: png,
+        })),
+      }),
+    ).toBeUndefined();
+  });
+
   it("normalizes an optional ModelRef and rejects extra fields", () => {
     expect(
       parsePromptRequest({
@@ -149,9 +194,7 @@ describe("Thread execution HTTP validation", () => {
           subagentRoles: {
             reviewer: {
               model: { provider: "openai", id: "gpt-5.4" },
-              fallbackModels: [
-                { provider: "OPENAI", id: "gpt-5.4" },
-              ],
+              fallbackModels: [{ provider: "OPENAI", id: "gpt-5.4" }],
             },
           },
         },

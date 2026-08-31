@@ -24,6 +24,14 @@ type DeltaPolicy = {
 
 const TEXT_POLICY: DeltaPolicy = { maxDelayMs: 100, maxBytes: 1_024 };
 const THINKING_POLICY: DeltaPolicy = {
+  // Provider-visible reasoning is operator feedback, not a terminal receipt.
+  // Keep the durable stream bounded, but flush often enough that a long model
+  // turn cannot look frozen and use a smaller byte boundary for providers that
+  // release reasoning in large bursts.
+  maxDelayMs: 300,
+  maxBytes: 768,
+};
+const REDACTED_THINKING_POLICY: DeltaPolicy = {
   maxDelayMs: 5_000,
   maxBytes: 4_096,
 };
@@ -68,7 +76,7 @@ export class ModelDeltaBatcher {
     this.pending.chunks.push(delta);
     this.pending.chunkCount += 1;
     this.pending.bytes += Buffer.byteLength(delta, "utf8");
-    const policy = policyFor(type);
+    const policy = policyFor(type, redacted);
     if (
       this.pending.bytes >= policy.maxBytes ||
       this.now() - this.pending.startedAt >= policy.maxDelayMs
@@ -121,8 +129,9 @@ export class ModelDeltaBatcher {
   }
 }
 
-function policyFor(type: ModelDeltaEventType): DeltaPolicy {
-  return type === "model.thinking.delta" ? THINKING_POLICY : TEXT_POLICY;
+function policyFor(type: ModelDeltaEventType, redacted: boolean): DeltaPolicy {
+  if (type !== "model.thinking.delta") return TEXT_POLICY;
+  return redacted ? REDACTED_THINKING_POLICY : THINKING_POLICY;
 }
 
 function deltaPayload(pending: PendingDelta, delta: string): JsonObject {

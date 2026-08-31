@@ -72,7 +72,8 @@ export async function createThreadBranch(
   )?.runId;
   const messageEvents = sourceEvents.filter(
     (event) =>
-      event.category === "message" ||
+      event.type === "message.user" ||
+      event.type === "message.assistant" ||
       (options.includeGoalContinuationPrompts === true &&
         event.type === "goal.continuation.prompt"),
   );

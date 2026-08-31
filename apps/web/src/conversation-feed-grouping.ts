@@ -7,6 +7,7 @@ import type { ConversationCitation } from "./conversation-citation-view-model";
 import type { ConversationNetworkActivity } from "./conversation-network-activity-view-model";
 import type { ConversationMilestone } from "./conversation-milestone-view-model";
 import type { ConversationPlan } from "./conversation-plan-view-model";
+import type { ConversationProgressNote } from "./conversation-progress-view-model";
 import type { ConversationRecovery } from "./conversation-recovery-view-model";
 import type { ConversationSubagent } from "./conversation-subagent-view-model";
 import type { ConversationToolActivity } from "./conversation-tool-activity-view-model";
@@ -14,17 +15,18 @@ import type { ConversationThinkingActivity } from "./conversation-thinking-view-
 import { conversationActivityCopy } from "./conversation-activity-copy";
 
 export type ConversationGroupedActivityItem =
+  | { kind: "activity"; seq: number; activity: ConversationActivity }
+  | { kind: "thinking"; seq: number; activity: ConversationThinkingActivity }
   | { kind: "network"; seq: number; activity: ConversationNetworkActivity }
   | { kind: "browser"; seq: number; activity: ConversationBrowserActivity }
   | { kind: "tool"; seq: number; activity: ConversationToolActivity };
 
 export type ConversationFeedItem =
   | { kind: "message"; seq: number; message: MessageView }
-  | { kind: "activity"; seq: number; activity: ConversationActivity }
   | { kind: "artifact"; seq: number; artifact: ConversationArtifact }
   | { kind: "citation"; seq: number; citation: ConversationCitation }
-  | { kind: "thinking"; seq: number; activity: ConversationThinkingActivity }
   | { kind: "milestone"; seq: number; milestone: ConversationMilestone }
+  | { kind: "progress"; seq: number; note: ConversationProgressNote }
   | ConversationGroupedActivityItem
   | { kind: "plan"; seq: number; plan: ConversationPlan }
   | { kind: "approval"; seq: number; approval: ConversationApproval }
@@ -38,46 +40,13 @@ export interface ConversationActivityGroup {
   label: string;
   summary: string;
   createdAt: string;
+  attentionCount: number;
   items: ConversationGroupedActivityItem[];
 }
 
 export type ConversationFeedEntry =
   | ConversationFeedItem
   | ConversationActivityGroup;
-
-interface GroupDescriptor {
-  key: string;
-  label: string;
-  subject: string;
-}
-
-interface PendingGroup {
-  descriptor: GroupDescriptor;
-  items: ConversationGroupedActivityItem[];
-}
-
-const MINIMUM_GROUP_SIZE = 2;
-const BUILD_TOOLS = new Set([
-  "apply_patch",
-  "workspace_file_apply",
-  "lsp_rename_apply",
-  "lsp_code_action_apply",
-  "git_stage_apply",
-  "git_commit_apply",
-  "git_branch_create_apply",
-  "git_branch_switch_apply",
-  "git_review_apply",
-  "javascript_kernel",
-  "python_kernel",
-  "data_frame",
-  "sqlite_query",
-  "workspace_process",
-]);
-const VERIFY_TOOLS = new Set([
-  "verify_workspace",
-  "lsp_diagnostics",
-  "run_command",
-]);
 
 export function groupConversationFeed(
   feed: readonly ConversationFeedItem[],
@@ -89,7 +58,7 @@ export function groupConversationFeed(
     burst = [];
   };
   for (const item of feed) {
-    if (groupDescriptor(item)) {
+    if (isGroupableActivity(item)) {
       burst.push(item as ConversationGroupedActivityItem);
       continue;
     }
@@ -104,70 +73,47 @@ function groupActivityBurst(
   burst: ConversationGroupedActivityItem[],
 ): ConversationFeedEntry[] {
   if (burst.length === 0) return [];
-  const entries: ConversationFeedEntry[] = [];
-  let pending: PendingGroup | undefined;
-  const flush = () => {
-    if (!pending) return;
-    entries.push(
-      ...(pending.items.length >= MINIMUM_GROUP_SIZE
-        ? [activityGroup(pending)]
-        : pending.items),
-    );
-    pending = undefined;
-  };
-  for (const item of burst) {
-    const descriptor = groupDescriptor(item)!;
-    if (pending?.descriptor.key === descriptor.key) {
-      pending.items.push(item);
-    } else {
-      flush();
-      pending = { descriptor, items: [item] };
-    }
-  }
-  flush();
-  return entries;
+  return [activityGroup(burst)];
 }
 
-function activityGroup(pending: PendingGroup): ConversationActivityGroup {
-  const first = pending.items[0]!;
-  const last = pending.items.at(-1)!;
-  const count = pending.items.length;
+function activityGroup(
+  items: ConversationGroupedActivityItem[],
+): ConversationActivityGroup {
+  const first = items[0]!;
+  const last = items.at(-1)!;
+  const attentionCount = items.filter(needsAttention).length;
+  const stepUnit =
+    items.length === 1
+      ? conversationActivityCopy.group.step
+      : conversationActivityCopy.group.steps;
   return {
     kind: "activity-group",
-    id: `${pending.descriptor.key}:${String(first.seq)}`,
+    id: `execution:${String(first.seq)}`,
     seq: first.seq,
-    label: pending.descriptor.label,
-    summary: `${pending.descriptor.subject} · ${String(count)} ${conversationActivityCopy.group.steps}`,
+    label: conversationActivityCopy.group.execution,
+    summary: `${String(items.length)} ${stepUnit}${attentionCount > 0 ? ` · ${String(attentionCount)} ${conversationActivityCopy.group.attention}` : ""}`,
     createdAt: last.activity.createdAt,
-    items: pending.items,
+    attentionCount,
+    items,
   };
 }
 
-function groupDescriptor(
+function isGroupableActivity(
   item: ConversationFeedItem,
-): GroupDescriptor | undefined {
-  if (item.kind === "tool" && item.activity.status === "completed") {
-    const stage = toolStage(item.activity.toolName);
-    return stageDescriptor(stage);
-  }
-  if (item.kind === "network" && item.activity.status === "completed") {
-    return stageDescriptor("research");
-  }
-  if (item.kind === "browser" && item.activity.status === "completed") {
-    return stageDescriptor("inspect");
-  }
-  return undefined;
+): item is ConversationGroupedActivityItem {
+  return (
+    item.kind === "activity" ||
+    item.kind === "thinking" ||
+    item.kind === "network" ||
+    item.kind === "browser" ||
+    item.kind === "tool"
+  );
 }
 
-function toolStage(
-  toolName: string,
-): "research" | "build" | "verify" | "inspect" {
-  if (toolName === "research_source") return "research";
-  if (BUILD_TOOLS.has(toolName)) return "build";
-  return VERIFY_TOOLS.has(toolName) ? "verify" : "inspect";
-}
-
-function stageDescriptor(stage: ReturnType<typeof toolStage>): GroupDescriptor {
-  const subject = conversationActivityCopy.group.stages[stage];
-  return { key: `stage:${stage}`, label: subject, subject };
+function needsAttention(item: ConversationGroupedActivityItem): boolean {
+  if (item.kind === "thinking") return false;
+  if (item.kind === "activity") return item.activity.tone === "blocked";
+  return (
+    item.activity.status === "failed" || item.activity.status === "blocked"
+  );
 }

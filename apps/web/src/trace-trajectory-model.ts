@@ -89,6 +89,11 @@ export interface TraceTrajectoryPosition {
   width: number;
 }
 
+export interface TraceTrajectoryRange {
+  start: number;
+  end: number;
+}
+
 export function createTraceTrajectoryModel(
   eventsInput: readonly RunEvent[],
   runsInput: readonly RunRecord[],
@@ -161,6 +166,37 @@ export function traceTrajectoryPosition(
   }
   const denominator = Math.max(1, model.eventCount);
   return boundedPosition(((segment.seq - 1) / denominator) * 100, 0);
+}
+
+export function traceTrajectoryEventRatio(
+  event: TraceTrajectoryEvent,
+  model: TraceTrajectoryModel,
+  metric: TraceTrajectoryMetric,
+): number {
+  if (metric === "duration") {
+    return clampRatio(
+      (event.timestampMs - model.startedAtMs) / model.durationMs,
+    );
+  }
+  if (metric === "turns") {
+    return clampRatio(event.turnIndex / Math.max(1, model.turnCount + 1));
+  }
+  return clampRatio(
+    event.callOrdinal !== undefined
+      ? (event.callOrdinal - 1) / Math.max(1, model.callCount)
+      : (event.event.seq - 1) / Math.max(1, model.eventCount),
+  );
+}
+
+export function traceTrajectoryEventInRange(
+  event: TraceTrajectoryEvent,
+  model: TraceTrajectoryModel,
+  metric: TraceTrajectoryMetric,
+  range: TraceTrajectoryRange | undefined,
+): boolean {
+  if (!range) return true;
+  const ratio = traceTrajectoryEventRatio(event, model, metric);
+  return ratio >= range.start && ratio <= range.end;
 }
 
 export function traceTrajectoryMatches(
@@ -396,6 +432,10 @@ function boundedPosition(leftInput: number, widthInput: number) {
   const left = Math.min(100, Math.max(0, leftInput));
   const width = Math.min(100 - left, Math.max(0, widthInput));
   return { left, width };
+}
+
+function clampRatio(value: number): number {
+  return Math.max(0, Math.min(1, value));
 }
 
 function compareEvents(left: RunEvent, right: RunEvent): number {

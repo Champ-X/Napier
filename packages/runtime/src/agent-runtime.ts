@@ -21,6 +21,7 @@ import {
   type GoalState,
   type ModelContextEnvelopeReceipt,
   type ModelRef,
+  type PromptImageInput,
   type RunEvent,
   type RunInvocationSource,
   type RunControlMessageMode,
@@ -69,13 +70,17 @@ import { resolveOperatorDecisionCapabilityContinuation } from "./agent-capabilit
 import { createAgentRunStartedPayload } from "./agent-run-started-event.js";
 import {
   controlMessageEventKey,
+  createRunProgressMessageEvent,
   delay,
   formatPlanToolGuidance,
   OperatorDecisionPendingError,
+  assertPromptImageCapability,
+  promptUserContent,
   sha256Text,
   splitForStreaming,
   summarize,
   toJsonValue,
+  turnPromptEvent,
 } from "./agent-runtime-utils.js";
 import { resolveAgentRunModel } from "./agent-run-model.js";
 import { validateAgentRunPrompt } from "./agent-run-prompt-preflight.js";
@@ -354,6 +359,10 @@ export class AgentRuntime {
       invocationSource,
       options.model, options.modelRoute,
     );
+    assertPromptImageCapability(
+      this.modelRegistry.resolve(modelRef),
+      options.images,
+    );
     const workflowInvocation = isWorkflowRunSource(invocationSource);
     const messageExperiment = options[AGENT_MESSAGE_EXPERIMENT_EXECUTION];
     const toolResultReplay = options[AGENT_MESSAGE_TOOL_RESULT_REPLAY];
@@ -604,6 +613,7 @@ export class AgentRuntime {
               model,
               modelRoute!,
               text,
+              source === invocationSource ? options.images : undefined,
               source,
               subagents,
               access.restricted,
@@ -1196,6 +1206,7 @@ export class AgentRuntime {
     model: Model<Api>,
     modelRoute: ModelRouteSession,
     prompt: string,
+    promptImages: readonly PromptImageInput[] | undefined,
     source: TurnSource,
     subagents: SubagentCoordinator | undefined,
     restrictedReadOnlyExecution: boolean,
@@ -1363,7 +1374,11 @@ export class AgentRuntime {
     const planToolGuidance = formatPlanToolGuidance(tools);
     const initialPromptMessages = providerMessages([
       ...history.messages,
-      { role: "user", content: prompt, timestamp: Date.now() },
+      {
+        role: "user",
+        content: promptUserContent(prompt, promptImages),
+        timestamp: Date.now(),
+      },
     ]);
     const checkpointContext = history.checkpoint
       ? formatContextCheckpoint(history.checkpoint)
@@ -1589,7 +1604,7 @@ export class AgentRuntime {
       [
         {
           role: "user",
-          content: prompt,
+          content: promptUserContent(prompt, promptImages),
           timestamp: Date.now(),
         },
       ],
@@ -1858,7 +1873,7 @@ export class AgentRuntime {
       if (update.type === "text_delta" || update.type === "thinking_delta") {
         const redactCandidate =
           modelAdvisorPolicy.mode === "enforce" ||
-          (update.type !== "thinking_delta" && privateSourceContent.redact(false));
+          privateSourceContent.redact(false);
         await deltaBatcher.push(
           update.type === "text_delta"
             ? "model.text.delta"
@@ -1981,7 +1996,23 @@ export class AgentRuntime {
             event.message.stopReason === "aborted" ? "aborted" : "error",
             event.message.errorMessage,
           );
-        if (hasToolCalls) return undefined;
+        if (hasToolCalls) {
+          await this.record(
+            createRunProgressMessageEvent({
+              threadId: run.threadId,
+              runId: run.id,
+              sourceEventId: responseEvent.id,
+              model: `${event.message.provider}/${event.message.model}`,
+              toolNames: toolCalls.map((call) => call.name),
+              text,
+              contentRedacted:
+                modelAdvisorPolicy.mode === "enforce" ||
+                privateSourceContent.redact(false),
+            }),
+            onEvent,
+          );
+          return undefined;
+        }
         await this.recordModelAdvisorGate(
           run,
           text,
@@ -3162,33 +3193,4 @@ export class AgentRuntime {
   private async collectRunUsage(runId: string): Promise<Usage> {
     return this.store.aggregateRunUsage(runId);
   }
-}
-
-function turnPromptEvent(source: TurnSource) {
-  if (source === "user" || source === "schedule" || source === "channel") {
-    return {
-      type: "message.user",
-      category: "message",
-      visibility: "user",
-    } as const;
-  }
-  if (isWorkflowRunSource(source)) {
-    return {
-      type: "workflow.node.prompt",
-      category: "plan",
-      visibility: "hidden",
-    } as const;
-  }
-  if (source === "goal_continuation") {
-    return {
-      type: "goal.continuation.prompt",
-      category: "goal",
-      visibility: "hidden",
-    } as const;
-  }
-  return {
-    type: "run.recovery.prompt",
-    category: "lifecycle",
-    visibility: "hidden",
-  } as const;
 }

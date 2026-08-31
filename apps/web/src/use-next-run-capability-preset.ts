@@ -21,6 +21,7 @@ export async function executeLoadedNextRunPrompt(
     await executeNextRunPrompt(input);
   } catch (error) {
     input.restoreInput(input.text);
+    input.restoreImages?.();
     input.onError(error);
   }
 }

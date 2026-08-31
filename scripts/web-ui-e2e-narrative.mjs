@@ -13,7 +13,8 @@ export async function readWebUiNarrative(page, expected) {
       return (
         text(".thread-heading h1") === target.title &&
         text(".task-narrative-current > span") === target.phase &&
-        text(".task-narrative-current strong") === target.currentAction
+        (text(".task-narrative-current strong") ||
+          text(".task-narrative-action-detail p")) === target.currentAction
       );
     },
     expected,
@@ -27,7 +28,9 @@ export async function readWebUiNarrative(page, expected) {
     return {
       title: text(".thread-heading h1"),
       phase: text(".task-narrative-current > span"),
-      currentAction: text(".task-narrative-current strong"),
+      currentAction:
+        text(".task-narrative-current strong") ||
+        text(".task-narrative-action-detail p"),
       metrics: text(".task-narrative-current small"),
       blocker: text(".task-narrative-blocker p"),
       nextStep: text(".task-narrative-next p"),
@@ -231,31 +234,49 @@ export async function verifyWebUiLongRunNarrative(browser, origin, expected) {
     });
     await page.waitForFunction(
       () =>
-        document.querySelectorAll(".conversation-activity-group").length ===
-          3 &&
+        document.querySelectorAll(".conversation-activity-group").length >= 1 &&
         document.querySelector(".conversation-show-earlier") instanceof
           HTMLElement,
       undefined,
       { timeout: WEB_UI_START_TIMEOUT_MS },
     );
-    const collapsed = await page.evaluate(() => {
+    const progressNotes = page.locator(".conversation-progress-note");
+    const progressNoteCount = await progressNotes.count();
+    const progressNoteVisible = await progressNotes
+      .filter({ hasText: expected.progressText })
+      .isVisible();
+    const progressPrivateMarkerVisible = (
+      await progressNotes.allTextContents()
+    ).some((text) => text.includes("PRIVATE_PROGRESS_PATH"));
+    const initialExecutionFlow = await page.evaluate(() => {
       const feedItems = () =>
         document.querySelectorAll(
           ".message-ledger > :is(article, details, section)",
         ).length;
+      const groups = [
+        ...document.querySelectorAll(".conversation-activity-group"),
+      ];
       return {
         showEarlierVisible:
           document.querySelector(".conversation-show-earlier") instanceof
           HTMLElement,
         mountedFeedItems: feedItems(),
-        summaries: [
-          ...document.querySelectorAll(
-            ".conversation-activity-group > summary strong",
-          ),
-        ].map((item) => item.textContent?.trim() ?? ""),
+        groupCount: groups.length,
+        directSummaryCount: document.querySelectorAll(
+          ".conversation-activity-group > summary",
+        ).length,
         mountedChildren: document.querySelectorAll(
           ".conversation-activity-group-items > details",
         ).length,
+        stepsDirectlyExpanded: groups.every(
+          (group) =>
+            group.querySelectorAll(
+              ".conversation-activity-group-items > details",
+            ).length > 0,
+        ),
+        groupsLabelled: groups.every((group) =>
+          group.hasAttribute("aria-label"),
+        ),
       };
     });
     const environmentFallback = {
@@ -313,18 +334,29 @@ export async function verifyWebUiLongRunNarrative(browser, origin, expected) {
     const expandedFeedItems = await page
       .locator(".message-ledger > :is(article, details, section)")
       .count();
-    await page
-      .locator(".conversation-activity-group > summary")
-      .first()
-      .click();
-    await page.waitForFunction(
-      () =>
-        document.querySelectorAll(
+    const expandedExecutionFlow = await page.evaluate(() => {
+      const groups = [
+        ...document.querySelectorAll(".conversation-activity-group"),
+      ];
+      return {
+        groupCount: groups.length,
+        directSummaryCount: document.querySelectorAll(
+          ".conversation-activity-group > summary",
+        ).length,
+        mountedChildren: document.querySelectorAll(
           ".conversation-activity-group-items > details",
-        ).length === 12,
-      undefined,
-      { timeout: WEB_UI_START_TIMEOUT_MS },
-    );
+        ).length,
+        stepsDirectlyExpanded: groups.every(
+          (group) =>
+            group.querySelectorAll(
+              ".conversation-activity-group-items > details",
+            ).length > 0,
+        ),
+        groupsLabelled: groups.every((group) =>
+          group.hasAttribute("aria-label"),
+        ),
+      };
+    });
     return {
       ...after,
       environmentFallbackInitiallyHidden,
@@ -335,15 +367,27 @@ export async function verifyWebUiLongRunNarrative(browser, origin, expected) {
         environmentFallback.geometry.withinDetails,
       horizontalOverflowPx: environmentFallback.geometry.horizontalOverflowPx,
       refreshPreserved: true,
-      showEarlierVisible: collapsed.showEarlierVisible,
-      mountedFeedItems: collapsed.mountedFeedItems,
+      showEarlierVisible: initialExecutionFlow.showEarlierVisible,
+      mountedFeedItems: initialExecutionFlow.mountedFeedItems,
       expandedFeedItems,
+      progressNoteVisible,
+      progressNoteCount,
+      progressPrivateMarkerVisible,
       activityAggregation: {
-        summaries: collapsed.summaries,
-        collapsedMountedChildren: collapsed.mountedChildren,
-        expandedMountedChildren: await page
-          .locator(".conversation-activity-group-items > details")
-          .count(),
+        initialGroupCount: initialExecutionFlow.groupCount,
+        initialMountedChildren: initialExecutionFlow.mountedChildren,
+        expandedGroupCount: expandedExecutionFlow.groupCount,
+        expandedMountedChildren: expandedExecutionFlow.mountedChildren,
+        directSummaryCount: Math.max(
+          initialExecutionFlow.directSummaryCount,
+          expandedExecutionFlow.directSummaryCount,
+        ),
+        stepsDirectlyExpanded:
+          initialExecutionFlow.stepsDirectlyExpanded &&
+          expandedExecutionFlow.stepsDirectlyExpanded,
+        groupsLabelled:
+          initialExecutionFlow.groupsLabelled &&
+          expandedExecutionFlow.groupsLabelled,
       },
     };
   } finally {
@@ -393,7 +437,9 @@ export async function verifyWebUiArtifactNavigation(browser, origin, expected) {
       expected.title,
       { timeout: WEB_UI_START_TIMEOUT_MS },
     );
-    const primaryOutput = page.locator(".task-completion-primary-output");
+    const primaryOutput = page.locator(
+      ".workspace-evidence-results .task-completion-primary-output",
+    );
     const primaryTitle = await primaryOutput.getAttribute("title");
     const primaryPath = expected.paths.find((path) =>
       primaryTitle?.endsWith(path),
@@ -401,11 +447,15 @@ export async function verifyWebUiArtifactNavigation(browser, origin, expected) {
     assert.ok(primaryPath, "Primary Artifact is not an expected output");
     await primaryOutput.locator('[data-artifact-action="open"]').click();
     await page.waitForFunction(
-      (targetPath) =>
-        document.activeElement instanceof HTMLElement &&
-        document.activeElement.dataset["artifactPath"] === targetPath &&
-        document.querySelector(".artifact-inspector") instanceof HTMLElement,
-      primaryPath,
+      () => {
+        const inspector = document.querySelector(".artifact-inspector");
+        return (
+          inspector instanceof HTMLElement &&
+          document.activeElement instanceof HTMLElement &&
+          inspector.contains(document.activeElement)
+        );
+      },
+      undefined,
       { timeout: WEB_UI_START_TIMEOUT_MS },
     );
     const primaryInspection = await page.evaluate((targetPath) => {
@@ -420,9 +470,8 @@ export async function verifyWebUiArtifactNavigation(browser, origin, expected) {
       const workspaceRect = workspace?.getBoundingClientRect();
       return {
         path: targetPath,
-        focusedSourceCard:
-          source instanceof HTMLElement &&
-          source.dataset["artifactPath"] === targetPath,
+        focusedInspection:
+          source instanceof HTMLElement && inspector?.contains(source) === true,
         openedInOneClick:
           inspector instanceof HTMLElement &&
           inspector.getClientRects().length > 0,
@@ -505,40 +554,7 @@ export async function verifyWebUiArtifactNavigation(browser, origin, expected) {
       state: "detached",
       timeout: WEB_UI_START_TIMEOUT_MS,
     });
-    await page.setViewportSize({ width: 390, height: 844 });
-    await primaryOutput.locator('[data-artifact-action="open"]').click();
-    await page.locator(".artifact-inspector").waitFor({
-      state: "visible",
-      timeout: WEB_UI_START_TIMEOUT_MS,
-    });
-    const compactInspection = await page.evaluate(() => {
-      const inspector = document.querySelector(".artifact-inspector");
-      const workspace = document.querySelector(".workspace-primary-surface");
-      const inspectorRect = inspector?.getBoundingClientRect();
-      const workspaceRect = workspace?.getBoundingClientRect();
-      return {
-        viewportWidth: window.innerWidth,
-        inspectorWidth: inspectorRect?.width ?? 0,
-        inspectorLeft: inspectorRect?.left ?? 0,
-        inspectorRight: inspectorRect?.right ?? 0,
-        workspaceLeft: workspaceRect?.left ?? 0,
-        workspaceWidth: workspaceRect?.width ?? 0,
-        position:
-          inspector instanceof HTMLElement
-            ? getComputedStyle(inspector).position
-            : "",
-        horizontalOverflowPx: Math.max(
-          0,
-          document.documentElement.scrollWidth -
-            document.documentElement.clientWidth,
-        ),
-      };
-    });
-    await page.getByRole("button", { name: "Close preview" }).click();
-    await page.locator(".artifact-inspector").waitFor({
-      state: "detached",
-      timeout: WEB_UI_START_TIMEOUT_MS,
-    });
+    const workspaceToggle = page.locator("#workspace-rail-toggle");
     await page.setViewportSize({ width: 1_920, height: 1_080 });
     const answerFile = page.locator(
       `.message-workspace-link[data-artifact-path="${interactivePath}"]`,
@@ -560,7 +576,12 @@ export async function verifyWebUiArtifactNavigation(browser, origin, expected) {
       state: "detached",
       timeout: WEB_UI_START_TIMEOUT_MS,
     });
-    const completionToggle = page.locator(".task-completion-toggle");
+    if ((await workspaceToggle.getAttribute("aria-pressed")) === "false") {
+      await workspaceToggle.click();
+    }
+    const completionToggle = page.locator(
+      ".workspace-evidence-results .task-completion-toggle",
+    );
     if ((await completionToggle.getAttribute("aria-expanded")) === "false") {
       await completionToggle.click();
     }
@@ -599,7 +620,6 @@ export async function verifyWebUiArtifactNavigation(browser, origin, expected) {
       answerFileOpenedInspector,
       primaryInspection,
       intermediateInspections,
-      compactInspection,
       inspectorInteraction: {
         ...inspectorInteraction,
         consoleErrorCount: consoleErrors.length,

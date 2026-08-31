@@ -48,7 +48,7 @@ describe("ConversationToolActivityCard", () => {
   });
 
   it.each(["failed", "blocked"] as const)(
-    "keeps %s tool evidence expanded and visible",
+    "keeps %s tool evidence available but collapsed by default",
     async (status) => {
       const container = installDom();
       await act(async () => {
@@ -67,7 +67,7 @@ describe("ConversationToolActivityCard", () => {
         status === "failed" ? "Shell · Failed" : "Shell · Blocked",
       );
       expect(container.querySelector("details")?.hasAttribute("open")).toBe(
-        true,
+        false,
       );
     },
   );
@@ -114,7 +114,9 @@ describe("ConversationToolActivityCard", () => {
     });
 
     expect(container.textContent).toContain("Updated plan artifact");
-    expect(container.textContent).not.toContain("Update plan artifact completed");
+    expect(container.textContent).not.toContain(
+      "Update plan artifact completed",
+    );
   });
 
   it("renders patch completion as an action instead of a raw tool label", async () => {

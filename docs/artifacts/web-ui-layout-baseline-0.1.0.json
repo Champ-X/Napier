@@ -22,27 +22,27 @@
           "height": 52
         },
         "status": {
-          "x": 935,
+          "x": 961,
           "y": 10,
-          "width": 181,
+          "width": 157,
           "height": 32
         },
         "conversation": {
           "x": 252,
           "y": 52,
-          "width": 1028,
-          "height": 305
+          "width": 756,
+          "height": 329
         },
         "composer": {
-          "x": 386,
-          "y": 753,
-          "width": 760,
-          "height": 131
+          "x": 276,
+          "y": 776,
+          "width": 708,
+          "height": 108
         },
         "views": {
-          "x": 410,
+          "x": 614,
           "y": 0,
-          "width": 375,
+          "width": 303,
           "height": 51
         },
         "primary": {
@@ -71,27 +71,27 @@
           "height": 52
         },
         "status": {
-          "x": 1042,
+          "x": 1105,
           "y": 10,
-          "width": 219,
+          "width": 158,
           "height": 32
         },
         "conversation": {
           "x": 252,
           "y": 52,
-          "width": 1188,
-          "height": 305
+          "width": 916,
+          "height": 329
         },
         "composer": {
-          "x": 466,
-          "y": 753,
+          "x": 330,
+          "y": 776,
           "width": 760,
-          "height": 131
+          "height": 108
         },
         "views": {
-          "x": 658,
+          "x": 694,
           "y": 0,
-          "width": 375,
+          "width": 303,
           "height": 51
         },
         "primary": {
@@ -120,27 +120,27 @@
           "height": 52
         },
         "status": {
-          "x": 1481,
+          "x": 1567,
           "y": 10,
-          "width": 232,
+          "width": 166,
           "height": 32
         },
         "conversation": {
           "x": 252,
           "y": 52,
-          "width": 1668,
-          "height": 485
+          "width": 1396,
+          "height": 509
         },
         "composer": {
-          "x": 706,
-          "y": 933,
+          "x": 570,
+          "y": 956,
           "width": 760,
-          "height": 131
+          "height": 108
         },
         "views": {
-          "x": 898,
+          "x": 934,
           "y": 0,
-          "width": 375,
+          "width": 303,
           "height": 51
         },
         "primary": {

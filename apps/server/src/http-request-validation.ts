@@ -1,4 +1,25 @@
 import type { ModelRef } from "@napier/contracts";
+import type { Hono } from "hono";
+
+import { jsonError } from "./http-response-evidence.js";
+
+const LOOPBACK_HOSTNAMES = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+/** Reject DNS-rebinding access to Napier's local control plane. */
+export function registerLoopbackApiGuard(app: Hono): void {
+  app.use("/api/*", async (context, next) => {
+    let hostname: string;
+    try {
+      hostname = new URL(context.req.url).hostname.toLowerCase();
+    } catch {
+      return jsonError(context, "API host is invalid", 400);
+    }
+    if (!LOOPBACK_HOSTNAMES.has(hostname)) {
+      return jsonError(context, "API host must be loopback", 403);
+    }
+    await next();
+  });
+}
 
 export function requestRecord(
   input: unknown,

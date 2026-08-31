@@ -96,6 +96,22 @@ export const composerCopyEn = {
     runtimeReady: "Selected permissions are ready for the next run.",
     advancedSettings: "Advanced settings",
   },
+  images: {
+    attach: "Attach images",
+    drop: "Drop images to attach",
+    selected: "Attached images",
+    remove: "Remove",
+    clear: "Clear images",
+    ephemeral:
+      "Images are sent with this run only and are not saved to history.",
+    visionRequired: "Choose a vision model to use attached images.",
+    errors: {
+      unsupported: "Use a JPEG, PNG, GIF, or WebP image.",
+      too_many: "Attach up to four images per run.",
+      too_large: "Each image must be 8 MiB or smaller.",
+      total_too_large: "Attached images must total 16 MiB or less.",
+    },
+  },
   nextRunBadge: "NEXT RUN ONLY",
 } as const;
 
@@ -182,6 +198,21 @@ export const composerCopyZh: LocaleOverride<typeof composerCopyEn> = {
     runtimeStatus: "运行环境",
     runtimeReady: "所选权限已就绪，将持续用于后续运行。",
     advancedSettings: "高级设置",
+  },
+  images: {
+    attach: "添加图片",
+    drop: "松开以添加图片",
+    selected: "已添加的图片",
+    remove: "移除",
+    clear: "清空图片",
+    ephemeral: "图片仅随本轮发送，不会保存到会话历史。",
+    visionRequired: "请选择支持视觉输入的模型后再发送图片。",
+    errors: {
+      unsupported: "仅支持 JPEG、PNG、GIF 或 WebP 图片。",
+      too_many: "每次运行最多添加 4 张图片。",
+      too_large: "单张图片不能超过 8 MiB。",
+      total_too_large: "图片总大小不能超过 16 MiB。",
+    },
   },
   nextRunBadge: "仅下一次运行",
 };

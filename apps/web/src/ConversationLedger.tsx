@@ -19,6 +19,7 @@ import {
 import { ConversationNetworkActivityCard } from "./ConversationNetworkActivityCard";
 import { ConversationMilestoneCard } from "./ConversationMilestoneCard";
 import { ConversationPlanCard } from "./ConversationPlanCard";
+import { ConversationProgressNote } from "./ConversationProgressNote";
 import { ConversationRecoveryCard } from "./ConversationRecoveryCard";
 import { ConversationSubagentCard } from "./ConversationSubagentCard";
 import { ConversationToolActivityCard } from "./ConversationToolActivityCard";
@@ -38,6 +39,7 @@ export interface ConversationLedgerProps {
   onLedgerChanged(): Promise<void>;
   onOpenSubagentHub(taskId?: string): void;
   onInspectArtifact?(inspection: ArtifactInspection): void;
+  onOpenWorkspaceFile?(path: string): void;
 }
 
 export function ConversationLedger({
@@ -45,10 +47,10 @@ export function ConversationLedger({
   detail,
   streamingText,
   endRef,
-  onBranch,
   onLedgerChanged,
   onOpenSubagentHub,
   onInspectArtifact,
+  onOpenWorkspaceFile,
 }: ConversationLedgerProps) {
   const [toolDisplays, setToolDisplays] = useState<
     Awaited<ReturnType<typeof getLocalToolDisplays>>
@@ -110,10 +112,10 @@ export function ConversationLedger({
         renderFeedItem(
           item,
           projection,
-          onBranch,
           onLedgerChanged,
           onOpenSubagentHub,
           onInspectArtifact,
+          onOpenWorkspaceFile,
         ),
       )}
       {streamingText ? (
@@ -122,6 +124,7 @@ export function ConversationLedger({
           workspaceLinks={projection.workspaceLinks}
           citationLinks={projection.citationLinks}
           {...(onInspectArtifact ? { onInspectArtifact } : {})}
+          {...(onOpenWorkspaceFile ? { onOpenWorkspaceFile } : {})}
         />
       ) : null}
       <div ref={endRef} />
@@ -132,13 +135,21 @@ export function ConversationLedger({
 function renderFeedItem(
   item: ConversationFeedEntry,
   projection: ReturnType<typeof conversationFeedProjection>,
-  onBranch: ConversationLedgerProps["onBranch"],
   onLedgerChanged: ConversationLedgerProps["onLedgerChanged"],
   onOpenSubagentHub: ConversationLedgerProps["onOpenSubagentHub"],
   onInspectArtifact: ConversationLedgerProps["onInspectArtifact"],
+  onOpenWorkspaceFile: ConversationLedgerProps["onOpenWorkspaceFile"],
 ) {
   if (item.kind === "activity-group") {
-    return <ConversationActivityGroupCard key={item.id} group={item} />;
+    return (
+      <ConversationActivityGroupCard
+        key={item.id}
+        group={item}
+        {...(projection.activeThinkingId
+          ? { activeThinkingId: projection.activeThinkingId }
+          : {})}
+      />
+    );
   }
   if (item.kind === "message") {
     return (
@@ -148,9 +159,7 @@ function renderFeedItem(
         workspaceLinks={projection.workspaceLinks}
         citationLinks={projection.citationLinks}
         {...(onInspectArtifact ? { onInspectArtifact } : {})}
-        {...(item.message.role === "assistant"
-          ? { onBranch: () => onBranch(item.message.seq) }
-          : {})}
+        {...(onOpenWorkspaceFile ? { onOpenWorkspaceFile } : {})}
       />
     );
   }
@@ -190,6 +199,18 @@ function renderFeedItem(
       />
     );
   }
+  if (item.kind === "progress") {
+    return (
+      <ConversationProgressNote
+        key={`progress-${item.note.id}`}
+        note={item.note}
+        workspaceLinks={projection.workspaceLinks}
+        citationLinks={projection.citationLinks}
+        {...(onInspectArtifact ? { onInspectArtifact } : {})}
+        {...(onOpenWorkspaceFile ? { onOpenWorkspaceFile } : {})}
+      />
+    );
+  }
   if (item.kind === "citation") {
     return (
       <ConversationCitationCard
@@ -215,6 +236,7 @@ type ExecutionFeedItem = Exclude<
   | { kind: "citation" }
   | { kind: "thinking" }
   | { kind: "milestone" }
+  | { kind: "progress" }
 >;
 
 function renderExecutionFeedItem(

@@ -36,6 +36,7 @@ import {
   conversationPlans,
 } from "./conversation-plan-view-model";
 import { conversationRecoveries } from "./conversation-recovery-view-model";
+import { conversationProgressNotes } from "./conversation-progress-view-model";
 import {
   conversationSubagentEventId,
   conversationSubagents,
@@ -45,7 +46,7 @@ import {
   type ConversationToolActivity,
 } from "./conversation-tool-activity-view-model";
 import {
-  activeConversationThinkingId,
+  activeConversationThinkingActivity,
   conversationThinkingActivities,
 } from "./conversation-thinking-view-model";
 import {
@@ -86,17 +87,29 @@ export function conversationFeedProjection(
   );
   const workspaceLinks = conversationArtifactWorkspaceLinks(artifacts);
   const citations = detail?.citations ?? conversationCitations(events);
-  const thinkingActivities = conversationThinkingActivities(events);
+  const retainedThinkingActivities = conversationThinkingActivities(events);
   const milestones = conversationMilestones(events);
+  const progressNotes = conversationProgressNotes(events);
   const currentRunId = detail?.thread.currentRunId;
-  const activeThinkingId = activeConversationThinkingId(
+  const runIsActive = Boolean(
+    currentRunId &&
+      (detail?.thread.status === "running" ||
+        runs.some((run) => run.id === currentRunId && run.status === "running")),
+  );
+  const activeThinking = activeConversationThinkingActivity(
     events,
     currentRunId,
-    Boolean(
-      currentRunId &&
-      runs.some((run) => run.id === currentRunId && run.status === "running"),
-    ),
+    runIsActive,
+    retainedThinkingActivities,
   );
+  const activeThinkingId = activeThinking?.id;
+  const thinkingActivities =
+    activeThinking &&
+    !retainedThinkingActivities.some(
+      (activity) => activity.id === activeThinking.id,
+    )
+      ? [...retainedThinkingActivities, activeThinking]
+      : retainedThinkingActivities;
   const citationLinks = conversationCitationLinks(citations);
   const citationEventIds = new Set(citations.map((citation) => citation.id));
   const citationCallIds = new Set(citations.map((citation) => citation.callId));
@@ -213,6 +226,11 @@ export function conversationFeedProjection(
         seq: milestone.seq,
         milestone,
       })),
+      ...progressNotes.map((note) => ({
+        kind: "progress" as const,
+        seq: note.seq,
+        note,
+      })),
       ...networkActivities.map((activity) => ({
         kind: "network" as const,
         seq: activity.seq,
@@ -302,6 +320,7 @@ function includeLegacyActivity(
     artifactKeys: ReadonlySet<string>;
   },
 ): boolean {
+  if (event.type === "run.progress.message") return false;
   const key = conversationArtifactEventKey(event);
   const callId = eventCallId(event);
   const planId = conversationPlanEventId(event);

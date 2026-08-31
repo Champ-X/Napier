@@ -44,6 +44,7 @@ export interface SelectedModelAvailability {
   id: string;
   label: string;
   configured: boolean;
+  vision?: boolean;
   known: boolean;
 }
 
@@ -123,7 +124,9 @@ export function modelPickerGroups(
       claimed.add(key);
       return [option];
     });
-    return groupOptions.length > 0 ? { id, label, options: groupOptions } : undefined;
+    return groupOptions.length > 0
+      ? { id, label, options: groupOptions }
+      : undefined;
   };
   const recommended = priorityGroup(
     "recommended",
@@ -140,12 +143,14 @@ export function modelPickerGroups(
     ]);
   }
   const providerGroups = [...providers.entries()]
-    .map(([provider, providerOptions]): ModelPickerGroup => ({
-      id: `provider:${provider}`,
-      provider,
-      label: providerOptions[0]?.providerName ?? provider,
-      options: providerOptions.sort(comparePickerOptions),
-    }))
+    .map(
+      ([provider, providerOptions]): ModelPickerGroup => ({
+        id: `provider:${provider}`,
+        provider,
+        label: providerOptions[0]?.providerName ?? provider,
+        options: providerOptions.sort(comparePickerOptions),
+      }),
+    )
     .sort((left, right) => left.label.localeCompare(right.label));
   return [recommended, recent, ...providerGroups].filter(
     (group): group is ModelPickerGroup => group !== undefined,
@@ -204,6 +209,7 @@ export function selectedModelAvailability(
       id: model.id,
       label: `${model.provider} / ${model.name}`,
       configured: model.configured,
+      vision: model.vision,
       known: true,
     };
   }
@@ -214,6 +220,7 @@ export function selectedModelAvailability(
     id: parsed.id,
     label: selectedKey,
     configured: false,
+    vision: false,
     known: false,
   };
 }
@@ -268,10 +275,7 @@ function comparePickerOptions(
   );
 }
 
-function matchesModelQuery(
-  option: ModelPickerOption,
-  query: string,
-): boolean {
+function matchesModelQuery(option: ModelPickerOption, query: string): boolean {
   if (!query) return true;
   return [option.name, option.id, option.provider, option.providerName]
     .join(" ")

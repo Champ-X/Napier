@@ -58,7 +58,7 @@ import { registerEvaluationReviewHttp } from "./evaluation-review-http.js";
 import { registerEvaluationSuiteAdminHttp } from "./evaluation-suite-admin-http.js";
 import { registerExtensionLifecycleHttp } from "./extension-lifecycle-http.js";
 import { readLimitedJson,RequestBodyTooLargeError } from "./http-request-body.js";
-import { requestRecord } from "./http-request-validation.js";
+import { registerLoopbackApiGuard,requestRecord } from "./http-request-validation.js";
 import { errorMessage,jsonError,sha256Json } from "./http-response-evidence.js";
 import { registerInboundChannelAdminHttp } from "./inbound-channel-admin-http.js";
 import { registerInboundChannelDeadLetterHttp } from "./inbound-channel-dead-letter-http.js";
@@ -119,12 +119,12 @@ interface CreateAppOptions {
   listWorkspaceThreads?: ListWorkspaceThreads;
 }
 export function createApp(services: NapierServices, options?: CreateAppOptions): Hono {
-  const app = new Hono();
+  const app = new Hono(); registerLoopbackApiGuard(app);
   app.use(
     "/api/*",
     cors({
       origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
-      allowHeaders: ["Content-Type", "Authorization", "X-Napier-Channel-Token"],
+      allowHeaders: ["Content-Type", "Authorization", "X-Napier-Channel-Token", "X-Napier-Intent"],
       allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       credentials: false,
     }),

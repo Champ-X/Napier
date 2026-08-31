@@ -138,6 +138,14 @@
   color: var(--color-fg-muted);
 }
 
+.model-picker-unavailable-toggle input {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
 .model-picker-results {
   min-height: 72px;
   overflow: hidden auto;

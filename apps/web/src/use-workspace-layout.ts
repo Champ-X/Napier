@@ -15,20 +15,30 @@ export const WORKSPACE_EVIDENCE_WIDTH = {
 
 const NAVIGATION_WIDTH_KEY = "napier.workspace.navigation-width";
 const EVIDENCE_WIDTH_KEY = "napier.workspace.evidence-width";
+const COMPACT_VIEWPORT_MAX = 720;
+const WORKSPACE_RAIL_VIEWPORT_MIN =
+  WORKSPACE_NAVIGATION_WIDTH.default +
+  WORKSPACE_CENTER_MIN_WIDTH +
+  WORKSPACE_EVIDENCE_WIDTH.min;
 
 /**
- * Desktop-only shell state. Napier's supported viewport contract starts at
- * 1280px, so sidebar layout is controlled solely by the operator rather than
- * inferred from window width.
+ * Operator-controlled desktop shell state with a compact safety rail for
+ * narrow windows. Returning to desktop restores the operator's last choice.
  */
 export interface WorkspaceLayoutControls {
   /** Whether the sidebar should render as the compact icon rail. */
   collapsed: boolean;
+  compactViewport: boolean;
+  mobileNavigationOpen: boolean;
   navigationWidth: number;
   navigationMax: number;
   evidenceWidth: number;
   evidenceMax: number;
+  /** Whether the viewport can render the evidence rail without hiding it. */
+  workspaceRailAvailable: boolean;
   toggleSidebar(): void;
+  openSidebar(): void;
+  closeSidebar(): void;
   setNavigationWidth(width: number): void;
   setEvidenceWidth(width: number): void;
   resetNavigationWidth(): void;
@@ -36,7 +46,8 @@ export interface WorkspaceLayoutControls {
 }
 
 export function useWorkspaceLayout(): WorkspaceLayoutControls {
-  const [collapsed, setCollapsed] = useState(false);
+  const [manuallyCollapsed, setManuallyCollapsed] = useState(false);
+  const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(readViewportWidth);
   const [preferredNavigationWidth, setNavigationWidthState] = useState(() =>
     readStoredWidth(NAVIGATION_WIDTH_KEY, WORKSPACE_NAVIGATION_WIDTH),
@@ -54,10 +65,21 @@ export function useWorkspaceLayout(): WorkspaceLayoutControls {
     ...WORKSPACE_EVIDENCE_WIDTH,
     max: evidenceMax,
   });
-  const toggleSidebar = useCallback(
-    () => setCollapsed((current) => !current),
-    [],
-  );
+  const compactViewport = viewportWidth < COMPACT_VIEWPORT_MAX;
+  const collapsed = manuallyCollapsed || compactViewport;
+  const workspaceRailAvailable = viewportWidth >= WORKSPACE_RAIL_VIEWPORT_MIN;
+  const toggleSidebar = useCallback(() => {
+    if (compactViewport) {
+      setMobileNavigationOpen((current) => !current);
+      return;
+    }
+    setManuallyCollapsed((current) => !current);
+  }, [compactViewport]);
+  const openSidebar = useCallback(() => {
+    if (compactViewport) setMobileNavigationOpen(true);
+    else setManuallyCollapsed(false);
+  }, [compactViewport]);
+  const closeSidebar = useCallback(() => setMobileNavigationOpen(false), []);
   const setNavigationWidth = useCallback((width: number) => {
     setNavigationWidthState(clampWidth(width, WORKSPACE_NAVIGATION_WIDTH));
   }, []);
@@ -86,14 +108,22 @@ export function useWorkspaceLayout(): WorkspaceLayoutControls {
     window.addEventListener("resize", updateViewportWidth);
     return () => window.removeEventListener("resize", updateViewportWidth);
   }, []);
+  useEffect(() => {
+    if (!compactViewport) setMobileNavigationOpen(false);
+  }, [compactViewport]);
 
   return {
     collapsed,
+    compactViewport,
+    mobileNavigationOpen,
     navigationWidth,
     navigationMax,
     evidenceWidth,
     evidenceMax,
+    workspaceRailAvailable,
     toggleSidebar,
+    openSidebar,
+    closeSidebar,
     setNavigationWidth,
     setEvidenceWidth,
     resetNavigationWidth,
@@ -106,9 +136,7 @@ function availableNavigationMax(viewportWidth: number): number {
     WORKSPACE_NAVIGATION_WIDTH.min,
     Math.min(
       WORKSPACE_NAVIGATION_WIDTH.max,
-      viewportWidth -
-        WORKSPACE_CENTER_MIN_WIDTH -
-        WORKSPACE_EVIDENCE_WIDTH.min,
+      viewportWidth - WORKSPACE_CENTER_MIN_WIDTH - WORKSPACE_EVIDENCE_WIDTH.min,
     ),
   );
 }
@@ -127,9 +155,7 @@ function availableEvidenceMax(
 }
 
 function readViewportWidth(): number {
-  return typeof window === "undefined"
-    ? 1920
-    : Math.max(window.innerWidth, WORKSPACE_CENTER_MIN_WIDTH);
+  return typeof window === "undefined" ? 1920 : Math.max(window.innerWidth, 1);
 }
 
 interface WidthBounds {

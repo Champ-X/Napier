@@ -87,7 +87,7 @@ export function WorkspaceViewNavigation({
               onClick={() => onChange(view.id)}
               onKeyDown={(event) => moveWorkspaceView(event, view.id, onChange)}
             >
-              <Icon size={14} aria-hidden="true" />
+              <Icon size={16} aria-hidden="true" />
               <strong>{view.label}</strong>
               {count !== undefined && count > 0 ? (
                 <i>{compactCount(count)}</i>

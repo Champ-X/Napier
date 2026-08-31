@@ -7,11 +7,25 @@ import {
 } from "../src/agent-runtime-utils.js";
 
 describe("Agent Runtime progress guidance", () => {
+  it("asks every tool-driven run for concise public phase narration", () => {
+    const guidance = formatPlanToolGuidance([
+      { name: "read_file" } as AgentTool,
+    ]);
+
+    expect(guidance).toContain("<operator_progress_protocol>");
+    expect(guidance).toContain("what the evidence established");
+    expect(guidance).toContain("same assistant response as the tool call");
+    expect(guidance).toContain("Do not expose private chain-of-thought");
+    expect(guidance).toContain("implementation to verification");
+    expect(guidance).not.toContain("<plan_tool_protocol>");
+  });
+
   it("asks long-running tool runs for evidence-grounded stage conclusions", () => {
     const guidance = formatPlanToolGuidance([
       { name: "record_run_milestone" } as AgentTool,
     ]);
 
+    expect(guidance).toContain("<operator_progress_protocol>");
     expect(guidance).toContain("record_run_milestone");
     expect(guidance).toContain("progress conclusions during the Run");
     expect(guidance).toContain("completed tool evidence");
@@ -19,7 +33,7 @@ describe("Agent Runtime progress guidance", () => {
     expect(guidance).toContain("Do not record milestones after minor actions");
   });
 
-  it("does not add the protocol when no plan or milestone tools are active", () => {
+  it("does not add progress guidance when no tools are active", () => {
     expect(formatPlanToolGuidance([])).toBe("");
   });
 });

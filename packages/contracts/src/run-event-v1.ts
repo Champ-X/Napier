@@ -79,6 +79,13 @@ export const RUN_EVENT_DEFINITION_GROUPS_V1 = [
     projectionOwner: "conversation-feed",
   }),
   defineEventGroup({
+    types: ["run.progress.message"],
+    category: "message",
+    defaultVisibility: "user",
+    owner: "run-progress",
+    projectionOwner: "conversation-feed",
+  }),
+  defineEventGroup({
     types: ["run.started", "run.completed", "turn.started", "turn.completed"],
     category: "lifecycle",
     defaultVisibility: "debug",
@@ -301,6 +308,14 @@ export interface MessageAssistantPayloadV1 extends JsonObject {
   text: string;
 }
 
+export interface RunProgressMessagePayloadV1 extends JsonObject {
+  sourceEventId: string;
+  model: string;
+  toolNames: string[];
+  text?: string;
+  contentRedacted?: true;
+}
+
 export interface ToolStartedPayloadV1 extends JsonObject {
   callId: string;
   toolName: string;
@@ -314,6 +329,7 @@ export interface ToolTerminalPayloadV1 extends JsonObject {
 interface CoreRunEventMap {
   "message.user": MessageUserPayloadV1;
   "message.assistant": MessageAssistantPayloadV1;
+  "run.progress.message": RunProgressMessagePayloadV1;
   "tool.started": ToolStartedPayloadV1;
   "tool.completed": ToolTerminalPayloadV1;
   "tool.failed": ToolTerminalPayloadV1;

@@ -48,6 +48,9 @@ describe("Run event registry", () => {
     const delta = schemas.find(
       (candidate) => candidate.type === "model.text.delta",
     );
+    const progress = schemas.find(
+      (candidate) => candidate.type === "run.progress.message",
+    );
     const benchmark = schemas.find(
       (candidate) => candidate.type === "benchmark.workflow.evaluated",
     );
@@ -67,6 +70,15 @@ describe("Run event registry", () => {
       expect.objectContaining({
         category: "model",
         defaultVisibility: "hidden",
+        schemaVersion: 1,
+      }),
+    );
+    expect(progress).toEqual(
+      expect.objectContaining({
+        category: "message",
+        defaultVisibility: "user",
+        owner: "run-progress",
+        projectionOwner: "conversation-feed",
         schemaVersion: 1,
       }),
     );
@@ -116,6 +128,43 @@ describe("Run event registry", () => {
       payload: { role: "user", text: "Hello" },
       schemaVersion: 1,
     });
+  });
+
+  it("validates the public progress-message privacy boundary", () => {
+    const base: AppendEventInput<"run.progress.message"> = {
+      threadId: "thread_registry",
+      runId: "run_registry",
+      type: "run.progress.message",
+      category: "message",
+      payload: {
+        sourceEventId: "event_response",
+        model: "napier/demo",
+        toolNames: ["read_file"],
+        contentRedacted: true,
+      },
+    };
+
+    expect(resolveRegisteredEventInput(base)).toEqual(
+      expect.objectContaining({ visibility: "user", payload: base.payload }),
+    );
+    expect(() =>
+      resolveRegisteredEventInput({
+        ...base,
+        payload: { ...base.payload, text: "private source content" },
+      }),
+    ).toThrow("payload v1 is invalid");
+    expect(() =>
+      resolveRegisteredEventInput({
+        ...base,
+        payload: { ...base.payload, reasoning: "private reasoning" },
+      }),
+    ).toThrow("payload v1 is invalid");
+    expect(() =>
+      resolveRegisteredEventInput({
+        ...base,
+        payload: { ...base.payload, toolNames: [" "] },
+      }),
+    ).toThrow("payload v1 is invalid");
   });
 
   it.each([

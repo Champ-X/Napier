@@ -45,6 +45,36 @@ describe("useWorkspaceLayout", () => {
     expect(probe.read().collapsed).toBe(false);
   });
 
+  it("uses the compact rail in narrow windows and restores the desktop choice", async () => {
+    const probe = await mountProbe(1_440);
+
+    await probe.resizeTo(390);
+    expect(probe.read()).toMatchObject({
+      collapsed: true,
+      workspaceRailAvailable: false,
+    });
+    await probe.openSidebar();
+    expect(probe.read()).toMatchObject({
+      collapsed: true,
+      mobileNavigationOpen: true,
+    });
+
+    await probe.resizeTo(1_440);
+    expect(probe.read()).toMatchObject({
+      collapsed: false,
+      workspaceRailAvailable: true,
+      mobileNavigationOpen: false,
+    });
+  });
+
+  it("only exposes the evidence rail when the center and rail can coexist", async () => {
+    const probe = await mountProbe(1_252);
+    expect(probe.read().workspaceRailAvailable).toBe(true);
+
+    await probe.resizeTo(1_251);
+    expect(probe.read().workspaceRailAvailable).toBe(false);
+  });
+
   it("persists independently resized navigation and evidence widths", async () => {
     const probe = await mountProbe(1920);
 
@@ -132,6 +162,8 @@ interface ProbeReading {
   navigationMax: number;
   evidenceWidth: number;
   evidenceMax: number;
+  workspaceRailAvailable: boolean;
+  mobileNavigationOpen: boolean;
 }
 
 async function mountProbe(initialWidth: number) {
@@ -139,6 +171,7 @@ async function mountProbe(initialWidth: number) {
   const root = createRoot(container);
   roots.push(root);
   let toggleSidebar = () => undefined as void;
+  let openSidebar = () => undefined as void;
   let setNavigationWidth = (_width: number) => undefined as void;
   let setEvidenceWidth = (_width: number) => undefined as void;
   let resetNavigationWidth = () => undefined as void;
@@ -147,6 +180,7 @@ async function mountProbe(initialWidth: number) {
   function Probe() {
     const controls = useWorkspaceLayout();
     toggleSidebar = controls.toggleSidebar;
+    openSidebar = controls.openSidebar;
     setNavigationWidth = controls.setNavigationWidth;
     setEvidenceWidth = controls.setEvidenceWidth;
     resetNavigationWidth = controls.resetNavigationWidth;
@@ -158,6 +192,8 @@ async function mountProbe(initialWidth: number) {
         data-navigation-max={controls.navigationMax}
         data-evidence-width={controls.evidenceWidth}
         data-evidence-max={controls.evidenceMax}
+        data-workspace-rail-available={String(controls.workspaceRailAvailable)}
+        data-mobile-navigation-open={String(controls.mobileNavigationOpen)}
       />
     );
   }
@@ -173,6 +209,10 @@ async function mountProbe(initialWidth: number) {
         navigationMax: Number(node.getAttribute("data-navigation-max")),
         evidenceWidth: Number(node.getAttribute("data-evidence-width")),
         evidenceMax: Number(node.getAttribute("data-evidence-max")),
+        workspaceRailAvailable:
+          node.getAttribute("data-workspace-rail-available") === "true",
+        mobileNavigationOpen:
+          node.getAttribute("data-mobile-navigation-open") === "true",
       };
     },
     async resizeTo(width: number) {
@@ -183,6 +223,9 @@ async function mountProbe(initialWidth: number) {
     },
     async toggle() {
       await act(async () => toggleSidebar());
+    },
+    async openSidebar() {
+      await act(async () => openSidebar());
     },
     async setNavigationWidth(width: number) {
       await act(async () => setNavigationWidth(width));

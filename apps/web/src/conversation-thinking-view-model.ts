@@ -33,6 +33,8 @@ export interface ConversationThinkingActivity {
   seq: number;
   lastSeq: number;
   createdAt: string;
+  startedAt: string;
+  turnSeq: number;
   summaryKind: ConversationThinkingSummaryKind;
   followingActionKind?: ConversationThinkingActionKind;
   durationSeconds?: number;
@@ -98,6 +100,7 @@ export function conversationThinkingActivities(
     if (!thinkingDelta(event)) continue;
 
     const first = event;
+    const turnStart = turnStarts.get(event.runId) ?? first;
     let last = event;
     let chunkCount = boundedInteger(event.payload["chunkCount"]);
     let deltaBytes = boundedInteger(event.payload["deltaBytes"]);
@@ -134,11 +137,15 @@ export function conversationThinkingActivities(
       last,
     );
     activities.push({
-      id: first.id,
+      // Bind the activity to the turn rather than its first persisted batch.
+      // This keeps the live placeholder mounted when the first delta arrives.
+      id: turnStart.id,
       runId: first.runId,
-      seq: first.seq,
+      seq: turnStart.seq,
       lastSeq: last.seq,
       createdAt: last.createdAt,
+      startedAt: turnStart.createdAt,
+      turnSeq: turnStart.seq,
       summaryKind: summaryKind(followingActionKind),
       ...(followingActionKind ? { followingActionKind } : {}),
       ...(durationSeconds !== undefined ? { durationSeconds } : {}),
@@ -156,15 +163,63 @@ export function activeConversationThinkingId(
   currentRunId: string | undefined,
   runIsActive: boolean,
 ): string | undefined {
+  return activeConversationThinkingActivity(
+    events,
+    currentRunId,
+    runIsActive,
+  )?.id;
+}
+
+/**
+ * Projects the live model-waiting phase even before a provider emits its first
+ * displayable reasoning delta. Once deltas arrive, the same turn-bound id is
+ * retained so React can update the transcript in place instead of replacing a
+ * spinner with a completed disclosure.
+ */
+export function activeConversationThinkingActivity(
+  events: readonly RunEvent[],
+  currentRunId: string | undefined,
+  runIsActive: boolean,
+  activities: readonly ConversationThinkingActivity[] =
+    conversationThinkingActivities(events),
+): ConversationThinkingActivity | undefined {
   if (!currentRunId || !runIsActive) return undefined;
   const runEvents = events
     .filter((event) => event.runId === currentRunId)
     .sort((left, right) => left.seq - right.seq);
-  const latest = runEvents.at(-1);
-  if (latest?.type !== "model.thinking.delta") return undefined;
-  return conversationThinkingActivities(runEvents).find(
-    (activity) => activity.lastSeq === latest.seq,
-  )?.id;
+  const turnStart = [...runEvents]
+    .reverse()
+    .find((event) => event.type === "turn.started");
+  if (!turnStart) return undefined;
+  const afterTurnStart = runEvents.filter((event) => event.seq > turnStart.seq);
+  if (
+    afterTurnStart.some(
+      (event) =>
+        event.type === "turn.completed" ||
+        event.type === "model.text.delta" ||
+        event.type === "model.response" ||
+        event.type === "run.progress.message" ||
+        event.type === "message.assistant" ||
+        event.type.startsWith("tool."),
+    )
+  ) {
+    return undefined;
+  }
+  const retained = activities.find(
+    (activity) =>
+      activity.runId === currentRunId && activity.turnSeq === turnStart.seq,
+  );
+  if (retained) return retained;
+  return {
+    id: turnStart.id,
+    runId: turnStart.runId,
+    seq: turnStart.seq,
+    lastSeq: turnStart.seq,
+    createdAt: turnStart.createdAt,
+    startedAt: turnStart.createdAt,
+    turnSeq: turnStart.seq,
+    summaryKind: "continue",
+  };
 }
 
 function collectThinkingContent(

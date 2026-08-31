@@ -170,12 +170,6 @@
   margin-top: var(--space-4);
 }
 
-@media (max-width: 560px) {
-  .conversation-workspace-view:has(.welcome-panel) {
-    padding-inline: 0;
-  }
-}
-
 .trajectory-workspace-view,
 .task-workspace-view {
   overflow: hidden auto;
@@ -956,7 +950,10 @@
 .task-validation-matrix-head,
 .task-validation-row {
   display: grid;
-  grid-template-columns: minmax(160px, 0.8fr) minmax(280px, 1.5fr) minmax(150px, 0.65fr);
+  grid-template-columns: minmax(160px, 0.8fr) minmax(280px, 1.5fr) minmax(
+      150px,
+      0.65fr
+    );
   gap: var(--inline-md);
   align-items: center;
   padding: var(--inset-sm) var(--inset-md);
@@ -1462,45 +1459,117 @@
   color: var(--color-fg-muted);
 }
 
-.developer-tool {
-  overflow: clip;
+.developer-tool-status {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  overflow: hidden;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.developer-tool-status > div {
+  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+  border-inline-end: 1px solid var(--color-border-subtle);
+}
+
+.developer-tool-status > div:last-child {
+  border-inline-end: 0;
+}
+
+.developer-tool-status dt {
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  color: var(--color-fg-subtle);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.developer-tool-status dd {
+  margin: var(--space-1) 0 0;
+  overflow: hidden;
+  font-family: var(--serif);
+  font-size: var(--text-lg);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.developer-tool-navigation {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.developer-tool-navigation button {
+  display: grid;
+  min-width: 0;
+  min-height: 64px;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-fg-muted);
+  text-align: left;
+  cursor: pointer;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.developer-tool-navigation button:hover,
+.developer-tool-navigation button.is-active {
+  color: var(--color-fg);
+  border-color: var(--color-border-strong);
+}
+
+.developer-tool-navigation button.is-active {
+  color: var(--color-accent);
+  background: var(--color-accent-subtle);
+  box-shadow: inset 3px 0 var(--color-accent);
+}
+
+.developer-tool-navigation button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.developer-tool-navigation button > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.developer-tool-navigation strong {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.developer-tool-navigation small {
+  overflow: hidden;
+  font-size: var(--text-xs);
+  color: var(--color-fg-subtle);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.developer-tool-content {
+  min-width: 0;
+  overflow: hidden;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
 
-.developer-tool > summary {
-  display: flex;
-  min-height: var(--control-target-primary);
-  align-items: center;
-  gap: var(--inline-sm);
-  padding: 0 var(--inset-md);
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-fg);
-  cursor: pointer;
-  list-style: none;
-  background: var(--color-bg-subtle);
-}
-
-.developer-tool > summary::-webkit-details-marker {
-  display: none;
-}
-
-.developer-tool > summary:hover,
-.developer-tool[open] > summary {
-  color: var(--color-accent);
-  background: var(--color-accent-subtle);
-}
-
-.developer-tool > .run-lab,
-.developer-tool > .plan-inspector-surface,
-.developer-tool > .default-product-trial,
-.developer-tool > .context-compaction-workbench,
-.developer-tool > .context-loading {
+.developer-tool-content > .run-lab,
+.developer-tool-content > .plan-inspector-surface,
+.developer-tool-content > .default-product-trial,
+.developer-tool-content > .context-compaction-workbench,
+.developer-tool-content > .context-loading {
   margin: 0;
   border: 0;
-  border-top: 1px solid var(--color-border-subtle);
   border-radius: 0;
   box-shadow: none;
 }
@@ -1853,7 +1922,8 @@
   color: var(--color-paper);
   background: var(--color-blue-15);
   border-radius: 7px;
-  box-shadow: 0 7px 22px color-mix(in srgb, var(--color-blue-11) 18%, transparent);
+  box-shadow: 0 7px 22px
+    color-mix(in srgb, var(--color-blue-11) 18%, transparent);
   opacity: 0;
   transform: translateY(-3px);
   transition:
@@ -2059,264 +2129,11 @@
   display: none;
 }
 
-/* Folder picker dialog ------------------------------------------------- */
-.folder-picker {
-  position: fixed;
-  z-index: 75;
-  top: 50%;
-  left: 50%;
-  display: flex;
-  width: min(480px, calc(100vw - 32px));
-  max-height: min(620px, calc(100vh - 48px));
-  flex-direction: column;
-  overflow: hidden;
-  background: var(--paper-bright);
-  border: 1px solid var(--rule-strong);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-float);
-  transform: translate(-50%, -50%);
-  animation: folder-picker-enter 180ms ease-out both;
-}
-
-@keyframes folder-picker-enter {
-  from {
-    opacity: 0;
-    transform: translate(-50%, calc(-50% + 8px)) scale(0.99);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-}
-
-.folder-picker-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 20px 22px 16px;
-  background: var(--paper-deep);
-  border-bottom: 1px solid var(--rule);
-}
-
-.folder-picker-heading span {
-  font-family: var(--mono);
+.workspace-tree-picker-error {
+  margin: 0 var(--space-2) var(--space-2);
   font-size: var(--text-xs);
-  color: var(--ledger);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.folder-picker-heading h2 {
-  margin: 6px 0 4px;
-  font-family: var(--serif);
-  font-size: 19px;
-}
-
-.folder-picker-heading p {
-  margin: 0;
-  font-size: var(--text-xs);
-  line-height: 1.5;
-  color: var(--ink-soft);
-}
-
-.folder-picker-heading > button {
-  display: grid;
-  width: 30px;
-  height: 30px;
-  flex: none;
-  color: var(--ink-soft);
-  cursor: pointer;
-  background: transparent;
-  border: 1px solid var(--rule);
-  border-radius: 50%;
-  place-items: center;
-}
-
-.folder-picker-heading > button:hover {
-  color: var(--ink);
-  background: var(--nav-soft);
-}
-
-.folder-picker-path {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 10px 22px;
-  color: var(--ink-soft);
-  background: var(--nav);
-  border-bottom: 1px solid var(--rule);
-}
-
-.folder-picker-path code {
-  min-width: 0;
-  overflow: hidden;
-  font-family: var(--mono);
-  font-size: var(--text-xs);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  direction: rtl;
-  text-align: left;
-}
-
-.folder-picker-list {
-  min-height: 140px;
-  flex: 1;
-  overflow: auto;
-  padding: 8px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--rule-strong) transparent;
-}
-
-.folder-picker-up {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  font-family: var(--mono);
-  font-size: var(--text-xs);
-  color: var(--ink-soft);
-  text-align: left;
-  cursor: pointer;
-  background: transparent;
-  border: 0;
-  border-radius: var(--radius-xs);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.folder-picker-up:hover:not(:disabled) {
-  color: var(--ink);
-  background: var(--nav-soft);
-}
-
-.folder-picker-up:disabled {
-  color: var(--ink-faint);
-  cursor: default;
-}
-
-.folder-picker-list ul {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.folder-picker-list ul button {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  gap: 9px;
-  padding: 9px 10px;
-  color: var(--ink-soft);
-  text-align: left;
-  cursor: pointer;
-  background: transparent;
-  border: 0;
-  border-radius: var(--radius-xs);
-  transition: background 120ms ease;
-}
-
-.folder-picker-list ul button:hover:not(:disabled) {
-  color: var(--ink);
-  background: var(--ledger-soft);
-}
-
-.folder-picker-list ul button:disabled {
-  cursor: default;
-  opacity: 0.6;
-}
-
-.folder-picker-list ul button > span {
-  min-width: 0;
-  overflow: hidden;
-  font-size: 13px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.folder-picker-list ul svg,
-.folder-picker-up svg {
-  flex: none;
-  color: var(--ledger);
-}
-
-.folder-picker-status {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 34px 16px;
-  font-size: 12px;
-  color: var(--ink-faint);
-}
-
-.folder-picker-status.is-error {
-  color: var(--vermilion);
-}
-
-.folder-picker-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 22px 18px;
-  background: var(--paper-deep);
-  border-top: 1px solid var(--rule);
-}
-
-.folder-picker-manual {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 10px;
-  font-size: var(--text-xs);
-  color: var(--ink-soft);
-  cursor: pointer;
-  background: transparent;
-  border: 0;
-  border-radius: var(--radius-xs);
-}
-
-.folder-picker-manual:hover {
-  color: var(--ink);
-  background: var(--nav-soft);
-}
-
-.folder-picker-select {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 9px 16px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--color-paper);
-  cursor: pointer;
-  background: var(--ledger);
-  border: 0;
-  border-radius: var(--radius-sm);
-  transition:
-    background 130ms ease,
-    opacity 130ms ease;
-}
-
-.folder-picker-select:hover:not(:disabled) {
-  background: var(--color-accent);
-}
-
-.folder-picker-select:disabled {
-  cursor: default;
-  opacity: 0.5;
-}
-
-.folder-picker .spin {
-  animation: folder-picker-spin 0.8s linear infinite;
-}
-
-@keyframes folder-picker-spin {
-  to {
-    transform: rotate(360deg);
-  }
+  line-height: var(--leading-compact);
+  color: var(--color-danger-fg);
 }
 
 .workspace-settings-button:hover {

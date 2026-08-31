@@ -24,16 +24,30 @@ describe("Workbench layout", () => {
   });
 
   it("keeps header controls out of the workspace navigation lane", async () => {
-    const styles = await readFile(
-      new URL("../src/styles/task-workbench.css", import.meta.url),
-      "utf8",
-    );
+    const [styles, arenaStyles, navigation] = await Promise.all([
+      readFile(
+        new URL("../src/styles/task-workbench.css", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL("../src/styles/arena-shell.css", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL("../src/WorkspaceViewNavigation.tsx", import.meta.url),
+        "utf8",
+      ),
+    ]);
 
     expect(styles).toContain(
       "grid-template-columns: minmax(0, 1fr) auto max-content;",
     );
     expect(styles).not.toContain("minmax(260px, 1fr)");
     expect(styles).not.toContain("minmax(350px, 1fr)");
+    expect(navigation).toContain('<Icon size={16} aria-hidden="true" />');
+    expect(arenaStyles).toContain(".workspace-view-tabs > button > svg");
+    expect(arenaStyles).toContain(".workspace-view-tabs strong");
+    expect(arenaStyles).toContain(".workspace-rail-toggle");
   });
 
   it("keeps blockers and next actions independently visible", async () => {
@@ -59,7 +73,7 @@ describe("Workbench layout", () => {
     );
     expect(featureStyles).toContain(".task-completion-strip");
     expect(featureStyles).toContain(".task-completion-toggle[aria-expanded");
-    expect(featureStyles).toContain(".task-result-summary");
+    expect(featureStyles).toContain(".task-result-summary.is-compact-only");
     expect(featureStyles).toContain("grid-area: results");
     expect(featureStyles).toContain("@media (forced-colors: active)");
     expect(globalStyles).not.toContain(".task-narrative {");
@@ -93,7 +107,13 @@ describe("Workbench layout", () => {
     expect(navigation).toContain('[data-artifact-action="open"]');
     expect(navigation).toContain("?.click()");
     expect(navigation).toContain('openInspector("files")');
-    expect(app).toContain("onOpenArtifact={taskControls.openArtifact}");
+    expect(app).toContain("artifactInspectionForPath(");
+    expect(app).toContain(
+      "absoluteWorkspacePath(bootstrap.workspace.root, path)",
+    );
+    expect(app).toContain("<WorkspaceFileInspector");
+    expect(app).toContain("onOpenArtifact={openArtifact}");
+    expect(app).toContain("onOpenWorkspaceFile={openArtifact}");
     expect(shell).toContain('files: "changes"');
     expect(shell).toContain('setWorkspaceView("task")');
     expect(task).toContain("<TaskChangesPanel");
@@ -109,24 +129,44 @@ describe("Workbench layout", () => {
     expect(styles).toContain("grid-column: 2 / -1;");
   });
 
-  it("shares one resizable evidence rail between artifacts and Browser", async () => {
-    const [app, artifactStyles, browserStyles] = await Promise.all([
-      readFile(
-        new URL("../src/AppWorkspaceViews.tsx", import.meta.url),
-        "utf8",
-      ),
-      readFile(
-        new URL("../src/styles/artifact-inspector.css", import.meta.url),
-        "utf8",
-      ),
-      readFile(
-        new URL("../src/browser-live-view.css", import.meta.url),
-        "utf8",
-      ),
-    ]);
+  it("keeps a workspace ledger beside the conversation and shares one resizable inspection rail", async () => {
+    const [app, ledger, ledgerStyles, artifactStyles, browserStyles] =
+      await Promise.all([
+        readFile(
+          new URL("../src/AppWorkspaceViews.tsx", import.meta.url),
+          "utf8",
+        ),
+        readFile(
+          new URL("../src/WorkspaceEvidenceRail.tsx", import.meta.url),
+          "utf8",
+        ),
+        readFile(
+          new URL("../src/workspace-evidence-rail.css", import.meta.url),
+          "utf8",
+        ),
+        readFile(
+          new URL("../src/styles/artifact-inspector.css", import.meta.url),
+          "utf8",
+        ),
+        readFile(
+          new URL("../src/browser-live-view.css", import.meta.url),
+          "utf8",
+        ),
+      ]);
 
     expect(app).toContain('side="evidence"');
-    expect(app).toContain("showEvidenceRail");
+    expect(app).toContain("showWorkspaceRail");
+    expect(app).toContain("layout.workspaceRailAvailable");
+    expect(app).toContain("showResizableRail");
+    expect(app).toContain("<WorkspaceEvidenceRail");
+    expect(ledger).toContain("<LazyTaskCompletionSummary");
+    expect(ledgerStyles).toContain(
+      ".workspace-primary-surface.has-workspace-rail",
+    );
+    expect(ledgerStyles).toContain(
+      "grid-template-columns: minmax(0, 1fr) minmax(244px, 272px)",
+    );
+    expect(ledger).toContain("onClose(): void");
     expect(artifactStyles).toContain("var(--workspace-evidence-width");
     expect(browserStyles).toContain("var(--workspace-evidence-width");
     expect(artifactStyles).toContain("var(--layout-center-min)");
@@ -150,23 +190,32 @@ describe("Workbench layout", () => {
   });
 
   it("keeps environment setup styles feature-owned and state-complete", async () => {
-    const [provider, sandbox, providerStyles, sandboxStyles, globalStyles] =
-      await Promise.all([
-        readFile(
-          new URL("../src/ProviderSetupCard.tsx", import.meta.url),
-          "utf8",
-        ),
-        readFile(
-          new URL("../src/SandboxSetupCard.tsx", import.meta.url),
-          "utf8",
-        ),
-        readFile(new URL("../src/provider-setup.css", import.meta.url), "utf8"),
-        readFile(new URL("../src/sandbox-setup.css", import.meta.url), "utf8"),
-        readFile(new URL("../src/styles.css", import.meta.url), "utf8"),
-      ]);
+    const [
+      provider,
+      sandbox,
+      capabilities,
+      providerStyles,
+      sandboxStyles,
+      globalStyles,
+    ] = await Promise.all([
+      readFile(
+        new URL("../src/ProviderSetupCard.tsx", import.meta.url),
+        "utf8",
+      ),
+      readFile(new URL("../src/SandboxSetupCard.tsx", import.meta.url), "utf8"),
+      readFile(
+        new URL("../src/ContextCapabilityFields.tsx", import.meta.url),
+        "utf8",
+      ),
+      readFile(new URL("../src/provider-setup.css", import.meta.url), "utf8"),
+      readFile(new URL("../src/sandbox-setup.css", import.meta.url), "utf8"),
+      readFile(new URL("../src/styles.css", import.meta.url), "utf8"),
+    ]);
 
     expect(provider).toContain('import "./provider-setup.css"');
     expect(sandbox).toContain('import "./sandbox-setup.css"');
+    expect(capabilities).toContain("<SandboxSetupCard");
+    expect(capabilities).toContain("onActivated={refreshWorkspace}");
     expect(providerStyles).toContain(":focus-visible");
     expect(providerStyles).toContain('[aria-busy="true"]');
     expect(sandboxStyles).toContain("button.danger");

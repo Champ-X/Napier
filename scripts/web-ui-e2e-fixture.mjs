@@ -320,6 +320,14 @@ export async function seedWebUiNarrativeFixture(root) {
         `Long conversation checkpoint ${String(index + 1).padStart(3, "0")}`,
       ]),
     );
+    const progressText =
+      "I mapped the evidence set; next I will verify the workspace.";
+    await appendProgressMessageFixture(
+      store,
+      longRunThread.id,
+      longRun.id,
+      progressText,
+    );
     await appendCompletedToolCalls(store, longRunThread.id, longRun.id, [
       ["read_file", 12],
       ["web_search", 5],
@@ -509,6 +517,7 @@ export async function seedWebUiNarrativeFixture(root) {
         blocker: "",
         nextStep: "Start a follow-up task or inspect the evidence.",
         artifactPath: "",
+        progressText,
       },
       artifactNavigation: {
         threadId: artifactThread.id,
@@ -613,6 +622,40 @@ async function appendCompletedToolCalls(store, threadId, runId, groups) {
       }
     }
   }
+}
+
+async function appendProgressMessageFixture(store, threadId, runId, text) {
+  const response = await store.appendEvent({
+    threadId,
+    runId,
+    type: "model.response",
+    category: "model",
+    visibility: "debug",
+    payload: {
+      model: "faux-long-run/faux-1",
+      text,
+      toolCalls: [
+        {
+          id: "call_progress_fixture",
+          name: "read_file",
+          arguments: { path: "PRIVATE_PROGRESS_PATH" },
+        },
+      ],
+    },
+  });
+  await store.appendEvent({
+    threadId,
+    runId,
+    type: "run.progress.message",
+    category: "message",
+    visibility: "user",
+    payload: {
+      sourceEventId: response.id,
+      model: "faux-long-run/faux-1",
+      toolNames: ["read_file"],
+      text,
+    },
+  });
 }
 
 async function appendThinkingSummaryFixture(store, threadId, runId) {

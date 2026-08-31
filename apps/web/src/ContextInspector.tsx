@@ -80,19 +80,21 @@ export function ContextInspector({
           <strong title={object.title}>{object.title}</strong>
         </div>
         <div className="context-inspector-actions">
-          <button
-            type="button"
-            className={`context-inspector-pin${pinned ? " is-pinned" : ""}`}
-            aria-pressed={pinned}
-            aria-label={pinned ? copy.unpin : copy.pin}
-            onClick={() => onTogglePin?.(!pinned)}
-          >
-            {pinned ? (
-              <PinOff size={14} aria-hidden="true" />
-            ) : (
-              <Pin size={14} aria-hidden="true" />
-            )}
-          </button>
+          {onTogglePin ? (
+            <button
+              type="button"
+              className={`context-inspector-pin${pinned ? " is-pinned" : ""}`}
+              aria-pressed={pinned}
+              aria-label={pinned ? copy.unpin : copy.pin}
+              onClick={() => onTogglePin(!pinned)}
+            >
+              {pinned ? (
+                <PinOff size={14} aria-hidden="true" />
+              ) : (
+                <Pin size={14} aria-hidden="true" />
+              )}
+            </button>
+          ) : null}
           <button
             type="button"
             className="context-inspector-close"
