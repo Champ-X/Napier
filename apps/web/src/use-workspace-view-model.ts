@@ -77,7 +77,10 @@ import {
 } from "./api";
 import { getBootstrap, getBootstrapRestoringWorkspace } from "./bootstrap-api";
 import { contextCheckpointPayload } from "./context-checkpoint-payload";
-import { promptImagesFromAttachments, type ComposerImageAttachment } from "./composer-image-attachments";
+import {
+  promptImagesFromAttachments,
+  type ComposerImageAttachment,
+} from "./composer-image-attachments";
 import { copy } from "./copy";
 import { extensionCopy } from "./extension-copy";
 import type {
@@ -92,17 +95,20 @@ import { formatApiErrorMessage } from "./api-error";
 import { latestManuallyResumableRun } from "./manual-run-recovery";
 import { selectedModelAvailability } from "./model-selection-view-model";
 import { openTelemetryTraceArtifactFilename } from "./otel-trace-export-view";
-import { runReplaySnapshotFilename, threadReplayBundleFilename } from "./run-replay-view-model";
+import {
+  runReplaySnapshotFilename,
+  threadReplayBundleFilename,
+} from "./run-replay-view-model";
 import {
   applyThreadRunEvent,
   applyThreadStreamFrameToBootstrap,
   applyThreadStreamFrameToDetail,
+  activateThreadDetail,
   attachThreadRun,
   detachThreadRun,
   mergeBackgroundBootstrap,
   mergeBackgroundThreadDetail,
   mergeNavigationBootstrap,
-  mergeRefreshedThreadBootstrap,
   resolveCachedThreadDetail,
   threadRunViewState,
   type ThreadRunSessions,
@@ -110,8 +116,14 @@ import {
 import { messagePayload } from "./message-payload";
 import { commitThreadLocation, threadIdFromLocation } from "./thread-location";
 import { useBrowserInteractionConfirmation } from "./use-browser-interaction-confirmation";
-import { executeLoadedNextRunPrompt, useNextRunCapabilityPreset } from "./use-next-run-capability-preset";
-import { upsertThreadControlMessage, useMemoryProvenanceDraft } from "./thread-detail-view-state";
+import {
+  executeLoadedNextRunPrompt,
+  useNextRunCapabilityPreset,
+} from "./use-next-run-capability-preset";
+import {
+  upsertThreadControlMessage,
+  useMemoryProvenanceDraft,
+} from "./thread-detail-view-state";
 import { useRecoveredActiveRun } from "./use-active-run-state";
 import { useThreadNavigation } from "./use-thread-navigation";
 import { useSubagentHubActions } from "./use-subagent-hub-actions";
@@ -122,7 +134,10 @@ import {
   type OpenTelemetryTraceVerificationReceipt,
   type RunReplayVerificationReceipt,
 } from "./run-lab-receipts";
-export { importProvenanceReceiptView, summarizeThreadReplayBundleCoverage } from "./run-lab-receipts";
+export {
+  importProvenanceReceiptView,
+  summarizeThreadReplayBundleCoverage,
+} from "./run-lab-receipts";
 export type {
   FixtureTransferReceipt,
   OpenTelemetryTraceReceipt,
@@ -145,10 +160,18 @@ export type InspectorTab =
 
 const SHA256 = /^[a-f0-9]{64}$/;
 
-function eventAnchorSetSha256FromArtifact(artifact: OpenTelemetryTraceArtifact): string | undefined {
-  const root = artifact.otlp.resourceSpans[0]?.scopeSpans[0]?.spans.find((span) => span.parentSpanId === undefined);
-  const value = root?.attributes.find((attribute) => attribute.key === "napier.event_anchor_set.sha256")?.value;
-  return value && "stringValue" in value && SHA256.test(value.stringValue) ? value.stringValue : undefined;
+function eventAnchorSetSha256FromArtifact(
+  artifact: OpenTelemetryTraceArtifact,
+): string | undefined {
+  const root = artifact.otlp.resourceSpans[0]?.scopeSpans[0]?.spans.find(
+    (span) => span.parentSpanId === undefined,
+  );
+  const value = root?.attributes.find(
+    (attribute) => attribute.key === "napier.event_anchor_set.sha256",
+  )?.value;
+  return value && "stringValue" in value && SHA256.test(value.stringValue)
+    ? value.stringValue
+    : undefined;
 }
 
 export interface MessageView {
@@ -166,7 +189,8 @@ const MAX_OTLP_TRACE_ARTIFACT_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_SIGNED_EXTENSION_PACKAGE_FILE_BYTES = 4 * 1024 * 1024;
 const MAX_EXTENSION_PACKAGE_DEPLOYMENT_FILES = 8;
 const MAX_EXTENSION_PACKAGE_DEPLOYMENT_FILE_BYTES = 16 * 1024 * 1024;
-const MAX_EXTENSION_PACKAGE_LOCKFILE_FILE_BYTES = MAX_EXTENSION_PACKAGE_DEPLOYMENT_FILE_BYTES + 256 * 1024;
+const MAX_EXTENSION_PACKAGE_LOCKFILE_FILE_BYTES =
+  MAX_EXTENSION_PACKAGE_DEPLOYMENT_FILE_BYTES + 256 * 1024;
 const MAX_EXTENSION_PACKAGE_CHANNEL_INDEX_FILE_BYTES = 1 * 1024 * 1024;
 export function useWorkspaceViewModel() {
   const [bootstrap, setBootstrap] = useState<LiveReadyBootstrapResponse>();
@@ -175,37 +199,63 @@ export function useWorkspaceViewModel() {
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("plan");
   const [selectedModelKey, setSelectedModelKey] = useState("napier/demo");
   const [composer, setComposer] = useState("");
-  const [composerImages, setComposerImages] = useState<ComposerImageAttachment[]>([]);
-  const [threadRunSessions, setThreadRunSessions] = useState<ThreadRunSessions>({});
-  const [controlMessageMode, setControlMessageMode] = useState<RunControlMessageMode>("steering");
+  const [composerImages, setComposerImages] = useState<
+    ComposerImageAttachment[]
+  >([]);
+  const [threadRunSessions, setThreadRunSessions] = useState<ThreadRunSessions>(
+    {},
+  );
+  const [controlMessageMode, setControlMessageMode] =
+    useState<RunControlMessageMode>("steering");
   const [goalDraft, setGoalDraft] = useState("");
-  const [memoryDraft, setMemoryDraft, memoryProvenance] = useMemoryProvenanceDraft(proposeMemory);
-  const [memoryCategory, setMemoryCategory] = useState<MemoryCategory>("context");
+  const [memoryDraft, setMemoryDraft, memoryProvenance] =
+    useMemoryProvenanceDraft(proposeMemory);
+  const [memoryCategory, setMemoryCategory] =
+    useState<MemoryCategory>("context");
   const [memoryScope, setMemoryScope] = useState<MemoryScope>("workspace");
   const [memoryReviewIntervalDays, setMemoryReviewIntervalDays] = useState(90);
   const [memorySupersedesId, setMemorySupersedesId] = useState<string>();
-  const [memoryConsolidatesIds, setMemoryConsolidatesIds] = useState<string[]>([]);
+  const [memoryConsolidatesIds, setMemoryConsolidatesIds] = useState<string[]>(
+    [],
+  );
   const [extensionBusyId, setExtensionBusyId] = useState<string>();
-  const [extensionPackageReceipt, setExtensionPackageReceipt] = useState<ExtensionPackageReceipt>();
-  const [extensionPackageUpdatePreview, setExtensionPackageUpdatePreview] = useState<ExtensionPackageUpdatePreview>();
-  const [extensionPackageUpdateEnvelope, setExtensionPackageUpdateEnvelope] = useState<unknown>();
-  const [extensionPackageDeploymentPreview, setExtensionPackageDeploymentPreview] = useState<ExtensionPackageDeploymentPreview>();
-  const [extensionPackageRolloutPreview, setExtensionPackageRolloutPreview] = useState<ExtensionPackageRolloutPreview>();
-  const [extensionPackageDeploymentEnvelopes, setExtensionPackageDeploymentEnvelopes] = useState<unknown[]>();
+  const [extensionPackageReceipt, setExtensionPackageReceipt] =
+    useState<ExtensionPackageReceipt>();
+  const [extensionPackageUpdatePreview, setExtensionPackageUpdatePreview] =
+    useState<ExtensionPackageUpdatePreview>();
+  const [extensionPackageUpdateEnvelope, setExtensionPackageUpdateEnvelope] =
+    useState<unknown>();
+  const [
+    extensionPackageDeploymentPreview,
+    setExtensionPackageDeploymentPreview,
+  ] = useState<ExtensionPackageDeploymentPreview>();
+  const [extensionPackageRolloutPreview, setExtensionPackageRolloutPreview] =
+    useState<ExtensionPackageRolloutPreview>();
+  const [
+    extensionPackageDeploymentEnvelopes,
+    setExtensionPackageDeploymentEnvelopes,
+  ] = useState<unknown[]>();
   const [labLeftRunId, setLabLeftRunId] = useState("");
   const [labRightRunId, setLabRightRunId] = useState("");
   const [runComparison, setRunComparison] = useState<RunComparison>();
-  const [runReplayVerificationReceipt, setRunReplayVerificationReceipt] = useState<RunReplayVerificationReceipt>();
+  const [runReplayVerificationReceipt, setRunReplayVerificationReceipt] =
+    useState<RunReplayVerificationReceipt>();
   const [labBusyAction, setLabBusyAction] = useState<string>();
-  const [labFixtureReceipt, setLabFixtureReceipt] = useState<FixtureTransferReceipt>();
+  const [labFixtureReceipt, setLabFixtureReceipt] =
+    useState<FixtureTransferReceipt>();
   const [traceExportBusy, setTraceExportBusy] = useState(false);
-  const [traceExportReceipt, setTraceExportReceipt] = useState<OpenTelemetryTraceReceipt>();
+  const [traceExportReceipt, setTraceExportReceipt] =
+    useState<OpenTelemetryTraceReceipt>();
   const [traceVerifyBusy, setTraceVerifyBusy] = useState(false);
-  const [traceVerificationReceipt, setTraceVerificationReceipt] = useState<OpenTelemetryTraceVerificationReceipt>();
+  const [traceVerificationReceipt, setTraceVerificationReceipt] =
+    useState<OpenTelemetryTraceVerificationReceipt>();
   const [isLoading, setIsLoading] = useState(true);
   const [operatorDecisionBusy, setOperatorDecisionBusy] = useState(false);
   const [error, setError] = useState<string>();
-  const { preset: nextRunCapabilityPreset, setPreset: setNextRunCapabilityPreset } = useNextRunCapabilityPreset(detail?.thread.id);
+  const {
+    preset: nextRunCapabilityPreset,
+    setPreset: setNextRunCapabilityPreset,
+  } = useNextRunCapabilityPreset(detail?.thread.id);
   const selectedThreadIdRef = useRef<string | undefined>(undefined);
   const threadDetailCacheRef = useRef(new Map<string, WebThreadDetail>());
   selectedThreadIdRef.current = selectedThreadId;
@@ -230,7 +280,10 @@ export function useWorkspaceViewModel() {
     try {
       const result = await getBootstrapRestoringWorkspace(threadId);
       if (result.activeThread) {
-        threadDetailCacheRef.current.set(result.activeThread.thread.id, result.activeThread);
+        threadDetailCacheRef.current.set(
+          result.activeThread.thread.id,
+          result.activeThread,
+        );
       }
       setBootstrap(result);
       setDetail(result.activeThread);
@@ -249,7 +302,8 @@ export function useWorkspaceViewModel() {
   const messages = useMemo<MessageView[]>(() => {
     if (detail?.messages) return detail.messages;
     return (detail?.events ?? []).flatMap((event): MessageView[] => {
-      if (event.type !== "message.user" && event.type !== "message.assistant") return [];
+      if (event.type !== "message.user" && event.type !== "message.assistant")
+        return [];
       const payload = messagePayload(event);
       if (!payload) return [];
       return [
@@ -273,18 +327,37 @@ export function useWorkspaceViewModel() {
         .reverse(),
     [detail?.events],
   );
-  const resumableRun = useMemo(() => (detail ? latestManuallyResumableRun(detail.thread.status, detail.runs) : undefined), [detail]);
+  const resumableRun = useMemo(
+    () =>
+      detail
+        ? latestManuallyResumableRun(detail.thread.status, detail.runs)
+        : undefined,
+    [detail],
+  );
   const openOperatorDecision = useMemo(
-    () => detail?.operatorDecisions.findLast((decision) => decision.status === "pending" || decision.status === "answered"),
+    () =>
+      detail?.operatorDecisions.findLast(
+        (decision) =>
+          decision.status === "pending" || decision.status === "answered",
+      ),
     [detail?.operatorDecisions],
   );
   const openOperatorDecisionWorkflowOwned = useMemo(
-    () => openOperatorDecision !== undefined && detail?.runs.find((run) => run.id === openOperatorDecision.runId)?.source === "workflow",
+    () =>
+      openOperatorDecision !== undefined &&
+      detail?.runs.find((run) => run.id === openOperatorDecision.runId)
+        ?.source === "workflow",
     [detail?.runs, openOperatorDecision],
   );
-  const browserInteraction = useBrowserInteractionConfirmation(detail, setError);
+  const browserInteraction = useBrowserInteractionConfirmation(
+    detail,
+    setError,
+  );
   const terminalRuns = useMemo(
-    () => (detail?.runs ?? []).filter((run) => run.status !== "queued" && run.status !== "running"),
+    () =>
+      (detail?.runs ?? []).filter(
+        (run) => run.status !== "queued" && run.status !== "running",
+      ),
     [detail?.runs],
   );
   const selectedModel = useMemo(
@@ -304,92 +377,153 @@ export function useWorkspaceViewModel() {
         .at(0),
     [detail?.events],
   );
-  const terminalRunKey = terminalRuns.map((run) => `${run.id}:${run.status}`).join("|");
+  const terminalRunKey = terminalRuns
+    .map((run) => `${run.id}:${run.status}`)
+    .join("|");
   useEffect(() => {
     const ids = new Set(terminalRuns.map((run) => run.id));
     const fallbackLeft = terminalRuns.at(-2)?.id ?? "";
     const fallbackRight = terminalRuns.at(-1)?.id ?? "";
-    setLabLeftRunId((current) => (ids.has(current) && current !== fallbackRight ? current : fallbackLeft));
-    setLabRightRunId((current) => (ids.has(current) && current !== fallbackLeft ? current : fallbackRight));
+    setLabLeftRunId((current) =>
+      ids.has(current) && current !== fallbackRight ? current : fallbackLeft,
+    );
+    setLabRightRunId((current) =>
+      ids.has(current) && current !== fallbackLeft ? current : fallbackRight,
+    );
     setRunComparison(undefined);
   }, [detail?.thread.id, terminalRunKey]);
-  const resetThreadReceipts = () =>
-    [setLabFixtureReceipt, setRunReplayVerificationReceipt, setTraceExportReceipt, setTraceVerificationReceipt].forEach((reset) =>
-      reset(undefined),
-    );
-  const switchWorkspaceRoot = useCallback(async (root: string, threadId?: string): Promise<void> => {
-    setError(undefined);
-    try {
-      await rebindWorkspaceRoot(root);
-      const result = await getBootstrap(threadId);
-      threadDetailCacheRef.current.clear();
-      if (result.activeThread) threadDetailCacheRef.current.set(result.activeThread.thread.id, result.activeThread);
-      setThreadRunSessions({});
-      setBootstrap(result);
-      setDetail(result.activeThread);
-      commitThreadLocation(setSelectedThreadId, result.activeThread?.thread.id);
-      setSelectedModelKey(modelKey(result.recommendedRunModel));
-      [setComposer, setGoalDraft, setMemoryDraft, setLabLeftRunId, setLabRightRunId].forEach((reset) => reset(""));
+  const resetThreadReceipts = useCallback(
+    () =>
       [
-        setMemorySupersedesId,
-        setRunComparison,
-        setRunReplayVerificationReceipt,
         setLabFixtureReceipt,
+        setRunReplayVerificationReceipt,
         setTraceExportReceipt,
         setTraceVerificationReceipt,
-        setExtensionBusyId,
-        setExtensionPackageReceipt,
-        setExtensionPackageUpdatePreview,
-        setExtensionPackageUpdateEnvelope,
-        setExtensionPackageDeploymentPreview,
-        setExtensionPackageDeploymentEnvelopes,
-        setExtensionPackageRolloutPreview,
-        setLabBusyAction,
-      ].forEach((reset) => reset(undefined));
-      [setTraceExportBusy, setTraceVerifyBusy, setOperatorDecisionBusy].forEach((reset) => reset(false));
-      setMemoryConsolidatesIds([]);
-      setMemoryCategory("context");
-      setMemoryScope("workspace");
-      setMemoryReviewIntervalDays(90);
-      setControlMessageMode("steering");
-      setInspectorTab("plan");
-    } catch (cause) {
-      setError(toErrorMessage(cause));
-      throw cause;
-    }
-  }, []);
+      ].forEach((reset) => reset(undefined)),
+    [],
+  );
+  const switchWorkspaceRoot = useCallback(
+    async (root: string, threadId?: string): Promise<void> => {
+      setError(undefined);
+      try {
+        await rebindWorkspaceRoot(root);
+        const result = await getBootstrap(threadId);
+        threadDetailCacheRef.current.clear();
+        if (result.activeThread)
+          threadDetailCacheRef.current.set(
+            result.activeThread.thread.id,
+            result.activeThread,
+          );
+        setThreadRunSessions({});
+        setBootstrap(result);
+        setDetail(result.activeThread);
+        commitThreadLocation(
+          setSelectedThreadId,
+          result.activeThread?.thread.id,
+        );
+        setSelectedModelKey(modelKey(result.recommendedRunModel));
+        [
+          setComposer,
+          setGoalDraft,
+          setMemoryDraft,
+          setLabLeftRunId,
+          setLabRightRunId,
+        ].forEach((reset) => reset(""));
+        [
+          setMemorySupersedesId,
+          setRunComparison,
+          setRunReplayVerificationReceipt,
+          setLabFixtureReceipt,
+          setTraceExportReceipt,
+          setTraceVerificationReceipt,
+          setExtensionBusyId,
+          setExtensionPackageReceipt,
+          setExtensionPackageUpdatePreview,
+          setExtensionPackageUpdateEnvelope,
+          setExtensionPackageDeploymentPreview,
+          setExtensionPackageDeploymentEnvelopes,
+          setExtensionPackageRolloutPreview,
+          setLabBusyAction,
+        ].forEach((reset) => reset(undefined));
+        [
+          setTraceExportBusy,
+          setTraceVerifyBusy,
+          setOperatorDecisionBusy,
+        ].forEach((reset) => reset(false));
+        setMemoryConsolidatesIds([]);
+        setMemoryCategory("context");
+        setMemoryScope("workspace");
+        setMemoryReviewIntervalDays(90);
+        setControlMessageMode("steering");
+        setInspectorTab("plan");
+      } catch (cause) {
+        setError(toErrorMessage(cause));
+        throw cause;
+      }
+    },
+    [],
+  );
   const resolveThreadDetail = useCallback(
-    (candidate: WebThreadDetail | undefined) => resolveCachedThreadDetail(threadDetailCacheRef.current, candidate),
+    (candidate: WebThreadDetail | undefined) =>
+      resolveCachedThreadDetail(threadDetailCacheRef.current, candidate),
+    [],
+  );
+  const cachedThreadDetail = useCallback(
+    (threadId: string) => threadDetailCacheRef.current.get(threadId),
+    [],
+  );
+  const setNavigationBootstrap = useCallback(
+    (value: LiveReadyBootstrapResponse) =>
+      setBootstrap((current) => mergeNavigationBootstrap(current, value)),
     [],
   );
   const threadNavigation = useThreadNavigation({
     bootstrap,
+    detail,
     selectedThreadId,
-    setBootstrap: (value) => setBootstrap((current) => mergeNavigationBootstrap(current, value)),
+    setBootstrap: setNavigationBootstrap,
     setDetail,
     setSelectedThreadId,
     setSelectedModelKey,
     modelKey,
     resetReceipts: resetThreadReceipts,
+    cachedDetail: cachedThreadDetail,
     resolveDetail: resolveThreadDetail,
     setError,
   });
-  const handleStreamFrame = useCallback((sourceThreadId: string, frame: StreamFrame): void => {
-    if (frame.type === "event") {
-      setThreadRunSessions((current) => applyThreadRunEvent(current, sourceThreadId, frame.event));
-    }
-    const cached = applyThreadStreamFrameToDetail(threadDetailCacheRef.current.get(sourceThreadId), sourceThreadId, frame);
-    if (cached) threadDetailCacheRef.current.set(sourceThreadId, cached);
-    if (selectedThreadIdRef.current === sourceThreadId && cached) {
-      setDetail(cached);
-    }
-    setBootstrap((current) => applyThreadStreamFrameToBootstrap(current, sourceThreadId, frame));
-    if (frame.type === "error" && selectedThreadIdRef.current === sourceThreadId) {
-      setError(`${frame.message} (${frame.code} · ${frame.diagnosticSha256.slice(0, 12)})`);
-    }
-  }, []);
+  const handleStreamFrame = useCallback(
+    (sourceThreadId: string, frame: StreamFrame): void => {
+      if (frame.type === "event") {
+        setThreadRunSessions((current) =>
+          applyThreadRunEvent(current, sourceThreadId, frame.event),
+        );
+      }
+      const cached = applyThreadStreamFrameToDetail(
+        threadDetailCacheRef.current.get(sourceThreadId),
+        sourceThreadId,
+        frame,
+      );
+      if (cached) threadDetailCacheRef.current.set(sourceThreadId, cached);
+      if (selectedThreadIdRef.current === sourceThreadId && cached) {
+        setDetail(cached);
+      }
+      setBootstrap((current) =>
+        applyThreadStreamFrameToBootstrap(current, sourceThreadId, frame),
+      );
+      if (
+        frame.type === "error" &&
+        selectedThreadIdRef.current === sourceThreadId
+      ) {
+        setError(
+          `${frame.message} (${frame.code} · ${frame.diagnosticSha256.slice(0, 12)})`,
+        );
+      }
+    },
+    [],
+  );
   const streamFrameHandler = useCallback(
-    (threadId: string) => (frame: StreamFrame) => handleStreamFrame(threadId, frame),
+    (threadId: string) => (frame: StreamFrame) =>
+      handleStreamFrame(threadId, frame),
     [handleStreamFrame],
   );
   const setRunError = useCallback((threadId: string, error: unknown): void => {
@@ -399,21 +533,29 @@ export function useWorkspaceViewModel() {
   }, []);
   const refreshBootstrap = useCallback(
     async (threadId: string) => {
-      const refreshed = await getBootstrap(threadId);
-      if (refreshed.activeThread) threadDetailCacheRef.current.set(threadId, refreshed.activeThread);
-      setBootstrap((current) => mergeRefreshedThreadBootstrap(current, refreshed, threadId));
+      const response = await getThread(threadId);
+      const refreshed = resolveThreadDetail(response) ?? response;
+      threadDetailCacheRef.current.set(threadId, refreshed);
+      setBootstrap((current) =>
+        mergeBackgroundThreadDetail(current, refreshed),
+      );
       if (selectedThreadIdRef.current === threadId) {
-        setDetail(resolveThreadDetail(refreshed.activeThread));
+        setDetail(refreshed);
       }
     },
     [resolveThreadDetail],
   );
 
-  const commitRefreshedThreadDetail = useCallback((threadId: string, refreshed: WebThreadDetail): void => {
-    threadDetailCacheRef.current.set(threadId, refreshed);
-    setBootstrap((current) => mergeBackgroundThreadDetail(current, refreshed));
-    if (selectedThreadIdRef.current === threadId) setDetail(refreshed);
-  }, []);
+  const commitRefreshedThreadDetail = useCallback(
+    (threadId: string, refreshed: WebThreadDetail): void => {
+      threadDetailCacheRef.current.set(threadId, refreshed);
+      setBootstrap((current) =>
+        mergeBackgroundThreadDetail(current, refreshed),
+      );
+      if (selectedThreadIdRef.current === threadId) setDetail(refreshed);
+    },
+    [],
+  );
 
   const subagentHubActions = useSubagentHubActions({
     detail,
@@ -430,16 +572,23 @@ export function useWorkspaceViewModel() {
     commitRefreshedThreadDetail(threadId, await getThread(threadId));
   }, [commitRefreshedThreadDetail, detail]);
 
-  const startRunUi = useCallback((threadId: string, source: WebThreadDetail) => {
-    threadDetailCacheRef.current.set(threadId, source);
-    setThreadRunSessions((current) => attachThreadRun(current, threadId));
-    setRunReplayVerificationReceipt(undefined);
-    setTraceExportReceipt(undefined);
-    setTraceVerificationReceipt(undefined);
-    setError(undefined);
-  }, []);
+  const startRunUi = useCallback(
+    (threadId: string, source: WebThreadDetail) => {
+      threadDetailCacheRef.current.set(threadId, source);
+      setThreadRunSessions((current) => attachThreadRun(current, threadId));
+      setRunReplayVerificationReceipt(undefined);
+      setTraceExportReceipt(undefined);
+      setTraceVerificationReceipt(undefined);
+      setError(undefined);
+    },
+    [],
+  );
 
-  const finishRunUi = useCallback((threadId: string) => setThreadRunSessions((current) => detachThreadRun(current, threadId)), []);
+  const finishRunUi = useCallback(
+    (threadId: string) =>
+      setThreadRunSessions((current) => detachThreadRun(current, threadId)),
+    [],
+  );
 
   const submit = useCallback(
     async (override?: string) => {
@@ -450,10 +599,14 @@ export function useWorkspaceViewModel() {
         setComposer("");
         setError(undefined);
         try {
-          const message = await queueRunControlMessage(detail.thread.id, activeRunId, {
-            mode: controlMessageMode,
-            text,
-          });
+          const message = await queueRunControlMessage(
+            detail.thread.id,
+            activeRunId,
+            {
+              mode: controlMessageMode,
+              text,
+            },
+          );
           setDetail((current) => upsertThreadControlMessage(current, message));
         } catch (queueError) {
           setComposer(text);
@@ -551,7 +704,10 @@ export function useWorkspaceViewModel() {
   }, [detail]);
 
   const answerOperatorDecision = useCallback(
-    async (decisionId: string, answer: AnswerOperatorDecisionRequest): Promise<void> => {
+    async (
+      decisionId: string,
+      answer: AnswerOperatorDecisionRequest,
+    ): Promise<void> => {
       if (!detail || operatorDecisionBusy) return;
       setOperatorDecisionBusy(true);
       setError(undefined);
@@ -586,14 +742,23 @@ export function useWorkspaceViewModel() {
 
   const continueOperatorDecision = useCallback(
     async (decision: OperatorDecision): Promise<void> => {
-      if (!detail || decision.status !== "answered" || operatorDecisionBusy || isRunning) {
+      if (
+        !detail ||
+        decision.status !== "answered" ||
+        operatorDecisionBusy ||
+        isRunning
+      ) {
         return;
       }
       const threadId = detail.thread.id;
       setOperatorDecisionBusy(true);
       startRunUi(threadId, detail);
       try {
-        await continueOperatorDecisionApi(threadId, decision.id, streamFrameHandler(threadId));
+        await continueOperatorDecisionApi(
+          threadId,
+          decision.id,
+          streamFrameHandler(threadId),
+        );
         await refreshBootstrap(threadId);
       } catch (continueError) {
         setRunError(threadId, continueError);
@@ -645,41 +810,53 @@ export function useWorkspaceViewModel() {
 
   const branchFrom = useCallback(
     async (seq: number) => {
-      if (!detail) return;
+      if (!bootstrap || !detail) return;
       try {
-        const branch = await createBranch(detail.thread.id, { fromSeq: seq });
-        const refreshed = await getBootstrap(branch.thread.id);
-        setBootstrap(refreshed);
-        setDetail(refreshed.activeThread);
+        const response = await createBranch(detail.thread.id, { fromSeq: seq });
+        const branch = resolveThreadDetail(response) ?? response;
+        threadDetailCacheRef.current.set(branch.thread.id, branch);
+        setNavigationBootstrap(activateThreadDetail(bootstrap, branch));
+        setDetail(branch);
         commitThreadLocation(setSelectedThreadId, branch.thread.id);
-        setSelectedModelKey(modelKey(refreshed.recommendedRunModel));
+        setSelectedModelKey(modelKey(bootstrap.recommendedRunModel));
       } catch (branchError) {
         setError(toErrorMessage(branchError));
       }
     },
-    [detail],
+    [bootstrap, detail, resolveThreadDetail, setNavigationBootstrap],
   );
 
   const saveMemory = useCallback(async () => {
     if (!detail || !memoryDraft.trim()) return;
     if (memoryConsolidatesIds.length === 1) return;
     try {
-      const correctionTarget = memorySupersedesId ? bootstrap?.memories.find((memory) => memory.id === memorySupersedesId) : undefined;
+      const correctionTarget = memorySupersedesId
+        ? bootstrap?.memories.find((memory) => memory.id === memorySupersedesId)
+        : undefined;
       const consolidationTargets = memoryConsolidatesIds.flatMap((memoryId) => {
-        const memory = bootstrap?.memories.find((candidate) => candidate.id === memoryId);
+        const memory = bootstrap?.memories.find(
+          (candidate) => candidate.id === memoryId,
+        );
         return memory ? [memory] : [];
       });
       const replacementTarget = correctionTarget ?? consolidationTargets[0];
       const effectiveScope = replacementTarget?.scope ?? memoryScope;
-      const effectiveAgentId = effectiveScope === "agent" ? (replacementTarget?.agentId ?? detail.agent.id) : undefined;
+      const effectiveAgentId =
+        effectiveScope === "agent"
+          ? (replacementTarget?.agentId ?? detail.agent.id)
+          : undefined;
       const fact = await memoryProvenance.propose({
         content: memoryDraft.trim(),
         category: memoryCategory,
         scope: effectiveScope,
         ...(effectiveAgentId ? { agentId: effectiveAgentId } : {}),
         reviewIntervalDays: memoryReviewIntervalDays,
-        ...(memorySupersedesId ? { supersedesMemoryId: memorySupersedesId } : {}),
-        ...(memoryConsolidatesIds.length >= 2 ? { consolidatesMemoryIds: memoryConsolidatesIds } : {}),
+        ...(memorySupersedesId
+          ? { supersedesMemoryId: memorySupersedesId }
+          : {}),
+        ...(memoryConsolidatesIds.length >= 2
+          ? { consolidatesMemoryIds: memoryConsolidatesIds }
+          : {}),
         threadId: detail.thread.id,
       });
       setMemoryDraft("");
@@ -698,7 +875,10 @@ export function useWorkspaceViewModel() {
             }
           : current,
       );
-      commitRefreshedThreadDetail(detail.thread.id, await getThread(detail.thread.id));
+      commitRefreshedThreadDetail(
+        detail.thread.id,
+        await getThread(detail.thread.id),
+      );
       setInspectorTab("memory");
     } catch (memoryError) {
       setError(toErrorMessage(memoryError));
@@ -737,13 +917,18 @@ export function useWorkspaceViewModel() {
   const toggleMemoryConsolidation = useCallback(
     (memory: MemoryFact): void => {
       const selected = memoryConsolidatesIds.flatMap((memoryId) => {
-        const candidate = bootstrap?.memories.find((item) => item.id === memoryId);
+        const candidate = bootstrap?.memories.find(
+          (item) => item.id === memoryId,
+        );
         return candidate ? [candidate] : [];
       });
       const alreadySelected = memoryConsolidatesIds.includes(memory.id);
       if (!alreadySelected) {
         const anchor = selected[0];
-        if (anchor && (anchor.scope !== memory.scope || anchor.agentId !== memory.agentId)) {
+        if (
+          anchor &&
+          (anchor.scope !== memory.scope || anchor.agentId !== memory.agentId)
+        ) {
           setError(copy.memory.errors.consolidationScope);
           return;
         }
@@ -755,17 +940,30 @@ export function useWorkspaceViewModel() {
       const nextIds = alreadySelected
         ? memoryConsolidatesIds.filter((memoryId) => memoryId !== memory.id)
         : [...memoryConsolidatesIds, memory.id];
-      const nextTargets = [...selected, ...(!alreadySelected ? [memory] : [])].filter((candidate) => nextIds.includes(candidate.id));
+      const nextTargets = [
+        ...selected,
+        ...(!alreadySelected ? [memory] : []),
+      ].filter((candidate) => nextIds.includes(candidate.id));
       setMemorySupersedesId(undefined);
       setMemoryConsolidatesIds(nextIds);
       if (memoryConsolidatesIds.length === 0 || nextIds.length === 0) {
         setMemoryDraft("");
       }
       if (nextTargets[0]) {
-        const sourceCategories = nextTargets.map((candidate) => (candidate.category === "correction" ? "context" : candidate.category));
-        setMemoryCategory(sourceCategories.every((category) => category === sourceCategories[0]) ? sourceCategories[0]! : "context");
+        const sourceCategories = nextTargets.map((candidate) =>
+          candidate.category === "correction" ? "context" : candidate.category,
+        );
+        setMemoryCategory(
+          sourceCategories.every((category) => category === sourceCategories[0])
+            ? sourceCategories[0]!
+            : "context",
+        );
         setMemoryScope(nextTargets[0].scope);
-        setMemoryReviewIntervalDays(Math.min(...nextTargets.map((candidate) => candidate.reviewIntervalDays)));
+        setMemoryReviewIntervalDays(
+          Math.min(
+            ...nextTargets.map((candidate) => candidate.reviewIntervalDays),
+          ),
+        );
       } else {
         setMemoryCategory("context");
         setMemoryScope("workspace");
@@ -785,7 +983,10 @@ export function useWorkspaceViewModel() {
   }, []);
 
   const reviewMemoryFact = useCallback(
-    async (memoryId: string, action: ReviewMemoryRequest["action"]): Promise<void> => {
+    async (
+      memoryId: string,
+      action: ReviewMemoryRequest["action"],
+    ): Promise<void> => {
       if (!detail) return;
       try {
         await reviewMemory(memoryId, {
@@ -814,7 +1015,10 @@ export function useWorkspaceViewModel() {
           : current,
       );
       if (detail) {
-        commitRefreshedThreadDetail(detail.thread.id, await getThread(detail.thread.id));
+        commitRefreshedThreadDetail(
+          detail.thread.id,
+          await getThread(detail.thread.id),
+        );
       }
     },
     [commitRefreshedThreadDetail, detail],
@@ -829,7 +1033,10 @@ export function useWorkspaceViewModel() {
   }, [commitRefreshedThreadDetail, detail]);
 
   const runExtensionMutation = useCallback(
-    async (busyId: string, operation: () => Promise<ExtensionRecord>): Promise<void> => {
+    async (
+      busyId: string,
+      operation: () => Promise<ExtensionRecord>,
+    ): Promise<void> => {
       setExtensionBusyId(busyId);
       setError(undefined);
       try {
@@ -844,7 +1051,9 @@ export function useWorkspaceViewModel() {
   );
 
   const proposeMcpExtension = useCallback(
-    async (request: Omit<CreateMcpExtensionRequest, "threadId">): Promise<void> => {
+    async (
+      request: Omit<CreateMcpExtensionRequest, "threadId">,
+    ): Promise<void> => {
       if (!detail) return;
       setExtensionBusyId("new");
       setError(undefined);
@@ -866,7 +1075,10 @@ export function useWorkspaceViewModel() {
   );
 
   const reviewExtensionTrust = useCallback(
-    async (extensionId: string, action: ReviewExtensionRequest["action"]): Promise<void> => {
+    async (
+      extensionId: string,
+      action: ReviewExtensionRequest["action"],
+    ): Promise<void> => {
       if (!detail) return;
       await runExtensionMutation(extensionId, () =>
         reviewExtension(extensionId, {
@@ -880,14 +1092,18 @@ export function useWorkspaceViewModel() {
 
   const connectMcpExtension = useCallback(
     async (extensionId: string): Promise<void> => {
-      await runExtensionMutation(extensionId, () => connectExtension(extensionId, detail?.thread.id));
+      await runExtensionMutation(extensionId, () =>
+        connectExtension(extensionId, detail?.thread.id),
+      );
     },
     [detail?.thread.id, runExtensionMutation],
   );
 
   const disconnectMcpExtension = useCallback(
     async (extensionId: string): Promise<void> => {
-      await runExtensionMutation(extensionId, () => disconnectExtension(extensionId, detail?.thread.id));
+      await runExtensionMutation(extensionId, () =>
+        disconnectExtension(extensionId, detail?.thread.id),
+      );
     },
     [detail?.thread.id, runExtensionMutation],
   );
@@ -955,7 +1171,10 @@ export function useWorkspaceViewModel() {
       setExtensionBusyId(`publisher:${anchorId}`);
       setError(undefined);
       try {
-        await revokeExtensionPublisherTrustAnchorApi(anchorId, detail.thread.id);
+        await revokeExtensionPublisherTrustAnchorApi(
+          anchorId,
+          detail.thread.id,
+        );
         setExtensionPackageUpdatePreview(undefined);
         setExtensionPackageUpdateEnvelope(undefined);
         setExtensionPackageDeploymentPreview(undefined);
@@ -972,7 +1191,10 @@ export function useWorkspaceViewModel() {
   );
 
   const downloadSignedExtensionPackage = useCallback(
-    async (extensionId: string, draft: ExtensionPackageSignDraft): Promise<void> => {
+    async (
+      extensionId: string,
+      draft: ExtensionPackageSignDraft,
+    ): Promise<void> => {
       if (!detail || !bootstrap) return;
       setExtensionBusyId("package:sign");
       setExtensionPackageReceipt(undefined);
@@ -985,8 +1207,13 @@ export function useWorkspaceViewModel() {
           ...(draft.dependencies ? { dependencies: draft.dependencies } : {}),
           ...(draft.expiresAt ? { expiresAt: draft.expiresAt } : {}),
         });
-        const normalizedName = bootstrap.extensions.find((extension) => extension.id === extensionId)?.normalizedName ?? extensionId;
-        downloadJson(envelope, signedExtensionPackageFilename(normalizedName, envelope));
+        const normalizedName =
+          bootstrap.extensions.find((extension) => extension.id === extensionId)
+            ?.normalizedName ?? extensionId;
+        downloadJson(
+          envelope,
+          signedExtensionPackageFilename(normalizedName, envelope),
+        );
         setExtensionPackageReceipt({
           action: "signed",
           status: "trusted",
@@ -1009,70 +1236,97 @@ export function useWorkspaceViewModel() {
     [bootstrap, commitRefreshedThreadDetail, detail],
   );
 
-  const verifySignedExtensionPackageFile = useCallback(async (file: File): Promise<void> => {
-    if (file.size > MAX_EXTENSION_PACKAGE_LOCKFILE_FILE_BYTES) {
-      setError(extensionCopy.packages.errors.lockfileTooLarge);
-      return;
-    }
-    setExtensionBusyId("package:verify");
-    setExtensionPackageReceipt(undefined);
-    setError(undefined);
-    try {
-      const artifact = JSON.parse(await file.text()) as unknown;
-      if (isExtensionPackageLockfile(artifact)) {
-        const verification = await verifyExtensionPackageLockfileApi({
-          lockfile: artifact,
-        });
-        setExtensionPackageReceipt({
-          action: "lockfile_verified",
-          status: verification.status,
-          reason: verification.status === "trusted" ? extensionCopy.packages.lockfileVerified : verification.reason,
-          ...(verification.lockfileSha256 ? { envelopeSha256: verification.lockfileSha256 } : {}),
-        });
+  const verifySignedExtensionPackageFile = useCallback(
+    async (file: File): Promise<void> => {
+      if (file.size > MAX_EXTENSION_PACKAGE_LOCKFILE_FILE_BYTES) {
+        setError(extensionCopy.packages.errors.lockfileTooLarge);
         return;
       }
-      if (isSignedExtensionPackageChannelIndexEnvelope(artifact)) {
-        if (file.size > MAX_EXTENSION_PACKAGE_CHANNEL_INDEX_FILE_BYTES) {
-          setError(extensionCopy.packages.errors.channelIndexTooLarge);
+      setExtensionBusyId("package:verify");
+      setExtensionPackageReceipt(undefined);
+      setError(undefined);
+      try {
+        const artifact = JSON.parse(await file.text()) as unknown;
+        if (isExtensionPackageLockfile(artifact)) {
+          const verification = await verifyExtensionPackageLockfileApi({
+            lockfile: artifact,
+          });
+          setExtensionPackageReceipt({
+            action: "lockfile_verified",
+            status: verification.status,
+            reason:
+              verification.status === "trusted"
+                ? extensionCopy.packages.lockfileVerified
+                : verification.reason,
+            ...(verification.lockfileSha256
+              ? { envelopeSha256: verification.lockfileSha256 }
+              : {}),
+          });
           return;
         }
-        const verification = await verifyExtensionPackageChannelIndexApi({
+        if (isSignedExtensionPackageChannelIndexEnvelope(artifact)) {
+          if (file.size > MAX_EXTENSION_PACKAGE_CHANNEL_INDEX_FILE_BYTES) {
+            setError(extensionCopy.packages.errors.channelIndexTooLarge);
+            return;
+          }
+          const verification = await verifyExtensionPackageChannelIndexApi({
+            envelope: artifact,
+          });
+          setExtensionPackageReceipt({
+            action: "channel_index_verified",
+            status: verification.status,
+            reason:
+              verification.status === "trusted"
+                ? extensionCopy.packages.channelIndexVerified
+                : verification.reason,
+            ...(verification.keyId ? { keyId: verification.keyId } : {}),
+            ...(verification.indexSha256
+              ? { indexSha256: verification.indexSha256 }
+              : {}),
+            ...(verification.envelopeSha256
+              ? { envelopeSha256: verification.envelopeSha256 }
+              : {}),
+            channelCount: verification.channelCount,
+          });
+          return;
+        }
+        if (file.size > MAX_SIGNED_EXTENSION_PACKAGE_FILE_BYTES) {
+          setError(extensionCopy.packages.errors.tooLarge);
+          return;
+        }
+        const verification = await verifySignedExtensionPackageApi({
           envelope: artifact,
         });
         setExtensionPackageReceipt({
-          action: "channel_index_verified",
+          action: "verified",
           status: verification.status,
-          reason: verification.status === "trusted" ? extensionCopy.packages.channelIndexVerified : verification.reason,
+          reason: verification.reason,
+          ...(verification.packageName
+            ? { packageName: verification.packageName }
+            : {}),
+          ...(verification.packageVersion
+            ? { packageVersion: verification.packageVersion }
+            : {}),
           ...(verification.keyId ? { keyId: verification.keyId } : {}),
-          ...(verification.indexSha256 ? { indexSha256: verification.indexSha256 } : {}),
-          ...(verification.envelopeSha256 ? { envelopeSha256: verification.envelopeSha256 } : {}),
-          channelCount: verification.channelCount,
+          ...(verification.manifestSha256
+            ? { manifestSha256: verification.manifestSha256 }
+            : {}),
+          ...(verification.envelopeSha256
+            ? { envelopeSha256: verification.envelopeSha256 }
+            : {}),
         });
-        return;
+      } catch (packageError) {
+        setError(
+          packageError instanceof SyntaxError
+            ? extensionCopy.packages.errors.invalid
+            : toErrorMessage(packageError),
+        );
+      } finally {
+        setExtensionBusyId(undefined);
       }
-      if (file.size > MAX_SIGNED_EXTENSION_PACKAGE_FILE_BYTES) {
-        setError(extensionCopy.packages.errors.tooLarge);
-        return;
-      }
-      const verification = await verifySignedExtensionPackageApi({
-        envelope: artifact,
-      });
-      setExtensionPackageReceipt({
-        action: "verified",
-        status: verification.status,
-        reason: verification.reason,
-        ...(verification.packageName ? { packageName: verification.packageName } : {}),
-        ...(verification.packageVersion ? { packageVersion: verification.packageVersion } : {}),
-        ...(verification.keyId ? { keyId: verification.keyId } : {}),
-        ...(verification.manifestSha256 ? { manifestSha256: verification.manifestSha256 } : {}),
-        ...(verification.envelopeSha256 ? { envelopeSha256: verification.envelopeSha256 } : {}),
-      });
-    } catch (packageError) {
-      setError(packageError instanceof SyntaxError ? extensionCopy.packages.errors.invalid : toErrorMessage(packageError));
-    } finally {
-      setExtensionBusyId(undefined);
-    }
-  }, []);
+    },
+    [],
+  );
 
   const importSignedExtensionPackageFile = useCallback(
     async (file: File): Promise<void> => {
@@ -1098,7 +1352,9 @@ export function useWorkspaceViewModel() {
         await commitExtension(extension);
         const packageBinding = extension.packageBinding;
         if (!packageBinding) {
-          throw new Error("Signed Extension import did not produce a package binding");
+          throw new Error(
+            "Signed Extension import did not produce a package binding",
+          );
         }
         const signed = packageBinding.envelope;
         setExtensionPackageReceipt({
@@ -1113,7 +1369,11 @@ export function useWorkspaceViewModel() {
           envelopeSha256: signed.contentSha256,
         });
       } catch (packageError) {
-        setError(packageError instanceof SyntaxError ? extensionCopy.packages.errors.invalid : toErrorMessage(packageError));
+        setError(
+          packageError instanceof SyntaxError
+            ? extensionCopy.packages.errors.invalid
+            : toErrorMessage(packageError),
+        );
       } finally {
         setExtensionBusyId(undefined);
       }
@@ -1121,29 +1381,33 @@ export function useWorkspaceViewModel() {
     [commitExtension, detail],
   );
 
-  const exportExtensionPackageLockfile = useCallback(async (): Promise<void> => {
-    if (!detail) return;
-    setExtensionBusyId("package:lockfile-export");
-    setExtensionPackageReceipt(undefined);
-    setError(undefined);
-    try {
-      const lockfile = await exportExtensionPackageLockfileApi({
-        threadId: detail.thread.id,
-      });
-      downloadJson(lockfile, `napier-extension-lockfile-${lockfile.contentSha256.slice(0, 12)}.json`);
-      setExtensionPackageReceipt({
-        action: "lockfile_exported",
-        status: "trusted",
-        reason: extensionCopy.packages.lockfileExported,
-        envelopeSha256: lockfile.contentSha256,
-      });
-      await refreshExtensionWorkspace();
-    } catch (packageError) {
-      setError(toErrorMessage(packageError));
-    } finally {
-      setExtensionBusyId(undefined);
-    }
-  }, [detail, refreshExtensionWorkspace]);
+  const exportExtensionPackageLockfile =
+    useCallback(async (): Promise<void> => {
+      if (!detail) return;
+      setExtensionBusyId("package:lockfile-export");
+      setExtensionPackageReceipt(undefined);
+      setError(undefined);
+      try {
+        const lockfile = await exportExtensionPackageLockfileApi({
+          threadId: detail.thread.id,
+        });
+        downloadJson(
+          lockfile,
+          `napier-extension-lockfile-${lockfile.contentSha256.slice(0, 12)}.json`,
+        );
+        setExtensionPackageReceipt({
+          action: "lockfile_exported",
+          status: "trusted",
+          reason: extensionCopy.packages.lockfileExported,
+          envelopeSha256: lockfile.contentSha256,
+        });
+        await refreshExtensionWorkspace();
+      } catch (packageError) {
+        setError(toErrorMessage(packageError));
+      } finally {
+        setExtensionBusyId(undefined);
+      }
+    }, [detail, refreshExtensionWorkspace]);
 
   const downloadExtensionPackageChannelIndex = useCallback(
     async (trustAnchorId: string, publisher: string): Promise<void> => {
@@ -1158,7 +1422,10 @@ export function useWorkspaceViewModel() {
           publisher,
           lockfileBaseUrl: window.location.origin,
         });
-        downloadJson(envelope, `napier-channel-index-${envelope.index.contentSha256.slice(0, 12)}.json`);
+        downloadJson(
+          envelope,
+          `napier-channel-index-${envelope.index.contentSha256.slice(0, 12)}.json`,
+        );
         setExtensionPackageReceipt({
           action: "channel_index_signed",
           status: "trusted",
@@ -1208,74 +1475,99 @@ export function useWorkspaceViewModel() {
     [detail, refreshExtensionWorkspace],
   );
 
-  const previewExtensionPackageRolloutChannel = useCallback(async (channelId: string): Promise<void> => {
-    setExtensionBusyId(`package:rollout-preview:${channelId}`);
-    setExtensionPackageReceipt(undefined);
-    setExtensionPackageUpdatePreview(undefined);
-    setExtensionPackageUpdateEnvelope(undefined);
-    setExtensionPackageDeploymentPreview(undefined);
-    setExtensionPackageDeploymentEnvelopes(undefined);
-    setExtensionPackageRolloutPreview(undefined);
-    setError(undefined);
-    try {
-      const preview = await previewExtensionPackageRolloutChannelApi(channelId);
-      setExtensionPackageRolloutPreview(preview);
-      setExtensionPackageDeploymentPreview(preview.deploymentPreview);
-    } catch (packageError) {
-      setError(toErrorMessage(packageError));
-    } finally {
-      setExtensionBusyId(undefined);
-    }
-  }, []);
+  const previewExtensionPackageRolloutChannel = useCallback(
+    async (channelId: string): Promise<void> => {
+      setExtensionBusyId(`package:rollout-preview:${channelId}`);
+      setExtensionPackageReceipt(undefined);
+      setExtensionPackageUpdatePreview(undefined);
+      setExtensionPackageUpdateEnvelope(undefined);
+      setExtensionPackageDeploymentPreview(undefined);
+      setExtensionPackageDeploymentEnvelopes(undefined);
+      setExtensionPackageRolloutPreview(undefined);
+      setError(undefined);
+      try {
+        const preview =
+          await previewExtensionPackageRolloutChannelApi(channelId);
+        setExtensionPackageRolloutPreview(preview);
+        setExtensionPackageDeploymentPreview(preview.deploymentPreview);
+      } catch (packageError) {
+        setError(toErrorMessage(packageError));
+      } finally {
+        setExtensionBusyId(undefined);
+      }
+    },
+    [],
+  );
 
-  const previewExtensionPackageUpdateFile = useCallback(async (extensionId: string, file: File): Promise<void> => {
-    if (file.size > MAX_SIGNED_EXTENSION_PACKAGE_FILE_BYTES) {
-      setError(extensionCopy.packages.errors.tooLarge);
-      return;
-    }
-    setExtensionBusyId("package:update-preview");
-    setExtensionPackageReceipt(undefined);
-    setExtensionPackageUpdatePreview(undefined);
-    setExtensionPackageUpdateEnvelope(undefined);
-    setExtensionPackageDeploymentPreview(undefined);
-    setExtensionPackageDeploymentEnvelopes(undefined);
-    setExtensionPackageRolloutPreview(undefined);
-    setError(undefined);
-    try {
-      const envelope = JSON.parse(await file.text()) as unknown;
-      const preview = await previewExtensionPackageUpdateApi(extensionId, {
-        envelope,
-      });
-      setExtensionPackageUpdateEnvelope(envelope);
-      setExtensionPackageUpdatePreview(preview);
-    } catch (packageError) {
-      setError(packageError instanceof SyntaxError ? extensionCopy.packages.errors.invalid : toErrorMessage(packageError));
-    } finally {
-      setExtensionBusyId(undefined);
-    }
-  }, []);
+  const previewExtensionPackageUpdateFile = useCallback(
+    async (extensionId: string, file: File): Promise<void> => {
+      if (file.size > MAX_SIGNED_EXTENSION_PACKAGE_FILE_BYTES) {
+        setError(extensionCopy.packages.errors.tooLarge);
+        return;
+      }
+      setExtensionBusyId("package:update-preview");
+      setExtensionPackageReceipt(undefined);
+      setExtensionPackageUpdatePreview(undefined);
+      setExtensionPackageUpdateEnvelope(undefined);
+      setExtensionPackageDeploymentPreview(undefined);
+      setExtensionPackageDeploymentEnvelopes(undefined);
+      setExtensionPackageRolloutPreview(undefined);
+      setError(undefined);
+      try {
+        const envelope = JSON.parse(await file.text()) as unknown;
+        const preview = await previewExtensionPackageUpdateApi(extensionId, {
+          envelope,
+        });
+        setExtensionPackageUpdateEnvelope(envelope);
+        setExtensionPackageUpdatePreview(preview);
+      } catch (packageError) {
+        setError(
+          packageError instanceof SyntaxError
+            ? extensionCopy.packages.errors.invalid
+            : toErrorMessage(packageError),
+        );
+      } finally {
+        setExtensionBusyId(undefined);
+      }
+    },
+    [],
+  );
 
   const applyExtensionPackageUpdate = useCallback(
     async (confirmation: ExtensionPackageUpdateConfirmation): Promise<void> => {
-      if (!detail || !extensionPackageUpdatePreview || extensionPackageUpdateEnvelope === undefined) {
+      if (
+        !detail ||
+        !extensionPackageUpdatePreview ||
+        extensionPackageUpdateEnvelope === undefined
+      ) {
         return;
       }
       setExtensionBusyId("package:update");
       setExtensionPackageReceipt(undefined);
       setError(undefined);
       try {
-        const result = await applyExtensionPackageUpdateApi(extensionPackageUpdatePreview.extensionId, {
-          threadId: detail.thread.id,
-          envelope: extensionPackageUpdateEnvelope,
-          expectedPackageBindingSha256: extensionPackageUpdatePreview.expectedPackageBindingSha256,
-          ...(confirmation.publisherChange ? { confirmPublisherChange: true } : {}),
-          ...(confirmation.versionOverride ? { confirmVersionOverride: true } : {}),
-        });
+        const result = await applyExtensionPackageUpdateApi(
+          extensionPackageUpdatePreview.extensionId,
+          {
+            threadId: detail.thread.id,
+            envelope: extensionPackageUpdateEnvelope,
+            expectedPackageBindingSha256:
+              extensionPackageUpdatePreview.expectedPackageBindingSha256,
+            ...(confirmation.publisherChange
+              ? { confirmPublisherChange: true }
+              : {}),
+            ...(confirmation.versionOverride
+              ? { confirmVersionOverride: true }
+              : {}),
+          },
+        );
         await commitExtension(result.extension);
         setExtensionPackageReceipt({
           action: "updated",
           status: "trusted",
-          reason: result.updated ? extensionCopy.packages.reviewReset : extensionCopy.packages.noUpdateChanges,
+          reason: result.updated
+            ? extensionCopy.packages.reviewReset
+            : extensionCopy.packages.noUpdateChanges,
           extensionId: result.extension.id,
           packageName: result.extension.name,
           packageVersion: result.preview.next.version,
@@ -1291,7 +1583,12 @@ export function useWorkspaceViewModel() {
         setExtensionBusyId(undefined);
       }
     },
-    [commitExtension, detail, extensionPackageUpdateEnvelope, extensionPackageUpdatePreview],
+    [
+      commitExtension,
+      detail,
+      extensionPackageUpdateEnvelope,
+      extensionPackageUpdatePreview,
+    ],
   );
 
   const cancelExtensionPackageUpdate = useCallback((): void => {
@@ -1299,45 +1596,66 @@ export function useWorkspaceViewModel() {
     setExtensionPackageUpdateEnvelope(undefined);
   }, []);
 
-  const previewExtensionPackageDeploymentFiles = useCallback(async (files: File[]): Promise<void> => {
-    const totalBytes = files.reduce((total, file) => total + file.size, 0);
-    const singleLockfileCandidate = files.length === 1;
-    if (
-      files.length < 1 ||
-      files.length > MAX_EXTENSION_PACKAGE_DEPLOYMENT_FILES ||
-      totalBytes > MAX_EXTENSION_PACKAGE_DEPLOYMENT_FILE_BYTES ||
-      (!singleLockfileCandidate && files.some((file) => file.size > MAX_SIGNED_EXTENSION_PACKAGE_FILE_BYTES))
-    ) {
-      setError(extensionCopy.packages.errors.deploymentTooLarge);
-      return;
-    }
-    setExtensionBusyId("package:deployment-preview");
-    setExtensionPackageReceipt(undefined);
-    setExtensionPackageDeploymentPreview(undefined);
-    setExtensionPackageDeploymentEnvelopes(undefined);
-    setExtensionPackageRolloutPreview(undefined);
-    setExtensionPackageUpdatePreview(undefined);
-    setExtensionPackageUpdateEnvelope(undefined);
-    setError(undefined);
-    try {
-      const parsed = await Promise.all(files.map(async (file) => JSON.parse(await file.text()) as unknown));
-      const envelopes =
-        parsed.length === 1 && isExtensionPackageLockfile(parsed[0]) ? parsed[0].packages.map((entry) => entry.envelope) : parsed;
-      const preview = await previewExtensionPackageDeploymentApi({
-        envelopes,
-      });
-      setExtensionPackageDeploymentEnvelopes(envelopes);
-      setExtensionPackageDeploymentPreview(preview);
-    } catch (packageError) {
-      setError(packageError instanceof SyntaxError ? extensionCopy.packages.errors.invalid : toErrorMessage(packageError));
-    } finally {
-      setExtensionBusyId(undefined);
-    }
-  }, []);
+  const previewExtensionPackageDeploymentFiles = useCallback(
+    async (files: File[]): Promise<void> => {
+      const totalBytes = files.reduce((total, file) => total + file.size, 0);
+      const singleLockfileCandidate = files.length === 1;
+      if (
+        files.length < 1 ||
+        files.length > MAX_EXTENSION_PACKAGE_DEPLOYMENT_FILES ||
+        totalBytes > MAX_EXTENSION_PACKAGE_DEPLOYMENT_FILE_BYTES ||
+        (!singleLockfileCandidate &&
+          files.some(
+            (file) => file.size > MAX_SIGNED_EXTENSION_PACKAGE_FILE_BYTES,
+          ))
+      ) {
+        setError(extensionCopy.packages.errors.deploymentTooLarge);
+        return;
+      }
+      setExtensionBusyId("package:deployment-preview");
+      setExtensionPackageReceipt(undefined);
+      setExtensionPackageDeploymentPreview(undefined);
+      setExtensionPackageDeploymentEnvelopes(undefined);
+      setExtensionPackageRolloutPreview(undefined);
+      setExtensionPackageUpdatePreview(undefined);
+      setExtensionPackageUpdateEnvelope(undefined);
+      setError(undefined);
+      try {
+        const parsed = await Promise.all(
+          files.map(async (file) => JSON.parse(await file.text()) as unknown),
+        );
+        const envelopes =
+          parsed.length === 1 && isExtensionPackageLockfile(parsed[0])
+            ? parsed[0].packages.map((entry) => entry.envelope)
+            : parsed;
+        const preview = await previewExtensionPackageDeploymentApi({
+          envelopes,
+        });
+        setExtensionPackageDeploymentEnvelopes(envelopes);
+        setExtensionPackageDeploymentPreview(preview);
+      } catch (packageError) {
+        setError(
+          packageError instanceof SyntaxError
+            ? extensionCopy.packages.errors.invalid
+            : toErrorMessage(packageError),
+        );
+      } finally {
+        setExtensionBusyId(undefined);
+      }
+    },
+    [],
+  );
 
   const applyExtensionPackageDeployment = useCallback(
-    async (confirmation: ExtensionPackageDeploymentConfirmation): Promise<void> => {
-      if (!detail || !extensionPackageDeploymentPreview || (!extensionPackageDeploymentEnvelopes && !extensionPackageRolloutPreview)) {
+    async (
+      confirmation: ExtensionPackageDeploymentConfirmation,
+    ): Promise<void> => {
+      if (
+        !detail ||
+        !extensionPackageDeploymentPreview ||
+        (!extensionPackageDeploymentEnvelopes &&
+          !extensionPackageRolloutPreview)
+      ) {
         return;
       }
       setExtensionBusyId("package:deployment");
@@ -1347,30 +1665,50 @@ export function useWorkspaceViewModel() {
         let deploymentNoChanges: boolean;
         let receiptReason: string;
         if (extensionPackageRolloutPreview) {
-          const result = await applyExtensionPackageRolloutChannelApi(extensionPackageRolloutPreview.channelId, {
-            threadId: detail.thread.id,
-            expectedRolloutSha256: extensionPackageRolloutPreview.contentSha256,
-            expectedDeploymentSha256: extensionPackageRolloutPreview.deploymentPreview.contentSha256,
-            ...(confirmation.publisherChanges ? { confirmPublisherChanges: true } : {}),
-            ...(confirmation.versionOverrides ? { confirmVersionOverrides: true } : {}),
-          });
+          const result = await applyExtensionPackageRolloutChannelApi(
+            extensionPackageRolloutPreview.channelId,
+            {
+              threadId: detail.thread.id,
+              expectedRolloutSha256:
+                extensionPackageRolloutPreview.contentSha256,
+              expectedDeploymentSha256:
+                extensionPackageRolloutPreview.deploymentPreview.contentSha256,
+              ...(confirmation.publisherChanges
+                ? { confirmPublisherChanges: true }
+                : {}),
+              ...(confirmation.versionOverrides
+                ? { confirmVersionOverrides: true }
+                : {}),
+            },
+          );
           deploymentNoChanges = result.deployment.preview.noChanges;
-          receiptReason = deploymentNoChanges ? extensionCopy.packages.noUpdateChanges : extensionCopy.packages.rolloutApplied;
+          receiptReason = deploymentNoChanges
+            ? extensionCopy.packages.noUpdateChanges
+            : extensionCopy.packages.rolloutApplied;
         } else {
           if (!extensionPackageDeploymentEnvelopes) return;
           const result = await applyExtensionPackageDeploymentApi({
             threadId: detail.thread.id,
             envelopes: extensionPackageDeploymentEnvelopes,
-            expectedDeploymentSha256: extensionPackageDeploymentPreview.contentSha256,
-            ...(confirmation.publisherChanges ? { confirmPublisherChanges: true } : {}),
-            ...(confirmation.versionOverrides ? { confirmVersionOverrides: true } : {}),
+            expectedDeploymentSha256:
+              extensionPackageDeploymentPreview.contentSha256,
+            ...(confirmation.publisherChanges
+              ? { confirmPublisherChanges: true }
+              : {}),
+            ...(confirmation.versionOverrides
+              ? { confirmVersionOverrides: true }
+              : {}),
           });
           deploymentNoChanges = result.preview.noChanges;
-          receiptReason = deploymentNoChanges ? extensionCopy.packages.noUpdateChanges : extensionCopy.packages.deploymentReviewReset;
+          receiptReason = deploymentNoChanges
+            ? extensionCopy.packages.noUpdateChanges
+            : extensionCopy.packages.deploymentReviewReset;
         }
         await refreshExtensionWorkspace();
         setExtensionPackageReceipt({
-          action: extensionPackageRolloutPreview ? "rollout_applied" : "deployed",
+          action: extensionPackageRolloutPreview
+            ? "rollout_applied"
+            : "deployed",
           status: "trusted",
           reason: receiptReason,
         });
@@ -1417,7 +1755,9 @@ export function useWorkspaceViewModel() {
     setLabBusyAction("compare");
     setError(undefined);
     try {
-      setRunComparison(await compareThreadRuns(detail.thread.id, labLeftRunId, labRightRunId));
+      setRunComparison(
+        await compareThreadRuns(detail.thread.id, labLeftRunId, labRightRunId),
+      );
       setInspectorTab("lab");
     } catch (comparisonError) {
       setError(toErrorMessage(comparisonError));
@@ -1439,7 +1779,11 @@ export function useWorkspaceViewModel() {
     setLabBusyAction("evaluate");
     setError(undefined);
     try {
-      const comparison = await compareThreadRuns(detail.thread.id, labLeftRunId, labRightRunId);
+      const comparison = await compareThreadRuns(
+        detail.thread.id,
+        labLeftRunId,
+        labRightRunId,
+      );
       await createRunEvaluation(detail.thread.id, {
         leftRunId: labLeftRunId,
         rightRunId: labRightRunId,
@@ -1454,7 +1798,14 @@ export function useWorkspaceViewModel() {
     } finally {
       setLabBusyAction(undefined);
     }
-  }, [commitRefreshedThreadDetail, detail, labLeftRunId, labRightRunId, selectedModel.configured, selectedModelKey]);
+  }, [
+    commitRefreshedThreadDetail,
+    detail,
+    labLeftRunId,
+    labRightRunId,
+    selectedModel.configured,
+    selectedModelKey,
+  ]);
 
   const exportOpenTelemetryTrace = useCallback(
     async (runId?: string): Promise<void> => {
@@ -1463,7 +1814,10 @@ export function useWorkspaceViewModel() {
       setTraceVerificationReceipt(undefined);
       setError(undefined);
       try {
-        const artifact = await exportOpenTelemetryTraceApi(detail.thread.id, runId);
+        const artifact = await exportOpenTelemetryTraceApi(
+          detail.thread.id,
+          runId,
+        );
         downloadJson(artifact, openTelemetryTraceArtifactFilename(artifact));
         const eventAnchorSetSha256 = eventAnchorSetSha256FromArtifact(artifact);
         setTraceExportReceipt({
@@ -1496,20 +1850,35 @@ export function useWorkspaceViewModel() {
       setTraceVerificationReceipt(undefined);
       setError(undefined);
       try {
-        const artifact = JSON.parse(await file.text()) as OpenTelemetryTraceArtifact;
-        const verification = await verifyOpenTelemetryTraceArtifactApi(detail.thread.id, { artifact });
+        const artifact = JSON.parse(
+          await file.text(),
+        ) as OpenTelemetryTraceArtifact;
+        const verification = await verifyOpenTelemetryTraceArtifactApi(
+          detail.thread.id,
+          { artifact },
+        );
         setTraceVerificationReceipt({
           status: verification.status,
           diagnostics: verification.diagnostics,
           ...(verification.traceId ? { traceId: verification.traceId } : {}),
-          ...(verification.contentSha256 ? { contentSha256: verification.contentSha256 } : {}),
-          ...(verification.eventStreamSha256 ? { eventStreamSha256: verification.eventStreamSha256 } : {}),
-          ...(verification.eventAnchorSetSha256 ? { eventAnchorSetSha256: verification.eventAnchorSetSha256 } : {}),
+          ...(verification.contentSha256
+            ? { contentSha256: verification.contentSha256 }
+            : {}),
+          ...(verification.eventStreamSha256
+            ? { eventStreamSha256: verification.eventStreamSha256 }
+            : {}),
+          ...(verification.eventAnchorSetSha256
+            ? { eventAnchorSetSha256: verification.eventAnchorSetSha256 }
+            : {}),
           eventCount: verification.eventCount,
           spanCount: verification.spanCount,
         });
       } catch (verifyError) {
-        setError(verifyError instanceof SyntaxError ? copy.trace.otel.errors.artifactInvalid : toErrorMessage(verifyError));
+        setError(
+          verifyError instanceof SyntaxError
+            ? copy.trace.otel.errors.artifactInvalid
+            : toErrorMessage(verifyError),
+        );
       } finally {
         setTraceVerifyBusy(false);
       }
@@ -1552,21 +1921,36 @@ export function useWorkspaceViewModel() {
           setError(copy.lab.errors.replayInvalid);
           return;
         }
-        const verification = await verifyRunReplaySnapshotApi(detail.thread.id, runId, { snapshot });
+        const verification = await verifyRunReplaySnapshotApi(
+          detail.thread.id,
+          runId,
+          { snapshot },
+        );
         setRunReplayVerificationReceipt({
           status: verification.status,
           diagnostics: verification.diagnostics,
           ...(verification.runId ? { runId: verification.runId } : {}),
-          ...(verification.contentSha256 ? { contentSha256: verification.contentSha256 } : {}),
-          ...(verification.eventStreamSha256 ? { eventStreamSha256: verification.eventStreamSha256 } : {}),
-          ...(verification.assistantTextSha256 ? { assistantTextSha256: verification.assistantTextSha256 } : {}),
+          ...(verification.contentSha256
+            ? { contentSha256: verification.contentSha256 }
+            : {}),
+          ...(verification.eventStreamSha256
+            ? { eventStreamSha256: verification.eventStreamSha256 }
+            : {}),
+          ...(verification.assistantTextSha256
+            ? { assistantTextSha256: verification.assistantTextSha256 }
+            : {}),
           eventCount: verification.eventCount,
           subagentCount: verification.subagentCount,
           modelContextEnvelopeCount: verification.modelContextEnvelopeCount,
-          embeddedModelContextEnvelopeCount: verification.embeddedModelContextEnvelopeCount,
+          embeddedModelContextEnvelopeCount:
+            verification.embeddedModelContextEnvelopeCount,
         });
       } catch (verifyError) {
-        setError(verifyError instanceof SyntaxError ? copy.lab.errors.replayInvalid : toErrorMessage(verifyError));
+        setError(
+          verifyError instanceof SyntaxError
+            ? copy.lab.errors.replayInvalid
+            : toErrorMessage(verifyError),
+        );
       } finally {
         setLabBusyAction(undefined);
       }
@@ -1595,6 +1979,7 @@ export function useWorkspaceViewModel() {
   }, [detail]);
 
   const importThreadFixture = useCallback(async (file: File): Promise<void> => {
+    if (!bootstrap) return;
     if (file.size > MAX_THREAD_REPLAY_FILE_BYTES) {
       setError(copy.lab.errors.fixtureTooLarge);
       return;
@@ -1607,13 +1992,14 @@ export function useWorkspaceViewModel() {
     try {
       const bundle = JSON.parse(await file.text()) as ThreadReplayBundle;
       const sourceCoverage = summarizeThreadReplayBundleCoverage(bundle);
-      const imported = await importThreadReplayBundle({ bundle });
+      const response = await importThreadReplayBundle({ bundle });
+      const imported = resolveThreadDetail(response) ?? response;
       const provenance = imported.thread.importProvenance;
-      const refreshed = await getBootstrap(imported.thread.id);
-      setBootstrap(refreshed);
-      setDetail(refreshed.activeThread);
+      threadDetailCacheRef.current.set(imported.thread.id, imported);
+      setNavigationBootstrap(activateThreadDetail(bootstrap, imported));
+      setDetail(imported);
       commitThreadLocation(setSelectedThreadId, imported.thread.id);
-      setSelectedModelKey(modelKey(refreshed.recommendedRunModel));
+      setSelectedModelKey(modelKey(bootstrap.recommendedRunModel));
       setRunComparison(undefined);
       setInspectorTab("lab");
       setLabFixtureReceipt({
@@ -1621,16 +2007,23 @@ export function useWorkspaceViewModel() {
         contentSha256: provenance?.sourceContentSha256 ?? bundle.contentSha256,
         ...sourceCoverage,
         eventCount: provenance?.sourceEventCount ?? sourceCoverage.eventCount,
-        modelContextEnvelopeCount: provenance?.sourceModelContextEnvelopeCount ?? sourceCoverage.modelContextEnvelopeCount,
+        modelContextEnvelopeCount:
+          provenance?.sourceModelContextEnvelopeCount ??
+          sourceCoverage.modelContextEnvelopeCount,
         embeddedModelContextEnvelopeCount:
-          provenance?.sourceEmbeddedModelContextEnvelopeCount ?? sourceCoverage.embeddedModelContextEnvelopeCount,
+          provenance?.sourceEmbeddedModelContextEnvelopeCount ??
+          sourceCoverage.embeddedModelContextEnvelopeCount,
       });
     } catch (importError) {
-      setError(importError instanceof SyntaxError ? copy.lab.errors.fixtureInvalid : toErrorMessage(importError));
+      setError(
+        importError instanceof SyntaxError
+          ? copy.lab.errors.fixtureInvalid
+          : toErrorMessage(importError),
+      );
     } finally {
       setLabBusyAction(undefined);
     }
-  }, []);
+  }, [bootstrap, resolveThreadDetail, setNavigationBootstrap]);
 
   const verifyThreadFixture = useCallback(async (file: File): Promise<void> => {
     if (file.size > MAX_THREAD_REPLAY_FILE_BYTES) {
@@ -1647,17 +2040,26 @@ export function useWorkspaceViewModel() {
         action: "verified",
         status: verification.status,
         diagnostics: verification.diagnostics,
-        ...(verification.contentSha256 ? { contentSha256: verification.contentSha256 } : {}),
-        ...(verification.eventStreamSha256 ? { eventStreamSha256: verification.eventStreamSha256 } : {}),
+        ...(verification.contentSha256
+          ? { contentSha256: verification.contentSha256 }
+          : {}),
+        ...(verification.eventStreamSha256
+          ? { eventStreamSha256: verification.eventStreamSha256 }
+          : {}),
         eventCount: verification.eventCount,
         runCount: verification.runCount,
         planCount: verification.planCount,
         evaluationCount: verification.evaluationCount,
         modelContextEnvelopeCount: verification.modelContextEnvelopeCount,
-        embeddedModelContextEnvelopeCount: verification.embeddedModelContextEnvelopeCount,
+        embeddedModelContextEnvelopeCount:
+          verification.embeddedModelContextEnvelopeCount,
       });
     } catch (verifyError) {
-      setError(verifyError instanceof SyntaxError ? copy.lab.errors.fixtureInvalid : toErrorMessage(verifyError));
+      setError(
+        verifyError instanceof SyntaxError
+          ? copy.lab.errors.fixtureInvalid
+          : toErrorMessage(verifyError),
+      );
     } finally {
       setLabBusyAction(undefined);
     }
@@ -1669,7 +2071,9 @@ export function useWorkspaceViewModel() {
       current
         ? {
             ...current,
-            agents: current.agents.map((candidate) => (candidate.id === agent.id ? agent : candidate)),
+            agents: current.agents.map((candidate) =>
+              candidate.id === agent.id ? agent : candidate,
+            ),
             ...(current.activeThread
               ? {
                   activeThread: {
@@ -1682,11 +2086,19 @@ export function useWorkspaceViewModel() {
         : current,
     );
   }, []);
-  const commitConfigurationBootstrap = useCallback((refreshed: LiveReadyBootstrapResponse): void => {
-    setBootstrap((current) => mergeBackgroundBootstrap(current, refreshed));
-    if (selectedThreadIdRef.current === refreshed.activeThread?.thread.id) setDetail(refreshed.activeThread);
-    setSelectedModelKey((current) => (current === "napier/demo" ? modelKey(refreshed.recommendedRunModel) : current));
-  }, []);
+  const commitConfigurationBootstrap = useCallback(
+    (refreshed: LiveReadyBootstrapResponse): void => {
+      setBootstrap((current) => mergeBackgroundBootstrap(current, refreshed));
+      if (selectedThreadIdRef.current === refreshed.activeThread?.thread.id)
+        setDetail(refreshed.activeThread);
+      setSelectedModelKey((current) =>
+        current === "napier/demo"
+          ? modelKey(refreshed.recommendedRunModel)
+          : current,
+      );
+    },
+    [],
+  );
 
   return {
     bootstrap,
@@ -1811,7 +2223,8 @@ function modelKey(model: { provider: string; id: string } | undefined): string {
 
 function parseModelKey(value: string): { provider: string; id: string } {
   const separator = value.indexOf("/");
-  if (separator < 1 || separator === value.length - 1) return { provider: "napier", id: "demo" };
+  if (separator < 1 || separator === value.length - 1)
+    return { provider: "napier", id: "demo" };
   return {
     provider: value.slice(0, separator),
     id: value.slice(separator + 1),
@@ -1834,12 +2247,15 @@ function downloadJson(value: unknown, filename: string): void {
 }
 
 function objectString(value: unknown, key: string): string | undefined {
-  if (!value || Array.isArray(value) || typeof value !== "object") return undefined;
+  if (!value || Array.isArray(value) || typeof value !== "object")
+    return undefined;
   const entry = (value as Record<string, unknown>)[key];
   return typeof entry === "string" ? entry : undefined;
 }
 
-function isExtensionPackageLockfile(value: unknown): value is ExtensionPackageLockfile {
+function isExtensionPackageLockfile(
+  value: unknown,
+): value is ExtensionPackageLockfile {
   if (!value || Array.isArray(value) || typeof value !== "object") {
     return false;
   }
@@ -1849,11 +2265,19 @@ function isExtensionPackageLockfile(value: unknown): value is ExtensionPackageLo
     record["kind"] === "napier.extension-package-lockfile" &&
     Array.isArray(packages) &&
     packages.length > 0 &&
-    packages.every((entry) => Boolean(entry) && typeof entry === "object" && !Array.isArray(entry) && "envelope" in entry)
+    packages.every(
+      (entry) =>
+        Boolean(entry) &&
+        typeof entry === "object" &&
+        !Array.isArray(entry) &&
+        "envelope" in entry,
+    )
   );
 }
 
-function isSignedExtensionPackageChannelIndexEnvelope(value: unknown): value is SignedExtensionPackageChannelIndexEnvelope {
+function isSignedExtensionPackageChannelIndexEnvelope(
+  value: unknown,
+): value is SignedExtensionPackageChannelIndexEnvelope {
   if (!value || Array.isArray(value) || typeof value !== "object") {
     return false;
   }
@@ -1872,12 +2296,21 @@ function isSignedExtensionPackageChannelIndexEnvelope(value: unknown): value is 
   );
 }
 
-function upsertMemory(memories: BootstrapResponse["memories"], fact: BootstrapResponse["memories"][number]): BootstrapResponse["memories"] {
+function upsertMemory(
+  memories: BootstrapResponse["memories"],
+  fact: BootstrapResponse["memories"][number],
+): BootstrapResponse["memories"] {
   return [fact, ...memories.filter((memory) => memory.id !== fact.id)];
 }
 
-function upsertExtension(extensions: ExtensionRecord[], extension: ExtensionRecord): ExtensionRecord[] {
-  return [extension, ...extensions.filter((candidate) => candidate.id !== extension.id)];
+function upsertExtension(
+  extensions: ExtensionRecord[],
+  extension: ExtensionRecord,
+): ExtensionRecord[] {
+  return [
+    extension,
+    ...extensions.filter((candidate) => candidate.id !== extension.id),
+  ];
 }
 function toErrorMessage(error: unknown): string {
   return formatApiErrorMessage(error);

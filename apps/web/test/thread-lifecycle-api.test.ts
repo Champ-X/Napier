@@ -25,7 +25,10 @@ describe("Thread lifecycle API", () => {
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
       "/api/threads/thread_1",
-      expect.objectContaining({ method: "DELETE" }),
+      expect.objectContaining({
+        method: "DELETE",
+        headers: expect.objectContaining({ Prefer: "return=minimal" }),
+      }),
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,

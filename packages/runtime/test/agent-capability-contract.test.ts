@@ -17,10 +17,19 @@ import {
   managedCapabilityPayload,
   managedCapabilitySha256,
 } from "../src/default-agent-capability-contract.js";
-import { bindingMatchesProfile, ensureCurrentCapabilityBindings, lookupCapabilityBinding, propagateUpdatedCapabilityBinding, validateCapabilityBinding } from "../src/agent-capability-bindings.js";
+import {
+  bindingMatchesProfile,
+  ensureCurrentCapabilityBindings,
+  lookupCapabilityBinding,
+  propagateUpdatedCapabilityBinding,
+  validateCapabilityBinding,
+} from "../src/agent-capability-bindings.js";
 import { inspectProcessSandboxReadiness } from "../src/process-run-readiness.js";
 import { CapabilityRestorePersistenceError } from "../src/agent-capability-store-mutations.js";
-import { compatibilityTelemetrySnapshot, resetCompatibilityTelemetryForTest } from "../src/compatibility-telemetry.js";
+import {
+  compatibilityTelemetrySnapshot,
+  resetCompatibilityTelemetryForTest,
+} from "../src/compatibility-telemetry.js";
 
 const roots: string[] = [];
 const CODER_SAFE_TOOLS = ["apply_patch", "lsp_diagnostics", "read_file"];
@@ -196,18 +205,27 @@ describe("default Agent Capability Contract", () => {
       expect(projection.runtimeExposedTools).not.toContain("workspace_process");
       expect(projection.readiness).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ id: "tool:apply_patch", status: "unavailable", allowedByPolicy: true, exposed: false }),
+          expect.objectContaining({
+            id: "tool:apply_patch",
+            status: "unavailable",
+            allowedByPolicy: true,
+            exposed: false,
+          }),
           expect.objectContaining({
             id: "sandbox:unsupported",
             status: "unavailable",
           }),
           expect.objectContaining({
             id: "skill:research-brief",
-            status: "missing",
+            status: "ready",
+            allowedByPolicy: true,
+            exposed: true,
           }),
           expect.objectContaining({
             id: "skill:browser-automation",
-            status: "missing",
+            status: "ready",
+            allowedByPolicy: true,
+            exposed: true,
           }),
           expect.objectContaining({
             id: "tool:skill_load",
@@ -353,7 +371,12 @@ describe("default Agent Capability Contract", () => {
       const before = services.store.getAgent("agent_napier");
       try {
         expect(managedCapabilitySha256(before)).toBe(expectedManagedSha256);
-        expect(compatibilityTelemetrySnapshot().metrics.find((metric) => metric.id === "compat.agent_capability.legacy_binding_read")?.count).toBe(1);
+        expect(
+          compatibilityTelemetrySnapshot().metrics.find(
+            (metric) =>
+              metric.id === "compat.agent_capability.legacy_binding_read",
+          )?.count,
+        ).toBe(1);
         expect(
           services.store.getAgentCapabilityBinding(before.id, before.revision),
         ).toEqual(

@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, memo, Suspense } from "react";
 
 import { advancedSurfaceCopy } from "./advanced-surface-copy";
 import type { ArtifactInspection } from "./artifact-inspection";
@@ -15,7 +15,7 @@ const LazyConversationLedger = lazy(() =>
 
 type WorkspaceViewModel = ReturnType<typeof useWorkspaceViewModel>;
 
-export function ConversationWorkspace({
+export const ConversationWorkspace = memo(function ConversationWorkspace({
   vm,
   endRef,
   viewportRef,
@@ -68,7 +68,7 @@ export function ConversationWorkspace({
       )}
     </section>
   );
-}
+}, sameConversationWorkspaceProps);
 
 export interface ConversationWorkspaceProps {
   vm: Pick<
@@ -85,6 +85,25 @@ export interface ConversationWorkspaceProps {
   onOpenSubagentHub(taskId?: string): void;
   onInspectArtifact(inspection: ArtifactInspection): void;
   onOpenWorkspaceFile(path: string): void;
+}
+
+function sameConversationWorkspaceProps(
+  previous: ConversationWorkspaceProps,
+  next: ConversationWorkspaceProps,
+): boolean {
+  return (
+    previous.vm.detail === next.vm.detail &&
+    previous.vm.isRunning === next.vm.isRunning &&
+    previous.vm.messages === next.vm.messages &&
+    previous.vm.streamingText === next.vm.streamingText &&
+    previous.vm.branchFrom === next.vm.branchFrom &&
+    previous.vm.refreshActiveThread === next.vm.refreshActiveThread &&
+    previous.endRef === next.endRef &&
+    previous.viewportRef === next.viewportRef &&
+    previous.onOpenSubagentHub === next.onOpenSubagentHub &&
+    previous.onInspectArtifact === next.onInspectArtifact &&
+    previous.onOpenWorkspaceFile === next.onOpenWorkspaceFile
+  );
 }
 
 export function shouldShowConversationWelcome(

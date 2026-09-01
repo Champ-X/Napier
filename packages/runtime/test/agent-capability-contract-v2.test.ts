@@ -120,11 +120,25 @@ describe("default Agent Capability Contract history", () => {
       expect(preview.diffSha256).toBe(
         "1ceab840365f7dde5a9179472cc30352017fab1210e2684397af0f05ed2b9f6e",
       );
-      expect(
-        (await services.agentCapabilities.project(agent.id)).projectionSha256,
-      ).toBe(
-        "8db611bb62782efa405f1d213956a30d43b268bf92ee367e18e194359dcaca02",
+      const projection = await services.agentCapabilities.project(agent.id);
+      expect(projection.projectionSha256).toBe(
+        "aea84f04841fb171d7884eb8ebdb9f178f91ce648590fc9c6c109ac2ce2ef803",
       );
+      expect(
+        projection.readiness
+          .filter((item) => item.id.startsWith("skill:"))
+          .map((item) => ({
+            id: item.id,
+            status: item.status,
+            exposed: item.exposed,
+          })),
+      ).toEqual([
+        { id: "skill:artifact-studio", status: "ready", exposed: true },
+        { id: "skill:browser-automation", status: "ready", exposed: true },
+        { id: "skill:data-analysis", status: "ready", exposed: true },
+        { id: "skill:research-brief", status: "ready", exposed: true },
+        { id: "skill:software-delivery", status: "ready", exposed: true },
+      ]);
     } finally {
       await services.shutdown();
     }

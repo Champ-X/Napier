@@ -17,6 +17,7 @@ import {
   ComposerImageError,
 } from "./composer-image-attachments";
 import { ComposerImageAttachments } from "./ComposerImageAttachments";
+import { ConversationPlanProgress } from "./ConversationPlanProgress";
 import { shellCopy } from "./shell-copy";
 import {
   initialComposerRunReadiness,
@@ -70,6 +71,7 @@ export function Composer({
     | "nextRunCapabilityPreset"
     | "setNextRunCapabilityPreset"
     | "commitConfigurationBootstrap"
+    | "bootstrap"
   >;
   activeAgent: AgentProfile | undefined;
   activeModel: SelectedModelAvailability;
@@ -121,6 +123,11 @@ export function Composer({
         )
       }
     >
+      <ConversationPlanProgress
+        key={`${vm.activeRunId ?? "idle"}:${vm.detail?.activePlan?.planId ?? "none"}`}
+        detail={vm.detail}
+        isRunning={vm.isRunning}
+      />
       <ComposerImageAttachments
         images={vm.composerImages}
         setImages={vm.setComposerImages}
@@ -256,7 +263,9 @@ export function Composer({
                   onReview={() => onOpenInspector("context")}
                   onReadinessChange={setRunReadiness}
                 />
-                {!activeModel.configured ? (
+                {!vm.bootstrap?.models.some(
+                  (model) => model.provider !== "napier" && model.configured,
+                ) ? (
                   <LazyProviderSetupCard
                     onBootstrapUpdated={vm.commitConfigurationBootstrap}
                     threadId={vm.detail?.thread.id}

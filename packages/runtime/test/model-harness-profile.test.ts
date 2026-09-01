@@ -12,6 +12,7 @@ import { describe, expect, it } from "vitest";
 import { canonicalJson, sha256 } from "../src/ed25519.js";
 import {
   formatModelHarnessPrompt,
+  inferModelHarnessTaskPhases,
   prepareModelHarnessCall,
   resolveModelHarnessProfile,
   resolveModelHarnessResolution,
@@ -23,6 +24,7 @@ const TOOL_NAMES = [
   "update_plan_step",
   "record_run_milestone",
   "skill_load",
+  "skill_resource",
   "capability",
   "mcp_schema_search",
   "delegate_task",
@@ -89,7 +91,7 @@ describe("model-aware Harness profile", () => {
       expect.objectContaining({
         family: "generic",
         promptDialect: "compact",
-        maxActiveTools: 20,
+        maxActiveTools: 24,
       }),
     );
   });
@@ -155,7 +157,7 @@ describe("model-aware Harness profile", () => {
     });
 
     expect(prepared.receipt.activeToolNames).toContain("git_commit_apply");
-    expect(prepared.receipt.activeToolCount).toBe(20);
+    expect(prepared.receipt.activeToolCount).toBe(24);
     expect(prepared.receipt).toEqual(
       expect.objectContaining({
         attempt: 2,
@@ -178,8 +180,12 @@ describe("model-aware Harness profile", () => {
       context: {
         messages: [
           {
-            role: "user",
-            content: "Loaded for the next turn: mcp__evidence_service__lookup",
+            role: "toolResult",
+            toolCallId: "call_mcp_schema_search",
+            toolName: "mcp_schema_search",
+            content: [{ type: "text", text: "Activated one MCP schema." }],
+            addedToolNames: ["mcp__evidence_service__lookup"],
+            isError: false,
             timestamp: 1,
           },
         ],
@@ -189,7 +195,7 @@ describe("model-aware Harness profile", () => {
       attempt: 1,
     });
 
-    expect(prepared.receipt.activeToolCount).toBe(20);
+    expect(prepared.receipt.activeToolCount).toBe(24);
     expect(prepared.receipt.activeToolNames).toContain(
       "mcp__evidence_service__lookup",
     );
@@ -218,7 +224,7 @@ describe("model-aware Harness profile", () => {
       attempt: 1,
     });
 
-    expect(prepared.receipt.activeToolCount).toBe(20);
+    expect(prepared.receipt.activeToolCount).toBe(24);
     expect(prepared.receipt.activeToolNames).toContain("capability");
     expect(prepared.receipt.activeToolNames).toContain("git_commit_apply");
   });
@@ -238,6 +244,15 @@ describe("model-aware Harness profile", () => {
             isError: false,
             timestamp: 2,
           },
+          {
+            role: "toolResult",
+            toolCallId: "call_catalog_latest",
+            toolName: "capability",
+            content: [{ type: "text", text: "Activated a capability." }],
+            addedToolNames: ["git_commit_apply"],
+            isError: false,
+            timestamp: 3,
+          },
         ],
         tools: tools(),
       },
@@ -245,9 +260,9 @@ describe("model-aware Harness profile", () => {
       attempt: 3,
     });
 
-    expect(prepared.receipt.activeToolCount).toBe(20);
+    expect(prepared.receipt.activeToolCount).toBe(24);
     expect(prepared.receipt.activeToolNames).toEqual(
-      expect.arrayContaining(["capability", "read_file"]),
+      expect.arrayContaining(["capability", "read_file", "git_commit_apply"]),
     );
   });
 
@@ -258,6 +273,7 @@ describe("model-aware Harness profile", () => {
       "gpt-5.4-2026-08-01",
       "openai-reasoning",
       "openai",
+      20,
     ],
     [
       "Anthropic",
@@ -265,6 +281,7 @@ describe("model-aware Harness profile", () => {
       "claude-sonnet-4-5-20250929",
       "claude",
       "anthropic",
+      20,
     ],
     [
       "GOOGLE-VERTEX",
@@ -272,11 +289,19 @@ describe("model-aware Harness profile", () => {
       "gemini-3.1-pro-preview",
       "gemini",
       "google",
+      20,
     ],
-    ["DeepSeek", "openai-completions", "deepseek-v4-pro", "deepseek", "openai"],
+    [
+      "DeepSeek",
+      "openai-completions",
+      "deepseek-v4-pro",
+      "deepseek",
+      "openai",
+      28,
+    ],
   ] as const)(
     "resolves %s/%s/%s to the %s model rule",
-    (provider, api, id, matchedRuleId, family) => {
+    (provider, api, id, matchedRuleId, family, maxActiveTools) => {
       const resolution = resolveModelHarnessResolution({
         model: specificModel(provider, api, id),
         messages: [
@@ -291,7 +316,7 @@ describe("model-aware Harness profile", () => {
           matchedRuleId,
           policySource: "model_rule",
           taskPhase: "coding",
-          maxActiveTools: 20,
+          maxActiveTools,
           defaultMaxRetries: 1,
         }),
       );
@@ -300,6 +325,130 @@ describe("model-aware Harness profile", () => {
       );
     },
   );
+
+  it("keeps every execution surface needed by the reported Chinese compound task", () => {
+    const prompt =
+      "深度分析Hermes Agent目前的源码，然后做一个精美全面的HTML来深度介绍它。";
+    const messages: Message[] = [
+      { role: "user", content: prompt, timestamp: 1 },
+    ];
+    expect(inferModelHarnessTaskPhases(messages)).toEqual(["coding"]);
+
+    const prepared = prepareModelHarnessCall({
+      model: specificModel(
+        "DeepSeek",
+        "openai-completions",
+        "deepseek-v4-flash-vision",
+      ),
+      context: { messages, tools: tools() },
+      options: {},
+      attempt: 1,
+    });
+
+    expect(prepared.receipt).toEqual(
+      expect.objectContaining({
+        taskPhase: "coding",
+        activeToolCount: 28,
+      }),
+    );
+    expect(prepared.receipt.activeToolNames).toEqual(
+      expect.arrayContaining([
+        "list_files",
+        "read_file",
+        "search_files",
+        "apply_patch",
+        "verify_workspace",
+        "run_command",
+        "workspace_process",
+        "web_search",
+        "web_fetch",
+        "capability",
+      ]),
+    );
+  });
+
+  it("unions tool needs for compound research, browsing, coding, and data work", () => {
+    const messages: Message[] = [
+      {
+        role: "user",
+        content:
+          "Research the latest source code, build an HTML page, then analyze a CSV dataset.",
+        timestamp: 1,
+      },
+    ];
+
+    expect(inferModelHarnessTaskPhases(messages)).toEqual([
+      "browser",
+      "research",
+      "coding",
+      "data",
+    ]);
+    const prepared = prepareModelHarnessCall({
+      model: specificModel("DeepSeek", "openai-completions", "deepseek-v4-pro"),
+      context: { messages, tools: tools() },
+      options: {},
+      attempt: 1,
+    });
+    expect(prepared.receipt.activeToolNames).toEqual(
+      expect.arrayContaining([
+        "browser",
+        "web_search",
+        "web_fetch",
+        "apply_patch",
+        "workspace_process",
+        "inspect_data",
+      ]),
+    );
+    expect(prepared.receipt.intents).toEqual([
+      "browser",
+      "research",
+      "coding",
+      "data",
+    ]);
+
+    const compactPrepared = prepareModelHarnessCall({
+      model: specificModel("openai", "openai-responses", "gpt-5.4"),
+      context: { messages, tools: tools() },
+      options: {},
+      attempt: 1,
+    });
+    expect(compactPrepared.receipt.activeToolCount).toBe(20);
+    expect(compactPrepared.receipt.activeToolNames).toEqual(
+      expect.arrayContaining([
+        "browser",
+        "web_search",
+        "web_fetch",
+        "apply_patch",
+        "workspace_process",
+        "inspect_data",
+      ]),
+    );
+  });
+
+  it("keeps the task phase anchored across internal retry redirects", () => {
+    const messages: Message[] = [
+      {
+        role: "user",
+        content: "Open the website in the browser and click the results page.",
+        timestamp: 1,
+      },
+      {
+        role: "user",
+        content:
+          "Internal thinking-loop redirect: the previous hidden reasoning attempt was stopped before it became visible.\nExecute one smallest safe tool action now.",
+        timestamp: 2,
+      },
+    ];
+
+    expect(inferModelHarnessTaskPhases(messages)).toEqual(["browser"]);
+    const prepared = prepareModelHarnessCall({
+      model: specificModel("openai", "openai-responses", "gpt-5.4"),
+      context: { messages, tools: tools() },
+      options: {},
+      attempt: 2,
+    });
+    expect(prepared.receipt.activeToolNames).toContain("browser");
+  });
 
   it("normalizes an OpenRouter provider alias and a namespaced model ID", () => {
     expect(
@@ -445,26 +594,42 @@ describe("model-aware Harness profile", () => {
         model: specificModel("test", "custom-api", "test-model"),
         messages: [],
         tools: [],
-        rules: [rule("expanding", { maxActiveTools: 21 })],
+        rules: [rule("expanding", { maxActiveTools: 25 })],
       }),
     ).toThrow("expands its family profile");
   });
 
-  it("fails closed instead of dropping protected activated MCP tools", () => {
-    const protectedTools = namedTools(
-      Array.from({ length: 21 }, (_, index) => `mcp__service__tool_${index}`),
+  it("bounds unused MCP schemas and keeps the most recently activated one", () => {
+    const mcpTools = namedTools(
+      Array.from(
+        { length: 25 },
+        (_, index) => `mcp__service__tool_${String(index).padStart(2, "0")}`,
+      ),
     );
-    expect(() =>
-      prepareModelHarnessCall({
-        model: specificModel("generic", "custom-api", "generic-v1"),
-        context: {
-          messages: [{ role: "user", content: "Continue.", timestamp: 1 }],
-          tools: protectedTools,
-        },
-        options: {},
-        attempt: 1,
-      }),
-    ).toThrow("protected tools exceed");
+    const prepared = prepareModelHarnessCall({
+      model: specificModel("generic", "custom-api", "generic-v1"),
+      context: {
+        messages: [
+          { role: "user", content: "Continue.", timestamp: 1 },
+          {
+            role: "toolResult",
+            toolCallId: "call_recent_mcp_activation",
+            toolName: "capability",
+            content: [{ type: "text", text: "Activated one MCP schema." }],
+            addedToolNames: ["mcp__service__tool_24"],
+            isError: false,
+            timestamp: 2,
+          },
+        ],
+        tools: mcpTools,
+      },
+      options: {},
+      attempt: 1,
+    });
+
+    expect(prepared.receipt.activeToolCount).toBe(24);
+    expect(prepared.receipt.activeToolNames).toContain("mcp__service__tool_24");
+    expect(prepared.receipt.omittedToolNames).toHaveLength(1);
   });
 
   it("keeps the v2 receipt hash-only and binds the resolved phase and capabilities", () => {

@@ -2183,18 +2183,36 @@ describe("AgentRuntime demo path", () => {
       (context) => {
         contexts.push(JSON.stringify(context));
         expect(context.systemPrompt).toContain("isolated research subagent");
-        expect(context.tools?.map((tool) => tool.name)).not.toContain("delegate_task");
+        const toolNames = context.tools?.map((tool) => tool.name) ?? [];
+        expect(toolNames).toEqual(
+          expect.arrayContaining([
+            "list_files",
+            "web_search",
+            "web_fetch",
+            "browser",
+            "research_source",
+          ]),
+        );
+        expect(toolNames).not.toEqual(
+          expect.arrayContaining([
+            "apply_patch",
+            "delegate_task",
+            "web_fetch_save",
+          ]),
+        );
         expect(JSON.stringify(context.messages)).toContain("Inspect packages/runtime only");
         expect(JSON.stringify(context.messages)).not.toContain("Coordinate a repository review");
         return fauxAssistantMessage(
           JSON.stringify({
-            summary: "The subagent has read-only workspace tools and no delegation tool.",
+            summary:
+              "The subagent inherits parent research tools without mutation or delegation authority.",
             items: [
               {
                 kind: "finding",
                 severity: "info",
                 title: "Delegation remains isolated",
-                detail: "The delegated runtime exposes read-only workspace tools and omits delegate_task.",
+                detail:
+                  "The delegated runtime exposes web research and read-only workspace tools while omitting mutation and delegate_task.",
                 evidence: [],
               },
             ],
@@ -2206,11 +2224,13 @@ describe("AgentRuntime demo path", () => {
         contexts.push(JSON.stringify(context));
         const serialized = JSON.stringify(context.messages);
         expect(serialized).toContain('"toolName":"delegate_task"');
-        expect(serialized).toContain("The subagent has read-only workspace tools");
+        expect(serialized).toContain("inherits parent research tools");
         expect(context.systemPrompt).toContain('"description":"Inspect runtime boundaries"');
         expect(context.systemPrompt).toContain('"status":"completed"');
         expect(context.systemPrompt).toContain('"outcomeSha256":"');
-        expect(context.systemPrompt).not.toContain("The subagent has read-only workspace tools");
+        expect(context.systemPrompt).not.toContain(
+          "inherits parent research tools",
+        );
         return fauxAssistantMessage("Verified: delegated work ran in an isolated, read-only context.");
       },
       fauxAssistantMessage('{"facts":[]}'),
@@ -2236,7 +2256,7 @@ describe("AgentRuntime demo path", () => {
         status: "completed",
         stopReason: "completed",
         result:
-          "The subagent has read-only workspace tools and no delegation tool.\n[info] Delegation remains isolated: The delegated runtime exposes read-only workspace tools and omits delegate_task.",
+          "The subagent inherits parent research tools without mutation or delegation authority.\n[info] Delegation remains isolated: The delegated runtime exposes web research and read-only workspace tools while omitting mutation and delegate_task.",
         outcome: expect.objectContaining({
           kind: "napier.subagent-outcome",
           itemCount: 1,

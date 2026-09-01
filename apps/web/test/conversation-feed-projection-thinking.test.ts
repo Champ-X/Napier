@@ -42,7 +42,70 @@ describe("conversationFeedProjection live thinking", () => {
       }),
     ]);
   });
+
+  it.each([
+    {
+      phase: "before the first model delta",
+      events: [
+        event(1, "turn.started"),
+        event(2, "message.user"),
+        event(3, "context.model_invocation"),
+      ],
+    },
+    {
+      phase: "after thinking starts streaming",
+      events: [
+        event(1, "turn.started"),
+        event(2, "message.user"),
+        event(3, "context.model_invocation"),
+        event(4, "model.thinking.delta"),
+      ],
+    },
+  ])("keeps the user message above thinking $phase", ({ events }) => {
+    const projection = conversationFeedProjection([userMessage(2)], {
+      thread: {
+        id: "thread_live",
+        status: "running",
+        currentRunId: "run_live",
+      },
+      runs: [],
+      plans: [],
+      events,
+      operatorDecisions: [],
+      subagents: [],
+      automaticRecoveryAssessments: [],
+      automaticRecoveryAttempts: [],
+    } as unknown as WebThreadDetail);
+
+    expect(projection.feed.map((item) => item.kind)).toEqual([
+      "message",
+      "activity-group",
+    ]);
+    expect(projection.feed[1]).toEqual(
+      expect.objectContaining({
+        kind: "activity-group",
+        seq: 2,
+        items: [
+          expect.objectContaining({
+            kind: "thinking",
+            seq: 2,
+          }),
+        ],
+      }),
+    );
+  });
 });
+
+function userMessage(seq: number) {
+  return {
+    id: `event_${String(seq)}`,
+    seq,
+    role: "user" as const,
+    text: "Build the game",
+    model: "",
+    createdAt: `2026-08-31T00:00:0${String(seq)}.000Z`,
+  };
+}
 
 function event(seq: number, type: string): RunEvent {
   return {

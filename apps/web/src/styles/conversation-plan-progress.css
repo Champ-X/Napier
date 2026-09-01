@@ -1,0 +1,244 @@
+.composer-plan-progress {
+  position: absolute;
+  z-index: 45;
+  bottom: calc(100% + var(--space-2));
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.composer-plan-progress-capsule {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  gap: var(--inline-sm);
+  padding: 0 var(--inset-md) 0 var(--inset-sm);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-fg-muted);
+  white-space: nowrap;
+  cursor: pointer;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-raised);
+  transition:
+    color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.composer-plan-progress-capsule:hover,
+.composer-plan-progress.is-expanded .composer-plan-progress-capsule {
+  color: var(--color-fg);
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-modal);
+}
+
+.composer-plan-progress-capsule:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 var(--control-focus-offset) var(--color-surface),
+    0 0 0 calc(var(--control-focus-offset) + var(--control-focus-width))
+      var(--color-focus-ring);
+}
+
+.composer-plan-progress-ring {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  overflow: visible;
+  transform: rotate(-90deg);
+}
+
+.composer-plan-progress-ring circle {
+  fill: none;
+  stroke-width: 3;
+}
+
+.composer-plan-progress-ring .track {
+  stroke: var(--color-border);
+}
+
+.composer-plan-progress-ring .meter {
+  stroke: var(--color-accent);
+  stroke-linecap: round;
+  transition: stroke-dasharray var(--duration-base) var(--ease-out);
+}
+
+.composer-plan-progress-popover {
+  position: absolute;
+  bottom: calc(100% + var(--space-2));
+  left: 50%;
+  display: grid;
+  width: min(420px, calc(100vw - var(--space-12)));
+  max-height: min(52vh, 430px);
+  gap: var(--stack-sm);
+  padding: var(--inset-md);
+  overflow: hidden;
+  color: var(--color-fg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-modal);
+  transform: translate(-50%, var(--space-2));
+  transform-origin: bottom center;
+  animation: plan-progress-enter var(--duration-fast) var(--ease-out) forwards;
+}
+
+.composer-plan-progress-popover > header {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--inline-md);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.composer-plan-progress-popover > header > div {
+  display: grid;
+  min-width: 0;
+  gap: var(--stack-xs);
+}
+
+.composer-plan-progress-popover > header span,
+.composer-plan-progress-popover > header small,
+.composer-plan-progress-popover li small {
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+}
+
+.composer-plan-progress-popover > header span {
+  font-weight: var(--font-weight-semibold);
+}
+
+.composer-plan-progress-popover > header strong {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: var(--text-sm);
+  line-height: var(--leading-compact);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.composer-plan-progress-popover > header small {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.composer-plan-progress-popover ol {
+  display: grid;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden auto;
+  list-style: none;
+}
+
+.composer-plan-progress-popover li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: start;
+  gap: var(--inline-sm);
+  min-height: 48px;
+  padding: var(--space-2) var(--space-2);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.composer-plan-progress-popover li:last-child {
+  border-bottom: 0;
+}
+
+.composer-plan-progress-popover li.is-current {
+  background: var(--color-accent-subtle);
+}
+
+.composer-plan-progress-popover li.is-current::before {
+  position: absolute;
+  top: var(--space-2);
+  bottom: var(--space-2);
+  left: 0;
+  width: 2px;
+  content: "";
+  background: var(--color-accent);
+  border-radius: var(--radius-full);
+}
+
+.composer-plan-step-icon {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+  color: var(--color-fg-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+.composer-plan-progress-popover .status-completed .composer-plan-step-icon {
+  color: var(--color-success);
+  background: var(--color-success-surface);
+  border-color: var(--color-success-border);
+}
+
+.composer-plan-progress-popover .status-running .composer-plan-step-icon,
+.composer-plan-progress-popover
+  .is-current:not(.status-completed)
+  .composer-plan-step-icon {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.composer-plan-progress-popover .status-blocked .composer-plan-step-icon {
+  color: var(--color-danger-fg);
+  background: var(--color-danger-surface);
+  border-color: var(--color-danger-border);
+}
+
+.composer-plan-progress-popover li > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.composer-plan-progress-popover li strong {
+  overflow: hidden;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--leading-compact);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@keyframes plan-progress-enter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, var(--space-2));
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@media (max-width: 700px) {
+  .composer-plan-progress-popover {
+    width: min(360px, calc(100vw - var(--space-6)));
+    max-height: 46vh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .composer-plan-progress-ring .meter {
+    transition: none;
+  }
+
+  .composer-plan-progress-popover {
+    animation: none;
+    transform: translate(-50%, 0);
+  }
+}

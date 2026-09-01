@@ -6,6 +6,7 @@ import { isStandardSkillLoadReceiptV2 } from "@napier/contracts/skill-load-stand
 
 import {
   buildStandardSkillSnapshot,
+  defaultBundledSkillRoot,
   discoverStandardSkillNames,
   StandardSkillSnapshotError,
 } from "../src/standard-skill-snapshot.js";
@@ -74,7 +75,202 @@ async function setup() {
   };
 }
 
+function isolatedOptions(home: string) {
+  return { userHome: home, bundledRoot: path.join(home, "empty-bundle") };
+}
+
 describe("standard project and user Skill snapshots", () => {
+  it("loads every default Skill from the read-only distribution bundle", async () => {
+    const { workspace, home } = await setup();
+    const names = [
+      "artifact-studio",
+      "browser-automation",
+      "data-analysis",
+      "research-brief",
+      "software-delivery",
+    ];
+
+    expect(defaultBundledSkillRoot()).toBe(
+      path.resolve(import.meta.dirname, "../../.."),
+    );
+    const snapshot = await buildStandardSkillSnapshot(
+      workspace,
+      names,
+      undefined,
+      { userHome: home },
+    );
+
+    expect(snapshot.binding).toMatchObject({
+      schemaVersion: 2,
+      loadableSkillNames: names,
+      configuredSkillRequests: names.map((name, position) =>
+        expect.objectContaining({
+          position,
+          canonicalName: name,
+          state: "loadable",
+          source: "bundled",
+          rootKind: "bundled_standard",
+        }),
+      ),
+    });
+    expect(snapshot.manifest.trustOrigins).toContain("napier_read_only_bundle");
+    for (const name of names) {
+      expect(snapshot.entry(name)).toMatchObject({
+        source: "bundled",
+        rootKind: "bundled_standard",
+        relativePath: `skills/${name}/SKILL.md`,
+        virtualPath: `/bundled/skills/${name}/SKILL.md`,
+      });
+      const loaded = await createSkillLoadTool(snapshot).execute(
+        `call_${name}`,
+        { name },
+        new AbortController().signal,
+      );
+      expect(isStandardSkillLoadReceiptV2(loaded.details)).toBe(true);
+      expect(loaded.details).toMatchObject({
+        state: "loaded",
+        source: "bundled",
+        rootKind: "bundled_standard",
+      });
+    }
+  });
+
+  it("uses configured project or user Skills in preference to bundled fallbacks", async () => {
+    const { workspace, home } = await setup();
+    await putSkill(
+      path.join(workspace, ".agents"),
+      "research-brief",
+      skillText("research-brief", { body: "# Project override" }),
+    );
+
+    const snapshot = await buildStandardSkillSnapshot(
+      workspace,
+      ["research-brief"],
+      undefined,
+      { userHome: home },
+    );
+
+    expect(snapshot.binding.configuredSkillRequests).toEqual([
+      expect.objectContaining({
+        source: "project",
+        rootKind: "project_standard",
+        state: "loadable",
+      }),
+    ]);
+    expect(snapshot.entry("research-brief")).toMatchObject({
+      source: "project",
+      rootKind: "project_standard",
+      virtualPath: "/project/.agents/skills/research-brief/SKILL.md",
+    });
+    expect(snapshot.entry("research-brief")?.formattedInvocation).toContain(
+      "Project override",
+    );
+    expect(snapshot.manifest.trustOrigins).toEqual([
+      "active_user_selected_project",
+      "local_user_skill_store",
+    ]);
+  });
+
+  it("applies user overrides and keeps custom-root conflicts fail-closed over a bundled fallback", async () => {
+    const { workspace, home } = await setup();
+    await putSkill(
+      path.join(home, ".agents"),
+      "research-brief",
+      skillText("research-brief", { body: "# User override" }),
+    );
+    const user = await buildStandardSkillSnapshot(
+      workspace,
+      ["research-brief"],
+      undefined,
+      { userHome: home },
+    );
+    expect(user.entry("research-brief")).toMatchObject({
+      source: "user",
+      rootKind: "user_standard",
+    });
+
+    await putSkill(path.join(workspace, ".agents"), "research-brief");
+    const conflict = await buildStandardSkillSnapshot(
+      workspace,
+      ["research-brief"],
+      undefined,
+      { userHome: home },
+    );
+    expect(conflict.binding.unavailableSkills).toEqual([
+      expect.objectContaining({
+        failureCode: "skill_ambiguous",
+        candidateRootKinds: ["project_standard", "user_standard"],
+      }),
+    ]);
+  });
+
+  it("does not silently fall back to bundled content when a custom override is disabled", async () => {
+    const { workspace, home } = await setup();
+    await putSkill(
+      path.join(workspace, ".agents"),
+      "research-brief",
+      skillText("research-brief", { disabled: true }),
+    );
+
+    const snapshot = await buildStandardSkillSnapshot(
+      workspace,
+      ["research-brief"],
+      undefined,
+      { userHome: home },
+    );
+
+    expect(snapshot.binding.loadableSkillNames).toEqual([]);
+    expect(snapshot.binding.unavailableSkills).toEqual([
+      expect.objectContaining({
+        failureCode: "skill_disabled",
+        candidateRootKinds: ["project_standard"],
+      }),
+    ]);
+  });
+
+  it("binds mixed project and bundled roots in one canonical snapshot", async () => {
+    const { workspace, home } = await setup();
+    await putSkill(path.join(workspace, ".agents"), "project-summary");
+
+    const snapshot = await buildStandardSkillSnapshot(
+      workspace,
+      ["project-summary", "research-brief"],
+      undefined,
+      { userHome: home },
+    );
+
+    expect(snapshot.manifest.observedRootKinds).toEqual([
+      "project_standard",
+      "bundled_standard",
+    ]);
+    expect(snapshot.binding.loadableSkillNames).toEqual([
+      "project-summary",
+      "research-brief",
+    ]);
+    expect(snapshot.manifest.trustOrigins).toContain("napier_read_only_bundle");
+  });
+
+  it("uses bundled fallbacks when the selected workspace path is a symlink without local Skills", async () => {
+    const { home } = await setup();
+    const realWorkspace = await temporary("standard-real-workspace");
+    const linkParent = await temporary("standard-linked-workspace");
+    const linkedWorkspace = path.join(linkParent, "workspace-link");
+    await symlink(realWorkspace, linkedWorkspace, "dir");
+
+    const snapshot = await buildStandardSkillSnapshot(
+      linkedWorkspace,
+      ["research-brief"],
+      undefined,
+      { userHome: home },
+    );
+
+    expect(snapshot.binding.loadableSkillNames).toEqual(["research-brief"]);
+    expect(snapshot.entry("research-brief")).toMatchObject({
+      source: "bundled",
+      rootKind: "bundled_standard",
+    });
+  });
+
   it("preserves the V1 contract for a relevant legacy-only Skill", async () => {
     resetCompatibilityTelemetryForTest();
     const { workspace, home } = await setup();
@@ -84,7 +280,7 @@ describe("standard project and user Skill snapshots", () => {
       workspace,
       ["legacy-brief"],
       undefined,
-      { userHome: home },
+      isolatedOptions(home),
     );
 
     expect(snapshot.binding.schemaVersion).toBe(1);
@@ -106,7 +302,7 @@ describe("standard project and user Skill snapshots", () => {
       workspace,
       ["project-brief"],
       undefined,
-      { userHome: home },
+      isolatedOptions(home),
     );
 
     expect(snapshot.binding).toMatchObject({
@@ -141,7 +337,7 @@ describe("standard project and user Skill snapshots", () => {
       workspace,
       ["user-brief"],
       undefined,
-      { userHome: home },
+      isolatedOptions(home),
     );
     const serialized = JSON.stringify({
       content: snapshot.content,
@@ -196,7 +392,7 @@ describe("standard project and user Skill snapshots", () => {
       workspace,
       ["shared-brief"],
       undefined,
-      { userHome: home },
+      isolatedOptions(home),
     );
 
     expect(snapshot.binding.schemaVersion).toBe(2);
@@ -230,7 +426,7 @@ describe("standard project and user Skill snapshots", () => {
       workspace,
       ["disabled-brief"],
       undefined,
-      { userHome: home },
+      isolatedOptions(home),
     );
     expect(conflict.binding.unavailableSkills[0]).toMatchObject({
       failureCode: "skill_ambiguous",
@@ -242,7 +438,7 @@ describe("standard project and user Skill snapshots", () => {
       workspace,
       ["disabled-brief"],
       undefined,
-      { userHome: home },
+      isolatedOptions(home),
     );
     expect(disabled.binding.unavailableSkills[0]).toMatchObject({
       failureCode: "skill_disabled",
@@ -259,13 +455,13 @@ describe("standard project and user Skill snapshots", () => {
       workspace,
       ["legacy-only"],
       undefined,
-      { userHome: home },
+      isolatedOptions(home),
     );
     const missing = await buildStandardSkillSnapshot(
       workspace,
       ["missing-skill"],
       undefined,
-      { userHome: home },
+      isolatedOptions(home),
     );
 
     expect(legacy.binding.schemaVersion).toBe(1);
@@ -288,7 +484,7 @@ describe("standard project and user Skill snapshots", () => {
 
     await expect(
       buildStandardSkillSnapshot(workspace, ["linked-brief"], undefined, {
-        userHome: home,
+        ...isolatedOptions(home),
       }),
     ).rejects.toMatchObject({
       code: "standard_catalog_untrusted",
@@ -303,7 +499,7 @@ describe("standard project and user Skill snapshots", () => {
 
     await expect(
       buildStandardSkillSnapshot(workspace, ["brief"], controller.signal, {
-        userHome: home,
+        ...isolatedOptions(home),
       }),
     ).rejects.toThrow("cancel-standard-snapshot");
     await expect(
@@ -311,7 +507,7 @@ describe("standard project and user Skill snapshots", () => {
         workspace,
         Array.from({ length: 65 }, (_, index) => `brief-${index}`),
         undefined,
-        { userHome: home },
+        isolatedOptions(home),
       ),
     ).rejects.toBeInstanceOf(StandardSkillSnapshotError);
   });
@@ -324,7 +520,7 @@ describe("standard project and user Skill snapshots", () => {
     await mkdir(path.join(home, ".agents", "skills", "Bad_Name"));
 
     await expect(
-      discoverStandardSkillNames(workspace, { userHome: home }),
+      discoverStandardSkillNames(workspace, isolatedOptions(home)),
     ).resolves.toEqual(["alpha-brief", "user-brief", "zeta-brief"]);
   });
 
@@ -336,7 +532,7 @@ describe("standard project and user Skill snapshots", () => {
     await putSkill(path.join(home, ".agents"), "shared-summary");
 
     await expect(
-      inspectStandardSkillCatalog(workspace, { userHome: home }),
+      inspectStandardSkillCatalog(workspace, isolatedOptions(home)),
     ).resolves.toEqual([
       {
         name: "project-summary",

@@ -8,6 +8,7 @@ import type {
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
+  inferModelHarnessTaskPhases,
   resolveModelHarnessResolution,
   type ModelHarnessResolution,
   type ModelHarnessTaskPhase,
@@ -24,6 +25,7 @@ export type {
 } from "./model-harness-receipt.js";
 export {
   formatModelHarnessPrompt,
+  inferModelHarnessTaskPhases,
   resolveModelHarnessProfile,
   resolveModelHarnessResolution,
 } from "./model-harness-resolution.js";
@@ -42,21 +44,50 @@ export interface PreparedModelHarnessCall {
   receipt: ModelHarnessResolutionReceipt;
 }
 
-const CONTROL_TOOLS = [
+const PROTECTED_CONTROL_TOOLS = [
   "request_operator_decision",
   "create_plan",
   "update_plan_step",
-  "replan_plan",
-  "update_plan_artifact",
-  "record_run_milestone",
   "skill_load",
   "skill_resource",
   "capability",
-  "mcp_schema_search",
   "delegate_task",
+  "record_run_milestone",
+  "mcp_schema_search",
+];
+const CONTROL_TOOLS = [
+  ...PROTECTED_CONTROL_TOOLS,
+  "replan_plan",
+  "update_plan_artifact",
   "candidate_file",
   "subagent_worktree_apply",
 ];
+const PHASE_CORE_TOOLS: Record<ModelHarnessTaskPhase, readonly string[]> = {
+  browser: ["browser"],
+  research: ["web_search", "web_fetch"],
+  data: ["inspect_data"],
+  coding: [
+    "list_files",
+    "read_file",
+    "search_files",
+    "apply_patch",
+    "verify_workspace",
+    "workspace_process",
+    "web_search",
+    "web_fetch",
+  ],
+  general: [
+    "list_files",
+    "read_file",
+    "search_files",
+    "inspect_code",
+    "apply_patch",
+    "verify_workspace",
+    "workspace_process",
+    "web_search",
+    "web_fetch",
+  ],
+};
 const TOOL_PRIORITY: Record<ModelHarnessTaskPhase, readonly string[]> = {
   coding: [
     "list_files",
@@ -140,8 +171,32 @@ const PHASE_REQUIRED_TOOLS: Record<ModelHarnessTaskPhase, readonly string[]> = {
   browser: ["browser"],
   research: ["web_search", "web_fetch"],
   data: ["inspect_data"],
-  coding: ["read_file", "apply_patch", "verify_workspace"],
-  general: ["read_file"],
+  coding: [
+    "list_files",
+    "read_file",
+    "search_files",
+    "apply_patch",
+    "verify_workspace",
+    "run_command",
+    "workspace_process",
+    "node_debugger",
+    "web_search",
+    "web_fetch",
+  ],
+  general: [
+    "list_files",
+    "read_file",
+    "search_files",
+    "inspect_code",
+    "inspect_data",
+    "sqlite_query",
+    "web_search",
+    "web_fetch",
+    "apply_patch",
+    "verify_workspace",
+    "run_command",
+    "workspace_process",
+  ],
 };
 
 export function prepareModelHarnessCall(input: {
@@ -198,7 +253,7 @@ export function prepareModelHarnessCall(input: {
     model: input.model.id,
     modelApi: input.model.api,
     attempt: input.attempt,
-    intents: [resolution.taskPhase],
+    intents: inferModelHarnessTaskPhases(input.context.messages),
     taskPhase: resolution.taskPhase,
     environmentCapabilities: resolution.environmentCapabilities,
     guidanceSha256: sha256(resolution.guidance),
@@ -242,20 +297,28 @@ function selectTools(
   if (tools.length <= resolution.maxActiveTools)
     return { active: tools, omitted: [] };
   const available = new Set(tools.map((tool) => tool.name));
-  const protectedNames = unique([
-    ...CONTROL_TOOLS,
-    ...names.filter((name) => name.startsWith("mcp__")).sort(),
-    ...PHASE_REQUIRED_TOOLS[resolution.taskPhase],
-  ]).filter((name) => available.has(name));
-  if (protectedNames.length > resolution.maxActiveTools) {
+  const taskPhases = inferModelHarnessTaskPhases(messages);
+  const hardProtectedNames = unique(PROTECTED_CONTROL_TOOLS).filter((name) =>
+    available.has(name),
+  );
+  if (hardProtectedNames.length > resolution.maxActiveTools) {
     throw new Error(
-      `Model Harness protected tools exceed the active-tool limit: ${protectedNames.length}/${resolution.maxActiveTools}`,
+      `Model Harness protected tools exceed the active-tool limit: ${hardProtectedNames.length}/${resolution.maxActiveTools}`,
     );
   }
+  const protectedNames = unique([
+    ...hardProtectedNames,
+    ...taskPhases.flatMap((phase) => PHASE_CORE_TOOLS[phase]),
+    ...usedToolNames(messages),
+    ...taskPhases.flatMap((phase) => PHASE_REQUIRED_TOOLS[phase]),
+  ])
+    .filter((name) => available.has(name))
+    .slice(0, resolution.maxActiveTools);
   const ranked = unique([
     ...protectedNames,
     ...usedToolNames(messages),
-    ...TOOL_PRIORITY[resolution.taskPhase],
+    ...taskPhases.flatMap((phase) => TOOL_PRIORITY[phase]),
+    ...CONTROL_TOOLS,
     ...TOOL_PRIORITY.general,
     ...names.slice().sort((left, right) => left.localeCompare(right)),
   ])
@@ -270,7 +333,7 @@ function selectTools(
 
 function usedToolNames(messages: Context["messages"]): string[] {
   return unique(
-    messages.flatMap((message) => {
+    messages.toReversed().flatMap((message) => {
       if (message.role === "toolResult")
         return [message.toolName, ...(message.addedToolNames ?? [])];
       if (message.role !== "assistant") return [];

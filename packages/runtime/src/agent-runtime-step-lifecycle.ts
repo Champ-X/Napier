@@ -26,6 +26,8 @@ import { modernRunConfiguration } from "./effective-run-profile.js";
 import { formatEditDialectGuidance } from "./edit-dialect-adapter.js";
 import type { ModelHarnessExperimentProfile } from "./model-harness-experiment-profile.js";
 import type { ToolProtocolRegistry } from "./tool-protocol-registry.js";
+import { formatWorkspaceToolGuidance } from "./workspace-tool-guidance.js";
+import { formatPlanToolGuidance } from "./agent-runtime-utils.js";
 
 export function wrapAgentToolsWithLifecycle(input: {
   tools: readonly AgentTool[];
@@ -109,8 +111,8 @@ export function createRuntimeCompiledPromptBuilder(input: {
   browserInteractionConfirmationAvailable: boolean;
   resolvedSystemPrompt: string;
   skillCatalog: string;
-  workspaceToolGuidance: string;
-  planToolGuidance: string;
+  availableToolNames: readonly string[];
+  onActiveToolNames?(names: ReadonlySet<string>): void;
   sourceContinuityGuidance: string;
   importedLedgerBoundary: string;
   checkpoint: string;
@@ -129,8 +131,10 @@ export function createRuntimeCompiledPromptBuilder(input: {
     const activeToolNames = (requestContext.tools ?? []).map(
       (tool) => tool.name,
     );
+    input.onActiveToolNames?.(new Set(activeToolNames));
     const effectiveCapabilities = createEffectiveCapabilitiesPromptBuilder({
       requestedTools: input.profile.enabledTools,
+      availableTools: input.availableToolNames,
       toolPolicy: input.profile.toolPolicy,
       sandboxId: input.sandboxId,
       restrictedReadOnlyExecution: input.restrictedReadOnlyExecution,
@@ -150,7 +154,7 @@ export function createRuntimeCompiledPromptBuilder(input: {
       skillCatalog: input.skillCatalog,
       effectiveCapabilities,
       workspaceToolGuidance: [
-        input.workspaceToolGuidance,
+        formatWorkspaceToolGuidance(requestContext.tools ?? []),
         formatEditDialectGuidance({
           model: requestModel,
           availableToolNames: activeToolNames,
@@ -158,7 +162,7 @@ export function createRuntimeCompiledPromptBuilder(input: {
       ]
         .filter(Boolean)
         .join("\n\n"),
-      planToolGuidance: input.planToolGuidance,
+      planToolGuidance: formatPlanToolGuidance(requestContext.tools ?? []),
       sourceContinuityGuidance: input.sourceContinuityGuidance,
       importedLedgerBoundary: input.importedLedgerBoundary,
       checkpoint: input.checkpoint,

@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
-import { mkdir, open, readFile, unlink } from "node:fs/promises";
+import { mkdir, open, readFile, stat, unlink } from "node:fs/promises";
 import path from "node:path";
+
+const INCOMPLETE_LOCK_STALE_MS = 5_000;
 
 export async function withWorkspacePathLock<T>(
   dataRoot: string,
@@ -130,16 +132,35 @@ async function removeAbandonedLock(lockPath: string): Promise<boolean> {
       pid?: unknown;
     };
   } catch (error) {
-    return errorCode(error) === "ENOENT";
+    if (errorCode(error) === "ENOENT") return true;
+    // A process can terminate after the exclusive file is created but before
+    // its owner record is written. Keep recent incomplete files to avoid
+    // stealing an in-flight lock, but recover old zero-byte/malformed files so
+    // one crash cannot permanently stall every later workspace mutation.
+    return removeStaleIncompleteLock(lockPath);
   }
   if (
     typeof record.pid !== "number" ||
     !Number.isSafeInteger(record.pid) ||
-    record.pid < 1 ||
-    isProcessAlive(record.pid)
+    record.pid < 1
   ) {
-    return false;
+    return removeStaleIncompleteLock(lockPath);
   }
+  if (isProcessAlive(record.pid)) return false;
+  return unlinkLock(lockPath);
+}
+
+async function removeStaleIncompleteLock(lockPath: string): Promise<boolean> {
+  try {
+    const metadata = await stat(lockPath);
+    if (Date.now() - metadata.mtimeMs < INCOMPLETE_LOCK_STALE_MS) return false;
+  } catch (error) {
+    return errorCode(error) === "ENOENT";
+  }
+  return unlinkLock(lockPath);
+}
+
+async function unlinkLock(lockPath: string): Promise<boolean> {
   try {
     await unlink(lockPath);
     return true;

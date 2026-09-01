@@ -218,11 +218,23 @@ function sourceRoot(source: unknown, root: unknown): boolean {
   if (!STANDARD_SKILL_ROOT_KINDS.includes(root as StandardSkillRootKind)) {
     return false;
   }
-  return source === (root === "user_standard" ? "user" : "project");
+  return (
+    source ===
+    (root === "user_standard"
+      ? "user"
+      : root === "bundled_standard"
+        ? "bundled"
+        : "project")
+  );
 }
 
 function rootKinds(value: unknown): value is StandardSkillRootKind[] {
-  if (!Array.isArray(value) || value.length > 3) return false;
+  if (
+    !Array.isArray(value) ||
+    value.length > STANDARD_SKILL_ROOT_KINDS.length
+  ) {
+    return false;
+  }
   const indexes = value.map((root) =>
     STANDARD_SKILL_ROOT_KINDS.indexOf(root as StandardSkillRootKind),
   );

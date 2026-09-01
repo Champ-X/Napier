@@ -1,5 +1,6 @@
 import type { ThreadSummary } from "@napier/contracts";
 import { MessageSquareText } from "lucide-react";
+import { memo } from "react";
 
 import {
   formatRelativeThreadTime,
@@ -13,7 +14,7 @@ export interface WorkspaceThreadRowProps {
   onSelect(threadId: string): void;
 }
 
-export function WorkspaceThreadRow({
+export const WorkspaceThreadRow = memo(function WorkspaceThreadRow({
   thread,
   active = false,
   onSelect,
@@ -40,7 +41,7 @@ export function WorkspaceThreadRow({
       <ThreadStatusDot status={thread.status} />
     </button>
   );
-}
+});
 
 function ThreadStatusDot({ status }: { status: ThreadSummary["status"] }) {
   if (status === "idle") return null;

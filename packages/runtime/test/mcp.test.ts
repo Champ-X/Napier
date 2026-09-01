@@ -210,6 +210,64 @@ describe("McpExtensionManager", () => {
     ]);
   });
 
+  it("keeps multi-match MCP discovery atomic until one exact schema is selected", async () => {
+    const store = await createStore();
+    const agent = store.listAgents()[0]!;
+    let extension = await store.createMcpExtension({
+      name: "Research records",
+      transport: {
+        type: "streamable_http",
+        url: "https://example.com/mcp",
+      },
+      requestedCapabilities: ["external.read"],
+    });
+    extension = await store.reviewExtension(extension.id, {
+      action: "approve",
+    });
+    const fake = createFakeClient({
+      tools: [{ name: "search" }, { name: "summarize" }],
+    });
+    const manager = new McpExtensionManager({
+      store,
+      createClient: async () => fake.client,
+      validateEndpoint: async () => undefined,
+    });
+    extension = await manager.connect(extension.id);
+    for (const name of ["search", "summarize"]) {
+      extension = await store.reviewMcpTool(extension.id, name, {
+        action: "approve",
+        effect: "read",
+      });
+    }
+    await store.setExtensionEnabled(extension.id, agent.id, true);
+    const search = manager.createDeferredAgentTools(agent.id).initialTools[0]!;
+
+    const discovered = await search.execute("schema-discovery", {
+      query: "research records",
+    });
+    expect(discovered.addedToolNames).toBeUndefined();
+    expect(discovered.details).toEqual(
+      expect.objectContaining({
+        activation: "discovery_only",
+        activatedToolNames: [],
+      }),
+    );
+    expect(discovered.content[0]?.text).toContain(
+      "Discovery only: no schema was loaded",
+    );
+
+    const activated = await search.execute("schema-activation", {
+      toolName: "mcp__research_records__search",
+    });
+    expect(activated.addedToolNames).toEqual(["mcp__research_records__search"]);
+    expect(activated.details).toEqual(
+      expect.objectContaining({
+        activation: "activated",
+        activatedToolNames: ["mcp__research_records__search"],
+      }),
+    );
+  });
+
   it("requires unrestricted policy for reviewed external writes", async () => {
     const store = await createStore();
     const agent = store.listAgents()[0]!;

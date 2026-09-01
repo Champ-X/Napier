@@ -4,6 +4,9 @@ import { copy } from "./copy";
 import { getLocale } from "./locale";
 import { workspaceTreeCopy as t } from "./workspace-tree-copy";
 
+const relativeTimeFormats = new Map<string, Intl.RelativeTimeFormat>();
+const dateFormats = new Map<string, Intl.DateTimeFormat>();
+
 export function threadPreview(thread: ThreadSummary): string {
   const preview = thread.lastMessage
     .replace(/[*_`#>|]/gu, "")
@@ -23,7 +26,7 @@ export function formatRelativeThreadTime(
   if (!Number.isFinite(timestamp)) return value;
   const elapsed = Math.max(0, now - timestamp);
   const locale = getLocale() === "zh" ? "zh-CN" : "en";
-  const relative = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+  const relative = relativeTimeFormat(locale);
   if (elapsed < 60_000) return relative.format(0, "second");
   if (elapsed < 3_600_000) {
     return relative.format(-Math.floor(elapsed / 60_000), "minute");
@@ -34,10 +37,26 @@ export function formatRelativeThreadTime(
   if (elapsed < 2_592_000_000) {
     return relative.format(-Math.floor(elapsed / 86_400_000), "day");
   }
-  return new Intl.DateTimeFormat(locale, {
+  return dateFormat(locale).format(new Date(timestamp));
+}
+
+function relativeTimeFormat(locale: string): Intl.RelativeTimeFormat {
+  const cached = relativeTimeFormats.get(locale);
+  if (cached) return cached;
+  const created = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+  relativeTimeFormats.set(locale, created);
+  return created;
+}
+
+function dateFormat(locale: string): Intl.DateTimeFormat {
+  const cached = dateFormats.get(locale);
+  if (cached) return cached;
+  const created = new Intl.DateTimeFormat(locale, {
     month: "short",
     day: "numeric",
-  }).format(new Date(timestamp));
+  });
+  dateFormats.set(locale, created);
+  return created;
 }
 
 export function threadStatusLabel(status: ThreadSummary["status"]): string {

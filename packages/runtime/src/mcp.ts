@@ -71,6 +71,8 @@ interface McpToolDetails {
 }
 
 interface McpSchemaSearchDetails {
+  activation: "activated" | "discovery_only" | "no_match";
+  activatedToolNames: string[];
   matchedTools: Array<{
     extensionId: string;
     extensionName: string;
@@ -271,11 +273,21 @@ export class McpExtensionManager {
           ),
           input,
         );
-        const addedToolNames = matches.map((entry) => entry.tool.directName);
-        const text = formatMcpSchemaSearchResult(matches);
+        const addedToolNames =
+          matches.length === 1
+            ? matches.map((entry) => entry.tool.directName)
+            : [];
+        const text = formatMcpSchemaSearchResult(matches, addedToolNames);
         return {
           content: [{ type: "text", text }],
           details: {
+            activation:
+              matches.length === 0
+                ? "no_match"
+                : addedToolNames.length === 1
+                  ? "activated"
+                  : "discovery_only",
+            activatedToolNames: addedToolNames,
             matchedTools: matches.map(({ extension, tool }) => ({
               extensionId: extension.id,
               extensionName: extension.name,
@@ -766,7 +778,10 @@ function normalizeSearchTerm(value: string | undefined): string {
   return value?.replace(/\s+/g, " ").trim().toLowerCase() ?? "";
 }
 
-function formatMcpSchemaSearchResult(matches: McpAgentToolEntry[]): string {
+function formatMcpSchemaSearchResult(
+  matches: McpAgentToolEntry[],
+  activatedToolNames: string[],
+): string {
   if (matches.length === 0) {
     return [
       "No approved external MCP tools matched the schema search.",
@@ -775,7 +790,9 @@ function formatMcpSchemaSearchResult(matches: McpAgentToolEntry[]): string {
   }
   return [
     `Matched ${matches.length} approved external MCP tool${matches.length === 1 ? "" : "s"}.`,
-    `Loaded for the next turn: ${matches.map(({ tool }) => tool.directName).join(", ")}`,
+    activatedToolNames.length === 1
+      ? `Loaded for the next turn: ${activatedToolNames[0]}`
+      : "Discovery only: no schema was loaded because the query matched multiple tools. Call mcp_schema_search again with one exact toolName or schemaSha256.",
     ...matches.map(({ extension, tool }, index) => {
       const schema = JSON.stringify(tool.inputSchema, null, 2);
       const truncated = schema.length > MAX_SCHEMA_PREVIEW_CHARS;

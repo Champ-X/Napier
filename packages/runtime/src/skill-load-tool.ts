@@ -312,16 +312,24 @@ function errorMessage(error: unknown): string {
 }
 function skillEntryOrigin(value: unknown):
   | {
-      source: "project" | "user";
+      source: "project" | "user" | "bundled";
       rootKind: StandardSkillRootKind;
     }
   | undefined {
   const entry = record(value);
   if (
-    (entry?.source === "project" || entry?.source === "user") &&
+    (entry?.source === "project" ||
+      entry?.source === "user" ||
+      entry?.source === "bundled") &&
     (entry.rootKind === "project_legacy" ||
       entry.rootKind === "project_standard" ||
-      entry.rootKind === "user_standard")
+      entry.rootKind === "user_standard" ||
+      entry.rootKind === "bundled_standard") &&
+    ((entry.source === "project" &&
+      (entry.rootKind === "project_legacy" ||
+        entry.rootKind === "project_standard")) ||
+      (entry.source === "user" && entry.rootKind === "user_standard") ||
+      (entry.source === "bundled" && entry.rootKind === "bundled_standard"))
   ) {
     return {
       source: entry.source,

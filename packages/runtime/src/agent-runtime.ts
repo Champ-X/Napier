@@ -72,7 +72,6 @@ import {
   controlMessageEventKey,
   createRunProgressMessageEvent,
   delay,
-  formatPlanToolGuidance,
   OperatorDecisionPendingError,
   assertPromptImageCapability,
   promptUserContent,
@@ -105,6 +104,10 @@ import {
 import { agentToolResultText } from "./agent-tool-result-text.js";
 import { createAgentToolResultFinalizer } from "./agent-tool-result-boundary.js";
 import { createAgentToolPreflight } from "./agent-tool-preflight.js";
+import {
+  unresolvedCapabilityClaim,
+  type UnresolvedCapabilityClaim,
+} from "./capability-availability-guard.js";
 import { createCapabilityCatalogTool } from "./capability-catalog.js";
 import { ToolProtocolRegistry } from "./tool-protocol-registry.js";
 import { createGovernedCodeBridgeBinding } from "./governed-code-bridge.js";
@@ -119,7 +122,6 @@ export { buildRunRecoveryPrompt } from "./run-recovery-prompt.js";
 import { buildRunRecoveryPrompt } from "./run-recovery-prompt.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
-import { formatWorkspaceToolGuidance } from "./workspace-tool-guidance.js";
 import {
   isWorkflowRunSource,
   WORKFLOW_NODE_EXECUTION,
@@ -192,7 +194,7 @@ import { ModelRegistry } from "./models.js";
 import { ModelRouter, type ModelRouteSession } from "./model-route.js";
 import { createId, createProcessLeaseOwnerId } from "./ids.js";
 import {
-  authorizeInternalResearchRecoveryIf,
+  authorizeInternalCapabilityPresetRecoveryIf,
   resolvePromptCapabilityProfile,
 } from "./internal-research-recovery-authorization.js";
 import {
@@ -261,8 +263,32 @@ interface ActiveRun {
   abort: () => void;
   source: RunInvocationSource;
 }
-type TurnSource = RunInvocationSource | "goal_continuation" | "advisor_correction";
+type TurnSource =
+  | RunInvocationSource
+  | "goal_continuation"
+  | "advisor_correction"
+  | "capability_recovery";
+
+class CapabilityRecoveryRequiredError extends Error {
+  constructor(readonly prompt: string) {
+    super("The model response made a contradicted capability claim");
+    this.name = "CapabilityRecoveryRequiredError";
+  }
+}
+
+function formatCapabilityRecoveryPrompt(
+  claim: UnresolvedCapabilityClaim,
+): string {
+  return [
+    "Internal capability recovery redirect: the previous draft was rejected because it contradicted the effective tool surface.",
+    `Active capabilities that have no unresolved execution failure: ${claim.usableNow.join(", ") || "none"}.`,
+    `Configured capabilities discoverable through the capability catalog: ${claim.discoverable.join(", ") || "none"}.`,
+    "Continue the original operator task. Call one active tool now; if the needed schema is hidden, call capability with its exact cap://tools/<tool> URI and use it on the next step.",
+    "Do not repeat the unavailable-capability claim or ask the operator unless an actual current tool call establishes a concrete blocker.",
+  ].join("\n");
+}
 const RUN_LEASE_TTL_MS = 60_000, RUN_LEASE_HEARTBEAT_MS = 20_000;
+const MAX_ACTIVATED_DEFERRED_TOOL_SCHEMAS = 8;
 export class AgentRuntime {
   private readonly activeRuns = new Map<string, Map<string, ActiveRun>>();
   private readonly workerId = createId("worker");
@@ -337,14 +363,16 @@ export class AgentRuntime {
     );
     const thread = this.store.getThread(options.threadId);
     const invocationSource = requestedSource ?? "user";
-    const { profile: effectiveAgentSnapshot, internalResearchRecovery } =
-      await resolvePromptCapabilityProfile(
-        this.store,
-        this.verificationSandbox,
-        thread.agentId,
-        options,
-        invocationSource,
-      );
+    const {
+      profile: effectiveAgentSnapshot,
+      internalCapabilityPresetRecovery,
+    } = await resolvePromptCapabilityProfile(
+      this.store,
+      this.verificationSandbox,
+      thread.agentId,
+      options,
+      invocationSource,
+    );
     const environmentExecution = await negotiateEnvironmentExecution(
       effectiveAgentSnapshot,
       this.verificationSandbox,
@@ -435,9 +463,9 @@ export class AgentRuntime {
         : {}),
     };
     const leasedRun = await this.store.createLeasedRun(
-      authorizeInternalResearchRecoveryIf(
+      authorizeInternalCapabilityPresetRecoveryIf(
         createRunInput,
-        internalResearchRecovery,
+        internalCapabilityPresetRecovery,
       ),
       {
         ownerId: this.runLeaseOwnerId,
@@ -590,6 +618,20 @@ export class AgentRuntime {
               profile: agentProfile,
               sandbox: this.verificationSandbox,
               processes: this.workspaceProcesses,
+              createInheritedTools: () =>
+                this.capabilities.createTools({
+                  profile: agentProfile,
+                  threadId: run.threadId,
+                  runId: run.id,
+                  ...(projectSkillSnapshot
+                    ? { projectSkillSnapshot }
+                    : {}),
+                  skillLoadAllowed:
+                    firstClassSkillLoading &&
+                    (invocationSource === "user" ||
+                      invocationSource === "recovery"),
+                  browserInteractionConfirmationAllowed: false,
+                }),
               worktreeOwnerId: this.workerId,
               parentSignal: abortController.signal,
               ...(options.onEvent ? { onEvent: options.onEvent } : {}),
@@ -654,6 +696,7 @@ export class AgentRuntime {
         let currentText = text;
         let currentSource = source;
         let correctionAttempt = 0;
+        let capabilityRecoveryAttempt = 0;
         let correctionRequest: ModelAdvisorCorrectionRequest | undefined;
         while (true) {
           try {
@@ -676,6 +719,13 @@ export class AgentRuntime {
             }
             return response;
           } catch (error) {
+            if (error instanceof CapabilityRecoveryRequiredError) {
+              if (capabilityRecoveryAttempt >= 1) throw error;
+              capabilityRecoveryAttempt += 1;
+              currentText = error.prompt;
+              currentSource = "capability_recovery";
+              continue;
+            }
             const block =
               error instanceof ModelAdvisorBlockedError ||
               error instanceof CombinedModelAdvisorBlockedError
@@ -1357,21 +1407,29 @@ export class AgentRuntime {
       deferred: deferredExtensionTools,
     });
     const definitions = toolSelection.immediate.concat(toolSelection.deferred); const toolProtocol = new ToolProtocolRegistry(definitions);
+    const runtimeAvailableModelToolNames = new Set(
+      definitions.map((tool) => tool.name),
+    );
     tools = toolSelection.immediate; deferredExtensionTools = toolSelection.deferred;
     const lifecyclePipelines = this.lifecycles.current(); let stepIndex = 0;
-    let activeStepToolNames = new Set(tools.map((tool) => tool.name));
+    let activeModelToolNames = new Set(tools.map((tool) => tool.name));
     const wrapTools = (candidates: readonly AgentTool[]) => wrapAgentToolsWithLifecycle({
       tools: candidates, registry: toolProtocol, lifecycles: lifecyclePipelines,
       run, stepIndex: () => stepIndex,
     });
     tools = wrapTools(tools);
     deferredExtensionTools = wrapTools(deferredExtensionTools);
+    let activatedDeferredToolNames: string[] = [];
     const toolResultLifecycle = toolLife(this,
       [budget, run, tools, deferredExtensionTools, definitions],
       [toolResultReplay, onEvent, toolProtocol]);
+    // The deadline lifecycle replaces deferred entries in place. Build the
+    // activation map afterwards so dynamically exposed MCP/subagent tools
+    // cannot bypass cancellation, settlement journaling, or outer deadlines.
+    const deferredToolByName = new Map(
+      deferredExtensionTools.map((tool) => [tool.name, tool]),
+    );
     const progress = await progLife(this, budget, run, tools, prompt, onEvent);
-    const workspaceToolGuidance = formatWorkspaceToolGuidance(tools);
-    const planToolGuidance = formatPlanToolGuidance(tools);
     const initialPromptMessages = providerMessages([
       ...history.messages,
       {
@@ -1412,8 +1470,10 @@ export class AgentRuntime {
         this.browserInteractionConfirmations.available,
       resolvedSystemPrompt,
       skillCatalog: skillCatalogOverlay,
-      workspaceToolGuidance,
-      planToolGuidance,
+      availableToolNames: definitions.map((tool) => tool.name),
+      onActiveToolNames: (names) => {
+        activeModelToolNames = new Set(names);
+      },
       sourceContinuityGuidance,
       importedLedgerBoundary,
       checkpoint: checkpointContext,
@@ -1448,9 +1508,8 @@ export class AgentRuntime {
       lifecycles: lifecyclePipelines,
       run,
       toolSetSha256: toolSelection.receipt.activeToolSetSha256, registry: toolProtocol,
-      onStep: (index, names) => {
+      onStep: (index) => {
         stepIndex = index;
-        activeStepToolNames = names;
       },
     });
     const toolPreflight = createAgentToolPreflight({
@@ -1465,7 +1524,8 @@ export class AgentRuntime {
         ...(onEvent ? { onEvent } : {}),
       },
       turnPipeline, budget, progress, lifecycle: toolResultLifecycle,
-      activeToolNames: () => activeStepToolNames,
+      activeToolNames: () => activeModelToolNames,
+      runtimeAvailableToolNames: () => runtimeAvailableModelToolNames,
       toolLoopGuardPolicy,
       ...(onEvent ? { onEvent } : {}),
     });
@@ -1473,7 +1533,7 @@ export class AgentRuntime {
     codeBridge.attach({
       store: this.store, displays: this.toolDisplays,
       run, tools: [...tools, ...deferredExtensionTools], registry: toolProtocol,
-      activeToolNames: () => activeStepToolNames,
+      activeToolNames: () => activeModelToolNames,
       assertBudget: () => budget.assertCanStartAuxiliaryCall(),
       preflight: toolPreflight.governed,
       finalize: afterToolCall,
@@ -1631,19 +1691,32 @@ export class AgentRuntime {
         prepareNextTurn: async ({ context, toolResults }) => {
           let nextTools = context.tools;
           if (!finalization.active && deferredExtensionTools.length > 0) {
-            const requestedNames = new Set(
-              toolResults.flatMap((result) => result.addedToolNames ?? []),
-            );
-            const currentNames = new Set(
-              (context.tools ?? []).map((tool) => tool.name),
-            );
-            const additions = deferredExtensionTools.filter(
-              (tool) =>
-                requestedNames.has(tool.name) && !currentNames.has(tool.name),
-            );
-            if (additions.length > 0) {
-              nextTools = [...(context.tools ?? []), ...additions];
+            const requestedNames = [
+              ...new Set(
+                toolResults.flatMap(
+                  (result) => result.addedToolNames ?? [],
+                ),
+              ),
+            ];
+            for (const name of requestedNames) {
+              if (!deferredToolByName.has(name)) continue;
+              activatedDeferredToolNames = [
+                ...activatedDeferredToolNames.filter(
+                  (candidate) => candidate !== name,
+                ),
+                name,
+              ].slice(-MAX_ACTIVATED_DEFERRED_TOOL_SCHEMAS);
             }
+            const baseTools = (context.tools ?? []).filter(
+              (tool) => !deferredToolByName.has(tool.name),
+            );
+            nextTools = [
+              ...baseTools,
+              ...activatedDeferredToolNames.flatMap((name) => {
+                const tool = deferredToolByName.get(name);
+                return tool ? [tool] : [];
+              }),
+            ];
           }
           let nextDelegationLedgerProjection = delegationLedgerProjection;
           let nextMilestoneContextProjection = milestoneContextProjection;
@@ -1831,6 +1904,8 @@ export class AgentRuntime {
           preRecordedControlMessages,
           currentModelContextEnvelope,
           toolResultLifecycle,
+          activeModelToolNames,
+          runtimeAvailableModelToolNames,
           privateSourceContent,
           deltaBatcher,
           onEvent,
@@ -1864,6 +1939,8 @@ export class AgentRuntime {
     preRecordedControlMessages: Map<string, number>,
     modelContextEnvelope: ModelContextEnvelopeReceipt | undefined,
     toolResultLifecycle: AgentToolResultLifecycle,
+    activeToolNames: ReadonlySet<string>,
+    runtimeAvailableToolNames: ReadonlySet<string>,
     privateSourceContent: PrivateSourceModelContentBoundary,
     deltaBatcher: ModelDeltaBatcher,
     onEvent?: EventSink,
@@ -1952,6 +2029,22 @@ export class AgentRuntime {
           (event.message.stopReason === "aborted"
             ? "Model call was aborted."
             : "Model call failed.");
+        const capabilityClaim =
+          !hasToolCalls && !modelFailure
+            ? unresolvedCapabilityClaim({
+                args: text,
+                events: await this.store.listRunEvents(run.id),
+                activeToolNames,
+                runtimeAvailableToolNames,
+              })
+            : undefined;
+        const capabilityRecoveryClaim =
+          capabilityClaim &&
+          (capabilityClaim.usableNow.length > 0 ||
+            (activeToolNames.has("capability") &&
+              capabilityClaim.discoverable.length > 0))
+            ? capabilityClaim
+            : undefined;
         const responseEvent = await this.record(
           {
             threadId: run.threadId,
@@ -1985,6 +2078,12 @@ export class AgentRuntime {
               usage,
               usageAccounting,
               toolCalls: toJsonValue(toolCalls),
+              ...(capabilityRecoveryClaim
+                ? {
+                    responseDisposition:
+                      "capability_recovery_required" as const,
+                  }
+                : {}),
             },
           },
           onEvent,
@@ -2012,6 +2111,11 @@ export class AgentRuntime {
             onEvent,
           );
           return undefined;
+        }
+        if (capabilityRecoveryClaim) {
+          throw new CapabilityRecoveryRequiredError(
+            formatCapabilityRecoveryPrompt(capabilityRecoveryClaim),
+          );
         }
         await this.recordModelAdvisorGate(
           run,

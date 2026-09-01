@@ -10,6 +10,7 @@ import type { EventSink } from "./event-sink.js";
 import type { RunBudgetTracker } from "./run-budget.js";
 import { progTool, type RunProgressTracker } from "./run-progress-vector.js";
 import type { LocalStore } from "./store.js";
+import { unresolvedCapabilityClaim } from "./capability-availability-guard.js";
 import {
   createToolCallSha256,
   latestActiveToolLoopGuard,
@@ -37,6 +38,7 @@ export function createAgentToolPreflight(input: {
   progress: RunProgressTracker;
   lifecycle: AgentToolResultLifecycle;
   activeToolNames(): ReadonlySet<string>;
+  runtimeAvailableToolNames(): ReadonlySet<string>;
   toolLoopGuardPolicy: ToolLoopGuardPolicy;
   onEvent?: EventSink;
 }): {
@@ -56,7 +58,13 @@ export function createAgentToolPreflight(input: {
     reason: string,
     evidence: Record<string, JsonValue> = {},
   ): Promise<BeforeToolCallResult> => {
-    await captureBlockDisplay(input.displays, input.policy.run, toolCall, args, reason);
+    await captureBlockDisplay(
+      input.displays,
+      input.policy.run,
+      toolCall,
+      args,
+      reason,
+    );
     await append(input, "tool.blocked", {
       callId: toolCall.id,
       toolName: toolCall.name,
@@ -114,6 +122,33 @@ export function createAgentToolPreflight(input: {
           { harnessInterventionReason: "safety_block" },
         );
       }
+      if (toolCall.name === "request_operator_decision") {
+        const active = input.activeToolNames();
+        const claim = unresolvedCapabilityClaim({
+          args,
+          events: await input.store.listRunEvents(input.policy.run.id),
+          activeToolNames: active,
+          runtimeAvailableToolNames: input.runtimeAvailableToolNames(),
+        });
+        if (claim) {
+          if (claim.usableNow.length > 0) {
+            return recordBlock(
+              toolCall,
+              args,
+              `Do not request operator input for a capability blocker: ${claim.usableNow.join(", ")} is active on this step. Call the active tool and continue; only a recorded tool failure can establish an execution blocker.`,
+              { harnessInterventionReason: "capability_use_required" },
+            );
+          }
+          if (active.has("capability") && claim.discoverable.length > 0) {
+            return recordBlock(
+              toolCall,
+              args,
+              `Do not request operator input for a capability blocker: ${claim.discoverable.join(", ")} is configured but hidden by the focused model surface. Call capability with ${claim.discoverable.map((name) => `uri=${JSON.stringify(`cap://tools/${name}`)}`).join(" or ")}, then continue on the next step.`,
+              { harnessInterventionReason: "capability_discovery_required" },
+            );
+          }
+        }
+      }
       const exhaustion =
         toolCall.name === "request_operator_decision"
           ? input.budget.exhaustion
@@ -146,6 +181,8 @@ export function createAgentToolPreflight(input: {
   };
 }
 
+export { claimedUnavailableCapabilityTools } from "./capability-availability-guard.js";
+
 async function captureBlockDisplay(
   displays: AgentToolDisplayStore,
   run: { threadId: string; id: string },
@@ -154,7 +191,10 @@ async function captureBlockDisplay(
   reason: string,
 ): Promise<void> {
   const owner = {
-    threadId: run.threadId, runId: run.id, callId: toolCall.id, toolName: toolCall.name,
+    threadId: run.threadId,
+    runId: run.id,
+    callId: toolCall.id,
+    toolName: toolCall.name,
   };
   await displays.recordInput(owner, args).catch(() => undefined);
   await displays.recordOutput(owner, reason, true).catch(() => undefined);

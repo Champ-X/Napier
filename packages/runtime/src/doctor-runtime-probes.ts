@@ -149,7 +149,18 @@ export async function probeSkillsRuntime(
       undefined,
       options,
     );
-    const name = snapshot.binding.loadableSkillNames[0];
+    if (snapshot.binding.unavailableSkills.length > 0) {
+      throw new Error("At least one discovered Skill failed snapshot admission");
+    }
+    const name =
+      snapshot.binding.loadableSkillNames.find((candidate) => {
+        const entry = snapshot.entry(candidate);
+        return (
+          !entry ||
+          !("rootKind" in entry) ||
+          entry.rootKind !== "bundled_standard"
+        );
+      }) ?? snapshot.binding.loadableSkillNames[0];
     if (!name) throw new Error("No Skill passed snapshot admission");
     const access = createSkillAccessState();
     const result = await createSkillLoadTool(snapshot, access).execute(
@@ -167,7 +178,7 @@ export async function probeSkillsRuntime(
     return {
       status: "ready",
       code: "skills_ready",
-      message: `Production Skill loader loaded 1 of ${String(snapshot.binding.loadableSkillNames.length)} admitted project or user Skills; the derived resource tool is available and reads content only when referenced`,
+      message: `Production Skill loader loaded 1 of ${String(snapshot.binding.loadableSkillNames.length)} admitted project, user, or bundled Skills; the derived resource tool is available and reads content only when referenced`,
       evidence: {
         present: present.length,
         admitted: snapshot.binding.loadableSkillNames.length,
@@ -186,7 +197,7 @@ export async function probeSkillsRuntime(
       status: "unavailable",
       code: "skills_unavailable",
       message:
-        "Project or user Skills were found, but the production Skill loader could not safely load one",
+        "Project, user, or bundled Skills were found, but the production Skill loader could not safely admit and load them",
       evidence: { present: present.length, productionCall: false },
     };
   }

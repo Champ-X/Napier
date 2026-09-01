@@ -4,12 +4,15 @@ import {
   type SkillApplicationMode,
   type SkillLifecycleProjectionState,
 } from "@napier/contracts/skill-lifecycle";
-import type { StandardSkillRootKind } from "@napier/contracts/skill-load-standard";
+import type {
+  StandardSkillRootKind,
+  StandardSkillSource,
+} from "@napier/contracts/skill-load-standard";
 
 export interface SkillLifecycleEventTraceView {
   skillName: string;
   state: SkillLifecycleProjectionState;
-  source: "project" | "user" | "composite";
+  source: StandardSkillSource | "composite";
   rootKind?: StandardSkillRootKind;
   candidateRootKinds: StandardSkillRootKind[];
   applicationMode?: SkillApplicationMode;

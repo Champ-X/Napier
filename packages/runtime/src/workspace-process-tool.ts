@@ -4,6 +4,10 @@ import { Type, type Static } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
+  MAX_COMMAND_TIMEOUT_MS,
+  MIN_COMMAND_TIMEOUT_MS,
+} from "./command-execution.js";
+import {
   MAX_WORKSPACE_PROCESS_INPUT_BYTES,
   MAX_WORKSPACE_PROCESS_POLL_WAIT_MS,
   type WorkspaceProcessManager,
@@ -41,7 +45,10 @@ const workspaceProcessSchema = Type.Union([
         }),
       ),
       timeoutMs: Type.Optional(
-        Type.Integer({ minimum: 1_000, maximum: 120_000 }),
+        Type.Integer({
+          minimum: MIN_COMMAND_TIMEOUT_MS,
+          maximum: MAX_COMMAND_TIMEOUT_MS,
+        }),
       ),
       interactive: Type.Optional(Type.Boolean()),
       terminal: Type.Optional(
@@ -131,7 +138,7 @@ export function createWorkspaceProcessTool(
     name: "workspace_process",
     label: "Workspace process",
     description:
-      "Processes: start/input/poll/resize/cancel; text is redacted. Starts are read-only. Writes use preview_write (1-8 scopes) then start_write; reports Delta. A service exposes one health-checked OCI HTTP port on ephemeral 127.0.0.1 with outbound denied; bind 0.0.0.0. Host-direct has no isolation and rejects services.",
+      "Start/control Node or POSIX shell/CLI; shell takes one script, Node literal argv. Text is redacted; starts are read-only. Writes: preview_write (1-8 scopes), then start_write, with Delta. OCI service: one health-checked port, outbound denied. Host-direct has no isolation/enforced boundaries and rejects services.",
     parameters: workspaceProcessSchema,
     async execute(_toolCallId, input, signal) {
       assertExclusiveProcessIoMode(input);

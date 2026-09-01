@@ -1,5 +1,9 @@
 import { Type } from "typebox";
 
+import {
+  MAX_COMMAND_TIMEOUT_MS,
+  MIN_COMMAND_TIMEOUT_MS,
+} from "./command-execution.js";
 import { MAX_WORKSPACE_PROCESS_WRITE_SCOPES } from "./workspace-process-write-preview.js";
 import {
   MAX_TERMINAL_COLUMNS,
@@ -20,7 +24,10 @@ const cwd = Type.Optional(
   }),
 );
 const timeoutMs = Type.Optional(
-  Type.Integer({ minimum: 1_000, maximum: 120_000 }),
+  Type.Integer({
+    minimum: MIN_COMMAND_TIMEOUT_MS,
+    maximum: MAX_COMMAND_TIMEOUT_MS,
+  }),
 );
 const writePaths = Type.Array(
   Type.String({

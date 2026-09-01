@@ -20,6 +20,83 @@ afterEach(async () => {
 });
 
 describe("AgentRuntime manual Run recovery", () => {
+  it("replays an origin-bound temporary capability preset without allowing direct recovery escalation", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-preset-recovery-"));
+    temporaryRoots.push(root);
+    const store = new LocalStore({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot: path.join(root, "workspace"),
+    });
+    await store.initialize();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Full access recovery",
+      agentId: agent.id,
+    });
+    const interrupted = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+      model: { provider: "faux-prior", id: "faux-1" },
+      capabilityPreset: "full_access",
+    });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: interrupted.id,
+      type: "run.started",
+      category: "lifecycle",
+      visibility: "debug",
+      payload: { capabilityPreset: "full_access" },
+    });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: interrupted.id,
+      type: "message.user",
+      category: "message",
+      visibility: "user",
+      payload: { role: "user", text: "Resume the interrupted task." },
+    });
+    await store.finishRun(interrupted.id, "failed", {
+      outcome: "paused_budget",
+      error: "Delegation exceeded its outer tool deadline.",
+    });
+
+    const faux = fauxProvider({ provider: "faux-preset-recovery" });
+    faux.setResponses([
+      fauxAssistantMessage("Recovery reused the origin capability boundary."),
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(faux.provider);
+    const runtime = new AgentRuntime(store, registry);
+
+    await expect(
+      runtime.runPrompt({
+        threadId: thread.id,
+        text: "An unbound recovery must not escalate.",
+        source: "recovery",
+        capabilityPreset: "full_access",
+      }),
+    ).rejects.toThrow(
+      "Temporary Agent capability presets are available only for user Runs",
+    );
+
+    const resumed = await runtime.resumeInterruptedRun({
+      threadId: thread.id,
+      runId: interrupted.id,
+      model: { provider: "faux-preset-recovery", id: "faux-1" },
+    });
+
+    expect(resumed.status, resumed.error).toBe("completed");
+    expect(resumed.source).toBe("recovery");
+    expect(resumed.parentRunId).toBe(interrupted.id);
+    const started = (await store.listRunEvents(resumed.id)).find(
+      (event) => event.type === "run.started",
+    );
+    expect(started?.payload).toEqual(
+      expect.objectContaining({ capabilityPreset: "full_access" }),
+    );
+  });
+
   it("resumes an idle paused-budget Run as a linked recovery child", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-manual-recovery-"));
     temporaryRoots.push(root);

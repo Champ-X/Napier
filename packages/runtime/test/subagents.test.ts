@@ -8,13 +8,19 @@ import {
   fauxProvider,
   fauxToolCall,
 } from "@earendil-works/pi-ai";
+import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type { AgentProfile, SubagentLimits } from "@napier/contracts";
+import { Type } from "typebox";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ModelRegistry } from "../src/models.js";
 import { LocalStore } from "../src/store.js";
 import { SubagentCoordinator } from "../src/subagents.js";
 import { coderFailureContextSha256 } from "../src/subagents.js";
+import {
+  TOOL_MINIMUM_DEADLINE_MS,
+  type ToolMinimumDeadline,
+} from "../src/tool-deadline-policy.js";
 
 const temporaryRoots: string[] = [];
 
@@ -29,6 +35,7 @@ afterEach(async () => {
 async function createHarness(
   limits: Partial<SubagentLimits> = {},
   profileOverrides: Partial<AgentProfile> = {},
+  createInheritedTools?: () => AgentTool[],
 ) {
   const root = await mkdtemp(path.join(tmpdir(), "napier-subagent-"));
   temporaryRoots.push(root);
@@ -76,6 +83,7 @@ async function createHarness(
     run,
     profile,
     sandbox: { id: "unused", launch: vi.fn() },
+    ...(createInheritedTools ? { createInheritedTools } : {}),
     worktreeOwnerId: "worker_test_subagents",
     parentSignal: parentAbort.signal,
   });
@@ -111,12 +119,57 @@ function sha256(value: string): string {
 }
 
 describe("SubagentCoordinator", () => {
+  it("inherits parent research capabilities without recursive or root mutation tools", async () => {
+    const inherited = [
+      inheritedTool("web_search"),
+      inheritedTool("web_fetch"),
+      inheritedTool("browser"),
+      inheritedTool("skill_load"),
+      inheritedTool("apply_patch"),
+      inheritedTool("delegate_task"),
+      inheritedTool("run_command"),
+    ];
+    const { coordinator, faux } = await createHarness({}, {}, () => inherited);
+    faux.setResponses([
+      (context) => {
+        const toolNames = context.tools?.map((tool) => tool.name) ?? [];
+        expect(toolNames).toEqual(
+          expect.arrayContaining([
+            "list_files",
+            "web_search",
+            "web_fetch",
+            "browser",
+            "skill_load",
+          ]),
+        );
+        expect(toolNames).not.toEqual(
+          expect.arrayContaining([
+            "apply_patch",
+            "delegate_task",
+            "run_command",
+          ]),
+        );
+        return fauxAssistantMessage(typedResult("Research access inherited."));
+      },
+    ]);
+
+    await expect(
+      coordinator.createTool().execute("delegate-inherited", delegatedTask),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        details: expect.objectContaining({ status: "completed" }),
+      }),
+    );
+  });
+
   it("fails closed when direct control targets a terminal task", async () => {
     const { coordinator, faux, store, thread } = await createHarness();
     faux.setResponses([
       fauxAssistantMessage(typedResult("Terminal evidence collected.")),
     ]);
-    await coordinator.createTool().execute("delegate-terminal-control", delegatedTask);
+    await coordinator
+      .createTool()
+      .execute("delegate-terminal-control", delegatedTask);
     const task = store.listSubagentTasks(thread.id)[0]!;
 
     await expect(
@@ -126,7 +179,11 @@ describe("SubagentCoordinator", () => {
       }),
     ).rejects.toThrow("Subagent task is not active");
     await expect(
-      coordinator.cancelTask(task.id, task.revision, "Cancel after completion."),
+      coordinator.cancelTask(
+        task.id,
+        task.revision,
+        "Cancel after completion.",
+      ),
     ).rejects.toThrow("Subagent task is not active");
   });
 
@@ -218,6 +275,20 @@ describe("SubagentCoordinator", () => {
     expect(coordinator.createTool().description).toContain(
       "at most 12 total and 6 concurrent",
     );
+    expect(
+      (coordinator.createTool() as AgentTool & ToolMinimumDeadline)[
+        TOOL_MINIMUM_DEADLINE_MS
+      ],
+    ).toBe(730_000);
+    expect(
+      (
+        coordinator
+          .createSupervisorTools()
+          .find((tool) => tool.name === "subagent_collect") as
+          | (AgentTool & ToolMinimumDeadline)
+          | undefined
+      )?.[TOOL_MINIMUM_DEADLINE_MS],
+    ).toBe(730_000);
   });
 
   it("runs a coder in a private worktree and applies only its reviewed preview", async () => {
@@ -778,3 +849,16 @@ describe("SubagentCoordinator", () => {
     );
   });
 });
+
+function inheritedTool(name: string): AgentTool {
+  return {
+    name,
+    label: name,
+    description: `${name} fixture`,
+    parameters: Type.Object({}),
+    execute: async () => ({
+      content: [{ type: "text", text: `${name} result` }],
+      details: {},
+    }),
+  };
+}

@@ -45,6 +45,9 @@ export type RunHarnessInterventionReason =
   | "workflow_approval"
   | "approval_block"
   | "capability_block"
+  | "capability_use_required"
+  | "capability_discovery_required"
+  | "capability_recovery"
   | "safety_block"
   | "budget_pause"
   | "manual_recovery";

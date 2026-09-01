@@ -48,6 +48,7 @@ const FILES = [
   "scripts/benchmark-store-scale.mjs",
   "scripts/benchmark-trace-scale.mjs",
   "scripts/check-release-artifacts.mjs",
+  "scripts/copy-bundled-skills.mjs",
   "scripts/copy-sandbox-image.mjs",
   "scripts/create-agent-harness-acceptance-evidence.mjs",
   "scripts/create-harness-experiment-release-evidence.mjs",

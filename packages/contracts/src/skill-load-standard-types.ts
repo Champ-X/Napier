@@ -4,9 +4,10 @@ export const STANDARD_SKILL_ROOT_KINDS = [
   "project_legacy",
   "project_standard",
   "user_standard",
+  "bundled_standard",
 ] as const;
 export type StandardSkillRootKind = (typeof STANDARD_SKILL_ROOT_KINDS)[number];
-export type StandardSkillSource = "project" | "user";
+export type StandardSkillSource = "project" | "user" | "bundled";
 type Sha = string;
 
 export type StandardSkillRequestRecord =
@@ -116,7 +117,13 @@ export interface StandardSkillSnapshotManifestV2 {
   kind: "napier.standard-skill-snapshot-manifest";
   schemaVersion: 2;
   source: "composite";
-  trustOrigins: ["active_user_selected_project", "local_user_skill_store"];
+  trustOrigins:
+    | ["active_user_selected_project", "local_user_skill_store"]
+    | [
+        "active_user_selected_project",
+        "local_user_skill_store",
+        "napier_read_only_bundle",
+      ];
   workspaceIdentitySha256: Sha;
   trustPolicySha256: Sha;
   configuredSkillRequests: StandardSkillRequestRecord[];

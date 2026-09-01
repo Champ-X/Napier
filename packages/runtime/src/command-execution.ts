@@ -18,7 +18,7 @@ import {
 } from "./sandboxed-process.js";
 export const DEFAULT_COMMAND_TIMEOUT_MS = 30_000;
 export const MIN_COMMAND_TIMEOUT_MS = 1_000;
-export const MAX_COMMAND_TIMEOUT_MS = 120_000;
+export const MAX_COMMAND_TIMEOUT_MS = 30 * 60_000;
 export const MAX_COMMAND_ARGUMENTS = 64;
 export const MAX_COMMAND_ARGUMENT_CHARS = 2_048;
 export const COMMAND_ARGUMENT_PATTERN = "^[^\\u0000-\\u001f\\u007f]*$";

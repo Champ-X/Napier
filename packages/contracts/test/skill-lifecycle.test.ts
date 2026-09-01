@@ -17,6 +17,19 @@ describe("Skill lifecycle projection contract", () => {
       receiptContentSha256: "4".repeat(64),
     });
     expect(isSkillLifecycleProjectionV1(loaded)).toBe(true);
+    expect(
+      isSkillLifecycleProjectionV1(
+        seal({
+          ...base(),
+          state: "loaded" as const,
+          source: "bundled" as const,
+          rootKind: "bundled_standard" as const,
+          selectedSeq: 10,
+          terminalSeq: 12,
+          receiptContentSha256: "4".repeat(64),
+        }),
+      ),
+    ).toBe(true);
 
     const applicationMode = "software_change_verified" as const;
     const proofEventSeqs = [18, 24];

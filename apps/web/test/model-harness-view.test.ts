@@ -36,6 +36,7 @@ describe("model Harness view", () => {
       matchedRuleId: "openai-reasoning",
       policySource: "model_rule",
       taskPhase: "coding",
+      intents: ["coding", "research"],
       environmentCapabilities: ["workspace_write", "process", "mcp"],
       guidanceSha256: "b".repeat(64),
     });
@@ -48,6 +49,7 @@ describe("model Harness view", () => {
         matchedRuleId: "openai-reasoning",
         policySource: "model_rule",
         taskPhase: "coding",
+        intents: ["coding", "research"],
         environmentCapabilities: ["workspace_write", "process", "mcp"],
         guidanceSha256: "b".repeat(64),
       }),

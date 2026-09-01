@@ -330,7 +330,7 @@ export const zh: LocaleOverride<typeof en> = {
   recovery: {
     eyebrow: "恢复检查点",
     title: "有一次运行在结算前中断。",
-    body: "从持久证据恢复。Napier 会在重复任何可能有副作用的操作前先核实当前状态。",
+    body: "沿用中断运行的模型、Agent 版本与能力边界恢复。Napier 会先核对持久证据和当前状态，再重复任何可能有副作用的操作。",
     action: "安全恢复",
     run: "中断的运行",
     partial: {
@@ -443,6 +443,18 @@ export const zh: LocaleOverride<typeof en> = {
     recommended: "智能体默认",
     recent: "最近使用",
     empty: "没有匹配的模型。",
+    setupChecking: "正在检查当前工作区……",
+    setupCheckingBody:
+      "正在查找可复用的服务端凭证位置，不会读取或显示密钥内容。",
+    setupTitle: "发现可用的实时模型凭证",
+    setupBody:
+      "每个工作区独立保存模型授权。选择提供方即可在这里启用；只会保存凭证位置。",
+    setupMissingTitle: "尚未启用实时模型",
+    setupMissingBody: "请先在“智能体与模型”设置中添加提供方凭证。",
+    enable: "启用",
+    enabling: "正在启用……",
+    retrySetup: "重新检查",
+    openSettings: "模型设置",
   },
   welcome: desktopShellCopyZh.welcome,
   notices: desktopShellCopyZh.notices,

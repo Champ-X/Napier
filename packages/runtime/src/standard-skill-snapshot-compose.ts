@@ -8,6 +8,7 @@ import type {
   StandardSkillRequestRecord,
   StandardSkillRootKind,
 } from "@napier/contracts/skill-load-standard";
+import { STANDARD_SKILL_ROOT_KINDS } from "@napier/contracts/skill-load-standard";
 import {
   isStandardSkillCatalogBindingV2,
   isStandardSkillLoadFailureV2,
@@ -30,10 +31,27 @@ import type {
 
 const NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const MAX_TOTAL_BYTES = 8 * 1024 * 1024;
-const TRUST_POLICY = {
+const STANDARD_TRUST_POLICY = {
   roots: ["project_legacy", "project_standard", "user_standard"],
   conflicts: "fail_closed_no_implicit_precedence",
   userRoot: "local_os_user_home_agents_skills",
+  rootScanner: "project_skill_snapshot_v1",
+  resources: "on_demand_text_only_nofollow_64k",
+  shell: "denied",
+  writes: "denied",
+  maxConfiguredRequests: 64,
+  maxAggregateBytes: MAX_TOTAL_BYTES,
+} as const;
+const BUNDLED_TRUST_POLICY = {
+  roots: [
+    "project_legacy",
+    "project_standard",
+    "user_standard",
+    "bundled_standard",
+  ],
+  conflicts: "configured_roots_override_bundled_else_fail_closed",
+  userRoot: "local_os_user_home_agents_skills",
+  bundledRoot: "napier_read_only_distribution_bundle",
   rootScanner: "project_skill_snapshot_v1",
   resources: "on_demand_text_only_nofollow_64k",
   shell: "denied",
@@ -136,7 +154,9 @@ function finalizeComposite(
   const resourceLoaders = new Map(
     converted.map((item) => [item.entry.canonicalName, item.loadResource]),
   );
-  const observedRootKinds = scans.map((scan) => scan.root.kind).sort(compare);
+  const observedRootKinds = scans
+    .map((scan) => scan.root.kind)
+    .sort(compareRootKinds);
   const rootIdentities = scans.map((scan) => ({
     rootKind: scan.root.kind,
     workspaceIdentitySha256: scan.snapshot.content.workspaceIdentitySha256,
@@ -278,9 +298,20 @@ function createCompositeObjects(input: {
   unavailableSkills: StandardSkillLoadFailureV2[];
   unavailableFailureContentSha256s: string[];
 }): StandardSkillSnapshot {
+  const includesBundled = input.observedRootKinds.includes("bundled_standard");
+  const trustPolicy = includesBundled
+    ? BUNDLED_TRUST_POLICY
+    : STANDARD_TRUST_POLICY;
+  const trustOrigins = includesBundled
+    ? ([
+        "active_user_selected_project",
+        "local_user_skill_store",
+        "napier_read_only_bundle",
+      ] as const)
+    : (["active_user_selected_project", "local_user_skill_store"] as const);
   const common = {
     workspaceIdentitySha256: sha256(path.resolve(input.workspaceRoot)),
-    trustPolicySha256: sha256(canonicalJson(TRUST_POLICY)),
+    trustPolicySha256: sha256(canonicalJson(trustPolicy)),
     configuredSkillRequests: input.configuredSkillRequests,
     selectionSha256: sha256(canonicalJson(input.configuredSkillRequests)),
     observedRootKinds: input.observedRootKinds,
@@ -311,10 +342,7 @@ function createCompositeObjects(input: {
     kind: "napier.standard-skill-snapshot-manifest" as const,
     schemaVersion: 2 as const,
     source: "composite" as const,
-    trustOrigins: [
-      "active_user_selected_project",
-      "local_user_skill_store",
-    ] as const,
+    trustOrigins,
     ...common,
     entries: input.entries.map(publicEntry),
     unavailableFailureContentSha256s: input.unavailableFailureContentSha256s,
@@ -370,10 +398,16 @@ function convertCandidate(candidate: StandardSkillCandidate) {
   const rootKind = candidate.root.kind;
   const original = candidate.entry!;
   const relativePath =
-    rootKind === "project_legacy"
+    rootKind === "project_legacy" || rootKind === "bundled_standard"
       ? `skills/${original.canonicalName}/SKILL.md`
       : `.agents/skills/${original.canonicalName}/SKILL.md`;
-  const virtualPath = `${source === "user" ? "/user" : "/project"}/${relativePath}`;
+  const virtualOwner =
+    source === "user"
+      ? "/user"
+      : source === "bundled"
+        ? "/bundled"
+        : "/project";
+  const virtualPath = `${virtualOwner}/${relativePath}`;
   const skill = { ...candidate.skill!, filePath: virtualPath };
   const formattedInvocation = formatSkillInvocation(skill);
   const entry: StandardSkillSnapshotEntry = {
@@ -428,7 +462,18 @@ function unavailable(
 function rootKinds(
   candidates: readonly StandardSkillCandidate[],
 ): StandardSkillRootKind[] {
-  return [...new Set(candidates.map((item) => item.root.kind))].sort(compare);
+  return [...new Set(candidates.map((item) => item.root.kind))].sort(
+    compareRootKinds,
+  );
+}
+function compareRootKinds(
+  left: StandardSkillRootKind,
+  right: StandardSkillRootKind,
+): number {
+  return (
+    STANDARD_SKILL_ROOT_KINDS.indexOf(left) -
+    STANDARD_SKILL_ROOT_KINDS.indexOf(right)
+  );
 }
 function countNames(values: readonly string[]) {
   const counts = new Map<string, number>();

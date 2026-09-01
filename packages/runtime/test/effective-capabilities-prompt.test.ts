@@ -19,7 +19,7 @@ describe("Effective Capabilities Prompt layer", () => {
     );
     expect(prompt).toContain("Active tools (2): browser, web_search.");
     expect(prompt).toContain(
-      "Requested tools omitted or unavailable (1): apply_patch.",
+      "Requested tools unavailable or policy-withheld (1): apply_patch.",
     );
     expect(prompt).toContain(
       "Browser backend: native_playwright. Browser interaction: confirmation_governed.",
@@ -30,6 +30,52 @@ describe("Effective Capabilities Prompt layer", () => {
     expect(prompt).toContain(
       "do not pre-confirm it with request_operator_decision",
     );
+  });
+
+  it("distinguishes harness-hidden capabilities from real unavailability", () => {
+    const prompt = formatEffectiveCapabilitiesPrompt({
+      requestedTools: [
+        "browser",
+        "workspace_process",
+        "run_command",
+        "apply_patch",
+      ],
+      availableTools: [
+        "capability",
+        "browser",
+        "workspace_process",
+        "run_command",
+        "apply_patch",
+      ],
+      activeTools: ["capability"],
+      toolPolicy: "unrestricted",
+      sandboxId: "host-direct",
+      restrictedReadOnlyExecution: false,
+      executionMode: "standard",
+      advisorCorrection: false,
+      browserInteractionConfirmationAvailable: true,
+    });
+
+    expect(prompt).toContain(
+      "Configured tools currently hidden by the focused model surface (4; discoverable via capability): apply_patch, browser, run_command, workspace_process.",
+    );
+    expect(prompt).toContain(
+      "Requested tools unavailable or policy-withheld (0): none.",
+    );
+    expect(prompt).toContain(
+      "Browser backend: configured but hidden on this step.",
+    );
+    expect(prompt).toContain(
+      "workspace_process with runtime=shell runs one explicit POSIX shell script",
+    );
+    expect(prompt).toContain(
+      "workspace_process is not a network grant",
+    );
+    expect(prompt).toContain(
+      "Before claiming that a needed tool is unavailable or requesting operator help",
+    );
+    expect(prompt).toContain("activate one schema");
+    expect(prompt).not.toContain("omitted or unavailable");
   });
 
   it("fails capability claims closed for restricted execution", () => {

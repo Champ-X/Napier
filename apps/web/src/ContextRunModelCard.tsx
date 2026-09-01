@@ -9,8 +9,16 @@ export interface ContextRunModelCardProps {
 }
 
 export function ContextRunModelCard({ controller }: ContextRunModelCardProps) {
-  const { agent, models, onModel, recentModelKeys, selectedModel, selectedModelKey } =
-    controller;
+  const {
+    agent,
+    models,
+    onBootstrapUpdated,
+    onModel,
+    recentModelKeys,
+    selectedModel,
+    selectedModelKey,
+    threadId,
+  } = controller;
   return (
     <section
       className="context-runtime-card"
@@ -33,6 +41,7 @@ export function ContextRunModelCard({ controller }: ContextRunModelCardProps) {
           label={contextCopy.chooseModel}
           recommendedModelKeys={[`${agent.model.provider}/${agent.model.id}`]}
           recentModelKeys={recentModelKeys}
+          setup={{ threadId, onBootstrapUpdated }}
           onChange={onModel}
         />
       </div>

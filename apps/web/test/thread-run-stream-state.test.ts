@@ -3,6 +3,7 @@ import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-m
 import { describe, expect, it } from "vitest";
 
 import {
+  activateThreadDetail,
   activeRunStreamingText,
   applyThreadRunEvent,
   applyThreadStreamFrameToBootstrap,
@@ -13,11 +14,41 @@ import {
   mergeNavigationBootstrap,
   mergeBackgroundThreadDetail,
   mergeRefreshedThreadBootstrap,
+  removeThreadDetail,
   threadRunViewState,
   type ThreadRunSessions,
 } from "../src/thread-run-stream-state";
 
 describe("Thread Run stream state", () => {
+  it("activates a locally returned Thread without replacing static bootstrap catalogs", () => {
+    const current = bootstrap(
+      detail("thread_a", []),
+      summary("thread_a", "idle", 2),
+    );
+    const created = detail("thread_b", []);
+
+    const updated = activateThreadDetail(current, created);
+
+    expect(updated.activeThread?.thread.id).toBe("thread_b");
+    expect(updated.threads.map((thread) => thread.id)).toContain("thread_b");
+    expect(updated.models).toBe(current.models);
+    expect(updated.skills).toBe(current.skills);
+  });
+
+  it("removes a Thread optimistically and activates a cached successor", () => {
+    const current = bootstrap(
+      detail("thread_a", []),
+      summary("thread_a", "idle", 2),
+      summary("thread_b", "idle", 1),
+    );
+    const next = detail("thread_b", []);
+
+    const updated = removeThreadDetail(current, "thread_a", next);
+
+    expect(updated.threads.map((thread) => thread.id)).toEqual(["thread_b"]);
+    expect(updated.activeThread?.thread.id).toBe("thread_b");
+  });
+
   it("keeps simultaneous Thread streams isolated", () => {
     let sessions: ThreadRunSessions = {};
     sessions = attachThreadRun(sessions, "thread_a");
@@ -78,6 +109,21 @@ describe("Thread Run stream state", () => {
 
     expect(sessions.thread_a?.streamingText).toBe("再修改样式");
     expect(activeRunStreamingText(events, "run_active")).toBe("再修改样式");
+  });
+
+  it("retracts a streamed capability blocker as soon as recovery is required", () => {
+    const events = [
+      event("thread_a", "run_active", 1, "工具均不可用"),
+      capabilityRecoveryResponse("thread_a", "run_active", 2),
+    ];
+
+    let sessions: ThreadRunSessions = attachThreadRun({}, "thread_a");
+    for (const runEvent of events) {
+      sessions = applyThreadRunEvent(sessions, "thread_a", runEvent);
+    }
+
+    expect(sessions.thread_a?.streamingText).toBe("");
+    expect(activeRunStreamingText(events, "run_active")).toBe("");
   });
 
   it("does not append a background Thread event to the selected detail", () => {
@@ -460,6 +506,23 @@ function modelResponse(threadId: string, runId: string, seq: number): RunEvent {
     payload: {
       text: "先检查结构",
       toolCalls: [{ id: "call_read", name: "read_file" }],
+    },
+  };
+}
+
+function capabilityRecoveryResponse(
+  threadId: string,
+  runId: string,
+  seq: number,
+): RunEvent {
+  return {
+    ...event(threadId, runId, seq, ""),
+    type: "model.response",
+    visibility: "debug",
+    payload: {
+      text: "工具均不可用",
+      toolCalls: [],
+      responseDisposition: "capability_recovery_required",
     },
   };
 }

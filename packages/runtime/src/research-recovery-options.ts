@@ -2,7 +2,7 @@ import type { RunEvent, RunRecord } from "@napier/contracts";
 
 import { capabilityPresetForOriginRun } from "./agent-capability-override.js";
 import type { RunPromptOptions } from "./agent-runtime-options.js";
-import { authorizeInternalResearchRecovery } from "./internal-research-recovery-authorization.js";
+import { authorizeInternalCapabilityPresetRecovery } from "./internal-research-recovery-authorization.js";
 import {
   prepareSkillContinuationSnapshot,
   SKILL_CONTINUATION_SNAPSHOT,
@@ -25,13 +25,14 @@ export async function prepareManualSkillRecoveryOptions(
       event.type === "context.skills" &&
       isSkillCatalogBinding(event.payload),
   );
-  if (!firstClassSkillLoading) return options;
-  const continuation = await prepareSkillContinuationSnapshot(
-    workspaceRoot,
-    interrupted,
-    events,
-    options.signal,
-  );
+  const continuation = firstClassSkillLoading
+    ? await prepareSkillContinuationSnapshot(
+        workspaceRoot,
+        interrupted,
+        events,
+        options.signal,
+      )
+    : { bound: false as const };
   const recoveryOptions = {
     ...options,
     ...(preset ? { capabilityPreset: preset } : {}),
@@ -42,8 +43,8 @@ export async function prepareManualSkillRecoveryOptions(
       ? { [SKILL_CONTINUATION_SNAPSHOT]: continuation.snapshot }
       : {}),
   };
-  return preset === "research"
-    ? authorizeInternalResearchRecovery(recoveryOptions)
+  return preset
+    ? authorizeInternalCapabilityPresetRecovery(recoveryOptions)
     : recoveryOptions;
 }
 
@@ -96,8 +97,8 @@ export async function prepareAutomaticSkillRecoveryOptions(
       ? { [SKILL_CONTINUATION_SNAPSHOT]: continuation.snapshot }
       : {}),
   };
-  return preset === "research"
-    ? authorizeInternalResearchRecovery(recoveryOptions)
+  return preset
+    ? authorizeInternalCapabilityPresetRecovery(recoveryOptions)
     : recoveryOptions;
 }
 

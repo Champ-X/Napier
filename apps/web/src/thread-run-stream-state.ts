@@ -79,6 +79,8 @@ export function applyThreadRunEvent(
   } else if (
     event.type === "message.assistant" ||
     isToolCallingModelResponse(event) ||
+    isCapabilityRecoveryModelResponse(event) ||
+    event.type === "run.recovery.prompt" ||
     event.type === "model.advisor.blocked" ||
     event.type === "model.advisor.correction.requested"
   ) {
@@ -118,6 +120,8 @@ export function activeRunStreamingText(
     if (
       event.type === "message.assistant" ||
       isToolCallingModelResponse(event) ||
+      isCapabilityRecoveryModelResponse(event) ||
+      event.type === "run.recovery.prompt" ||
       event.type === "model.advisor.blocked" ||
       event.type === "model.advisor.correction.requested"
     ) {
@@ -135,6 +139,17 @@ function isToolCallingModelResponse(event: RunEvent): boolean {
   }
   const toolCalls = payload["toolCalls"];
   return Array.isArray(toolCalls) && toolCalls.length > 0;
+}
+
+function isCapabilityRecoveryModelResponse(event: RunEvent): boolean {
+  if (event.type !== "model.response") return false;
+  const payload = event.payload;
+  return Boolean(
+    payload &&
+    typeof payload === "object" &&
+    !Array.isArray(payload) &&
+    payload["responseDisposition"] === "capability_recovery_required",
+  );
 }
 
 export function applyThreadStreamFrameToDetail(
@@ -288,6 +303,35 @@ export function mergeBackgroundThreadDetail(
     ...current,
     threads: upsertThread(current.threads, refreshed.thread),
     ...(activeThread ? { activeThread } : {}),
+  };
+}
+
+export function activateThreadDetail(
+  current: LiveReadyBootstrapResponse,
+  detail: WebThreadDetail,
+): LiveReadyBootstrapResponse {
+  return {
+    ...current,
+    threads: upsertThread(current.threads, detail.thread),
+    activeThread: detail,
+  };
+}
+
+export function removeThreadDetail(
+  current: LiveReadyBootstrapResponse,
+  threadId: string,
+  nextDetail?: WebThreadDetail,
+): LiveReadyBootstrapResponse {
+  const activeRemoved = current.activeThread?.thread.id === threadId;
+  const { activeThread: _activeThread, ...rest } = current;
+  return {
+    ...rest,
+    threads: current.threads.filter((thread) => thread.id !== threadId),
+    ...(!activeRemoved && current.activeThread
+      ? { activeThread: current.activeThread }
+      : nextDetail
+        ? { activeThread: nextDetail }
+        : {}),
   };
 }
 

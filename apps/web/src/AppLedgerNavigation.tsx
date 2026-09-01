@@ -18,9 +18,10 @@ export function AppLedgerNavigation({
       bootstrap={vm.bootstrap}
       selectedThreadId={vm.selectedThreadId}
       busyThreadId={vm.threadLifecycleBusyId}
-      onNewThread={() => void vm.newThread()}
-      onSelect={(threadId) => void vm.selectThread(threadId)}
-      onTrash={(threadId) => void vm.trashThread(threadId)}
+      newThreadBusy={vm.isCreatingThread}
+      onNewThread={vm.newThread}
+      onSelect={vm.selectThread}
+      onTrash={vm.trashThread}
       onWorkspaceSwitch={vm.switchWorkspaceRoot}
       onOpenDeveloperWorkbench={shell.openDeveloperWorkbench}
       onOpenSettings={shell.openSettings}

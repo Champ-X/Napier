@@ -266,7 +266,7 @@ export function conversationFeedProjection(
         seq: activity.seq,
         activity,
       })),
-    ].sort((left, right) => left.seq - right.seq) as ConversationFeedItem[],
+    ].sort(compareConversationFeedOrder) as ConversationFeedItem[],
   );
   return {
     ...(activeThinkingId ? { activeThinkingId } : {}),
@@ -275,6 +275,20 @@ export function conversationFeedProjection(
     feed,
     workspaceLinks,
   };
+}
+
+function compareConversationFeedOrder(
+  left: { kind: ConversationFeedItem["kind"]; seq: number },
+  right: { kind: ConversationFeedItem["kind"]; seq: number },
+): number {
+  const sequenceOrder = left.seq - right.seq;
+  if (sequenceOrder !== 0) return sequenceOrder;
+  // A live thinking activity intentionally shares the triggering message's
+  // sequence so its React identity remains stable when the first delta lands.
+  // Make the causal tie-break explicit instead of relying on stable sort.
+  if (left.kind === "message" && right.kind === "thinking") return -1;
+  if (left.kind === "thinking" && right.kind === "message") return 1;
+  return 0;
 }
 
 function activityRecordedMilestone(

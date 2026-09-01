@@ -1,4 +1,4 @@
-import { Agent } from "@earendil-works/pi-agent-core";
+import { Agent, type AgentTool } from "@earendil-works/pi-agent-core";
 import type { Api, Model, MutableModels } from "@earendil-works/pi-ai";
 import {
   emptyUsage,
@@ -10,6 +10,7 @@ import {
 } from "@napier/contracts";
 
 import type { ModelRouteSession } from "./model-route.js";
+import { ENVIRONMENT_DEGRADED_READ_TOOL_NAMES } from "./read-only-tool-names.js";
 import type { LocalStore } from "./store.js";
 import type { SubagentExecutionControl } from "./subagent-execution-control.js";
 import { createSubagentStream } from "./subagent-model-stream.js";
@@ -45,6 +46,7 @@ export class SubagentTaskRunner {
       limits: SubagentLimits;
       parentSignal: AbortSignal;
       worktrees?: SubagentWorktreeMutationManager;
+      createInheritedTools?: () => AgentTool[];
       control?: SubagentExecutionControl;
       onEvent?: EventSink;
     },
@@ -130,9 +132,12 @@ export class SubagentTaskRunner {
           : subagentRoleInstructions(task.role),
         model: this.options.model,
         thinkingLevel: this.options.model.reasoning ? "medium" : "off",
-        tools: worktree
-          ? this.options.worktrees!.createCoderTools(worktree)
-          : createWorkspaceTools(this.options.store.workspaceRoot),
+        tools: mergeSubagentTools(
+          worktree
+            ? this.options.worktrees!.createCoderTools(worktree)
+            : createWorkspaceTools(this.options.store.workspaceRoot),
+          this.options.createInheritedTools?.() ?? [],
+        ),
         messages: [],
       },
       streamFn: createSubagentStream(
@@ -347,4 +352,37 @@ export class SubagentTaskRunner {
       }
     }
   }
+}
+
+const INHERITED_SUBAGENT_TOOL_NAMES = new Set<string>([
+  ...ENVIRONMENT_DEGRADED_READ_TOOL_NAMES,
+  "git_inspect",
+  "workspace_file_preview",
+  "lsp_diagnostics",
+  "lsp_symbols",
+  "lsp_definition",
+  "lsp_references",
+  "lsp_rename",
+  "lsp_code_actions",
+]);
+
+/**
+ * Subagents inherit the parent's enabled research and inspection surface.
+ * Mutation remains role-owned: coders write only through their isolated
+ * worktree tools, while delegation and root-workspace mutation never recurse.
+ */
+export function mergeSubagentTools(
+  roleTools: readonly AgentTool[],
+  inheritedTools: readonly AgentTool[],
+): AgentTool[] {
+  const merged = new Map(roleTools.map((tool) => [tool.name, tool]));
+  for (const tool of inheritedTools) {
+    if (
+      INHERITED_SUBAGENT_TOOL_NAMES.has(tool.name) &&
+      !merged.has(tool.name)
+    ) {
+      merged.set(tool.name, tool);
+    }
+  }
+  return [...merged.values()];
 }

@@ -288,15 +288,27 @@ describe("Run Harness effect metrics", () => {
         harnessInterventionReason: "budget_pause",
       }),
       event(run, 8, "run.recovery.started", { mode: "manual" }),
+      event(run, 9, "tool.blocked", {
+        harnessInterventionReason: "capability_use_required",
+      }),
+      event(run, 10, "tool.blocked", {
+        harnessInterventionReason: "capability_discovery_required",
+      }),
+      event(run, 11, "model.response", {
+        responseDisposition: "capability_recovery_required",
+      }),
     ];
 
     const interventions = project(run, events).interventions;
-    expect(interventions.count).toBe(8);
+    expect(interventions.count).toBe(11);
     expect(interventions.reasonCounts).toEqual({
       approval_block: 1,
       browser_confirmation: 1,
       budget_pause: 1,
       capability_block: 1,
+      capability_discovery_required: 1,
+      capability_recovery: 1,
+      capability_use_required: 1,
       manual_recovery: 1,
       operator_decision: 1,
       safety_block: 1,

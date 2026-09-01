@@ -35,6 +35,8 @@ describe("Provider Process tool definition budget", () => {
     expect(tool.description).toContain("read-only");
     expect(tool.description).toContain("Delta");
     expect(tool.description).toContain("redacted");
+    expect(tool.description).toContain("POSIX shell");
+    expect(JSON.stringify(tool.parameters)).toContain('"maximum":1800000');
   });
 
   it("rejects conflicting pipe and PTY modes before launch", async () => {

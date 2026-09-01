@@ -157,12 +157,14 @@ function validResolution(value: Record<string, unknown>): boolean {
   const policySource = member(value.policySource, POLICY_SOURCES);
   const taskPhase = member(value.taskPhase, PHASES);
   const intents = members(value.intents, PHASES);
+  if (!intents || intents.length < 1 || intents.length > PHASES.size) {
+    return false;
+  }
   return (
     Boolean(matchedRuleId && RULE_ID.test(matchedRuleId)) &&
     Boolean(policySource) &&
     (policySource === "family") === (matchedRuleId === "family-fallback") &&
     Boolean(taskPhase) &&
-    intents?.length === 1 &&
     intents[0] === taskPhase &&
     Boolean(members(value.environmentCapabilities, CAPABILITIES)) &&
     SHA256.test(text(value.guidanceSha256) ?? "")

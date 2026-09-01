@@ -58,7 +58,7 @@ export function createOperatorDecisionTool(
     name: "request_operator_decision",
     label: "Request operator decision",
     description:
-      "Pause only for an operator-owned choice that evidence, the request, and defaults cannot resolve. Never pre-confirm Browser interactions; call Browser directly for Napier's exact action-bound confirmation. Provide a 1-12 character header, one question, 2-4 labeled options with implications, and multiSelect. This must be the turn's only call; it ends the Run until a linked continuation.",
+      "Pause only for an operator-owned choice evidence/defaults cannot resolve. Missing command/network/Browser/Git/write schemas require capability lookup, not a pause. Never pre-confirm Browser interactions; call Browser for Napier's exact action-bound confirmation. Supply a 1-12 character header, one question, 2-4 options, and multiSelect. This sole call ends the Run.",
     parameters: operatorDecisionSchema,
     executionMode: "sequential",
     async execute(_toolCallId, input) {

@@ -296,10 +296,23 @@ function standardManifestHeader(value: Record<string, unknown>): boolean {
     value.kind === "napier.standard-skill-snapshot-manifest" &&
     value.schemaVersion === 2 &&
     value.source === "composite" &&
-    canonical(value.trustOrigins) ===
-      canonical(["active_user_selected_project", "local_user_skill_store"]) &&
+    validStandardTrustOrigins(value.trustOrigins) &&
     hex(value.workspaceIdentitySha256) &&
     hex(value.trustPolicySha256),
+  );
+}
+
+function validStandardTrustOrigins(value: unknown): boolean {
+  const encoded = canonical(value);
+  return (
+    encoded ===
+      canonical(["active_user_selected_project", "local_user_skill_store"]) ||
+    encoded ===
+      canonical([
+        "active_user_selected_project",
+        "local_user_skill_store",
+        "napier_read_only_bundle",
+      ])
   );
 }
 
@@ -312,7 +325,7 @@ function standardManifestSelection(value: Record<string, unknown>): boolean {
       sha256(canonical(value.configuredSkillRequests)) &&
     rootKinds(value.observedRootKinds) &&
     hex(value.rootIdentitySetSha256) &&
-    integer(value.directDirectoryCount, 0, 192),
+    integer(value.directDirectoryCount, 0, 256),
   );
 }
 
@@ -361,8 +374,17 @@ function standardManifestRelations(
     unavailableFailureContentSha256s: unavailable,
     catalogSha256: value.catalogSha256,
   };
+  const includesBundledRoot =
+    value.observedRootKinds.includes("bundled_standard");
+  const includesBundledTrust = (
+    value.trustOrigins as readonly string[]
+  ).includes("napier_read_only_bundle");
   return Boolean(
+    includesBundledRoot === includesBundledTrust &&
     sortedUnique(names) &&
+    entries.every((entry) =>
+      value.observedRootKinds.includes(entry.rootKind),
+    ) &&
     entries.reduce((sum, entry) => sum + entry.sizeBytes, 0) ===
       value.aggregateRawBytes &&
     canonical(loadable.map((item) => item.canonicalName).sort(codeUnit)) ===
@@ -467,28 +489,40 @@ function sourceRoot(source: unknown, rootKind: unknown): boolean {
   return (
     (source === "project" &&
       (rootKind === "project_legacy" || rootKind === "project_standard")) ||
-    (source === "user" && rootKind === "user_standard")
+    (source === "user" && rootKind === "user_standard") ||
+    (source === "bundled" && rootKind === "bundled_standard")
   );
 }
 
 function relativePath(rootKind: unknown, skillName: unknown): string {
-  return rootKind === "project_legacy"
+  return rootKind === "project_legacy" || rootKind === "bundled_standard"
     ? `skills/${String(skillName)}/SKILL.md`
     : `.agents/skills/${String(skillName)}/SKILL.md`;
 }
 
 function virtualPath(rootKind: unknown, skillName: unknown): string {
-  const prefix = rootKind === "user_standard" ? "/user" : "/project";
+  const prefix =
+    rootKind === "user_standard"
+      ? "/user"
+      : rootKind === "bundled_standard"
+        ? "/bundled"
+        : "/project";
   return `${prefix}/${relativePath(rootKind, skillName)}`;
 }
 
 function rootKinds(value: unknown): value is StandardSkillRootKind[] {
-  return Boolean(
-    Array.isArray(value) &&
-    value.every((item) =>
-      STANDARD_SKILL_ROOT_KINDS.includes(item as StandardSkillRootKind),
-    ) &&
-    sortedUnique(value as string[]),
+  if (
+    !Array.isArray(value) ||
+    value.length > STANDARD_SKILL_ROOT_KINDS.length
+  ) {
+    return false;
+  }
+  const indexes = value.map((root) =>
+    STANDARD_SKILL_ROOT_KINDS.indexOf(root as StandardSkillRootKind),
+  );
+  return indexes.every(
+    (index, position) =>
+      index >= 0 && (position === 0 || index > indexes[position - 1]!),
   );
 }
 

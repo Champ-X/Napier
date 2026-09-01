@@ -1,14 +1,10 @@
 import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
-import {
-  type AgentKernel,
-} from "@napier/runtime/agent";
+import { type AgentKernel } from "@napier/runtime/agent";
 import {
   builtinUsagePriceTableCatalog,
   type ModelRegistry,
 } from "@napier/runtime/model";
-import {
-  type LocalStore,
-} from "@napier/runtime/store";
+import { type LocalStore } from "@napier/runtime/store";
 import { inspectStandardSkillCatalog } from "@napier/runtime/standard-skill-catalog";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -175,15 +171,26 @@ async function bootstrapSkills(services: {
   skillUserHome?: string;
 }) {
   const workspaceRoot = services.store.workspaceRoot;
-  if (!workspaceRoot) return BUNDLED_SKILLS;
-  const discovered = await inspectStandardSkillCatalog(workspaceRoot, {
-    ...(services.skillUserHome ? { userHome: services.skillUserHome } : {}),
-  }).catch(() => []);
-  const catalog = new Map(BUNDLED_SKILLS.map((skill) => [skill.name, skill]));
-  for (const skill of discovered) catalog.set(skill.name, skill);
-  return [...catalog.values()].sort((left, right) =>
-    left.name < right.name ? -1 : left.name > right.name ? 1 : 0,
-  );
+  if (!workspaceRoot) return unavailableBundledSkills("workspace unavailable");
+  try {
+    return await inspectStandardSkillCatalog(workspaceRoot, {
+      ...(services.skillUserHome ? { userHome: services.skillUserHome } : {}),
+    });
+  } catch (error) {
+    const diagnostic =
+      error instanceof Error && error.message
+        ? error.message.slice(0, 160)
+        : "catalog inspection failed";
+    return unavailableBundledSkills(diagnostic);
+  }
+}
+
+function unavailableBundledSkills(diagnostic: string) {
+  return BUNDLED_SKILLS.map((skill) => ({
+    ...skill,
+    description: `Unavailable (${diagnostic}): ${skill.description}`,
+    enabled: false,
+  }));
 }
 
 function setBootstrapProjectionHeaders(

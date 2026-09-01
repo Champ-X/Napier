@@ -1,4 +1,4 @@
-import { constants } from "node:fs";
+import { constants, existsSync } from "node:fs";
 import { lstat, opendir } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
@@ -34,6 +34,7 @@ const DIRECT_MISSING_DIAGNOSTIC = sha256("snapshot:direct_directory_missing");
 
 export interface StandardSkillSnapshotOptions {
   userHome?: string;
+  bundledRoot?: string;
   hooks?: Partial<Record<StandardSkillRootKind, ProjectSkillSnapshotHooks>>;
 }
 
@@ -60,7 +61,11 @@ export async function buildStandardSkillSnapshot(
   if (configuredNames.length > MAX_REQUESTS) {
     throw new StandardSkillSnapshotError("configured_request_limit");
   }
-  const roots = descriptors(workspaceRoot, options.userHome ?? homedir());
+  const roots = descriptors(
+    workspaceRoot,
+    options.userHome ?? homedir(),
+    options.bundledRoot ?? defaultBundledSkillRoot(),
+  );
   const requested = [...new Set(configuredNames.filter(validName))];
   const scans: StandardSkillRootScan[] = [];
   for (const root of roots) {
@@ -123,12 +128,13 @@ export async function buildStandardSkillSnapshot(
 
 export async function discoverStandardSkillNames(
   workspaceRoot: string,
-  options: Pick<StandardSkillSnapshotOptions, "userHome"> = {},
+  options: Pick<StandardSkillSnapshotOptions, "userHome" | "bundledRoot"> = {},
 ): Promise<string[]> {
   const names = new Set<string>();
   for (const root of descriptors(
     workspaceRoot,
     options.userHome ?? homedir(),
+    options.bundledRoot ?? defaultBundledSkillRoot(),
   )) {
     if (!(await rootPresent(root))) continue;
     const directory = await opendir(path.join(root.ownerRoot, "skills"));
@@ -191,12 +197,21 @@ function candidateMap(
       });
     }
   }
+  for (const [name, candidates] of result) {
+    const configuredCandidates = candidates.filter(
+      (candidate) => candidate.root.kind !== "bundled_standard",
+    );
+    if (configuredCandidates.length > 0) {
+      result.set(name, configuredCandidates);
+    }
+  }
   return result;
 }
 
 function descriptors(
   workspaceRoot: string,
   userHome: string,
+  bundledRoot: string,
 ): StandardSkillRootDescriptor[] {
   return [
     { kind: "project_legacy", source: "project", ownerRoot: workspaceRoot },
@@ -210,7 +225,28 @@ function descriptors(
       source: "user",
       ownerRoot: path.join(userHome, ".agents"),
     },
+    {
+      kind: "bundled_standard",
+      source: "bundled",
+      ownerRoot: bundledRoot,
+    },
   ];
+}
+
+export function defaultBundledSkillRoot(): string {
+  if (path.basename(import.meta.dirname) !== "dist") {
+    return path.resolve(import.meta.dirname, "../../..");
+  }
+  const distributionRoot = path.join(import.meta.dirname, "bundled-skills");
+  if (existsSync(path.join(distributionRoot, "skills"))) {
+    return distributionRoot;
+  }
+  const sourceCheckoutRoot = path.resolve(import.meta.dirname, "../../..");
+  return existsSync(
+    path.join(sourceCheckoutRoot, "packages/runtime/package.json"),
+  ) && existsSync(path.join(sourceCheckoutRoot, "skills"))
+    ? sourceCheckoutRoot
+    : distributionRoot;
 }
 
 async function rootPresent(
@@ -220,9 +256,7 @@ async function rootPresent(
     lstat(root.ownerRoot).catch(() => undefined),
     lstat(path.join(root.ownerRoot, "skills")).catch(() => undefined),
   ]);
-  if (!skills && (!owner || (owner.isDirectory() && !owner.isSymbolicLink()))) {
-    return false;
-  }
+  if (!skills) return false;
   if (
     typeof constants.O_NOFOLLOW !== "number" ||
     !owner?.isDirectory() ||

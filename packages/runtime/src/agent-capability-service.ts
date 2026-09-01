@@ -34,6 +34,7 @@ import {
 } from "./default-agent-capability-contract.js";
 import {
   buildStandardSkillSnapshot,
+  defaultBundledSkillRoot,
   type SkillSnapshot,
 } from "./standard-skill-snapshot.js";
 import {
@@ -390,6 +391,7 @@ async function standardSkillFileExists(
     path.join(workspaceRoot, "skills", name, "SKILL.md"),
     path.join(workspaceRoot, ".agents", "skills", name, "SKILL.md"),
     path.join(homedir(), ".agents", "skills", name, "SKILL.md"),
+    path.join(defaultBundledSkillRoot(), "skills", name, "SKILL.md"),
   ];
   const results = await Promise.all(
     locations.map((location) =>

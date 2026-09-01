@@ -73,14 +73,20 @@ const PHASE_PATTERNS: Array<[ModelHarnessTaskPhase, RegExp]> = [
     /\b(citation|latest|research|search|source|web)\b|引用|最新|调研|搜索|来源/iu,
   ],
   [
-    "data",
-    /\b(csv|data|dataset|dataframe|spreadsheet|sql|sqlite)\b|数据|表格|统计|分析/iu,
+    "coding",
+    /\b(build|bug|clone|code|develop|file|fix|html|implement|javascript|program|refactor|repo|repository|source code|test|typescript|verify)\b|代码|源码|编写|编码|开发|生成|制作|克隆|构建|仓库|实现|文件|测试|验证|修复|重构/iu,
   ],
   [
-    "coding",
-    /\b(build|bug|code|file|fix|implement|refactor|repo|test|verify)\b|代码|构建|仓库|实现|文件|测试|验证|修复|重构/iu,
+    "data",
+    /\b(analyze (?:a |the )?(?:csv|data|dataset|dataframe|spreadsheet)|csv|data|dataset|dataframe|spreadsheet|sql|sqlite|statistics)\b|数据|表格|统计/iu,
   ],
 ];
+const INTERNAL_USER_REDIRECT_PREFIXES = [
+  "Internal thinking-loop redirect:",
+  "Internal execution redirect:",
+  "Internal convergence redirect:",
+  "Internal capability recovery redirect:",
+] as const;
 const CAPABILITY_TOOLS: Record<
   Exclude<ModelHarnessEnvironmentCapability, "mcp">,
   ReadonlySet<string>
@@ -136,7 +142,7 @@ export const MODEL_HARNESS_RULES: readonly ModelHarnessRule[] = Object.freeze([
     modelPattern: "^(?:(?:deepseek|openrouter)[/:.])?deepseek(?:[-._].*)?$",
     guidance:
       "Use one mutation sequence at a time, keep tool arguments exact, and verify before advancing.",
-    maxActiveTools: 20,
+    maxActiveTools: 28,
     defaultMaxRetries: 1,
   }),
 ]);
@@ -181,7 +187,7 @@ export function resolveModelHarnessProfile(
             }
           : {
               promptDialect: "compact" as const,
-              maxActiveTools: 20,
+              maxActiveTools: 24,
               defaultMaxRetries: 1,
             };
   return {
@@ -229,17 +235,33 @@ export function validateModelHarnessRules(
 export function inferModelHarnessTaskPhase(
   messages: readonly Message[],
 ): ModelHarnessTaskPhase {
+  return inferModelHarnessTaskPhases(messages)[0] ?? "general";
+}
+
+/**
+ * A user request can require more than one execution surface. The receipt keeps
+ * a stable primary phase, while tool selection uses every matched phase so a
+ * compound research-and-build task does not lose either half of its toolset.
+ */
+export function inferModelHarnessTaskPhases(
+  messages: readonly Message[],
+): ModelHarnessTaskPhase[] {
   const latest = messages
     .toReversed()
     .find(
       (message) =>
-        message.role === "user" && userText(message).trim().length > 0,
+        message.role === "user" &&
+        userText(message).trim().length > 0 &&
+        !INTERNAL_USER_REDIRECT_PREFIXES.some((prefix) =>
+          userText(message).startsWith(prefix),
+        ),
     );
-  if (!latest || latest.role !== "user") return "general";
-  return (
-    PHASE_PATTERNS.find(([, pattern]) => pattern.test(userText(latest)))?.[0] ??
-    "general"
+  if (!latest || latest.role !== "user") return ["general"];
+  const text = userText(latest);
+  const phases = PHASE_PATTERNS.filter(([, pattern]) => pattern.test(text)).map(
+    ([phase]) => phase,
   );
+  return phases.length > 0 ? phases : ["general"];
 }
 
 export function projectModelHarnessEnvironmentCapabilities(
@@ -274,7 +296,7 @@ export function formatModelHarnessPrompt(
   return [
     `<model_harness id="${resolution.resolutionId}" base="${resolution.id}" rule="${resolution.matchedRuleId}">`,
     `Provider prompt dialect: ${resolution.promptDialect}. Model-visible tool definitions are authoritative for this turn.`,
-    `Current task phase: ${resolution.taskPhase}. Available environment capabilities: ${capabilities}.`,
+    `Current task phase: ${resolution.taskPhase}. This is the primary phase; model-visible capabilities this turn: ${capabilities}.`,
     resolution.guidance,
     "</model_harness>",
   ].join("\n");

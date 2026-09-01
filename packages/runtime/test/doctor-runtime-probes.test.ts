@@ -197,12 +197,14 @@ describe("Skill loader Doctor probe", () => {
           status: "ready",
           code: "skills_ready",
           evidence: expect.objectContaining({
-            present: 1,
-            admitted: 1,
+            present: 5,
+            admitted: 5,
             productionCall: true,
             resourceToolConstructed: true,
             resourceProductionCall: false,
             catalogSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+            source: "project",
+            rootKind: "project_legacy",
           }),
         }),
       );
@@ -227,7 +229,7 @@ describe("Skill loader Doctor probe", () => {
         expect.objectContaining({
           status: "unavailable",
           code: "skills_unavailable",
-          evidence: { present: 1, productionCall: false },
+          evidence: { present: 6, productionCall: false },
         }),
       );
     } finally {

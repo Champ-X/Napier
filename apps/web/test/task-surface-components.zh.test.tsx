@@ -42,6 +42,32 @@ describe("ordinary task surface Chinese copy", () => {
     expect(markup).not.toContain("Multiple choices");
   });
 
+  it("renders compact live plan progress and expands its ordered steps", async () => {
+    const container = installChineseDom();
+    const { ConversationPlanProgress } =
+      await import("../src/ConversationPlanProgress");
+
+    render(
+      <ConversationPlanProgress
+        detail={planProgressDetail()}
+        isRunning={true}
+      />,
+      container,
+    );
+    const capsule = container.querySelector(
+      ".composer-plan-progress-capsule",
+    ) as HTMLButtonElement;
+
+    expect(capsule.textContent).toContain("第 2 / 3 步");
+    expect(capsule.getAttribute("aria-expanded")).toBe("false");
+    click(capsule);
+    await Promise.resolve();
+    expect(capsule.getAttribute("aria-expanded")).toBe("true");
+    expect(container.textContent).toContain("实时计划");
+    expect(container.textContent).toContain("实现界面");
+    expect(container.textContent).toContain("运行中");
+  });
+
   it("renders the task completion header and output action in Chinese", async () => {
     const container = installChineseDom();
     const { default: TaskCompletionSummary } =
@@ -169,6 +195,73 @@ function installChineseDom(): HTMLElement {
 
 function click(element: Element): void {
   element.dispatchEvent(new Event("click", { bubbles: true }));
+}
+
+function planProgressDetail() {
+  const steps = [
+    progressStep("step_inspect", "审计现状", "completed"),
+    progressStep("step_build", "实现界面", "running"),
+    progressStep("step_verify", "完成验证", "ready"),
+  ];
+  return {
+    activePlan: {
+      planId: "plan_progress0001",
+      revision: 1,
+      status: "active",
+      objective: "系统性优化长任务体验",
+      completedStepCount: 1,
+      settledStepCount: 1,
+      stepCount: 3,
+      runningStep: steps[1],
+      nextStep: steps[2],
+      verifiedArtifactCount: 0,
+      producedArtifactCount: 0,
+      missingArtifactCount: 0,
+      outputPaths: [],
+      activePhaseIndex: 0,
+      phaseCount: 1,
+      eventWatermark: 3,
+    },
+    plans: [
+      {
+        id: "plan_progress0001",
+        threadId: "thread_progress0001",
+        objective: "系统性优化长任务体验",
+        status: "active",
+        steps,
+        artifacts: [],
+        replans: [],
+        replanRecommendation: null,
+        criticalPathStepIds: steps.map((step) => step.id),
+        readyStepIds: ["step_verify"],
+        blockedStepIds: [],
+        phaseWaves: [["step_build"]],
+        activePhaseIndex: 0,
+        parallelReadyStepIds: [],
+        phaseProjectionSha256: "a".repeat(64),
+        revision: 1,
+        createdAt: "2026-09-01T00:00:00.000Z",
+        updatedAt: "2026-09-01T00:00:01.000Z",
+      },
+    ],
+    conversationPlans: [],
+  } as unknown as import("@napier/contracts").ThreadDetail;
+}
+
+function progressStep(
+  id: string,
+  title: string,
+  status: "completed" | "running" | "ready",
+) {
+  return {
+    id,
+    title,
+    description: `${title}说明`,
+    status,
+    dependsOn: [],
+    verification: `${title}已验证`,
+    ...(status === "running" ? { runId: "run_progress0001" } : {}),
+  };
 }
 
 function taskOverviewDetail() {

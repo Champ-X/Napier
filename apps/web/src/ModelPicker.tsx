@@ -7,6 +7,10 @@ import {
   modelPickerGroups,
   selectedModelAvailability,
 } from "./model-selection-view-model";
+import {
+  ModelPickerProviderSetup,
+  type ModelPickerSetupConfig,
+} from "./ModelPickerProviderSetup";
 import "./model-picker.css";
 
 export interface ModelPickerProps {
@@ -17,6 +21,7 @@ export interface ModelPickerProps {
   variant?: "compact" | "full";
   recommendedModelKeys?: readonly string[] | undefined;
   recentModelKeys?: readonly string[] | undefined;
+  setup?: ModelPickerSetupConfig | undefined;
   onChange(value: string): void;
 }
 
@@ -28,6 +33,7 @@ export function ModelPicker({
   variant = "full",
   recommendedModelKeys = [],
   recentModelKeys = [],
+  setup,
   onChange,
 }: ModelPickerProps) {
   const [open, setOpen] = useState(false);
@@ -41,6 +47,9 @@ export function ModelPicker({
   const selected = selectedModelAvailability(models, value);
   const selectedSummary = models.find(
     (model) => `${model.provider}/${model.id}` === value,
+  );
+  const hasConfiguredLiveModel = models.some(
+    (model) => model.provider !== "napier" && model.configured,
   );
   const groups = useMemo(
     () =>
@@ -187,6 +196,16 @@ export function ModelPicker({
             />
             <span>{copy.modelPicker.showUnavailable}</span>
           </label>
+          {setup && !hasConfiguredLiveModel ? (
+            <ModelPickerProviderSetup
+              config={setup}
+              labels={copy.modelPicker}
+              onEnabled={(modelKey) => {
+                onChange(modelKey);
+                closeAndRestoreFocus();
+              }}
+            />
+          ) : null}
           <div
             id={`${pickerId}-results`}
             className="model-picker-results"

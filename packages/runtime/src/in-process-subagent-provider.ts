@@ -1,4 +1,5 @@
 import type { Api, Model, MutableModels } from "@earendil-works/pi-ai";
+import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type {
   JsonValue,
   AgentProfile,
@@ -56,6 +57,7 @@ export class InProcessSubagentProvider implements SubagentProvider {
       limits: SubagentLimits;
       parentSignal: AbortSignal;
       worktrees?: SubagentWorktreeMutationManager;
+      createInheritedTools?: () => AgentTool[];
       schedule?<T>(operation: () => Promise<T>): Promise<T>;
       onEvent?: EventSink;
     },
@@ -133,6 +135,9 @@ export class InProcessSubagentProvider implements SubagentProvider {
       limits: this.options.limits,
       parentSignal: this.options.parentSignal,
       ...(this.options.worktrees ? { worktrees: this.options.worktrees } : {}),
+      ...(this.options.createInheritedTools
+        ? { createInheritedTools: this.options.createInheritedTools }
+        : {}),
       control,
       ...(this.options.onEvent ? { onEvent: this.options.onEvent } : {}),
     });

@@ -14,6 +14,26 @@ import {
 export const CAPABILITY_TOOL_NAME = "capability";
 const CAPABILITY_ROOT_URI = "cap://tools";
 const MAX_CAPABILITY_MATCHES = 20;
+const CAPABILITY_SEARCH_ALIASES: Readonly<Record<string, readonly string[]>> =
+  Object.freeze({
+    workspace_process: [
+      "bash",
+      "shell",
+      "posix",
+      "terminal",
+      "cli",
+      "command line",
+      "process",
+      "local command",
+      "npm",
+    ],
+    run_command: ["node", "javascript", "argv", "command"],
+    web_search: ["internet", "network", "online", "web", "search"],
+    web_fetch: ["internet", "network", "http", "url", "download", "fetch"],
+    browser: ["website", "web page", "navigate", "click"],
+    apply_patch: ["write", "edit", "modify", "patch", "source code"],
+    workspace_file_apply: ["write", "edit", "create file", "artifact"],
+  });
 const capabilitySchema = Type.Union([
   Type.Object(
     {
@@ -54,7 +74,7 @@ export function createCapabilityCatalogTool(
     name: CAPABILITY_TOOL_NAME,
     label: "Capability catalog",
     description:
-      "Discover configured first-party and approved extension tools by query or cap://tools URI. The cap://tools root only lists tools; specific matches become visible on the next step. Discovery is read-only and is not authorization; tools still pass normal policy, approval, sandbox, receipt, and ledger gates.",
+      "Discover configured first-party and approved extension tools. Query and cap://tools only list candidates; one exact cap://tools/<tool> URI activates that tool on the next step. Discovery is read-only and is not authorization; tools still pass normal policy, approval, sandbox, receipt, and ledger gates.",
     parameters: capabilitySchema,
     execute: async (_toolCallId, input) => {
       const query = "uri" in input ? input.uri : input.query;
@@ -73,9 +93,10 @@ export function createCapabilityCatalogTool(
       return {
         content: [{ type: "text", text: formatCapabilityResult(details) }],
         details,
-        ...(matched.length > 0 &&
-        !("uri" in input && input.uri === CAPABILITY_ROOT_URI)
-          ? { addedToolNames: matched.map(({ toolId }) => toolId) }
+        ...("uri" in input &&
+        input.uri !== CAPABILITY_ROOT_URI &&
+        matched.length === 1
+          ? { addedToolNames: [matched[0]!.toolId] }
           : {}),
       };
     },
@@ -130,6 +151,7 @@ function selectByQuery(
         descriptor.toolId,
         descriptor.label,
         descriptor.description,
+        ...capabilitySearchAliases(descriptor.toolId),
         ...descriptor.definition.capabilityUris,
         ...descriptor.definition.policyTags,
       ]
@@ -140,12 +162,18 @@ function selectByQuery(
     .slice(0, limit);
 }
 
+function capabilitySearchAliases(toolId: string): readonly string[] {
+  return toolId.startsWith("git_")
+    ? ["git", "repository", "repo", "version control", "local source"]
+    : (CAPABILITY_SEARCH_ALIASES[toolId] ?? []);
+}
+
 function formatCapabilityResult(details: CapabilityCatalogDetails): string {
   if (details.descriptors.length === 0) {
     return `No configured capability matched ${JSON.stringify(details.query)}.`;
   }
   return [
-    "Configured capabilities (discovery does not grant authorization):",
+    "Configured capabilities (discovery does not grant authorization; call one exact URI to activate it):",
     ...details.descriptors.map(
       ({ uri, toolId, label, definition }) =>
         `- ${uri} -> ${toolId} (${label}); sideEffect=${definition.sideEffect}; concurrency=${definition.concurrency}`,

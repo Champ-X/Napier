@@ -38,6 +38,10 @@ import { SUBAGENT_WORKTREE_FILE_TOOL_SCHEMA_SHA256 } from "./subagent-worktree-f
 import { isSubagentSemanticLspToolName } from "./subagent-worktree-lsp-tools.js";
 import { WriteLinkedTestVerificationRunner } from "./write-linked-test-verification.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
+import {
+  TOOL_MINIMUM_DEADLINE_MS,
+  type ToolMinimumDeadline,
+} from "./tool-deadline-policy.js";
 
 export {
   delegateTaskCallArgumentsLedgerProjection,
@@ -73,6 +77,7 @@ const delegateTaskSchema = Type.Object({
 });
 
 const DEFAULT_ROLES: SubagentRole[] = ["researcher", "reviewer", "general"];
+const SUBAGENT_DELEGATION_SETTLEMENT_BUFFER_MS = 30_000;
 
 type EventSink = (event: RunEvent) => Promise<void> | void;
 
@@ -86,6 +91,7 @@ export interface SubagentCoordinatorOptions {
   profile: AgentProfile;
   sandbox: OsSandboxAdapter;
   processes?: WorkspaceProcessManager | undefined;
+  createInheritedTools?: () => AgentTool[];
   worktreeOwnerId: string;
   parentSignal: AbortSignal;
   onEvent?: EventSink;
@@ -179,6 +185,9 @@ export class SubagentCoordinator {
         parentSignal: options.parentSignal,
         schedule: (operation) => this.semaphore.run(operation),
         ...(this.worktrees ? { worktrees: this.worktrees } : {}),
+        ...(options.createInheritedTools
+          ? { createInheritedTools: options.createInheritedTools }
+          : {}),
         ...(options.onEvent ? { onEvent: options.onEvent } : {}),
       }),
     );
@@ -203,11 +212,18 @@ export class SubagentCoordinator {
 
   createSupervisorTools(): AgentTool[] {
     return createSubagentSupervisorTools({
-        providerId: "in_process",
-        supervisor: this.supervisor,
-        start: (request, signal) => this.startTask(request, signal),
-        collectResult: collectedSupervisorToolResult,
-      });
+      providerId: "in_process",
+      supervisor: this.supervisor,
+      start: (request, signal) => this.startTask(request, signal),
+      collectResult: collectedSupervisorToolResult,
+    }).map((tool) =>
+      tool.name === "subagent_collect"
+        ? ({
+            ...tool,
+            [TOOL_MINIMUM_DEADLINE_MS]: this.delegationDeadlineMs(),
+          } as AgentTool & ToolMinimumDeadline)
+        : tool,
+    );
   }
 
   async steerTask(
@@ -280,17 +296,20 @@ export class SubagentCoordinator {
         "Only coder uses writePaths listing every created, changed, deleted, or moved endpoint; returns an isolated unmerged one-use worktree preview.",
       ].join(" "),
       parameters: delegateTaskSchema,
+      [TOOL_MINIMUM_DEADLINE_MS]: this.delegationDeadlineMs(),
       execute: async (_toolCallId, input, signal) =>
         collectedToolResult(
           await this.supervisor.collect(await this.startTask(input, signal)),
         ),
-    };
+    } as AgentTool<typeof delegateTaskSchema, DelegationDetails> &
+      ToolMinimumDeadline;
   }
 
-  private async startTask(
-    input: SubagentStartToolInput,
-    signal?: AbortSignal,
-  ) {
+  private delegationDeadlineMs(): number {
+    return this.limits.timeoutMs + SUBAGENT_DELEGATION_SETTLEMENT_BUFFER_MS;
+  }
+
+  private async startTask(input: SubagentStartToolInput, signal?: AbortSignal) {
     if (!this.enabledRoles.has(input.role)) {
       throw new Error(`Subagent role is disabled: ${input.role}`);
     }

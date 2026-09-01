@@ -10,6 +10,11 @@ import {
   ToolDeadlineError,
   ToolNotStartedError,
 } from "../src/tool-deadline.js";
+import {
+  DEFAULT_TOOL_DEADLINE_POLICY,
+  TOOL_MINIMUM_DEADLINE_MS,
+  type ToolMinimumDeadline,
+} from "../src/tool-deadline-policy.js";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -24,6 +29,44 @@ afterEach(async () => {
 });
 
 describe("Tool deadline manager", () => {
+  it("allows ten minutes by default for complex tool operations", () => {
+    expect(DEFAULT_TOOL_DEADLINE_POLICY).toEqual({
+      timeoutMs: 600_000,
+      settlementGraceMs: 5_000,
+    });
+  });
+
+  it("honors a bounded tool minimum deadline below the remaining Run budget", async () => {
+    vi.useFakeTimers();
+    const fixture = await createFixture({
+      timeoutMs: 100,
+      settlementGraceMs: 20,
+    });
+    const manager = createToolDeadlineManager({
+      budget: fixture.budget,
+      registry: fixture.registry,
+      run: fixture.run,
+      store: fixture.store,
+    });
+    const longLived = tool(
+      () =>
+        new Promise((resolve) => {
+          setTimeout(() => resolve(result("settled within tool bound")), 200);
+        }),
+    ) as AgentTool & ToolMinimumDeadline;
+    longLived[TOOL_MINIMUM_DEADLINE_MS] = 250;
+    const tools = [longLived];
+    manager.wrap(tools);
+
+    const pending = tools[0]!.execute("call_bounded_long", {}, undefined);
+    await vi.advanceTimersByTimeAsync(100);
+    expect(manager.error).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(100);
+    await expect(pending).resolves.toEqual(result("settled within tool bound"));
+    expect(manager.error).toBeUndefined();
+    fixture.store.close();
+  });
+
   it("passes through a tool that completes before its child deadline", async () => {
     const fixture = await createFixture();
     const manager = createToolDeadlineManager({

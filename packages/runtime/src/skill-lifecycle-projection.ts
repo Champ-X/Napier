@@ -9,7 +9,10 @@ import {
   type SkillApplicationMode,
   type SkillLifecycleProjectionV1,
 } from "@napier/contracts/skill-lifecycle";
-import type { StandardSkillRootKind } from "@napier/contracts/skill-load-standard";
+import type {
+  StandardSkillRootKind,
+  StandardSkillSource,
+} from "@napier/contracts/skill-load-standard";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
@@ -34,7 +37,7 @@ const SOFTWARE_MUTATION_TOOLS = new Set([
 ]);
 
 type Origin = {
-  source: "project" | "user";
+  source: StandardSkillSource;
   rootKind: StandardSkillRootKind;
 };
 
@@ -404,7 +407,9 @@ function origin(
     return { source: "project", rootKind: "project_legacy" };
   }
   return "rootKind" in value &&
-    (value.source === "project" || value.source === "user")
+    (value.source === "project" ||
+      value.source === "user" ||
+      value.source === "bundled")
     ? { source: value.source, rootKind: value.rootKind }
     : undefined;
 }

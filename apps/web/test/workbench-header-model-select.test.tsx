@@ -1,10 +1,16 @@
 import type { ModelSummary } from "@napier/contracts";
+import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
+import type {
+  ProviderSetupPreview,
+  ProviderSetupResult,
+} from "@napier/contracts/provider-setup";
 import { parseHTML } from "linkedom";
 import { createRoot } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { WorkbenchHeader } from "../src/WorkbenchHeader";
+import { canonicalJson, sha256Text } from "../src/stable-digest";
 
 const roots: ReturnType<typeof createRoot>[] = [];
 
@@ -153,7 +159,145 @@ describe("Workbench header model selection", () => {
     expect(results.textContent).not.toContain("GPT-5");
     expect(results.textContent).not.toContain("GPT-4.1");
   });
+
+  it("enables an environment-backed provider from a fresh workspace", async () => {
+    const preview = await providerPreview();
+    const result = await providerResult(preview);
+    const bootstrap = {
+      recommendedRunModel: result.model,
+      models: [
+        model("napier", "demo", "Deterministic demo", true),
+        model("deepseek", "deepseek-v4-flash", "DeepSeek V4 Flash", true),
+      ],
+    } as LiveReadyBootstrapResponse;
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(stableResponse(preview))
+      .mockResolvedValueOnce(stableResponse(result))
+      .mockResolvedValueOnce(await bodyResponse(bootstrap));
+    vi.stubGlobal("fetch", fetchMock);
+    const onBootstrapUpdated = vi.fn();
+    const onModel = vi.fn();
+    const container = installDom();
+    const root = createRoot(container);
+    roots.push(root);
+
+    await act(async () => {
+      root.render(
+        <WorkbenchHeader
+          isRunning={false}
+          model={{
+            configured: true,
+            id: "demo",
+            key: "napier/demo",
+            provider: "napier",
+          }}
+          models={[model("napier", "demo", "Deterministic demo", true)]}
+          modelSetup={{
+            threadId: "thread_fresh_workspace",
+            onBootstrapUpdated,
+          }}
+          status="idle"
+          title="Thread"
+          contextLabel="Conversation"
+          onModel={onModel}
+        />,
+      );
+      findByAttribute(container, "aria-label", "Agent & Model")?.dispatchEvent(
+        new Event("click", { bubbles: true }),
+      );
+    });
+
+    await vi.waitFor(() =>
+      expect(container.textContent).toContain("Live credentials found"),
+    );
+    const enable = findElements(container, "button").find((button) =>
+      button.textContent?.includes("Enable DeepSeek"),
+    );
+    expect(enable).toBeTruthy();
+
+    await act(async () => {
+      enable?.dispatchEvent(new Event("click", { bubbles: true }));
+    });
+    await vi.waitFor(() =>
+      expect(onModel).toHaveBeenCalledWith("deepseek/deepseek-v4-flash"),
+    );
+    expect(onBootstrapUpdated).toHaveBeenCalledWith(bootstrap);
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      "/api/setup/providers",
+      "/api/setup/providers",
+      "/api/bootstrap?thread=thread_fresh_workspace",
+    ]);
+  });
 });
+
+async function providerPreview(): Promise<ProviderSetupPreview> {
+  const content = {
+    kind: "napier.provider-setup-preview" as const,
+    schemaVersion: 1 as const,
+    candidates: [
+      {
+        providerId: "deepseek",
+        providerName: "DeepSeek",
+        environmentVariable: "DEEPSEEK_API_KEY",
+        model: { provider: "deepseek", id: "deepseek-v4-flash" },
+        status: "available" as const,
+      },
+    ],
+    recommendedProviderId: "deepseek",
+    candidateCount: 1,
+    readyCount: 0,
+    availableCount: 1,
+    candidateSetSha256: "a".repeat(64),
+  };
+  return {
+    ...content,
+    contentSha256: await sha256Text(canonicalJson(content)),
+  };
+}
+
+async function providerResult(
+  preview: ProviderSetupPreview,
+): Promise<ProviderSetupResult> {
+  const content = {
+    kind: "napier.provider-setup-result" as const,
+    schemaVersion: 1 as const,
+    providerId: "deepseek",
+    model: { provider: "deepseek", id: "deepseek-v4-flash" },
+    status: "ready" as const,
+    action: "created" as const,
+    referenceIdSha256: "b".repeat(64),
+    previewSha256: preview.contentSha256,
+  };
+  return {
+    ...content,
+    contentSha256: await sha256Text(canonicalJson(content)),
+  };
+}
+
+function stableResponse(value: { contentSha256: string }): Response {
+  return new Response(JSON.stringify(value), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+      "X-Napier-Content-SHA256": value.contentSha256,
+      "X-Napier-Content-SHA256-Mode": "stable",
+    },
+  });
+}
+
+async function bodyResponse(value: unknown): Promise<Response> {
+  const body = JSON.stringify(value);
+  return new Response(body, {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
+      "X-Napier-Content-SHA256": await sha256Text(body),
+      "X-Napier-Content-SHA256-Mode": "body",
+    },
+  });
+}
 
 function installDom(): HTMLElement {
   const { document, window } = parseHTML(

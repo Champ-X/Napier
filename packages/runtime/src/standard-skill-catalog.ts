@@ -8,7 +8,7 @@ import {
 
 export async function inspectStandardSkillCatalog(
   workspaceRoot: string,
-  options: Pick<StandardSkillSnapshotOptions, "userHome"> = {},
+  options: Pick<StandardSkillSnapshotOptions, "userHome" | "bundledRoot"> = {},
 ): Promise<SkillSummary[]> {
   const names = await discoverStandardSkillNames(workspaceRoot, options);
   if (names.length === 0) return [];
@@ -55,20 +55,26 @@ type CatalogRequest = {
   canonicalName?: string;
   state: "loadable" | "unavailable";
   failureContentSha256?: string;
-  source?: "project" | "user";
+  source?: "project" | "user" | "bundled";
 };
 
 function requestSource(request: {
-  source?: "project" | "user";
+  source?: "project" | "user" | "bundled";
 }): SkillSummary["source"] {
-  return request.source === "user" ? "user" : "workspace";
+  return request.source === "user"
+    ? "user"
+    : request.source === "bundled"
+      ? "bundled"
+      : "workspace";
 }
 
 function unavailableSource(failure: unknown): SkillSummary["source"] {
   const roots = candidateRoots(failure);
   return roots?.length === 1 && roots[0] === "user_standard"
     ? "user"
-    : "workspace";
+    : roots?.length === 1 && roots[0] === "bundled_standard"
+      ? "bundled"
+      : "workspace";
 }
 
 function unavailableDescription(failure: unknown): string {

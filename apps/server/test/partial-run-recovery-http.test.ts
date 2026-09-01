@@ -8,6 +8,7 @@ import {
   fauxToolCall,
 } from "@earendil-works/pi-ai";
 import type { StreamFrame } from "@napier/contracts";
+import { agentCapabilityPresetUpdate } from "@napier/contracts/agent-capabilities";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createApp, createServices } from "../src/app.js";
@@ -31,6 +32,90 @@ afterEach(async () => {
 });
 
 describe("partial Run recovery HTTP", () => {
+  it("streams an origin-bound full-access recovery instead of a hashed preset error", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-server-preset-"));
+    roots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot, { recursive: true });
+    const service = await createServices({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot,
+      sandbox: processReadySandbox("preset-recovery-http"),
+    });
+    services.push(service);
+    const agent = service.store.listAgents()[0]!;
+    const thread = await service.store.createThread({
+      title: "Preset recovery API test",
+      agentId: agent.id,
+    });
+    const interrupted = await service.store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+      model: { provider: "faux-prior", id: "faux-1" },
+      capabilityPreset: "full_access",
+    });
+    await service.store.appendEvent({
+      threadId: thread.id,
+      runId: interrupted.id,
+      type: "run.started",
+      category: "lifecycle",
+      visibility: "debug",
+      payload: { capabilityPreset: "full_access" },
+    });
+    await service.store.appendEvent({
+      threadId: thread.id,
+      runId: interrupted.id,
+      type: "message.user",
+      category: "message",
+      visibility: "user",
+      payload: { role: "user", text: "Resume the interrupted delivery." },
+    });
+    await service.store.finishRun(interrupted.id, "failed", {
+      outcome: "paused_budget",
+      error: "Delegated work exceeded its outer deadline.",
+    });
+    const recovery = fauxProvider({ provider: "faux-preset-http-recovery" });
+    recovery.setResponses([
+      fauxAssistantMessage("Recovered with the original capability preset."),
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    service.models.registerProvider(recovery.provider);
+
+    const response = await createApp(service).request(
+      `/api/threads/${thread.id}/resume`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          runId: interrupted.id,
+          model: { provider: "faux-preset-http-recovery", id: "faux-1" },
+        }),
+      },
+    );
+    const frames = parseSseFrames(await response.text());
+    const done = frames.at(-1);
+
+    expect(response.status).toBe(200);
+    expect(frames.some((frame) => frame.type === "error")).toBe(false);
+    expect(done?.type).toBe("done");
+    if (!done || done.type !== "done") throw new Error("Missing done frame");
+    const recoveredRun = service.store
+      .listRuns(thread.id)
+      .find((run) => run.id === done.runId);
+    expect(recoveredRun).toEqual(
+      expect.objectContaining({
+        source: "recovery",
+        parentRunId: interrupted.id,
+        status: "completed",
+        configuration: expect.objectContaining({
+          enabledTools: [
+            ...agentCapabilityPresetUpdate("full_access").enabledTools,
+          ].sort(),
+        }),
+      }),
+    );
+  });
+
   it("binds the parent request to one recovery child SSE stream", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-server-partial-"));
     roots.push(root);

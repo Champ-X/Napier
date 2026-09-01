@@ -248,8 +248,17 @@ function interventionReason(event: RunEvent): RunHarnessInterventionReason[] {
     return ["budget_pause"];
   }
   const reason = stringField(event.payload, "harnessInterventionReason");
+  if (
+    event.type === "model.response" &&
+    stringField(event.payload, "responseDisposition") ===
+      "capability_recovery_required"
+  ) {
+    return ["capability_recovery"];
+  }
   return reason === "approval_block" ||
     reason === "capability_block" ||
+    reason === "capability_use_required" ||
+    reason === "capability_discovery_required" ||
     reason === "safety_block"
     ? [reason]
     : [];

@@ -90,6 +90,7 @@ export function conversationThinkingActivities(
 ): ConversationThinkingActivity[] {
   const ordered = [...events].sort((left, right) => left.seq - right.seq);
   const turnStarts = new Map<string, RunEvent>();
+  const consumedThinkingEventIds = new Set<string>();
   const activities: ConversationThinkingActivity[] = [];
   for (let index = 0; index < ordered.length; index += 1) {
     const event = ordered[index]!;
@@ -97,7 +98,9 @@ export function conversationThinkingActivities(
       turnStarts.set(event.runId, event);
       continue;
     }
-    if (!thinkingDelta(event)) continue;
+    if (!thinkingDelta(event) || consumedThinkingEventIds.has(event.id)) {
+      continue;
+    }
 
     const first = event;
     const turnStart = turnStarts.get(event.runId) ?? first;
@@ -109,9 +112,22 @@ export function conversationThinkingActivities(
     collectThinkingContent(event.payload, transcript, () => {
       redactedChunkCount += 1;
     });
-    let next = ordered[index + 1];
-    while (thinkingDelta(next, event.runId)) {
-      last = next;
+    let lastIndex = index;
+    for (let cursor = index + 1; cursor < ordered.length; cursor += 1) {
+      const candidate = ordered[cursor]!;
+      if (candidate.runId !== event.runId) continue;
+      if (
+        candidate.type === "turn.started" ||
+        candidate.type === "turn.completed" ||
+        candidate.type === "message.user" ||
+        publicActionKind(candidate)
+      ) {
+        break;
+      }
+      if (!thinkingDelta(candidate, event.runId)) continue;
+      consumedThinkingEventIds.add(candidate.id);
+      last = candidate;
+      lastIndex = cursor;
       chunkCount = sumBounded(
         chunkCount,
         boundedInteger(last.payload["chunkCount"]),
@@ -123,13 +139,11 @@ export function conversationThinkingActivities(
       collectThinkingContent(last.payload, transcript, () => {
         redactedChunkCount += 1;
       });
-      index += 1;
-      next = ordered[index + 1];
     }
 
     const followingActionKind = findFollowingAction(
       ordered,
-      index,
+      lastIndex,
       event.runId,
     );
     const durationSeconds = durationBetween(
@@ -141,7 +155,10 @@ export function conversationThinkingActivities(
       // This keeps the live placeholder mounted when the first delta arrives.
       id: turnStart.id,
       runId: first.runId,
-      seq: turnStart.seq,
+      // Providers emit turn.started before they echo the triggering user
+      // message. Anchor the visual activity to that message so the feed keeps
+      // the causal order: prompt, then thinking.
+      seq: thinkingDisplaySeq(ordered, turnStart, first.seq),
       lastSeq: last.seq,
       createdAt: last.createdAt,
       startedAt: turnStart.createdAt,
@@ -213,13 +230,28 @@ export function activeConversationThinkingActivity(
   return {
     id: turnStart.id,
     runId: turnStart.runId,
-    seq: turnStart.seq,
+    seq: thinkingDisplaySeq(runEvents, turnStart),
     lastSeq: turnStart.seq,
     createdAt: turnStart.createdAt,
     startedAt: turnStart.createdAt,
     turnSeq: turnStart.seq,
     summaryKind: "continue",
   };
+}
+
+function thinkingDisplaySeq(
+  orderedEvents: readonly RunEvent[],
+  turnStart: RunEvent,
+  throughSeq = Number.POSITIVE_INFINITY,
+): number {
+  const triggeringMessage = orderedEvents.find(
+    (event) =>
+      event.runId === turnStart.runId &&
+      event.seq > turnStart.seq &&
+      event.seq <= throughSeq &&
+      event.type === "message.user",
+  );
+  return triggeringMessage?.seq ?? turnStart.seq;
 }
 
 function collectThinkingContent(

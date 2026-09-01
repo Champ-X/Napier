@@ -49,10 +49,18 @@ describe("Thread lifecycle trash HTTP", () => {
     await services.store.finishRun(run.id, "completed");
     const trashed = await app.request(`/api/threads/${created.thread.id}`, {
       method: "DELETE",
+      headers: { Prefer: "return=minimal" },
     });
     expect(trashed.status).toBe(200);
+    expect(trashed.headers.get("preference-applied")).toBe("return=minimal");
     expect(trashed.headers.get("x-napier-content-sha256")).toMatch(
       /^[a-f0-9]{64}$/,
+    );
+    expect(await trashed.json()).toEqual(
+      expect.objectContaining({
+        id: created.thread.id,
+        status: "idle",
+      }),
     );
     expect(await visibleThreadIds(app)).not.toContain(created.thread.id);
 

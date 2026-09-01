@@ -14,6 +14,7 @@ import {
 
 export interface EffectiveCapabilitiesPromptBuilderInput {
   requestedTools: readonly string[];
+  availableTools?: readonly string[];
   toolPolicy: ToolPolicyMode;
   sandboxId: string;
   restrictedReadOnlyExecution: boolean;

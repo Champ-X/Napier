@@ -156,6 +156,25 @@ describe("standard Skill load contracts", () => {
     });
 
     expect(isStandardSkillSnapshotManifestV2(manifest)).toBe(true);
+    const {
+      snapshotManifestSha256: _snapshotManifestSha256,
+      ...manifestWithoutHash
+    } = manifest;
+    expect(
+      isStandardSkillSnapshotManifestV2(
+        sealAs(
+          {
+            ...manifestWithoutHash,
+            trustOrigins: [
+              "active_user_selected_project",
+              "local_user_skill_store",
+              "napier_read_only_bundle",
+            ],
+          },
+          "snapshotManifestSha256",
+        ),
+      ),
+    ).toBe(false);
     expect(isStandardSkillCatalogBindingV2(binding)).toBe(true);
     expect(
       isStandardSkillCatalogBindingV2({

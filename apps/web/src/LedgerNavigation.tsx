@@ -2,11 +2,12 @@ import {
   ChevronLeft,
   ChevronRight,
   MessageCirclePlus,
+  Loader2,
   Search,
   Settings2,
   Wrench,
 } from "lucide-react";
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, memo, useEffect, useRef, useState } from "react";
 
 import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
 import { copy } from "./copy";
@@ -14,21 +15,11 @@ import type { WorkspaceLayoutControls } from "./use-workspace-layout";
 import { WorkspaceTree } from "./WorkspaceTree";
 import { workspaceTreeCopy as t } from "./workspace-tree-copy";
 
-export function LedgerNavigation({
-  bootstrap,
-  selectedThreadId,
-  busyThreadId,
-  onNewThread,
-  onSelect,
-  onTrash,
-  onWorkspaceSwitch,
-  onOpenDeveloperWorkbench,
-  onOpenSettings,
-  layout,
-}: {
+export interface LedgerNavigationProps {
   bootstrap: LiveReadyBootstrapResponse;
   selectedThreadId: string | undefined;
   busyThreadId: string | undefined;
+  newThreadBusy: boolean;
   onNewThread(): void;
   onSelect(threadId: string): void;
   onTrash(threadId: string): void;
@@ -36,7 +27,21 @@ export function LedgerNavigation({
   onOpenDeveloperWorkbench(): void;
   onOpenSettings(): void;
   layout: WorkspaceLayoutControls;
-}) {
+}
+
+export const LedgerNavigation = memo(function LedgerNavigation({
+  bootstrap,
+  selectedThreadId,
+  busyThreadId,
+  newThreadBusy,
+  onNewThread,
+  onSelect,
+  onTrash,
+  onWorkspaceSwitch,
+  onOpenDeveloperWorkbench,
+  onOpenSettings,
+  layout,
+}: LedgerNavigationProps) {
   const {
     collapsed,
     closeSidebar,
@@ -98,12 +103,18 @@ export function LedgerNavigation({
           className="new-ledger-button"
           type="button"
           aria-label={copy.newThread}
+          aria-busy={newThreadBusy}
+          disabled={newThreadBusy}
           onClick={() => {
             onNewThread();
             closeSidebar();
           }}
         >
-          <MessageCirclePlus size={17} aria-hidden="true" />
+          {newThreadBusy ? (
+            <Loader2 size={17} aria-hidden="true" className="spin" />
+          ) : (
+            <MessageCirclePlus size={17} aria-hidden="true" />
+          )}
           <span>{copy.newThread}</span>
         </button>
 
@@ -172,5 +183,28 @@ export function LedgerNavigation({
         </div>
       </nav>
     </Fragment>
+  );
+}, sameLedgerNavigationProps);
+
+function sameLedgerNavigationProps(
+  previous: LedgerNavigationProps,
+  next: LedgerNavigationProps,
+): boolean {
+  return (
+    previous.bootstrap === next.bootstrap &&
+    previous.selectedThreadId === next.selectedThreadId &&
+    previous.busyThreadId === next.busyThreadId &&
+    previous.newThreadBusy === next.newThreadBusy &&
+    previous.onNewThread === next.onNewThread &&
+    previous.onSelect === next.onSelect &&
+    previous.onTrash === next.onTrash &&
+    previous.onWorkspaceSwitch === next.onWorkspaceSwitch &&
+    previous.onOpenDeveloperWorkbench === next.onOpenDeveloperWorkbench &&
+    previous.onOpenSettings === next.onOpenSettings &&
+    previous.layout.collapsed === next.layout.collapsed &&
+    previous.layout.mobileNavigationOpen === next.layout.mobileNavigationOpen &&
+    previous.layout.toggleSidebar === next.layout.toggleSidebar &&
+    previous.layout.openSidebar === next.layout.openSidebar &&
+    previous.layout.closeSidebar === next.layout.closeSidebar
   );
 }

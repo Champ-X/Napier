@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { Archive, Ellipsis } from "lucide-react";
 
 import type { ThreadSummary } from "@napier/contracts";
@@ -8,7 +8,7 @@ import { WorkspaceThreadRow } from "./WorkspaceThreadRow";
 const trashCopy = copy.trash;
 const menuLabel = copy.recentThreads;
 
-export function ThreadList({
+export const ThreadList = memo(function ThreadList({
   threads,
   selectedThreadId,
   busyThreadId,
@@ -118,4 +118,4 @@ export function ThreadList({
       })}
     </div>
   );
-}
+});

@@ -1,6 +1,5 @@
 import { createHash } from "node:crypto";
 
-import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type {
   JsonObject,
   JsonValue,
@@ -52,7 +51,11 @@ export function createRunProgressMessageEvent(input: {
 }
 
 export function turnPromptEvent(
-  source: RunInvocationSource | "goal_continuation" | "advisor_correction",
+  source:
+    | RunInvocationSource
+    | "goal_continuation"
+    | "advisor_correction"
+    | "capability_recovery",
 ) {
   if (source === "user" || source === "schedule" || source === "channel") {
     return {
@@ -82,7 +85,9 @@ export function turnPromptEvent(
   } as const;
 }
 
-export function formatPlanToolGuidance(tools: readonly AgentTool[]): string {
+export function formatPlanToolGuidance(
+  tools: readonly { name: string }[],
+): string {
   const toolNames = new Set(tools.map((tool) => tool.name));
   if (toolNames.size === 0) return "";
   const hasCreatePlan = toolNames.has("create_plan");

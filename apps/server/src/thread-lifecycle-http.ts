@@ -4,15 +4,15 @@ import {
   MAX_THREAD_REPLAY_BUNDLE_BYTES,
   validateThreadReplayBundle,
 } from "@napier/runtime/agent";
-import {
-  createId,
-} from "@napier/runtime/core";
-import {
-  type LocalStore,
-} from "@napier/runtime/store";
+import { createId } from "@napier/runtime/core";
+import { type LocalStore } from "@napier/runtime/store";
 import { Hono } from "hono";
 
-import { errorMessage, jsonError } from "./http-response-evidence.js";
+import {
+  errorMessage,
+  jsonError,
+  setBodyContentSha256Header,
+} from "./http-response-evidence.js";
 import {
   readLimitedJson,
   readOptionalLimitedJson,
@@ -162,7 +162,12 @@ export function registerThreadLifecycleHttp(
   app.delete("/api/threads/:threadId", async (context) => {
     const threadId = context.req.param("threadId");
     try {
-      await services.store.trashThread(threadId);
+      const thread = await services.store.trashThread(threadId);
+      if (prefersMinimalResponse(context.req.header("prefer"))) {
+        setBodyContentSha256Header(context, thread);
+        context.header("Preference-Applied", "return=minimal");
+        return context.json(thread);
+      }
       const detail = await projectDetail(services, threadId);
       setThreadDetailProjectionHeaders(context, detail);
       return context.json(detail);
@@ -256,6 +261,15 @@ function registerGoalHttp(
     setThreadDetailProjectionHeaders(context, detail);
     return context.json(detail);
   });
+}
+
+function prefersMinimalResponse(prefer: string | undefined): boolean {
+  return Boolean(
+    prefer
+      ?.split(",")
+      .map((value) => value.trim().toLowerCase())
+      .includes("return=minimal"),
+  );
 }
 
 async function projectDetail(

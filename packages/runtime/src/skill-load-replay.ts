@@ -10,6 +10,7 @@ import {
   buildStandardSkillSnapshot,
   type SkillSnapshot,
 } from "./standard-skill-snapshot.js";
+import { buildProjectSkillSnapshot } from "./project-skill-snapshot.js";
 
 export const SKILL_CONTINUATION_SNAPSHOT: unique symbol = Symbol(
   "napier.skill-continuation-snapshot",
@@ -79,11 +80,22 @@ export async function prepareSkillContinuationSnapshot(
   ) {
     throw new Error("Source Run Project Skill selection evidence is invalid");
   }
-  const snapshot = await buildStandardSkillSnapshot(
-    workspaceRoot,
-    selectedNames as string[],
-    signal,
-  );
+  // V1 bindings predate the composite standard/bundled catalog. Rebuild them
+  // through the same project-only loader that created the source evidence;
+  // otherwise introducing a bundled root changes the schema and makes an
+  // otherwise unchanged historical Run impossible to resume.
+  const snapshot =
+    sourceBinding.schemaVersion === 1
+      ? await buildProjectSkillSnapshot(
+          workspaceRoot,
+          selectedNames as string[],
+          signal,
+        )
+      : await buildStandardSkillSnapshot(
+          workspaceRoot,
+          selectedNames as string[],
+          signal,
+        );
   validateSkillSnapshotForContinuation(sourceBinding, snapshot);
   return { bound: true, snapshot };
 }

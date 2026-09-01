@@ -10,6 +10,7 @@ import {
   UnsupportedSandboxAdapter,
 } from "../src/index.js";
 import { buildProjectSkillSnapshot } from "../src/project-skill-snapshot.js";
+import { isSkillCatalogBinding } from "../src/skill-load-contracts.js";
 
 const roots: string[] = [];
 
@@ -145,11 +146,17 @@ describe("Run-bound project Skill snapshots", () => {
       const context = (await services.store.listEvents(thread.id)).find(
         (event) => event.runId === run.id && event.type === "context.skills",
       )?.payload as Record<string, unknown>;
-      expect(isSkillCatalogBindingV1(context)).toBe(true);
+      expect(isSkillCatalogBinding(context)).toBe(true);
       expect(context).toEqual(
         expect.objectContaining({
           kind: "napier.skill-catalog-binding",
-          loadableSkillNames: ["data-analysis", "research-brief"],
+          loadableSkillNames: [
+            "artifact-studio",
+            "browser-automation",
+            "data-analysis",
+            "research-brief",
+            "software-delivery",
+          ],
           catalogSha256: run.configuration?.skillCatalogSha256,
           snapshotManifestSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
         }),

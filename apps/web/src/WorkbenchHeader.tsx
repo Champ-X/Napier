@@ -4,6 +4,7 @@ import { Folder } from "lucide-react";
 
 import { copy } from "./copy";
 import { ModelPicker } from "./ModelPicker";
+import type { ModelPickerSetupConfig } from "./ModelPickerProviderSetup";
 import { workspaceEvidenceCopy as workspaceCopy } from "./workspace-evidence-copy";
 
 type HeaderModel = {
@@ -24,6 +25,7 @@ export function WorkbenchHeader({
   taskStatus,
   recommendedModelKeys,
   recentModelKeys,
+  modelSetup,
   onModel,
   workspaceRailOpen = true,
   onToggleWorkspaceRail,
@@ -38,6 +40,7 @@ export function WorkbenchHeader({
   taskStatus?: ReactNode;
   recommendedModelKeys?: readonly string[];
   recentModelKeys?: readonly string[];
+  modelSetup?: ModelPickerSetupConfig;
   onModel(value: string): void;
   workspaceRailOpen?: boolean;
   onToggleWorkspaceRail?(): void;
@@ -74,6 +77,7 @@ export function WorkbenchHeader({
           variant="compact"
           recommendedModelKeys={recommendedModelKeys}
           recentModelKeys={recentModelKeys}
+          setup={modelSetup}
           onChange={onModel}
         />
         {onToggleWorkspaceRail ? (

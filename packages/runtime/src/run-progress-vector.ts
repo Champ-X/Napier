@@ -259,7 +259,11 @@ export class RunProgressTracker {
         if (toolName && SOURCE_TOOLS.has(toolName)) {
           this.sourceEvidence.add(eventEvidence(event));
         }
-        if (toolName && isWorkspaceMutationTool(toolName)) {
+        if (
+          toolName &&
+          (isWorkspaceMutationTool(toolName) ||
+            isSettledWorkspaceProcessMutation(toolName, payload))
+        ) {
           this.workspaceEvidence.add(eventEvidence(event));
           if (this.firstWorkspaceMutationTurn === undefined) {
             this.firstWorkspaceMutationTurn = this.turnIndex;
@@ -290,6 +294,20 @@ export class RunProgressTracker {
       .listPlans(this.context.run.threadId)
       .filter((plan) => this.planIds.has(plan.id));
   }
+}
+
+function isSettledWorkspaceProcessMutation(
+  toolName: string,
+  payload: Record<string, JsonValue> | undefined,
+): boolean {
+  if (toolName !== "workspace_process" || !payload) return false;
+  const rawDetails = payload["details"];
+  const details = rawDetails === undefined ? undefined : record(rawDetails);
+  return (
+    details?.["status"] === "succeeded" &&
+    details["workspaceDeltaStatus"] === "changed" &&
+    details["workspaceWriteScopeStatus"] === "within_scope"
+  );
 }
 
 export function progLife(

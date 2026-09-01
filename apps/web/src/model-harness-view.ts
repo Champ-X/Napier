@@ -169,7 +169,9 @@ function harnessResolution(
     identity.harnessId !== MODEL_HARNESS_ID ||
     payload["family"] !== baseHarnessId.split(".")[2] ||
     !Array.isArray(payload["intents"]) ||
-    payload["intents"].length !== 1 ||
+    payload["intents"].length < 1 ||
+    payload["intents"].length > INTENTS.size ||
+    new Set(payload["intents"]).size !== payload["intents"].length ||
     payload["intents"][0] !== taskPhase
   )
     return undefined;

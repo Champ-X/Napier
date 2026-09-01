@@ -38,6 +38,11 @@ export function AppWorkbenchHeader({
           : []
       }
       recentModelKeys={recentModelKeysFromRuns(vm.detail?.runs ?? [])}
+      modelSetup={{
+        ...(vm.detail ? { threadId: vm.detail.thread.id } : {}),
+        onBootstrapUpdated: vm.commitConfigurationBootstrap,
+        onOpenSettings: () => shell.routeInspector("context"),
+      }}
       workspaceRailOpen={shell.workspaceRailOpen}
       {...(shell.workspaceView === "conversation" && !browserControlsAvailable
         ? { onToggleWorkspaceRail: shell.toggleWorkspaceRail }

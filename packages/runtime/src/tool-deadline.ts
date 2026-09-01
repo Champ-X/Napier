@@ -14,12 +14,14 @@ import { createToolCallSha256 } from "./tool-loop-guard.js";
 import type { ToolProtocolRegistry } from "./tool-protocol-registry.js";
 import {
   DEFAULT_TOOL_DEADLINE_POLICY,
+  TOOL_MINIMUM_DEADLINE_MS,
   ToolDeadlineError,
   type ToolDeadlineEvidence,
   type ToolDeadlinePolicy,
   type ToolDeadlineReason,
   type ToolEffectJournalEvidence,
   type ToolEffectState,
+  type ToolMinimumDeadline,
   ToolNotStartedError,
 } from "./tool-deadline-policy.js";
 export {
@@ -73,11 +75,12 @@ export class ToolDeadlineManager {
     onUpdate: AgentToolUpdateCallback | undefined,
   ): Promise<AgentToolResult<unknown>> {
     const requestedTimeout = requestedTimeoutMs(args);
+    const minimumToolTimeout = minimumToolTimeoutMs(tool);
     const timeoutMs = Math.max(
       1,
       Math.min(
         this.context.budget.remainingTimeoutMs(),
-        this.context.policy.timeoutMs,
+        Math.max(this.context.policy.timeoutMs, minimumToolTimeout ?? 0),
         requestedTimeout ?? Number.MAX_SAFE_INTEGER,
       ),
     );
@@ -396,6 +399,15 @@ function requestedTimeoutMs(value: unknown): number | undefined {
     Number.isSafeInteger(timeoutMs) &&
     timeoutMs > 0
     ? timeoutMs
+    : undefined;
+}
+
+function minimumToolTimeoutMs(tool: AgentTool): number | undefined {
+  const value = (tool as AgentTool & ToolMinimumDeadline)[
+    TOOL_MINIMUM_DEADLINE_MS
+  ];
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0
+    ? value
     : undefined;
 }
 

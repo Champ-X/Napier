@@ -20,6 +20,13 @@ const writeTool = {
   parameters: Type.Object({ patch: Type.String() }),
   execute: async () => ({ content: [], details: {} }),
 };
+const processTool = {
+  name: "workspace_process",
+  label: "Workspace process",
+  description: "Start and control a workspace process.",
+  parameters: Type.Object({ action: Type.String() }),
+  execute: async () => ({ content: [], details: {} }),
+};
 
 describe("Capability Catalog", () => {
   it("projects deterministic ToolDefinitionV2 descriptors", () => {
@@ -109,6 +116,28 @@ describe("Capability Catalog", () => {
       expect.objectContaining({ matchedCount: 2 }),
     );
     expect(result.addedToolNames).toBeUndefined();
+  });
+
+  it("discovers the POSIX command surface from Bash and CLI vocabulary", async () => {
+    const catalog = createCapabilityCatalogTool([
+      readTool,
+      writeTool,
+      processTool,
+    ]);
+
+    for (const query of ["bash", "shell", "terminal", "command line"]) {
+      const result = await catalog.execute(
+        `call_catalog_${query.replaceAll(" ", "_")}`,
+        { query },
+        undefined,
+      );
+      expect(result.addedToolNames).toBeUndefined();
+      expect(result.content[0]).toEqual(
+        expect.objectContaining({
+          text: expect.stringContaining("cap://tools/workspace_process"),
+        }),
+      );
+    }
   });
 
   it("rejects ambiguous duplicate tool identities", () => {

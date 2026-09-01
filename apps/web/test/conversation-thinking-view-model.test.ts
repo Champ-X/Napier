@@ -83,6 +83,45 @@ describe("conversationThinkingActivities", () => {
     ]);
   });
 
+  it("keeps internal debug events from fragmenting one thinking stage", () => {
+    const activities = conversationThinkingActivities([
+      event(1, "turn.started", "debug", {}),
+      event(2, "message.user", "user", {
+        role: "user",
+        text: "Build the game",
+      }),
+      event(3, "model.thinking.delta", "hidden", {
+        chunkCount: 2,
+        deltaBytes: 10,
+        delta: "First. ",
+      }),
+      event(4, "route_attempt_ended", "debug", {}),
+      event(5, "model.thinking_loop.detected", "debug", {}),
+      event(6, "model.thinking.delta", "hidden", {
+        chunkCount: 3,
+        deltaBytes: 12,
+        delta: "Second.",
+      }),
+      event(7, "context.model_invocation", "debug", {}),
+      event(8, "tool.started", "user", {
+        callId: "call_patch",
+        toolName: "apply_patch",
+      }),
+    ]);
+
+    expect(activities).toEqual([
+      expect.objectContaining({
+        id: "event_1",
+        seq: 2,
+        lastSeq: 6,
+        followingActionKind: "apply_patch",
+        chunkCount: 5,
+        deltaBytes: 22,
+        transcript: "First. Second.",
+      }),
+    ]);
+  });
+
   it("marks historical hash-only thinking without inventing text", () => {
     const activities = conversationThinkingActivities([
       event(1, "turn.started", "debug", {}),
@@ -172,6 +211,29 @@ describe("conversationThinkingActivities", () => {
         true,
       ),
     ).toBeUndefined();
+  });
+
+  it("anchors waiting and retained thinking after the triggering user message", () => {
+    const waiting = [
+      event(1, "turn.started", "debug", {}),
+      event(2, "message.user", "user", {
+        role: "user",
+        text: "Build the game",
+      }),
+      event(3, "context.model_invocation", "debug", {}),
+    ];
+
+    expect(
+      activeConversationThinkingActivity(waiting, "run_1", true),
+    ).toEqual(expect.objectContaining({ seq: 2, turnSeq: 1 }));
+    expect(
+      conversationThinkingActivities([
+        ...waiting,
+        event(4, "model.thinking.delta", "hidden", { delta: "Working" }),
+      ]),
+    ).toEqual([
+      expect.objectContaining({ seq: 2, turnSeq: 1, transcript: "Working" }),
+    ]);
   });
 });
 

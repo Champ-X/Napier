@@ -91,6 +91,59 @@ describe("Run progress vector", () => {
     fixture.store.close();
   });
 
+  it("counts only a settled, in-scope workspace process write as mutation progress", async () => {
+    const fixture = await createFixture("scoped-process-mutation");
+    const run = await fixture.store.createRun({
+      threadId: fixture.threadId,
+      agentId: fixture.agentId,
+    });
+    const tracker = await RunProgressTracker.create(fixture.store, run);
+
+    await event(fixture.store, run, "tool.completed", {
+      callId: "call_process_poll",
+      toolName: "workspace_process",
+      status: "completed",
+      details: {
+        action: "poll",
+        status: "succeeded",
+        workspaceDeltaStatus: "changed",
+        workspaceWriteScopeStatus: "within_scope",
+        resultSha256: "b".repeat(64),
+      },
+    });
+    await event(fixture.store, run, "turn.completed", {});
+    const settled = await tracker.recordTurn();
+    expect(settled.payload).toEqual(
+      expect.objectContaining({
+        progressed: true,
+        changedDimensions: ["workspace"],
+        workspaceMutationCount: 1,
+      }),
+    );
+
+    await event(fixture.store, run, "tool.completed", {
+      callId: "call_process_running",
+      toolName: "workspace_process",
+      status: "completed",
+      details: {
+        action: "start_write",
+        status: "running",
+        workspaceDeltaStatus: "changed",
+        workspaceWriteScopeStatus: "within_scope",
+        resultSha256: "c".repeat(64),
+      },
+    });
+    await event(fixture.store, run, "turn.completed", {});
+    const running = await tracker.recordTurn();
+    expect(running.payload).toEqual(
+      expect.objectContaining({
+        progressed: false,
+        workspaceMutationCount: 1,
+      }),
+    );
+    fixture.store.close();
+  });
+
   it("deduplicates blocked failure fingerprints without counting progress", async () => {
     const fixture = await createFixture("blocked-fingerprint");
     const run = await fixture.store.createRun({

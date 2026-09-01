@@ -17,6 +17,12 @@ export const taskSurfaceCopyEn = {
     evidenceRecorded: "Evidence recorded",
     allSettled: "All planned steps settled",
     waiting: "Plan is waiting for the next transition",
+    progress: {
+      eyebrow: "Live plan",
+      ariaLabel: "Live plan progress",
+      stepPrefix: "Step ",
+      stepSuffix: "",
+    },
     statuses: {
       active: "Active",
       completed: "Completed",
@@ -92,6 +98,12 @@ export const taskSurfaceZh: LocaleOverride<typeof taskSurfaceCopyEn> = {
     evidenceRecorded: "证据已记录",
     allSettled: "所有计划步骤均已结算",
     waiting: "计划正在等待下一次状态变化",
+    progress: {
+      eyebrow: "实时计划",
+      ariaLabel: "实时计划进度",
+      stepPrefix: "第 ",
+      stepSuffix: " 步",
+    },
     statuses: {
       active: "进行中",
       completed: "已完成",

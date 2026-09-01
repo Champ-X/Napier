@@ -73,6 +73,7 @@ const ROOTS: readonly StandardSkillRootKind[] = [
   "project_legacy",
   "project_standard",
   "user_standard",
+  "bundled_standard",
 ];
 const FAILURES = new Set<string>(SKILL_RESOURCE_FAILURE_CODES);
 const SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/u;
@@ -136,7 +137,10 @@ export function skillResourceRelativePath(
   skillName: string,
   resourcePath: string,
 ): string {
-  const prefix = rootKind === "project_legacy" ? "skills" : ".agents/skills";
+  const prefix =
+    rootKind === "project_legacy" || rootKind === "bundled_standard"
+      ? "skills"
+      : ".agents/skills";
   return `${prefix}/${skillName}/${resourcePath}`;
 }
 
@@ -145,7 +149,12 @@ export function skillResourceVirtualPath(
   skillName: string,
   resourcePath: string,
 ): string {
-  const owner = rootKind === "user_standard" ? "/user" : "/project";
+  const owner =
+    rootKind === "user_standard"
+      ? "/user"
+      : rootKind === "bundled_standard"
+        ? "/bundled"
+        : "/project";
   return `${owner}/${skillResourceRelativePath(rootKind, skillName, resourcePath)}`;
 }
 
@@ -286,7 +295,12 @@ function rootSource(
 ): root is StandardSkillRootKind {
   return (
     ROOTS.includes(root as StandardSkillRootKind) &&
-    source === (root === "user_standard" ? "user" : "project")
+    source ===
+      (root === "user_standard"
+        ? "user"
+        : root === "bundled_standard"
+          ? "bundled"
+          : "project")
   );
 }
 

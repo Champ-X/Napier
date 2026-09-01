@@ -402,6 +402,19 @@ export const desktopWorkbenchCopy = {
     recommended: "Agent default",
     recent: "Recently used",
     empty: "No models match this search.",
+    setupChecking: "Checking this workspace…",
+    setupCheckingBody:
+      "Looking for reusable server-side credential locations without reading or displaying their values.",
+    setupTitle: "Live credentials found",
+    setupBody:
+      "This workspace keeps its own model permissions. Enable a provider to use its models here; only the credential location is saved.",
+    setupMissingTitle: "No live model is enabled",
+    setupMissingBody:
+      "Add a provider credential in Agent & Model settings, then check again.",
+    enable: "Enable",
+    enabling: "Enabling…",
+    retrySetup: "Check again",
+    openSettings: "Model settings",
   },
   workspaceSurface: {
     section: "Workspace",

@@ -4,7 +4,10 @@ import {
   isSkillLoadReceiptV1,
   isSkillLoadSelectionV1,
 } from "@napier/contracts/skill-load";
-import type { StandardSkillRootKind } from "@napier/contracts/skill-load-standard";
+import type {
+  StandardSkillRootKind,
+  StandardSkillSource,
+} from "@napier/contracts/skill-load-standard";
 import {
   isStandardSkillLoadFailureV2,
   isStandardSkillLoadReceiptV2,
@@ -19,7 +22,7 @@ import {
 export interface SkillLoadToolEventTraceView {
   skillLoadName?: string;
   skillLoadState?: SkillLifecycleState;
-  skillLoadSource?: "project" | "user" | "composite";
+  skillLoadSource?: StandardSkillSource | "composite";
   skillLoadRootKind?: StandardSkillRootKind;
   skillLoadCandidateRootKinds?: StandardSkillRootKind[];
   skillLoadCatalogSha256?: string;
@@ -37,7 +40,7 @@ export interface SkillResourceToolEventTraceView {
   skillResourcePath?: string;
   skillResourceState?: "loaded" | "failed";
   skillResourceFailureCode?: SkillResourceFailureCode;
-  skillResourceSource?: "project" | "user" | "composite";
+  skillResourceSource?: StandardSkillSource | "composite";
   skillResourceRootKind?: StandardSkillRootKind;
   skillResourceCandidateRootKinds?: StandardSkillRootKind[];
   skillResourceCatalogSha256?: string;

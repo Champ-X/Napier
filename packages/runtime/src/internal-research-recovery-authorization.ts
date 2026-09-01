@@ -16,37 +16,37 @@ import {
 import type { RunPromptOptions } from "./agent-runtime-options.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
 
-const INTERNAL_RESEARCH_RECOVERY_AUTHORIZATION = Symbol(
-  "internal-research-recovery-authorization",
+const INTERNAL_CAPABILITY_PRESET_RECOVERY_AUTHORIZATION = Symbol(
+  "internal-capability-preset-recovery-authorization",
 );
 
-type InternallyAuthorizedResearchRecovery = {
-  [INTERNAL_RESEARCH_RECOVERY_AUTHORIZATION]: true;
+type InternallyAuthorizedCapabilityPresetRecovery = {
+  [INTERNAL_CAPABILITY_PRESET_RECOVERY_AUTHORIZATION]: true;
 };
 
-export function authorizeInternalResearchRecovery<T extends object>(
+export function authorizeInternalCapabilityPresetRecovery<T extends object>(
   value: T,
-): T & InternallyAuthorizedResearchRecovery {
+): T & InternallyAuthorizedCapabilityPresetRecovery {
   return {
     ...value,
-    [INTERNAL_RESEARCH_RECOVERY_AUTHORIZATION]: true,
+    [INTERNAL_CAPABILITY_PRESET_RECOVERY_AUTHORIZATION]: true,
   };
 }
 
-export function authorizeInternalResearchRecoveryIf<T extends object>(
+export function authorizeInternalCapabilityPresetRecoveryIf<T extends object>(
   value: T,
   authorized: boolean,
-): T | (T & InternallyAuthorizedResearchRecovery) {
+): T | (T & InternallyAuthorizedCapabilityPresetRecovery) {
   if (!authorized) return value;
-  return authorizeInternalResearchRecovery(value);
+  return authorizeInternalCapabilityPresetRecovery(value);
 }
 
-export function hasInternalResearchRecoveryAuthorization(
+export function hasInternalCapabilityPresetRecoveryAuthorization(
   value: object,
-): value is object & InternallyAuthorizedResearchRecovery {
+): value is object & InternallyAuthorizedCapabilityPresetRecovery {
   return (
-    (value as InternallyAuthorizedResearchRecovery)[
-      INTERNAL_RESEARCH_RECOVERY_AUTHORIZATION
+    (value as InternallyAuthorizedCapabilityPresetRecovery)[
+      INTERNAL_CAPABILITY_PRESET_RECOVERY_AUTHORIZATION
     ] === true
   );
 }
@@ -61,30 +61,35 @@ export async function resolvePromptCapabilityProfile(
   agentId: string,
   options: RunPromptOptions,
   source: RunInvocationSource,
-): Promise<{ profile: AgentProfile; internalResearchRecovery: boolean }> {
-  const internalResearchRecovery =
-    hasInternalResearchRecoveryAuthorization(options);
+): Promise<{
+  profile: AgentProfile;
+  internalCapabilityPresetRecovery: boolean;
+}> {
+  const internalCapabilityPresetRecovery =
+    hasInternalCapabilityPresetRecoveryAuthorization(options);
   if (
-    internalResearchRecovery &&
+    internalCapabilityPresetRecovery &&
     (source !== "recovery" ||
-      options.capabilityPreset !== "research" ||
+      !options.capabilityPreset ||
       !options.parentRunId ||
       !options.recovery)
   ) {
-    throw new Error("Internal Research recovery authorization is invalid");
+    throw new Error(
+      "Internal capability preset recovery authorization is invalid",
+    );
   }
   const base = resolveAgentCapabilityProfileFromStore(
     store,
     agentId,
     options.agentRevision,
-    internalResearchRecovery ? undefined : options.capabilityPreset,
+    internalCapabilityPresetRecovery ? undefined : options.capabilityPreset,
     source,
   );
-  const profile = internalResearchRecovery
-    ? applyAgentCapabilityPresetOverride(base, "research", "user")
+  const profile = internalCapabilityPresetRecovery
+    ? applyAgentCapabilityPresetOverride(base, options.capabilityPreset, "user")
     : base;
   return {
-    internalResearchRecovery,
+    internalCapabilityPresetRecovery,
     profile,
   };
 }
@@ -102,7 +107,7 @@ export function resolveStoredRunCapabilityProfile(input: {
   source: RunInvocationSource;
   authorizationCarrier: object;
 }): AgentProfile {
-  const authorized = hasInternalResearchRecoveryAuthorization(
+  const authorized = hasInternalCapabilityPresetRecoveryAuthorization(
     input.authorizationCarrier,
   );
   if (authorized) {
@@ -114,11 +119,14 @@ export function resolveStoredRunCapabilityProfile(input: {
       : undefined;
     if (
       input.source !== "recovery" ||
-      input.capabilityPreset !== "research" ||
+      !input.capabilityPreset ||
       !parent ||
-      capabilityPresetForOriginRun(input.events, parent.id) !== "research"
+      capabilityPresetForOriginRun(input.events, parent.id) !==
+        input.capabilityPreset
     ) {
-      throw new Error("Internal Research recovery authorization is invalid");
+      throw new Error(
+        "Internal capability preset recovery authorization is invalid",
+      );
     }
   }
   const base = resolveAgentCapabilityProfile({
@@ -134,6 +142,6 @@ export function resolveStoredRunCapabilityProfile(input: {
     source: input.source,
   });
   return authorized
-    ? applyAgentCapabilityPresetOverride(base, "research", "user")
+    ? applyAgentCapabilityPresetOverride(base, input.capabilityPreset, "user")
     : base;
 }

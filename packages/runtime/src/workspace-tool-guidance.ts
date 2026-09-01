@@ -1,7 +1,5 @@
-import type { AgentTool } from "@earendil-works/pi-agent-core";
-
 export function formatWorkspaceToolGuidance(
-  tools: readonly AgentTool[],
+  tools: readonly { name: string }[],
 ): string {
   const toolNames = new Set(tools.map((tool) => tool.name));
   if (!hasAnyTool(toolNames, GUIDED_TOOL_NAMES)) return "";

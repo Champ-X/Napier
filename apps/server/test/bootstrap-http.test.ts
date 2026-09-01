@@ -1,4 +1,11 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -459,9 +466,73 @@ describe("Bootstrap HTTP", () => {
         source: "workspace",
         enabled: true,
       });
+      expect(
+        bootstrap.skills
+          .filter((skill) => skill.source === "bundled")
+          .map((skill) => skill.name)
+          .sort(),
+      ).toEqual([
+        "artifact-studio",
+        "browser-automation",
+        "data-analysis",
+        "research-brief",
+        "software-delivery",
+      ]);
+      expect(
+        bootstrap.skills
+          .filter((skill) => skill.source === "bundled")
+          .every((skill) => skill.enabled),
+      ).toBe(true);
     } finally {
       await rm(workspaceRoot, { recursive: true, force: true });
       await rm(userHome, { recursive: true, force: true });
+    }
+  });
+
+  it("fails closed instead of advertising bundled Skills when catalog trust fails", async () => {
+    const workspaceRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-bootstrap-skills-untrusted-"),
+    );
+    const outside = await mkdtemp(
+      path.join(tmpdir(), "napier-bootstrap-skills-outside-"),
+    );
+    try {
+      await mkdir(path.join(workspaceRoot, ".agents"));
+      await mkdir(path.join(outside, "skills"));
+      await symlink(
+        path.join(outside, "skills"),
+        path.join(workspaceRoot, ".agents", "skills"),
+      );
+      const agent = seedAgent();
+      const thread = threadSummary();
+      const store = Object.assign(
+        bootstrapStore(agent, thread, threadDetail(agent, thread)),
+        { workspaceRoot },
+      );
+      const app = new Hono();
+      registerBootstrapHttp(app, {
+        store: store as never,
+        models: {
+          list: vi.fn(async () => []),
+          recommendDefaultRunModel: vi.fn(async () => ({
+            provider: "napier",
+            id: "demo",
+          })),
+        } as never,
+      });
+
+      const bootstrap = (await (
+        await app.request("/api/bootstrap")
+      ).json()) as BootstrapResponse;
+      expect(bootstrap.skills).toHaveLength(5);
+      expect(bootstrap.skills.every((skill) => !skill.enabled)).toBe(true);
+      expect(bootstrap.skills.every((skill) => skill.source === "bundled")).toBe(
+        true,
+      );
+      expect(bootstrap.skills[0]?.description).toContain("Unavailable (");
+    } finally {
+      await rm(workspaceRoot, { recursive: true, force: true });
+      await rm(outside, { recursive: true, force: true });
     }
   });
 });

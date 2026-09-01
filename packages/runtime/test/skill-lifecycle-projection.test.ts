@@ -24,6 +24,24 @@ afterEach(async () => {
 });
 
 describe("active Skill lifecycle projection", () => {
+  it("projects a default Skill from the bundled source in an empty workspace", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-skill-bundled-"));
+    roots.push(root);
+    const fixture = {
+      workspace: path.join(root, "workspace"),
+      home: path.join(root, "home"),
+    };
+    await Promise.all([mkdir(fixture.workspace), mkdir(fixture.home)]);
+
+    const lifecycle = await loadedLifecycle(fixture, "research-brief");
+
+    expect(projectActiveSkillLifecycles(lifecycle, runId)[0]).toMatchObject({
+      state: "loaded",
+      source: "bundled",
+      rootKind: "bundled_standard",
+    });
+  });
+
   it("proves software application only after a completed mutation and passed verification", async () => {
     const fixture = await setup("software-delivery");
     const lifecycle = await loadedLifecycle(fixture, "software-delivery");

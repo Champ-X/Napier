@@ -1,5 +1,9 @@
 import type { WorkspaceProcessStatus } from "@napier/contracts";
 
+import {
+  MAX_COMMAND_TIMEOUT_MS,
+  MIN_COMMAND_TIMEOUT_MS,
+} from "./command-execution.js";
 import { validWorkspaceProcessLocalServiceFields } from "./workspace-process-local-service-events.js";
 
 const PROCESS_ID = /^process_[a-z0-9]{8,80}$/u;
@@ -62,7 +66,11 @@ function validSessionExecution(value: Record<string, unknown>): boolean {
     hash(value["environmentSha256"]) &&
     hash(value["resourceLimitsSha256"]) &&
     hash(value["cwdPathSha256"]) &&
-    boundedInteger(value["timeoutMs"], 1_000, 120_000) &&
+    boundedInteger(
+      value["timeoutMs"],
+      MIN_COMMAND_TIMEOUT_MS,
+      MAX_COMMAND_TIMEOUT_MS,
+    ) &&
     boundedInteger(value["outputLimitChars"], 1, 1_000_000) &&
     isoDate(value["startedAt"]) &&
     nonNegativeInteger(value["stdoutChars"]) &&

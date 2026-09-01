@@ -49,10 +49,32 @@ describe("Skill resource contracts", () => {
       }),
     } as const;
     const receipt = seal(core);
+    const bundledReceipt = seal({
+      ...core,
+      source: "bundled" as const,
+      rootKind: "bundled_standard" as const,
+      relativePath: skillResourceRelativePath(
+        "bundled_standard",
+        skillName,
+        resourcePath,
+      ),
+      virtualPath: skillResourceVirtualPath(
+        "bundled_standard",
+        skillName,
+        resourcePath,
+      ),
+    });
 
     expect(isSkillResourceLoadReceiptV1(receipt)).toBe(true);
+    expect(isSkillResourceLoadReceiptV1(bundledReceipt)).toBe(true);
     expect(
       isSkillResourceLoadReceiptV1({ ...receipt, source: "project" }),
+    ).toBe(false);
+    expect(
+      isSkillResourceLoadReceiptV1({
+        ...bundledReceipt,
+        rootKind: "project_standard",
+      }),
     ).toBe(false);
     expect(
       isSkillResourceLoadReceiptV1({

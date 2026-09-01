@@ -1,7 +1,10 @@
 import { useState } from "react";
 
 import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
-import type { NextRunPromptInput } from "./next-run-capability-preset-execution";
+import {
+  executeNextRunPrompt,
+  type NextRunPromptInput,
+} from "./next-run-capability-preset-execution";
 
 export const DEFAULT_COMPOSER_PERMISSION_PRESET = "full_access" as const;
 
@@ -15,13 +18,5 @@ export function useNextRunCapabilityPreset(_threadId: string | undefined) {
 export async function executeLoadedNextRunPrompt(
   input: NextRunPromptInput,
 ): Promise<void> {
-  try {
-    const { executeNextRunPrompt } =
-      await import("./next-run-capability-preset-execution");
-    await executeNextRunPrompt(input);
-  } catch (error) {
-    input.restoreInput(input.text);
-    input.restoreImages?.();
-    input.onError(error);
-  }
+  await executeNextRunPrompt(input);
 }

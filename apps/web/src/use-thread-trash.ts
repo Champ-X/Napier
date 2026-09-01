@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 
 import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
-import type { ThreadDetail } from "@napier/contracts";
-import { getBootstrap } from "./bootstrap-api";
+import { getThread, type WebThreadDetail } from "./api";
 import { formatApiErrorMessage } from "./api-error";
 import { commitThreadLocation } from "./thread-location";
 import { restoreThread, trashThread } from "./thread-lifecycle-api";
+import {
+  activateThreadDetail,
+  removeThreadDetail,
+} from "./thread-run-stream-state";
 
 export interface TrashedThreadReceipt {
   threadId: string;
@@ -17,23 +20,31 @@ export const THREAD_UNDO_WINDOW_MS = 5_000;
 
 export function useThreadTrash(input: {
   bootstrap: LiveReadyBootstrapResponse | undefined;
+  detail: WebThreadDetail | undefined;
   selectedThreadId: string | undefined;
   setBootstrap(value: LiveReadyBootstrapResponse): void;
-  setDetail(value: ThreadDetail | undefined): void;
+  setDetail(value: WebThreadDetail | undefined): void;
   setSelectedThreadId(value: string | undefined): void;
   setSelectedModelKey(value: string): void;
   modelKey(model: { provider: string; id: string }): string;
+  cachedDetail(threadId: string): WebThreadDetail | undefined;
+  resolveDetail(
+    detail: WebThreadDetail | undefined,
+  ): WebThreadDetail | undefined;
   setError(value: string | undefined): void;
 }) {
   const {
     bootstrap,
+    cachedDetail,
+    detail,
+    modelKey,
+    resolveDetail,
     selectedThreadId,
     setBootstrap,
     setDetail,
-    setSelectedThreadId,
-    setSelectedModelKey,
-    modelKey,
     setError,
+    setSelectedModelKey,
+    setSelectedThreadId,
   } = input;
   const [busyThreadId, setBusyThreadId] = useState<string>();
   const [receipt, setReceipt] = useState<TrashedThreadReceipt>();
@@ -47,68 +58,98 @@ export function useThreadTrash(input: {
     return () => window.clearTimeout(timeout);
   }, [receipt]);
 
-  const applyBootstrap = useCallback(
-    (bootstrap: LiveReadyBootstrapResponse) => {
-      setBootstrap(bootstrap);
-      setDetail(bootstrap.activeThread);
-      commitThreadLocation(
-        setSelectedThreadId,
-        bootstrap.activeThread?.thread.id,
-      );
-      setSelectedModelKey(modelKey(bootstrap.recommendedRunModel));
-    },
-    [
-      modelKey,
-      setBootstrap,
-      setDetail,
-      setSelectedModelKey,
-      setSelectedThreadId,
-    ],
-  );
-
   const trash = useCallback(
     async (threadId: string) => {
       if (!bootstrap || busyThreadId) return;
       const target = bootstrap.threads.find((thread) => thread.id === threadId);
       if (!target) return;
+      const previousDetail = detail;
+      const previousSelectedThreadId = selectedThreadId;
+      const remaining = bootstrap.threads.filter(
+        (thread) => thread.id !== threadId,
+      );
+      const activeRemoved = threadId === selectedThreadId;
+      const nextThreadId = activeRemoved ? remaining[0]?.id : selectedThreadId;
+      const cachedNext = nextThreadId ? cachedDetail(nextThreadId) : undefined;
+      const optimistic = removeThreadDetail(
+        bootstrap,
+        threadId,
+        activeRemoved ? cachedNext : undefined,
+      );
+
       setBusyThreadId(threadId);
       setError(undefined);
+      setBootstrap(optimistic);
+      if (activeRemoved) {
+        setDetail(cachedNext);
+        commitThreadLocation(setSelectedThreadId, nextThreadId);
+      }
       try {
         await trashThread(threadId);
-        const remaining = bootstrap.threads.filter(
-          (thread) => thread.id !== threadId,
-        );
-        const nextThreadId =
-          threadId === selectedThreadId ? remaining[0]?.id : selectedThreadId;
-        applyBootstrap(await getBootstrap(nextThreadId));
+        if (activeRemoved && nextThreadId) {
+          const response = await getThread(nextThreadId);
+          const next = resolveDetail(response) ?? response;
+          setBootstrap(activateThreadDetail(optimistic, next));
+          setDetail(next);
+          commitThreadLocation(setSelectedThreadId, next.thread.id);
+        }
         setReceipt({
           threadId,
           title: target.title,
           trashedAt: new Date().toISOString(),
         });
       } catch (error) {
+        setBootstrap(bootstrap);
+        setDetail(previousDetail);
+        commitThreadLocation(setSelectedThreadId, previousSelectedThreadId);
         setError(formatApiErrorMessage(error));
       } finally {
         setBusyThreadId(undefined);
       }
     },
-    [applyBootstrap, bootstrap, busyThreadId, selectedThreadId, setError],
+    [
+      bootstrap,
+      busyThreadId,
+      cachedDetail,
+      detail,
+      resolveDetail,
+      selectedThreadId,
+      setBootstrap,
+      setDetail,
+      setError,
+      setSelectedThreadId,
+    ],
   );
 
   const restore = useCallback(async () => {
-    if (!receipt || busyThreadId) return;
+    if (!bootstrap || !receipt || busyThreadId) return;
     setBusyThreadId(receipt.threadId);
     setError(undefined);
     try {
-      await restoreThread(receipt.threadId);
-      applyBootstrap(await getBootstrap(receipt.threadId));
+      const response = await restoreThread(receipt.threadId);
+      const restored = resolveDetail(response) ?? response;
+      setBootstrap(activateThreadDetail(bootstrap, restored));
+      setDetail(restored);
+      commitThreadLocation(setSelectedThreadId, restored.thread.id);
+      setSelectedModelKey(modelKey(bootstrap.recommendedRunModel));
       setReceipt(undefined);
     } catch (error) {
       setError(formatApiErrorMessage(error));
     } finally {
       setBusyThreadId(undefined);
     }
-  }, [applyBootstrap, busyThreadId, receipt, setError]);
+  }, [
+    bootstrap,
+    busyThreadId,
+    modelKey,
+    receipt,
+    resolveDetail,
+    setBootstrap,
+    setDetail,
+    setError,
+    setSelectedModelKey,
+    setSelectedThreadId,
+  ]);
 
   return {
     threadLifecycleBusyId: busyThreadId,
