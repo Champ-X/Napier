@@ -475,6 +475,7 @@ describe("Bootstrap HTTP", () => {
         "artifact-studio",
         "browser-automation",
         "data-analysis",
+        "frontend-design",
         "research-brief",
         "software-delivery",
       ]);
@@ -524,11 +525,11 @@ describe("Bootstrap HTTP", () => {
       const bootstrap = (await (
         await app.request("/api/bootstrap")
       ).json()) as BootstrapResponse;
-      expect(bootstrap.skills).toHaveLength(5);
+      expect(bootstrap.skills).toHaveLength(6);
       expect(bootstrap.skills.every((skill) => !skill.enabled)).toBe(true);
-      expect(bootstrap.skills.every((skill) => skill.source === "bundled")).toBe(
-        true,
-      );
+      expect(
+        bootstrap.skills.every((skill) => skill.source === "bundled"),
+      ).toBe(true);
       expect(bootstrap.skills[0]?.description).toContain("Unavailable (");
     } finally {
       await rm(workspaceRoot, { recursive: true, force: true });

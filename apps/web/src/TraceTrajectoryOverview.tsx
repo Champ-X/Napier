@@ -276,7 +276,6 @@ function TrajectoryLane({
   return (
     <div className={`trace-overview-lane lane-${lane.id}`}>
       <span className="trace-lane-label">
-        <i>{lane.index}</i>
         {lane.label}
         {layout.rowCount > 1 ? (
           <small

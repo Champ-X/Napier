@@ -9,7 +9,7 @@ import {
   fauxToolCall,
 } from "@earendil-works/pi-ai";
 import type { StreamFrame } from "@napier/contracts";
-import { isSkillCatalogBindingV1 } from "@napier/contracts/skill-load";
+import { isStandardSkillCatalogBindingV2 } from "@napier/contracts/skill-load-standard";
 import { isSkillLifecycleProjectionV1 } from "@napier/contracts/skill-lifecycle";
 import {
   createLocalAgentRuntime,
@@ -85,7 +85,7 @@ describe("Research Skill load CLI", () => {
     );
     expect(
       events.find((event) => event.type === "context.skills")?.payload,
-    ).toSatisfy(isSkillCatalogBindingV1);
+    ).toSatisfy(isStandardSkillCatalogBindingV2);
     expect(
       events.find(
         (event) =>
@@ -143,6 +143,7 @@ describe("Research Skill load CLI", () => {
         "artifact-studio",
         "browser-automation",
         "data-analysis",
+        "frontend-design",
         "research-brief",
         "software-delivery",
       ]);

@@ -154,6 +154,7 @@ describe("Run-bound project Skill snapshots", () => {
             "artifact-studio",
             "browser-automation",
             "data-analysis",
+            "frontend-design",
             "research-brief",
             "software-delivery",
           ],

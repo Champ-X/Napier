@@ -5,6 +5,7 @@ import {
   createTraceVirtualLayout,
   createTraceVirtualWindow,
   TRACE_COMPACT_EVENT_ROW_HEIGHT_PX,
+  TRACE_EVENT_ROW_HEIGHT_PX,
   TRACE_VIRTUAL_VIEWPORT_PX,
 } from "../src/trace-virtual-window";
 import type { TraceTrajectoryEvent } from "../src/trace-trajectory-model";
@@ -24,9 +25,9 @@ describe("Trace virtual window", () => {
     );
 
     expect(layout.totalRowCount).toBe(100_000);
-    expect(layout.eventTopById.get("event_100000")).toBeGreaterThan(5_000_000);
-    expect(first.mountedRowCount).toBeLessThanOrEqual(14);
-    expect(last.mountedRowCount).toBeLessThanOrEqual(14);
+    expect(layout.eventTopById.get("event_100000")).toBeGreaterThan(2_900_000);
+    expect(first.mountedRowCount).toBeLessThanOrEqual(24);
+    expect(last.mountedRowCount).toBeLessThanOrEqual(24);
     expect(last.items.at(-1)?.key).toBe("event:event_100000");
   });
 
@@ -51,7 +52,7 @@ describe("Trace virtual window", () => {
     });
 
     expect(compact.totalHeight - regular.totalHeight).toBe(
-      2 * (TRACE_COMPACT_EVENT_ROW_HEIGHT_PX - 58),
+      2 * (TRACE_COMPACT_EVENT_ROW_HEIGHT_PX - TRACE_EVENT_ROW_HEIGHT_PX),
     );
   });
 });

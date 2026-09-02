@@ -113,6 +113,7 @@ const FULL_CAPABILITY_SKILLS = [
   "software-delivery",
   "artifact-studio",
   "browser-automation",
+  "frontend-design",
 ];
 const FULL_CAPABILITY_SUBAGENTS: SubagentRole[] = [
   "researcher",
@@ -149,7 +150,7 @@ export const AGENT_CAPABILITY_PRESETS: readonly AgentCapabilityPreset[] = [
       ...CODE_WRITE_TOOLS,
       ...PROCESS_TOOLS,
     ],
-    ["software-delivery"],
+    ["frontend-design", "software-delivery"],
     ["coder", "reviewer", "general"],
   ),
   preset(

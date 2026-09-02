@@ -222,6 +222,25 @@ describe("workspace directory listing", () => {
     expect(preview.sha256).toMatch(/^[a-f0-9]{64}$/u);
   });
 
+  it("resolves answer image paths relative to the active workspace", async () => {
+    await mkdir(path.join(base, "assets"));
+    const file = path.join(base, "assets", "result.webp");
+    const contents = Buffer.from([0x52, 0x49, 0x46, 0x46]);
+    await writeFile(file, contents);
+    const app = new Hono();
+    registerWorkspaceDirectoriesHttp(app, undefined, () => base);
+
+    const preview = await readWorkspaceFilePreview("assets/result.webp", base);
+    const response = await app.request(
+      "/api/workspace/file?path=assets%2Fresult.webp",
+    );
+
+    expect(preview.path).toBe(file);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("image/webp");
+    expect(Buffer.from(await response.arrayBuffer())).toEqual(contents);
+  });
+
   it("serves an integrity-bound workspace file preview over HTTP", async () => {
     const file = path.join(base, "preview.png");
     const contents = Buffer.from([0x89, 0x50, 0x4e, 0x47]);

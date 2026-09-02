@@ -14,6 +14,7 @@ import type { ArtifactInspection } from "./artifact-inspection";
 import {
   MessageMarkdown,
   type MessageCitationLink,
+  type MessageSkillResourceLink,
   type MessageWorkspaceLink,
 } from "./message-markdown";
 import type { MessageView } from "./use-workspace-view-model";
@@ -54,17 +55,21 @@ export function ConversationGenericActivityCard({
 export interface ConversationMessageCardProps {
   message: MessageView;
   workspaceLinks: readonly MessageWorkspaceLink[];
+  skillResourceLinks?: readonly MessageSkillResourceLink[];
   citationLinks: readonly MessageCitationLink[];
   onInspectArtifact?(inspection: ArtifactInspection): void;
   onOpenWorkspaceFile?(path: string): void;
+  onOpenSkillResource?(reference: MessageSkillResourceLink): void;
 }
 
 export function ConversationMessageCard({
   message,
   workspaceLinks,
+  skillResourceLinks = [],
   citationLinks,
   onInspectArtifact,
   onOpenWorkspaceFile,
+  onOpenSkillResource,
 }: ConversationMessageCardProps) {
   const anchorId = `message-${String(message.seq)}`;
   return (
@@ -89,9 +94,11 @@ export function ConversationMessageCard({
           <MessageMarkdown
             text={message.text}
             workspaceLinks={workspaceLinks}
+            skillResourceLinks={skillResourceLinks}
             citationLinks={citationLinks}
             {...(onInspectArtifact ? { onInspectArtifact } : {})}
             {...(onOpenWorkspaceFile ? { onOpenWorkspaceFile } : {})}
+            {...(onOpenSkillResource ? { onOpenSkillResource } : {})}
           />
         </div>
         <MessageCopyAction message={message} />
@@ -123,17 +130,21 @@ function MessageCopyAction({
 export interface ConversationStreamingCardProps {
   text: string;
   workspaceLinks: readonly MessageWorkspaceLink[];
+  skillResourceLinks?: readonly MessageSkillResourceLink[];
   citationLinks: readonly MessageCitationLink[];
   onInspectArtifact?(inspection: ArtifactInspection): void;
   onOpenWorkspaceFile?(path: string): void;
+  onOpenSkillResource?(reference: MessageSkillResourceLink): void;
 }
 
 export function ConversationStreamingCard({
   text,
   workspaceLinks,
+  skillResourceLinks = [],
   citationLinks,
   onInspectArtifact,
   onOpenWorkspaceFile,
+  onOpenSkillResource,
 }: ConversationStreamingCardProps) {
   return (
     <article
@@ -153,9 +164,11 @@ export function ConversationStreamingCard({
           <MessageMarkdown
             text={text}
             workspaceLinks={workspaceLinks}
+            skillResourceLinks={skillResourceLinks}
             citationLinks={citationLinks}
             {...(onInspectArtifact ? { onInspectArtifact } : {})}
             {...(onOpenWorkspaceFile ? { onOpenWorkspaceFile } : {})}
+            {...(onOpenSkillResource ? { onOpenSkillResource } : {})}
           />
           <span className="ink-caret" aria-hidden="true" />
         </div>

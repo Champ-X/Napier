@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -10,7 +11,10 @@ import {
   discoverStandardSkillNames,
   StandardSkillSnapshotError,
 } from "../src/standard-skill-snapshot.js";
-import { inspectStandardSkillCatalog } from "../src/standard-skill-catalog.js";
+import {
+  inspectStandardSkillCatalog,
+  inspectStandardSkillResource,
+} from "../src/standard-skill-catalog.js";
 import { createSkillLoadTool } from "../src/skill-load-tool.js";
 import {
   compatibilityTelemetrySnapshot,
@@ -86,6 +90,7 @@ describe("standard project and user Skill snapshots", () => {
       "artifact-studio",
       "browser-automation",
       "data-analysis",
+      "frontend-design",
       "research-brief",
       "software-delivery",
     ];
@@ -554,5 +559,42 @@ describe("standard project and user Skill snapshots", () => {
         enabled: true,
       },
     ]);
+  });
+
+  it("reopens a receipt-bound Skill resource and rejects later content drift", async () => {
+    const { workspace, home } = await setup();
+    const ownerRoot = path.join(workspace, ".agents");
+    const resourceText = "# Visual gate\n\nInspect the rendered result.\n";
+    await putSkill(ownerRoot, "preview-skill");
+    await putResource(
+      ownerRoot,
+      "preview-skill",
+      "references/gate.md",
+      resourceText,
+    );
+    const reference = {
+      skillName: "preview-skill",
+      resourcePath: "references/gate.md",
+      rootKind: "project_standard" as const,
+      rawContentSha256: createHash("sha256").update(resourceText).digest("hex"),
+    };
+
+    await expect(
+      inspectStandardSkillResource(workspace, reference, isolatedOptions(home)),
+    ).resolves.toMatchObject({
+      text: resourceText,
+      virtualPath: "/project/.agents/skills/preview-skill/references/gate.md",
+      rawContentSha256: reference.rawContentSha256,
+    });
+
+    await expect(
+      inspectStandardSkillResource(
+        workspace,
+        { ...reference, rawContentSha256: "0".repeat(64) },
+        isolatedOptions(home),
+      ),
+    ).rejects.toMatchObject({
+      code: "resource_drift",
+    });
   });
 });

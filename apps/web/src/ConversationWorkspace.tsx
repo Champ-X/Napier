@@ -2,6 +2,7 @@ import { lazy, memo, Suspense } from "react";
 
 import { advancedSurfaceCopy } from "./advanced-surface-copy";
 import type { ArtifactInspection } from "./artifact-inspection";
+import type { MessageSkillResourceLink } from "./message-markdown";
 import { ConversationFollowButton } from "./ConversationFollowButton";
 import { useConversationFollow } from "./use-conversation-follow";
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
@@ -22,6 +23,7 @@ export const ConversationWorkspace = memo(function ConversationWorkspace({
   onOpenSubagentHub,
   onInspectArtifact,
   onOpenWorkspaceFile,
+  onOpenSkillResource,
 }: ConversationWorkspaceProps) {
   const accessibilityCopy = advancedSurfaceCopy.accessibility;
   const follow = useConversationFollow({
@@ -56,6 +58,7 @@ export const ConversationWorkspace = memo(function ConversationWorkspace({
             onOpenSubagentHub={onOpenSubagentHub}
             onInspectArtifact={onInspectArtifact}
             onOpenWorkspaceFile={onOpenWorkspaceFile}
+            onOpenSkillResource={onOpenSkillResource}
           />
         </Suspense>
       )}
@@ -85,6 +88,7 @@ export interface ConversationWorkspaceProps {
   onOpenSubagentHub(taskId?: string): void;
   onInspectArtifact(inspection: ArtifactInspection): void;
   onOpenWorkspaceFile(path: string): void;
+  onOpenSkillResource(reference: MessageSkillResourceLink): void;
 }
 
 function sameConversationWorkspaceProps(
@@ -102,7 +106,8 @@ function sameConversationWorkspaceProps(
     previous.viewportRef === next.viewportRef &&
     previous.onOpenSubagentHub === next.onOpenSubagentHub &&
     previous.onInspectArtifact === next.onInspectArtifact &&
-    previous.onOpenWorkspaceFile === next.onOpenWorkspaceFile
+    previous.onOpenWorkspaceFile === next.onOpenWorkspaceFile &&
+    previous.onOpenSkillResource === next.onOpenSkillResource
   );
 }
 

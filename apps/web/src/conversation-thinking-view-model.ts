@@ -42,6 +42,7 @@ export interface ConversationThinkingActivity {
   deltaBytes?: number;
   transcript?: string;
   redactedChunkCount?: number;
+  localDisplayOrigin?: "captured_response" | "conversation_surface";
 }
 
 const RESEARCH_TOOLS = new Set(["research_source", "web_search"]);
@@ -141,6 +142,18 @@ export function conversationThinkingActivities(
       });
     }
 
+    const localDisplay = findLocalThinkingDisplay(
+      ordered,
+      lastIndex,
+      event.runId,
+    );
+    const restoredFromLocal = Boolean(
+      localDisplay && (redactedChunkCount > 0 || transcript.length === 0),
+    );
+    if (localDisplay && restoredFromLocal) {
+      transcript.splice(0, transcript.length, localDisplay.thinking);
+    }
+
     const followingActionKind = findFollowingAction(
       ordered,
       lastIndex,
@@ -170,9 +183,40 @@ export function conversationThinkingActivities(
       ...(deltaBytes !== undefined ? { deltaBytes } : {}),
       ...(transcript.length > 0 ? { transcript: transcript.join("") } : {}),
       ...(redactedChunkCount > 0 ? { redactedChunkCount } : {}),
+      ...(localDisplay && restoredFromLocal
+        ? { localDisplayOrigin: localDisplay.origin }
+        : {}),
     });
   }
   return activities;
+}
+
+function findLocalThinkingDisplay(
+  events: readonly RunEvent[],
+  thinkingIndex: number,
+  runId: string,
+):
+  | {
+      thinking: string;
+      origin: "captured_response" | "conversation_surface";
+    }
+  | undefined {
+  for (let index = thinkingIndex + 1; index < events.length; index += 1) {
+    const event = events[index]!;
+    if (event.runId !== runId) continue;
+    if (event.type === "turn.started" || event.type === "turn.completed") {
+      return undefined;
+    }
+    if (event.type !== "model.response" || !record(event.payload)) continue;
+    const thinking = event.payload["localDisplayThinking"];
+    const origin = event.payload["localDisplayOrigin"];
+    return typeof thinking === "string" &&
+      thinking.length > 0 &&
+      (origin === "captured_response" || origin === "conversation_surface")
+      ? { thinking, origin }
+      : undefined;
+  }
+  return undefined;
 }
 
 export function activeConversationThinkingId(
@@ -180,11 +224,8 @@ export function activeConversationThinkingId(
   currentRunId: string | undefined,
   runIsActive: boolean,
 ): string | undefined {
-  return activeConversationThinkingActivity(
-    events,
-    currentRunId,
-    runIsActive,
-  )?.id;
+  return activeConversationThinkingActivity(events, currentRunId, runIsActive)
+    ?.id;
 }
 
 /**
@@ -197,8 +238,9 @@ export function activeConversationThinkingActivity(
   events: readonly RunEvent[],
   currentRunId: string | undefined,
   runIsActive: boolean,
-  activities: readonly ConversationThinkingActivity[] =
-    conversationThinkingActivities(events),
+  activities: readonly ConversationThinkingActivity[] = conversationThinkingActivities(
+    events,
+  ),
 ): ConversationThinkingActivity | undefined {
   if (!currentRunId || !runIsActive) return undefined;
   const runEvents = events

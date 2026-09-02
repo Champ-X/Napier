@@ -24,7 +24,9 @@ import { ConversationRecoveryCard } from "./ConversationRecoveryCard";
 import { ConversationSubagentCard } from "./ConversationSubagentCard";
 import { ConversationToolActivityCard } from "./ConversationToolActivityCard";
 import { ConversationThinkingActivity } from "./ConversationThinkingActivity";
+import { getLocalModelDisplays } from "./local-model-display-api";
 import { getLocalToolDisplays } from "./local-tool-display-api";
+import type { MessageSkillResourceLink } from "./message-markdown";
 import type { MessageView } from "./use-workspace-view-model";
 
 const INITIAL_FEED_WINDOW = 160;
@@ -40,6 +42,7 @@ export interface ConversationLedgerProps {
   onOpenSubagentHub(taskId?: string): void;
   onInspectArtifact?(inspection: ArtifactInspection): void;
   onOpenWorkspaceFile?(path: string): void;
+  onOpenSkillResource?(reference: MessageSkillResourceLink): void;
 }
 
 export function ConversationLedger({
@@ -51,9 +54,13 @@ export function ConversationLedger({
   onOpenSubagentHub,
   onInspectArtifact,
   onOpenWorkspaceFile,
+  onOpenSkillResource,
 }: ConversationLedgerProps) {
   const [toolDisplays, setToolDisplays] = useState<
     Awaited<ReturnType<typeof getLocalToolDisplays>>
+  >([]);
+  const [modelDisplays, setModelDisplays] = useState<
+    Awaited<ReturnType<typeof getLocalModelDisplays>>
   >([]);
   const toolEventVersion = (detail?.events ?? []).filter((event) =>
     event.type.startsWith("tool."),
@@ -76,9 +83,33 @@ export function ConversationLedger({
       current = false;
     };
   }, [detail?.thread.id, toolEventVersion]);
+  const modelEventVersion = (detail?.events ?? []).filter(
+    (event) =>
+      event.type === "model.response" ||
+      event.type === "context.conversation_surface",
+  ).length;
+  useEffect(() => {
+    const threadId = detail?.thread.id;
+    if (!threadId) {
+      setModelDisplays([]);
+      return;
+    }
+    let current = true;
+    void getLocalModelDisplays(threadId)
+      .then((records) => {
+        if (current) setModelDisplays(records);
+      })
+      .catch(() => {
+        if (current) setModelDisplays([]);
+      });
+    return () => {
+      current = false;
+    };
+  }, [detail?.thread.id, modelEventVersion]);
   const projection = useMemo(
-    () => conversationFeedProjection(messages, detail, toolDisplays),
-    [detail, messages, toolDisplays],
+    () =>
+      conversationFeedProjection(messages, detail, toolDisplays, modelDisplays),
+    [detail, messages, modelDisplays, toolDisplays],
   );
   const artifactAnchorKey = projection.artifactAnchorIds.join("|");
   const [visibleLimit, setVisibleLimit] = useState(INITIAL_FEED_WINDOW);
@@ -116,15 +147,18 @@ export function ConversationLedger({
           onOpenSubagentHub,
           onInspectArtifact,
           onOpenWorkspaceFile,
+          onOpenSkillResource,
         ),
       )}
       {streamingText ? (
         <ConversationStreamingCard
           text={streamingText}
           workspaceLinks={projection.workspaceLinks}
+          skillResourceLinks={projection.skillResourceLinks}
           citationLinks={projection.citationLinks}
           {...(onInspectArtifact ? { onInspectArtifact } : {})}
           {...(onOpenWorkspaceFile ? { onOpenWorkspaceFile } : {})}
+          {...(onOpenSkillResource ? { onOpenSkillResource } : {})}
         />
       ) : null}
       <div ref={endRef} />
@@ -139,6 +173,7 @@ function renderFeedItem(
   onOpenSubagentHub: ConversationLedgerProps["onOpenSubagentHub"],
   onInspectArtifact: ConversationLedgerProps["onInspectArtifact"],
   onOpenWorkspaceFile: ConversationLedgerProps["onOpenWorkspaceFile"],
+  onOpenSkillResource: ConversationLedgerProps["onOpenSkillResource"],
 ) {
   if (item.kind === "activity-group") {
     return (
@@ -157,9 +192,11 @@ function renderFeedItem(
         key={`message-${item.message.id}`}
         message={item.message}
         workspaceLinks={projection.workspaceLinks}
+        skillResourceLinks={projection.skillResourceLinks}
         citationLinks={projection.citationLinks}
         {...(onInspectArtifact ? { onInspectArtifact } : {})}
         {...(onOpenWorkspaceFile ? { onOpenWorkspaceFile } : {})}
+        {...(onOpenSkillResource ? { onOpenSkillResource } : {})}
       />
     );
   }
@@ -205,9 +242,11 @@ function renderFeedItem(
         key={`progress-${item.note.id}`}
         note={item.note}
         workspaceLinks={projection.workspaceLinks}
+        skillResourceLinks={projection.skillResourceLinks}
         citationLinks={projection.citationLinks}
         {...(onInspectArtifact ? { onInspectArtifact } : {})}
         {...(onOpenWorkspaceFile ? { onOpenWorkspaceFile } : {})}
+        {...(onOpenSkillResource ? { onOpenSkillResource } : {})}
       />
     );
   }

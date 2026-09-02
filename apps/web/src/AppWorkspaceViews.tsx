@@ -13,8 +13,10 @@ import { ArtifactInspector } from "./ArtifactInspector";
 import { WorkbenchBrowserRail } from "./WorkbenchBrowserRail";
 import { WorkspaceEvidenceRail } from "./WorkspaceEvidenceRail";
 import { WorkspaceFileInspector } from "./WorkspaceFileInspector";
+import { SkillResourceInspector } from "./SkillResourceInspector";
 import { workspaceEvidenceCopy as workspaceCopy } from "./workspace-evidence-copy";
 import type { ArtifactInspection } from "./artifact-inspection";
+import type { MessageSkillResourceLink } from "./message-markdown";
 import { taskArtifactTargets } from "./task-completion-output-paths";
 import {
   ConversationWorkspace,
@@ -79,17 +81,20 @@ export function AppWorkspaceViews({
   const [artifactInspection, setArtifactInspection] =
     useState<ArtifactInspection>();
   const [workspaceFilePath, setWorkspaceFilePath] = useState<string>();
+  const [skillResourceInspection, setSkillResourceInspection] =
+    useState<MessageSkillResourceLink>();
   const [dismissedBrowserRunId, setDismissedBrowserRunId] = useState<string>();
+  const inspectionOpen = Boolean(
+    artifactInspection || workspaceFilePath || skillResourceInspection,
+  );
   const showBrowserRail =
     shell.workspaceView === "conversation" &&
-    !artifactInspection &&
-    !workspaceFilePath &&
+    !inspectionOpen &&
     taskControls.browserControlsAvailable &&
     dismissedBrowserRunId !== vm.activeRunId;
   const showWorkspaceRail =
     shell.workspaceView === "conversation" &&
-    !artifactInspection &&
-    !workspaceFilePath &&
+    !inspectionOpen &&
     !showBrowserRail &&
     shell.workspaceRailOpen;
   const showConversationWelcome = shouldShowConversationWelcome(
@@ -99,9 +104,11 @@ export function AppWorkspaceViews({
   useEffect(() => {
     setArtifactInspection(undefined);
     setWorkspaceFilePath(undefined);
+    setSkillResourceInspection(undefined);
   }, [vm.detail?.thread.id, shell.workspaceView]);
   const openArtifact = useCallback(
     (path: string) => {
+      setSkillResourceInspection(undefined);
       const inspection = artifactInspectionForPath(
         vm.detail,
         bootstrap.workspace.root,
@@ -121,8 +128,17 @@ export function AppWorkspaceViews({
   );
   const inspectArtifact = useCallback((inspection: ArtifactInspection) => {
     setWorkspaceFilePath(undefined);
+    setSkillResourceInspection(undefined);
     setArtifactInspection(inspection);
   }, []);
+  const inspectSkillResource = useCallback(
+    (reference: MessageSkillResourceLink) => {
+      setArtifactInspection(undefined);
+      setWorkspaceFilePath(undefined);
+      setSkillResourceInspection(reference);
+    },
+    [],
+  );
   const closeWorkspaceRail = useCallback(() => {
     shell.setWorkspaceRailOpen(false);
     requestAnimationFrame(() =>
@@ -134,20 +150,21 @@ export function AppWorkspaceViews({
     () => setWorkspaceFilePath(undefined),
     [],
   );
+  const closeSkillResource = useCallback(
+    () => setSkillResourceInspection(undefined),
+    [],
+  );
   const closeBrowser = useCallback(
     () => setDismissedBrowserRunId(vm.activeRunId),
     [vm.activeRunId],
   );
   const evidenceOverlay =
     !layout.workspaceRailAvailable &&
-    (Boolean(artifactInspection) ||
-      Boolean(workspaceFilePath) ||
-      showBrowserRail ||
-      showWorkspaceRail);
+    (inspectionOpen || showBrowserRail || showWorkspaceRail);
 
   return (
     <div
-      className={`workspace-primary-surface${artifactInspection || workspaceFilePath ? " has-artifact-inspector" : ""}${showBrowserRail ? " has-browser-rail" : ""}${showWorkspaceRail ? " has-workspace-rail" : ""}${evidenceOverlay ? " has-evidence-overlay" : ""}`}
+      className={`workspace-primary-surface${inspectionOpen ? " has-artifact-inspector" : ""}${showBrowserRail ? " has-browser-rail" : ""}${showWorkspaceRail ? " has-workspace-rail" : ""}${evidenceOverlay ? " has-evidence-overlay" : ""}`}
     >
       {shell.workspaceView === "conversation" ? (
         <section
@@ -164,6 +181,7 @@ export function AppWorkspaceViews({
             onOpenSubagentHub={shell.openSubagentHub}
             onInspectArtifact={inspectArtifact}
             onOpenWorkspaceFile={openArtifact}
+            onOpenSkillResource={inspectSkillResource}
           />
           <WorkbenchDeferredCompactTaskResult
             vm={vm}
@@ -231,11 +249,13 @@ export function AppWorkspaceViews({
         layout={layout}
         artifactInspection={artifactInspection}
         workspaceFilePath={workspaceFilePath}
+        skillResourceInspection={skillResourceInspection}
         showBrowserRail={showBrowserRail}
         showWorkspaceRail={showWorkspaceRail}
         onOpenArtifact={openArtifact}
         onCloseArtifact={closeArtifact}
         onCloseWorkspaceFile={closeWorkspaceFile}
+        onCloseSkillResource={closeSkillResource}
         onCloseBrowser={closeBrowser}
         onCloseWorkspaceRail={closeWorkspaceRail}
       />
@@ -249,11 +269,13 @@ interface AppWorkspaceEvidenceSurfacesProps {
   layout: WorkspaceLayoutControls;
   artifactInspection: ArtifactInspection | undefined;
   workspaceFilePath: string | undefined;
+  skillResourceInspection: MessageSkillResourceLink | undefined;
   showBrowserRail: boolean;
   showWorkspaceRail: boolean;
   onOpenArtifact(path: string): void;
   onCloseArtifact(): void;
   onCloseWorkspaceFile(): void;
+  onCloseSkillResource(): void;
   onCloseBrowser(): void;
   onCloseWorkspaceRail(): void;
 }
@@ -264,11 +286,13 @@ function AppWorkspaceEvidenceSurfaces({
   layout,
   artifactInspection,
   workspaceFilePath,
+  skillResourceInspection,
   showBrowserRail,
   showWorkspaceRail,
   onOpenArtifact,
   onCloseArtifact,
   onCloseWorkspaceFile,
+  onCloseSkillResource,
   onCloseBrowser,
   onCloseWorkspaceRail,
 }: AppWorkspaceEvidenceSurfacesProps) {
@@ -276,6 +300,7 @@ function AppWorkspaceEvidenceSurfaces({
     layout.workspaceRailAvailable &&
     (Boolean(artifactInspection) ||
       Boolean(workspaceFilePath) ||
+      Boolean(skillResourceInspection) ||
       showBrowserRail);
 
   return (
@@ -302,6 +327,12 @@ function AppWorkspaceEvidenceSurfaces({
         <WorkspaceFileInspector
           path={workspaceFilePath}
           onClose={onCloseWorkspaceFile}
+        />
+      ) : null}
+      {skillResourceInspection ? (
+        <SkillResourceInspector
+          reference={skillResourceInspection}
+          onClose={onCloseSkillResource}
         />
       ) : null}
       {showBrowserRail && vm.activeRunId && vm.detail ? (

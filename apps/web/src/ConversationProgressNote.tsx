@@ -3,6 +3,7 @@ import type { ConversationProgressNote as ProgressNote } from "./conversation-pr
 import {
   MessageMarkdown,
   type MessageCitationLink,
+  type MessageSkillResourceLink,
   type MessageWorkspaceLink,
 } from "./message-markdown";
 import { shellCopy } from "./shell-copy";
@@ -11,17 +12,21 @@ import "./conversation-progress-note.css";
 export interface ConversationProgressNoteProps {
   note: ProgressNote;
   workspaceLinks: readonly MessageWorkspaceLink[];
+  skillResourceLinks?: readonly MessageSkillResourceLink[];
   citationLinks: readonly MessageCitationLink[];
   onInspectArtifact?(inspection: ArtifactInspection): void;
   onOpenWorkspaceFile?(path: string): void;
+  onOpenSkillResource?(reference: MessageSkillResourceLink): void;
 }
 
 export function ConversationProgressNote({
   note,
   workspaceLinks,
+  skillResourceLinks = [],
   citationLinks,
   onInspectArtifact,
   onOpenWorkspaceFile,
+  onOpenSkillResource,
 }: ConversationProgressNoteProps) {
   return (
     <article
@@ -35,9 +40,11 @@ export function ConversationProgressNote({
         <MessageMarkdown
           text={note.text}
           workspaceLinks={workspaceLinks}
+          skillResourceLinks={skillResourceLinks}
           citationLinks={citationLinks}
           {...(onInspectArtifact ? { onInspectArtifact } : {})}
           {...(onOpenWorkspaceFile ? { onOpenWorkspaceFile } : {})}
+          {...(onOpenSkillResource ? { onOpenSkillResource } : {})}
         />
       </div>
     </article>

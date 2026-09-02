@@ -28,6 +28,7 @@ export interface NapierServices extends Pick<
   | "extensions"
   | "runtime"
   | "toolDisplays"
+  | "modelDisplays"
   | "contextCompactionWorkbench"
   | "subagentHubControls"
   | "kernel"
@@ -88,6 +89,7 @@ export async function createServices(
     workspaceFileMutations,
     runtime,
     toolDisplays,
+    modelDisplays,
     contextCompactionWorkbench,
     subagentHubControls,
     kernel,
@@ -123,6 +125,7 @@ export async function createServices(
     extensions,
     runtime,
     toolDisplays,
+    modelDisplays,
     contextCompactionWorkbench,
     subagentHubControls,
     kernel,

@@ -76,7 +76,7 @@ export function TraceTrajectoryControls({
               key={lane.id}
               onClick={() => onToggleLane(lane.id)}
             >
-              <i>{lane.index}</i>
+              <i aria-hidden="true" />
               <span>{lane.label}</span>
               <small>{formatNumber(laneCount)}</small>
             </button>

@@ -209,10 +209,10 @@ export async function readWorkspaceFilePreview(
   raw: unknown,
   allowedRoot: string,
 ): Promise<WorkspaceFilePreview> {
-  const requested = validateBrowseDirectoryPath(raw);
   const lexicalRoot = path.resolve(validateBrowseDirectoryPath(allowedRoot));
   const canonicalRoot = await resolveBrowseDirectory(allowedRoot);
-  const lexicalTarget = path.resolve(requested);
+  const requested = validateWorkspaceFilePath(raw);
+  const lexicalTarget = path.resolve(lexicalRoot, requested);
   if (
     !pathInside(lexicalRoot, lexicalTarget) &&
     !pathInside(canonicalRoot, lexicalTarget)
@@ -255,6 +255,21 @@ export async function readWorkspaceFilePreview(
     sizeBytes: contents.byteLength,
     sha256: sha256Bytes(contents),
   };
+}
+
+function validateWorkspaceFilePath(raw: unknown): string {
+  if (typeof raw !== "string") {
+    throw new DirectoryListingError("File path must be a string", 400);
+  }
+  if (
+    raw.trim().length === 0 ||
+    raw.length > MAX_DIRECTORY_PATH_LENGTH ||
+    // eslint-disable-next-line no-control-regex
+    /[\u0000-\u001f\u007f]/u.test(raw)
+  ) {
+    throw new DirectoryListingError("File path is invalid", 400);
+  }
+  return raw;
 }
 
 function resolveDirectoryCursor(raw: unknown): string | undefined {

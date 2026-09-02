@@ -9,12 +9,13 @@ const LAUNCH_SKILLS = [
   "artifact-studio",
   "browser-automation",
   "data-analysis",
+  "frontend-design",
   "research-brief",
   "software-delivery",
 ] as const;
 
 describe("launch Skill quality contract", () => {
-  it("loads all five launch Skills without diagnostics", async () => {
+  it("loads all six launch Skills without diagnostics", async () => {
     const workspaceRoot = path.resolve(import.meta.dirname, "../../..");
     const catalog = await loadWorkspaceSkills(workspaceRoot, LAUNCH_SKILLS);
 
@@ -33,6 +34,29 @@ describe("launch Skill quality contract", () => {
         ),
       }),
     );
+  });
+
+  it("keeps Frontend Design tied to rendered browser verification and a progressively loaded gate", async () => {
+    const workspaceRoot = path.resolve(import.meta.dirname, "../../..");
+    const content = await readFile(
+      path.join(workspaceRoot, "skills/frontend-design/SKILL.md"),
+      "utf8",
+    );
+
+    for (const requirement of [
+      "Approach this as the design lead",
+      "AI-generated design right now clusters",
+      "Work in two passes",
+      "visible keyboard focus",
+      "narrow viewport",
+      "skill_resource",
+      "references/visual-quality-gate.md",
+      "do not claim rendered visual verification",
+    ]) {
+      expect(content).toContain(requirement);
+    }
+    expect(content).toContain("53048666b05b4799081517d00e09e0a2dd688678");
+    expect(Buffer.byteLength(content, "utf8")).toBeLessThanOrEqual(12 * 1024);
   });
 
   it("keeps Artifact Studio bound to the real Plan verification workflow", async () => {

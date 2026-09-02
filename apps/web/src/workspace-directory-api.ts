@@ -61,6 +61,14 @@ export async function previewWorkspaceFile(
 ): Promise<WorkspaceFilePreview> {
   const endpoint = `/api/workspace/file?${new URLSearchParams({ path }).toString()}`;
   const response = await fetch(endpoint, signal ? { signal } : undefined);
+  return readFilePreviewResponse(response, endpoint, path);
+}
+
+export async function readFilePreviewResponse(
+  response: Response,
+  endpoint: string,
+  path: string,
+): Promise<WorkspaceFilePreview> {
   if (!response.ok) {
     await throwNapierApiError(
       response,

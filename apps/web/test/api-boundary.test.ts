@@ -17,6 +17,7 @@ const allowedFetchCallers = new Set([
   "src/browser-live-view-stream-api.ts",
   "src/browser-task-api.ts",
   "src/model-invocation-experiment-api.ts",
+  "src/skill-resource-api.ts",
   "src/stream-run-api.ts",
   "src/tool-invocation-experiment-api.ts",
   "src/workflow-api.ts",

@@ -25,7 +25,7 @@ afterEach(async () => {
 });
 
 describe("Runtime bundled Skill build assets", () => {
-  it("copies only the five pinned Skills into the distribution", async () => {
+  it("copies only the six pinned Skills into the distribution", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-bundled-skills-"));
     roots.push(root);
     for (const name of BUNDLED_SKILL_NAMES) {

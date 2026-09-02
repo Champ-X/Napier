@@ -43,6 +43,9 @@ export function ConversationThinkingActivity({
       <summary>
         <Brain size={15} aria-hidden="true" />
         <span>{title}</span>
+        {activity.localDisplayOrigin ? (
+          <small>{chinese ? "本机私有副本" : "Local private copy"}</small>
+        ) : null}
       </summary>
       <div className="conversation-thinking-content">
         {activity.transcript ? (
@@ -55,9 +58,7 @@ export function ConversationThinkingActivity({
           </pre>
         ) : active ? (
           <p className="conversation-thinking-waiting" role="status">
-            {chinese
-              ? "正在等待模型输出…"
-              : "Waiting for model output…"}
+            {chinese ? "正在等待模型输出…" : "Waiting for model output…"}
           </p>
         ) : (
           <p className="conversation-thinking-redacted">

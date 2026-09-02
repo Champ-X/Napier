@@ -46,13 +46,15 @@ const TOOL_OUTPUT_EVENTS = new Set([
 ]);
 
 const REASONING_KEYS = [
+  "localDisplayThinking",
   "reasoning",
   "thinking",
   "reasoningContent",
   "reasoning_content",
 ] as const;
-const CONTENT_KEYS = ["text", "content"] as const;
+const CONTENT_KEYS = ["localDisplayText", "text", "content"] as const;
 const TOOL_INPUT_KEYS = [
+  "displayInput",
   "input",
   "arguments",
   "args",
@@ -61,6 +63,8 @@ const TOOL_INPUT_KEYS = [
   "workflowInput",
 ] as const;
 const TOOL_OUTPUT_KEYS = [
+  "displayOutput",
+  "displayError",
   "output",
   "result",
   "outputText",

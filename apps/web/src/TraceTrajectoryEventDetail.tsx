@@ -11,7 +11,11 @@ import { ArrowRight, ShieldAlert, X } from "lucide-react";
 import type { TraceTrajectoryEvent } from "./trace-trajectory-model";
 import { traceTrajectoryCopy } from "./trace-trajectory-copy";
 import { traceTrajectoryEventDetailView } from "./trace-trajectory-event-detail-view";
-import { traceTrajectoryEventHighlights } from "./trace-trajectory-presentation";
+import {
+  traceTrajectoryEventHighlights,
+  traceTrajectoryEventPreview,
+  traceTrajectoryReadableSummary,
+} from "./trace-trajectory-presentation";
 import {
   traceTrajectoryRawEventView,
   type TraceTrajectoryRawField,
@@ -20,8 +24,8 @@ import {
 type DetailTab =
   | "diagnosis"
   | "summary"
-  | "context"
-  | "evidence"
+  | "preview"
+  | "source"
   | "timing"
   | "raw";
 
@@ -52,12 +56,16 @@ export function TraceTrajectoryEventDetail({
   const tabs: DetailTab[] = [
     ...(detail.diagnosis ? (["diagnosis"] as const) : []),
     "summary",
-    ...(detail.context.length > 0 ? (["context"] as const) : []),
-    ...(detail.evidence.length > 0 ? (["evidence"] as const) : []),
+    "preview",
+    ...(detail.context.length > 0 || detail.evidence.length > 0
+      ? (["source"] as const)
+      : []),
     ...(detail.timing.length > 0 ? (["timing"] as const) : []),
     "raw",
   ];
   const highlights = traceTrajectoryEventHighlights(event, detail.evidence);
+  const preview = traceTrajectoryEventPreview(event);
+  const readableSummary = traceTrajectoryReadableSummary(event);
   const copy = traceTrajectoryCopy.detail;
   useEffect(() => {
     if (selectedEventId.current === event.event.id) return;
@@ -146,8 +154,8 @@ export function TraceTrajectoryEventDetail({
             onKeyDown={(keyboardEvent) => moveTab(keyboardEvent, candidate)}
           >
             {copy[candidate]}
-            {candidate === "evidence" && detail.evidence.length > 0 ? (
-              <span>{detail.evidence.length}</span>
+            {candidate === "source" && detail.evidence.length > 0 ? (
+              <span>{detail.context.length + detail.evidence.length}</span>
             ) : null}
           </button>
         ))}
@@ -167,33 +175,73 @@ export function TraceTrajectoryEventDetail({
         ) : null}
         {tab === "summary" ? (
           <div className="trace-event-detail-summary">
-            <div className="trace-event-detail-callout">
-              <span>{copy.keyPath}</span>
-              <p>{detail.keyPath}</p>
-            </div>
+            <p className="trace-event-detail-narrative">{readableSummary}</p>
             {detail.metrics.length > 0 ? (
               <MetricStrip fields={detail.metrics} />
             ) : null}
-            <DetailSection title={copy.atAGlance}>
-              <p className="trace-event-detail-narrative">{event.summary}</p>
-            </DetailSection>
             <DetailSection title={copy.eventFields}>
               <DetailGrid fields={highlights} />
             </DetailSection>
+            <div className="trace-event-detail-keypath">
+              <span>{copy.keyPath}</span>
+              <code>{detail.keyPath}</code>
+            </div>
           </div>
         ) : null}
-        {tab === "context" ? <DetailGrid fields={detail.context} /> : null}
-        {tab === "evidence" ? (
-          detail.evidence.length > 0 ? (
-            <DetailGrid fields={detail.evidence} />
+        {tab === "preview" ? (
+          preview.length > 0 ? (
+            <PreviewPanel sections={preview} />
           ) : (
-            <p className="trace-event-detail-empty">{copy.noEvidence}</p>
+            <p className="trace-event-detail-empty">{copy.previewEmpty}</p>
           )
+        ) : null}
+        {tab === "source" ? (
+          <div className="trace-event-detail-source">
+            {detail.context.length > 0 ? (
+              <DetailSection title={copy.context}>
+                <DetailGrid fields={detail.context} />
+              </DetailSection>
+            ) : null}
+            <DetailSection title={copy.evidence}>
+              {detail.evidence.length > 0 ? (
+                <DetailGrid fields={detail.evidence} />
+              ) : (
+                <p className="trace-event-detail-empty">{copy.noEvidence}</p>
+              )}
+            </DetailSection>
+          </div>
         ) : null}
         {tab === "timing" ? <DetailGrid fields={detail.timing} /> : null}
         {tab === "raw" ? <RawEventPanel event={event} /> : null}
       </div>
     </section>
+  );
+}
+
+function PreviewPanel({
+  sections,
+}: {
+  sections: ReturnType<typeof traceTrajectoryEventPreview>;
+}) {
+  const copy = traceTrajectoryCopy.detail;
+  return (
+    <div className="trace-event-preview">
+      {sections.map((section) => (
+        <section key={section.id}>
+          <header>
+            <h4>{section.label}</h4>
+            {section.localOnly ? <span>{copy.localOnly}</span> : null}
+          </header>
+          {section.code ? (
+            <pre>
+              <code>{section.value}</code>
+            </pre>
+          ) : (
+            <p>{section.value}</p>
+          )}
+        </section>
+      ))}
+    </div>
   );
 }
 

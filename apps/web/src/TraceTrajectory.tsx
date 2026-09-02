@@ -1,9 +1,14 @@
 import { Activity } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 import type { RunEvent, RunRecord } from "@napier/contracts";
 import { ContextInspector } from "./ContextInspector";
+import { projectLocalModelDisplays } from "./conversation-model-display-view-model";
+import { projectLocalToolDisplays } from "./conversation-tool-display-view-model";
 import { copy } from "./copy";
 import { getLocale } from "./locale";
+import { getLocalModelDisplays } from "./local-model-display-api";
+import { getLocalToolDisplays } from "./local-tool-display-api";
 import { traceTrajectoryCopy } from "./trace-trajectory-copy";
 import type { TraceTrajectoryModel } from "./trace-trajectory-model";
 import { TraceTrajectoryControls } from "./TraceTrajectoryControls";
@@ -14,6 +19,7 @@ import { TraceTrajectoryRunIndex } from "./TraceTrajectoryRunIndex";
 import { useTraceTrajectoryController } from "./use-trace-trajectory-controller";
 import { useTraceTrajectoryModel } from "./use-trace-trajectory-model";
 import "./trace-trajectory.css";
+import "./trace-trajectory-compact.css";
 
 export interface TraceTrajectoryProps {
   events: RunEvent[];
@@ -26,9 +32,66 @@ export function TraceTrajectory({
   runs,
   running,
 }: TraceTrajectoryProps) {
-  const projection = useTraceTrajectoryModel(events, runs);
+  const [toolDisplays, setToolDisplays] = useState<
+    Awaited<ReturnType<typeof getLocalToolDisplays>>
+  >([]);
+  const [modelDisplays, setModelDisplays] = useState<
+    Awaited<ReturnType<typeof getLocalModelDisplays>>
+  >([]);
+  const threadId = runs[0]?.threadId ?? events[0]?.threadId;
+  const toolEventVersion = events.filter((event) =>
+    event.type.startsWith("tool."),
+  ).length;
+  const modelEventVersion = events.filter(
+    (event) =>
+      event.type === "model.response" ||
+      event.type === "context.conversation_surface",
+  ).length;
+  useEffect(() => {
+    if (!threadId) {
+      setToolDisplays([]);
+      return;
+    }
+    let current = true;
+    void getLocalToolDisplays(threadId)
+      .then((records) => {
+        if (current) setToolDisplays(records);
+      })
+      .catch(() => {
+        if (current) setToolDisplays([]);
+      });
+    return () => {
+      current = false;
+    };
+  }, [threadId, toolEventVersion]);
+  useEffect(() => {
+    if (!threadId) {
+      setModelDisplays([]);
+      return;
+    }
+    let current = true;
+    void getLocalModelDisplays(threadId)
+      .then((records) => {
+        if (current) setModelDisplays(records);
+      })
+      .catch(() => {
+        if (current) setModelDisplays([]);
+      });
+    return () => {
+      current = false;
+    };
+  }, [modelEventVersion, threadId]);
+  const displayEvents = useMemo(
+    () =>
+      projectLocalModelDisplays(
+        projectLocalToolDisplays(events, toolDisplays),
+        modelDisplays,
+      ),
+    [events, modelDisplays, toolDisplays],
+  );
+  const projection = useTraceTrajectoryModel(displayEvents, runs);
   if (projection.pending || !projection.model) {
-    return <ProjectingTrajectory eventCount={events.length} />;
+    return <ProjectingTrajectory eventCount={displayEvents.length} />;
   }
   return <ProjectedTrajectory model={projection.model} running={running} />;
 }
@@ -44,12 +107,16 @@ function ProjectedTrajectory({
   if (state.model.events.length === 0) return <EmptyTrajectory />;
   return (
     <section className="trace-trajectory" aria-labelledby="trajectory-title">
-      <div className="trace-trajectory-masthead">
-        <TrajectoryHeader
-          runCount={state.model.runs.length}
-          running={running}
-        />
-        <dl className="trace-trajectory-stats">
+      <div className="trace-trajectory-summary-strip">
+        <span className={`trace-trajectory-state ${running ? "is-live" : ""}`}>
+          <i aria-hidden="true" />
+          {running ? copy.trace.plotting : copy.trace.recorded}
+        </span>
+        <h3 id="trajectory-title">{copy.trace.title}</h3>
+        <dl
+          className="trace-trajectory-stats"
+          aria-label={traceTrajectoryCopy.metricSummary}
+        >
           <Stat
             label={copy.trace.elapsed}
             value={formatTraceDuration(state.model.durationMs)}
@@ -165,31 +232,6 @@ function EmptyTrajectory() {
         <p>{copy.trace.empty}</p>
       </div>
     </section>
-  );
-}
-
-function TrajectoryHeader({
-  runCount,
-  running,
-}: {
-  runCount: number;
-  running: boolean;
-}) {
-  return (
-    <header className="trace-trajectory-header">
-      <div>
-        <span>
-          {traceTrajectoryCopy.executionMap} / {formatNumber(runCount)}{" "}
-          {traceTrajectoryCopy.runs}
-        </span>
-        <h3 id="trajectory-title">{copy.trace.title}</h3>
-        <p>{copy.trace.body}</p>
-      </div>
-      <span className={`trace-trajectory-state ${running ? "is-live" : ""}`}>
-        <i aria-hidden="true" />
-        {running ? copy.trace.plotting : copy.trace.recorded}
-      </span>
-    </header>
   );
 }
 

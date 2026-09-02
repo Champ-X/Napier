@@ -97,6 +97,15 @@
   background: var(--color-bg-subtle);
 }
 
+.conversation-thinking > summary small {
+  padding: 1px 5px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-accent);
+  background: var(--color-accent-subtle);
+  border-radius: 999px;
+}
+
 .conversation-thinking.is-active > summary {
   color: var(--color-fg);
 }

@@ -3,12 +3,12 @@ import type {
   TraceRunSemanticCollection,
 } from "./trace-semantic-rows";
 
-export const TRACE_VIRTUAL_OVERSCAN_PX = 240;
-export const TRACE_VIRTUAL_VIEWPORT_PX = 520;
-const TURN_HEADER_HEIGHT_PX = 27;
-const EVENT_ROW_HEIGHT_PX = 58;
-export const TRACE_COMPACT_EVENT_ROW_HEIGHT_PX = 84;
-const FOLD_ROW_HEIGHT_PX = 38;
+export const TRACE_VIRTUAL_OVERSCAN_PX = 120;
+export const TRACE_VIRTUAL_VIEWPORT_PX = 560;
+const TURN_HEADER_HEIGHT_PX = 20;
+export const TRACE_EVENT_ROW_HEIGHT_PX = 30;
+export const TRACE_COMPACT_EVENT_ROW_HEIGHT_PX = 48;
+const FOLD_ROW_HEIGHT_PX = 24;
 
 export type TraceVirtualItem = TraceVirtualTurnItem | TraceVirtualRowItem;
 
@@ -65,7 +65,7 @@ export function createTraceVirtualLayout(
     for (const row of turn.rows) {
       const height =
         row.kind === "event"
-          ? (options.eventRowHeightPx ?? EVENT_ROW_HEIGHT_PX)
+          ? (options.eventRowHeightPx ?? TRACE_EVENT_ROW_HEIGHT_PX)
           : FOLD_ROW_HEIGHT_PX;
       items.push({
         kind: "row",

@@ -6,6 +6,7 @@ import {
   activeConversationThinkingId,
   conversationThinkingActivities,
 } from "../src/conversation-thinking-view-model";
+import { projectLocalModelDisplays } from "../src/conversation-model-display-view-model";
 
 describe("conversationThinkingActivities", () => {
   it("retains the complete available transcript and next public action", () => {
@@ -140,6 +141,60 @@ describe("conversationThinkingActivities", () => {
     expect(activities[0]).not.toHaveProperty("transcript");
   });
 
+  it("restores hash-only thinking from its local response display", () => {
+    const events = [
+      event(1, "turn.started", "debug", {}),
+      event(2, "model.thinking.delta", "hidden", {
+        chunkCount: 2,
+        deltaBytes: 42,
+        deltaSha256: "a".repeat(64),
+        redacted: true,
+      }),
+      event(3, "model.response", "debug", {
+        textSha256: "b".repeat(64),
+        reasoningSha256: "c".repeat(64),
+      }),
+      event(4, "turn.completed", "debug", {}),
+    ];
+    const projected = projectLocalModelDisplays(events, [
+      {
+        sourceThreadId: "thread_1",
+        sourceRunId: "run_1",
+        responseEventId: "event_3",
+        thinking: "Recovered readable reasoning.",
+        origin: "captured_response",
+      },
+    ]);
+
+    expect(conversationThinkingActivities(projected)[0]).toEqual(
+      expect.objectContaining({
+        transcript: "Recovered readable reasoning.",
+        redactedChunkCount: 1,
+        localDisplayOrigin: "captured_response",
+      }),
+    );
+  });
+
+  it("keeps delivered thinking authoritative when a local copy also exists", () => {
+    const events = [
+      event(1, "turn.started", "debug", {}),
+      event(2, "model.thinking.delta", "hidden", {
+        delta: "Delivered reasoning.",
+      }),
+      event(3, "model.response", "debug", {
+        localDisplayThinking: "Local duplicate.",
+        localDisplayOrigin: "captured_response",
+      }),
+      event(4, "turn.completed", "debug", {}),
+    ];
+
+    const activity = conversationThinkingActivities(events)[0];
+    expect(activity).toEqual(
+      expect.objectContaining({ transcript: "Delivered reasoning." }),
+    );
+    expect(activity).not.toHaveProperty("localDisplayOrigin");
+  });
+
   it("uses a bounded fallback when no public action follows", () => {
     const activities = conversationThinkingActivities([
       event(1, "turn.started", "debug", {}),
@@ -169,7 +224,9 @@ describe("conversationThinkingActivities", () => {
     expect(activeConversationThinkingId(thinking, "run_1", true)).toBe(
       "event_1",
     );
-    expect(activeConversationThinkingId(thinking, "run_1", false)).toBeUndefined();
+    expect(
+      activeConversationThinkingId(thinking, "run_1", false),
+    ).toBeUndefined();
     expect(
       activeConversationThinkingId(
         [
@@ -192,9 +249,7 @@ describe("conversationThinkingActivities", () => {
       event(3, "context.model_invocation", "debug", {}),
     ];
 
-    expect(
-      activeConversationThinkingActivity(waiting, "run_1", true),
-    ).toEqual(
+    expect(activeConversationThinkingActivity(waiting, "run_1", true)).toEqual(
       expect.objectContaining({
         id: "event_1",
         seq: 1,
@@ -223,9 +278,9 @@ describe("conversationThinkingActivities", () => {
       event(3, "context.model_invocation", "debug", {}),
     ];
 
-    expect(
-      activeConversationThinkingActivity(waiting, "run_1", true),
-    ).toEqual(expect.objectContaining({ seq: 2, turnSeq: 1 }));
+    expect(activeConversationThinkingActivity(waiting, "run_1", true)).toEqual(
+      expect.objectContaining({ seq: 2, turnSeq: 1 }),
+    );
     expect(
       conversationThinkingActivities([
         ...waiting,

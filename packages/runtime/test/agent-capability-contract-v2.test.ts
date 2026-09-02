@@ -17,8 +17,9 @@ import {
   DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2_SHA256,
   DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3,
   DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3_SHA256,
-  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4,
   DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4_SHA256,
+  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V5,
+  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V5_SHA256,
   createCapabilityRestorePreview,
   managedCapabilitySha256,
 } from "../src/default-agent-capability-contract.js";
@@ -34,7 +35,7 @@ afterEach(async () => {
 });
 
 describe("default Agent Capability Contract history", () => {
-  it("pins V1-V3 history and current full-capability vectors", async () => {
+  it("pins V1-V4 history and current V5 full-capability vectors", async () => {
     expect(DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V1).toEqual({
       toolPolicy: "observe",
       enabledTools: [
@@ -97,18 +98,21 @@ describe("default Agent Capability Contract history", () => {
       ].sort(),
     });
     expect(DEFAULT_AGENT_CAPABILITY_RECOMMENDATION).toBe(
-      DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4,
+      DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V5,
     );
-    expect(DEFAULT_AGENT_CAPABILITY_CONTRACT_VERSION).toBe(4);
+    expect(DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4_SHA256).toBe(
+      "f7be71c6564e6858a3431fc1e01e77806106f3973c70fbb6a3253e2c3c57152d",
+    );
+    expect(DEFAULT_AGENT_CAPABILITY_CONTRACT_VERSION).toBe(5);
     expect(DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256).toBe(
-      DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4_SHA256,
+      DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V5_SHA256,
     );
 
     const services = await createRuntime();
     try {
       const agent = services.store.listAgents()[0]!;
       expect(managedCapabilitySha256(agent)).toBe(
-        "998ef4368f87b808689fe5cd5640762d74bf644a7fbf8cefda214b440ba989e1",
+        "7137227557cb3b4f43185dc5c38545761e2bb0656c90476fb13680a21397741e",
       );
       const preview = createCapabilityRestorePreview({
         ...agent,
@@ -118,11 +122,11 @@ describe("default Agent Capability Contract history", () => {
         enabledSubagents: [],
       });
       expect(preview.diffSha256).toBe(
-        "1ceab840365f7dde5a9179472cc30352017fab1210e2684397af0f05ed2b9f6e",
+        "5cda11f40aaf930fea23288fe16296ab6d6ebc1fb19a7d1c3d2f5b4616580cd8",
       );
       const projection = await services.agentCapabilities.project(agent.id);
       expect(projection.projectionSha256).toBe(
-        "aea84f04841fb171d7884eb8ebdb9f178f91ce648590fc9c6c109ac2ce2ef803",
+        "56d32e5912d14ad608257b126c9950a1f98d5b68b2773a3688d7def78ca99fdd",
       );
       expect(
         projection.readiness
@@ -136,6 +140,7 @@ describe("default Agent Capability Contract history", () => {
         { id: "skill:artifact-studio", status: "ready", exposed: true },
         { id: "skill:browser-automation", status: "ready", exposed: true },
         { id: "skill:data-analysis", status: "ready", exposed: true },
+        { id: "skill:frontend-design", status: "ready", exposed: true },
         { id: "skill:research-brief", status: "ready", exposed: true },
         { id: "skill:software-delivery", status: "ready", exposed: true },
       ]);
@@ -144,7 +149,7 @@ describe("default Agent Capability Contract history", () => {
     }
   });
 
-  it("projects a bound V2 profile as stale and upgrades it to V4", async () => {
+  it("projects a bound V2 profile as stale and upgrades it to V5", async () => {
     const fixture = await createRuntimeFixture();
     const initial = await fixture.create();
     const seeded = initial.store.listAgents()[0]!;
@@ -208,7 +213,7 @@ describe("default Agent Capability Contract history", () => {
       const stale = await services.agentCapabilities.project(seeded.id);
       expect(stale).toEqual(
         expect.objectContaining({
-          contractVersion: 4,
+          contractVersion: 5,
           driftState: "stale",
           ownership: "recommended",
           configuredSkills: [
@@ -219,7 +224,7 @@ describe("default Agent Capability Contract history", () => {
             "software-delivery",
           ],
           restorePreview: expect.objectContaining({
-            contractVersion: 4,
+            contractVersion: 5,
             operations: expect.arrayContaining([
               expect.objectContaining({
                 field: "toolPolicy",
@@ -240,7 +245,7 @@ describe("default Agent Capability Contract history", () => {
           }),
           upgradePreview: expect.objectContaining({
             sourceContractVersion: 2,
-            targetContractVersion: 4,
+            targetContractVersion: 5,
             explicitOverrideFields: [],
             operations: expect.arrayContaining([
               expect.objectContaining({

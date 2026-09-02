@@ -37,6 +37,7 @@ import {
 } from "./conversation-plan-view-model";
 import { conversationRecoveries } from "./conversation-recovery-view-model";
 import { conversationProgressNotes } from "./conversation-progress-view-model";
+import { conversationSkillResourceLinks } from "./conversation-skill-resource-view-model";
 import {
   conversationSubagentEventId,
   conversationSubagents,
@@ -53,8 +54,13 @@ import {
   projectLocalToolDisplays,
   type LocalConversationToolDisplay,
 } from "./conversation-tool-display-view-model";
+import {
+  projectLocalModelDisplays,
+  type LocalConversationModelDisplay,
+} from "./conversation-model-display-view-model";
 import type {
   MessageCitationLink,
+  MessageSkillResourceLink,
   MessageWorkspaceLink,
 } from "./message-markdown";
 import type { MessageView } from "./use-workspace-view-model";
@@ -64,6 +70,7 @@ export interface ConversationFeedProjection {
   artifactAnchorIds: string[];
   citationLinks: MessageCitationLink[];
   feed: ConversationFeedEntry[];
+  skillResourceLinks: MessageSkillResourceLink[];
   workspaceLinks: MessageWorkspaceLink[];
 }
 
@@ -71,12 +78,16 @@ export function conversationFeedProjection(
   messages: readonly MessageView[],
   detail: WebThreadDetail | undefined,
   toolDisplays: readonly LocalConversationToolDisplay[] = [],
+  modelDisplays: readonly LocalConversationModelDisplay[] = [],
 ): ConversationFeedProjection {
-  const events = projectLocalToolDisplays(detail?.events ?? [], toolDisplays);
-  const activitySource = projectLocalToolDisplays(
-    detail?.activityEvents ?? events,
-    toolDisplays,
+  const events = projectLocalModelDisplays(
+    projectLocalToolDisplays(detail?.events ?? [], toolDisplays),
+    modelDisplays,
   );
+  // The server projection intentionally keeps only the newest 32 tool calls.
+  // Pair from the complete thread event list so older calls do not fall back
+  // to separate generic `tool.started` and `tool.completed` cards after reload.
+  const activitySource = events;
   const plans = detail?.plans ?? [];
   const runs = detail?.runs ?? [];
   const artifacts =
@@ -86,6 +97,7 @@ export function conversationFeedProjection(
     artifacts.map((item) => `${item.planId}:${item.artifact.id}`),
   );
   const workspaceLinks = conversationArtifactWorkspaceLinks(artifacts);
+  const skillResourceLinks = conversationSkillResourceLinks(events);
   const citations = detail?.citations ?? conversationCitations(events);
   const retainedThinkingActivities = conversationThinkingActivities(events);
   const milestones = conversationMilestones(events);
@@ -93,8 +105,8 @@ export function conversationFeedProjection(
   const currentRunId = detail?.thread.currentRunId;
   const runIsActive = Boolean(
     currentRunId &&
-      (detail?.thread.status === "running" ||
-        runs.some((run) => run.id === currentRunId && run.status === "running")),
+    (detail?.thread.status === "running" ||
+      runs.some((run) => run.id === currentRunId && run.status === "running")),
   );
   const activeThinking = activeConversationThinkingActivity(
     events,
@@ -273,6 +285,7 @@ export function conversationFeedProjection(
     artifactAnchorIds,
     citationLinks,
     feed,
+    skillResourceLinks,
     workspaceLinks,
   };
 }

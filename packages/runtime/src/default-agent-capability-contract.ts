@@ -16,7 +16,7 @@ import type {
 
 export const DEFAULT_AGENT_CAPABILITY_CONTRACT_ID =
   "napier.default-agent.capabilities" as const;
-export const DEFAULT_AGENT_CAPABILITY_CONTRACT_VERSION = 4 as const;
+export const DEFAULT_AGENT_CAPABILITY_CONTRACT_VERSION = 5 as const;
 
 export const DEFAULT_AGENT_CAPABILITY_TOOLS = [
   "list_files",
@@ -139,9 +139,12 @@ export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3_SHA256 = sha256(
 );
 
 export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4: ManagedCapabilityPayload =
-  deepFreeze(
-    managedCapabilityPayload(agentCapabilityPresetUpdate("safe_automation")),
-  );
+  deepFreeze({
+    ...managedCapabilityPayload(agentCapabilityPresetUpdate("safe_automation")),
+    // Contract history is immutable. The current Safe Automation preset may
+    // grow, but V4 remains pinned to the five Skills it originally shipped.
+    enabledSkills: sortedUnique(DEFAULT_AGENT_CAPABILITY_SKILLS),
+  });
 
 export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4_SHA256 = sha256(
   canonicalJson({
@@ -152,10 +155,24 @@ export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4_SHA256 = sha256(
   }),
 );
 
+export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V5: ManagedCapabilityPayload =
+  deepFreeze(
+    managedCapabilityPayload(agentCapabilityPresetUpdate("safe_automation")),
+  );
+
+export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V5_SHA256 = sha256(
+  canonicalJson({
+    schemaVersion: 1,
+    contractId: DEFAULT_AGENT_CAPABILITY_CONTRACT_ID,
+    contractVersion: 5,
+    ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V5,
+  }),
+);
+
 export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION =
-  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4;
+  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V5;
 export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256 =
-  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4_SHA256;
+  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V5_SHA256;
 
 export const DEFAULT_AGENT_CAPABILITY_CONTRACT_HISTORY: readonly AgentCapabilityContractRecommendation[] =
   deepFreeze([
@@ -189,6 +206,14 @@ export const DEFAULT_AGENT_CAPABILITY_CONTRACT_HISTORY: readonly AgentCapability
       recommendationSha256: DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4_SHA256,
       recommendation: managedCapabilityPayload(
         DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4,
+      ),
+    },
+    {
+      contractId: DEFAULT_AGENT_CAPABILITY_CONTRACT_ID,
+      contractVersion: 5,
+      recommendationSha256: DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V5_SHA256,
+      recommendation: managedCapabilityPayload(
+        DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V5,
       ),
     },
   ]);

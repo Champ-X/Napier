@@ -197,8 +197,8 @@ describe("Skill loader Doctor probe", () => {
           status: "ready",
           code: "skills_ready",
           evidence: expect.objectContaining({
-            present: 5,
-            admitted: 5,
+            present: 6,
+            admitted: 6,
             productionCall: true,
             resourceToolConstructed: true,
             resourceProductionCall: false,
@@ -229,7 +229,7 @@ describe("Skill loader Doctor probe", () => {
         expect.objectContaining({
           status: "unavailable",
           code: "skills_unavailable",
-          evidence: { present: 6, productionCall: false },
+          evidence: { present: 7, productionCall: false },
         }),
       );
     } finally {

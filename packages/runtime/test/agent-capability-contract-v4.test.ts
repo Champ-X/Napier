@@ -9,8 +9,8 @@ import { createAgentProfileRevision } from "../src/agents.js";
 import {
   DEFAULT_AGENT_CAPABILITY_CONTRACT_VERSION,
   DEFAULT_AGENT_CAPABILITY_RECOMMENDATION,
-  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3,
-  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3_SHA256,
+  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4,
+  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4_SHA256,
 } from "../src/default-agent-capability-contract.js";
 import { createLocalAgentRuntime } from "../src/local-agent-runtime.js";
 import { UnsupportedSandboxAdapter } from "../src/sandbox.js";
@@ -23,13 +23,13 @@ afterEach(async () => {
   );
 });
 
-describe("default Agent Capability Contract v4", () => {
+describe("default Agent Capability Contract v5", () => {
   it("seeds full Safe Automation with relaxed Run and Subagent limits", async () => {
     const fixture = await createFixture();
     const services = await fixture.create();
     try {
       const agent = services.store.listAgents()[0]!;
-      expect(DEFAULT_AGENT_CAPABILITY_CONTRACT_VERSION).toBe(4);
+      expect(DEFAULT_AGENT_CAPABILITY_CONTRACT_VERSION).toBe(5);
       expect(agent).toEqual(
         expect.objectContaining({
           toolPolicy: "workspace",
@@ -52,6 +52,7 @@ describe("default Agent Capability Contract v4", () => {
         }),
       );
       expect(agent.enabledTools).toHaveLength(45);
+      expect(agent.enabledSkills).toContain("frontend-design");
       expect(agent.enabledTools).toEqual(
         expect.arrayContaining([
           "apply_patch",
@@ -68,7 +69,7 @@ describe("default Agent Capability Contract v4", () => {
       const projection = await services.agentCapabilities.project(agent.id);
       expect(projection).toEqual(
         expect.objectContaining({
-          contractVersion: 4,
+          contractVersion: 5,
           driftState: "current",
           ownership: "recommended",
           configuredTools: expect.arrayContaining([
@@ -83,7 +84,7 @@ describe("default Agent Capability Contract v4", () => {
     }
   });
 
-  it("upgrades a bound V3 recommendation to full V4 capabilities", async () => {
+  it("upgrades a bound V4 recommendation to V5 with Frontend Design", async () => {
     const fixture = await createFixture();
     const seededRuntime = await fixture.create();
     const seeded = seededRuntime.store.listAgents()[0]!;
@@ -103,26 +104,26 @@ describe("default Agent Capability Contract v4", () => {
     const agentIndex = state.agents.findIndex(
       (candidate) => candidate.id === seeded.id,
     );
-    const v3Profile: AgentProfile = {
+    const v4Profile: AgentProfile = {
       ...state.agents[agentIndex]!,
-      ...structuredClone(DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3),
+      ...structuredClone(DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4),
     };
-    state.agents[agentIndex] = v3Profile;
+    state.agents[agentIndex] = v4Profile;
     const revisionIndex = state.agentRevisions.findIndex(
       (candidate) =>
         candidate.agentId === seeded.id &&
         candidate.revision === seeded.revision,
     );
     state.agentRevisions[revisionIndex] = createAgentProfileRevision(
-      v3Profile,
-      { source: "created", createdAt: v3Profile.createdAt },
+      v4Profile,
+      { source: "created", createdAt: v4Profile.createdAt },
     );
     const binding = state.agentCapabilityBindings.find(
       (candidate) => candidate.agentId === seeded.id,
     )!;
-    binding.contractVersion = 3;
+    binding.contractVersion = 4;
     binding.recommendationSha256 =
-      DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3_SHA256;
+      DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V4_SHA256;
     await writeFile(statePath, `${JSON.stringify(state, null, 2)}\n`, "utf8");
 
     const services = await fixture.create();
@@ -130,30 +131,20 @@ describe("default Agent Capability Contract v4", () => {
       const stale = await services.agentCapabilities.project(seeded.id);
       expect(stale).toEqual(
         expect.objectContaining({
-          contractVersion: 4,
+          contractVersion: 5,
           driftState: "stale",
           ownership: "recommended",
           upgradePreview: expect.objectContaining({
-            sourceContractVersion: 3,
-            targetContractVersion: 4,
+            sourceContractVersion: 4,
+            targetContractVersion: 5,
             explicitOverrideFields: [],
-            operations: expect.arrayContaining([
+            operations: [
               expect.objectContaining({
-                field: "toolPolicy",
-                operation: "replace",
-                value: "workspace",
-              }),
-              expect.objectContaining({
-                field: "enabledTools",
+                field: "enabledSkills",
                 operation: "add",
-                value: "workspace_process",
+                value: "frontend-design",
               }),
-              expect.objectContaining({
-                field: "enabledSubagents",
-                operation: "add",
-                value: "coder",
-              }),
-            ]),
+            ],
           }),
         }),
       );
@@ -164,7 +155,7 @@ describe("default Agent Capability Contract v4", () => {
       });
       expect(upgraded.projection).toEqual(
         expect.objectContaining({
-          contractVersion: 4,
+          contractVersion: 5,
           driftState: "current",
           ownership: "recommended",
           configuredTools: DEFAULT_AGENT_CAPABILITY_RECOMMENDATION.enabledTools,

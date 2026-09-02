@@ -25,31 +25,32 @@ export function TraceTrajectoryRunIndex({
 }: TraceTrajectoryRunIndexProps) {
   const copy = traceTrajectoryCopy;
   const visibleCount = visibleEventIds.size;
+  const visibleRuns = model.runs.filter((run) =>
+    run.turns.some((turn) =>
+      turn.events.some((event) => visibleEventIds.has(event.event.id)),
+    ),
+  );
   return (
     <div className="trace-run-index">
-      <header>
-        <div>
-          <span>
-            {viewMode === "key" ? copy.keyActionTrail : copy.fullAuditTrail}
-          </span>
-          <strong>
-            {viewMode === "key" ? copy.whatAgentDid : copy.everyRecordedEvent}
-          </strong>
-        </div>
+      <header className="trace-ledger-columns">
+        <span>{copy.audit.role}</span>
+        <strong>
+          {viewMode === "key" ? copy.whatAgentDid : copy.everyRecordedEvent}
+        </strong>
         <output aria-live="polite">
           {query
             ? `${formatNumber(visibleCount)} ${copy.matches}`
             : `${formatNumber(visibleCount)} / ${formatNumber(model.eventCount)} ${copy.filtered}`}
         </output>
       </header>
-      {model.runs.map((run) => (
+      {visibleRuns.map((run, index) => (
         <TraceTrajectoryRunSection
           key={run.id}
           run={run}
           selectedEventId={selectedEventId}
           visibleEventIds={visibleEventIds}
           forceOpen={Boolean(query)}
-          latest={run.ordinal === model.runs.length}
+          latest={index === visibleRuns.length - 1}
           onSelect={onSelect}
         />
       ))}

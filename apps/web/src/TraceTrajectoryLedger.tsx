@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, Layers } from "lucide-react";
+import { ChevronDown, ChevronRight, Layers } from "lucide-react";
 
 import type {
   TraceTrajectoryEvent,
@@ -8,7 +8,7 @@ import type {
 } from "./trace-trajectory-model";
 import { getLocale } from "./locale";
 import { traceTrajectoryCopy } from "./trace-trajectory-copy";
-import { traceTrajectorySummarySegments } from "./trace-trajectory-presentation";
+import { traceTrajectoryReadableSummary } from "./trace-trajectory-presentation";
 import {
   buildTraceRunSemanticCollection,
   type TraceSemanticFoldRow,
@@ -267,7 +267,7 @@ function TraceTrajectoryFoldRow({
         <time dateTime={new Date(row.startMs).toISOString()}>
           {formatClock(row.startMs)}
         </time>
-        <i aria-hidden="true">–</i>
+        <i aria-hidden="true">→</i>
         <time dateTime={new Date(row.endMs).toISOString()}>
           {formatClock(row.endMs)}
         </time>
@@ -289,7 +289,7 @@ function TraceTrajectoryEventRow({
   selected: boolean;
   onSelect: (eventId: string) => void;
 }) {
-  const summarySegments = traceTrajectorySummarySegments(event.summary);
+  const readableSummary = traceTrajectoryReadableSummary(event);
   return (
     <div
       id={`trace-event-${event.event.id}`}
@@ -298,9 +298,11 @@ function TraceTrajectoryEventRow({
       aria-setsize={setSize}
       className={[
         `lane-${event.lane}`,
+        `role-${event.role.toLocaleLowerCase()}`,
         event.status === "failed" ? "is-exception" : "",
         selected ? "is-selected" : "",
       ].join(" ")}
+      data-turn={event.turnIndex}
     >
       <button
         type="button"
@@ -310,30 +312,26 @@ function TraceTrajectoryEventRow({
         <span className="trace-event-identity">
           <span className="trace-event-role">{event.role}</span>
           <span className="trace-event-sequence">
-            <i />#{String(event.event.seq).padStart(3, "0")}
+            #{String(event.event.seq).padStart(3, "0")}
           </span>
         </span>
         <span className="trace-event-copy">
-          <span className="trace-event-title">
-            <strong>{event.label}</strong>
-            <i className={`status-${event.status}`}>
-              {traceTrajectoryCopy.statuses[event.status]}
-            </i>
-          </span>
-          <small className="trace-event-summary-parts">
-            {summarySegments.map((segment, index) => (
-              <span key={`${segment}:${String(index)}`}>{segment}</span>
-            ))}
-          </small>
+          <strong>{readableSummary}</strong>
+          {readableSummary !== event.label ? (
+            <small>{event.label}</small>
+          ) : null}
         </span>
         <span className="trace-event-meta">
+          <i className={`status-${event.status}`}>
+            {traceTrajectoryCopy.statuses[event.status]}
+          </i>
           {event.durationMs !== undefined ? (
             <strong>{formatTraceDuration(event.durationMs)}</strong>
           ) : null}
           <time dateTime={event.event.createdAt}>
             {formatTimestamp(event.event.createdAt)}
           </time>
-          <ChevronDown size={15} aria-hidden="true" />
+          <ChevronRight size={13} aria-hidden="true" />
         </span>
       </button>
     </div>

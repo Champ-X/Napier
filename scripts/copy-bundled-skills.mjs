@@ -9,6 +9,7 @@ export const BUNDLED_SKILL_NAMES = Object.freeze([
   "artifact-studio",
   "browser-automation",
   "data-analysis",
+  "frontend-design",
   "research-brief",
   "software-delivery",
 ]);

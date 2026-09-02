@@ -1,62 +1,80 @@
-import type { MouseEvent, ReactNode } from "react";
-import { FileCode2 } from "lucide-react";
-import type { ArtifactManifestEntry } from "@napier/contracts";
-
 import type { ArtifactInspection } from "./artifact-inspection";
+import { MessageFlowchart } from "./MessageFlowchart";
+import { MessageHtmlPreview } from "./MessageHtmlPreview";
 import { highlightMessageCode } from "./message-code-highlighting";
+import { parseMessageFlowchart } from "./message-flowchart";
+import {
+  createMessageInlineContext,
+  inlineMarkdown,
+} from "./message-markdown-inline";
 import {
   parseMarkdownBlocks,
   projectDiffLines,
 } from "./message-markdown-parser";
+import type {
+  MessageCitationLink,
+  MessageSkillResourceLink,
+  MessageWorkspaceLink,
+} from "./message-markdown-types";
 import "./message-markdown.css";
 
 export type { DiffLineTone } from "./message-markdown-parser";
+export type {
+  MessageCitationLink,
+  MessageSkillResourceLink,
+  MessageWorkspaceLink,
+} from "./message-markdown-types";
+export {
+  isWorkspaceFileReference,
+  isWorkspaceImageReference,
+} from "./message-markdown-inline";
 export {
   parseMarkdownBlocks,
   projectDiffLines,
 } from "./message-markdown-parser";
 
-export interface MessageWorkspaceLink {
-  artifact?: ArtifactManifestEntry;
-  path: string;
-  planId?: string;
-  threadId?: string;
-  targetId: string;
-}
-
-export interface MessageCitationLink {
-  citationId: string;
-  targetId: string;
-  index: number;
-}
-
 export interface MessageMarkdownProps {
   text: string;
   workspaceLinks?: readonly MessageWorkspaceLink[];
+  skillResourceLinks?: readonly MessageSkillResourceLink[];
   citationLinks?: readonly MessageCitationLink[];
   onInspectArtifact?(inspection: ArtifactInspection): void;
   onOpenWorkspaceFile?(path: string): void;
+  onOpenSkillResource?(reference: MessageSkillResourceLink): void;
 }
 
 export function MessageMarkdown({
   text,
   workspaceLinks = [],
+  skillResourceLinks = [],
   citationLinks = [],
   onInspectArtifact,
   onOpenWorkspaceFile,
+  onOpenSkillResource,
 }: MessageMarkdownProps) {
-  const workspaceTargets = new Map(
-    workspaceLinks.map((link) => [link.path, link]),
-  );
-  const citationTargets = new Map(
-    citationLinks.map((link) => [link.citationId, link]),
-  );
+  const inlineContext = createMessageInlineContext({
+    workspaceLinks,
+    skillResourceLinks,
+    citationLinks,
+    ...(onInspectArtifact ? { onInspectArtifact } : {}),
+    ...(onOpenWorkspaceFile ? { onOpenWorkspaceFile } : {}),
+    ...(onOpenSkillResource ? { onOpenSkillResource } : {}),
+  });
   return (
     <>
       {parseMarkdownBlocks(text).map((block, index) => {
         const key = `${block.kind}-${String(index)}`;
         if (block.kind === "code") {
           const language = block.language?.toLowerCase();
+          if (
+            (language === "mermaid" || language === "flowchart") &&
+            parseMessageFlowchart(block.value)
+          ) {
+            return <MessageFlowchart key={key} source={block.value} />;
+          }
+          if (language === "html" || language === "htm") {
+            return <MessageHtmlPreview key={key} source={block.value} />;
+          }
           const diffLines =
             language === "diff" || language === "patch"
               ? projectDiffLines(block.value)
@@ -105,26 +123,14 @@ export function MessageMarkdown({
           const Heading = `h${String(block.level + 2)}` as "h3" | "h4" | "h5";
           return (
             <Heading key={key}>
-              {inlineMarkdown(
-                block.value,
-                workspaceTargets,
-                citationTargets,
-                onInspectArtifact,
-                onOpenWorkspaceFile,
-              )}
+              {inlineMarkdown(block.value, inlineContext)}
             </Heading>
           );
         }
         if (block.kind === "quote") {
           return (
             <blockquote key={key}>
-              {inlineMarkdown(
-                block.value,
-                workspaceTargets,
-                citationTargets,
-                onInspectArtifact,
-                onOpenWorkspaceFile,
-              )}
+              {inlineMarkdown(block.value, inlineContext)}
             </blockquote>
           );
         }
@@ -134,13 +140,7 @@ export function MessageMarkdown({
             <List key={key}>
               {block.items.map((item, itemIndex) => (
                 <li key={`${key}-${String(itemIndex)}`}>
-                  {inlineMarkdown(
-                    item,
-                    workspaceTargets,
-                    citationTargets,
-                    onInspectArtifact,
-                    onOpenWorkspaceFile,
-                  )}
+                  {inlineMarkdown(item, inlineContext)}
                 </li>
               ))}
             </List>
@@ -154,13 +154,7 @@ export function MessageMarkdown({
                   <tr>
                     {block.headers.map((header, headerIndex) => (
                       <th key={`${key}-head-${String(headerIndex)}`}>
-                        {inlineMarkdown(
-                          header,
-                          workspaceTargets,
-                          citationTargets,
-                          onInspectArtifact,
-                          onOpenWorkspaceFile,
-                        )}
+                        {inlineMarkdown(header, inlineContext)}
                       </th>
                     ))}
                   </tr>
@@ -172,13 +166,7 @@ export function MessageMarkdown({
                         <td
                           key={`${key}-cell-${String(rowIndex)}-${String(cellIndex)}`}
                         >
-                          {inlineMarkdown(
-                            cell,
-                            workspaceTargets,
-                            citationTargets,
-                            onInspectArtifact,
-                            onOpenWorkspaceFile,
-                          )}
+                          {inlineMarkdown(cell, inlineContext)}
                         </td>
                       ))}
                     </tr>
@@ -188,217 +176,8 @@ export function MessageMarkdown({
             </div>
           );
         }
-        return (
-          <p key={key}>
-            {inlineMarkdown(
-              block.value,
-              workspaceTargets,
-              citationTargets,
-              onInspectArtifact,
-              onOpenWorkspaceFile,
-            )}
-          </p>
-        );
+        return <p key={key}>{inlineMarkdown(block.value, inlineContext)}</p>;
       })}
     </>
-  );
-}
-
-function inlineMarkdown(
-  value: string,
-  workspaceTargets: ReadonlyMap<string, MessageWorkspaceLink>,
-  citationTargets: ReadonlyMap<string, MessageCitationLink>,
-  onInspectArtifact?: (inspection: ArtifactInspection) => void,
-  onOpenWorkspaceFile?: (path: string) => void,
-): ReactNode[] {
-  const tokens =
-    /(`[^`\n]+`|\*\*[^*\n]+\*\*|\[[^\]\n]+\]\([^\s)]+\)|\[citation:citation_[a-z0-9]{8,80}\])/gu;
-  const output: ReactNode[] = [];
-  let cursor = 0;
-  for (const match of value.matchAll(tokens)) {
-    const start = match.index;
-    if (start > cursor) output.push(value.slice(cursor, start));
-    const token = match[0];
-    if (token.startsWith("[citation:")) {
-      const citationId = token.slice("[citation:".length, -1);
-      const citation = citationTargets.get(citationId);
-      output.push(
-        citation ? (
-          <a
-            className="message-citation-link"
-            href={`#${citation.targetId}`}
-            key={`${start}-citation`}
-            aria-label={`Citation ${citation.index}`}
-          >
-            [{citation.index}]
-          </a>
-        ) : (
-          token
-        ),
-      );
-    } else if (token.startsWith("`")) {
-      const code = token.slice(1, -1);
-      const target = workspaceTargets.get(code);
-      output.push(
-        target ? (
-          <WorkspaceArtifactLink
-            code
-            key={`${start}-workspace-code`}
-            label={code}
-            link={target}
-            {...(onInspectArtifact ? { onInspectArtifact } : {})}
-          />
-        ) : onOpenWorkspaceFile && isWorkspaceFileReference(code) ? (
-          <WorkspaceFileLink
-            code
-            key={`${start}-workspace-file-code`}
-            label={code}
-            path={code}
-            onOpen={onOpenWorkspaceFile}
-          />
-        ) : (
-          <code key={`${start}-code`}>{code}</code>
-        ),
-      );
-    } else if (token.startsWith("**")) {
-      output.push(
-        <strong key={`${start}-strong`}>
-          {inlineMarkdown(
-            token.slice(2, -2),
-            workspaceTargets,
-            citationTargets,
-            onInspectArtifact,
-            onOpenWorkspaceFile,
-          )}
-        </strong>,
-      );
-    } else {
-      const link = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/u);
-      const href = link?.[2];
-      const target = href ? workspaceTargets.get(href) : undefined;
-      output.push(
-        target ? (
-          <WorkspaceArtifactLink
-            key={`${start}-workspace-link`}
-            label={link?.[1] ?? target.path}
-            link={target}
-            {...(onInspectArtifact ? { onInspectArtifact } : {})}
-          />
-        ) : href && onOpenWorkspaceFile && isWorkspaceFileReference(href) ? (
-          <WorkspaceFileLink
-            key={`${start}-workspace-file-link`}
-            label={link?.[1] ?? href}
-            path={href}
-            onOpen={onOpenWorkspaceFile}
-          />
-        ) : href && safeExternalHref(href) ? (
-          <a
-            href={href}
-            key={`${start}-link`}
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            {link[1]}
-          </a>
-        ) : (
-          token
-        ),
-      );
-    }
-    cursor = start + token.length;
-  }
-  if (cursor < value.length) output.push(value.slice(cursor));
-  return output;
-}
-
-function WorkspaceFileLink({
-  code = false,
-  label,
-  path,
-  onOpen,
-}: {
-  code?: boolean;
-  label: string;
-  path: string;
-  onOpen(path: string): void;
-}) {
-  return (
-    <button
-      type="button"
-      className={`message-workspace-link is-direct${code ? " is-code" : ""}`}
-      data-workspace-path={path}
-      aria-label={`Open preview: ${path}`}
-      onClick={() => onOpen(path)}
-    >
-      <FileCode2 size={13} aria-hidden="true" />
-      {code ? <code>{label}</code> : label}
-    </button>
-  );
-}
-
-function WorkspaceArtifactLink({
-  code = false,
-  label,
-  link,
-  onInspectArtifact,
-}: {
-  code?: boolean;
-  label: string;
-  link: MessageWorkspaceLink;
-  onInspectArtifact?: (inspection: ArtifactInspection) => void;
-}) {
-  const inspectable =
-    link.artifact && link.planId && link.threadId && onInspectArtifact;
-  const open = (event: MouseEvent<HTMLAnchorElement>) => {
-    if (!inspectable) return;
-    event.preventDefault();
-    onInspectArtifact({
-      artifact: link.artifact!,
-      mode: "preview",
-      planId: link.planId!,
-      threadId: link.threadId!,
-    });
-  };
-  return (
-    <a
-      className={`message-workspace-link${code ? " is-code" : ""}`}
-      href={`#${link.targetId}`}
-      onClick={open}
-      data-artifact-path={link.path}
-      aria-label={`Open preview: ${link.path}`}
-    >
-      <FileCode2 size={13} aria-hidden="true" />
-      {code ? <code>{label}</code> : label}
-    </a>
-  );
-}
-
-function safeExternalHref(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" || url.protocol === "http:";
-  } catch {
-    return false;
-  }
-}
-
-const WORKSPACE_FILE_EXTENSION =
-  /\.(?:c|cc|cjs|cpp|css|csv|docx?|gif|go|h|hpp|html?|java|jpe?g|js|jsx|json|kt|kts|less|markdown|md|mdx|mjs|pdf|php|png|pptx?|py|rb|rs|s?css|sh|sql|svg|toml|ts|tsx|txt|webp|xlsx?|xml|ya?ml|zsh)$/iu;
-
-export function isWorkspaceFileReference(value: string): boolean {
-  const normalized = value.trim().replaceAll("\\", "/");
-  if (
-    !normalized ||
-    /[\s<>\[\]{}|"'`]/u.test(normalized) ||
-    /^(?:data|file|https?):/iu.test(normalized) ||
-    normalized.split("/").includes("..")
-  ) {
-    return false;
-  }
-  const filename = normalized.split("/").at(-1);
-  return Boolean(
-    filename &&
-    !filename.startsWith(".") &&
-    WORKSPACE_FILE_EXTENSION.test(filename),
   );
 }

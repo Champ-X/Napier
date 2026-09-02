@@ -206,6 +206,85 @@ describe("Message workspace links", () => {
     expect(container.textContent).toContain(".env");
     expect(container.textContent).toContain("npm test");
   });
+
+  it("resolves a bare filename against the nearest directory reference in the same sentence", async () => {
+    const container = installDom();
+    const onOpenWorkspaceFile = vi.fn<(path: string) => void>();
+    await act(async () => {
+      render(
+        <MessageMarkdown
+          text="仅在 `napier-frontend-skill-smoke/` 内创建了单文件 `index.html`。"
+          onOpenWorkspaceFile={onOpenWorkspaceFile}
+        />,
+        container,
+      );
+    });
+
+    const fileButton = findElementsByLocalName(container, "button")[0];
+    expect(fileButton?.getAttribute("data-workspace-path")).toBe(
+      "napier-frontend-skill-smoke/index.html",
+    );
+    expect(fileButton?.textContent).toBe("index.html");
+    await act(async () => fileButton?.click());
+    expect(onOpenWorkspaceFile).toHaveBeenCalledWith(
+      "napier-frontend-skill-smoke/index.html",
+    );
+  });
+
+  it("does not carry directory context across a sentence boundary", async () => {
+    const container = installDom();
+    const onOpenWorkspaceFile = vi.fn<(path: string) => void>();
+    await act(async () => {
+      render(
+        <MessageMarkdown
+          text="检查目录 `archive/`。然后打开 `index.html`。"
+          onOpenWorkspaceFile={onOpenWorkspaceFile}
+        />,
+        container,
+      );
+    });
+
+    expect(
+      findElementsByLocalName(container, "button")[0]?.getAttribute(
+        "data-workspace-path",
+      ),
+    ).toBe("index.html");
+  });
+
+  it("opens a receipt-bound Skill resource through its canonical virtual path", async () => {
+    const container = installDom();
+    const onOpenWorkspaceFile = vi.fn<(path: string) => void>();
+    const onOpenSkillResource = vi.fn();
+    const reference = {
+      skillName: "frontend-design",
+      resourcePath: "references/visual-quality-gate.md",
+      relativePath: "skills/frontend-design/references/visual-quality-gate.md",
+      virtualPath:
+        "/bundled/skills/frontend-design/references/visual-quality-gate.md",
+      rootKind: "bundled_standard" as const,
+      rawContentSha256: "a".repeat(64),
+    };
+    await act(async () => {
+      render(
+        <MessageMarkdown
+          text="加载了 `frontend-design`，并按 `references/visual-quality-gate.md` 检查。"
+          skillResourceLinks={[reference]}
+          onOpenWorkspaceFile={onOpenWorkspaceFile}
+          onOpenSkillResource={onOpenSkillResource}
+        />,
+        container,
+      );
+    });
+
+    const fileButton = findElementsByLocalName(container, "button")[0];
+    expect(fileButton?.getAttribute("data-skill-resource-path")).toBe(
+      reference.virtualPath,
+    );
+    expect(fileButton?.textContent).toBe(reference.resourcePath);
+    await act(async () => fileButton?.click());
+    expect(onOpenSkillResource).toHaveBeenCalledWith(reference);
+    expect(onOpenWorkspaceFile).not.toHaveBeenCalled();
+  });
 });
 
 function installDom(): HTMLElement {

@@ -26,6 +26,7 @@ import {
 } from "./thread-lifecycle-http-validation.js";
 import { setThreadDetailProjectionHeaders } from "./thread-lifecycle-http-response.js";
 import { attachKernelThreadProjections } from "./kernel-thread-projections.js";
+import { registerModelDisplayHttp } from "./model-display-http.js";
 import { registerToolDisplayHttp } from "./tool-display-http.js";
 
 const MAX_THREAD_CREATE_REQUEST_BYTES = 8 * 1024;
@@ -66,6 +67,9 @@ export interface ThreadLifecycleHttpServices {
     "availability"
   >;
   toolDisplays: Parameters<typeof registerToolDisplayHttp>[1]["toolDisplays"];
+  modelDisplays: Parameters<
+    typeof registerModelDisplayHttp
+  >[1]["modelDisplays"];
 }
 
 export function registerThreadLifecycleHttp(
@@ -73,6 +77,7 @@ export function registerThreadLifecycleHttp(
   services: ThreadLifecycleHttpServices,
 ): void {
   registerToolDisplayHttp(app, services);
+  registerModelDisplayHttp(app, services);
   app.get("/api/threads/:threadId", async (context) => {
     const detail = await projectDetail(services, context.req.param("threadId"));
     setThreadDetailProjectionHeaders(context, detail);

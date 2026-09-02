@@ -149,7 +149,7 @@ describe("trajectory Chinese copy", () => {
     );
   });
 
-  it("renders a four-section event inspector with bounded evidence", async () => {
+  it("renders the compact event inspector with bounded source evidence", async () => {
     const container = installChineseDom();
     const { TraceTrajectoryEventDetail } =
       await import("../src/TraceTrajectoryEventDetail");
@@ -167,18 +167,20 @@ describe("trajectory Chinese copy", () => {
     render(<TraceTrajectoryEventDetail event={event} />, container);
     const text = container.textContent ?? "";
     expect(text).toContain("摘要");
-    expect(text).toContain("上下文");
-    expect(text).toContain("证据");
+    expect(text).toContain("预览");
+    expect(text).toContain("来源");
     expect(text).toContain("计时");
     expect(text).toContain("任务完成。");
     expect(text).not.toContain("TOP_SECRET_MODEL_OUTPUT");
 
-    const evidenceTab = [...container.querySelectorAll('[role="tab"]')].find(
-      (candidate) => candidate.textContent?.includes("证据"),
+    const sourceTab = [...container.querySelectorAll('[role="tab"]')].find(
+      (candidate) => candidate.textContent?.includes("来源"),
     ) as HTMLButtonElement;
-    evidenceTab.dispatchEvent(new Event("click", { bubbles: true }));
+    sourceTab.dispatchEvent(new Event("click", { bubbles: true }));
     await Promise.resolve();
     const evidence = container.textContent ?? "";
+    expect(evidence).toContain("上下文");
+    expect(evidence).toContain("证据");
     expect(evidence).toContain("模型");
     expect(evidence).toContain("输入 Token");
     expect(evidence).toContain("文本 SHA-256");

@@ -95,6 +95,7 @@ import {
   modelRefFromModel,
   providerMessages,
 } from "./agent-model-projection.js";
+import { AgentModelDisplayStore } from "./agent-model-display-store.js";
 import { contextHistoryCharacterBudget } from "./model-context-token-meter.js";
 import { AgentToolDisplayStore, builtInToolHarnessProjection } from "./agent-tool-effects.js";
 import {
@@ -325,7 +326,15 @@ export class AgentRuntime {
     readonly conversationSurfaceCapsules = new ConversationSurfaceCapsuleStore(
       store.dataRoot,
     ),
-    private readonly subagentHubControls?: Pick<SubagentHubControlService, "register">, readonly toolDisplays = new AgentToolDisplayStore(store.dataRoot),
+    private readonly subagentHubControls?: Pick<
+      SubagentHubControlService,
+      "register"
+    >,
+    readonly toolDisplays = new AgentToolDisplayStore(store.dataRoot),
+    readonly modelDisplays = new AgentModelDisplayStore(store.dataRoot, {
+      store,
+      capsules: conversationSurfaceCapsules,
+    }),
   ) {
     this.contextEvents = new ContextEventReadModel(store);
     this.modelRouter = new ModelRouter(store, modelRegistry);
@@ -2088,6 +2097,24 @@ export class AgentRuntime {
           },
           onEvent,
         );
+        try {
+          await this.modelDisplays.recordResponse(
+            {
+              threadId: run.threadId,
+              runId: run.id,
+              responseEventId: responseEvent.id,
+              ...(modelContextEnvelope
+                ? {
+                    modelContextEnvelopeTurnIndex:
+                      modelContextEnvelope.turnIndex,
+                  }
+                : {}),
+            },
+            { text, thinking: reasoning },
+          );
+        } catch {
+          // Local display persistence is best-effort and never blocks a run.
+        }
         await calibrateResponse(this, run, responseEvent, event.message, onEvent);
         budget.observePrimaryUsage(usage, Date.now(), usageAccounting);
         if (modelFailure)
@@ -3285,14 +3312,19 @@ export class AgentRuntime {
     onEvent?: EventSink,
   ): Promise<RunEvent> {
     const event = await this.store.appendEvent(input);
-    if (onEvent) {
-      try {
-        await onEvent(event);
-      } catch {
-        // A disconnected stream must not cancel durable agent execution.
-      }
-    }
+    await this.emitRecordedEvent(event, onEvent);
     return event;
+  }
+  private async emitRecordedEvent(
+    event: RunEvent,
+    onEvent?: EventSink,
+  ): Promise<void> {
+    if (!onEvent) return;
+    try {
+      await onEvent(event);
+    } catch {
+      // A disconnected stream must not cancel durable agent execution.
+    }
   }
   private async collectRunUsage(runId: string): Promise<Usage> {
     return this.store.aggregateRunUsage(runId);

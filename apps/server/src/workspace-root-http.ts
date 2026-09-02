@@ -19,6 +19,7 @@ import {
   WorkspaceRebindRequestError,
   workspaceRebindBusyReasons,
 } from "./workspace-rebind.js";
+import { registerSkillResourcePreviewHttp } from "./skill-resource-preview-http.js";
 
 const MAX_WORKSPACE_ROOT_REQUEST_BYTES = 8 * 1024;
 
@@ -42,6 +43,7 @@ export function registerWorkspaceRootHttp(
     undefined,
     () => services.store.getWorkspaceSummary().root,
   );
+  registerSkillResourcePreviewHttp(app, services.store);
   app.post("/api/workspace/root", async (context) => {
     let input: unknown;
     try {

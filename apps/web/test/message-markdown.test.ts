@@ -81,16 +81,20 @@ describe("Message Markdown", () => {
   });
 
   it("never injects raw HTML and restricts links to http(s)", async () => {
-    const source = await readFile(
-      new URL("../src/message-markdown.tsx", import.meta.url),
-      "utf8",
-    );
-    expect(source).not.toContain("dangerouslySetInnerHTML");
-    expect(source).toContain('url.protocol === "https:"');
-    expect(source).toContain('url.protocol === "http:"');
-    expect(source).toContain('rel="noreferrer noopener"');
-    expect(source).toContain("message-table-wrap");
-    expect(source).toContain("language-${language}");
-    expect(source).toContain("message-diff-line");
+    const [markdownSource, inlineSource] = await Promise.all([
+      readFile(new URL("../src/message-markdown.tsx", import.meta.url), "utf8"),
+      readFile(
+        new URL("../src/message-markdown-inline.tsx", import.meta.url),
+        "utf8",
+      ),
+    ]);
+    expect(markdownSource).not.toContain("dangerouslySetInnerHTML");
+    expect(inlineSource).not.toContain("dangerouslySetInnerHTML");
+    expect(inlineSource).toContain('url.protocol === "https:"');
+    expect(inlineSource).toContain('url.protocol === "http:"');
+    expect(inlineSource).toContain('rel="noreferrer noopener"');
+    expect(markdownSource).toContain("message-table-wrap");
+    expect(markdownSource).toContain("language-${language}");
+    expect(markdownSource).toContain("message-diff-line");
   });
 });

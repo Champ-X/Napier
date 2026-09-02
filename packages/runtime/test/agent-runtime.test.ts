@@ -88,18 +88,21 @@ describe("AgentRuntime demo path", () => {
     });
     const runtime = processReadyRuntime(store, new ModelRegistry());
     const streamedTypes: string[] = [];
+    const streamedEventIds: string[] = [];
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
       text: "Explain the execution ledger.",
       onEvent: (event) => {
         streamedTypes.push(event.type);
+        streamedEventIds.push(event.id);
       },
     });
 
     expect(run.status).toBe("completed");
     expect(streamedTypes).toContain("model.text.delta");
     expect(streamedTypes.at(-1)).toBe("run.completed");
+    expect(new Set(streamedEventIds).size).toBe(streamedEventIds.length);
     const events = await store.listEvents(thread.id);
     expect(events.some((event) => event.type === "message.user")).toBe(true);
     expect(events.some((event) => event.type === "message.assistant")).toBe(true);

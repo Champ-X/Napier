@@ -573,21 +573,21 @@ describe("default Agent Capability Contract", () => {
       );
       expect(lookup.status).toBe("valid");
       if (lookup.status !== "valid") throw new Error("binding missing");
-      const v5 = createAgentCapabilityContractRecommendation(5, {
+      const v6 = createAgentCapabilityContractRecommendation(6, {
         ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION,
         enabledSkills: [
           ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION.enabledSkills,
-          "future-v4-skill",
+          "future-v5-skill",
         ],
       });
-      const history = [...DEFAULT_AGENT_CAPABILITY_CONTRACT_HISTORY, v5];
+      const history = [...DEFAULT_AGENT_CAPABILITY_CONTRACT_HISTORY, v6];
       expect(validateCapabilityBinding(lookup.binding, history)).toEqual(
         lookup.binding,
       );
       expect(bindingMatchesProfile(lookup.binding, profile, history)).toBe(
         true,
       );
-      const renamed = { ...profile, revision: 2, name: "V4 runtime name" };
+      const renamed = { ...profile, revision: 2, name: "V5 runtime name" };
       const propagated = propagateUpdatedCapabilityBinding(
         lookup.binding,
         profile,
@@ -596,7 +596,7 @@ describe("default Agent Capability Contract", () => {
       );
       expect(propagated).toEqual(
         expect.objectContaining({
-          contractVersion: 4,
+          contractVersion: 5,
           recommendationSha256: DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256,
           ownership: "recommended",
           explicitOverrideFields: [],
@@ -605,7 +605,7 @@ describe("default Agent Capability Contract", () => {
       const customized = {
         ...renamed,
         revision: 3,
-        enabledSkills: ["future-v4-skill"],
+        enabledSkills: ["future-v5-skill"],
       };
       const overridden = propagateUpdatedCapabilityBinding(
         propagated,
@@ -615,7 +615,7 @@ describe("default Agent Capability Contract", () => {
       );
       expect(overridden).toEqual(
         expect.objectContaining({
-          contractVersion: 4,
+          contractVersion: 5,
           recommendationSha256: DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256,
           ownership: "explicit_overrides",
           explicitOverrideFields: ["enabledSkills"],
