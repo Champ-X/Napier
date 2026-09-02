@@ -1,5 +1,5 @@
 /* Generated from DESIGN.md. Do not edit by hand. */
-/* source-sha256: 2a2e96bf1415c801591fb1f95a6c389fbf7b44efb446a18e3fad99d2aba95f9e */
+/* source-sha256: 9740055b1b091cc442a68b8e9d6bc2cb4e78ce228df8e6418df48231e12146c1 */
 :root {
   color-scheme: light;
   --color-accent: #34332F;
@@ -165,7 +165,7 @@
   --inset-xl: 32px;
   --inset-xs: 8px;
   --layout-center-min: 640px;
-  --layout-command-bar: 52px;
+  --layout-command-bar: 88px;
   --layout-composer-expanded-max: 240px;
   --layout-composer-max: 160px;
   --layout-composer-min: 56px;

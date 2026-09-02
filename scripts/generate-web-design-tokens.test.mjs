@@ -21,7 +21,7 @@ describe("Napier Web design tokens", () => {
     expect(css).toContain("--color-focus-ring: #5B5852;");
     expect(css).toContain("--color-navigation-bg: #F6F4F0;");
     expect(css).toContain("--color-execution-spine: #6F6A63;");
-    expect(css).toContain("--layout-command-bar: 52px;");
+    expect(css).toContain("--layout-command-bar: 88px;");
     expect(css).toContain("--layout-composer-shell: 72px;");
     expect(css).toContain("--layout-reading-target: 760px;");
     expect(css).toContain("--layout-sidebar-expanded: 252px;");

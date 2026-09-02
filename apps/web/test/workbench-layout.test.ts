@@ -39,15 +39,20 @@ describe("Workbench layout", () => {
       ),
     ]);
 
+    expect(styles).toContain('"identity actions"\n    "views views"');
     expect(styles).toContain(
-      "grid-template-columns: minmax(0, 1fr) auto max-content;",
+      "grid-template-columns: minmax(0, 1fr) max-content;",
     );
+    expect(styles).toContain("grid-template-rows: 48px 40px;");
     expect(styles).not.toContain("minmax(260px, 1fr)");
     expect(styles).not.toContain("minmax(350px, 1fr)");
     expect(navigation).toContain('<Icon size={16} aria-hidden="true" />');
     expect(arenaStyles).toContain(".workspace-view-tabs > button > svg");
     expect(arenaStyles).toContain(".workspace-view-tabs strong");
     expect(arenaStyles).toContain(".workspace-rail-toggle");
+    expect(arenaStyles).toContain("@media (max-width: 960px)");
+    expect(arenaStyles).toContain("@media (max-width: 680px)");
+    expect(arenaStyles).toContain("flex: 1 1 0;");
   });
 
   it("keeps blockers and next actions independently visible", async () => {

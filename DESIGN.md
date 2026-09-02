@@ -445,7 +445,7 @@ Principles:
     "topbar": { "$type": "dimension", "$value": { "value": 48, "unit": "px" } },
     "command-bar": {
       "$type": "dimension",
-      "$value": { "value": 52, "unit": "px" }
+      "$value": { "value": 88, "unit": "px" }
     },
     "status-bar": {
       "$type": "dimension",
@@ -767,8 +767,8 @@ new system without a flag day:
   continuity as quiet disclosure rows rather than a visible blue rail.
 - `--color-canvas` is the main workspace background; `--color-paper` is the
   bounded reading surface inside it.
-- `--layout-command-bar` (52px) is the combined identity, view, status, model,
-  and settings row. `--layout-composer-shell` (72px) is the composer at rest.
+- `--layout-command-bar` (88px) separates identity and run controls from the
+  view navigation row. `--layout-composer-shell` (72px) is the composer at rest.
   `--layout-execution-gutter` (40px) is the shared spine gutter.
 
 ## 10. Agent Prompt Guide

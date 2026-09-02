@@ -17,14 +17,17 @@
   grid-area: header;
   display: grid;
   min-width: 0;
-  align-items: center;
+  align-items: stretch;
   /*
-   * Keep navigation and run controls at their intrinsic widths. The title is
-   * the only intentionally lossy region, so it absorbs the remaining space
-   * and ellipsizes instead of letting run metadata paint over the tabs.
+   * Keep identity and run controls on the primary row. Views get a dedicated
+   * row so their labels remain stable while the thread title ellipsizes.
    */
-  grid-template-columns: minmax(0, 1fr) auto max-content;
-  gap: var(--space-2);
+  grid-template-areas:
+    "identity actions"
+    "views views";
+  grid-template-columns: minmax(0, 1fr) max-content;
+  grid-template-rows: 48px 40px;
+  gap: 0 var(--space-4);
   min-height: var(--layout-command-bar);
   padding: 0 var(--space-6);
   background: var(--color-paper);
@@ -34,6 +37,7 @@
 }
 
 .thread-heading {
+  grid-area: identity;
   min-width: 0;
   display: grid;
   gap: 2px;
@@ -100,6 +104,7 @@
   align-items: center;
   gap: var(--space-2);
   justify-self: end;
+  grid-area: actions;
 }
 
 .model-chip {

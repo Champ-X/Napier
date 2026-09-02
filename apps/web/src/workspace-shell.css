@@ -9,9 +9,12 @@
 .workspace-view-navigation {
   z-index: 8;
   display: flex;
+  width: 100%;
   min-width: 0;
   align-items: stretch;
-  margin: 0 auto;
+  justify-content: flex-start;
+  margin: 0;
+  grid-area: views;
 }
 
 .workspace-view-tabs {
