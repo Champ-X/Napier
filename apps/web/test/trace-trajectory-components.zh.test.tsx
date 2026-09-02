@@ -171,6 +171,13 @@ describe("trajectory Chinese copy", () => {
     expect(text).toContain("来源");
     expect(text).toContain("计时");
     expect(text).toContain("任务完成。");
+    expect(text).toContain("基本信息");
+    expect(text).toContain("事件定位");
+    expect(text).toContain("按角色、动作、执行对象与调用层级定位此事件。");
+    expect(text).not.toContain("关键路径");
+    expect(
+      container.querySelectorAll(".trace-event-detail-keypath li").length,
+    ).toBeGreaterThan(1);
     expect(text).not.toContain("TOP_SECRET_MODEL_OUTPUT");
 
     const sourceTab = [...container.querySelectorAll('[role="tab"]')].find(

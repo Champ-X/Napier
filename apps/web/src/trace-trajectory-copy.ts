@@ -63,9 +63,11 @@ export const traceTrajectoryCopyEn = {
     evidence: "Evidence",
     timing: "Timing",
     raw: "Raw",
-    keyPath: "Key path",
+    keyPath: "Event location",
+    keyPathHint:
+      "Locates this event by role, action, subject, and call hierarchy.",
     atAGlance: "At a glance",
-    eventFields: "Event fields",
+    eventFields: "Basic information",
     localOnly: "Local private display",
     previewEmpty: "No human-readable content was retained for this event.",
     previewFields: {
@@ -344,9 +346,10 @@ export const traceTrajectoryZh: LocaleOverride<typeof traceTrajectoryCopyEn> = {
     evidence: "证据",
     timing: "计时",
     raw: "原始数据",
-    keyPath: "关键路径",
+    keyPath: "事件定位",
+    keyPathHint: "按角色、动作、执行对象与调用层级定位此事件。",
     atAGlance: "关键信息",
-    eventFields: "事件属性",
+    eventFields: "基本信息",
     localOnly: "本机私有展示",
     previewEmpty: "该事件没有保留可供阅读的内容。",
     previewFields: {

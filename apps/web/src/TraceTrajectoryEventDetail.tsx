@@ -67,6 +67,9 @@ export function TraceTrajectoryEventDetail({
   const preview = traceTrajectoryEventPreview(event);
   const readableSummary = traceTrajectoryReadableSummary(event);
   const copy = traceTrajectoryCopy.detail;
+  const locationSegments = detail.keyPath
+    .split(/\s+\/\s+/u)
+    .filter((segment) => segment.length > 0);
   useEffect(() => {
     if (selectedEventId.current === event.event.id) return;
     selectedEventId.current = event.event.id;
@@ -183,8 +186,17 @@ export function TraceTrajectoryEventDetail({
               <DetailGrid fields={highlights} />
             </DetailSection>
             <div className="trace-event-detail-keypath">
-              <span>{copy.keyPath}</span>
-              <code>{detail.keyPath}</code>
+              <header>
+                <strong>{copy.keyPath}</strong>
+                <small>{copy.keyPathHint}</small>
+              </header>
+              <ol aria-label={copy.keyPath}>
+                {locationSegments.map((segment, index) => (
+                  <li key={`${String(index)}:${segment}`}>
+                    <code>{segment}</code>
+                  </li>
+                ))}
+              </ol>
             </div>
           </div>
         ) : null}

@@ -44,13 +44,17 @@ describe("Trace virtual window", () => {
     expect(last.row.rowIndex).toBe(100);
   });
 
-  it("reserves the taller two-line row used by compact viewports", () => {
+  it("reserves readable two-line rows without breaking compact offsets", () => {
     const rows = collection(2);
     const regular = createTraceVirtualLayout(rows);
     const compact = createTraceVirtualLayout(rows, {
       eventRowHeightPx: TRACE_COMPACT_EVENT_ROW_HEIGHT_PX,
     });
 
+    expect(TRACE_EVENT_ROW_HEIGHT_PX).toBeGreaterThanOrEqual(48);
+    expect(TRACE_COMPACT_EVENT_ROW_HEIGHT_PX).toBeGreaterThan(
+      TRACE_EVENT_ROW_HEIGHT_PX,
+    );
     expect(compact.totalHeight - regular.totalHeight).toBe(
       2 * (TRACE_COMPACT_EVENT_ROW_HEIGHT_PX - TRACE_EVENT_ROW_HEIGHT_PX),
     );
