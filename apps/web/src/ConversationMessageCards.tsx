@@ -73,7 +73,10 @@ export function ConversationMessageCard({
 }: ConversationMessageCardProps) {
   const anchorId = `message-${String(message.seq)}`;
   return (
-    <article id={anchorId} className={`message-card role-${message.role}`}>
+    <article
+      id={anchorId}
+      className={`message-card has-copy-action role-${message.role}`}
+    >
       <div className="message-gutter">
         <span>{String(message.seq).padStart(3, "0")}</span>
         <i />

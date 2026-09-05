@@ -7,7 +7,12 @@ const POSTCONDITION = /^(verified|drifted|indeterminate)$/u;
 export function workspaceFileEventTraceSummary(
   event: RunEvent,
 ): string | undefined {
-  if (event.type !== "workspace.file.mutated") return undefined;
+  if (
+    event.type !== "workspace.file.mutated" &&
+    event.type !== "workspace.file.recovered"
+  ) {
+    return undefined;
+  }
   if (
     !event.payload ||
     typeof event.payload !== "object" ||
@@ -34,7 +39,9 @@ export function workspaceFileEventTraceSummary(
   const directoryCount = integer(event.payload["directoryCount"]);
   const bytes = integer(event.payload["bytes"]);
   return [
-    "workspace file mutation",
+    event.type === "workspace.file.recovered"
+      ? "workspace file recovery"
+      : "workspace file mutation",
     ...(operation ? [operation] : []),
     ...(event.payload["initiatedBy"] === "agent" ||
     event.payload["initiatedBy"] === "operator"

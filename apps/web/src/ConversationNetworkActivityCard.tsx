@@ -64,7 +64,6 @@ export function ConversationNetworkActivityCard({
           toolName={activity.kind === "search" ? "web_search" : "web_fetch"}
         />
       ) : null}
-      <p>{copy.network.untrusted}</p>
     </details>
   );
 }

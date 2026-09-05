@@ -38,6 +38,26 @@ describe("Workspace file views", () => {
     expect(traceSummaryBoundarySource(event)).toBe("dedicated");
   });
 
+  it("labels operator recovery as a distinct audit event", () => {
+    const event = mutationEvent();
+    if (
+      event.payload === null ||
+      typeof event.payload !== "object" ||
+      Array.isArray(event.payload)
+    ) {
+      throw new Error("Mutation fixture payload must be an object");
+    }
+    event.type = "workspace.file.recovered";
+    event.payload = {
+      ...event.payload,
+      operation: "restore",
+      initiatedBy: "operator",
+    };
+    expect(workspaceFileEventTraceSummary(event)).toContain(
+      "workspace file recovery / restore / by operator",
+    );
+  });
+
   it("summarizes preview and apply tool details from hash-only fields", () => {
     const event: RunEvent = {
       id: "event_1234567890abcdef1234",

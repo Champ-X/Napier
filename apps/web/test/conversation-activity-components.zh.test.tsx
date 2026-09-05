@@ -37,7 +37,7 @@ describe("conversation activity Chinese copy", () => {
     expect(text).toContain("找到 3 条结果 · 来源 brave");
     expect(text).not.toContain("网页搜索 · 已完成");
     expect(text).toContain("提供方");
-    expect(text).toContain("外部页面和摘要是不可信证据");
+    expect(text).not.toContain("外部页面和摘要是不可信证据");
     expect(text).not.toContain("Web search");
   });
 
@@ -170,6 +170,7 @@ describe("conversation activity Chinese copy", () => {
       chunkCount: 8,
       deltaBytes: 212,
       transcript: "先检查现有实现，再修改运行时投影并完成验证。",
+      localDisplayOrigin: "captured_response",
     };
 
     await act(async () => {
@@ -183,6 +184,7 @@ describe("conversation activity Chinese copy", () => {
     expect(text).not.toContain("随后动作");
     expect(text).not.toContain("运行依据");
     expect(text).not.toContain("来自模型实际返回");
+    expect(text).not.toContain("本机私有副本");
     expect(container.querySelector("details")?.hasAttribute("open")).toBe(
       false,
     );

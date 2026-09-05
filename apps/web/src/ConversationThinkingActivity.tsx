@@ -43,9 +43,6 @@ export function ConversationThinkingActivity({
       <summary>
         <Brain size={15} aria-hidden="true" />
         <span>{title}</span>
-        {activity.localDisplayOrigin ? (
-          <small>{chinese ? "本机私有副本" : "Local private copy"}</small>
-        ) : null}
       </summary>
       <div className="conversation-thinking-content">
         {activity.transcript ? (

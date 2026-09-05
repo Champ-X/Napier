@@ -1,10 +1,10 @@
 .message-text {
   position: relative;
-  container-type: inline-size;
   font-family: var(--font-sans);
   font-size: var(--text-base);
   line-height: var(--leading-body);
   letter-spacing: 0.002em;
+  overflow-wrap: anywhere;
 }
 
 .role-user .message-text {
@@ -290,6 +290,10 @@ button.message-workspace-link {
   background: var(--paper-deep);
   border: 1px solid var(--rule);
   border-radius: 3px;
+}
+
+.message-html-preview {
+  container-type: inline-size;
 }
 
 .message-flowchart {

@@ -142,6 +142,8 @@
 }
 
 .message-card:hover .message-copy-action,
+.message-card:focus-within .message-copy-action,
+.role-assistant .message-copy-action,
 .message-copy-action:focus-visible {
   opacity: 1;
   pointer-events: auto;

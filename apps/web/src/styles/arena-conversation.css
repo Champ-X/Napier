@@ -18,6 +18,11 @@
   margin-block-end: var(--space-8);
 }
 
+.message-card.has-copy-action {
+  margin-block-end: 0;
+  padding-block-end: calc(var(--control-target) + var(--space-1));
+}
+
 .message-gutter {
   display: none;
 }

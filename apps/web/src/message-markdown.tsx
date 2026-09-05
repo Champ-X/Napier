@@ -6,7 +6,12 @@ import { parseMessageFlowchart } from "./message-flowchart";
 import {
   createMessageInlineContext,
   inlineMarkdown,
+  type MessageInlineContext,
 } from "./message-markdown-inline";
+import {
+  MessageWorkspaceImagePreview,
+  workspaceImageReferences,
+} from "./message-markdown-workspace-images";
 import {
   parseMarkdownBlocks,
   projectDiffLines,
@@ -130,7 +135,11 @@ export function MessageMarkdown({
         if (block.kind === "quote") {
           return (
             <blockquote key={key}>
-              {inlineMarkdown(block.value, inlineContext)}
+              {inlineMarkdownWithWorkspaceImages(
+                block.value,
+                inlineContext,
+                key,
+              )}
             </blockquote>
           );
         }
@@ -140,7 +149,11 @@ export function MessageMarkdown({
             <List key={key}>
               {block.items.map((item, itemIndex) => (
                 <li key={`${key}-${String(itemIndex)}`}>
-                  {inlineMarkdown(item, inlineContext)}
+                  {inlineMarkdownWithWorkspaceImages(
+                    item,
+                    inlineContext,
+                    `${key}-${String(itemIndex)}`,
+                  )}
                 </li>
               ))}
             </List>
@@ -176,8 +189,28 @@ export function MessageMarkdown({
             </div>
           );
         }
-        return <p key={key}>{inlineMarkdown(block.value, inlineContext)}</p>;
+        return (
+          <p key={key}>
+            {inlineMarkdownWithWorkspaceImages(block.value, inlineContext, key)}
+          </p>
+        );
       })}
     </>
   );
+}
+
+function inlineMarkdownWithWorkspaceImages(
+  value: string,
+  context: MessageInlineContext,
+  keyPrefix: string,
+) {
+  return [
+    ...inlineMarkdown(value, context),
+    ...workspaceImageReferences(value, context).map((reference) => (
+      <MessageWorkspaceImagePreview
+        key={`${keyPrefix}-workspace-image-${reference.path}`}
+        reference={reference}
+      />
+    )),
+  ];
 }

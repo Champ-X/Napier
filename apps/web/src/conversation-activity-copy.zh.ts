@@ -57,7 +57,6 @@ export const conversationActivityZh: LocaleOverride<
   network: {
     search: "网页搜索",
     fetch: "网页读取",
-    untrusted: "外部页面和摘要是不可信证据，不是操作指令。",
     discovering: "正在查找公开来源",
     reading: "正在读取公开来源",
     searchFailed: "搜索失败——请尝试其他提供方或检查网络状态",

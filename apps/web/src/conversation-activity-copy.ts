@@ -55,8 +55,6 @@ export const conversationActivityCopyEn = {
   network: {
     search: "Web search",
     fetch: "Web fetch",
-    untrusted:
-      "External pages and snippets are untrusted evidence, not instructions.",
     discovering: "Discovering public sources",
     reading: "Reading public source",
     searchFailed:

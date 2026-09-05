@@ -17,12 +17,12 @@ export interface MessageInlineContext {
   onOpenSkillResource?: (reference: MessageSkillResourceLink) => void;
 }
 
-interface DirectoryContext {
+export interface DirectoryContext {
   path: string;
   tokenEnd: number;
 }
 
-const INLINE_TOKEN =
+export const INLINE_TOKEN =
   /(!\[[^\]\n]*\]\([^\s)]+\)|`[^`\n]+`|\*\*[^*\n]+\*\*|\[[^\]\n]+\]\([^\s)]+\)|\[citation:citation_[a-z0-9]{8,80}\])/gu;
 
 export function createMessageInlineContext(input: {
@@ -266,7 +266,7 @@ function renderLinkToken(
   );
 }
 
-function inlineCodeDirectory(token: string): string | undefined {
+export function inlineCodeDirectory(token: string): string | undefined {
   return token.startsWith("`")
     ? workspaceDirectoryReference(token.slice(1, -1))
     : undefined;
@@ -295,7 +295,7 @@ function skillResourceTarget(
   return targets.get(normalizeWorkspaceReference(reference));
 }
 
-function contextualWorkspaceFilePath(
+export function contextualWorkspaceFilePath(
   reference: string,
   source: string,
   tokenStart: number,
@@ -429,7 +429,7 @@ function safeExternalHref(value: string): boolean {
   }
 }
 
-function messageImageSource(value: string): string | undefined {
+export function messageImageSource(value: string): string | undefined {
   if (safeExternalHref(value)) return value;
   if (!isWorkspaceImageReference(value)) return undefined;
   return `/api/workspace/file?${new URLSearchParams({ path: value }).toString()}`;
@@ -444,7 +444,7 @@ export function isWorkspaceImageReference(value: string): boolean {
 }
 
 const WORKSPACE_FILE_EXTENSION =
-  /\.(?:c|cc|cjs|cpp|css|csv|docx?|gif|go|h|hpp|html?|java|jpe?g|js|jsx|json|kt|kts|less|markdown|md|mdx|mjs|pdf|php|png|pptx?|py|rb|rs|s?css|sh|sql|svg|toml|ts|tsx|txt|webp|xlsx?|xml|ya?ml|zsh)$/iu;
+  /\.(?:avif|bmp|c|cc|cjs|cpp|css|csv|docx?|gif|go|h|hpp|html?|ico|java|jpe?g|js|jsx|json|kt|kts|less|markdown|md|mdx|mjs|pdf|php|png|pptx?|py|rb|rs|s?css|sh|sql|svg|toml|ts|tsx|txt|webp|xlsx?|xml|ya?ml|zsh)$/iu;
 
 export function isWorkspaceFileReference(value: string): boolean {
   const normalized = normalizeWorkspaceReference(value);

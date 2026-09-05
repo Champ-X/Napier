@@ -207,6 +207,32 @@ describe("Message workspace links", () => {
     expect(container.textContent).toContain("npm test");
   });
 
+  it("promotes a referenced workspace image into an inline preview", async () => {
+    const container = installDom();
+    const onOpenWorkspaceFile = vi.fn<(path: string) => void>();
+    await act(async () => {
+      render(
+        <MessageMarkdown
+          text="已下载 `fifa2026-houston-poster.jpg` — 海报原图。"
+          onOpenWorkspaceFile={onOpenWorkspaceFile}
+        />,
+        container,
+      );
+    });
+
+    const image = findElementsByLocalName(container, "img")[0];
+    expect(image?.getAttribute("src")).toBe(
+      "/api/workspace/file?path=fifa2026-houston-poster.jpg",
+    );
+    expect(image?.getAttribute("alt")).toBe("fifa2026-houston-poster.jpg");
+    expect(
+      image?.parentElement?.getAttribute("data-workspace-image-path"),
+    ).toBe("fifa2026-houston-poster.jpg");
+    expect(findElementsByLocalName(container, "button")[0]?.textContent).toBe(
+      "fifa2026-houston-poster.jpg",
+    );
+  });
+
   it("resolves a bare filename against the nearest directory reference in the same sentence", async () => {
     const container = installDom();
     const onOpenWorkspaceFile = vi.fn<(path: string) => void>();
