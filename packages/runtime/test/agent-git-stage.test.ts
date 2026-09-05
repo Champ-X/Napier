@@ -114,21 +114,23 @@ describe("Agent preview-bound Git staging", () => {
       ),
     );
     expect(gitEvents.map((event) => event.type)).toEqual([
+      "tool.admitted",
       "tool.started",
       "tool.completed",
+      "tool.admitted",
       "tool.started",
       "tool.completed",
     ]);
-    expect(gitEvents[0]?.payload).toEqual(
+    expect(gitEvents[1]?.payload).toEqual(
       expect.objectContaining({
         effect: "read",
         inputRedacted: true,
       }),
     );
-    expect(gitEvents[2]?.payload).toEqual(
+    expect(gitEvents[4]?.payload).toEqual(
       expect.objectContaining({ effect: "write", inputRedacted: true }),
     );
-    expect(gitEvents[3]?.payload).toEqual(
+    expect(gitEvents[5]?.payload).toEqual(
       expect.objectContaining({
         outputRedacted: true,
         details: expect.objectContaining({

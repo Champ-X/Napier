@@ -2,13 +2,11 @@ import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { Check } from "typebox/value";
 
 import type { AgentRuntime } from "./agent-runtime.js";
-import { builtInToolEffect } from "./agent-tool-effects.js";
+import { bindBuiltInToolCompatibilityPolicy } from "./agent-tool-effects.js";
 import { assessToolCall } from "./policy.js";
 import { createStatelessAgentTools } from "./stateless-agent-tools.js";
 import type { LocalStore } from "./store.js";
-import {
-  TOOL_INVOCATION_EXPERIMENT_TOOLS,
-} from "./tool-invocation-capsule.js";
+import { requireToolInvocationExperimentProtocol } from "./tool-invocation-experiment-eligibility.js";
 import { createOwnedToolRecordV2 } from "./tool-protocol-registry.js";
 
 export function resolveToolInvocationExperimentTool(input: {
@@ -22,9 +20,6 @@ export function resolveToolInvocationExperimentTool(input: {
   arguments: unknown;
   expectedDefinitionSha256: string;
 }): AgentTool {
-  if (!TOOL_INVOCATION_EXPERIMENT_TOOLS.has(input.toolName)) {
-    throw new Error("Tool invocation is not eligible for an experiment");
-  }
   const profile = input.store.getAgentRevision(
     input.agentId,
     input.agentRevision,
@@ -36,12 +31,10 @@ export function resolveToolInvocationExperimentTool(input: {
     runId: input.runId,
     sandbox: input.runtime.verificationSandbox,
     restrictedReadOnlyExecution: true,
-  }).find((candidate) => candidate.name === input.toolName);
-  if (
-    !tool ||
-    !definitionMatches(tool, input.expectedDefinitionSha256) ||
-    builtInToolEffect(input.toolName, input.arguments) !== "read"
-  ) {
+  })
+    .map(bindBuiltInToolCompatibilityPolicy)
+    .find((candidate) => candidate.name === input.toolName);
+  if (!tool) {
     throw new Error(
       "Tool invocation experiment tool definition is unavailable or changed",
     );
@@ -55,19 +48,28 @@ export function resolveToolInvocationExperimentTool(input: {
   if (!argumentsValid) {
     throw new Error("Tool invocation experiment arguments are invalid");
   }
+  const protocol = createOwnedToolRecordV2(tool);
+  try {
+    requireToolInvocationExperimentProtocol(protocol, input.arguments);
+  } catch {
+    throw new Error(
+      "Tool invocation experiment tool definition is unavailable or changed",
+    );
+  }
+  if (!protocol.matchesDefinitionSha256(input.expectedDefinitionSha256)) {
+    throw new Error(
+      "Tool invocation experiment tool definition is unavailable or changed",
+    );
+  }
   const decision = assessToolCall(
     "observe",
     input.toolName,
     JSON.parse(JSON.stringify(input.arguments)),
     input.store.workspaceRoot,
+    protocol.invocation(input.arguments),
   );
   if (!decision.allowed) {
     throw new Error("Tool invocation experiment policy denied execution");
   }
   return tool;
-}
-
-function definitionMatches(tool: AgentTool, expected: string): boolean {
-  const protocol = createOwnedToolRecordV2(tool);
-  return protocol.implementationSha256 === expected;
 }

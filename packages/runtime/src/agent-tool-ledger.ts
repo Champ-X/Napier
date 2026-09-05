@@ -85,7 +85,7 @@ import {
   delegateTaskCallArgumentsLedgerProjection,
   delegateTaskInputLedgerProjection,
   delegateTaskOutputLedgerProjection,
-} from "./subagents.js";
+} from "./subagent-task-evidence.js";
 import {
   isSubagentSupervisorToolName,
   subagentSupervisorToolInputProjection,

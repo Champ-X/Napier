@@ -1,7 +1,11 @@
 import { DatabaseSync } from "node:sqlite";
 
-import type { RunEvent } from "@napier/contracts";
+import type { RunEvent, RunEventAdmissionPolicyV1 } from "@napier/contracts";
 
+import type {
+  EventIdempotencyKey,
+  IdempotentRunEvent,
+} from "./event-idempotency.js";
 import {
   listRunLeases,
   renewRunLease,
@@ -13,60 +17,52 @@ import {
   LEDGER_SCHEMA_VERSION,
   migrateLedgerSchema,
 } from "./sqlite-ledger-schema.js";
+import type {
+  LedgerEventStats,
+  LedgerSchemaReport,
+  LedgerSnapshot,
+} from "./sqlite-ledger-model.js";
+import {
+  commitSqliteEventOnce,
+  commitSqliteEventOnceAtRunHead,
+  insertSqliteEventIdempotency,
+  type SqliteEventOnceResult,
+} from "./sqlite-event-idempotency.js";
+import type { TerminalRunStatus } from "./run-event-admission.js";
 import { SqliteLedgerQuery } from "./sqlite-ledger-query.js";
 import { SqliteLedgerReadWorker } from "./sqlite-ledger-read-worker.js";
+import { SqliteToolConcurrencyLeaseBackend } from "./sqlite-tool-concurrency-leases.js";
+import { createLazyToolConcurrencyLeaseBackend } from "./tool-concurrency-store-backend.js";
+import {
+  readLedgerSnapshot,
+  rollbackSqliteTransaction,
+} from "./sqlite-ledger-state.js";
+import {
+  assertTerminalCommitEffectAuthority as assertTerminalCommit,
+  assertTerminalEventEffectAuthority as assertTerminalEvents,
+} from "./sqlite-terminal-commit.js";
+import { queryTerminalRunStatus } from "./sqlite-terminal-events.js";
 import type { RunEventQueryScope } from "./run-event-query-port.js";
-
+import {
+  ConcurrentRunLeaseUpdateError,
+  ConcurrentStoreUpdateError,
+} from "./sqlite-ledger-errors.js";
 export const LEDGER_DATABASE_FILENAME = "ledger.sqlite";
 export { LEDGER_SCHEMA_VERSION } from "./sqlite-ledger-schema.js";
-
-export interface LedgerSnapshot {
-  revision: number;
-  snapshotRevision: number;
-  stateJson: string;
-  runLeases: LedgerRunLease[];
-}
-
-export interface LedgerEventStats {
-  threadId: string;
-  count: number;
-  maxSeq: number;
-}
-
-export interface LedgerSchemaMigration {
-  version: number;
-  name: string;
-  appliedAt: string;
-}
-
-export interface LedgerSchemaReport {
-  schemaVersion: number;
-  quickCheck: string;
-  migrations: LedgerSchemaMigration[];
-}
-
-export class ConcurrentStoreUpdateError extends Error {
-  constructor(expectedRevision: number, actualRevision: number) {
-    super(
-      `Concurrent store update detected: expected revision ${expectedRevision}, found ${actualRevision}`,
-    );
-    this.name = "ConcurrentStoreUpdateError";
-  }
-}
-
-export class ConcurrentRunLeaseUpdateError extends Error {
-  constructor(
-    readonly runId: string,
-    readonly expectedRevision: number,
-  ) {
-    super(
-      `Concurrent Run lease update detected: ${runId} expected revision ${String(expectedRevision)}`,
-    );
-    this.name = "ConcurrentRunLeaseUpdateError";
-  }
-}
+export {
+  ConcurrentRunLeaseUpdateError,
+  ConcurrentStoreUpdateError,
+} from "./sqlite-ledger-errors.js";
+export type {
+  LedgerEventStats,
+  LedgerSchemaMigration,
+  LedgerSchemaReport,
+  LedgerSnapshot,
+} from "./sqlite-ledger-model.js";
 
 export class SqliteLedger {
+  static readonly lazyToolConcurrencyLeaseBackend =
+    createLazyToolConcurrencyLeaseBackend;
   private database: DatabaseSync | undefined;
   private query: SqliteLedgerQuery | undefined;
   private reader: SqliteLedgerReadWorker | undefined;
@@ -98,7 +94,6 @@ export class SqliteLedger {
         PRAGMA busy_timeout = 5000;
         PRAGMA foreign_keys = ON;
         PRAGMA trusted_schema = OFF;
-
       `);
       migrateLedgerSchema(database, versionRow.user_version);
       const integrity = database.prepare("PRAGMA quick_check").get() as
@@ -161,11 +156,11 @@ export class SqliteLedger {
     const ownsTransaction = !database.isTransaction;
     if (ownsTransaction) database.exec("BEGIN");
     try {
-      const snapshot = readSnapshot(database);
+      const snapshot = readLedgerSnapshot(database);
       if (ownsTransaction) database.exec("COMMIT");
       return snapshot;
     } catch (error) {
-      if (ownsTransaction) rollback(database);
+      if (ownsTransaction) rollbackSqliteTransaction(database);
       throw error;
     }
   }
@@ -190,6 +185,7 @@ export class SqliteLedger {
       for (const event of events) {
         this.insertEvent(insertEvent, event);
       }
+      assertTerminalCommit(database, undefined, stateJson, events);
       synchronizeRunLeases(database, runLeasesFromStateJson(stateJson));
       database.exec("COMMIT");
       return {
@@ -199,7 +195,7 @@ export class SqliteLedger {
         runLeases: listRunLeases(database),
       };
     } catch (error) {
-      rollback(database);
+      rollbackSqliteTransaction(database);
       throw error;
     }
   }
@@ -226,6 +222,7 @@ export class SqliteLedger {
         const insertEvent = this.prepareEventInsert();
         for (const event of events) this.insertEvent(insertEvent, event);
       }
+      assertTerminalCommit(database, current?.stateJson, stateJson, events);
       const nextRevision = actualRevision + 1;
       if (actualRevision === 0) {
         database
@@ -260,7 +257,7 @@ export class SqliteLedger {
       database.exec("COMMIT");
       return nextRevision;
     } catch (error) {
-      rollback(database);
+      rollbackSqliteTransaction(database);
       throw error;
     }
   }
@@ -285,6 +282,7 @@ export class SqliteLedger {
       }
       const insertEvent = this.prepareEventInsert();
       for (const event of events) this.insertEvent(insertEvent, event);
+      assertTerminalEvents(database, events);
       const nextRevision = actualRevision + 1;
       const result = database
         .prepare(
@@ -302,9 +300,45 @@ export class SqliteLedger {
       database.exec("COMMIT");
       return nextRevision;
     } catch (error) {
-      rollback(database);
+      rollbackSqliteTransaction(database);
       throw error;
     }
+  }
+
+  commitEventOnce(
+    expectedRevision: number,
+    event: IdempotentRunEvent,
+    idempotency: EventIdempotencyKey,
+    admission: RunEventAdmissionPolicyV1 = "run_any",
+  ): SqliteEventOnceResult {
+    return commitSqliteEventOnce(
+      this.requireDatabase(),
+      expectedRevision,
+      event,
+      idempotency,
+      admission,
+    );
+  }
+
+  commitEventOnceAtRunHead(
+    expectedRevision: number,
+    event: IdempotentRunEvent,
+    idempotency: EventIdempotencyKey,
+    expectedRunHeadSeq: number,
+    admission: RunEventAdmissionPolicyV1 = "run_any",
+  ): SqliteEventOnceResult {
+    if (!Number.isSafeInteger(expectedRunHeadSeq) || expectedRunHeadSeq < 0) {
+      throw new Error(
+        "Expected Run event head sequence must be a non-negative safe integer",
+      );
+    }
+    return commitSqliteEventOnceAtRunHead(
+      this.requireDatabase(),
+      expectedRevision,
+      event,
+      idempotency,
+      { expectedRunHeadSeq, admission },
+    );
   }
 
   listEvents(threadId: string, afterSeq = 0): RunEvent[] {
@@ -325,6 +359,17 @@ export class SqliteLedger {
     types?: readonly string[],
   ): RunEvent[] {
     return this.requireQuery().listRunEvents(runId, afterSeq, types);
+  }
+
+  terminalRunStatus(
+    threadId: string,
+    runId: string,
+  ): TerminalRunStatus | undefined {
+    return queryTerminalRunStatus(this.requireQuery(), threadId, runId);
+  }
+
+  hasTerminalRunEvent(threadId: string, runId: string): boolean {
+    return this.terminalRunStatus(threadId, runId) !== undefined;
   }
 
   listEventsRange(
@@ -394,10 +439,13 @@ export class SqliteLedger {
       database.exec("COMMIT");
       return lease;
     } catch (error) {
-      rollback(database);
+      rollbackSqliteTransaction(database);
       throw error;
     }
   }
+
+  toolConcurrencyLeaseBackend = (): SqliteToolConcurrencyLeaseBackend =>
+    new SqliteToolConcurrencyLeaseBackend(this.requireDatabase());
 
   private prepareEventInsert() {
     return this.requireDatabase().prepare(
@@ -430,6 +478,7 @@ export class SqliteLedger {
       event.createdAt,
       JSON.stringify(event),
     );
+    insertSqliteEventIdempotency(this.requireDatabase(), event);
   }
 
   private requireDatabase(): DatabaseSync {
@@ -447,37 +496,5 @@ export class SqliteLedger {
   eventReader(): SqliteLedgerReadWorker {
     if (!this.reader) throw new Error("SQLite ledger is not initialized");
     return this.reader;
-  }
-}
-
-function readSnapshot(database: DatabaseSync): LedgerSnapshot | undefined {
-  const row = database
-    .prepare(
-      `SELECT revision, snapshot_revision, state_json
-       FROM workspace_state
-       WHERE singleton = 1`,
-    )
-    .get() as
-    | {
-        revision: number;
-        snapshot_revision: number;
-        state_json: string;
-      }
-    | undefined;
-  return row
-    ? {
-        revision: row.revision,
-        snapshotRevision: row.snapshot_revision,
-        stateJson: row.state_json,
-        runLeases: listRunLeases(database),
-      }
-    : undefined;
-}
-
-function rollback(database: DatabaseSync): void {
-  try {
-    database.exec("ROLLBACK");
-  } catch {
-    // The original transaction error is more useful than a redundant rollback.
   }
 }

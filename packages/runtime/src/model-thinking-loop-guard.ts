@@ -15,8 +15,10 @@ import {
   type ModelThinkingLoopEvidence,
 } from "./model-thinking-loop-policy.js";
 import { ModelSemanticStallObserver } from "./model-semantic-stall-observer.js";
-
-const MAX_BUFFERED_THINKING_BYTES = 32 * 1024;
+import {
+  MAX_UNCOMMITTED_THINKING_BYTES,
+  thinkingDeltaBytes,
+} from "./model-output-commit-policy.js";
 
 export interface ModelThinkingLoopGuardInput {
   model: Model<Api>;
@@ -119,10 +121,10 @@ export function guardModelThinkingLoop(
             if (buffering) {
               buffered.push(event);
               if (event.type === "thinking_delta") {
-                bufferedBytes += Buffer.byteLength(event.delta, "utf8");
+                bufferedBytes += thinkingDeltaBytes(event);
                 detected = detector.observe(event.delta, attempt);
                 if (detected) break;
-                if (bufferedBytes >= MAX_BUFFERED_THINKING_BYTES) {
+                if (bufferedBytes >= MAX_UNCOMMITTED_THINKING_BYTES) {
                   for (const bufferedEvent of buffered) yield bufferedEvent;
                   buffered.length = 0;
                   buffering = false;

@@ -1,12 +1,15 @@
 import { timingSafeEqual } from "node:crypto";
 
 import type {
+  EventVisibility,
+  JsonObject,
   RunEvent,
   RunRecord,
   RunStatus,
   ThreadRecord,
 } from "@napier/contracts";
 
+import type { EventSink } from "./event-sink.js";
 import { nowIso } from "./ids.js";
 import { projectOperatorDecisions } from "./operator-decisions.js";
 import { reconcileInterruptedRuns } from "./run-interruption-recovery.js";
@@ -16,7 +19,13 @@ import {
   operatorDecisionCancellationReason,
   runControlMessageCancellationReason,
 } from "./run-lifecycle-cancellation.js";
-import { applyOutcome, settleThread } from "./run-outcomes.js";
+import { applyOutcome, assertOutcome, settleThread } from "./run-outcomes.js";
+import {
+  durableTerminalRunStatus,
+  RunTerminalEventConflictError,
+} from "./run-event-admission.js";
+import type { AppendEventInput } from "./run-event-registry.js";
+import { RUN_TRANSITION_DEFINITIONS } from "./run-state-machine.js";
 import { storeSha256 as sha256 } from "./store-hashing.js";
 import type {
   StorePersistedRunRecord,
@@ -30,6 +39,22 @@ export interface FinishRunOptions {
   usage?: RunRecord["usage"];
   leaseToken?: string;
   waitForOperatorDecisionId?: string;
+  /**
+   * When supplied, the terminal event and lifecycle projection are committed
+   * together. Omit only for legacy callers that do not own a terminal event.
+   */
+  terminalEvent?: {
+    visibility?: EventVisibility;
+    payload: JsonObject;
+  };
+  /** Best-effort live delivery after the atomic commit succeeds. */
+  onTerminalEvent?: EventSink | undefined;
+}
+
+interface FinishRunResult {
+  run: RunRecord;
+  terminalEvent?: RunEvent;
+  terminalEventAppended: boolean;
 }
 
 export class RunLifecycleRepository {
@@ -41,51 +66,99 @@ export class RunLifecycleRepository {
     options: FinishRunOptions = {},
   ): Promise<RunRecord> {
     this.host.assertInitialized();
-    return this.host.stateQueue.run(async () => {
-      const run = this.host.mutableRun(runId);
-      assertRunLease(run, options.leaseToken);
-      const thread = this.host.mutableThread(run.threadId);
-      const currentEvents = this.host.requireLedger().listEvents(thread.id);
-      const waitingDecision = findWaitingDecision(
-        currentEvents,
-        run.id,
-        options.waitForOperatorDecisionId,
-      );
-      assertWaitingDecision(
-        status,
-        options.waitForOperatorDecisionId,
-        waitingDecision,
-      );
-      settleRunRecord(run, status, options);
-      thread.updatedAt = run.finishedAt!;
-      const remainingActiveRuns = activeRunsAfter(
-        this.host.state,
-        thread,
-        run.id,
-      );
-      replaceCurrentRun(thread, run.id, remainingActiveRuns);
-      const cancellationEvents = this.cancelPendingInteractions(
-        thread,
-        run.id,
-        status,
-        waitingDecision?.id,
-      );
-      const openDecision = projectOperatorDecisions([
-        ...currentEvents,
-        ...cancellationEvents,
-      ]).find(
-        (decision) =>
-          decision.status === "pending" || decision.status === "answered",
-      );
-      thread.status = settleThread(
-        status,
-        options.outcome,
-        remainingActiveRuns.length > 0,
-        Boolean(waitingDecision || openDecision),
-      );
-      await this.host.persistState(cancellationEvents);
-      return stripRunSecrets(run);
-    });
+    const result = await this.host.stateQueue.run(
+      async (): Promise<FinishRunResult> => {
+        const run = this.host.mutableRun(runId);
+        assertRunLease(run, options.leaseToken);
+        const thread = this.host.mutableThread(run.threadId);
+        const currentEvents = this.host.requireLedger().listEvents(thread.id);
+        const durableTerminalStatus = durableTerminalRunStatus(
+          currentEvents,
+          thread.id,
+          run.id,
+        );
+        if (durableTerminalStatus && durableTerminalStatus !== status) {
+          throw new RunTerminalEventConflictError(
+            status,
+            durableTerminalStatus,
+          );
+        }
+        const waitingDecision = findWaitingDecision(
+          currentEvents,
+          run.id,
+          options.waitForOperatorDecisionId,
+        );
+        assertWaitingDecision(
+          status,
+          options.waitForOperatorDecisionId,
+          waitingDecision,
+        );
+        settleRunRecord(run, status, options);
+        thread.updatedAt = run.finishedAt!;
+        const remainingActiveRuns = activeRunsAfter(
+          this.host.state,
+          thread,
+          run.id,
+        );
+        replaceCurrentRun(thread, run.id, remainingActiveRuns);
+        const terminalEvent =
+          options.terminalEvent && !durableTerminalStatus
+            ? appendTerminalEvent(
+                this.host,
+                thread,
+                run.id,
+                status,
+                options.terminalEvent,
+              )
+            : durableTerminalStatus
+              ? firstTerminalEvent(currentEvents, run.id)
+              : undefined;
+        const cancellationEvents = this.cancelPendingInteractions(
+          thread,
+          run.id,
+          status,
+          waitingDecision?.id,
+        );
+        const openDecision = projectOperatorDecisions([
+          ...currentEvents,
+          ...cancellationEvents,
+        ]).find(
+          (decision) =>
+            decision.status === "pending" || decision.status === "answered",
+        );
+        thread.status = settleThread(
+          status,
+          options.outcome,
+          remainingActiveRuns.length > 0,
+          Boolean(waitingDecision || openDecision),
+        );
+        await this.host.persistState([
+          ...(terminalEvent && !durableTerminalStatus ? [terminalEvent] : []),
+          ...cancellationEvents,
+        ]);
+        return {
+          run: stripRunSecrets(run),
+          ...(terminalEvent
+            ? { terminalEvent: structuredClone(terminalEvent) }
+            : {}),
+          terminalEventAppended: Boolean(
+            terminalEvent && !durableTerminalStatus,
+          ),
+        };
+      },
+    );
+    if (
+      result.terminalEventAppended &&
+      result.terminalEvent &&
+      options.onTerminalEvent
+    ) {
+      try {
+        await options.onTerminalEvent(result.terminalEvent);
+      } catch {
+        // A disconnected live stream must not roll back durable settlement.
+      }
+    }
+    return result.run;
   }
 
   async reconcileInterruptedRuns(interruptActiveLeases = false): Promise<void> {
@@ -142,12 +215,66 @@ function settleRunRecord(
   status: Exclude<RunStatus, "queued" | "running">,
   options: FinishRunOptions,
 ): void {
-  applyOutcome(run, status, options.outcome);
-  run.finishedAt = nowIso();
+  const wasActive = run.status === "queued" || run.status === "running";
+  if (wasActive) {
+    applyOutcome(run, status, options.outcome);
+  } else {
+    if (run.status !== status) {
+      throw new RunTerminalEventConflictError(status, run.status);
+    }
+    assertOutcome(status, options.outcome);
+    if (options.outcome) run.outcome = options.outcome;
+  }
+  if (wasActive || !run.finishedAt) run.finishedAt = nowIso();
   if (options.error) run.error = options.error;
   if (options.usage) run.usage = structuredClone(options.usage);
   delete run.lease;
   delete run.leaseTokenSha256;
+}
+
+function appendTerminalEvent(
+  host: StoreRepositoryHost,
+  thread: ThreadRecord,
+  runId: string,
+  status: Exclude<RunStatus, "queued" | "running">,
+  input: NonNullable<FinishRunOptions["terminalEvent"]>,
+): RunEvent {
+  if (input.payload["status"] !== status) {
+    throw new Error(
+      "Run terminal event payload status does not match settlement",
+    );
+  }
+  const transition = RUN_TRANSITION_DEFINITIONS.find(
+    (candidate) => candidate.from === "running" && candidate.to === status,
+  );
+  if (!transition)
+    throw new Error(`Run terminal event is missing for ${status}`);
+  const terminalInput = {
+    threadId: thread.id,
+    runId,
+    type: transition.durableEvent,
+    category: "lifecycle",
+    ...(input.visibility ? { visibility: input.visibility } : {}),
+    payload: input.payload,
+  } as AppendEventInput;
+  const [event] = host.appendEventsToThread(thread, [terminalInput]);
+  if (!event) throw new Error("Run terminal event was not created");
+  return event;
+}
+
+function firstTerminalEvent(
+  events: readonly RunEvent[],
+  runId: string,
+): RunEvent | undefined {
+  return events.find(
+    (event) =>
+      event.runId === runId &&
+      RUN_TRANSITION_DEFINITIONS.some(
+        (transition) =>
+          transition.from === "running" &&
+          transition.durableEvent === event.type,
+      ),
+  );
 }
 
 function activeRunsAfter(

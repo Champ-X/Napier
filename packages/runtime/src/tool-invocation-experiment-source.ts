@@ -74,11 +74,14 @@ export async function projectToolInvocationExperimentSource(
   }
   const capsuleEvent = capsuleEvents[0]!;
   const receipt = validateToolInvocationCapsuleReceipt(capsuleEvent.payload);
+  // Older Runs announced `tool.started` before policy preflight; current Runs
+  // capture the validated invocation first and start only after durable
+  // admission. Bind by the stable call receipt rather than either incidental
+  // phase order so both ledger generations remain replayable.
   const startedEvents = events.filter(
     (event) =>
       event.runId === sourceRun.id &&
       event.type === "tool.started" &&
-      event.seq < capsuleEvent.seq &&
       toolEventBinding(event, receipt),
   );
   if (startedEvents.length !== 1) {
@@ -87,10 +90,12 @@ export async function projectToolInvocationExperimentSource(
     );
   }
   const startedEvent = startedEvents[0]!;
-  const implementationSha256 = toolImplementationSha256(
-    startedEvent,
-    receipt.toolDefinitionSha256,
-  );
+  const definitionSha256 = toolDefinitionSha256(startedEvent);
+  if (definitionSha256 !== receipt.toolDefinitionSha256) {
+    throw new Error(
+      "Tool invocation experiment source definition evidence is invalid",
+    );
+  }
   const terminalEvents = events.filter(
     (event) =>
       event.runId === sourceRun.id &&
@@ -129,7 +134,7 @@ export async function projectToolInvocationExperimentSource(
     runId: sourceRun.id,
     toolName: capsule.toolName,
     arguments: capsule.arguments,
-    expectedDefinitionSha256: implementationSha256,
+    expectedDefinitionSha256: definitionSha256,
   });
   const workspace = await createWorkspacePathSnapshot(
     store.workspaceRoot,
@@ -160,7 +165,7 @@ export async function projectToolInvocationExperimentSource(
     sourceTerminalEventSeq: terminalEvent.seq,
     sourceToolName: receipt.toolName,
     sourceEffect: "read" as const,
-    sourceToolDefinitionSha256: implementationSha256,
+    sourceToolDefinitionSha256: definitionSha256,
     sourceArgumentsSha256: receipt.argumentsSha256,
     sourceWorkspaceScopeSha256: receipt.workspaceScopeSha256,
     sourceCapsuleSha256: receipt.capsuleSha256,
@@ -190,13 +195,13 @@ export async function projectToolInvocationExperimentSource(
   };
 }
 
-function toolImplementationSha256(event: RunEvent, legacy: string): string {
+function toolDefinitionSha256(event: RunEvent): string | undefined {
   const payload = record(event.payload);
   const protocol = record(payload?.["toolProtocol"]);
-  const value = protocol?.["implementationSha256"];
+  const value = protocol?.["definitionSha256"];
   return typeof value === "string" && /^[a-f0-9]{64}$/u.test(value)
     ? value
-    : legacy;
+    : undefined;
 }
 
 function defaultExperimentTitle(sourceTitle: string, toolName: string): string {

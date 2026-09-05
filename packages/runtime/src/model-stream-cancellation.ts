@@ -16,6 +16,7 @@ import type { EventSink } from "./event-sink.js";
 import type { LocalStore } from "./store.js";
 import type { RunRecord } from "@napier/contracts";
 import type { RunBudgetTracker } from "./run-budget.js";
+import { attestHostModelAbort } from "./model-abort-provenance.js";
 import {
   createModelTurnDeadline,
   isModelTurnWatchdogError,
@@ -177,14 +178,21 @@ function attachAbortIsolation(
     const watchdog = isModelTurnWatchdogError(signal?.reason)
       ? signal.reason
       : undefined;
+    const message = terminalMessage(
+      model,
+      "aborted",
+      watchdog?.message ?? "Model stream was aborted by the active Run.",
+    );
+    attestHostModelAbort(
+      message,
+      watchdog
+        ? { owner: "watchdog", evidence: watchdog.evidence }
+        : { owner: "caller" },
+    );
     abortedEvent = {
       type: "error",
       reason: "aborted",
-      error: terminalMessage(
-        model,
-        "aborted",
-        watchdog?.message ?? "Model stream was aborted by the active Run.",
-      ),
+      error: message,
     };
     settle(abortedEvent.error);
     resolveAbort();

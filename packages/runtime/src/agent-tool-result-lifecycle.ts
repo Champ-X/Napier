@@ -10,9 +10,13 @@ import type {
   RunRecord,
   ToolInvocationCapsuleReceipt,
 } from "@napier/contracts";
+import type { ToolFailureReceiptV1 } from "@napier/contracts/tool-protocol";
 import { isSkillResourceLoadFailureV1 } from "@napier/contracts/skill-resource";
 
 import type { FrozenToolResultReplayController } from "./agent-message-tool-result-replay.js";
+import { preserveAgentToolIdentity } from "./agent-tool-metadata.js";
+import { wrapToolsWithFailureCapture } from "./agent-tool-failure-capture.js";
+import { replayedToolFailureReceipt } from "./agent-tool-failure-replay.js";
 import {
   agentToolDisplayOwner,
   type AgentToolDisplayStore,
@@ -22,6 +26,10 @@ import { captureToolInvocation } from "./tool-invocation-capture.js";
 import { toolInvocationArgumentsSha256 } from "./tool-invocation-capsule.js";
 import type { ToolInvocationCapsuleStore } from "./tool-invocation-capsule-store.js";
 import { captureToolInvocationResult } from "./tool-invocation-result-capture.js";
+import {
+  replayableToolResult,
+  validateToolInvocationResultCapsuleReceipt,
+} from "./tool-invocation-result-capsule.js";
 import type { ToolInvocationResultCapsuleStore } from "./tool-invocation-result-capsule-store.js";
 import type { LocalStore } from "./store.js";
 import { isSkillLoadFailure } from "./skill-load-contracts.js";
@@ -88,6 +96,14 @@ export class AgentToolResultLifecycle {
   private readonly definitions: Map<string, AgentTool>;
   private readonly captured = new Map<string, ToolInvocationCapsuleReceipt>();
   private readonly invocationInputs = new Map<string, unknown>();
+  private readonly failureReceipts = new Map<string, ToolFailureReceiptV1>();
+  private readonly finalizations = new Map<
+    string,
+    {
+      toolName: string;
+      result: Promise<AfterToolCallResult | undefined>;
+    }
+  >();
   readonly deadlines: ToolDeadlineManager;
 
   constructor(private readonly options: AgentToolResultLifecycleOptions) {
@@ -104,13 +120,21 @@ export class AgentToolResultLifecycle {
       store: options.store,
       ...(options.onEvent ? { onEvent: options.onEvent } : {}),
     });
+    const captured = (callId: string, receipt: ToolFailureReceiptV1) =>
+      this.failureReceipts.set(callId, receipt);
+    for (const tools of [options.tools, options.deferredTools])
+      wrapToolsWithFailureCapture({
+        tools,
+        protocols: options.toolProtocol,
+        captured,
+      });
     if (options.replay) {
       for (const [index, tool] of options.tools.entries()) {
-        options.tools[index] = {
+        options.tools[index] = preserveAgentToolIdentity(tool, {
           ...tool,
           execute: (toolCallId, _args, signal) =>
             Promise.resolve(options.replay!.resultFor(toolCallId, signal)),
-        };
+        });
       }
     }
   }
@@ -129,7 +153,10 @@ export class AgentToolResultLifecycle {
     const tool = this.definitions.get(toolName);
     const protocol = this.options.toolProtocol.get(toolName);
     if (!protocol) {
-      return { block: true, reason: `Tool Protocol definition is unavailable: ${toolName}` };
+      return {
+        block: true,
+        reason: `Tool Protocol definition is unavailable: ${toolName}`,
+      };
     }
     this.invocationInputs.set(toolCallId, structuredClone(args));
     const replay = this.options.replay;
@@ -177,15 +204,131 @@ export class AgentToolResultLifecycle {
     result: AgentToolResult<unknown>;
     isError: boolean;
   }): Promise<AfterToolCallResult | undefined> {
+    const existing = this.finalizations.get(input.toolCall.id);
+    if (existing) {
+      if (existing.toolName !== input.toolCall.name) {
+        throw new Error(
+          `Tool result finalization replay conflicts for ${input.toolCall.id}`,
+        );
+      }
+      return existing.result;
+    }
+    const result = this.finalizeOnce(input);
+    this.finalizations.set(input.toolCall.id, {
+      toolName: input.toolCall.name,
+      result,
+    });
+    return result;
+  }
+
+  async replayCapturedResult(
+    toolCallId: string,
+    toolName: string,
+    args: unknown,
+  ): Promise<
+    | {
+        result: AgentToolResult<unknown>;
+        isError: boolean;
+        resultEvidenceSha256: string;
+      }
+    | undefined
+  > {
+    const protocol = this.options.toolProtocol.get(toolName);
+    if (
+      !protocol ||
+      protocol.invocation(args).idempotency.resultReplay !== "exact_result_only"
+    ) {
+      return undefined;
+    }
+    const runEvents = await this.options.store.listRunEvents(
+      this.options.run.id,
+    );
+    const candidates = runEvents.filter((event) => {
+      const payload = jsonRecord(event.payload);
+      return (
+        event.type === "context.tool_result" &&
+        payload?.["callId"] === toolCallId
+      );
+    });
+    if (candidates.length === 0) return undefined;
+    try {
+      const receipts = candidates.map((event) =>
+        validateToolInvocationResultCapsuleReceipt(event.payload),
+      );
+      const receipt = receipts[0]!;
+      // Accept duplicate historical receipts only when content-identical.
+      if (
+        receipts.some(
+          (candidate) => candidate.contentSha256 !== receipt.contentSha256,
+        )
+      ) {
+        return undefined;
+      }
+      if (
+        receipt.toolName !== toolName ||
+        !protocol.matchesReplayIdentitySha256(receipt.toolDefinitionSha256) ||
+        receipt.argumentsSha256 !== toolInvocationArgumentsSha256(args)
+      ) {
+        return undefined;
+      }
+      const capsule = await this.options.resultCapsules.read(
+        receipt.capsuleSha256,
+      );
+      if (
+        capsule.sourceThreadId !== this.options.run.threadId ||
+        capsule.sourceRunId !== this.options.run.id ||
+        capsule.callId !== toolCallId ||
+        capsule.toolName !== toolName ||
+        capsule.contentSha256 !== receipt.capsuleSha256 ||
+        capsule.invocationCapsuleSha256 !== receipt.invocationCapsuleSha256 ||
+        capsule.toolDefinitionSha256 !== receipt.toolDefinitionSha256 ||
+        capsule.argumentsSha256 !== receipt.argumentsSha256 ||
+        capsule.resultSha256 !== receipt.resultSha256 ||
+        capsule.outputTextSha256 !== receipt.outputTextSha256 ||
+        capsule.outputTextBytes !== receipt.outputTextBytes ||
+        capsule.isError !== receipt.isError
+      ) {
+        return undefined;
+      }
+      const replay = {
+        result: replayableToolResult(capsule),
+        isError: capsule.isError,
+        resultEvidenceSha256: receipt.contentSha256,
+      };
+      const failure = replayedToolFailureReceipt(runEvents, toolCallId);
+      if (capsule.isError && failure)
+        this.failureReceipts.set(toolCallId, failure);
+      // Seed finalization because Pi still invokes afterToolCall on replay.
+      if (!this.finalizations.has(toolCallId)) {
+        this.finalizations.set(toolCallId, {
+          toolName,
+          result: Promise.resolve(
+            capsule.isError ? { isError: true } : undefined,
+          ),
+        });
+      }
+      return replay;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private async finalizeOnce(input: {
+    toolCall: { id: string; name: string };
+    result: AgentToolResult<unknown>;
+    isError: boolean;
+  }): Promise<AfterToolCallResult | undefined> {
     const protocol = this.options.toolProtocol.require(input.toolCall.name);
     const typedSkillFailure =
       isSkillLoadFailure(input.result.details) ||
       isSkillResourceLoadFailureV1(input.result.details);
     const replay = this.options.replay;
-    const effectiveIsError = replay?.effectiveIsError(
-      input.toolCall.id,
-      input.isError || typedSkillFailure,
-    ) ?? (input.isError || typedSkillFailure);
+    const effectiveIsError =
+      replay?.effectiveIsError(
+        input.toolCall.id,
+        input.isError || typedSkillFailure,
+      ) ??
+      (input.isError || typedSkillFailure);
     await this.options.displays
       .recordOutput(
         agentToolDisplayOwner(this.options.run, {
@@ -223,7 +366,7 @@ export class AgentToolResultLifecycle {
       });
       return reused.patch;
     }
-    await captureToolInvocationResult(
+    const receipt = await captureToolInvocationResult(
       this.options.store,
       this.options.resultCapsules,
       this.options.run,
@@ -232,6 +375,13 @@ export class AgentToolResultLifecycle {
       effectiveIsError,
       this.options.onEvent,
     );
+    if (this.captured.has(input.toolCall.id) && !receipt) {
+      // Experiment evidence is auxiliary. Capture fails closed as an
+      // unavailable experiment, but must never rewrite a successful primary
+      // tool outcome (for example, Browser image results are intentionally not
+      // replayable text capsules).
+      this.captured.delete(input.toolCall.id);
+    }
     return typedSkillFailure && !input.isError ? { isError: true } : undefined;
   }
 
@@ -252,13 +402,33 @@ export class AgentToolResultLifecycle {
     toolName: string,
     status: "started" | "completed" | "failed" | "blocked",
     args?: unknown,
+    result?: AgentToolResult<unknown>,
+    isError?: boolean,
   ): Record<string, JsonValue> {
     const protocol = this.options.toolProtocol.get(toolName);
     if (!protocol) return {};
     const input = args ?? this.invocationInputs.get(toolCallId);
     return {
-      toolProtocol: protocol.uiProjection(status, input) as unknown as JsonValue,
+      toolProtocol: protocol.uiProjection(
+        status,
+        input,
+        result,
+        isError,
+      ) as unknown as JsonValue,
     };
+  }
+
+  failureProjection(
+    toolCallId: string,
+    toolName: string,
+    failure: unknown,
+  ): Record<string, JsonValue> {
+    const protocol = this.options.toolProtocol.get(toolName);
+    if (!protocol) return {};
+    const input = this.invocationInputs.get(toolCallId);
+    const receipt =
+      this.failureReceipts.get(toolCallId) ?? protocol.failure(input, failure);
+    return { toolFailure: receipt as unknown as JsonValue };
   }
 
   validateModelVisibleResult(
@@ -317,4 +487,12 @@ export class AgentToolResultLifecycle {
       // Durable evidence survives a disconnected observer.
     }
   }
+}
+
+function jsonRecord(
+  value: JsonValue | undefined,
+): Record<string, JsonValue> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value
+    : undefined;
 }

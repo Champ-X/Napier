@@ -273,19 +273,13 @@ export class ExecutionPlanWorkflowLoopRuntime {
         },
         options.onEvent,
       );
-      await this.ledger.append(
-        {
-          threadId: options.threadId,
-          runId: leased.run.id,
-          type: "run.completed",
-          category: "lifecycle",
+      const run = await this.store.finishRun(leased.run.id, "completed", {
+        leaseToken: leased.token,
+        terminalEvent: {
           visibility: "debug",
           payload: { status: "completed" },
         },
-        options.onEvent,
-      );
-      const run = await this.store.finishRun(leased.run.id, "completed", {
-        leaseToken: leased.token,
+        onTerminalEvent: options.onEvent,
       });
       settled = true;
       return {
@@ -308,27 +302,20 @@ export class ExecutionPlanWorkflowLoopRuntime {
               : cancelled
                 ? "cancelled"
                 : "loop_failed";
-      await this.ledger
-        .append(
-          {
-            threadId: options.threadId,
-            runId: leased.run.id,
-            type: cancelled ? "run.cancelled" : "run.failed",
-            category: "lifecycle",
-            visibility: "user",
-            payload: {
-              status: cancelled ? "cancelled" : "failed",
-              errorCode: code,
-              diagnosticSha256: sha256(errorMessage(error)),
-            },
-          },
-          options.onEvent,
-        )
-        .catch(() => undefined);
+      const diagnosticSha256 = sha256(errorMessage(error));
       await this.store
         .finishRun(leased.run.id, cancelled ? "cancelled" : "failed", {
           error: `Workflow Loop ${code}`,
           leaseToken: leased.token,
+          terminalEvent: {
+            visibility: "user",
+            payload: {
+              status: cancelled ? "cancelled" : "failed",
+              errorCode: code,
+              diagnosticSha256,
+            },
+          },
+          onTerminalEvent: options.onEvent,
         })
         .catch(() => undefined);
       if (error instanceof ExecutionPlanWorkflowLoopError) throw error;

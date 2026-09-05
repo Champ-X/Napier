@@ -29,11 +29,12 @@ export class DynamicWebSearchExecutor implements WebSearchExecutor {
   search(
     request: Parameters<WebSearchExecutor["search"]>[0],
     signal?: AbortSignal,
+    operations?: Parameters<WebSearchExecutor["search"]>[2],
   ) {
     if (!this.executor) {
       throw new Error("Web Search plugin is disabled");
     }
-    return this.executor.search(request, signal);
+    return this.executor.search(request, signal, operations);
   }
 }
 

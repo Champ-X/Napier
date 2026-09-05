@@ -7,6 +7,12 @@ import { Type } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { SubagentWorktreeApplyManager } from "./subagent-worktree-mutation-model.js";
+import {
+  defineToolProgress,
+  progressSemantics,
+  resultDetails,
+  stableFields,
+} from "./tool-progress-semantics.js";
 
 const applySchema = Type.Object(
   {
@@ -23,20 +29,35 @@ const applySchema = Type.Object(
 export function createSubagentWorktreeApplyTool(
   manager: SubagentWorktreeApplyManager,
 ): AgentTool<typeof applySchema, SubagentWorktreeApplyDetails> {
-  return {
-    name: "subagent_worktree_apply",
-    label: "Apply coder worktree",
-    description:
-      "Apply one reviewed coder Subagent worktree through its opaque one-use preview. The source workspace must still match the complete fork snapshot; multi-file commit, rollback, diagnostics, and enabled related tests are coordinated by Napier.",
-    parameters: applySchema,
-    async execute(_toolCallId, input, signal) {
-      const applied = await manager.apply(input.previewId, signal);
-      return {
-        content: [{ type: "text", text: applied.summary }],
-        details: applied.details,
-      };
+  return defineToolProgress(
+    {
+      name: "subagent_worktree_apply",
+      label: "Apply coder worktree",
+      description:
+        "Apply one reviewed coder Subagent worktree through its opaque one-use preview. The source workspace must still match the complete fork snapshot; multi-file commit, rollback, diagnostics, and enabled related tests are coordinated by Napier.",
+      parameters: applySchema,
+      async execute(_toolCallId, input, signal) {
+        const applied = await manager.apply(input.previewId, signal);
+        return {
+          content: [{ type: "text", text: applied.summary }],
+          details: applied.details,
+        };
+      },
     },
-  };
+    {
+      schemaVersion: 1,
+      classificationVersion: "1.0.0",
+      modes: [
+        { modeId: "apply_workspace", operation: "mutate", scope: "workspace", contribution: "product" },
+      ],
+      resolve: (input) => ({
+        semantics: progressSemantics("mutate", "workspace", "product"),
+        resourceKey: { kind: "subagent-worktree-preview", input },
+      }),
+      state: (_input, result) =>
+        stableFields(resultDetails(result), ["resultSha256"]),
+    },
+  );
 }
 
 export function subagentWorktreeToolCallArgumentsLedgerProjection(

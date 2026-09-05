@@ -295,28 +295,17 @@ export class ModelInvocationExperimentRuntime {
         },
         input.onEvent,
       );
-      await this.append(
-        {
-          threadId: input.targetThread.id,
-          runId: leased.run.id,
-          type:
-            result.status === "completed"
-              ? "run.completed"
-              : result.status === "cancelled"
-                ? "run.cancelled"
-                : "run.failed",
-          category: "lifecycle",
-          visibility: result.status === "completed" ? "debug" : "user",
-          payload: { status: result.status },
-        },
-        input.onEvent,
-      );
       await this.store.finishRun(leased.run.id, result.status, {
         usage: candidate.observation.usage,
         ...(result.status === "failed"
           ? { error: "Model invocation experiment provider call failed" }
           : {}),
         leaseToken: leased.token,
+        terminalEvent: {
+          visibility: result.status === "completed" ? "debug" : "user",
+          payload: { status: result.status },
+        },
+        onTerminalEvent: input.onEvent,
       });
       return result;
     } catch (error) {

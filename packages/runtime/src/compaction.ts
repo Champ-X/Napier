@@ -239,11 +239,13 @@ export function buildContextCompactionMessages(
     .sort((left, right) => left.seq - right.seq)
     .map((event) => {
       const text = contextContinuityEventText(event);
-      const role = event.type === "message.assistant"
-        ? "Assistant"
-        : event.type === "message.user" || event.type === "goal.continuation.prompt"
-          ? "User"
-          : `Ledger ${event.type}`;
+      const role =
+        event.type === "message.assistant"
+          ? "Assistant"
+          : event.type === "message.user" ||
+              event.type === "goal.continuation.prompt"
+            ? "User"
+            : `Ledger ${event.type}`;
       return `#${event.seq} ${role}: ${sanitizeEvidence(text)}`;
     })
     .join("\n\n");
@@ -324,7 +326,8 @@ export function contextMessageEvents(events: RunEvent[]): RunEvent[] {
     (event) =>
       event.type === "message.user" ||
       event.type === "message.assistant" ||
-      event.type === "goal.continuation.prompt",
+      event.type === "goal.continuation.prompt" ||
+      event.type === "run.progress.directive.delivered",
   );
 }
 

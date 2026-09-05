@@ -12,6 +12,7 @@ import {
 } from "../src/mcp.js";
 import { UnsupportedSandboxAdapter } from "../src/sandbox.js";
 import { LocalStore } from "../src/store.js";
+import { ToolProtocolRegistry } from "../src/tool-protocol-registry.js";
 
 const temporaryRoots: string[] = [];
 
@@ -178,6 +179,22 @@ describe("McpExtensionManager", () => {
     expect(deferredTools.map((tool) => tool.name)).toEqual([
       "mcp__research_records__search",
     ]);
+    const protocol = new ToolProtocolRegistry([
+      ...initialTools,
+      ...deferredTools,
+    ]);
+    expect(protocol.require(MCP_SCHEMA_SEARCH_TOOL_NAME).definition).toEqual(
+      expect.objectContaining({ sideEffect: "none", concurrency: "safe" }),
+    );
+    expect(
+      protocol.require("mcp__research_records__search").definition,
+    ).toEqual(
+      expect.objectContaining({
+        sideEffect: "none",
+        concurrency: "safe",
+        retry: { strategy: "terminal_failure", maxAttempts: 2 },
+      }),
+    );
     expect(
       manager.assessToolCall("observe", MCP_SCHEMA_SEARCH_TOOL_NAME, agent.id),
     ).toEqual(
@@ -301,6 +318,15 @@ describe("McpExtensionManager", () => {
     });
     await store.setExtensionEnabled(extension.id, agent.id, true);
     const [tool] = manager.createAgentTools(agent.id);
+    expect(
+      new ToolProtocolRegistry([tool!]).require(tool!.name).definition,
+    ).toEqual(
+      expect.objectContaining({
+        sideEffect: "irreversible",
+        concurrency: "serialized",
+        retry: { strategy: "not_started", maxAttempts: 2 },
+      }),
+    );
 
     expect(manager.assessToolCall("observe", tool!.name, agent.id)).toEqual(
       expect.objectContaining({

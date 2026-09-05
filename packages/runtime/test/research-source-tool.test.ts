@@ -17,6 +17,7 @@ import {
   RunResearchSourceManager,
   type ResearchSourceToolDetails,
 } from "../src/research-sources.js";
+import { ToolProtocolRegistry } from "../src/tool-protocol-registry.js";
 import { assessToolCall } from "../src/policy.js";
 
 describe("research_source Agent tool", () => {
@@ -198,6 +199,55 @@ describe("research_source Agent tool", () => {
       { threadId: "thread_research", runId: "run_research" },
       { action: "capture", maxChars: 12_000 },
       undefined,
+    );
+  });
+
+  it("declares each new claim-to-range binding as a Run-local product", () => {
+    const tool = createResearchSourceTool(
+      {} as RunResearchSourceManager,
+      { threadId: "thread_research", runId: "run_research" },
+    );
+    const protocol = new ToolProtocolRegistry([tool]).require(
+      "research_source",
+    );
+    const citation = protocol.progress(
+      {
+        action: "cite",
+        sourceId: "source_fixture0001",
+        sourceContentSha256: "a".repeat(64),
+        startLine: 1,
+        endLine: 2,
+        claim: "A claim bound to immutable evidence.",
+      },
+      {
+        content: [{ type: "text", text: "citation_fixture0001" }],
+        details: details("cite"),
+      },
+    );
+    const imported = protocol.progress({
+      action: "capture_fetch",
+      webSourceId: "websource_fixture0001",
+      webSourceContentSha256: "a".repeat(64),
+      maxChars: 12_000,
+    });
+
+    expect(citation).toEqual(
+      expect.objectContaining({
+        modeId: "bind_claim_evidence",
+        operation: "mutate",
+        scope: "run_source",
+        contribution: "product",
+        resourceKeySha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        stateSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    expect(imported).toEqual(
+      expect.objectContaining({
+        modeId: "import_run_source",
+        operation: "reuse",
+        scope: "run_source",
+        contribution: "supporting",
+      }),
     );
   });
 

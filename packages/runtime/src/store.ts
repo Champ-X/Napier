@@ -222,13 +222,8 @@ import type {
   RestoreRecommendedCapabilitiesRequestV1,
   UpgradeRecommendedCapabilitiesRequestV1,
 } from "@napier/contracts/agent-capability-contract";
-import {
-  compatibilityCheckpointRequired,
-  StoreCompatibilityProjectionWriter,
-} from "./store-compatibility-projections.js";
 import { recordCompatibilityHit } from "./compatibility-telemetry.js";
 import { assertArtifactReceiptEventBoundary } from "./artifact-receipts.js";
-import { persistStoreMutation } from "./store-persistence.js";
 import { replayThreadSummaryTails } from "./store-thread-summary-projection.js";
 import { loadThreadDetail } from "./thread-detail.js";
 import {
@@ -327,18 +322,15 @@ import type {
 } from "./run-control-repository.js";
 import { RunControlRepository } from "./run-control-repository.js";
 import {
-  resolveCompatibilityEventInput,
-  resolveExtensionEventInput,
-  resolveRegisteredEventInput,
+  StoreCompatibilityProjectionWriter,
+  StoreEventService,
   type AppendCompatibilityEventInput,
   type AppendEventInput,
+  type AppendEventOnceOptions,
+  type AppendEventOnceAtRunHeadOptions,
+  type AppendEventOnceAtRunHeadResult,
   type AppendExtensionEventInput,
-  type ResolvedRunEventInput,
-} from "./run-event-registry.js";
-import {
-  appendRegisteredEventsToThread,
-  appendResolvedRunEvent,
-} from "./run-event-writer.js";
+} from "./store-event-service.js";
 import {
   createRunLeaseBinding,
   renewNormalizedRunLease,
@@ -346,7 +338,10 @@ import {
   type RunLeaseOptions,
 } from "./run-lease-renewal.js";
 import { applyNormalizedRunLeases } from "./run-lease-state.js";
-import { RunLifecycleRepository } from "./run-lifecycle-repository.js";
+import {
+  type FinishRunOptions,
+  RunLifecycleRepository,
+} from "./run-lifecycle-repository.js";
 import { aggregateRunUsage } from "./run-replay.js";
 import { initialRunStatus } from "./run-state-machine.js";
 import { SerialQueue } from "./serial-queue.js";
@@ -412,7 +407,7 @@ export {
   DEFAULT_INBOUND_RETRY_POLICY,
   DEFAULT_INBOUND_SIGNATURE_POLICY,
 } from "./inbound-channel-policy.js";
-export type { AppendEventInput } from "./run-event-registry.js";
+export type { AppendEventInput } from "./store-event-service.js";
 export type { RunLeaseOptions } from "./run-lease-renewal.js";
 const MAX_CONCURRENT_WORKFLOW_RUNS_PER_THREAD = 4;
 type PersistedRunRecord = PersistedStoreState["runs"][number];
@@ -516,6 +511,7 @@ export class LocalStore {
   private readonly threadQueues = new Map<string, SerialQueue>();
   private readonly persistenceMonitor = new StorePersistenceMonitor();
   private readonly compatibilityProjections: StoreCompatibilityProjectionWriter;
+  private readonly eventService: StoreEventService;
   private ledger: SqliteLedger | undefined;
   private state: PersistedState = structuredClone(EMPTY_STATE);
   private stateRevision = 0;
@@ -670,6 +666,27 @@ export class LocalStore {
       (threadId, afterSeq) =>
         this.requireLedger().listEvents(threadId, afterSeq),
     );
+    this.eventService = new StoreEventService({
+      assertReady: () => this.assertInitialized(),
+      runStatus: (runId) => this.state.runs.find((run) => run.id === runId),
+      terminalRunStatus: (threadId, runId) =>
+        this.requireLedger().terminalRunStatus(threadId, runId),
+      mutableThread: (threadId) => this.mutableThread(threadId),
+      runInThreadQueue: (threadId, operation) =>
+        this.threadQueue(threadId).run(operation),
+      runInStateQueue: (operation) => this.stateQueue.run(operation),
+      validateResourceId: (id) => this.validateResourceId(id),
+      revision: () => this.stateRevision,
+      replaceRevision: (revision) => {
+        this.stateRevision = Math.max(this.stateRevision, revision);
+      },
+      snapshotJson: () => JSON.stringify(this.state),
+      compatibilityStateJson: () => JSON.stringify(this.state, null, 2),
+      ledger: () => this.requireLedger(),
+      monitor: this.persistenceMonitor,
+      compatibility: this.compatibilityProjections,
+      refreshProjection: () => this.refreshStateFromLedger(true),
+    });
   }
 
   async initialize(interruptActiveRuns = false): Promise<void> {
@@ -763,6 +780,10 @@ export class LocalStore {
     return this.requireLedger().schemaReport();
   }
 
+  toolConcurrencyLeaseBackend = () =>
+    SqliteLedger.lazyToolConcurrencyLeaseBackend(() =>
+      this.requireLedger().toolConcurrencyLeaseBackend(),
+    );
   getPersistenceMetrics(): StorePersistenceMetrics {
     this.assertInitialized();
     return this.persistenceMonitor.snapshot();
@@ -3027,13 +3048,7 @@ export class LocalStore {
   async finishRun(
     runId: string,
     status: Exclude<RunStatus, "queued" | "running">,
-    options: {
-      error?: string;
-      outcome?: NonNullable<RunRecord["outcome"]>;
-      usage?: RunRecord["usage"];
-      leaseToken?: string;
-      waitForOperatorDecisionId?: string;
-    } = {},
+    options: FinishRunOptions = {},
   ): Promise<RunRecord> {
     return this.runLifecycleRepository.finishRun(runId, status, options);
   }
@@ -3064,37 +3079,33 @@ export class LocalStore {
   }
 
   async appendEvent(input: AppendEventInput): Promise<RunEvent> {
-    return this.appendResolvedEvent(resolveRegisteredEventInput(input));
+    return this.eventService.append(input);
+  }
+
+  async appendEventOnce(
+    input: AppendEventInput,
+    options: AppendEventOnceOptions,
+  ): Promise<RunEvent> {
+    return this.eventService.appendOnce(input, options);
+  }
+
+  async appendEventOnceAtRunHead(
+    input: AppendEventInput,
+    options: AppendEventOnceAtRunHeadOptions,
+  ): Promise<AppendEventOnceAtRunHeadResult> {
+    return this.eventService.appendOnceAtRunHead(input, options);
   }
 
   async appendExtensionEvent(
     input: AppendExtensionEventInput,
   ): Promise<RunEvent> {
-    return this.appendResolvedEvent(resolveExtensionEventInput(input));
+    return this.eventService.appendExtension(input);
   }
 
   async appendCompatibilityEvent(
     input: AppendCompatibilityEventInput,
   ): Promise<RunEvent> {
-    return this.appendResolvedEvent(resolveCompatibilityEventInput(input));
-  }
-
-  private async appendResolvedEvent(
-    input: ResolvedRunEventInput,
-  ): Promise<RunEvent> {
-    this.assertInitialized();
-    return appendResolvedRunEvent(
-      {
-        runStatus: (runId) => this.state.runs.find((run) => run.id === runId),
-        mutableThread: (threadId) => this.mutableThread(threadId),
-        runInThreadQueue: (threadId, operation) =>
-          this.threadQueue(threadId).run(operation),
-        runInStateQueue: (operation) => this.stateQueue.run(operation),
-        persistEvent: (event) => this.persistState(event, "event"),
-        validateResourceId: (id) => this.validateResourceId(id),
-      },
-      input,
-    );
+    return this.eventService.appendCompatibility(input);
   }
 
   private async reconcileInterruptedRuns(
@@ -3162,7 +3173,7 @@ export class LocalStore {
     inputs: AppendEventInput[],
     options: { createdAt?: string } = {},
   ): RunEvent[] {
-    return appendRegisteredEventsToThread(thread, inputs, options);
+    return this.eventService.appendRegisteredToThread(thread, inputs, options);
   }
   private createRunRecord(
     input: CreateRunInput,
@@ -3572,25 +3583,7 @@ export class LocalStore {
     eventOrEvents?: RunEvent | RunEvent[],
     mode: "snapshot" | "event" = "snapshot",
   ): Promise<void> {
-    const events = Array.isArray(eventOrEvents)
-      ? eventOrEvents
-      : eventOrEvents
-        ? [eventOrEvents]
-        : [];
-    const snapshotRequired =
-      mode === "snapshot" || compatibilityCheckpointRequired(events);
-    this.stateRevision = await persistStoreMutation({
-      expectedRevision: this.stateRevision,
-      ...(snapshotRequired
-        ? { snapshotJson: () => JSON.stringify(this.state) }
-        : {}),
-      compatibilityStateJson: () => JSON.stringify(this.state, null, 2),
-      events,
-      ledger: this.requireLedger(),
-      monitor: this.persistenceMonitor,
-      compatibility: this.compatibilityProjections,
-      onCommitFailure: () => this.refreshStateFromLedger(true),
-    });
+    await this.eventService.persist(eventOrEvents, mode);
   }
 
   private assertInitialized(): void {

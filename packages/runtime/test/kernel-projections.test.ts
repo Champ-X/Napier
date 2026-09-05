@@ -565,8 +565,15 @@ describe("Conversation Activity Events projection", () => {
       dataRoot: path.join(root, "data"),
     });
     await store.initialize();
-    const thread = store.listThreads()[0]!;
-    const runId = store.getThread(thread.id).runIds[0]!;
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Activity projection",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
     const registry = new KernelProjectionRegistry();
     const service = new ConversationActivityEventsProjectionService(
       registry,
@@ -579,7 +586,7 @@ describe("Conversation Activity Events projection", () => {
       );
       await store.appendEvent({
         threadId: thread.id,
-        runId,
+        runId: run.id,
         type: "tool.started",
         category: "tool",
         visibility: "user",

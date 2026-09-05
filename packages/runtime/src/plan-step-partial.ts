@@ -3,6 +3,7 @@ import type { RunRecord } from "@napier/contracts";
 import type { EventSink } from "./event-sink.js";
 import { PARTIAL_PLAN_STEP } from "./plan-step-transition.js";
 import type { LocalStore } from "./store.js";
+import { runPlanProgressEventPayload } from "./run-progress-plan-state.js";
 
 export async function partialRunPlanSteps(input: {
   store: LocalStore;
@@ -36,6 +37,7 @@ export async function partialRunPlanSteps(input: {
           planStatus: updated.status,
           evidence: partial.evidence,
           phaseProjectionSha256: updated.phaseProjectionSha256,
+          ...runPlanProgressEventPayload(updated),
         },
       });
       if (!input.onEvent) continue;

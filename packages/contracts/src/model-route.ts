@@ -162,6 +162,10 @@ export interface ModelRouteAttempt {
   failureClass?: RouteFailureClass;
   fallbackFromAttempt?: number;
   fallbackReason?: RouteFailureClass;
+  retryFromAttempt?: number;
+  retryReason?: RouteFailureClass;
+  retryDelayMs?: number;
+  bufferedThinkingBytes?: number;
   diagnosticSha256?: string;
   providerHint?: string;
   retryAfterMs?: number;

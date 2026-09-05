@@ -1,26 +1,23 @@
 import type { AgentToolResult } from "@earendil-works/pi-agent-core";
-import type { TextContent } from "@earendil-works/pi-ai";
 import type {
-  JsonValue,
   ToolInvocationCapsuleReceipt,
   ToolInvocationResultCapsuleReceipt,
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import {
+  normalizeReplayableToolResult,
+  TOOL_INVOCATION_RESULT_TOOL_NAME_PATTERN,
+  type ReplayableToolResult,
+} from "./tool-invocation-result-normalization.js";
+
+export type { ReplayableToolResult } from "./tool-invocation-result-normalization.js";
 
 export const MAX_TOOL_INVOCATION_RESULT_CAPSULE_BYTES = 1024 * 1024;
 
 const HASH = /^[a-f0-9]{64}$/u;
 const THREAD_ID = /^thread_[a-z0-9]{8,80}$/u;
 const RUN_ID = /^run_[a-z0-9_-]{8,80}$/u;
-const TOOL_NAME = /^[A-Za-z][A-Za-z0-9_.:-]{0,127}$/u;
-
-export interface ReplayableToolResult {
-  content: TextContent[];
-  details: JsonValue;
-  usage?: JsonValue;
-  addedToolNames?: string[];
-}
 
 export interface ToolInvocationResultCapsule {
   kind: "napier.tool-invocation-result-capsule";
@@ -106,7 +103,7 @@ export function validateToolInvocationResultCapsule(
     !RUN_ID.test(value["sourceRunId"]) ||
     !callId(value["callId"]) ||
     typeof value["toolName"] !== "string" ||
-    !TOOL_NAME.test(value["toolName"]) ||
+    !TOOL_INVOCATION_RESULT_TOOL_NAME_PATTERN.test(value["toolName"]) ||
     !hashFields(value, [
       "invocationCapsuleSha256",
       "toolDefinitionSha256",
@@ -203,7 +200,7 @@ export function validateToolInvocationResultCapsuleReceipt(
     value["schemaVersion"] !== 1 ||
     !callId(value["callId"]) ||
     typeof value["toolName"] !== "string" ||
-    !TOOL_NAME.test(value["toolName"]) ||
+    !TOOL_INVOCATION_RESULT_TOOL_NAME_PATTERN.test(value["toolName"]) ||
     !hashFields(value, [
       "invocationCapsuleSha256",
       "toolDefinitionSha256",
@@ -254,97 +251,6 @@ export function replayableToolResult(
 
 export function replayableToolResultText(result: ReplayableToolResult): string {
   return result.content.map((item) => item.text).join("\n");
-}
-
-function normalizeReplayableToolResult(input: unknown): ReplayableToolResult {
-  const value = record(input, "Replayable tool result");
-  exactKeys(
-    value,
-    ["content", "details"],
-    new Set(["usage", "addedToolNames"]),
-  );
-  if (
-    !Array.isArray(value["content"]) ||
-    value["content"].some(
-      (item) =>
-        !item ||
-        typeof item !== "object" ||
-        Array.isArray(item) ||
-        (item as Record<string, unknown>)["type"] !== "text" ||
-        typeof (item as Record<string, unknown>)["text"] !== "string" ||
-        Object.keys(item).some((key) => key !== "type" && key !== "text"),
-    )
-  ) {
-    throw new Error("Replayable tool result content is invalid");
-  }
-  const content = value["content"].map((item) => ({
-    type: "text" as const,
-    text: (item as { text: string }).text,
-  }));
-  const details = normalizeJson(value["details"]);
-  const usage =
-    value["usage"] === undefined ? undefined : normalizeJson(value["usage"]);
-  const addedToolNames =
-    value["addedToolNames"] === undefined
-      ? undefined
-      : normalizeToolNames(value["addedToolNames"]);
-  return {
-    content,
-    details,
-    ...(usage !== undefined ? { usage } : {}),
-    ...(addedToolNames ? { addedToolNames } : {}),
-  };
-}
-
-function normalizeJson(
-  input: unknown,
-  depth = 0,
-  ancestors: ReadonlySet<object> = new Set(),
-): JsonValue {
-  if (depth > 64) {
-    throw new Error("Replayable tool result exceeds the JSON depth limit");
-  }
-  if (
-    input === null ||
-    typeof input === "string" ||
-    typeof input === "boolean"
-  ) {
-    return input;
-  }
-  if (typeof input === "number") {
-    if (Number.isFinite(input)) return input;
-    throw new Error("Replayable tool result contains a non-finite number");
-  }
-  if (!input || typeof input !== "object") {
-    throw new Error("Replayable tool result is not exact JSON");
-  }
-  if (ancestors.has(input)) {
-    throw new Error("Replayable tool result contains a cycle");
-  }
-  const nextAncestors = new Set(ancestors).add(input);
-  if (Array.isArray(input)) {
-    return input.map((item) => normalizeJson(item, depth + 1, nextAncestors));
-  }
-  const prototype = Object.getPrototypeOf(input);
-  if (prototype !== Object.prototype && prototype !== null) {
-    throw new Error("Replayable tool result is not exact JSON");
-  }
-  return Object.fromEntries(
-    Object.entries(input).map(([key, value]) => [
-      key,
-      normalizeJson(value, depth + 1, nextAncestors),
-    ]),
-  );
-}
-
-function normalizeToolNames(input: unknown): string[] {
-  if (
-    !Array.isArray(input) ||
-    input.some((name) => typeof name !== "string" || !TOOL_NAME.test(name))
-  ) {
-    throw new Error("Replayable tool result added tools are invalid");
-  }
-  return [...input] as string[];
 }
 
 function exactKeys(

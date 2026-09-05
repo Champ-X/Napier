@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { classifyFailure } from "../src/run-failure-classification.js";
-import { ModelTurnWatchdogError } from "../src/model-turn-deadline.js";
+import {
+  classifyFailure,
+  withSettlementOutcome,
+} from "../src/run-failure-classification.js";
+import {
+  modelFailureError,
+  ModelTurnWatchdogError,
+} from "../src/model-turn-deadline.js";
 import { RunNoProgressError } from "../src/run-no-progress-policy.js";
 import {
   ToolDeadlineError,
@@ -73,6 +79,74 @@ describe("Run failure classification", () => {
     );
     expect(failure).not.toHaveProperty("outcome");
   });
+
+  it("keeps transient provider stream failures resumable and non-blocking", () => {
+    const failure = classifyFailure(
+      false,
+      false,
+      undefined,
+      modelFailureError("error", "terminated"),
+    );
+
+    expect(failure).toEqual(
+      expect.objectContaining({
+        status: "failed",
+        outcome: "paused_budget",
+        blocksGoal: false,
+        message:
+          "The model response stream ended unexpectedly. Safely resume the Run; select another configured model if the connection keeps failing.",
+        modelProviderFailure: {
+          failureClass: "network",
+          message:
+            "The model response stream ended unexpectedly. Safely resume the Run; select another configured model if the connection keeps failing.",
+        },
+      }),
+    );
+    expect(withSettlementOutcome(failure, "partial").outcome).toBe("partial");
+  });
+
+  it("distinguishes a provider abort from root Run cancellation", () => {
+    const failure = classifyFailure(
+      false,
+      false,
+      undefined,
+      modelFailureError("aborted", "provider stream aborted", false),
+    );
+
+    expect(failure).toEqual(
+      expect.objectContaining({
+        status: "failed",
+        outcome: "paused_budget",
+        blocksGoal: false,
+        modelProviderFailure: expect.objectContaining({
+          failureClass: "network",
+        }),
+      }),
+    );
+  });
+
+  it.each(["AbortError", "request timeout", "HTTP 408"])(
+    "keeps provider-side %s failures resumable",
+    (diagnostic) => {
+      const failure = classifyFailure(
+        false,
+        false,
+        undefined,
+        modelFailureError("error", diagnostic, false),
+      );
+
+      expect(failure).toEqual(
+        expect.objectContaining({
+          status: "failed",
+          outcome: "paused_budget",
+          blocksGoal: false,
+          modelProviderFailure: expect.objectContaining({
+            failureClass: "network",
+          }),
+        }),
+      );
+    },
+  );
 
   it("keeps no-progress convergence resumable and non-blocking", () => {
     const evidence = {

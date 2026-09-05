@@ -156,9 +156,6 @@ export class ExecutionPlanWorkflowSimulationMaterializer {
           lease.run.id,
           inputSha256,
         );
-        await this.store.finishRun(lease.run.id, "completed", {
-          leaseToken: lease.token,
-        });
         await this.operations.completePlanStep(
           context,
           node.id,
@@ -188,6 +185,14 @@ export class ExecutionPlanWorkflowSimulationMaterializer {
           },
           context.onEvent,
         );
+        await this.store.finishRun(lease.run.id, "completed", {
+          leaseToken: lease.token,
+          terminalEvent: {
+            visibility: "debug",
+            payload: { status: "completed" },
+          },
+          onTerminalEvent: context.onEvent,
+        });
         context.outputs.set(node.id, structuredClone(simulated.output));
         context.nodeResults.set(
           node.id,
@@ -292,17 +297,6 @@ export class ExecutionPlanWorkflowSimulationMaterializer {
           outputBytes: simulated.outputBytes,
           outputSchemaSha256: workflowSchemaSha256(node.outputSchema),
         },
-      },
-      context.onEvent,
-    );
-    await this.ledger.append(
-      {
-        threadId: context.threadId,
-        runId,
-        type: "run.completed",
-        category: "lifecycle",
-        visibility: "debug",
-        payload: { status: "completed" },
       },
       context.onEvent,
     );

@@ -12,11 +12,11 @@ import { describe, expect, it } from "vitest";
 import { canonicalJson, sha256 } from "../src/ed25519.js";
 import {
   formatModelHarnessPrompt,
-  inferModelHarnessTaskPhases,
   prepareModelHarnessCall,
   resolveModelHarnessProfile,
   resolveModelHarnessResolution,
 } from "../src/model-harness-profile.js";
+import { inferModelHarnessTaskPhases } from "../src/model-harness-resolution.js";
 
 const TOOL_NAMES = [
   "request_operator_decision",

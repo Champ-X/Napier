@@ -1,6 +1,5 @@
 import { realpath, stat } from "node:fs/promises";
 import path from "node:path";
-import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { Type } from "typebox";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { runSandboxedProcess } from "./sandboxed-process.js";
@@ -11,13 +10,13 @@ import {
 } from "./verification-runtime.js";
 import type {
   SelectedTestExecutionResult,
-  VerificationDetails,
   VerificationKind,
   VerificationRequest,
   VerificationResult,
   VerificationRunnerOptions,
   VerificationStatus,
 } from "./verification-types.js";
+import { defineVerificationToolProgress } from "./verification-tool-progress.js";
 import { createWorkspacePathSnapshot as createPathSnapshot } from "./workspace-snapshot.js";
 
 export type {
@@ -330,11 +329,9 @@ export class VerificationRunner {
   }
 }
 
-export function createVerificationTool(
-  options: VerificationRunnerOptions,
-): AgentTool<typeof verifyWorkspaceSchema, VerificationDetails> {
+export function createVerificationTool(options: VerificationRunnerOptions) {
   const runner = new VerificationRunner(options);
-  return {
+  return defineVerificationToolProgress({
     name: "verify_workspace",
     label: "Verify workspace",
     description:
@@ -352,7 +349,7 @@ export function createVerificationTool(
         details: result.details,
       };
     },
-  };
+  });
 }
 
 function validateVerificationRequest(input: VerificationRequest): void {

@@ -145,7 +145,7 @@ describe("RunWebFetchSourceManager", () => {
     ).rejects.toThrow("not found for this Run");
   });
 
-  it("cancels active and queued fetches without repopulating the Run", async () => {
+  it("cancels concurrently active fetches without repopulating the Run", async () => {
     const started: Array<() => void> = [];
     const http = {
       request: vi.fn(
@@ -169,13 +169,84 @@ describe("RunWebFetchSourceManager", () => {
       action: "fetch",
       url: "https://example.com/two",
     });
-    await vi.waitFor(() => expect(started).toHaveLength(1));
+    await vi.waitFor(() => expect(started).toHaveLength(2));
 
     await manager.cancelRun(OWNER);
 
     await expect(first).rejects.toThrow("Web fetch was cancelled");
     await expect(second).rejects.toThrow("Web fetch was cancelled");
-    expect(http.request).toHaveBeenCalledTimes(1);
+    expect(http.request).toHaveBeenCalledTimes(2);
+  });
+
+  it("coalesces concurrent fetches for the same normalized target", async () => {
+    let resolveRequest!: (value: PublicHttpResponse) => void;
+    const http = {
+      request: vi.fn(
+        () =>
+          new Promise<PublicHttpResponse>((resolve) => {
+            resolveRequest = resolve;
+          }),
+      ),
+    };
+    const manager = new RunWebFetchSourceManager({ http });
+
+    const first = manager.execute(OWNER, {
+      action: "fetch",
+      url: "https://example.com/source#first",
+    });
+    const second = manager.execute(OWNER, {
+      action: "fetch",
+      url: "https://example.com/source#second",
+    });
+    await vi.waitFor(() => expect(http.request).toHaveBeenCalledTimes(1));
+    resolveRequest(response("shared evidence", "text/plain"));
+
+    const [firstResult, secondResult] = await Promise.all([first, second]);
+    const listed = await manager.execute(OWNER, { action: "list" });
+    expect(firstResult.details.sourceId).toBe(secondResult.details.sourceId);
+    expect(firstResult.details.sourceContentSha256).toBe(
+      secondResult.details.sourceContentSha256,
+    );
+    expect(listed.details.sourceCount).toBe(1);
+  });
+
+  it("starts a fresh fetch when the prior shared target has lost every subscriber", async () => {
+    let requestCount = 0;
+    const http = {
+      request: vi.fn((_request: unknown, signal?: AbortSignal) => {
+        requestCount += 1;
+        if (requestCount > 1) {
+          return Promise.resolve(response("fresh evidence", "text/plain"));
+        }
+        return new Promise<PublicHttpResponse>((_resolve, reject) => {
+          signal?.addEventListener(
+            "abort",
+            () => {
+              setTimeout(() => reject(new Error("cancelled")), 10);
+            },
+            { once: true },
+          );
+        });
+      }),
+    };
+    const manager = new RunWebFetchSourceManager({ http });
+    const controller = new AbortController();
+    const abandoned = manager.execute(
+      OWNER,
+      { action: "fetch", url: "https://example.com/retry" },
+      controller.signal,
+    );
+    await vi.waitFor(() => expect(http.request).toHaveBeenCalledTimes(1));
+    controller.abort();
+    await expect(abandoned).rejects.toThrow("Web fetch was cancelled");
+
+    const retried = await manager.execute(OWNER, {
+      action: "fetch",
+      url: "https://example.com/retry",
+    });
+
+    expect(retried.output).toContain("fresh evidence");
+    expect(http.request).toHaveBeenCalledTimes(2);
   });
 
   it("fails visibly for non-success HTTP responses", async () => {
@@ -201,6 +272,137 @@ describe("RunWebFetchSourceManager", () => {
         { browserFallbackAllowed: true },
       ),
     ).rejects.toThrow("HTTP 404");
+    expect(browserFallback.captureUrl).not.toHaveBeenCalled();
+  });
+
+  it("recovers an HTTP 403 through the bounded Browser fallback", async () => {
+    const browserFallback = {
+      captureUrl: vi.fn(async () =>
+        browserCapture("https://example.com/source", "Protected Source", [
+          "Protected Source",
+          "The controlled Browser rendered the public article after the static client received HTTP 403.",
+          "This second evidence line keeps the capture above the conservative usefulness threshold.",
+        ]),
+      ),
+    };
+    const manager = new RunWebFetchSourceManager({
+      http: {
+        request: vi.fn(async () => ({
+          ...response("forbidden", "text/plain"),
+          status: 403,
+        })),
+      },
+      browserFallback,
+    });
+
+    const fetched = await manager.execute(
+      OWNER,
+      { action: "fetch", url: "https://example.com/source" },
+      undefined,
+      { browserFallbackAllowed: true },
+    );
+
+    expect(browserFallback.captureUrl).toHaveBeenCalledOnce();
+    expect(fetched.output).toContain("Render: browser_fallback");
+    expect(fetched.output).toContain("controlled Browser rendered");
+    expect(fetched.details).toEqual(
+      expect.objectContaining({
+        sourceBodyBytes: 0,
+        sourceRenderMode: "browser_fallback",
+        browserFallbackStatus: "used",
+        browserFallbackCount: 1,
+      }),
+    );
+  });
+
+  it("recovers a transport timeout through the bounded Browser fallback", async () => {
+    const browserFallback = {
+      captureUrl: vi.fn(async () =>
+        browserCapture("https://example.com/source", "Delayed Source", [
+          "Delayed Source",
+          "The controlled Browser loaded public evidence after the static HTTP transport timed out.",
+          "A second complete sentence proves that the rendered page contains useful source text.",
+        ]),
+      ),
+    };
+    const manager = new RunWebFetchSourceManager({
+      http: {
+        request: vi.fn(async () => {
+          const error = new Error("读取源站超时");
+          error.name = "TimeoutError";
+          throw error;
+        }),
+      },
+      browserFallback,
+    });
+
+    const fetched = await manager.execute(
+      OWNER,
+      { action: "fetch", url: "https://example.com/source" },
+      undefined,
+      { browserFallbackAllowed: true },
+    );
+
+    expect(browserFallback.captureUrl).toHaveBeenCalledOnce();
+    expect(fetched.output).toContain("static HTTP transport timed out");
+    expect(fetched.details.browserFallbackStatus).toBe("used");
+  });
+
+  it("atomically consumes Browser fallback attempts even when capture fails", async () => {
+    const browserFallback = {
+      captureUrl: vi.fn(async () => {
+        throw new Error("browser route unavailable");
+      }),
+    };
+    const manager = new RunWebFetchSourceManager({
+      http: {
+        request: vi.fn(async () => {
+          const error = new Error("读取源站超时");
+          error.name = "TimeoutError";
+          throw error;
+        }),
+      },
+      browserFallback,
+    });
+
+    const attempts = await Promise.allSettled(
+      ["one", "two", "three"].map((path) =>
+        manager.execute(
+          OWNER,
+          { action: "fetch", url: `https://example.com/${path}` },
+          undefined,
+          { browserFallbackAllowed: true },
+        ),
+      ),
+    );
+
+    expect(attempts.map((attempt) => attempt.status)).toEqual([
+      "rejected",
+      "rejected",
+      "rejected",
+    ]);
+    expect(browserFallback.captureUrl).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not route policy or validation failures through Browser fallback", async () => {
+    const browserFallback = { captureUrl: vi.fn() };
+    const manager = new RunWebFetchSourceManager({
+      http: {
+        request: vi.fn(async () => {
+          throw new Error("Host resolves to a private or reserved address");
+        }),
+      },
+      browserFallback,
+    });
+
+    await expect(
+      manager.execute(
+        OWNER,
+        { action: "fetch", url: "https://example.com/source" },
+        undefined,
+        { browserFallbackAllowed: true },
+      ),
+    ).rejects.toThrow("private or reserved address");
     expect(browserFallback.captureUrl).not.toHaveBeenCalled();
   });
 

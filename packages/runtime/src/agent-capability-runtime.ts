@@ -184,12 +184,20 @@ export class AgentCapabilityRuntime {
       options.profile.enabledTools.includes("web_fetch")
     ) {
       tools.push(
-        createWebFetchTool(this.webFetch, owner, {
-          browserFallbackAllowed:
-            this.sessions.browserAvailable() &&
-            networkSessionToolsAllowed(options) &&
-            options.profile.enabledTools.includes("browser"),
-        }),
+        createWebFetchTool(
+          this.webFetch,
+          owner,
+          {
+            browserFallbackAllowed:
+              this.sessions.browserAvailable() &&
+              networkSessionToolsAllowed(options) &&
+              options.profile.enabledTools.includes("browser"),
+          },
+          {
+            store: this.store,
+            owner,
+          },
+        ),
       );
     }
     if (
@@ -205,6 +213,10 @@ export class AgentCapabilityRuntime {
             threadId: owner.threadId,
             id: owner.runId,
           }),
+          {
+            store: this.store,
+            owner,
+          },
         ),
       );
     }

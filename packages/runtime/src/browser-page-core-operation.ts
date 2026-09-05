@@ -5,6 +5,7 @@ import type {
   BrowserWorkspaceFile,
 } from "./browser-workspace-files.js";
 import { browserPageLocator } from "./browser-page-locator.js";
+import { browserNavigationStrategy } from "./browser-navigation-strategy.js";
 import {
   BROWSER_ACTION_TIMEOUT_MS,
   BROWSER_NAVIGATION_TIMEOUT_MS,
@@ -63,14 +64,20 @@ export async function performBrowserPageCoreOperation(input: {
         request.url,
         request.allowCrossOrigin === true,
       );
+      const strategy = browserNavigationStrategy(url);
       await input.withNetwork(() =>
         input.navigation.run(page, request.allowCrossOrigin === true, () =>
           page.goto(url.href, {
-            waitUntil: "domcontentloaded",
-            timeout: BROWSER_NAVIGATION_TIMEOUT_MS,
+            waitUntil: strategy.waitUntil,
+            timeout: strategy.timeout,
           }),
         ),
       );
+      if (strategy.directMedia) {
+        return {
+          state: await captureBrowserPageMetadata(page, input.signal),
+        };
+      }
       break;
     }
     case "back":

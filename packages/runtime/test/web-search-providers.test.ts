@@ -197,6 +197,67 @@ describe("WebSearchProviderRegistry", () => {
     expect(http.request).toHaveBeenCalledTimes(1);
   });
 
+  it("routes image search directly to configured Brave Images", async () => {
+    const http = requester(async (request) => {
+      expect(request.url).toContain(
+        "api.search.brave.com/res/v1/images/search",
+      );
+      return response(
+        200,
+        JSON.stringify({
+          results: [
+            {
+              title: "Official poster",
+              url: "https://official.example.com/poster",
+              properties: {
+                url: "https://images.example.com/poster.jpg#download",
+              },
+              thumbnail: {
+                src: "https://thumbs.example.com/poster.jpg#preview",
+              },
+              description: "Official image result.",
+            },
+          ],
+        }),
+        "application/json",
+      );
+    });
+    const registry = new WebSearchProviderRegistry({
+      env: { BRAVE_API_KEY: "BRAVE_TEST_KEY" },
+      http,
+    });
+
+    const result = await registry.search(
+      normalizeWebSearchRequest({
+        query: "FIFA official poster",
+        category: "images",
+      }),
+      AbortSignal.timeout(1_000),
+    );
+
+    expect(result.provider).toBe("brave");
+    expect(result.results).toEqual([
+      {
+        title: "Official poster",
+        url: "https://official.example.com/poster",
+        imageUrl: "https://images.example.com/poster.jpg",
+        thumbnailUrl: "https://thumbs.example.com/poster.jpg",
+        snippet: "Official image result.",
+        source: "Brave Search",
+      },
+    ]);
+    expect(result.attempts).toEqual([
+      { provider: "brave", status: "succeeded" },
+    ]);
+    expect(http.request).toHaveBeenCalledTimes(1);
+    expect(http.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: expect.stringContaining("safesearch=strict"),
+      }),
+      expect.any(AbortSignal),
+    );
+  });
+
   it("rejects provider results outside an explicit site constraint", async () => {
     const http = requester(async (request) => {
       if (request.url.includes("bing.com")) {

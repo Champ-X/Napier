@@ -80,17 +80,18 @@ describe("Agent Git inspection", () => {
       (event) => record(event.payload)?.["toolName"] === "git_inspect",
     );
     expect(gitEvents.map((event) => event.type)).toEqual([
+      "tool.admitted",
       "tool.started",
       "tool.completed",
     ]);
-    expect(gitEvents[0]?.payload).toEqual(
+    expect(gitEvents[1]?.payload).toEqual(
       expect.objectContaining({
         effect: "read",
         inputRedacted: true,
         inputSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
       }),
     );
-    expect(gitEvents[1]?.payload).toEqual(
+    expect(gitEvents[2]?.payload).toEqual(
       expect.objectContaining({
         outputRedacted: true,
         details: expect.objectContaining({

@@ -6,13 +6,10 @@ import type {
   WorkflowBenchmarkLedgerEventReceipt,
 } from "./workflow-benchmark-types.js";
 import { hasExactRunEventEnvelope } from "./run-event-envelope-shape.js";
-import { validCompletedToolProtocolProjection } from "./tool-protocol-event-shape.js";
+import { completedToolEventPayload } from "./tool-terminal-event-shape.js";
 
 export type WorkflowBenchmarkSqliteAction = "schema" | "query" | "chart";
 
-const PAYLOAD_KEYS = keySet(
-  "callId toolName status outputTextSha256 outputTextBytes outputSha256 outputBytes outputRedacted resultSha256 details toolProtocol",
-);
 const QUERY_DETAILS_KEYS = keySet(
   "kind schemaVersion action databasePathSha256 databaseSha256 databaseBytes sqlSha256 parameterCount parameterSetSha256 columnCount rowCount truncated columnsSha256 rowsSha256 durationMs workerSha256 runtimeSha256 limitsSha256 resultSha256",
 );
@@ -166,15 +163,15 @@ function receiptMatchesEvent(
 }
 
 function validSqliteActionEvent(value: unknown): value is RunEvent {
-  if (
-    !hasExactRunEventEnvelope(value) ||
-    !exactRecord(value["payload"], PAYLOAD_KEYS)
-  ) {
+  if (!hasExactRunEventEnvelope(value)) {
     return false;
   }
-  return (
-    validSqliteEventIdentity(value) && validSqliteEventPayload(value["payload"])
-  );
+  const payload = completedToolEventPayload(value["payload"], {
+    toolId: "sqlite_query",
+    resultSha256: "required",
+  });
+  if (!payload) return false;
+  return validSqliteEventIdentity(value) && validSqliteEventPayload(payload);
 }
 
 function validSqliteEventIdentity(event: Record<string, unknown>): boolean {
@@ -200,10 +197,6 @@ function validSqliteEventPayload(payload: Record<string, unknown>): boolean {
     digest(payload["outputSha256"]) &&
     nonNegativeInteger(payload["outputBytes"]) &&
     payload["outputRedacted"] === true &&
-    validCompletedToolProtocolProjection(
-      payload["toolProtocol"],
-      "sqlite_query",
-    ) &&
     digest(payload["resultSha256"]) &&
     validSqliteDetails(payload["details"]) &&
     payload["resultSha256"] ===

@@ -5,28 +5,31 @@ import {
   createCapabilityCatalogTool,
   createCapabilityDescriptors,
 } from "../src/capability-catalog.js";
+import { bindBuiltInToolCompatibilityPolicy } from "../src/agent-tool-effects.js";
+import { createOwnedToolRecordV2 } from "../src/owned-tool-protocol.js";
+import { defineReplayableTestReadTool } from "./self-describing-tool-test-support.js";
 
-const readTool = {
+const readTool = defineReplayableTestReadTool({
   name: "read_file",
   label: "Read file",
   description: "Read a workspace file.",
   parameters: Type.Object({ path: Type.String() }),
   execute: async () => ({ content: [], details: {} }),
-};
-const writeTool = {
+});
+const writeTool = bindBuiltInToolCompatibilityPolicy({
   name: "apply_patch",
   label: "Apply patch",
   description: "Apply a workspace patch.",
   parameters: Type.Object({ patch: Type.String() }),
   execute: async () => ({ content: [], details: {} }),
-};
-const processTool = {
+});
+const processTool = bindBuiltInToolCompatibilityPolicy({
   name: "workspace_process",
   label: "Workspace process",
   description: "Start and control a workspace process.",
   parameters: Type.Object({ action: Type.String() }),
   execute: async () => ({ content: [], details: {} }),
-};
+});
 
 describe("Capability Catalog", () => {
   it("projects deterministic ToolDefinitionV2 descriptors", () => {
@@ -69,7 +72,7 @@ describe("Capability Catalog", () => {
     );
     expect(descriptors[1]?.definition).toEqual(
       expect.objectContaining({
-        version: "2.0.0",
+        version: "2.0.0-test.1",
         sideEffect: "none",
         concurrency: "safe",
         idempotency: {
@@ -83,6 +86,18 @@ describe("Capability Catalog", () => {
 
   it("discovers an omitted first-party tool for activation on the next step", async () => {
     const catalog = createCapabilityCatalogTool([readTool, writeTool]);
+    const owned = createOwnedToolRecordV2(catalog);
+    expect(owned.definition.compatibility.mode).toBe("native");
+    expect(
+      owned.matchesReplayIdentitySha256(
+        "62ab9cc950ecdf11d15a5dddb1c31509d54115e7dbda1d1d11a8f35ad8472e53",
+      ),
+    ).toBe(true);
+    expect(
+      owned.matchesReplayIdentitySha256(
+        "6df52e27c9a01bac414fb61b1bdce5db7b000258e3e986d5adbe7f7b23cb9374",
+      ),
+    ).toBe(true);
     const result = await catalog.execute(
       "call_catalog",
       { uri: "cap://tools/apply_patch" },

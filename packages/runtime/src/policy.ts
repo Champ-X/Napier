@@ -1,6 +1,7 @@
 import path from "node:path";
 
 import type { JsonValue, ToolPolicyMode } from "@napier/contracts";
+import type { ToolInvocationProtocolV2 } from "@napier/contracts/tool-protocol";
 
 import { assessBrowserToolCall } from "./browser-tool-policy.js";
 import { assessGitToolCall } from "./git-tool-policy.js";
@@ -99,6 +100,7 @@ export function assessToolCall(
   toolName: string,
   input: JsonValue,
   workspaceRoot: string,
+  protocol?: ToolInvocationProtocolV2,
 ): PolicyDecision {
   if (INTERNAL_LEDGER_TOOLS.has(toolName)) {
     return {
@@ -109,12 +111,6 @@ export function assessToolCall(
   }
   const gitDecision = assessGitToolCall(mode, toolName, input, workspaceRoot);
   if (gitDecision) return gitDecision;
-  const readOnlyDecision = assessReadOnlyToolCall(
-    toolName,
-    input,
-    workspaceRoot,
-  );
-  if (readOnlyDecision) return readOnlyDecision;
   const browserDecision = assessBrowserToolCall(
     mode,
     toolName,
@@ -378,6 +374,14 @@ export function assessToolCall(
       reason: "explicit unrestricted policy",
     };
   }
+
+  const readOnlyDecision = assessReadOnlyToolCall(
+    toolName,
+    input,
+    workspaceRoot,
+    protocol,
+  );
+  if (readOnlyDecision) return readOnlyDecision;
 
   return {
     allowed: false,

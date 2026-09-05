@@ -156,7 +156,7 @@ export function createStatelessAgentTools(
     ...(patchObserver ? { patchObserver } : {}),
   }).filter((tool) => profile.enabledTools.includes(tool.name));
   appendDataTools(tools, profile, options.store.workspaceRoot);
-  appendWebTools(tools, profile, options.webSearch);
+  appendWebTools(tools, options);
 
   tools.push(
     ...createTypescriptAstTools(options.store.workspaceRoot).filter((tool) =>
@@ -365,14 +365,19 @@ function appendDataTools(
 
 function appendWebTools(
   tools: AgentTool[],
-  profile: AgentProfile,
-  webSearch: WebSearchExecutor | undefined,
+  options: CreateStatelessAgentToolsOptions,
 ): void {
+  const { profile, webSearch } = options;
   if (
     profile.enabledTools.includes("web_search") &&
     webSearch &&
     webSearch.available?.() !== false
   ) {
-    tools.push(createWebSearchTool(webSearch));
+    tools.push(
+      createWebSearchTool(webSearch, {
+        store: options.store,
+        owner: { threadId: options.threadId, runId: options.runId },
+      }),
+    );
   }
 }

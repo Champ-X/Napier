@@ -124,20 +124,16 @@ export async function materializeContextCompactionFork(input: {
       },
       admission: "run_active",
     });
-    await appendContextCompactionRunTerminal(
-      input.store,
-      targetLease.run.id,
-      branch.detail.thread.id,
-      "completed",
-    );
     await input.store.finishRun(targetLease.run.id, "completed", {
       leaseToken: targetLease.token,
+      terminalEvent: contextCompactionRunTerminalEvent("completed"),
     });
   } catch (error) {
     await input.store
       .finishRun(targetLease.run.id, "failed", {
         error: "Context compaction fork materialization failed",
         leaseToken: targetLease.token,
+        terminalEvent: contextCompactionRunTerminalEvent("failed"),
       })
       .catch(() => undefined);
     throw error;
@@ -166,21 +162,16 @@ export async function appendContextCompactionRunStarted(
   });
 }
 
-export async function appendContextCompactionRunTerminal(
-  store: LocalStore,
-  runId: string,
-  threadId: string,
+export function contextCompactionRunTerminalEvent(
   status: "completed" | "failed",
-): Promise<void> {
-  await store.appendEvent({
-    threadId,
-    runId,
-    type: status === "completed" ? "run.completed" : "run.failed",
-    category: "lifecycle",
+): {
+  visibility: "debug" | "user";
+  payload: { status: "completed" | "failed" };
+} {
+  return {
     visibility: status === "completed" ? "debug" : "user",
     payload: { status },
-    admission: "run_active",
-  });
+  };
 }
 
 function sourceMessageTextSha256(events: RunEvent[]): string {

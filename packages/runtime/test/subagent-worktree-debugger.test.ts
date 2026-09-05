@@ -14,6 +14,7 @@ import type { SubagentWorktreeLifecycleDiagnosticsAdapter } from "../src/subagen
 import { SubagentWorktreeMutationManager } from "../src/subagent-worktree-mutation.js";
 import { verifyThreadReplayBundle } from "../src/thread-bundles.js";
 import { WorkspaceProcessManager } from "../src/workspace-processes.js";
+import { createActiveTestRun } from "./active-run-test-fixture.js";
 
 const temporaryRoots: string[] = [];
 const openProcesses: WorkspaceProcessManager[] = [];
@@ -252,8 +253,10 @@ async function createFixture(source: string): Promise<Fixture> {
   });
   await processes.initialize();
   openProcesses.push(processes);
-  const thread = store.listThreads()[0]!;
-  const run = store.listRuns(thread.id)[0]!;
+  const { thread, run } = await createActiveTestRun(
+    store,
+    "Subagent worktree debugger fixture",
+  );
   return {
     workspaceRoot,
     dataRoot,

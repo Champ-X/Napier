@@ -1,4 +1,8 @@
-import type { ModelRef, RunInvocationSource, SubagentRole } from "@napier/contracts";
+import type {
+  ModelRef,
+  RunInvocationSource,
+  SubagentRole,
+} from "@napier/contracts";
 import type {
   ModelRole,
   ModelRoleRouteBinding,
@@ -35,21 +39,22 @@ export function resolveModelRouteSelection(input: {
   const policy = input.policy
     ? normalizeModelRoutePolicy(input.policy)
     : undefined;
-  const role = input.request?.role ?? (input.subagentRole ? "subagent" : "default");
+  const role =
+    input.request?.role ?? (input.subagentRole ? "subagent" : "default");
   const path = routePath(input.source);
   let source: ModelRouteResolutionSource = "agent_default";
   let binding: ModelRoleRouteBinding | undefined;
 
-  if (input.explicitPrimary) {
-    source = "explicit";
-    binding = { model: input.explicitPrimary };
-  } else if (
+  if (
     input.subagentRole &&
     input.request?.subagentRoles?.[input.subagentRole]
   ) {
     source = "subagent_role";
     binding = input.request.subagentRoles[input.subagentRole];
-  } else if (input.subagentRole && policy?.subagentRoles?.[input.subagentRole]) {
+  } else if (
+    input.subagentRole &&
+    policy?.subagentRoles?.[input.subagentRole]
+  ) {
     source = "subagent_role";
     binding = policy.subagentRoles[input.subagentRole];
   } else if (input.request?.role && policy?.roles[input.request.role]) {
@@ -63,10 +68,20 @@ export function resolveModelRouteSelection(input: {
     binding = policy.roles[role];
   }
 
-  const targets = bindingTargets(binding ?? { model: input.agentDefault });
+  const configuredBinding = binding ?? { model: input.agentDefault };
+  const targets =
+    input.explicitPrimary &&
+    sameModel(input.explicitPrimary, configuredBinding.model)
+      ? bindingTargets(configuredBinding)
+      : input.explicitPrimary
+        ? [{ model: structuredClone(input.explicitPrimary) }]
+        : bindingTargets(configuredBinding);
+  if (input.explicitPrimary) source = "explicit";
   if (input.request?.fallbackModels) {
     targets.push(
-      ...input.request.fallbackModels.map((model) => ({ model: structuredClone(model) })),
+      ...input.request.fallbackModels.map((model) => ({
+        model: structuredClone(model),
+      })),
     );
   }
   return { role, path, source, targets: uniqueTargets(targets) };
@@ -76,7 +91,11 @@ export function routePath(source: RunInvocationSource): ModelRoutePath {
   if (source === "user") return "interactive";
   if (source === "recovery") return "recovery";
   if (source === "schedule" || source === "channel") return "automation";
-  if (source === "workflow" || source === "workflow_reuse" || source === "workflow_simulation") {
+  if (
+    source === "workflow" ||
+    source === "workflow_reuse" ||
+    source === "workflow_simulation"
+  ) {
     return "workflow";
   }
   return "experiment";
@@ -94,12 +113,16 @@ function bindingTargets(binding: ModelRoleRouteBinding): ModelRouteTarget[] {
         : {}),
     },
     ...(binding.fallbackTargets?.map((target) => structuredClone(target)) ??
-      binding.fallbackModels?.map((model) => ({ model: structuredClone(model) })) ??
+      binding.fallbackModels?.map((model) => ({
+        model: structuredClone(model),
+      })) ??
       []),
   ];
 }
 
-function uniqueTargets(targets: readonly ModelRouteTarget[]): ModelRouteTarget[] {
+function uniqueTargets(
+  targets: readonly ModelRouteTarget[],
+): ModelRouteTarget[] {
   const seen = new Set<string>();
   const unique: ModelRouteTarget[] = [];
   for (const target of targets) {
@@ -112,4 +135,8 @@ function uniqueTargets(targets: readonly ModelRouteTarget[]): ModelRouteTarget[]
     throw new Error("Model route supports at most 5 candidates");
   }
   return unique;
+}
+
+function sameModel(left: ModelRef, right: ModelRef): boolean {
+  return left.provider === right.provider && left.id === right.id;
 }

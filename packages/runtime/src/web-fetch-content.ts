@@ -7,6 +7,10 @@ import {
   type WebFetchSourceFormat,
 } from "./web-fetch-model.js";
 import { hasConservativeBrowserShell } from "./web-fetch-browser-shell.js";
+import {
+  detectWebFetchImage,
+  type WebFetchImageType,
+} from "./web-fetch-image.js";
 
 const TEXT_MIMES = new Set([
   "application/javascript",
@@ -31,6 +35,10 @@ export async function parseWebFetchBody(input: {
 }): Promise<ParsedWebContent> {
   throwIfAborted(input.signal);
   const mime = normalizeMime(input.contentType);
+  const image = detectWebFetchImage(input.body);
+  if (image) {
+    return parseImageBody(input.body, input.finalUrl, image);
+  }
   if (
     mime === "application/pdf" ||
     urlExtension(input.finalUrl) === ".pdf" ||
@@ -73,6 +81,20 @@ export async function parseWebFetchBody(input: {
   throw new Error(
     `Web fetch content type is unsupported: ${mime || "unknown"}`,
   );
+}
+
+function parseImageBody(
+  body: Buffer,
+  finalUrl: string,
+  image: WebFetchImageType,
+): ParsedWebContent {
+  const title =
+    decodeUrlFilename(finalUrl) || `Image (${image.kind.toUpperCase()})`;
+  return finalizeContent({
+    format: "image",
+    title,
+    text: `[Image source: ${title}; ${image.mime}; ${body.byteLength} bytes]`,
+  });
 }
 
 async function parsePdfBody(
@@ -324,6 +346,16 @@ function looksLikeText(value: Buffer): boolean {
 
 function decodeUtf8(value: Buffer): string {
   return new TextDecoder("utf-8", { fatal: true }).decode(value);
+}
+
+function decodeUrlFilename(value: string): string {
+  const filename = new URL(value).pathname.split("/").filter(Boolean).at(-1);
+  if (!filename) return "";
+  try {
+    return decodeURIComponent(filename);
+  } catch {
+    return filename;
+  }
 }
 
 function urlExtension(value: string): string {

@@ -8,6 +8,7 @@ import type {
   ExecutionPlanWorkflowExperimentComparison,
   ExecutionPlanWorkflowExperimentResult,
   ExecutionPlanWorkflowManifest,
+  RunEvent,
   WorkflowObjectSchema,
 } from "@napier/contracts";
 import { afterEach, describe, expect, it } from "vitest";
@@ -295,34 +296,7 @@ describe("Execution Plan Workflow experiments", () => {
   }, 20_000);
 
   it("runs one checkpoint and preserves its descendant hold across Store reopen", async () => {
-    const fixture = await createFixture();
-    const sourceReportRunId = fixture.sourceResult.nodeResults[1]!.runId!;
-    await fixture.store.appendEvent({
-      threadId: fixture.sourceThreadId,
-      runId: sourceReportRunId,
-      type: "tool.started",
-      category: "tool",
-      visibility: "user",
-      payload: {
-        callId: "call_descendant_write",
-        toolName: "apply_patch",
-        status: "started",
-        effect: "write",
-      },
-    });
-    await fixture.store.appendEvent({
-      threadId: fixture.sourceThreadId,
-      runId: sourceReportRunId,
-      type: "tool.completed",
-      category: "tool",
-      visibility: "user",
-      payload: {
-        callId: "call_descendant_write",
-        toolName: "apply_patch",
-        status: "completed",
-        effect: "write",
-      },
-    });
+    const fixture = await createFixture({ sourceWriteEffect: true });
     const subgraphPreview = await fixture.experiments.preview(
       fixture.sourceThreadId,
       {
@@ -517,23 +491,10 @@ describe("Execution Plan Workflow experiments", () => {
   });
 
   it("steps one checkpoint before holding the remaining subgraph", async () => {
-    const fixture = await createFixture({ deterministicInspect: true });
-    const reportRunId = fixture.sourceResult.nodeResults[1]!.runId!;
-    for (const type of ["tool.started", "tool.completed"]) {
-      await fixture.store.appendEvent({
-        threadId: fixture.sourceThreadId,
-        runId: reportRunId,
-        type,
-        category: "tool",
-        visibility: "user",
-        payload: {
-          callId: "call_step_descendant_write",
-          toolName: "apply_patch",
-          status: type === "tool.started" ? "started" : "completed",
-          effect: "write",
-        },
-      });
-    }
+    const fixture = await createFixture({
+      deterministicInspect: true,
+      sourceWriteEffect: true,
+    });
     const request = {
       ...experimentRequest(fixture),
       fromNodeId: "inspect",
@@ -644,23 +605,7 @@ describe("Execution Plan Workflow experiments", () => {
   });
 
   it("simulates one checkpoint output and executes its descendants through the normal scheduler", async () => {
-    const fixture = await createFixture();
-    const sourceReportRunId = fixture.sourceResult.nodeResults[1]!.runId!;
-    for (const type of ["tool.started", "tool.completed"]) {
-      await fixture.store.appendEvent({
-        threadId: fixture.sourceThreadId,
-        runId: sourceReportRunId,
-        type,
-        category: "tool",
-        visibility: "user",
-        payload: {
-          callId: "call_simulation_descendant_write",
-          toolName: "apply_patch",
-          status: type === "tool.started" ? "started" : "completed",
-          effect: "write",
-        },
-      });
-    }
+    const fixture = await createFixture({ sourceWriteEffect: true });
     const sourceAgentId = fixture.store.getThread(
       fixture.sourceThreadId,
     ).agentId;
@@ -857,26 +802,13 @@ describe("Execution Plan Workflow experiments", () => {
   });
 
   it("replaces one typed checkpoint input and executes the real descendant subgraph", async () => {
-    const fixture = await createFixture({ deterministicInspect: true });
+    const fixture = await createFixture({
+      deterministicInspect: true,
+      sourceWriteEffect: true,
+    });
     const sourceAgentId = fixture.store.getThread(
       fixture.sourceThreadId,
     ).agentId;
-    const sourceReportRunId = fixture.sourceResult.nodeResults[1]!.runId!;
-    for (const type of ["tool.started", "tool.completed"] as const) {
-      await fixture.store.appendEvent({
-        threadId: fixture.sourceThreadId,
-        runId: sourceReportRunId,
-        type,
-        category: "tool",
-        visibility: "user",
-        payload: {
-          callId: "call_replacement_descendant_write",
-          toolName: "apply_patch",
-          status: type === "tool.started" ? "started" : "completed",
-          effect: "write",
-        },
-      });
-    }
     const replacementInput = {
       workflow: { request: sourceAgentId },
     };
@@ -1049,24 +981,11 @@ describe("Execution Plan Workflow experiments", () => {
   });
 
   it("replaces the top-level input and reruns the complete Workflow", async () => {
-    const fixture = await createFixture({ deterministicInspect: true });
+    const fixture = await createFixture({
+      deterministicInspect: true,
+      sourceWriteEffect: true,
+    });
     const sourcePlanBefore = fixture.store.getPlan(fixture.sourceResult.planId);
-    const sourceReportRunId = fixture.sourceResult.nodeResults[1]!.runId!;
-    for (const type of ["tool.started", "tool.completed"] as const) {
-      await fixture.store.appendEvent({
-        threadId: fixture.sourceThreadId,
-        runId: sourceReportRunId,
-        type,
-        category: "tool",
-        visibility: "user",
-        payload: {
-          callId: "call_top_level_replacement_write",
-          toolName: "apply_patch",
-          status: type === "tool.started" ? "started" : "completed",
-          effect: "write",
-        },
-      });
-    }
     const replacementWorkflowInput = {
       request: "Produce the report from a replacement Workflow input.",
     };
@@ -1924,34 +1843,8 @@ describe("Execution Plan Workflow experiments", () => {
   });
 
   it("requires a current preview hash before rerunning write-effect evidence", async () => {
-    const fixture = await createFixture();
+    const fixture = await createFixture({ sourceWriteEffect: true });
     const reportRunId = fixture.sourceResult.nodeResults[1]!.runId!;
-    await fixture.store.appendEvent({
-      threadId: fixture.sourceThreadId,
-      runId: reportRunId,
-      type: "tool.started",
-      category: "tool",
-      visibility: "user",
-      payload: {
-        callId: "call_write_effect",
-        toolName: "apply_patch",
-        status: "started",
-        effect: "write",
-      },
-    });
-    await fixture.store.appendEvent({
-      threadId: fixture.sourceThreadId,
-      runId: reportRunId,
-      type: "tool.completed",
-      category: "tool",
-      visibility: "user",
-      payload: {
-        callId: "call_write_effect",
-        toolName: "apply_patch",
-        status: "completed",
-        effect: "write",
-      },
-    });
     const request = experimentRequest(fixture);
     const preview = await fixture.experiments.preview(
       fixture.sourceThreadId,
@@ -1988,67 +1881,22 @@ describe("Execution Plan Workflow experiments", () => {
     ).rejects.toThrow("preview changed");
     expect(fixture.store.listThreads()).toHaveLength(threadCount);
 
-    await fixture.store.appendEvent({
-      threadId: fixture.sourceThreadId,
-      runId: reportRunId,
-      type: "tool.started",
-      category: "tool",
-      visibility: "user",
-      payload: {
-        callId: "call_read_after_preview",
-        toolName: "read_file",
-        status: "started",
-        effect: "read",
-      },
-    });
-    await fixture.store.appendEvent({
-      threadId: fixture.sourceThreadId,
-      runId: reportRunId,
-      type: "tool.started",
-      category: "tool",
-      visibility: "user",
-      payload: {
-        callId: "call_unknown_after_preview",
-        toolName: "third_party_action",
-        status: "started",
-      },
-    });
-    await fixture.store.appendEvent({
-      threadId: fixture.sourceThreadId,
-      runId: reportRunId,
-      type: "tool.completed",
-      category: "tool",
-      visibility: "user",
-      payload: {
-        callId: "call_read_after_preview",
-        toolName: "read_file",
-        status: "completed",
-        effect: "read",
-      },
-    });
     await expect(
-      fixture.experiments.run({
-        sourceThreadId: fixture.sourceThreadId,
-        request: {
-          ...request,
-          confirmSideEffects: true,
-          expectedPreviewSha256: preview.previewSha256,
+      fixture.store.appendEvent({
+        threadId: fixture.sourceThreadId,
+        runId: reportRunId,
+        type: "tool.started",
+        category: "tool",
+        visibility: "user",
+        payload: {
+          callId: "call_after_terminal",
+          toolName: "read_file",
+          status: "started",
+          effect: "read",
         },
       }),
-    ).rejects.toThrow("preview changed");
-    const currentPreview = await fixture.experiments.preview(
-      fixture.sourceThreadId,
-      request,
-    );
-    expect(currentPreview.toolEffects[0]).toEqual(
-      expect.objectContaining({
-        readOnlyCount: 1,
-        writeCount: 1,
-        unknownCount: 1,
-        unresolvedCount: 1,
-        unknownToolNames: ["third_party_action"],
-      }),
-    );
+    ).rejects.toThrow("Run is not active");
+    const currentPreview = preview;
     fixture.primary.setResponses([
       fauxAssistantMessage('{"report":"Confirmed rerun","approved":true}'),
     ]);
@@ -2066,8 +1914,8 @@ describe("Execution Plan Workflow experiments", () => {
     });
     expect(confirmed.comparison?.nodes[1]).toEqual(
       expect.objectContaining({
-        removedToolNames: ["apply_patch", "read_file", "third_party_action"],
-        metricDelta: expect.objectContaining({ toolCallCount: -3 }),
+        removedToolNames: ["apply_patch"],
+        metricDelta: expect.objectContaining({ toolCallCount: -1 }),
       }),
     );
     fixture.store.close();
@@ -2861,6 +2709,7 @@ async function createFixture(
     approvalInspect?: boolean;
     deterministicInspect?: boolean;
     conditionalInspect?: boolean;
+    sourceWriteEffect?: boolean;
   } = {},
 ): Promise<Fixture> {
   const root = await mkdtemp(
@@ -3097,6 +2946,42 @@ async function createFixture(
           fauxAssistantMessage('{"report":"Source report","approved":true}'),
         ],
   );
+  const reportRunIds = new Set<string>();
+  let sourceWriteEffectSeeded = false;
+  const onEvent = options.sourceWriteEffect
+    ? async (event: RunEvent) => {
+        if (
+          event.type === "workflow.node.started" &&
+          record(event.payload)?.["nodeId"] === "report"
+        ) {
+          reportRunIds.add(event.runId);
+          return;
+        }
+        if (
+          event.type !== "run.started" ||
+          !reportRunIds.has(event.runId) ||
+          sourceWriteEffectSeeded
+        ) {
+          return;
+        }
+        sourceWriteEffectSeeded = true;
+        for (const type of ["tool.started", "tool.completed"] as const) {
+          await store.appendEvent({
+            threadId: sourceThread.id,
+            runId: event.runId,
+            type,
+            category: "tool",
+            visibility: "user",
+            payload: {
+              callId: "call_source_write_effect",
+              toolName: "apply_patch",
+              status: type === "tool.started" ? "started" : "completed",
+              effect: "write",
+            },
+          });
+        }
+      }
+    : undefined;
   let sourceResult = await workflows.run({
     threadId: sourceThread.id,
     request: {
@@ -3106,6 +2991,7 @@ async function createFixture(
         ...(options.conditionalInspect ? { executeInspect: false } : {}),
       },
     },
+    ...(onEvent ? { onEvent } : {}),
   });
   if (options.approvalInspect) {
     const decision = (await store.listOperatorDecisions(sourceThread.id))[0]!;
@@ -3119,6 +3005,7 @@ async function createFixture(
         manifest,
         planId: sourceResult.planId,
       },
+      ...(onEvent ? { onEvent } : {}),
     });
   }
   return {

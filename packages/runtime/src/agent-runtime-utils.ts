@@ -127,6 +127,7 @@ export function formatPlanToolGuidance(
   if (hasStepUpdate) {
     lines.push(
       "Start a step before acting on it, then complete, block, skip, or reopen it with concise evidence from the current run.",
+      "Do not batch transitions for dependency-linked steps in the same assistant response. Wait for each update_plan_step result, then use its readyStepIds and parallelReadyStepIds before transitioning dependents; only steps already listed together in parallelReadyStepIds may be batched.",
     );
   }
   if (hasArtifactUpdate) {
@@ -219,6 +220,13 @@ export function publicModelFailureMessage(
   }
   if (isModelContextOverflowMessage(normalized)) {
     return "The model context exceeded the provider limit. Start a smaller follow-up or reduce attached context, then retry.";
+  }
+  if (
+    /\bterminated\b|und_err_socket|socket hang up|connection (?:closed|reset|terminated)|premature close|econnreset|fetch failed/u.test(
+      normalized,
+    )
+  ) {
+    return "The model response stream ended unexpectedly. Safely resume the Run; select another configured model if the connection keeps failing.";
   }
   if (
     /\b(?:408|500|502|503|504)\b|timed? out|timeout|network|connection|overload|service unavailable|temporar|internal server error/u.test(

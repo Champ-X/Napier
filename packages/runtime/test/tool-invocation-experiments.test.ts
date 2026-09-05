@@ -228,9 +228,9 @@ describe("tool invocation experiments", () => {
     ).rejects.toThrow("capsule file is invalid");
   });
 
-  it("rejects write tools and direct restricted Run creation", async () => {
+  it("does not treat a capsule as authority for a restricted Run", async () => {
     const fixture = await createReadFileFixture();
-    expect(() =>
+    expect(
       createToolInvocationCapsule({
         sourceThreadId: fixture.threadId,
         sourceRunId: fixture.runId,
@@ -243,8 +243,8 @@ describe("tool invocation experiments", () => {
           expectedSha256: null,
           content: "not executed",
         },
-      }),
-    ).toThrow("not eligible");
+      }).toolName,
+    ).toBe("apply_patch");
     const agent = fixture.services.store.getAgent(
       fixture.services.store.getThread(fixture.threadId).agentId,
     );

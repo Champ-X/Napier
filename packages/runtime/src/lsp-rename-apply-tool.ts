@@ -4,6 +4,12 @@ import { Type } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { LspRenameMutationManager } from "./lsp-rename-mutation-manager.js";
+import {
+  defineToolProgress,
+  progressSemantics,
+  resultDetails,
+  stableFields,
+} from "./tool-progress-semantics.js";
 
 const lspRenameApplySchema = Type.Object(
   {
@@ -19,20 +25,38 @@ const lspRenameApplySchema = Type.Object(
 export function createLspRenameApplyTool(
   manager: LspRenameMutationManager,
 ): AgentTool<typeof lspRenameApplySchema, LspRenameApplyDetails> {
-  return {
-    name: "lsp_rename_apply",
-    label: "Apply LSP rename",
-    description:
-      "Apply one fresh same-Run lsp_rename preview as a coordinated multi-file write. Napier locks and rehashes every target, stages all outputs, attempts verified rollback on commit failure, and links bounded before/after diagnostics. Never retry an indeterminate result without inspecting the workspace.",
-    parameters: lspRenameApplySchema,
-    async execute(_toolCallId, input, signal) {
-      const result = await manager.apply(input.previewId, signal ?? undefined);
-      return {
-        content: [{ type: "text", text: result.summary }],
-        details: result.details,
-      };
+  return defineToolProgress(
+    {
+      name: "lsp_rename_apply",
+      label: "Apply LSP rename",
+      description:
+        "Apply one fresh same-Run lsp_rename preview as a coordinated multi-file write. Napier locks and rehashes every target, stages all outputs, attempts verified rollback on commit failure, and links bounded before/after diagnostics. Never retry an indeterminate result without inspecting the workspace.",
+      parameters: lspRenameApplySchema,
+      async execute(_toolCallId, input, signal) {
+        const result = await manager.apply(
+          input.previewId,
+          signal ?? undefined,
+        );
+        return {
+          content: [{ type: "text", text: result.summary }],
+          details: result.details,
+        };
+      },
     },
-  };
+    {
+      schemaVersion: 1,
+      classificationVersion: "1.0.0",
+      modes: [
+        { modeId: "apply_workspace", operation: "mutate", scope: "workspace", contribution: "product" },
+      ],
+      resolve: (input) => ({
+        semantics: progressSemantics("mutate", "workspace", "product"),
+        resourceKey: { kind: "lsp-rename-preview", input },
+      }),
+      state: (_input, result) =>
+        stableFields(resultDetails(result), ["resultSha256"]),
+    },
+  );
 }
 
 export function lspRenameApplyToolCallArgumentsLedgerProjection(

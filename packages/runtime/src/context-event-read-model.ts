@@ -29,8 +29,10 @@ const DIRECT_CONTEXT_EVENT_TYPES = new Set([
   "tool.blocked",
   "tool.result_reused",
   "run.environment.negotiated",
+  "run.progress.directive.delivered",
   "verification.completed",
   "workspace.file.mutated",
+  "workspace.file.recovered",
   "agent.milestone.recorded",
   "goal.evaluated",
 ]);

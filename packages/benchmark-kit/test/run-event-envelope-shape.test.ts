@@ -18,11 +18,27 @@ describe("Run event envelope shape", () => {
   it("accepts legacy and registered v1 envelopes only", () => {
     expect(hasExactRunEventEnvelope(EVENT)).toBe(true);
     expect(hasExactRunEventEnvelope({ ...EVENT, schemaVersion: 1 })).toBe(true);
+    expect(
+      hasExactRunEventEnvelope({
+        ...EVENT,
+        schemaVersion: 1,
+        idempotency: {
+          namespace: "durable-tool-execution-terminal",
+          key: "run_1:call_1:terminal",
+        },
+      }),
+    ).toBe(true);
     expect(hasExactRunEventEnvelope({ ...EVENT, schemaVersion: 2 })).toBe(
       false,
     );
     expect(
       hasExactRunEventEnvelope({ ...EVENT, schemaVersion: 1, extra: true }),
+    ).toBe(false);
+    expect(
+      hasExactRunEventEnvelope({
+        ...EVENT,
+        idempotency: { namespace: "INVALID", key: "call" },
+      }),
     ).toBe(false);
   });
 });

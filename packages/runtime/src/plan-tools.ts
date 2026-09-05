@@ -18,11 +18,13 @@ import { canonicalJson, sha256 } from "./ed25519.js";
 import { createPlanArtifactEventPayload } from "./plans.js";
 import {
   appendPlanCreatedEvent,
+  appendPlanReplannedEvent,
   appendPlanStepEvent,
 } from "./plan-tool-events.js";
 import { isPathInsideWorkspace } from "./policy.js";
 import { createReplanPolicyTemplate } from "./replan-policies.js";
 import type { LocalStore } from "./store.js";
+import { isMissingFileError } from "./store-core-utils.js";
 import {
   inspectStructuredData,
   type WorkspaceDataCell,
@@ -34,7 +36,6 @@ const MAX_ARTIFACT_PREVIEW_BYTES = 64 * 1024;
 const MAX_ARTIFACT_DATA_PROFILE_BYTES = 2 * 1024 * 1024;
 const MAX_ARTIFACT_DIRECTORY_MANIFEST_ENTRIES = 5_000;
 const MAX_ARTIFACT_DATA_PROFILE_ROWS = 10;
-const DIRECTORY_DIGEST_KIND = "napier.plan-directory-digest";
 
 export interface WorkspaceFileArtifactExport {
   contents: Buffer;
@@ -196,6 +197,7 @@ export function createPlanTools(
     label: "Create execution plan",
     description:
       "Create a durable dependency-aware plan for multi-step work with explicit verification.",
+    executionMode: "sequential",
     parameters: createPlanSchema,
     async execute(_toolCallId, input) {
       const plan = await store.createPlan(
@@ -215,6 +217,7 @@ export function createPlanTools(
     label: "Update plan step",
     description:
       "Start, complete, block, skip, or reopen a plan step; complete/skip require evidence. Completing a ready step auto-starts it.",
+    executionMode: "sequential",
     parameters: transitionPlanStepSchema,
     async execute(_toolCallId, input) {
       let current = assertPlanThread(store, input.planId, run.threadId);
@@ -268,6 +271,7 @@ export function createPlanTools(
     label: "Replan execution plan",
     description:
       "Apply a governed plan revision with current revision, reason, and evidence; supersede stale steps/artifacts, redirect dependencies, or add replacements.",
+    executionMode: "sequential",
     parameters: replanPlanSchema,
     async execute(_toolCallId, input) {
       const current = assertPlanThread(store, input.planId, run.threadId);
@@ -291,37 +295,7 @@ export function createPlanTools(
       const plan = await store.replanPlan(input.planId, request);
       const replan = plan.replans.at(-1)!;
       if (plan.revision !== current.revision) {
-        await store.appendEvent({
-          threadId: run.threadId,
-          runId: run.id,
-          type: "plan.replanned",
-          category: "plan",
-          visibility: "user",
-          payload: {
-            planId: plan.id,
-            replanId: replan.id,
-            strategy: replan.strategy,
-            fromRevision: replan.fromRevision,
-            toRevision: replan.toRevision,
-            replanSha256: replan.replanSha256,
-            addedStepIds: replan.addedStepIds,
-            addedArtifactIds: replan.addedArtifactIds,
-            supersededStepIds: replan.supersededStepIds,
-            supersededArtifactIds: replan.supersededArtifactIds,
-            dependencyUpdatedStepIds: replan.dependencyUpdatedStepIds,
-            addedStepsSha256: replan.addedStepsSha256,
-            addedArtifactsSha256: replan.addedArtifactsSha256,
-            dependencyUpdatesSha256: replan.dependencyUpdatesSha256,
-            status: plan.status,
-            criticalPathStepIds: plan.criticalPathStepIds,
-            readyStepIds: plan.readyStepIds,
-            blockedStepIds: plan.blockedStepIds,
-            activePhaseIndex: plan.activePhaseIndex,
-            parallelReadyStepIds: plan.parallelReadyStepIds,
-            phaseWaveCount: plan.phaseWaves.length,
-            phaseProjectionSha256: plan.phaseProjectionSha256,
-          },
-        });
+        await appendPlanReplannedEvent(store, run, plan);
       }
       return planToolResult(
         plan,
@@ -343,6 +317,7 @@ export function createPlanTools(
     label: "Update plan artifact",
     description:
       "Record or verify a planned artifact. File/directory verification hashes actual workspace bytes; the model cannot supply the digest.",
+    executionMode: "sequential",
     parameters: updatePlanArtifactSchema,
     async execute(_toolCallId, input) {
       const current = assertPlanThread(store, input.planId, run.threadId);
@@ -853,7 +828,7 @@ async function createWorkspaceDirectoryManifest(
     }
   });
   const digestContent = {
-    kind: DIRECTORY_DIGEST_KIND,
+    kind: "napier.plan-directory-digest",
     schemaVersion: 1,
     entries,
   };
@@ -985,8 +960,4 @@ function planToolResult<TDetails>(
     ],
     details,
   };
-}
-
-function isMissingFileError(error: unknown): boolean {
-  return error instanceof Error && "code" in error && error.code === "ENOENT";
 }

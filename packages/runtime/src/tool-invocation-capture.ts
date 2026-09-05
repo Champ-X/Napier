@@ -4,14 +4,16 @@ import type {
   ToolInvocationCapsuleReceipt,
 } from "@napier/contracts";
 
-import type { EventSink } from "./event-sink.js";
+import { emitBestEffort, type EventSink } from "./event-sink.js";
+import {
+  claimRunHeadEvent,
+  IdempotentEventConflictError,
+} from "./event-idempotency.js";
 import { sha256 } from "./ed25519.js";
 import type { LocalStore } from "./store.js";
-import {
-  TOOL_INVOCATION_EXPERIMENT_TOOLS,
-  toolDefinitionSha256,
-} from "./tool-invocation-capsule.js";
+import { toolInvocationExperimentProtocol } from "./tool-invocation-experiment-eligibility.js";
 import type { ToolInvocationCapsuleStore } from "./tool-invocation-capsule-store.js";
+import { createOwnedToolRecordV2 } from "./owned-tool-protocol.js";
 
 export async function captureToolInvocation(
   store: LocalStore,
@@ -24,20 +26,30 @@ export async function captureToolInvocation(
   definitionSha256?: string,
   onEvent?: EventSink,
 ): Promise<ToolInvocationCapsuleReceipt | undefined> {
-  if (!TOOL_INVOCATION_EXPERIMENT_TOOLS.has(toolName)) return undefined;
   try {
     if (!tool || tool.name !== toolName) {
       throw new Error("Tool definition is unavailable");
+    }
+    const invocation = toolInvocationExperimentProtocol(
+      createOwnedToolRecordV2(tool),
+      args,
+    );
+    if (!invocation) return undefined;
+    if (
+      definitionSha256 !== undefined &&
+      definitionSha256 !== invocation.definitionSha256
+    ) {
+      throw new Error("Tool definition hash does not match the owned protocol");
     }
     const receipt = await capsules.put({
       sourceThreadId: run.threadId,
       sourceRunId: run.id,
       callId,
       toolName,
-      toolDefinitionSha256: definitionSha256 ?? toolDefinitionSha256(tool),
+      toolDefinitionSha256: invocation.definitionSha256,
       arguments: args,
     });
-    await append(
+    await appendReceiptOnce(
       store,
       {
         threadId: run.threadId,
@@ -47,10 +59,12 @@ export async function captureToolInvocation(
         visibility: "debug",
         payload: JSON.parse(JSON.stringify(receipt)),
       },
+      `${run.id}:${callId}`,
       onEvent,
     );
     return receipt;
   } catch (error) {
+    if (error instanceof IdempotentEventConflictError) throw error;
     await append(
       store,
       {
@@ -71,6 +85,19 @@ export async function captureToolInvocation(
     );
     return undefined;
   }
+}
+
+async function appendReceiptOnce(
+  store: LocalStore,
+  input: Parameters<LocalStore["appendEvent"]>[0],
+  key: string,
+  onEvent?: EventSink,
+): Promise<void> {
+  const receipt = await claimRunHeadEvent(store, input, {
+    namespace: "tool-invocation-receipt",
+    key,
+  });
+  if (receipt.appended) await emitBestEffort(onEvent, receipt.event);
 }
 
 async function append(

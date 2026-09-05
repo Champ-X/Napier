@@ -333,7 +333,8 @@ function textEventMessages(
       : eventText;
   if (
     event.type === "message.user" ||
-    event.type === "goal.continuation.prompt"
+    event.type === "goal.continuation.prompt" ||
+    event.type === "run.progress.directive.delivered"
   ) {
     const message: UserMessage = {
       role: "user",

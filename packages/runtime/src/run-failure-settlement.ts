@@ -55,18 +55,6 @@ export async function settleRunFailure(input: {
     });
   }
   const failure = await recordBudgetSettlement(input);
-  await record(
-    input.store,
-    {
-      threadId: input.run.threadId,
-      runId: input.run.id,
-      type: failure.eventType,
-      category: "lifecycle",
-      visibility: "user",
-      payload: failure.payload,
-    },
-    input.onEvent,
-  );
   if (input.invocationSource === "recovery" && input.parentRunId) {
     await record(
       input.store,
@@ -96,6 +84,11 @@ export async function settleRunFailure(input: {
     ...(failure.outcome ? { outcome: failure.outcome } : {}),
     usage: input.usage,
     leaseToken: input.leaseToken,
+    terminalEvent: {
+      visibility: "user",
+      payload: failure.payload,
+    },
+    onTerminalEvent: input.onEvent,
   });
 }
 

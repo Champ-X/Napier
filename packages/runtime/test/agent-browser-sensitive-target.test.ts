@@ -113,7 +113,7 @@ describe("Agent Browser sensitive-target handoff", () => {
           kind: "napier.tool-ui-projection",
           schemaVersion: 2,
           toolId: "browser",
-          semanticVersion: "2.0.0",
+          semanticVersion: "2.1.0",
           definitionSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
           implementationSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
           status: "blocked",

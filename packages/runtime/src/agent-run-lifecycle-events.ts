@@ -47,18 +47,6 @@ export async function finishSuccessfulAgentRun(input: {
   leaseToken: string;
   onEvent?: EventSink;
 }): Promise<RunRecord> {
-  await record(
-    input.store,
-    {
-      threadId: input.run.threadId,
-      runId: input.run.id,
-      type: "run.completed",
-      category: "lifecycle",
-      visibility: "debug",
-      payload: { status: "completed" },
-    },
-    input.onEvent,
-  );
   if (input.invocationSource === "recovery" && input.parentRunId) {
     await record(
       input.store,
@@ -83,6 +71,11 @@ export async function finishSuccessfulAgentRun(input: {
   return input.store.finishRun(input.run.id, "completed", {
     usage: input.usage,
     leaseToken: input.leaseToken,
+    terminalEvent: {
+      visibility: "debug",
+      payload: { status: "completed" },
+    },
+    onTerminalEvent: input.onEvent,
   });
 }
 

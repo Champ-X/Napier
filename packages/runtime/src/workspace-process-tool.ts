@@ -24,6 +24,12 @@ import {
   workspaceProcessWritePreviewToolResult as writePreviewToolResult,
 } from "./workspace-process-tool-result.js";
 import { workspaceProcessWriteActionSchema } from "./workspace-process-write-tool-schema.js";
+import {
+  defineToolProgress,
+  progressSemantics,
+  recordValue,
+  resultDetails,
+} from "./tool-progress-semantics.js";
 
 const workspaceProcessSchema = Type.Union([
   Type.Object(
@@ -134,7 +140,10 @@ export function createWorkspaceProcessTool(
   manager: WorkspaceProcessManager,
   context: { threadId: string; runId: string },
 ): AgentTool<typeof workspaceProcessSchema, WorkspaceProcessToolDetails> {
-  return {
+  const tool: AgentTool<
+    typeof workspaceProcessSchema,
+    WorkspaceProcessToolDetails
+  > = {
     name: "workspace_process",
     label: "Workspace process",
     description:
@@ -238,6 +247,31 @@ export function createWorkspaceProcessTool(
       return toolResult("cancel", session, []);
     },
   };
+  return defineToolProgress(tool, {
+    schemaVersion: 1,
+    classificationVersion: "1.0.0",
+    modes: [
+      { modeId: "observe_process", operation: "observe", scope: "session", contribution: "neutral" },
+      { modeId: "start_workspace_write", operation: "mutate", scope: "workspace", contribution: "neutral" },
+    ],
+    resolve: (input, result) => {
+      const action = recordValue(input)["action"];
+      const details = result ? resultDetails(result) : {};
+      return {
+        // A tool response only observes/initiates the process. The durable
+        // workspace.process.settled event is the single canonical product
+        // effect, so polling cannot count the same write a second time.
+        semantics:
+          action === "start_write"
+            ? progressSemantics("mutate", "workspace", "neutral")
+            : progressSemantics("observe", "session", "neutral"),
+        resourceKey: {
+          kind: "workspace-process-observation",
+          processId: details["processId"] ?? recordValue(input)["processId"],
+        },
+      };
+    },
+  });
 }
 
 export function workspaceProcessToolCallArgumentsLedgerProjection(

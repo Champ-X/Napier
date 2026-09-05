@@ -216,27 +216,20 @@ export class ExecutionPlanWorkflowApprovalRuntime {
               ? "cancelled"
               : "approval_request_failed";
       if (!settled) {
-        await this.ledger
-          .append(
-            {
-              threadId: options.threadId,
-              runId: leased.run.id,
-              type: cancelled ? "run.cancelled" : "run.failed",
-              category: "lifecycle",
-              visibility: "user",
-              payload: {
-                status: cancelled ? "cancelled" : "failed",
-                errorCode: code,
-                diagnosticSha256: sha256(errorMessage(error)),
-              },
-            },
-            options.onEvent,
-          )
-          .catch(() => undefined);
+        const diagnosticSha256 = sha256(errorMessage(error));
         await this.store
           .finishRun(leased.run.id, cancelled ? "cancelled" : "failed", {
             error: `Workflow approval ${code}`,
             leaseToken: leased.token,
+            terminalEvent: {
+              visibility: "user",
+              payload: {
+                status: cancelled ? "cancelled" : "failed",
+                errorCode: code,
+                diagnosticSha256,
+              },
+            },
+            onTerminalEvent: options.onEvent,
           })
           .catch(() => undefined);
       }
@@ -291,12 +284,9 @@ export class ExecutionPlanWorkflowApprovalRuntime {
         leased.run.id,
       );
       await emitOperatorDecisionMutation(mutation, options.onEvent);
-      await this.ledger.append(
-        {
-          threadId: options.threadId,
-          runId: leased.run.id,
-          type: "run.completed",
-          category: "lifecycle",
+      await this.store.finishRun(leased.run.id, "completed", {
+        leaseToken: leased.token,
+        terminalEvent: {
           visibility: "debug",
           payload: {
             status: "completed",
@@ -304,10 +294,7 @@ export class ExecutionPlanWorkflowApprovalRuntime {
             workflowApprovalDecisionId: options.decision.id,
           },
         },
-        options.onEvent,
-      );
-      await this.store.finishRun(leased.run.id, "completed", {
-        leaseToken: leased.token,
+        onTerminalEvent: options.onEvent,
       });
       settled = true;
       return mutation.decision;

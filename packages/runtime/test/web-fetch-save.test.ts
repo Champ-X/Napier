@@ -21,9 +21,18 @@ import {
 import { RunWebFetchSaveManager } from "../src/web-fetch-save.js";
 import { WebFetchCapsuleStore } from "../src/web-fetch-capsule-store.js";
 import { RunWebFetchSourceManager } from "../src/web-fetch-sources.js";
+import {
+  DurableToolOperationJournal,
+  projectSettledToolOperationProgress,
+} from "../src/tool-operation-journal.js";
 
 const OWNER_URL = "https://example.com/report.pdf";
 const PDF_BODY = minimalPdf("Saved PDF evidence.");
+const IMAGE_URL = "https://example.com/official-poster.png";
+const PNG_BODY = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+  "base64",
+);
 const roots: string[] = [];
 
 afterEach(async () => {
@@ -49,10 +58,17 @@ describe("RunWebFetchSaveManager", () => {
       now: () => new Date("2026-08-06T00:00:00.000Z"),
     });
 
-    const result = await manager.execute(fixture.owner, {
-      url: OWNER_URL,
-      path: "artifacts/report.pdf",
-    });
+    const result = await manager.execute(
+      fixture.owner,
+      {
+        url: OWNER_URL,
+        path: "artifacts/report.pdf",
+      },
+      undefined,
+      new DurableToolOperationJournal(fixture.store, fixture.owner).observer(
+        "call_save_pipeline",
+      ),
+    );
 
     expect(http.request).toHaveBeenCalledOnce();
     await expect(
@@ -108,6 +124,55 @@ describe("RunWebFetchSaveManager", () => {
         .filter((event) => event.type.startsWith("plan.artifact."))
         .map((event) => event.type),
     ).toEqual(["plan.artifact.produced", "plan.artifact.verified"]);
+    const operationEvents = (
+      await fixture.store.listRunEvents(fixture.owner.runId)
+    ).filter((event) => event.type.startsWith("tool.operation."));
+    expect(
+      operationEvents
+        .filter((event) => event.type === "tool.operation.proposed")
+        .map((event) =>
+          event.payload &&
+          typeof event.payload === "object" &&
+          !Array.isArray(event.payload)
+            ? event.payload["route"]
+            : undefined,
+        ),
+    ).toEqual([
+      "preflight",
+      "static_http",
+      "retain_source",
+      "validate_content",
+      "write_file",
+      "verify_bytes",
+      "register_artifact",
+    ]);
+    const operationProgress =
+      projectSettledToolOperationProgress(operationEvents);
+    expect(operationProgress.suppressParentSingletonCallIds).toEqual([
+      "call_save_pipeline",
+    ]);
+    expect(operationProgress.observations).toHaveLength(7);
+    expect(
+      operationProgress.observations.filter(
+        (operation) => operation.progress.contribution === "product",
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        route: "write_file",
+        outcome: "succeeded",
+      }),
+    ]);
+    expect(
+      operationProgress.observations
+        .filter(
+          (operation) => operation.progress.contribution === "verification",
+        )
+        .map((operation) => operation.route),
+    ).toEqual(["verify_bytes", "register_artifact"]);
+    expect(JSON.stringify(operationEvents)).not.toContain(OWNER_URL);
+    expect(JSON.stringify(operationEvents)).not.toContain(
+      "artifacts/report.pdf",
+    );
     expect(
       verifyThreadReplayBundle(
         createThreadReplayBundle(
@@ -115,6 +180,74 @@ describe("RunWebFetchSaveManager", () => {
         ),
       ).status,
     ).toBe("valid");
+    fixture.store.close();
+  });
+
+  it("saves signature-verified raster images as Plan Artifacts", async () => {
+    const fixture = await createFixture("artifacts/official-poster.png");
+    const http = { request: vi.fn(async () => imageResponse()) };
+    const sources = sourceManager(fixture, http);
+    const manager = new RunWebFetchSaveManager({
+      workspaceRoot: fixture.workspaceRoot,
+      store: fixture.store,
+      retainSource: sources,
+      http,
+    });
+
+    const result = await manager.execute(fixture.owner, {
+      url: IMAGE_URL,
+      path: "artifacts/official-poster.png",
+    });
+
+    await expect(
+      readFile(
+        path.join(fixture.workspaceRoot, "artifacts/official-poster.png"),
+      ),
+    ).resolves.toEqual(PNG_BODY);
+    expect(result.details).toEqual(
+      expect.objectContaining({
+        sourceFormat: "image",
+        fileSha256: sha256(PNG_BODY),
+        sourceBodySha256: sha256(PNG_BODY),
+        artifactRegistration: "artifact_registered",
+      }),
+    );
+    const read = await sources.execute(fixture.owner, {
+      action: "read",
+      sourceId: result.details.sourceId,
+      sourceContentSha256: result.details.sourceContentSha256,
+      startLine: 1,
+      endLine: result.details.sourceLineCount,
+    });
+    expect(read.output).toContain("image/png");
+    expect(fixture.store.getPlan(fixture.planId).artifacts[0]?.status).toBe(
+      "verified",
+    );
+    fixture.store.close();
+  });
+
+  it("rejects an image extension that disagrees with its byte signature", async () => {
+    const fixture = await createFixture("artifacts/official-poster.jpg");
+    const manager = new RunWebFetchSaveManager({
+      workspaceRoot: fixture.workspaceRoot,
+      store: fixture.store,
+      retainSource: sourceManager(fixture, {
+        request: vi.fn(async () => imageResponse()),
+      }),
+      http: { request: vi.fn(async () => imageResponse()) },
+    });
+
+    await expect(
+      manager.execute(fixture.owner, {
+        url: IMAGE_URL,
+        path: "artifacts/official-poster.jpg",
+      }),
+    ).rejects.toThrow("does not match image content");
+    await expect(
+      readFile(
+        path.join(fixture.workspaceRoot, "artifacts/official-poster.jpg"),
+      ),
+    ).rejects.toMatchObject({ code: "ENOENT" });
     fixture.store.close();
   });
 
@@ -176,10 +309,18 @@ describe("RunWebFetchSaveManager", () => {
       http: { request: vi.fn(async () => response()) },
     });
     await expect(
-      extensionManager.execute(extension.owner, {
-        url: OWNER_URL,
-        path: "artifacts/report.txt",
-      }),
+      extensionManager.execute(
+        extension.owner,
+        {
+          url: OWNER_URL,
+          path: "artifacts/report.txt",
+        },
+        undefined,
+        new DurableToolOperationJournal(
+          extension.store,
+          extension.owner,
+        ).observer("call_save_invalid_format"),
+      ),
     ).rejects.toThrow("does not match pdf content");
     await expect(
       readFile(path.join(extension.workspaceRoot, "artifacts/report.txt")),
@@ -191,6 +332,25 @@ describe("RunWebFetchSaveManager", () => {
         output: expect.stringContaining("websource_"),
       }),
     );
+    const extensionOperations = projectSettledToolOperationProgress(
+      (await extension.store.listRunEvents(extension.owner.runId)).filter(
+        (event) => event.type.startsWith("tool.operation."),
+      ),
+    );
+    expect(extensionOperations.suppressParentSingletonCallIds).toEqual([
+      "call_save_invalid_format",
+    ]);
+    expect(
+      extensionOperations.observations.map((operation) => ({
+        route: operation.route,
+        outcome: operation.outcome,
+      })),
+    ).toEqual([
+      { route: "preflight", outcome: "succeeded" },
+      { route: "static_http", outcome: "succeeded" },
+      { route: "retain_source", outcome: "succeeded" },
+      { route: "validate_content", outcome: "failed" },
+    ]);
     extension.store.close();
 
     const symlinked = await createFixture("linked/report.pdf", undefined, true);
@@ -400,6 +560,16 @@ function response(): PublicHttpResponse {
     headers: { "content-type": "application/pdf" },
     body: PDF_BODY,
     finalUrl: OWNER_URL,
+    redirectCount: 0,
+  };
+}
+
+function imageResponse(): PublicHttpResponse {
+  return {
+    status: 200,
+    headers: { "content-type": "application/octet-stream" },
+    body: PNG_BODY,
+    finalUrl: IMAGE_URL,
     redirectCount: 0,
   };
 }

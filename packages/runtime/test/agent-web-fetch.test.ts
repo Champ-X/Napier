@@ -123,6 +123,11 @@ describe("default Agent web fetch integration", () => {
         { action: "fetch", url: sourceUrl },
         expect.any(AbortSignal),
         { browserFallbackAllowed: true },
+        expect.objectContaining({ operation: expect.any(Function) }),
+        expect.objectContaining({
+          kind: "napier.web-fetch-materialization",
+          materializationSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        }),
       );
       expect(executor.execute).toHaveBeenNthCalledWith(
         2,
@@ -134,6 +139,8 @@ describe("default Agent web fetch integration", () => {
         }),
         expect.any(AbortSignal),
         { browserFallbackAllowed: true },
+        undefined,
+        undefined,
       );
       expect(executor.cancelRun).toHaveBeenCalledWith({
         threadId: thread.id,
@@ -163,9 +170,7 @@ describe("default Agent web fetch integration", () => {
       );
       expect(JSON.stringify(progress)).not.toContain("PRIVATE_STAGE_TEXT");
       expect(JSON.stringify(streamed)).not.toContain("PRIVATE_STAGE_TEXT");
-      expect(JSON.stringify(streamed)).not.toContain(
-        "PRIVATE_STAGE_REASONING",
-      );
+      expect(JSON.stringify(streamed)).not.toContain("PRIVATE_STAGE_REASONING");
       const completed = events.filter(
         (event) =>
           event.type === "tool.completed" &&

@@ -17,7 +17,6 @@ import path from "node:path";
 
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { Type } from "typebox";
-
 import { isPathInsideWorkspace } from "./policy.js";
 import {
   inspectStructuredData,
@@ -35,6 +34,7 @@ import type {
 } from "./workspace-patch-model.js";
 import { assertWorkspacePatchRangeSha256 } from "./workspace-patch-range.js";
 import { withWorkspacePathLock } from "./workspace-write-lock.js";
+import { defineWorkspaceReadToolProtocol } from "./workspace-read-tool-protocol.js";
 export type { WorkspaceDataFormat } from "./structured-data.js";
 export type {
   WorkspacePatchInput,
@@ -1205,7 +1205,7 @@ export function createWorkspaceTools(
     },
   };
 
-  const readTextFile: AgentTool<typeof readFileSchema, WorkspaceReadDetails> = {
+  const readTextFile: AgentTool<typeof readFileSchema, WorkspaceReadDetails> = defineWorkspaceReadToolProtocol({
     name: "read_file",
     label: "Read file",
     description: `Read a workspace-relative UTF-8 file or 1-based line range, up to ${MAX_READ_BYTES / 1024} KB.`,
@@ -1270,7 +1270,7 @@ export function createWorkspaceTools(
         },
       };
     },
-  };
+  });
 
   const searchFiles: AgentTool<
     typeof searchFilesSchema,

@@ -1,5 +1,6 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 
+import { preserveAgentToolIdentity } from "./agent-tool-metadata.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
   observeSubagentWorktreeCandidate,
@@ -76,7 +77,7 @@ export class SubagentWorktreeOperationCoordinator {
     session: SubagentWorktreeSession,
     verifyToolchain?: () => Promise<void>,
   ): AgentTool {
-    return {
+    return preserveAgentToolIdentity(tool, {
       ...tool,
       execute: (toolCallId, args, signal) =>
         this.runReadOnlyOperation(
@@ -86,7 +87,7 @@ export class SubagentWorktreeOperationCoordinator {
           verifyToolchain,
           signal,
         ),
-    };
+    });
   }
 
   wrapMutationTool(
@@ -94,7 +95,7 @@ export class SubagentWorktreeOperationCoordinator {
     session: SubagentWorktreeSession,
     verifyToolchain?: () => Promise<void>,
   ): AgentTool {
-    return {
+    return preserveAgentToolIdentity(tool, {
       ...tool,
       execute: (toolCallId, args, signal) =>
         this.serial(async () => {
@@ -122,7 +123,7 @@ export class SubagentWorktreeOperationCoordinator {
             throw failure;
           }
         }),
-    };
+    });
   }
 
   assertIntegrity(): void {
@@ -139,7 +140,7 @@ export class SubagentWorktreeOperationCoordinator {
     if (tool.name !== "lsp_diagnostics" && tool.name !== "verify_workspace") {
       throw new Error("Coder candidate verification tool is unsupported");
     }
-    return {
+    return preserveAgentToolIdentity(tool, {
       ...tool,
       execute: (toolCallId, args, signal) =>
         this.serial(async () => {
@@ -192,7 +193,7 @@ export class SubagentWorktreeOperationCoordinator {
             throw error;
           }
         }),
-    };
+    });
   }
 
   wrapCommandTool(
@@ -203,7 +204,7 @@ export class SubagentWorktreeOperationCoordinator {
     if (tool.name !== "run_command") {
       throw new Error("Coder candidate command tool is unsupported");
     }
-    return {
+    return preserveAgentToolIdentity(tool, {
       ...tool,
       execute: (toolCallId, args, signal) =>
         this.serial(async () => {
@@ -269,7 +270,7 @@ export class SubagentWorktreeOperationCoordinator {
             throw failure;
           }
         }),
-    };
+    });
   }
 
   async settle(): Promise<void> {

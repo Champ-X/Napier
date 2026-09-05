@@ -14,10 +14,21 @@ import {
   createRunControlMessageCancelledPayload,
   projectRunControlMessages,
 } from "./run-control-messages.js";
-import type { StoreRepositoryHost } from "./store-repository-host.js";
+import type { AppendEventInput } from "./run-event-registry.js";
+
+export interface RunLifecycleCancellationHost {
+  requireLedger(): {
+    listEvents(threadId: string, afterSeq?: number): RunEvent[];
+  };
+  appendEventsToThread(
+    thread: ThreadRecord,
+    inputs: AppendEventInput[],
+    options?: { createdAt?: string },
+  ): RunEvent[];
+}
 
 export function cancelPendingRunControlMessages(
-  host: StoreRepositoryHost,
+  host: RunLifecycleCancellationHost,
   thread: ThreadRecord,
   runId: string,
   reason: RunControlMessageCancellationReason,
@@ -40,7 +51,7 @@ export function cancelPendingRunControlMessages(
 }
 
 export function cancelPendingOperatorDecisions(
-  host: StoreRepositoryHost,
+  host: RunLifecycleCancellationHost,
   thread: ThreadRecord,
   runId: string,
   reason: OperatorDecisionCancellationReason,

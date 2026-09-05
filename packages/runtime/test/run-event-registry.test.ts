@@ -5,6 +5,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
+  assertRunEventAdmissionPartition,
   listRunEventSchemas,
   resolveCompatibilityEventInput,
   resolveExtensionEventInput,
@@ -57,6 +58,45 @@ describe("Run event registry", () => {
     const contextProjection = schemas.find(
       (candidate) => candidate.type === "context.projected",
     );
+    const toolAdmission = schemas.find(
+      (candidate) => candidate.type === "tool.admitted",
+    );
+    const toolSettlement = schemas.find(
+      (candidate) => candidate.type === "tool.operation.settled",
+    );
+    const operatorEpoch = schemas.find(
+      (candidate) => candidate.type === "run.progress.operator_epoch",
+    );
+    const controlDelivery = schemas.find(
+      (candidate) => candidate.type === "run.control.delivered",
+    );
+    const browserApproval = schemas.find(
+      (candidate) =>
+        candidate.type === "browser.interaction_confirmation.approved",
+    );
+    const routeStart = schemas.find(
+      (candidate) => candidate.type === "route_attempt_started",
+    );
+    const workflowStart = schemas.find(
+      (candidate) => candidate.type === "workflow.node.started",
+    );
+    const localServiceGrant = schemas.find(
+      (candidate) =>
+        candidate.type === "workspace.process.local_service_lease.granted",
+    );
+    const localServiceRevocation = schemas.find(
+      (candidate) =>
+        candidate.type === "workspace.process.local_service_lease.revoked",
+    );
+    const operatorAnswer = schemas.find(
+      (candidate) => candidate.type === "operator.decision.answered",
+    );
+    const operatorRequest = schemas.find(
+      (candidate) => candidate.type === "operator.decision.requested",
+    );
+    const operatorContinuation = schemas.find(
+      (candidate) => candidate.type === "operator.decision.continued",
+    );
 
     expect(message).toEqual(
       expect.objectContaining({
@@ -100,6 +140,67 @@ describe("Run event registry", () => {
         schemaVersion: 1,
       }),
     );
+    expect(toolAdmission?.admission).toBe("run_active");
+    expect(toolSettlement?.admission).toBe("run_any");
+    expect(operatorEpoch?.admission).toBe("run_active");
+    expect(controlDelivery?.admission).toBe("run_active");
+    expect(browserApproval?.admission).toBe("run_active");
+    expect(routeStart?.admission).toBe("run_active");
+    expect(workflowStart?.admission).toBe("run_any");
+    expect(localServiceGrant?.admission).toBe("run_active");
+    expect(localServiceRevocation?.admission).toBe("run_any");
+    expect(operatorRequest?.admission).toBe("run_active");
+    expect(operatorAnswer?.admission).toBe("run_any");
+    expect(operatorContinuation?.admission).toBe("run_any");
+    expect(
+      schemas.find((candidate) => candidate.type === "workspace.file.mutated")
+        ?.admission,
+    ).toBe("run_active");
+    expect(
+      schemas.find((candidate) => candidate.type === "workspace.file.recovered")
+        ?.admission,
+    ).toBe("run_any");
+    for (const type of [
+      "run.recovery.started",
+      "model.advisor.correction.requested",
+    ]) {
+      expect(
+        schemas.find((candidate) => candidate.type === type)?.admission,
+      ).toBe("run_active");
+    }
+    for (const type of [
+      "run.recovery.auto.claimed",
+      "run.recovery.auto.started",
+      "receipt.trust_rotation_proposal_approval_apply.queued",
+      "receipt.trust_rotation_proposal_approval_policy_apply.queued",
+      "schedule.claimed",
+      "channel.delivery.started",
+      "channel.delivery.retry.requested",
+      "channel.delivery.retry.scheduled",
+      "plan.replanned",
+      "plan.step.reopened",
+      "plan.step.started",
+      "workflow.approval.requested",
+      "workflow.breakpoint.continued",
+      "workflow.experiment.started",
+      "workflow.started",
+      "workflow.node.input_replacement.requested",
+      "workflow.node.simulation.requested",
+    ]) {
+      expect(
+        schemas.find((candidate) => candidate.type === type)?.admission,
+      ).toBe("run_any");
+    }
+    for (const type of [
+      "run.completed",
+      "run.failed",
+      "run.cancelled",
+      "run.interrupted",
+    ]) {
+      expect(
+        schemas.find((candidate) => candidate.type === type)?.admission,
+      ).toBe("terminal_transition");
+    }
     expect(new Set(schemas.map((schema) => schema.type)).size).toBe(
       schemas.length,
     );
@@ -124,10 +225,69 @@ describe("Run event registry", () => {
       runId: "run_registry",
       type: "message.user",
       category: "message",
+      admission: "run_any",
       visibility: "user",
       payload: { role: "user", text: "Hello" },
       schemaVersion: 1,
     });
+  });
+
+  it("applies lifecycle admission from the event definition", () => {
+    expect(
+      resolveRegisteredEventInput({
+        threadId: "thread_registry",
+        runId: "run_registry",
+        type: "tool.admitted",
+        category: "tool",
+        payload: { callId: "call_registry", toolName: "read_file" },
+      }).admission,
+    ).toBe("run_active");
+    expect(
+      resolveRegisteredEventInput({
+        threadId: "thread_registry",
+        runId: "run_registry",
+        type: "tool.completed",
+        category: "tool",
+        payload: { callId: "call_registry", toolName: "read_file" },
+      }).admission,
+    ).toBe("run_any");
+    expect(
+      resolveRegisteredEventInput({
+        threadId: "thread_registry",
+        runId: "run_registry",
+        type: "run.completed",
+        category: "lifecycle",
+        payload: { status: "completed" },
+        admission: "run_active",
+      }).admission,
+    ).toBe("terminal_transition");
+  });
+
+  it("rejects incomplete or overlapping event admission partitions", () => {
+    expect(() =>
+      assertRunEventAdmissionPartition({
+        types: ["authority.started", "authority.settled"],
+        activeRunTypes: ["authority.started"],
+        runAnyTypes: [],
+        terminalTransitionTypes: [],
+      }),
+    ).toThrow("omits type: authority.settled");
+    expect(() =>
+      assertRunEventAdmissionPartition({
+        types: ["authority.started"],
+        activeRunTypes: ["authority.started"],
+        runAnyTypes: ["authority.started"],
+        terminalTransitionTypes: [],
+      }),
+    ).toThrow("overlaps: authority.started");
+    expect(() =>
+      assertRunEventAdmissionPartition({
+        types: ["run.completed"],
+        activeRunTypes: [],
+        runAnyTypes: ["run.completed"],
+        terminalTransitionTypes: ["run.completed"],
+      }),
+    ).toThrow("overlaps: run.completed");
   });
 
   it("validates the public progress-message privacy boundary", () => {

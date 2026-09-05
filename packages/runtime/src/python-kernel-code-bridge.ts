@@ -3,11 +3,22 @@ import type {
   GovernedCodeBridgeRequest,
   GovernedCodeBridgeResult,
 } from "./governed-code-bridge-model.js";
+import {
+  formatKernelCodeBridgeResponseFrames,
+  MAX_KERNEL_CODE_BRIDGE_FRAME_PAYLOAD_BYTES,
+  MAX_KERNEL_CODE_BRIDGE_RESPONSE_FRAMES,
+  MAX_KERNEL_CODE_BRIDGE_RESULT_BYTES,
+} from "./kernel-code-bridge-framing.js";
 
 export const PYTHON_KERNEL_CALL_PREFIX = "NAPIER_PY_CALL ";
 export const PYTHON_KERNEL_CALL_RESULT_PREFIX = "NAPIER_PY_CALL_RESULT ";
 export const MAX_PYTHON_KERNEL_BRIDGE_INPUT_BYTES = 32 * 1024;
-export const MAX_PYTHON_KERNEL_BRIDGE_RESULT_BYTES = 256 * 1024;
+export const MAX_PYTHON_KERNEL_BRIDGE_RESULT_BYTES =
+  MAX_KERNEL_CODE_BRIDGE_RESULT_BYTES;
+export const MAX_PYTHON_KERNEL_BRIDGE_FRAME_PAYLOAD_BYTES =
+  MAX_KERNEL_CODE_BRIDGE_FRAME_PAYLOAD_BYTES;
+export const MAX_PYTHON_KERNEL_BRIDGE_RESPONSE_FRAMES =
+  MAX_KERNEL_CODE_BRIDGE_RESPONSE_FRAMES;
 
 export type PythonKernelCodeBridgeRequest = GovernedCodeBridgeRequest;
 export type PythonKernelCodeBridgeResult = GovernedCodeBridgeResult;
@@ -58,27 +69,22 @@ export function formatPythonKernelCodeBridgeResponse(input: {
   callId: number;
   result?: PythonKernelCodeBridgeResult;
   error?: string;
-}): string {
-  const resultJson =
-    input.result === undefined ? undefined : JSON.stringify(input.result);
-  if (
-    resultJson !== undefined &&
-    Buffer.byteLength(resultJson, "utf8") >
-      MAX_PYTHON_KERNEL_BRIDGE_RESULT_BYTES
-  ) {
-    throw new Error("Python Code Bridge result exceeded its limit");
+}): readonly string[] {
+  try {
+    return formatKernelCodeBridgeResponseFrames({
+      prefix: PYTHON_KERNEL_CALL_RESULT_PREFIX,
+      kind: "napier.python-kernel-call-result-frame",
+      ...input,
+    });
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "Code Bridge result exceeded its limit"
+    ) {
+      throw new Error("Python Code Bridge result exceeded its limit");
+    }
+    throw error;
   }
-  return `${PYTHON_KERNEL_CALL_RESULT_PREFIX}${JSON.stringify({
-    kind: "napier.python-kernel-call-result",
-    schemaVersion: 1,
-    evaluationId: input.evaluationId,
-    callId: input.callId,
-    ok: input.result !== undefined,
-    ...(resultJson !== undefined ? { resultJson } : {}),
-    ...(input.error !== undefined
-      ? { error: input.error.slice(0, 1_000) }
-      : {}),
-  })}`;
 }
 
 function record(value: unknown): value is Record<string, unknown> {

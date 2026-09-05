@@ -131,7 +131,7 @@ describe("Agent tool deadline", () => {
       expect.objectContaining({
         toolName: "mcp__slow_service__slow",
         reason: "deadline_exceeded",
-        effect: "unknown",
+        effect: "read",
         state: "started_unknown",
         timeoutMs: 100,
         graceMs: 50,

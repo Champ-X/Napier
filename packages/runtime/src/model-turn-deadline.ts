@@ -1,6 +1,8 @@
 import type { AssistantMessageEvent } from "@earendil-works/pi-ai";
+import type { RouteFailureClass } from "@napier/contracts/model-route";
 
 import { publicModelFailureMessage } from "./agent-runtime-utils.js";
+import { classifyRouteFailure } from "./model-route-policy.js";
 import { parseModelThinkingLoopError } from "./model-thinking-loop-policy.js";
 
 export type ModelTurnWatchdogReason =
@@ -37,6 +39,24 @@ export class ModelTurnWatchdogError extends Error {
     super(watchdogMessage(evidence));
     this.name = "ModelTurnWatchdogError";
   }
+}
+
+export interface ModelProviderFailureEvidence {
+  failureClass: RouteFailureClass;
+  message: string;
+}
+
+export class ModelProviderFailureError extends Error {
+  constructor(readonly evidence: ModelProviderFailureEvidence) {
+    super(evidence.message);
+    this.name = "ModelProviderFailureError";
+  }
+}
+
+export function isModelProviderFailureError(
+  value: unknown,
+): value is ModelProviderFailureError {
+  return value instanceof ModelProviderFailureError;
 }
 
 export function isModelTurnWatchdogError(
@@ -149,12 +169,31 @@ export function createModelTurnDeadline(input: {
 export function modelFailureError(
   stopReason: "error" | "aborted",
   diagnostic: string | undefined,
+  rootSignalAborted = stopReason === "aborted",
 ): Error {
   const watchdog = parseModelTurnWatchdogError(diagnostic);
+  const classifiedFailure = classifyRouteFailure({
+    message: diagnostic ?? "",
+  });
+  const providerAborted =
+    !rootSignalAborted &&
+    (stopReason === "aborted" ||
+      classifiedFailure === "cancelled" ||
+      /\baborterror\b/iu.test(diagnostic ?? ""));
   return (
     watchdog ??
     parseModelThinkingLoopError(diagnostic) ??
-    new Error(publicModelFailureMessage(stopReason, diagnostic))
+    new ModelProviderFailureError({
+      failureClass: providerAborted
+        ? "network"
+        : stopReason === "aborted"
+          ? "cancelled"
+          : classifiedFailure,
+      message: publicModelFailureMessage(
+        providerAborted ? "error" : stopReason,
+        providerAborted ? "network error" : diagnostic,
+      ),
+    })
   );
 }
 

@@ -19,6 +19,10 @@ import {
 import { LocalStore } from "@napier/runtime/store";
 
 import { BenchmarkCampaignRunner } from "./benchmark-campaign-runner.js";
+import {
+  completeBenchmarkRun,
+  createActiveBenchmarkRun,
+} from "./benchmark-run-lifecycle.js";
 import { CLI_VERSION } from "@napier/cli/runner";
 import { loadProcessRecoveryBenchmarkCase } from "./process-recovery-benchmark-case.js";
 import { verifyProcessRecoveryBenchmarkArtifacts } from "./process-recovery-benchmark-contract.js";
@@ -75,6 +79,13 @@ export async function runProcessRecoveryBenchmark(
         const sandboxBoundary = processSandboxBoundary(sandbox.id);
         store = new LocalStore({ workspaceRoot, dataRoot });
         await store.initialize();
+        const active = await createActiveBenchmarkRun(store, {
+          title: benchmarkCase.title,
+          leaseTtlMs: Math.min(
+            10 * 60_000,
+            Math.max(5_000, benchmarkCase.timeoutMs + 30_000),
+          ),
+        });
         manager = new WorkspaceProcessManager({
           store,
           workspaceRoot,
@@ -82,8 +93,7 @@ export async function runProcessRecoveryBenchmark(
           sandbox,
         });
         await manager.initialize();
-        const thread = store.listThreads()[0]!;
-        const run = store.listRuns(thread.id)[0]!;
+        const { thread, run } = active;
         const timeoutSignal = AbortSignal.timeout(benchmarkCase.timeoutMs);
         const signal = options.signal
           ? AbortSignal.any([options.signal, timeoutSignal])
@@ -144,6 +154,7 @@ export async function runProcessRecoveryBenchmark(
           visibility: "user",
           payload: evaluation as unknown as JsonObject,
         });
+        await completeBenchmarkRun(store, active);
         const finalReplay = await exportThreadReplayBundle(store, thread.id);
         const generatedAt = dependencies.now().toISOString();
         const bundle = createProcessRecoveryLedger({

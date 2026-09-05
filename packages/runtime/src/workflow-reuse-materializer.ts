@@ -244,9 +244,6 @@ export class ExecutionPlanWorkflowReuseMaterializer {
           output,
           outputSha256,
         );
-        await this.store.finishRun(lease.run.id, "completed", {
-          leaseToken: lease.token,
-        });
         await this.operations.completePlanStep(
           context,
           node.id,
@@ -277,6 +274,14 @@ export class ExecutionPlanWorkflowReuseMaterializer {
           },
           context.onEvent,
         );
+        await this.store.finishRun(lease.run.id, "completed", {
+          leaseToken: lease.token,
+          terminalEvent: {
+            visibility: "debug",
+            payload: { status: "completed" },
+          },
+          onTerminalEvent: context.onEvent,
+        });
         context.outputs.set(node.id, output);
         context.nodeResults.set(
           node.id,
@@ -406,17 +411,6 @@ export class ExecutionPlanWorkflowReuseMaterializer {
           sourceAttempt: reused.sourceAttempt,
           sourceInputSha256: reused.sourceInputSha256,
         },
-      },
-      context.onEvent,
-    );
-    await this.ledger.append(
-      {
-        threadId: context.threadId,
-        runId,
-        type: "run.completed",
-        category: "lifecycle",
-        visibility: "debug",
-        payload: { status: "completed" },
       },
       context.onEvent,
     );

@@ -17,22 +17,30 @@ import type {
 
 import { sha256 } from "./ed25519.js";
 import type { EventSink } from "./event-sink.js";
-import { createId, nowIso } from "./ids.js";
+import { nowIso } from "./ids.js";
 import {
   appendRouteEvent,
+  createStartedRouteAttempt,
   finalizeRouteAttempt,
-  routeAttempt,
   routeFailureMessage,
   routeSideEffectState,
-  routeVisibleOutput,
-  terminalEvent,
   terminalFromMessage,
 } from "./model-route-evidence.js";
 import {
-  classifyRouteFailure,
   routeCanFallback,
+  routeCanRetrySameCandidate,
   routeErrorText,
 } from "./model-route-policy.js";
+import {
+  consumeModelRouteSource,
+  type ModelRouteOutputProgress,
+} from "./model-route-output-buffer.js";
+import {
+  classifyRouteAttemptFailure,
+  MAX_INLINE_RETRY_DELAY_MS,
+  routeFailureHints,
+  routeResponseHints,
+} from "./model-route-provider-evidence.js";
 import type { LocalStore } from "./store.js";
 import type {
   ModelRouteAttemptContext,
@@ -54,6 +62,7 @@ interface RouterPort {
     credentialHealth: ModelRouteCredentialHealth;
     cooldownUntil?: string;
   };
+  waitBeforeRetry(delayMs: number, signal: AbortSignal): Promise<void>;
 }
 
 interface StreamOptions {
@@ -75,14 +84,13 @@ interface StreamInput {
 
 type AttemptResult =
   | { action: "fallback"; attempt: number; reason: RouteFailureClass }
+  | {
+      action: "retry";
+      attempt: number;
+      reason: RouteFailureClass;
+      delayMs: number;
+    }
   | { action: "terminal"; message: AssistantMessage };
-
-interface ConsumedStream {
-  finalMessage?: AssistantMessage;
-  failure?: unknown;
-  visibleOutputProduced: boolean;
-  pending: AssistantMessageEvent[];
-}
 
 export function createModelRouteStream(
   options: StreamOptions,
@@ -114,10 +122,20 @@ async function* routeEvents(
   settle: (message: AssistantMessage) => void,
 ): AsyncGenerator<AssistantMessageEvent> {
   const candidates = options.router.availableCandidates(options.candidates);
+  let currentModel = candidates[0]!.model;
+  let terminalProduced = false;
+  let index = 0;
+  let stepAttempt = 0;
+  let sameCandidateRetryUsed = false;
   let fallbackFromAttempt: number | undefined;
   let fallbackReason: RouteFailureClass | undefined;
+  let retryFromAttempt: number | undefined;
+  let retryReason: RouteFailureClass | undefined;
+  let retryDelayMs: number | undefined;
   try {
-    for (let index = 0; index < candidates.length; index += 1) {
+    while (index < candidates.length) {
+      stepAttempt += 1;
+      currentModel = candidates[index]!.model;
       const result = yield* runCandidate({
         options,
         input,
@@ -125,26 +143,59 @@ async function* routeEvents(
         index,
         candidateCount: candidates.length,
         attempt: nextAttempt(),
+        stepAttempt,
+        hasRetryAttempt:
+          !sameCandidateRetryUsed &&
+          stepAttempt < options.plan.retryPolicy.maxAttemptsPerStep,
         ...(fallbackFromAttempt !== undefined ? { fallbackFromAttempt } : {}),
         ...(fallbackReason ? { fallbackReason } : {}),
+        ...(retryFromAttempt !== undefined ? { retryFromAttempt } : {}),
+        ...(retryReason ? { retryReason } : {}),
+        ...(retryDelayMs !== undefined ? { retryDelayMs } : {}),
       });
       if (result.action === "terminal") {
         settle(result.message);
+        terminalProduced = true;
         yield terminalFromMessage(result.message);
         return;
       }
+      if (result.action === "retry") {
+        sameCandidateRetryUsed = true;
+        fallbackFromAttempt = undefined;
+        fallbackReason = undefined;
+        retryFromAttempt = result.attempt;
+        retryReason = result.reason;
+        retryDelayMs = result.delayMs;
+        await options.router.waitBeforeRetry(result.delayMs, input.signal);
+        continue;
+      }
+      index += 1;
       fallbackFromAttempt = result.attempt;
       fallbackReason = result.reason;
+      retryFromAttempt = undefined;
+      retryReason = undefined;
+      retryDelayMs = undefined;
     }
     throw new Error("Model route exhausted without a terminal result");
   } catch (error) {
     const message = routeFailureMessage(
-      candidates[0]!.model,
+      currentModel,
       error,
       input.signal.aborted,
     );
     settle(message);
+    terminalProduced = true;
     yield terminalFromMessage(message);
+  } finally {
+    if (!terminalProduced) {
+      settle(
+        routeFailureMessage(
+          currentModel,
+          new Error("Model route stream closed before a terminal result"),
+          true,
+        ),
+      );
+    }
   }
 }
 
@@ -155,13 +206,36 @@ async function* runCandidate(input: {
   index: number;
   candidateCount: number;
   attempt: number;
+  stepAttempt: number;
+  hasRetryAttempt: boolean;
   fallbackFromAttempt?: number;
   fallbackReason?: RouteFailureClass;
+  retryFromAttempt?: number;
+  retryReason?: RouteFailureClass;
+  retryDelayMs?: number;
 }): AsyncGenerator<AssistantMessageEvent, AttemptResult> {
   const startedAtMs = Date.now();
-  const started = createStartedAttempt(input, startedAtMs);
+  const started = createStartedRouteAttempt({
+    routePlanId: input.options.plan.id,
+    attempt: input.attempt,
+    stepAttempt: input.stepAttempt,
+    candidate: input.candidate.descriptor,
+    health: input.options.router.candidateHealth(input.candidate.descriptor),
+    startedAtMs,
+    ...(input.fallbackFromAttempt !== undefined
+      ? { fallbackFromAttempt: input.fallbackFromAttempt }
+      : {}),
+    ...(input.fallbackReason ? { fallbackReason: input.fallbackReason } : {}),
+    ...(input.retryFromAttempt !== undefined
+      ? { retryFromAttempt: input.retryFromAttempt }
+      : {}),
+    ...(input.retryReason ? { retryReason: input.retryReason } : {}),
+    ...(input.retryDelayMs !== undefined
+      ? { retryDelayMs: input.retryDelayMs }
+      : {}),
+  });
   const responseHints: { providerHint?: string; retryAfterMs?: number } = {};
-  await appendRouteEvent(
+  const startedEvent = await appendRouteEvent(
     input.options.store,
     input.options.run,
     "route_attempt_started",
@@ -186,22 +260,33 @@ async function* runCandidate(input: {
       startedAtMs,
       error,
       false,
+      0,
+      startedEvent.seq,
       responseHints,
     );
   }
 
   const iterator = source[Symbol.asyncIterator]();
+  const progress: ModelRouteOutputProgress = {
+    visibleOutputProduced: false,
+    bufferedThinkingBytes: 0,
+  };
+  let attemptEnded = false;
   try {
-    const consumed = yield* consumeSource(source, iterator);
+    const consumed = yield* consumeModelRouteSource(source, iterator, progress);
     if (consumed.failure !== undefined) {
-      return settleFailure(
+      const result = await settleFailure(
         input,
         started,
         startedAtMs,
         consumed.failure,
         consumed.visibleOutputProduced,
+        consumed.bufferedThinkingBytes,
+        startedEvent.seq,
         responseHints,
       );
+      attemptEnded = true;
+      return result;
     }
     if (!consumed.finalMessage) {
       throw new Error("Model route stream ended without a result");
@@ -212,54 +297,35 @@ async function* runCandidate(input: {
       startedAtMs,
       consumed.finalMessage,
       consumed.visibleOutputProduced,
+      consumed.bufferedThinkingBytes,
+      startedEvent.seq,
       responseHints,
     );
+    attemptEnded = true;
     if (result.action === "terminal") {
       for (const buffered of consumed.pending) yield buffered;
     }
     return result;
   } finally {
     await Promise.resolve(iterator.return?.()).catch(() => undefined);
-  }
-}
-
-async function* consumeSource(
-  source: AssistantMessageEventStream,
-  iterator: AsyncIterator<AssistantMessageEvent>,
-): AsyncGenerator<AssistantMessageEvent, ConsumedStream> {
-  const pending: AssistantMessageEvent[] = [];
-  let visibleOutputProduced = false;
-  try {
-    while (true) {
-      const step = await iterator.next();
-      if (step.done) {
-        return {
-          finalMessage: await source.result(),
-          visibleOutputProduced,
-          pending,
-        };
-      }
-      const event = step.value;
-      visibleOutputProduced ||= routeVisibleOutput(event);
-      if (!visibleOutputProduced && !terminalEvent(event)) {
-        pending.push(event);
-        continue;
-      }
-      if (event.type === "done" || event.type === "error") {
-        return {
-          finalMessage: event.type === "done" ? event.message : event.error,
-          visibleOutputProduced,
-          pending,
-        };
-      }
-      if (pending.length > 0) {
-        for (const buffered of pending) yield buffered;
-        pending.length = 0;
-      }
-      yield event;
+    if (!attemptEnded) {
+      await recordEnded(input, started, startedAtMs, {
+        visibleOutputProduced: progress.visibleOutputProduced,
+        sideEffectState: await routeSideEffectState(
+          input.options.store,
+          input.options.run,
+          startedEvent.seq,
+        ),
+        outcome: "terminal",
+        failureClass: "cancelled",
+        ...(progress.bufferedThinkingBytes > 0
+          ? { bufferedThinkingBytes: progress.bufferedThinkingBytes }
+          : {}),
+        diagnosticSha256: sha256(
+          "Model route stream closed before a terminal result",
+        ),
+      });
     }
-  } catch (failure) {
-    return { failure, visibleOutputProduced, pending };
   }
 }
 
@@ -269,20 +335,27 @@ async function settleFailure(
   startedAtMs: number,
   error: unknown,
   visibleOutputProduced: boolean,
+  bufferedThinkingBytes: number,
+  attemptStartedSeq: number,
   responseHints: { providerHint?: string; retryAfterMs?: number },
 ): Promise<AttemptResult> {
-  const failureClass = classifyRouteFailure(error);
-  const canFallback = await recordFailure(
+  const failureClass = classifyRouteAttemptFailure(
+    error,
+    input.input.signal.aborted,
+  );
+  const continuation = await recordFailure(
     input,
     started,
     startedAtMs,
     failureClass,
     visibleOutputProduced,
+    bufferedThinkingBytes,
+    attemptStartedSeq,
     error,
     responseHints,
   );
-  return canFallback
-    ? { action: "fallback", attempt: input.attempt, reason: failureClass }
+  return continuation
+    ? { ...continuation, attempt: input.attempt, reason: failureClass }
     : {
         action: "terminal",
         message: routeFailureMessage(
@@ -299,11 +372,15 @@ async function settleMessage(
   startedAtMs: number,
   message: AssistantMessage,
   visibleOutputProduced: boolean,
+  bufferedThinkingBytes: number,
+  attemptStartedSeq: number,
   responseHints: { providerHint?: string; retryAfterMs?: number },
 ): Promise<AttemptResult> {
   const failed =
     message.stopReason === "error" || message.stopReason === "aborted";
-  const failureClass = failed ? classifyRouteFailure(message) : undefined;
+  const failureClass = failed
+    ? classifyRouteAttemptFailure(message, input.input.signal.aborted)
+    : undefined;
   if (!failureClass) {
     await input.options.router.markSuccess(input.candidate.descriptor);
     await recordEnded(input, started, startedAtMs, {
@@ -311,22 +388,26 @@ async function settleMessage(
       sideEffectState: await routeSideEffectState(
         input.options.store,
         input.options.run,
+        attemptStartedSeq,
       ),
+      ...(bufferedThinkingBytes > 0 ? { bufferedThinkingBytes } : {}),
       outcome: "success",
     });
     return { action: "terminal", message };
   }
-  const canFallback = await recordFailure(
+  const continuation = await recordFailure(
     input,
     started,
     startedAtMs,
     failureClass,
     visibleOutputProduced,
+    bufferedThinkingBytes,
+    attemptStartedSeq,
     message,
     responseHints,
   );
-  return canFallback
-    ? { action: "fallback", attempt: input.attempt, reason: failureClass }
+  return continuation
+    ? { ...continuation, attempt: input.attempt, reason: failureClass }
     : { action: "terminal", message };
 }
 
@@ -336,12 +417,17 @@ async function recordFailure(
   startedAtMs: number,
   failureClass: RouteFailureClass,
   visibleOutputProduced: boolean,
+  bufferedThinkingBytes: number,
+  attemptStartedSeq: number,
   error: unknown,
   responseHints: { providerHint?: string; retryAfterMs?: number },
-): Promise<boolean> {
+): Promise<
+  { action: "fallback" } | { action: "retry"; delayMs: number } | undefined
+> {
   const sideEffectState = await routeSideEffectState(
     input.options.store,
     input.options.run,
+    attemptStartedSeq,
   );
   const canFallback = routeCanFallback({
     failureClass,
@@ -351,17 +437,31 @@ async function recordFailure(
     aborted: input.input.signal.aborted,
   });
   const hints = { ...responseHints, ...routeFailureHints(error) };
+  const canRetry =
+    !canFallback &&
+    (hints.retryAfterMs ?? 0) <= MAX_INLINE_RETRY_DELAY_MS &&
+    routeCanRetrySameCandidate({
+      failureClass,
+      visibleOutputProduced,
+      sideEffectState,
+      hasRetryAttempt: input.hasRetryAttempt,
+      aborted: input.input.signal.aborted,
+    });
   const cooldown = await input.options.router.markFailure(
     input.candidate.descriptor,
     failureClass,
     hints,
     input.options.plan.retryPolicy,
   );
+  const retryDelayMs = canRetry
+    ? Math.min(cooldown.backoffMs, MAX_INLINE_RETRY_DELAY_MS)
+    : 0;
   await recordEnded(input, started, startedAtMs, {
     visibleOutputProduced,
     sideEffectState,
-    outcome: canFallback ? "retryable" : "terminal",
+    outcome: canFallback || canRetry ? "retryable" : "terminal",
     failureClass,
+    ...(bufferedThinkingBytes > 0 ? { bufferedThinkingBytes } : {}),
     diagnosticSha256: sha256(routeErrorText(error)),
     ...(hints.providerHint ? { providerHint: hints.providerHint } : {}),
     ...(hints.retryAfterMs !== undefined
@@ -369,88 +469,9 @@ async function recordFailure(
       : {}),
     ...(cooldown.backoffMs > 0 ? { backoffMs: cooldown.backoffMs } : {}),
   });
-  return canFallback;
-}
-
-function routeFailureHints(error: unknown): {
-  providerHint?: string;
-  retryAfterMs?: number;
-} {
-  if (!error || typeof error !== "object") return {};
-  const record = error as Record<string, unknown>;
-  const headers = normalizedHeaders(
-    record["headers"] && typeof record["headers"] === "object"
-      ? (record["headers"] as Record<string, unknown>)
-      : {},
-  );
-  const retryAfter =
-    record["retryAfterMs"] ??
-    headers["retry-after-ms"];
-  const retryAfterMs =
-    retryAfter !== undefined
-      ? parseMilliseconds(retryAfter)
-      : parseRetryAfterHeader(headers["retry-after"]);
-  const hint =
-    record["providerHint"] ??
-    headers["x-provider-hint"] ??
-    headers["x-ratelimit-scope"];
-  const providerHint =
-    typeof hint === "string" && /^[A-Za-z0-9._:/ -]{1,120}$/u.test(hint)
-      ? hint
-      : undefined;
-  return {
-    ...(providerHint ? { providerHint } : {}),
-    ...(retryAfterMs !== undefined ? { retryAfterMs } : {}),
-  };
-}
-
-function routeResponseHints(headers: Record<string, string>): {
-  providerHint?: string;
-  retryAfterMs?: number;
-} {
-  const normalized = normalizedHeaders(headers);
-  const providerHint = safeProviderHint(
-    normalized["x-provider-hint"] ?? normalized["x-ratelimit-scope"],
-  );
-  const retryAfterMs =
-    parseMilliseconds(normalized["retry-after-ms"]) ??
-    parseRetryAfterHeader(normalized["retry-after"]);
-  return {
-    ...(providerHint ? { providerHint } : {}),
-    ...(retryAfterMs !== undefined ? { retryAfterMs } : {}),
-  };
-}
-
-function parseMilliseconds(value: unknown): number | undefined {
-  const numeric = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(numeric) || numeric < 0) return undefined;
-  return Math.min(300_000, Math.round(numeric));
-}
-
-function parseRetryAfterHeader(value: unknown): number | undefined {
-  if (typeof value !== "string") return undefined;
-  const seconds = Number(value);
-  if (Number.isFinite(seconds) && seconds >= 0) {
-    return Math.min(300_000, Math.round(seconds * 1_000));
-  }
-  const timestamp = Date.parse(value);
-  return Number.isFinite(timestamp)
-    ? Math.min(300_000, Math.max(0, timestamp - Date.now()))
-    : undefined;
-}
-
-function normalizedHeaders(
-  headers: Record<string, unknown>,
-): Record<string, unknown> {
-  return Object.fromEntries(
-    Object.entries(headers).map(([name, value]) => [name.toLowerCase(), value]),
-  );
-}
-
-function safeProviderHint(value: unknown): string | undefined {
-  return typeof value === "string" && /^[A-Za-z0-9._:/ -]{1,120}$/u.test(value)
-    ? value
-    : undefined;
+  if (canFallback) return { action: "fallback" };
+  if (canRetry) return { action: "retry", delayMs: retryDelayMs };
+  return undefined;
 }
 
 async function recordEnded(
@@ -470,25 +491,4 @@ async function recordEnded(
     }),
     input.options.onEvent,
   );
-}
-
-function createStartedAttempt(
-  input: Parameters<typeof runCandidate>[0],
-  startedAtMs: number,
-): ModelRouteAttempt {
-  return routeAttempt({
-    routePlanId: input.options.plan.id,
-    attemptId: createId("route_attempt"),
-    attempt: input.attempt,
-    stepAttempt: input.index + 1,
-    ...input.candidate.descriptor,
-    ...input.options.router.candidateHealth(input.candidate.descriptor),
-    startedAt: new Date(startedAtMs).toISOString(),
-    visibleOutputProduced: false,
-    sideEffectState: "none",
-    ...(input.fallbackFromAttempt !== undefined
-      ? { fallbackFromAttempt: input.fallbackFromAttempt }
-      : {}),
-    ...(input.fallbackReason ? { fallbackReason: input.fallbackReason } : {}),
-  });
 }

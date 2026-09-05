@@ -18,7 +18,7 @@ import {
 } from "../src/index.js";
 import { BrowserInteractionConfirmationManager } from "../src/browser-interaction-confirmations.js";
 import { BrowserSessionPauseManager } from "../src/browser-session-pause.js";
-import { canonicalJson, sha256 } from "../src/ed25519.js";
+import { browserOperationDetails } from "./agent-browser-test-support.js";
 import { withBrowserConfirmationState } from "./browser-confirmation-harness.js";
 
 const roots: string[] = [];
@@ -43,7 +43,7 @@ describe("Agent Browser Session integration", () => {
         operations.push(request.action);
         return {
           output: `PAGE_SECRET_${request.action}`,
-          details: details(request.action, operation),
+          details: browserOperationDetails(request.action, operation),
           ...(request.action === "screenshot"
             ? {
                 screenshot: {
@@ -152,7 +152,21 @@ describe("Agent Browser Session integration", () => {
         event.type === "tool.completed" &&
         record(event.payload)?.["toolName"] === "browser",
     );
-    expect(completed).toHaveLength(5);
+    expect(
+      completed.map(
+        (event) => record(record(event.payload)?.["details"])?.["action"],
+      ),
+    ).toEqual(["start", "snapshot", "type", "screenshot", "close"]);
+    expect(events.map((event) => event.type)).toContain(
+      "context.tool_result_unavailable",
+    );
+    expect(
+      events.filter(
+        (event) =>
+          event.type === "tool.failed" &&
+          record(event.payload)?.["toolName"] === "browser",
+      ),
+    ).toHaveLength(0);
     expect(completed[1]?.payload).toEqual(
       expect.objectContaining({
         outputRedacted: true,
@@ -188,7 +202,7 @@ describe("Agent Browser Session integration", () => {
         operation += 1;
         return {
           output: "PAGE_READ_ONLY",
-          details: details(request.action, operation),
+          details: browserOperationDetails(request.action, operation),
         };
       },
     );
@@ -293,7 +307,7 @@ describe("Agent Browser Session integration", () => {
           operations.push(request.action);
           return {
             output: `CONFIRMED_${request.action}`,
-            details: details(request.action, operations.length),
+            details: browserOperationDetails(request.action, operations.length),
           };
         },
       ),
@@ -416,7 +430,7 @@ describe("Agent Browser Session integration", () => {
           if (request.action === "start") await startGate;
           return {
             output: `PAGE_${request.action}`,
-            details: details(request.action, operation),
+            details: browserOperationDetails(request.action, operation),
           };
         },
       ),
@@ -523,7 +537,7 @@ describe("Agent Browser Session integration", () => {
     const browserSessions = withBrowserConfirmationState({
       execute: vi.fn(async () => ({
         output: "STARTED",
-        details: details("start", 1),
+        details: browserOperationDetails("start", 1),
       })),
       cancelRun: vi.fn(async () => undefined),
     }) as unknown as RunBrowserSessionManager;
@@ -883,9 +897,9 @@ describe("Agent Browser Session integration", () => {
         event.type.startsWith("tool.") &&
         record(event.payload)?.["toolName"] === "browser",
     );
-    expect(
-      browserEvents.find((event) => event.type === "tool.started")?.payload,
-    ).toEqual(expect.objectContaining({ action: "click", effect: "write" }));
+    expect(browserEvents.some((event) => event.type === "tool.started")).toBe(
+      false,
+    );
     expect(browserEvents.some((event) => event.type === "tool.completed")).toBe(
       false,
     );
@@ -916,46 +930,6 @@ async function createFixture(
     store,
     threadId: thread.id,
     registry: new ModelRegistry(),
-  };
-}
-
-function details(
-  action: BrowserSessionDetails["action"],
-  operation: number,
-): BrowserSessionDetails {
-  return {
-    kind: "napier.browser-session-operation",
-    schemaVersion: 2,
-    action,
-    sessionMode: "run_persistent",
-    sessionReused: operation > 1,
-    sessionOperation: operation,
-    sessionIdSha256: "a".repeat(64),
-    activeTabId: "tab_1",
-    tabCount: 1,
-    tabSetSha256: sha256(canonicalJson(["tab_1"])),
-    browserExecutableSha256: "b".repeat(64),
-    browserVersionSha256: "c".repeat(64),
-    limitsSha256: "d".repeat(64),
-    currentUrlSha256: "e".repeat(64),
-    currentOriginSha256: "f".repeat(64),
-    titleSha256: "1".repeat(64),
-    ...(action === "screenshot"
-      ? {
-          screenshotSha256: "2".repeat(64),
-          screenshotBytes: 17,
-        }
-      : {}),
-    blockedRequestCount: 0,
-    network: {
-      requestCount: operation,
-      connectCount: 1,
-      rejectedCount: 0,
-      transferredBytes: 100,
-      destinationCount: 1,
-      destinationsSha256: "3".repeat(64),
-    },
-    crossOriginAuthorized: false,
   };
 }
 

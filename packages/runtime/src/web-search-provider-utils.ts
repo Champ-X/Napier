@@ -20,14 +20,18 @@ export function sanitizeWebSearchResults(
     }
     if (site && !matchesSite(url.hostname, site)) continue;
     url.hash = "";
-    const key = url.href;
+    const imageUrl = safePublicUrl(candidate.imageUrl);
+    const thumbnailUrl = safePublicUrl(candidate.thumbnailUrl);
+    const key = imageUrl ?? url.href;
     if (seen.has(key)) continue;
     const title = boundedText(candidate.title, 300);
     if (!title) continue;
     seen.add(key);
     results.push({
       title,
-      url: key,
+      url: url.href,
+      ...(imageUrl ? { imageUrl } : {}),
+      ...(thumbnailUrl ? { thumbnailUrl } : {}),
       ...(candidate.snippet
         ? { snippet: boundedText(candidate.snippet, 1_000) }
         : {}),
@@ -39,6 +43,17 @@ export function sanitizeWebSearchResults(
     if (results.length >= limit) break;
   }
   return results;
+}
+
+function safePublicUrl(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  try {
+    const url = validatePublicHttpUrl(value);
+    url.hash = "";
+    return url.href;
+  } catch {
+    return undefined;
+  }
 }
 
 export function braveSafeSearch(

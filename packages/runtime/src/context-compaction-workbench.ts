@@ -14,7 +14,7 @@ import { modelRefFromModel } from "./agent-model-projection.js";
 import { hashContextEvents } from "./compaction.js";
 import {
   appendContextCompactionRunStarted,
-  appendContextCompactionRunTerminal,
+  contextCompactionRunTerminalEvent,
   ContextCompactionPreviewChangedError,
   materializeContextCompactionFork,
 } from "./context-compaction-fork-materialization.js";
@@ -171,15 +171,10 @@ export class ContextCompactionWorkbenchService {
         },
         admission: "run_active",
       });
-      await appendContextCompactionRunTerminal(
-        this.store,
-        leased.run.id,
-        sourceThreadId,
-        "completed",
-      );
       await this.store.finishRun(leased.run.id, "completed", {
         usage,
         leaseToken: leased.token,
+        terminalEvent: contextCompactionRunTerminalEvent("completed"),
       });
       const auditedEvents = await this.store.listEvents(sourceThreadId);
       this.cache({
@@ -269,14 +264,9 @@ export class ContextCompactionWorkbenchService {
         },
         admission: "run_active",
       });
-      await appendContextCompactionRunTerminal(
-        this.store,
-        sourceLease.run.id,
-        sourceThreadId,
-        "completed",
-      );
       await this.store.finishRun(sourceLease.run.id, "completed", {
         leaseToken: sourceLease.token,
+        terminalEvent: contextCompactionRunTerminalEvent("completed"),
       });
       sourceLease = undefined;
       return {
@@ -307,16 +297,11 @@ export class ContextCompactionWorkbenchService {
             admission: "run_active",
           })
           .catch(() => undefined);
-        await appendContextCompactionRunTerminal(
-          this.store,
-          sourceLease.run.id,
-          sourceThreadId,
-          "failed",
-        ).catch(() => undefined);
         await this.store
           .finishRun(sourceLease.run.id, "failed", {
             error: "Context compaction fork failed",
             leaseToken: sourceLease.token,
+            terminalEvent: contextCompactionRunTerminalEvent("failed"),
           })
           .catch(() => undefined);
       }
@@ -372,16 +357,11 @@ export class ContextCompactionWorkbenchService {
         admission: "run_active",
       })
       .catch(() => undefined);
-    await appendContextCompactionRunTerminal(
-      this.store,
-      runId,
-      threadId,
-      "failed",
-    ).catch(() => undefined);
     await this.store
       .finishRun(runId, "failed", {
         error: "Context compaction preview failed",
         leaseToken,
+        terminalEvent: contextCompactionRunTerminalEvent("failed"),
       })
       .catch(() => undefined);
   }

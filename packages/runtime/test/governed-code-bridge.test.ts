@@ -64,7 +64,6 @@ describe("Governed Code Bridge", () => {
         text: "Read the evidence through napier.call in JavaScript.",
         model: { provider: provider.provider.id, id: "faux-1" },
       });
-
       expect(run.status, run.error).toBe("completed");
       const events = (await fixture.store.listEvents(fixture.threadId)).filter(
         (event) => event.runId === run.id,
@@ -87,6 +86,20 @@ describe("Governed Code Bridge", () => {
           event.payload["callId"] === nestedStarted?.payload["callId"],
       );
       expect(nestedStarted?.payload["callId"]).toMatch(/^codebridge_/u);
+      expect(
+        events.filter(
+          (event) =>
+            event.type === "tool.admitted" &&
+            event.payload["callId"] === nestedStarted?.payload["callId"],
+        ),
+      ).toHaveLength(1);
+      expect(
+        events.filter(
+          (event) =>
+            event.type === "tool.started" &&
+            event.payload["callId"] === nestedStarted?.payload["callId"],
+        ),
+      ).toHaveLength(1);
       expect(nestedCompleted?.payload["parentEvaluationId"]).toMatch(
         /^kernelrequest_/u,
       );
@@ -97,6 +110,18 @@ describe("Governed Code Bridge", () => {
             event.payload["callId"] === nestedStarted?.payload["callId"],
         ),
       ).toBe(true);
+      const resultReceipt = events.find(
+        (event) =>
+          event.type === "context.tool_result" &&
+          event.payload["callId"] === nestedStarted?.payload["callId"],
+      );
+      const executionSettled = events.find(
+        (event) =>
+          event.type === "tool.operation.settled" &&
+          event.payload["parentCallId"] === nestedStarted?.payload["callId"],
+      );
+      expect(resultReceipt!.seq).toBeLessThan(executionSettled!.seq);
+      expect(executionSettled!.seq).toBeLessThan(nestedCompleted!.seq);
       expect(authorized?.payload).toEqual(
         expect.objectContaining({
           nestedDispatch: true,
@@ -132,6 +157,10 @@ describe("Governed Code Bridge", () => {
       expect(nestedCompleted?.payload["toolProtocol"]).toEqual({
         ...startedProtocol,
         status: "completed",
+        progress: {
+          ...(startedProtocol?.["progress"] as Record<string, unknown>),
+          stateSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        },
       });
       expect(authorized!.seq).toBeLessThan(nestedStarted!.seq);
       expect(
@@ -190,11 +219,11 @@ describe("Governed Code Bridge", () => {
         (event) => event.runId === run.id,
       );
       const blocked = events.find(
-          (event) =>
-            event.type === "tool.blocked" &&
-            event.payload["toolName"] === "read_file" &&
-            String(event.payload["callId"]).startsWith("codebridge_"),
-        );
+        (event) =>
+          event.type === "tool.blocked" &&
+          event.payload["toolName"] === "read_file" &&
+          String(event.payload["callId"]).startsWith("codebridge_"),
+      );
       expect(blocked?.payload["policyReason"]).toBe(
         "path escapes the configured workspace",
       );

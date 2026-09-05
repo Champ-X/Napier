@@ -310,7 +310,8 @@ export class JavascriptKernelManager {
           );
           if (codeBridgeRequest) {
             const pending = this.respondToCodeBridgeCall(
-              request, codeBridgeRequest,
+              request,
+              codeBridgeRequest,
             )
               .catch((error: unknown) => {
                 bridgeFailure = error;
@@ -342,33 +343,35 @@ export class JavascriptKernelManager {
     },
     call: Parameters<JavascriptKernelCodeBridgeDispatcher>[0],
   ): Promise<void> {
-    let response: string;
+    let responses: readonly string[];
     try {
       if (!request.codeBridge) {
         throw new Error("JavaScript Code Bridge is unavailable");
       }
       const result = await request.codeBridge(call, request.signal);
-      response = formatJavascriptKernelCodeBridgeResponse({
+      responses = formatJavascriptKernelCodeBridgeResponse({
         evaluationId: request.requestId,
         callId: call.callId,
         result,
       });
     } catch (error) {
-      response = formatJavascriptKernelCodeBridgeResponse({
+      responses = formatJavascriptKernelCodeBridgeResponse({
         evaluationId: request.requestId,
         callId: call.callId,
         error: error instanceof Error ? error.message : String(error),
       });
     }
-    await this.processes.writePrivateProtocolInput({
-      threadId: request.threadId,
-      runId: request.runId,
-      processId: request.processId,
-      text: response,
-      appendNewline: true,
-      initiatedBy: "agent",
-      ...(request.signal ? { signal: request.signal } : {}),
-    });
+    for (const response of responses) {
+      await this.processes.writePrivateProtocolInput({
+        threadId: request.threadId,
+        runId: request.runId,
+        processId: request.processId,
+        text: response,
+        appendNewline: true,
+        initiatedBy: "agent",
+        ...(request.signal ? { signal: request.signal } : {}),
+      });
+    }
   }
 }
 

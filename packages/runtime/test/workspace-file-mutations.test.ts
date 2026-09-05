@@ -25,6 +25,7 @@ import {
   workspaceFileToolCallArgumentsLedgerProjection,
   workspaceFileToolOutputLedgerProjection,
 } from "../src/index.js";
+import { createActiveTestRun } from "./active-run-test-fixture.js";
 
 const temporaryRoots: string[] = [];
 
@@ -165,6 +166,9 @@ describe("Workspace File Mutation Manager", () => {
         .filter((event) => event.type === "workspace.file.mutated")
         .map((event) => event.payload["operation"]),
     ).toEqual(["create_directory", "move", "trash"]);
+    await harness.store.finishRun(harness.run.id, "completed", {
+      leaseToken: harness.leaseToken,
+    });
     harness.store.close();
 
     const restartedStore = new LocalStore({
@@ -202,6 +206,11 @@ describe("Workspace File Mutation Manager", () => {
       ),
     ).toBe("draft\n");
     expect((await restarted.listTrash(harness.thread.id)).items).toEqual([]);
+    expect(
+      (await restartedStore.listEvents(harness.thread.id))
+        .filter((event) => event.type === "workspace.file.recovered")
+        .map((event) => event.payload["operation"]),
+    ).toEqual(["restore"]);
     restartedStore.close();
   });
 
@@ -347,6 +356,110 @@ describe("Workspace File Mutation Manager", () => {
         evidence: expect.objectContaining({ operation: "move" }),
       }),
     );
+    harness.store.close();
+  });
+
+  it("rejects a terminal Run before a filesystem effect", async () => {
+    const harness = await createHarness();
+    const source = path.join(harness.workspaceRoot, "source.txt");
+    const destination = path.join(harness.workspaceRoot, "destination.txt");
+    await writeFile(source, "value\n");
+    const preview = await harness.manager.preview(
+      harness.thread.id,
+      harness.run.id,
+      {
+        operation: "move",
+        sourcePath: "source.txt",
+        destinationPath: "destination.txt",
+      },
+    );
+    await harness.store.finishRun(harness.run.id, "completed", {
+      leaseToken: harness.leaseToken,
+    });
+
+    await expect(
+      harness.manager.apply(harness.thread.id, harness.run.id, preview.id),
+    ).rejects.toThrow("active Run");
+    expect(await readFile(source, "utf8")).toBe("value\n");
+    await expect(lstat(destination)).rejects.toMatchObject({ code: "ENOENT" });
+    harness.store.close();
+  });
+
+  it("reverts and verifies a filesystem effect when the Run terminates before Ledger settlement", async () => {
+    let renameCount = 0;
+    let harness!: Awaited<ReturnType<typeof createHarness>>;
+    harness = await createHarness({
+      renameEntry: async (source, destination) => {
+        await rename(source, destination);
+        if (renameCount++ === 0) {
+          await harness.store.finishRun(harness.run.id, "completed", {
+            leaseToken: harness.leaseToken,
+          });
+        }
+      },
+    });
+    const source = path.join(harness.workspaceRoot, "source.txt");
+    const destination = path.join(harness.workspaceRoot, "destination.txt");
+    await writeFile(source, "value\n");
+    const preview = await harness.manager.preview(
+      harness.thread.id,
+      harness.run.id,
+      {
+        operation: "move",
+        sourcePath: "source.txt",
+        destinationPath: "destination.txt",
+      },
+    );
+
+    await expect(
+      harness.manager.apply(harness.thread.id, harness.run.id, preview.id),
+    ).rejects.toThrow("reverted and verified");
+    expect(await readFile(source, "utf8")).toBe("value\n");
+    await expect(lstat(destination)).rejects.toMatchObject({ code: "ENOENT" });
+    expect(
+      (await harness.store.listEvents(harness.thread.id)).filter(
+        (event) => event.type === "workspace.file.mutated",
+      ),
+    ).toEqual([]);
+    harness.store.close();
+  });
+
+  it("keeps a committed mutation when only the append caller reports a post-commit failure", async () => {
+    const harness = await createHarness();
+    const source = path.join(harness.workspaceRoot, "source.txt");
+    const destination = path.join(harness.workspaceRoot, "destination.txt");
+    await writeFile(source, "value\n");
+    const preview = await harness.manager.preview(
+      harness.thread.id,
+      harness.run.id,
+      {
+        operation: "move",
+        sourcePath: "source.txt",
+        destinationPath: "destination.txt",
+      },
+    );
+    const appendEvent = harness.store.appendEvent.bind(harness.store);
+    vi.spyOn(harness.store, "appendEvent").mockImplementationOnce(
+      async (input) => {
+        await appendEvent(input);
+        throw new Error("compatibility projection failed after commit");
+      },
+    );
+
+    await expect(
+      harness.manager.apply(harness.thread.id, harness.run.id, preview.id),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        evidence: expect.objectContaining({ operation: "move" }),
+      }),
+    );
+    await expect(lstat(source)).rejects.toMatchObject({ code: "ENOENT" });
+    expect(await readFile(destination, "utf8")).toBe("value\n");
+    expect(
+      (await harness.store.listEvents(harness.thread.id)).filter(
+        (event) => event.type === "workspace.file.mutated",
+      ),
+    ).toHaveLength(1);
     harness.store.close();
   });
 
@@ -608,8 +721,10 @@ async function createHarness(options?: {
   ]);
   const store = new LocalStore({ workspaceRoot, dataRoot });
   await store.initialize();
-  const thread = store.listThreads()[0]!;
-  const run = store.listRuns(thread.id)[0]!;
+  const { thread, run, leaseToken } = await createActiveTestRun(
+    store,
+    "Workspace mutation fixture",
+  );
   const manager = new WorkspaceFileMutationManager({
     store,
     workspaceRoot,
@@ -625,6 +740,7 @@ async function createHarness(options?: {
     store,
     thread,
     run,
+    leaseToken,
     manager,
   };
 }

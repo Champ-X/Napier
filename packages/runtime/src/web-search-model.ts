@@ -1,4 +1,5 @@
 import { canonicalJson, sha256 } from "./ed25519.js";
+import type { ToolOperationObserver } from "./tool-operation-journal.js";
 
 export const WEB_SEARCH_PROVIDER_IDS = [
   "firecrawl",
@@ -39,7 +40,12 @@ export interface NormalizedWebSearchRequest {
 
 export interface WebSearchResult {
   title: string;
+  /** Canonical page that owns or describes the result. */
   url: string;
+  /** Direct image bytes when category=images; never overloaded into url. */
+  imageUrl?: string;
+  /** Provider proxy preview when one is available. */
+  thumbnailUrl?: string;
   snippet?: string;
   publishedAt?: string;
   source: string;
@@ -56,6 +62,12 @@ export interface WebSearchResponse {
   results: WebSearchResult[];
   attempts: WebSearchProviderAttempt[];
   retrievedAt: string;
+  /** Present when capability negotiation intentionally changed the output. */
+  resolution?: {
+    requestedCategory: WebSearchCategory;
+    resolvedCategory: WebSearchCategory;
+    mode: "image_page_candidates";
+  };
 }
 
 export interface WebSearchToolDetails {
@@ -63,6 +75,8 @@ export interface WebSearchToolDetails {
   schemaVersion: 1;
   provider: WebSearchProviderId;
   category: WebSearchCategory;
+  resolvedCategory?: WebSearchCategory;
+  resolutionMode?: "image_page_candidates";
   resultCount: number;
   attemptedProviderCount: number;
   failedProviderCount: number;
@@ -70,6 +84,10 @@ export interface WebSearchToolDetails {
   querySha256: string;
   resultSetSha256: string;
   retrievedAt: string;
+  operationJournalVersion?: 1;
+  operationCount?: number;
+  settledOperationCount?: number;
+  operationSetSha256?: string;
 }
 
 export interface WebSearchExecutor {
@@ -77,6 +95,7 @@ export interface WebSearchExecutor {
   search(
     request: WebSearchRequest,
     signal?: AbortSignal,
+    operations?: ToolOperationObserver,
   ): Promise<WebSearchResponse>;
 }
 
@@ -136,6 +155,8 @@ export function webSearchResultSetSha256(
       results.map((result) => ({
         title: result.title,
         url: result.url,
+        ...(result.imageUrl ? { imageUrl: result.imageUrl } : {}),
+        ...(result.thumbnailUrl ? { thumbnailUrl: result.thumbnailUrl } : {}),
         snippet: result.snippet ?? "",
         publishedAt: result.publishedAt ?? "",
         source: result.source,

@@ -1,59 +1,40 @@
-import {
-  PublicHttpClient,
-  type PublicHttpRequest,
-  type PublicHttpResponse,
-} from "./public-http-client.js";
+import { sha256 } from "./ed25519.js";
+import { PublicHttpClient } from "./public-http-client.js";
+import type {
+  ToolOperationLifecycle,
+  ToolOperationObserver,
+} from "./tool-operation-journal.js";
+import { createDefaultWebSearchProviders } from "./web-search-provider-implementations.js";
+import { negotiateWebSearchCapabilityRoute } from "./web-search-capability-routing.js";
+import type {
+  WebSearchProvider,
+  WebSearchProviderRegistryOptions,
+} from "./web-search-provider-types.js";
 import {
   type NormalizedWebSearchRequest,
   type WebSearchProviderAttempt,
-  type WebSearchProviderId,
   type WebSearchResponse,
   type WebSearchResult,
-  webSearchQueryText,
+  webSearchResultSetSha256,
 } from "./web-search-model.js";
 import {
-  bingFreshness,
-  braveFreshness,
-  braveSafeSearch,
-  decodeHtml,
-  decodeXml,
-  duckDuckGoFreshness,
-  elementText,
-  firecrawlTimeBasedSearch,
-  jsonRecord,
   providerDiagnostic,
-  record,
-  recordArray,
   sanitizeWebSearchResults,
-  stripMarkup,
-  tavilyTimeRange,
-  text,
   throwIfSearchAborted,
-  unwrapDuckDuckGoUrl,
 } from "./web-search-provider-utils.js";
+import {
+  WEB_SEARCH_FAILURE_DEFINITION_SHA256,
+  webSearchCapabilityBinding,
+  webSearchFailure,
+  webSearchFailureReceipt,
+  webSearchRouteBinding,
+} from "./web-search-failure.js";
 
-interface WebSearchProvider {
-  readonly id: WebSearchProviderId;
-  available(): boolean;
-  search(
-    request: NormalizedWebSearchRequest,
-    signal: AbortSignal,
-  ): Promise<WebSearchResult[]>;
-}
-
-export interface PublicHttpRequester {
-  request(
-    request: PublicHttpRequest,
-    signal?: AbortSignal,
-  ): Promise<PublicHttpResponse>;
-}
-
-export interface WebSearchProviderRegistryOptions {
-  env?: Readonly<Record<string, string | undefined>>;
-  http?: PublicHttpRequester;
-  providers?: readonly WebSearchProvider[];
-  now?: () => Date;
-}
+export type {
+  PublicHttpRequester,
+  WebSearchProvider,
+  WebSearchProviderRegistryOptions,
+} from "./web-search-provider-types.js";
 
 export class WebSearchProviderRegistry {
   private readonly providers: readonly WebSearchProvider[];
@@ -62,68 +43,107 @@ export class WebSearchProviderRegistry {
   constructor(options: WebSearchProviderRegistryOptions = {}) {
     const env = options.env ?? process.env;
     const http = options.http ?? new PublicHttpClient();
-    this.providers = options.providers ?? [
-      new FirecrawlWebSearchProvider(http, env["FIRECRAWL_API_KEY"]),
-      new BraveWebSearchProvider(http, env["BRAVE_API_KEY"]),
-      new TavilyWebSearchProvider(
-        http,
-        env["TAVILY_API_KEY"] ?? env["TAVILY_API_KRY"],
-      ),
-      new BingWebSearchProvider(http),
-      new DuckDuckGoWebSearchProvider(http),
-    ];
+    this.providers =
+      options.providers ?? createDefaultWebSearchProviders(http, env);
     this.now = options.now ?? (() => new Date());
   }
 
   async search(
     request: NormalizedWebSearchRequest,
     signal: AbortSignal,
+    operations?: ToolOperationObserver,
   ): Promise<WebSearchResponse> {
-    const candidates =
-      request.provider === "auto"
-        ? this.providers
-        : this.providers.filter((provider) => provider.id === request.provider);
+    const route = negotiateWebSearchCapabilityRoute(this.providers, request);
+    const candidates = route.selectedProviders;
     if (candidates.length === 0) {
-      throw new Error(
+      throw webSearchFailure(
         `Web search provider is not installed: ${request.provider}`,
+        "capability_unavailable",
+        webSearchCapabilityBinding(request),
+      );
+    }
+    const supportedCandidates = route.candidates;
+    if (supportedCandidates.length === 0) {
+      await this.rejectUnsupportedCandidates(candidates, request, operations);
+      throw webSearchFailure(
+        `Web search provider does not support ${request.category} results: ${request.provider}`,
+        "capability_unsupported",
+        webSearchCapabilityBinding(request),
+      );
+    }
+    if (
+      route.resolvedCategory === "images" &&
+      !supportedCandidates.some((provider) => provider.available())
+    ) {
+      await this.rejectUnavailableCandidates(
+        candidates,
+        supportedCandidates,
+        request,
+        operations,
+      );
+      throw webSearchFailure(
+        "Web image search is unavailable because no configured provider can return image results. Configure BRAVE_API_KEY or use category general to find an image-bearing public page or API.",
+        "capability_unavailable",
+        webSearchCapabilityBinding(request),
       );
     }
     const attempts: WebSearchProviderAttempt[] = [];
-    for (const provider of candidates) {
+    for (const provider of supportedCandidates) {
       throwIfSearchAborted(signal);
+      const operation = operations?.operation(
+        operationDescriptor(candidates, provider, route.request, {
+          requestedCategory: route.requestedCategory,
+          resolutionMode: route.resolutionMode,
+        }),
+      );
+      await operation?.proposed();
       if (!provider.available()) {
-        attempts.push({
-          provider: provider.id,
-          status: "unavailable",
-          diagnostic: `${provider.id} credentials are not configured`,
-        });
+        await recordUnavailableAttempt(operation, provider, request, attempts);
         continue;
       }
-      try {
-        const results = sanitizeWebSearchResults(
-          await provider.search(request, signal),
-          request.count,
-          request.site,
-        );
-        if (results.length === 0) {
-          throw new Error("provider returned no usable public results");
-        }
-        attempts.push({ provider: provider.id, status: "succeeded" });
-        return {
-          provider: provider.id,
-          results,
-          attempts,
-          retrievedAt: this.now().toISOString(),
-        };
-      } catch (error) {
-        throwIfSearchAborted(signal);
+      const admission = await operation?.admit();
+      if (admission && !admission.admitted) {
         attempts.push({
           provider: provider.id,
           status: "failed",
-          diagnostic: providerDiagnostic(error),
+          diagnostic: admission.reason ?? "failure circuit is open",
         });
-        if (request.provider !== "auto") break;
+        continue;
       }
+      await operation?.started();
+      const results = await searchProvider(
+        provider,
+        route.request,
+        signal,
+        operation,
+        attempts,
+      );
+      if (!results) {
+        if (request.provider !== "auto") break;
+        continue;
+      }
+      const resultSetSha256 = webSearchResultSetSha256(results);
+      await operation?.settled({
+        outcome: "succeeded",
+        state: resultSetSha256,
+        effect: { resultCount: results.length, resultSetSha256 },
+      });
+      attempts.push({ provider: provider.id, status: "succeeded" });
+      return {
+        provider: provider.id,
+        results,
+        attempts,
+        retrievedAt: this.now().toISOString(),
+        ...(route.resolutionMode === "image_page_candidates"
+          ? {
+              resolution: {
+                requestedCategory: route.requestedCategory,
+                resolvedCategory: route.resolvedCategory,
+                mode: route.resolutionMode,
+              },
+            }
+          : {}),
+      };
     }
     const summary = attempts
       .map(
@@ -131,354 +151,238 @@ export class WebSearchProviderRegistry {
           `${attempt.provider}: ${attempt.diagnostic ?? attempt.status}`,
       )
       .join("; ");
-    throw new Error(
+    const unavailable = attempts.every(
+      (attempt) => attempt.status === "unavailable",
+    );
+    throw webSearchFailure(
       `Web search failed after ${attempts.length} provider attempt${attempts.length === 1 ? "" : "s"}${summary ? ` (${summary})` : ""}`,
+      unavailable ? "capability_unavailable" : "unknown",
+      unavailable ? webSearchCapabilityBinding(request) : undefined,
     );
   }
-}
 
-class FirecrawlWebSearchProvider implements WebSearchProvider {
-  readonly id = "firecrawl";
-
-  constructor(
-    private readonly http: PublicHttpRequester,
-    private readonly apiKey: string | undefined,
-  ) {}
-
-  available(): boolean {
-    return Boolean(this.apiKey?.trim());
-  }
-
-  async search(
+  private async rejectUnsupportedCandidates(
+    candidates: readonly WebSearchProvider[],
     request: NormalizedWebSearchRequest,
-    signal: AbortSignal,
-  ): Promise<WebSearchResult[]> {
-    if (request.category === "images") {
-      throw new Error("Firecrawl web search does not return image results");
-    }
-    const news = request.category === "news";
-    const response = await this.http.request(
-      {
-        url: "https://api.firecrawl.dev/v2/search",
-        method: "POST",
-        headers: {
-          accept: "application/json",
-          authorization: `Bearer ${this.apiKey!.trim()}`,
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          query: webSearchQueryText(request),
-          limit: request.count,
-          sources: [{ type: news ? "news" : "web" }],
-          ...(request.timeRange
-            ? { tbs: firecrawlTimeBasedSearch(request.timeRange) }
-            : {}),
-        }),
-      },
-      signal,
-    );
-    if (response.status < 200 || response.status >= 300) {
-      throw new Error(`Firecrawl returned HTTP ${response.status}`);
-    }
-    const data = record(jsonRecord(response.body)["data"]) ?? {};
-    const entries = news ? recordArray(data["news"]) : recordArray(data["web"]);
-    return entries.flatMap((entry) => {
-      const url = text(entry["url"]);
-      const title = text(entry["title"]);
-      if (!url || !title) return [];
-      const snippet = text(entry["snippet"]) ?? text(entry["description"]);
-      const publishedAt = text(entry["date"]);
-      return [
-        {
-          title,
-          url,
-          ...(snippet ? { snippet } : {}),
-          ...(publishedAt ? { publishedAt } : {}),
-          source: "Firecrawl",
-        },
-      ];
-    });
-  }
-}
-
-class BraveWebSearchProvider implements WebSearchProvider {
-  readonly id = "brave";
-
-  constructor(
-    private readonly http: PublicHttpRequester,
-    private readonly apiKey: string | undefined,
-  ) {}
-
-  available(): boolean {
-    return Boolean(this.apiKey?.trim());
-  }
-
-  async search(
-    request: NormalizedWebSearchRequest,
-    signal: AbortSignal,
-  ): Promise<WebSearchResult[]> {
-    const endpoint =
-      request.category === "images"
-        ? "https://api.search.brave.com/res/v1/images/search"
-        : request.category === "news"
-          ? "https://api.search.brave.com/res/v1/news/search"
-          : "https://api.search.brave.com/res/v1/web/search";
-    const url = new URL(endpoint);
-    url.searchParams.set("q", webSearchQueryText(request));
-    url.searchParams.set("count", String(request.count));
-    url.searchParams.set("country", request.region);
-    url.searchParams.set("search_lang", request.language);
-    url.searchParams.set("safesearch", braveSafeSearch(request.safeSearch));
-    if (request.timeRange) {
-      url.searchParams.set("freshness", braveFreshness(request.timeRange));
-    }
-    const response = await this.http.request(
-      {
-        url: url.href,
-        headers: {
-          accept: "application/json",
-          "x-subscription-token": this.apiKey!.trim(),
-        },
-      },
-      signal,
-    );
-    if (response.status < 200 || response.status >= 300) {
-      throw new Error(`Brave returned HTTP ${response.status}`);
-    }
-    const body = jsonRecord(response.body);
-    const entries =
-      request.category === "images"
-        ? recordArray(body["results"])
-        : recordArray(
-            record(body[request.category === "news" ? "news" : "web"])?.[
-              "results"
-            ],
-          );
-    return entries.flatMap((entry) => {
-      const url = text(entry["url"]) ?? text(entry["page_url"]);
-      const title = text(entry["title"]) ?? text(entry["name"]);
-      if (!url || !title) return [];
-      return [
-        {
-          title,
-          url,
-          ...(text(entry["description"])
-            ? { snippet: text(entry["description"])! }
-            : {}),
-          ...(text(entry["page_age"])
-            ? { publishedAt: text(entry["page_age"])! }
-            : {}),
-          source: "Brave Search",
-        },
-      ];
-    });
-  }
-}
-
-class TavilyWebSearchProvider implements WebSearchProvider {
-  readonly id = "tavily";
-
-  constructor(
-    private readonly http: PublicHttpRequester,
-    private readonly apiKey: string | undefined,
-  ) {}
-
-  available(): boolean {
-    return Boolean(this.apiKey?.trim());
-  }
-
-  async search(
-    request: NormalizedWebSearchRequest,
-    signal: AbortSignal,
-  ): Promise<WebSearchResult[]> {
-    if (request.category === "images") {
-      throw new Error("Tavily does not provide image search results");
-    }
-    const response = await this.http.request(
-      {
-        url: "https://api.tavily.com/search",
-        method: "POST",
-        headers: {
-          accept: "application/json",
-          authorization: `Bearer ${this.apiKey!.trim()}`,
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          query: webSearchQueryText(request),
-          topic: request.category === "news" ? "news" : "general",
-          search_depth: "basic",
-          max_results: request.count,
-          include_answer: false,
-          include_raw_content: false,
-          ...(request.timeRange
-            ? { time_range: tavilyTimeRange(request.timeRange) }
-            : {}),
-        }),
-      },
-      signal,
-    );
-    if (response.status < 200 || response.status >= 300) {
-      throw new Error(`Tavily returned HTTP ${response.status}`);
-    }
-    return recordArray(jsonRecord(response.body)["results"]).flatMap(
-      (entry) => {
-        const url = text(entry["url"]);
-        const title = text(entry["title"]);
-        if (!url || !title) return [];
-        return [
-          {
-            title,
-            url,
-            ...(text(entry["content"])
-              ? { snippet: text(entry["content"])! }
-              : {}),
-            ...(text(entry["published_date"])
-              ? { publishedAt: text(entry["published_date"])! }
-              : {}),
-            source: "Tavily",
-          },
-        ];
-      },
-    );
-  }
-}
-
-class BingWebSearchProvider implements WebSearchProvider {
-  readonly id = "bing";
-
-  constructor(private readonly http: PublicHttpRequester) {}
-
-  available(): boolean {
-    return true;
-  }
-
-  async search(
-    request: NormalizedWebSearchRequest,
-    signal: AbortSignal,
-  ): Promise<WebSearchResult[]> {
-    if (request.category === "images") {
-      throw new Error("Bing RSS does not provide image search results");
-    }
-    const url = new URL(
-      request.category === "news"
-        ? "https://www.bing.com/news/search"
-        : "https://www.bing.com/search",
-    );
-    url.searchParams.set("q", webSearchQueryText(request));
-    url.searchParams.set("format", "rss");
-    url.searchParams.set("setlang", `${request.language}-${request.region}`);
-    url.searchParams.set("cc", request.region);
-    url.searchParams.set("mkt", `${request.language}-${request.region}`);
-    if (request.timeRange) {
-      url.searchParams.set("freshness", bingFreshness(request.timeRange));
-    }
-    const response = await this.http.request(
-      {
-        url: url.href,
-        headers: { accept: "application/rss+xml, application/xml, text/xml" },
-      },
-      signal,
-    );
-    if (response.status < 200 || response.status >= 300) {
-      throw new Error(`Bing returned HTTP ${response.status}`);
-    }
-    const xml = response.body.toString("utf8");
-    if (!/<rss\b/iu.test(xml)) {
-      throw new Error("Bing returned a non-RSS response");
-    }
-    return [...xml.matchAll(/<item>([\s\S]*?)<\/item>/giu)].flatMap((match) => {
-      const item = match[1] ?? "";
-      const title = decodeXml(elementText(item, "title"));
-      const url = decodeXml(elementText(item, "link"));
-      if (!title || !url) return [];
-      const snippet = decodeXml(elementText(item, "description"));
-      const publishedAt = decodeXml(
-        elementText(item, request.category === "news" ? "pubDate" : "pubDate"),
+    operations: ToolOperationObserver | undefined,
+  ): Promise<void> {
+    for (const provider of candidates) {
+      const operation = operations?.operation(
+        operationDescriptor(candidates, provider, request),
       );
-      return [
-        {
-          title,
-          url,
-          ...(snippet ? { snippet: stripMarkup(snippet) } : {}),
-          ...(publishedAt ? { publishedAt } : {}),
-          source: "Bing",
-        },
-      ];
-    });
+      const diagnostic = `${provider.id} does not support ${request.category} results`;
+      const error = webSearchFailure(
+        diagnostic,
+        "capability_unsupported",
+        webSearchCapabilityBinding({ ...request, provider: provider.id }),
+      );
+      await rejectOperation(
+        operation,
+        "unsupported",
+        diagnostic,
+        error,
+        request,
+        provider.id,
+      );
+    }
+  }
+
+  private async rejectUnavailableCandidates(
+    candidates: readonly WebSearchProvider[],
+    supportedCandidates: readonly WebSearchProvider[],
+    request: NormalizedWebSearchRequest,
+    operations: ToolOperationObserver | undefined,
+  ): Promise<void> {
+    for (const provider of supportedCandidates) {
+      if (provider.available()) continue;
+      const operation = operations?.operation(
+        operationDescriptor(candidates, provider, request),
+      );
+      const diagnostic = `${provider.id} credentials are not configured`;
+      const error = webSearchFailure(
+        diagnostic,
+        "capability_unavailable",
+        webSearchCapabilityBinding({ ...request, provider: provider.id }),
+      );
+      await rejectOperation(
+        operation,
+        "unavailable",
+        diagnostic,
+        error,
+        request,
+        provider.id,
+      );
+    }
   }
 }
 
-class DuckDuckGoWebSearchProvider implements WebSearchProvider {
-  readonly id = "duckduckgo";
-
-  constructor(private readonly http: PublicHttpRequester) {}
-
-  available(): boolean {
-    return true;
-  }
-
-  async search(
-    request: NormalizedWebSearchRequest,
-    signal: AbortSignal,
-  ): Promise<WebSearchResult[]> {
-    if (request.category === "images") {
-      throw new Error("DuckDuckGo HTML does not provide image search results");
-    }
-    const form = new URLSearchParams({
-      q: webSearchQueryText(request),
-      kl: `${request.region.toLowerCase()}-${request.language.toLowerCase()}`,
-      b: "",
+async function recordUnavailableAttempt(
+  operation: ToolOperationLifecycle | undefined,
+  provider: WebSearchProvider,
+  request: NormalizedWebSearchRequest,
+  attempts: WebSearchProviderAttempt[],
+): Promise<void> {
+  const diagnostic = `${provider.id} credentials are not configured`;
+  const error = webSearchFailure(
+    diagnostic,
+    "capability_unavailable",
+    webSearchCapabilityBinding({ ...request, provider: provider.id }),
+  );
+  const failure = webSearchFailureReceipt(
+    { ...request, attemptedProvider: provider.id },
+    error,
+  );
+  const admission = await operation?.admit({
+    admitted: false,
+    diagnostic,
+    failure,
+  });
+  if (!admission || admission.source === "caller") {
+    await operation?.settled({
+      outcome: "skipped",
+      diagnostic,
+      failure,
+      effect: { admission: "rejected", reason: "unavailable" },
     });
-    if (request.timeRange) {
-      form.set("df", duckDuckGoFreshness(request.timeRange));
-    }
-    const response = await this.http.request(
-      {
-        url: "https://html.duckduckgo.com/html/",
-        method: "POST",
-        headers: {
-          accept: "text/html",
-          "content-type": "application/x-www-form-urlencoded",
-          referer: "https://html.duckduckgo.com/",
-        },
-        body: form.toString(),
-      },
-      signal,
+  }
+  attempts.push({
+    provider: provider.id,
+    status: admission?.source === "failure_circuit" ? "failed" : "unavailable",
+    diagnostic: admission?.reason ?? diagnostic,
+  });
+}
+
+async function searchProvider(
+  provider: WebSearchProvider,
+  request: NormalizedWebSearchRequest,
+  signal: AbortSignal,
+  operation: ToolOperationLifecycle | undefined,
+  attempts: WebSearchProviderAttempt[],
+): Promise<WebSearchResult[] | undefined> {
+  try {
+    const results = sanitizeWebSearchResults(
+      await provider.search(request, signal),
+      request.count,
+      request.site,
     );
-    const html = response.body.toString("utf8");
-    if (response.status < 200 || response.status >= 300) {
-      throw new Error(`DuckDuckGo returned HTTP ${response.status}`);
-    }
-    if (html.includes("anomaly-modal") || html.includes("anomaly.js")) {
-      throw new Error("DuckDuckGo returned a bot-detection challenge");
-    }
-    const results: WebSearchResult[] = [];
-    const blockPattern =
-      /<div\b[^>]*\bclass="[^"]*\bresult\b[^"]*"[^>]*>([\s\S]*?)(?=<div\b[^>]*\bclass="[^"]*\bresult\b|<div\b[^>]*\bclass="[^"]*\bnav-link\b|$)/giu;
-    for (const blockMatch of html.matchAll(blockPattern)) {
-      const block = blockMatch[1] ?? "";
-      const titleMatch =
-        /<a\b[^>]*\bclass="[^"]*\bresult__a\b[^"]*"[^>]*\bhref="([^"]+)"[^>]*>([\s\S]*?)<\/a>/iu.exec(
-          block,
-        );
-      if (!titleMatch) continue;
-      const url = unwrapDuckDuckGoUrl(titleMatch[1] ?? "");
-      const title = decodeHtml(titleMatch[2] ?? "");
-      if (!url || !title) continue;
-      const snippetMatch =
-        /<(?:a|div|span)\b[^>]*\bclass="[^"]*\bresult__snippet\b[^"]*"[^>]*>([\s\S]*?)<\/(?:a|div|span)>/iu.exec(
-          block,
-        );
-      const snippet = decodeHtml(snippetMatch?.[1] ?? "");
-      results.push({
-        title,
-        url,
-        ...(snippet ? { snippet } : {}),
-        source: "DuckDuckGo",
-      });
+    if (results.length === 0) {
+      throw webSearchFailure(
+        "provider returned no usable public results",
+        "target_not_found",
+        {
+          kind: "web-search-target",
+          query: request.query,
+          category: request.category,
+          site: request.site ?? "",
+        },
+      );
     }
     return results;
+  } catch (error) {
+    const failure = webSearchFailureReceipt(
+      { ...request, attemptedProvider: provider.id },
+      error,
+    );
+    await operation?.settled({
+      outcome: "failed",
+      diagnostic: error,
+      failure,
+      effect: {
+        outcome: "failed",
+        diagnosticSha256: operationDiagnosticSha256(error),
+      },
+    });
+    throwIfSearchAborted(signal);
+    attempts.push({
+      provider: provider.id,
+      status: "failed",
+      diagnostic: providerDiagnostic(error),
+    });
+    return undefined;
   }
 }
 
-export type { WebSearchProvider };
+function operationDescriptor(
+  candidates: readonly WebSearchProvider[],
+  provider: WebSearchProvider,
+  request: NormalizedWebSearchRequest,
+  resolution: {
+    requestedCategory: NormalizedWebSearchRequest["category"];
+    resolutionMode: "direct" | "image_page_candidates";
+  } = {
+    requestedCategory: request.category,
+    resolutionMode: "direct",
+  },
+) {
+  const routeBinding = webSearchRouteBinding(provider.id);
+  return {
+    ordinal: candidates.indexOf(provider) + 1,
+    mode: request.provider === "auto" ? "fallback" : "direct",
+    route: provider.id,
+    operation: "acquire" as const,
+    scope: "external" as const,
+    contribution: "supporting" as const,
+    resourceKey: {
+      kind: "query",
+      query: request.query,
+      category: request.category,
+      requestedCategory: resolution.requestedCategory,
+      resolutionMode: resolution.resolutionMode,
+      timeRange: request.timeRange ?? "",
+      language: request.language,
+      region: request.region,
+      site: request.site ?? "",
+      count: request.count,
+      safeSearch: request.safeSearch,
+    },
+    failureBindings: {
+      target: {
+        kind: "web-search-target",
+        query: request.query,
+        category: request.category,
+        site: request.site ?? "",
+      },
+      route: routeBinding,
+      capability: webSearchCapabilityBinding({
+        ...request,
+        provider: provider.id,
+      }),
+    },
+    failureDefinitionSha256: WEB_SEARCH_FAILURE_DEFINITION_SHA256,
+    failureDomainKey: routeBinding,
+  };
+}
+
+async function rejectOperation(
+  operation: ToolOperationLifecycle | undefined,
+  reason: "unavailable" | "unsupported",
+  diagnostic: string,
+  error: unknown,
+  request: NormalizedWebSearchRequest,
+  provider: string,
+): Promise<void> {
+  const failure = webSearchFailureReceipt(
+    { ...request, attemptedProvider: provider },
+    error,
+  );
+  await operation?.proposed();
+  const admission = await operation?.admit({
+    admitted: false,
+    diagnostic,
+    failure,
+  });
+  if (!admission || admission.source === "caller") {
+    await operation?.settled({
+      outcome: "skipped",
+      diagnostic,
+      failure,
+      effect: { admission: "rejected", reason },
+    });
+  }
+}
+
+function operationDiagnosticSha256(error: unknown): string {
+  return sha256(
+    error instanceof Error ? `${error.name}: ${error.message}` : String(error),
+  );
+}

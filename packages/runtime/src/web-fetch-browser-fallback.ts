@@ -23,13 +23,17 @@ const EMPTY_DIAGNOSIS_SHA256 = sha256(canonicalJson([]));
 const MAX_STATIC_SHELL_TEXT_CHARS = 1_000;
 const MIN_RENDERED_TEXT_CHARS = 80;
 const MIN_RENDERED_GROWTH_CHARS = 80;
+const WEB_FETCH_BROWSER_SESSION_LANE = "web_fetch_fallback";
 
 export function createWebFetchBrowserFallbackProvider(
   manager: Pick<BrowserSessionPort, "execute" | "capturePage">,
 ): WebFetchBrowserFallbackProvider {
+  const tails = new Map<string, Promise<void>>();
   return {
     captureUrl: (owner, request, signal) =>
-      captureBrowserFallback(manager, owner, request, signal),
+      serializedBrowserFallback(tails, owner, signal, () =>
+        captureBrowserFallback(manager, owner, request, signal),
+      ),
   };
 }
 
@@ -209,16 +213,28 @@ async function captureBrowserFallback(
   request: { url: string; maxChars: number; waitMs: number },
   signal?: AbortSignal,
 ): ReturnType<WebFetchBrowserFallbackProvider["captureUrl"]> {
+  const fallbackOwner: BrowserSessionOwner = {
+    ...owner,
+    sessionLane: WEB_FETCH_BROWSER_SESSION_LANE,
+  };
   let started = false;
   try {
-    await manager.execute(owner, { action: "start", url: request.url }, signal);
+    await manager.execute(
+      fallbackOwner,
+      { action: "start", url: request.url },
+      signal,
+    );
     started = true;
     const waited = await manager.execute(
-      owner,
+      fallbackOwner,
       { action: "wait", durationMs: request.waitMs },
       signal,
     );
-    const capture = await manager.capturePage(owner, request.maxChars, signal);
+    const capture = await manager.capturePage(
+      fallbackOwner,
+      request.maxChars,
+      signal,
+    );
     if (
       capture.sessionOperation !== waited.details.sessionOperation + 1 ||
       capture.sessionIdSha256 !== waited.details.sessionIdSha256 ||
@@ -238,9 +254,57 @@ async function captureBrowserFallback(
   } finally {
     if (started) {
       await manager
-        .execute(owner, { action: "close" }, signal)
+        .execute(fallbackOwner, { action: "close" })
         .catch(() => undefined);
     }
+  }
+}
+
+async function serializedBrowserFallback<T>(
+  tails: Map<string, Promise<void>>,
+  owner: BrowserSessionOwner,
+  signal: AbortSignal | undefined,
+  operation: () => Promise<T>,
+): Promise<T> {
+  const key = `${owner.threadId}\u0000${owner.runId}`;
+  const previous = tails.get(key) ?? Promise.resolve();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const tail = previous.catch(() => undefined).then(() => gate);
+  tails.set(key, tail);
+  void tail.finally(() => {
+    if (tails.get(key) === tail) tails.delete(key);
+  });
+  try {
+    await waitForBrowserFallbackTurn(previous, signal);
+    return await operation();
+  } finally {
+    release();
+  }
+}
+
+async function waitForBrowserFallbackTurn(
+  previous: Promise<void>,
+  signal?: AbortSignal,
+): Promise<void> {
+  if (signal?.aborted) throw new Error("Web fetch was cancelled");
+  if (!signal) {
+    await previous.catch(() => undefined);
+    return;
+  }
+  let abort!: () => void;
+  try {
+    await Promise.race([
+      previous.catch(() => undefined),
+      new Promise<never>((_, reject) => {
+        abort = () => reject(new Error("Web fetch was cancelled"));
+        signal.addEventListener("abort", abort, { once: true });
+      }),
+    ]);
+  } finally {
+    signal.removeEventListener("abort", abort);
   }
 }
 

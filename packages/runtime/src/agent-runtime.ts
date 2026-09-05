@@ -30,11 +30,6 @@ import {
   type UsageAccounting,
 } from "@napier/contracts";
 import {
-  manualRunRecoveryBlockReason,
-  manualRunRecoverySettlementMatches,
-} from "@napier/contracts/manual-run-recovery";
-
-import {
   buildContextCompactionMessages,
   contextMessageEvents,
   createContextCheckpoint,
@@ -51,22 +46,14 @@ import { createDelegationLedgerProjection } from "./delegation-ledger.js";
 import type { EventSink } from "./event-sink.js";
 import {
   effectiveRunProfile,
-  modernRunConfiguration,
   runExecutionBoundary,
 } from "./effective-run-profile.js";
 import { createEnvironmentCapabilityNegotiationEvents } from "./environment-capability-negotiation.js";
-import {
-  agentToolGenericDetailsLedgerProjection,
-  agentToolCallArgumentsLedgerProjection as toolCallArgumentsLedgerProjection,
-  agentToolInputLedgerProjection as toolInputLedgerProjection,
-  agentToolOutputLedgerProjection as toolOutputLedgerProjection,
-} from "./agent-tool-ledger.js";
 import {
   AgentCapabilityRuntime,
   type AgentNetworkCapabilities,
 } from "./agent-capability-runtime.js";
 import { compileAuxiliaryPrompt } from "./agent-prompt-layers.js";
-import { resolveOperatorDecisionCapabilityContinuation } from "./agent-capability-override.js";
 import { createAgentRunStartedPayload } from "./agent-run-started-event.js";
 import {
   controlMessageEventKey,
@@ -97,14 +84,18 @@ import {
 } from "./agent-model-projection.js";
 import { AgentModelDisplayStore } from "./agent-model-display-store.js";
 import { contextHistoryCharacterBudget } from "./model-context-token-meter.js";
-import { AgentToolDisplayStore, builtInToolHarnessProjection } from "./agent-tool-effects.js";
+import { AgentToolDisplayStore, bindBuiltInToolCompatibilityPolicy } from "./agent-tool-effects.js";
 import {
   AgentToolResultLifecycle,
   toolLife,
 } from "./agent-tool-result-lifecycle.js";
-import { agentToolResultText } from "./agent-tool-result-text.js";
 import { createAgentToolResultFinalizer } from "./agent-tool-result-boundary.js";
 import { createAgentToolPreflight } from "./agent-tool-preflight.js";
+import {
+  agentToolStartedLedgerProjection,
+  agentToolCallArgumentsLedgerProjection as toolCallArgumentsLedgerProjection,
+  recordAgentToolExecutionEvent,
+} from "./agent-tool-execution-events.js";
 import {
   unresolvedCapabilityClaim,
   type UnresolvedCapabilityClaim,
@@ -120,7 +111,6 @@ import { BrowserSessionControlService } from "./browser-session-control.js";
 import { BrowserSessionPauseManager } from "./browser-session-pause.js";
 import type { BrowserSourceCaptureProvider } from "./research-sources.js";
 export { buildRunRecoveryPrompt } from "./run-recovery-prompt.js";
-import { buildRunRecoveryPrompt } from "./run-recovery-prompt.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
 import {
@@ -168,6 +158,8 @@ import { ModelDeltaBatcher } from "./model-delta-batcher.js";
 import { AgentModelCallPipelineHost } from "./agent-model-call-pipeline-host.js";
 import { AgentLifecyclePipelineAttachmentHost } from "./agent-lifecycle-pipeline-host.js";
 import {
+  type AgentToolConcurrencyGate,
+  createAgentToolConcurrencyGate,
   createLifecycleAgentStepStream,
   createRuntimeCompiledPromptBuilder,
   wrapAgentToolsWithLifecycle,
@@ -203,10 +195,10 @@ import {
   localImportedThroughSeq,
 } from "./import-boundary-format.js";
 import {
-  prepareAutomaticSkillRecoveryOptions,
-  prepareManualSkillRecoveryOptions,
-} from "./research-recovery-options.js";
-import { formatOperatorDecisionContinuation } from "./operator-decisions.js";
+  continueAnsweredOperatorDecision,
+  resumeInterruptedAgentRun,
+  resumeInterruptedAgentRunAutomatically,
+} from "./agent-run-recovery.js";
 import {
   PROMPT_VARIABLES_RESOLVED_EVENT,
   resolvePromptVariables,
@@ -215,7 +207,8 @@ import { RunBudgetTracker } from "./run-budget.js";
 import { finLife } from "./run-finalization-reserve.js";
 import { classifyFailure } from "./run-failure-classification.js";
 import { settleRunFailure } from "./run-failure-settlement.js";
-import { progLife } from "./run-progress-vector.js";
+import { createRunProgressTracker } from "./run-progress-tracker-host.js";
+import type { RunProgressTracker } from "./run-progress-vector.js";
 import {
   createPlatformSandboxAdapter,
   type OsSandboxAdapter,
@@ -236,7 +229,6 @@ import { createUsageAccounting } from "./token-accounting.js";
 import { TokenMeterRegistry } from "./token-meter-provider.js";
 import { calibrateResponse } from "./model-context-token-calibration.js";
 import {
-  createToolCallSha256,
   createToolLoopGuardContextReceipt,
   detectToolCallLoop,
   latestActiveToolLoopGuard,
@@ -302,6 +294,8 @@ export class AgentRuntime {
   private readonly turns = new AgentTurnPipelineHost();
   readonly attachKernelTurnPipeline = this.turns.attach;
   readonly tokenMeters = new TokenMeterRegistry();
+  // One workspace-scoped gate coordinates resources across concurrent Runs.
+  private readonly toolConcurrencyGate: AgentToolConcurrencyGate;
   private readonly capabilities: AgentCapabilityRuntime;
   readonly browserLiveViews: BrowserLiveViewService;
   readonly browserSessionControls: BrowserSessionControlService;
@@ -336,6 +330,10 @@ export class AgentRuntime {
       capsules: conversationSurfaceCapsules,
     }),
   ) {
+    this.toolConcurrencyGate = createAgentToolConcurrencyGate(
+      store,
+      this.runLeaseOwnerId,
+    );
     this.contextEvents = new ContextEventReadModel(store);
     this.modelRouter = new ModelRouter(store, modelRegistry);
     this.capabilities = new AgentCapabilityRuntime(
@@ -641,6 +639,7 @@ export class AgentRuntime {
                       invocationSource === "recovery"),
                   browserInteractionConfirmationAllowed: false,
                 }),
+              concurrencyGate: this.toolConcurrencyGate,
               worktreeOwnerId: this.workerId,
               parentSignal: abortController.signal,
               ...(options.onEvent ? { onEvent: options.onEvent } : {}),
@@ -962,161 +961,25 @@ export class AgentRuntime {
   async resumeInterruptedRun(
     options: ResumeInterruptedRunOptions,
   ): Promise<RunRecord> {
-    const thread = this.store.getThread(options.threadId);
-    const interrupted = this.store
-      .listRuns(thread.id)
-      .filter((run) => manualRunRecoverySettlementMatches(thread.status, run))
-      .findLast((run) => !options.runId || run.id === options.runId);
-    if (!interrupted) throw new Error("Manually resumable run not found");
-    const blockReason = manualRunRecoveryBlockReason(interrupted);
-    if (blockReason === "workflow_managed") {
-      throw new Error(
-        "Workflow node Runs must be resumed through their Workflow Plan",
-      );
-    }
-    if (blockReason === "model_experiment") {
-      throw new Error(
-        "Model invocation experiment Runs must be retried from their source checkpoint",
-      );
-    }
-    if (blockReason === "tool_experiment") {
-      throw new Error(
-        "Tool invocation experiment Runs must be retried from their source checkpoint",
-      );
-    }
-    if (blockReason === "agent_experiment") {
-      throw new Error(
-        "Agent message experiment Runs must be retried from their source checkpoint",
-      );
-    }
-    const events = await this.store.listRunEvents(interrupted.id);
-    const recoveryOptions: RunPromptOptions = {
-      threadId: thread.id,
-      text: buildRunRecoveryPrompt(
-        interrupted,
-        thread.goal?.status === "active" ? thread.goal.objective : undefined,
-        { events, plans: this.store.listPlans(thread.id) },
-      ),
-      parentRunId: interrupted.id,
-      source: "recovery",
-      recovery: { mode: "manual" },
-      ...(options.model ? { model: options.model } : {}),
-      ...(options.signal ? { signal: options.signal } : {}),
-      ...(options.onEvent ? { onEvent: options.onEvent } : {}),
-    };
-    return this.runPrompt(
-      await prepareManualSkillRecoveryOptions(
-        this.store.workspaceRoot,
-        interrupted,
-        events,
-        recoveryOptions,
-      ),
+    return resumeInterruptedAgentRun(
+      { store: this.store, runPrompt: this.runPrompt.bind(this) },
+      options,
     );
   }
   async continueOperatorDecision(
     options: ContinueOperatorDecisionOptions,
   ): Promise<RunRecord> {
-    const decision = (
-      await this.store.listOperatorDecisions(options.threadId)
-    ).find((candidate) => candidate.id === options.decisionId);
-    if (!decision) {
-      throw new Error(`Operator decision not found: ${options.decisionId}`);
-    }
-    if (decision.status !== "answered") {
-      throw new Error(
-        `Operator decision cannot continue in ${decision.status} state`,
-      );
-    }
-    const continuation = await resolveOperatorDecisionCapabilityContinuation(
-      this.store,
-      options.threadId,
-      decision.runId,
+    return continueAnsweredOperatorDecision(
+      { store: this.store, runPrompt: this.runPrompt.bind(this) },
+      options,
     );
-    return this.runPrompt({
-      threadId: options.threadId,
-      text: formatOperatorDecisionContinuation(decision),
-      ...continuation.runOptions,
-      parentRunId: continuation.originRun.id,
-      operatorDecisionId: decision.id,
-      source: "user",
-      ...(options.signal ? { signal: options.signal } : {}),
-      ...(options.onEvent ? { onEvent: options.onEvent } : {}),
-      onRunCreated: async (run) => {
-        await this.store.continueOperatorDecision(
-          options.threadId,
-          decision.id,
-          run.id,
-        );
-        await options.onRunCreated?.(run);
-      },
-    });
   }
   async resumeInterruptedRunAutomatically(
     options: ResumeInterruptedRunAutomaticallyOptions,
   ): Promise<RunRecord> {
-    const { assessment, attempt } = options;
-    if (
-      !assessment.eligible ||
-      assessment.runId !== attempt.interruptedRunId ||
-      assessment.rootRunId !== attempt.rootRunId ||
-      assessment.contentSha256 !== attempt.assessmentSha256 ||
-      assessment.priorAttempts + 1 !== attempt.attempt ||
-      attempt.status !== "claimed"
-    ) {
-      throw new Error("Automatic recovery claim evidence is invalid");
-    }
-    const thread = this.store.getThread(assessment.threadId);
-    if (thread.status !== "waiting" || thread.currentRunId) {
-      throw new Error("Thread is not waiting for automatic recovery");
-    }
-    const interrupted = this.store
-      .listRuns(thread.id)
-      .find((run) => run.id === assessment.runId);
-    if (
-      !interrupted ||
-      interrupted.status !== "interrupted" ||
-      isWorkflowRunSource(interrupted.source) ||
-      !interrupted.configuration ||
-      !modernRunConfiguration(interrupted.configuration) ||
-      interrupted.configuration.automaticRecovery.mode !== "safe_read_only" ||
-      interrupted.configuration.contentSha256 !==
-        assessment.runConfigurationSha256
-    ) {
-      throw new Error(
-        "Interrupted Run is not eligible for safe automatic recovery",
-      );
-    }
-    const events = await this.store.listRunEvents(interrupted.id);
-    const recoveryOptions: RunPromptOptions = {
-      threadId: thread.id,
-      text: buildRunRecoveryPrompt(
-        interrupted,
-        thread.goal?.status === "active" ? thread.goal.objective : undefined,
-        events,
-        "automatic",
-      ),
-      model: interrupted.configuration.model,
-      agentRevision: interrupted.configuration.agentRevision,
-      executionMode: "safe_read_only_recovery",
-      parentRunId: interrupted.id,
-      source: "recovery",
-      triggerId: attempt.triggerId,
-      recovery: {
-        mode: "automatic",
-        attemptId: attempt.id,
-        assessmentSha256: assessment.contentSha256,
-      },
-      ...(options.signal ? { signal: options.signal } : {}),
-      ...(options.onEvent ? { onEvent: options.onEvent } : {}),
-      ...(options.onRunCreated ? { onRunCreated: options.onRunCreated } : {}),
-    };
-    return this.runPrompt(
-      await prepareAutomaticSkillRecoveryOptions(
-        this.store.workspaceRoot,
-        interrupted,
-        events,
-        recoveryOptions,
-      ),
+    return resumeInterruptedAgentRunAutomatically(
+      { store: this.store, runPrompt: this.runPrompt.bind(this) },
+      options,
     );
   }
   stop(threadId: string): boolean {
@@ -1366,7 +1229,7 @@ export class AgentRuntime {
       browserInteractionConfirmationAllowed:
         run.source === "user" && !environmentDegradedExecution,
       codeBridge: codeBridge.dispatcher,
-    });
+    }).map(bindBuiltInToolCompatibilityPolicy);
     let pendingOperatorDecisionId: string | undefined;
     if (
       !restrictedReadOnlyExecution &&
@@ -1381,7 +1244,7 @@ export class AgentRuntime {
             pendingOperatorDecisionId = id;
           },
           ...(onEvent ? { onEvent } : {}),
-        }),
+        }).map(bindBuiltInToolCompatibilityPolicy),
       );
     }
     let deferredExtensionTools: AgentTool[] = [];
@@ -1402,14 +1265,14 @@ export class AgentRuntime {
       !advisorCorrection &&
       subagents?.hasEnabledRoles()
     ) {
-      tools.push(...subagents.createTools()); deferredExtensionTools.push(...subagents.createSupervisorTools());
+      tools.push(...subagents.createTools().map(bindBuiltInToolCompatibilityPolicy)); deferredExtensionTools.push(...subagents.createSupervisorTools().map(bindBuiltInToolCompatibilityPolicy));
     }
     if (
       !advisorCorrection &&
       tools.length + deferredExtensionTools.length > 20
     ) {
       const candidates = [...tools, ...deferredExtensionTools];
-      tools.push(createCapabilityCatalogTool(candidates, new ToolProtocolRegistry(candidates)));
+      tools.push(bindBuiltInToolCompatibilityPolicy(createCapabilityCatalogTool(candidates, new ToolProtocolRegistry(candidates))));
     }
     const toolSelection = await turnPipeline.compileTools({
       immediate: tools,
@@ -1422,14 +1285,31 @@ export class AgentRuntime {
     tools = toolSelection.immediate; deferredExtensionTools = toolSelection.deferred;
     const lifecyclePipelines = this.lifecycles.current(); let stepIndex = 0;
     let activeModelToolNames = new Set(tools.map((tool) => tool.name));
+    let toolResultLifecycle!: AgentToolResultLifecycle;
     const wrapTools = (candidates: readonly AgentTool[]) => wrapAgentToolsWithLifecycle({
       tools: candidates, registry: toolProtocol, lifecycles: lifecyclePipelines,
-      run, stepIndex: () => stepIndex,
+      run, stepIndex: () => stepIndex, store: this.store,
+      concurrencyGate: this.toolConcurrencyGate,
+      startedProjection: (toolCallId, toolName, args) =>
+        agentToolStartedLedgerProjection(
+          toolResultLifecycle,
+          toolCallId,
+          toolName,
+          args,
+        ),
+      prepareSettlement: (input) => toolResultLifecycle.finalize(input),
+      replayTerminal: (toolCallId, toolName, args) =>
+        toolResultLifecycle.replayCapturedResult(
+          toolCallId,
+          toolName,
+          args,
+        ),
+      ...(onEvent ? { onEvent } : {}),
     });
     tools = wrapTools(tools);
     deferredExtensionTools = wrapTools(deferredExtensionTools);
     let activatedDeferredToolNames: string[] = [];
-    const toolResultLifecycle = toolLife(this,
+    toolResultLifecycle = toolLife(this,
       [budget, run, tools, deferredExtensionTools, definitions],
       [toolResultReplay, onEvent, toolProtocol]);
     // The deadline lifecycle replaces deferred entries in place. Build the
@@ -1438,7 +1318,15 @@ export class AgentRuntime {
     const deferredToolByName = new Map(
       deferredExtensionTools.map((tool) => [tool.name, tool]),
     );
-    const progress = await progLife(this, budget, run, tools, prompt, onEvent);
+    const progress = await createRunProgressTracker(
+      this,
+      budget,
+      run,
+      tools,
+      prompt,
+      toolProtocol,
+      onEvent,
+    );
     const initialPromptMessages = providerMessages([
       ...history.messages,
       {
@@ -1541,11 +1429,20 @@ export class AgentRuntime {
     const afterToolCall = createAgentToolResultFinalizer(toolResultLifecycle);
     codeBridge.attach({
       store: this.store, displays: this.toolDisplays,
-      run, tools: [...tools, ...deferredExtensionTools], registry: toolProtocol,
+      // Bridge dispatch owns its nested lifecycle, so it must receive the raw
+      // definitions rather than model-facing lifecycle/deadline wrappers.
+      run, tools: definitions, registry: toolProtocol,
       activeToolNames: () => activeModelToolNames,
       assertBudget: () => budget.assertCanStartAuxiliaryCall(),
       preflight: toolPreflight.governed,
       finalize: afterToolCall,
+      replayTerminal: (toolCallId, toolName, args) =>
+        toolResultLifecycle.replayCapturedResult(
+          toolCallId,
+          toolName,
+          args,
+        ),
+      concurrencyGate: this.toolConcurrencyGate,
       ...(onEvent ? { onEvent } : {}),
     });
     const preRecordedControlMessages = new Map<string, number>();
@@ -1727,6 +1624,7 @@ export class AgentRuntime {
               }),
             ];
           }
+          nextTools = progress.toolsForNextTurn(nextTools);
           let nextDelegationLedgerProjection = delegationLedgerProjection;
           let nextMilestoneContextProjection = milestoneContextProjection;
           let nextActiveToolLoopGuard = activeToolLoopGuard;
@@ -1913,6 +1811,7 @@ export class AgentRuntime {
           preRecordedControlMessages,
           currentModelContextEnvelope,
           toolResultLifecycle,
+          progress,
           activeModelToolNames,
           runtimeAvailableModelToolNames,
           privateSourceContent,
@@ -1948,6 +1847,7 @@ export class AgentRuntime {
     preRecordedControlMessages: Map<string, number>,
     modelContextEnvelope: ModelContextEnvelopeReceipt | undefined,
     toolResultLifecycle: AgentToolResultLifecycle,
+    progress: RunProgressTracker,
     activeToolNames: ReadonlySet<string>,
     runtimeAvailableToolNames: ReadonlySet<string>,
     privateSourceContent: PrivateSourceModelContentBoundary,
@@ -2120,7 +2020,7 @@ export class AgentRuntime {
         if (modelFailure)
           throw modelFailureError(
             event.message.stopReason === "aborted" ? "aborted" : "error",
-            event.message.errorMessage,
+            event.message.errorMessage, signal.aborted,
           );
         if (hasToolCalls) {
           await this.record(
@@ -2177,79 +2077,22 @@ export class AgentRuntime {
       }
       return undefined;
     }
-    if (event.type === "tool_execution_start") {
-      await this.record(
+    if (
+      event.type === "tool_execution_start" ||
+      event.type === "tool_execution_end"
+    ) {
+      await recordAgentToolExecutionEvent(
         {
-          threadId: run.threadId,
-          runId: run.id,
-          type: "tool.started",
-          category: "tool",
-          visibility: "user",
-          payload: {
-            callId: event.toolCallId,
-            toolName: event.toolName,
-            status: "started",
-            callInputSha256: createToolCallSha256(event.toolName, event.args),
-            ...builtInToolHarnessProjection(event.toolName, event.args),
-            ...toolResultLifecycle.toolInput(
-              event.args,
-              toolInputLedgerProjection(event.toolName, event.args),
-            ),
-            ...toolResultLifecycle.startedProjection(
-              event.toolName,
-              event.args,
-            ),
-            ...toolResultLifecycle.protocolProjection(
-              event.toolCallId, event.toolName, "started", event.args),
-          },
+          store: this.store,
+          run,
+          lifecycle: toolResultLifecycle,
+          progress,
+          budget,
+          privateSourceContent,
+          ...(onEvent ? { onEvent } : {}),
         },
-        onEvent,
+        event,
       );
-      return undefined;
-    }
-    if (event.type === "tool_execution_end") {
-      privateSourceContent.observeToolResult(event.toolName);
-      const output = agentToolResultText(event.result);
-      const reusedProjection = toolResultLifecycle.reusedTerminalProjection(
-        event.toolCallId,
-      );
-      const outputProjection = reusedProjection
-        ? {}
-        : toolOutputLedgerProjection(event.toolName, output, event.result);
-      await this.record(
-        {
-          threadId: run.threadId,
-          runId: run.id,
-          type: event.isError ? "tool.failed" : "tool.completed",
-          category: "tool",
-          visibility: "user",
-          payload: {
-            callId: event.toolCallId,
-            toolName: event.toolName,
-            status: event.isError ? "failed" : "completed",
-            outputTextSha256: sha256Text(output),
-            outputTextBytes: Buffer.byteLength(output, "utf8"),
-            ...(reusedProjection
-              ? reusedProjection
-              : {
-                  ...outputProjection,
-                  ...agentToolGenericDetailsLedgerProjection(
-                    event.toolName,
-                    outputProjection,
-                    event.result.details,
-                  ),
-                }),
-            ...toolResultLifecycle.protocolProjection(event.toolCallId,
-              event.toolName, event.isError ? "failed" : "completed"),
-          },
-        },
-        onEvent,
-      );
-      if (["delegate_task", "subagent_collect"].includes(event.toolName)) {
-        budget.syncSubagentUsage(
-          this.store.listSubagentTasks(run.threadId, run.id),
-        );
-      }
     }
     return undefined;
   }

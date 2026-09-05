@@ -17,6 +17,11 @@ import {
   PYTHON_KERNEL_WORKER_SHA256,
 } from "./python-kernel-worker.js";
 import type { PythonKernelCodeBridgeDispatcher } from "./python-kernel-code-bridge.js";
+import {
+  defineToolProgress,
+  progressSemantics,
+  recordValue,
+} from "./tool-progress-semantics.js";
 
 export const MAX_PYTHON_KERNEL_TOOL_OUTPUT_BYTES = 32 * 1024;
 
@@ -96,7 +101,7 @@ export function createPythonKernelTool(
   context: { threadId: string; runId: string },
   codeBridge?: PythonKernelCodeBridgeDispatcher,
 ): AgentTool<typeof pythonKernelSchema, PythonKernelToolDetails> {
-  return {
+  const tool: AgentTool<typeof pythonKernelSchema, PythonKernelToolDetails> = {
     name: "python_kernel",
     label: "Python kernel",
     description:
@@ -190,6 +195,41 @@ export function createPythonKernelTool(
       );
     },
   };
+  return defineToolProgress(tool, {
+    schemaVersion: 1,
+    classificationVersion: "1.1.0",
+    modes: [
+      {
+        modeId: "python_kernel_session",
+        operation: "coordinate",
+        scope: "session",
+        contribution: "neutral",
+      },
+    ],
+    resolve(input) {
+      const value = recordValue(input);
+      const processId = value["processId"];
+      const resourceKey =
+        typeof processId === "string"
+          ? { kind: "python-kernel-session", processId }
+          : { kind: "python-kernel-manager", runId: context.runId };
+      return {
+        semantics: progressSemantics("coordinate", "session", "neutral"),
+        resourceKey,
+        failureBindings: {
+          target: resourceKey,
+          route: {
+            kind: "kernel-route",
+            runtime: "python",
+            action: value["action"],
+          },
+          capability: { kind: "kernel-capability", runtime: "python" },
+          session: resourceKey,
+        },
+        failureDomainKey: resourceKey,
+      };
+    },
+  });
 }
 
 export function pythonKernelToolCallArgumentsLedgerProjection(

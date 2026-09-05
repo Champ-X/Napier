@@ -22,6 +22,7 @@ import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
 import type { ModelRouteSession, ModelRouter } from "./model-route.js";
 import type { LocalStore } from "./store.js";
+import type { ToolConcurrencyGate } from "./tool-concurrency-gate.js";
 import { SubagentExecutionControl } from "./subagent-execution-control.js";
 import {
   normalizeSubagentOutputSchema,
@@ -56,6 +57,7 @@ export class InProcessSubagentProvider implements SubagentProvider {
       run: RunRecord;
       limits: SubagentLimits;
       parentSignal: AbortSignal;
+      concurrencyGate: ToolConcurrencyGate;
       worktrees?: SubagentWorktreeMutationManager;
       createInheritedTools?: () => AgentTool[];
       schedule?<T>(operation: () => Promise<T>): Promise<T>;
@@ -134,6 +136,7 @@ export class InProcessSubagentProvider implements SubagentProvider {
       run: this.options.run,
       limits: this.options.limits,
       parentSignal: this.options.parentSignal,
+      concurrencyGate: this.options.concurrencyGate,
       ...(this.options.worktrees ? { worktrees: this.options.worktrees } : {}),
       ...(this.options.createInheritedTools
         ? { createInheritedTools: this.options.createInheritedTools }

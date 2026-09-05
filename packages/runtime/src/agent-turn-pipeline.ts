@@ -11,7 +11,7 @@ import {
 } from "./agent-tool-policy-preflight.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { validateCompiledPromptArtifact } from "./prompt-compiler.js";
-import { createOwnedToolRecordV2 } from "./tool-protocol-registry.js";
+import { createOwnedToolRecordV2 } from "./owned-tool-protocol.js";
 
 export interface AgentTurnPromptAdapter {
   id: string;

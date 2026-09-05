@@ -14,6 +14,7 @@ import {
   WorkspaceProcessManager,
   workspaceProcessToolCallArgumentsLedgerProjection,
 } from "../src/index.js";
+import { createActiveTestRun } from "./active-run-test-fixture.js";
 
 const temporaryRoots: string[] = [];
 
@@ -154,14 +155,18 @@ async function createHarness() {
     sandbox: controlled.sandbox,
   });
   await manager.initialize();
+  const { thread, run } = await createActiveTestRun(
+    store,
+    "Workspace local service fixture",
+  );
   return {
     workspaceRoot,
     dataRoot,
     store,
     manager,
     controlled,
-    threadId: store.listThreads()[0]!.id,
-    runId: store.listRuns(store.listThreads()[0]!.id)[0]!.id,
+    threadId: thread.id,
+    runId: run.id,
   };
 }
 

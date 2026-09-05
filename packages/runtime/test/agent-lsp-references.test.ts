@@ -127,10 +127,11 @@ describe("Agent LSP references integration", () => {
         event.payload["toolName"] === "lsp_references",
     );
     expect(toolEvents.map((event) => event.type)).toEqual([
+      "tool.admitted",
       "tool.started",
       "tool.completed",
     ]);
-    expect(toolEvents[1]?.payload["details"]).toEqual(
+    expect(toolEvents[2]?.payload["details"]).toEqual(
       expect.objectContaining({
         kind: "napier.lsp-references",
         status: "found",

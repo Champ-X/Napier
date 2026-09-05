@@ -21,6 +21,12 @@ import {
   preflightWorkspaceOutputFile,
   writeWorkspaceOutputFile,
 } from "./workspace-output-file.js";
+import { detectWebFetchImage } from "./web-fetch-image.js";
+import type {
+  ToolOperationDescriptor,
+  ToolOperationObserver,
+  ToolOperationSettlement,
+} from "./tool-operation-journal.js";
 
 export interface WebFetchSaveRequest {
   url: string;
@@ -64,6 +70,7 @@ export interface WebFetchSaveExecutor {
     owner: { threadId: string; runId: string },
     request: WebFetchSaveRequest,
     signal?: AbortSignal,
+    operations?: ToolOperationObserver,
   ): Promise<WebFetchSaveResult>;
 }
 
@@ -92,21 +99,39 @@ export class RunWebFetchSaveManager implements WebFetchSaveExecutor {
     owner: { threadId: string; runId: string },
     request: WebFetchSaveRequest,
     signal: AbortSignal = new AbortController().signal,
+    operations?: ToolOperationObserver,
   ): Promise<WebFetchSaveResult> {
-    const path = await preflightWorkspaceOutputFile(
-      this.options.workspaceRoot,
-      request.path,
-      outputOptions(),
+    const target = await executeSaveOperation(
+      operations,
+      saveOperationDescriptor(1, "preflight", "verify", "neutral", request),
+      async () => {
+        const path = await preflightWorkspaceOutputFile(
+          this.options.workspaceRoot,
+          request.path,
+          outputOptions(),
+        );
+        const authority = this.artifacts.authorize(
+          owner,
+          (artifact) => artifact.kind === "file" && artifact.path === path,
+        );
+        if (!authority) {
+          throw new Error(
+            "Web Fetch save requires one expected file Artifact on the current Run-bound Plan",
+          );
+        }
+        return { path, authority };
+      },
+      ({ path, authority }) => ({
+        outcome: "succeeded",
+        state: {
+          pathSha256: sha256(path),
+          planIdSha256: sha256(authority.planId),
+          artifactIdSha256: sha256(authority.artifactId),
+        },
+        effect: { route: "preflight", authorized: true },
+      }),
     );
-    const authority = this.artifacts.authorize(
-      owner,
-      (artifact) => artifact.kind === "file" && artifact.path === path,
-    );
-    if (!authority) {
-      throw new Error(
-        "Web Fetch save requires one expected file Artifact on the current Run-bound Plan",
-      );
-    }
+    const { path, authority } = target;
     const executed = await executeWebFetchSource({
       http: this.http,
       browserFallbackCount: 0,
@@ -116,46 +141,157 @@ export class RunWebFetchSaveManager implements WebFetchSaveExecutor {
       options: { browserFallbackAllowed: false },
       now: this.now,
       allowPdfWithoutText: true,
+      ...(operations ? { operations } : {}),
+      operationOrdinalBase: 1,
     });
-    const retained = await this.options.retainSource.retainWebSource(
-      owner,
-      executed.source,
-      signal,
+    const retained = await executeSaveOperation(
+      operations,
+      saveOperationDescriptor(
+        3,
+        "retain_source",
+        "mutate",
+        "supporting",
+        request,
+      ),
+      () =>
+        this.options.retainSource.retainWebSource(
+          owner,
+          executed.source,
+          signal,
+        ),
+      (value) => ({
+        outcome: "succeeded",
+        state: value.source.contentSha256,
+        effect: {
+          route: "retain_source",
+          contentSha256: value.source.contentSha256,
+        },
+      }),
     );
-    assertPathFormat(path, executed.source.format);
-    const currentAuthority = this.artifacts.authorize(
-      owner,
-      (artifact) => artifact.kind === "file" && artifact.path === path,
+    await executeSaveOperation(
+      operations,
+      saveOperationDescriptor(
+        4,
+        "validate_content",
+        "verify",
+        "neutral",
+        request,
+      ),
+      async () => {
+        assertPathFormat(path, executed.source.format, executed.body);
+        const currentAuthority = this.artifacts.authorize(
+          owner,
+          (artifact) => artifact.kind === "file" && artifact.path === path,
+        );
+        if (
+          !currentAuthority ||
+          currentAuthority.planId !== authority.planId ||
+          currentAuthority.artifactId !== authority.artifactId
+        ) {
+          throw new Error("Web Fetch save Plan authority changed before write");
+        }
+        return executed.source.format;
+      },
+      (format) => ({
+        outcome: "succeeded",
+        state: { format, bodySha256: executed.source.bodySha256 },
+        effect: { route: "validate_content", format },
+      }),
     );
-    if (
-      !currentAuthority ||
-      currentAuthority.planId !== authority.planId ||
-      currentAuthority.artifactId !== authority.artifactId
-    ) {
-      throw new Error("Web Fetch save Plan authority changed before write");
-    }
-    const file = await writeWorkspaceOutputFile(
-      this.options.workspaceRoot,
-      path,
-      Readable.from([executed.body]),
-      outputOptions(),
-      signal,
+    const file = await executeSaveOperation(
+      operations,
+      saveOperationDescriptor(5, "write_file", "mutate", "product", request),
+      () =>
+        writeWorkspaceOutputFile(
+          this.options.workspaceRoot,
+          path,
+          Readable.from([executed.body]),
+          outputOptions(),
+          signal,
+        ),
+      (value) => ({
+        outcome: "succeeded",
+        state: { fileSha256: value.fileSha256, fileBytes: value.fileBytes },
+        effect: {
+          route: "write_file",
+          fileSha256: value.fileSha256,
+          fileBytes: value.fileBytes,
+        },
+      }),
     );
-    if (
-      file.fileSha256 !== executed.source.bodySha256 ||
-      file.fileBytes !== executed.source.bodyBytes
-    ) {
-      throw new Error("Web Fetch saved file does not match response bytes");
-    }
-    const registration = await this.files.register(owner, {
-      path: file.path,
-      fileSha256: file.fileSha256,
-      fileBytes: file.fileBytes,
-      producedEvidence:
-        "Web Fetch save wrote the declared raw public Source file.",
-      verifiedEvidence:
-        "Web Fetch save verified the declared raw Source file bytes.",
-    });
+    await executeSaveOperation(
+      operations,
+      saveOperationDescriptor(
+        6,
+        "verify_bytes",
+        "verify",
+        "verification",
+        request,
+      ),
+      async () => {
+        if (
+          file.fileSha256 !== executed.source.bodySha256 ||
+          file.fileBytes !== executed.source.bodyBytes
+        ) {
+          throw new Error("Web Fetch saved file does not match response bytes");
+        }
+        return file;
+      },
+      (value) => ({
+        outcome: "succeeded",
+        state: { fileSha256: value.fileSha256, fileBytes: value.fileBytes },
+        effect: {
+          route: "verify_bytes",
+          fileSha256: value.fileSha256,
+          fileBytes: value.fileBytes,
+        },
+      }),
+    );
+    const registration = await executeSaveOperation(
+      operations,
+      saveOperationDescriptor(
+        7,
+        "register_artifact",
+        "verify",
+        "verification",
+        request,
+      ),
+      () =>
+        this.files.register(owner, {
+          path: file.path,
+          fileSha256: file.fileSha256,
+          fileBytes: file.fileBytes,
+          producedEvidence:
+            "Web Fetch save wrote the declared raw public Source file.",
+          verifiedEvidence:
+            "Web Fetch save verified the declared raw Source file bytes.",
+        }),
+      (value) => {
+        const matches =
+          value.status === "registered" &&
+          value.reason === "artifact_registered" &&
+          value.planId === authority.planId &&
+          value.artifactId === authority.artifactId;
+        return matches
+          ? {
+              outcome: "succeeded",
+              state: {
+                fileSha256: file.fileSha256,
+                artifactIdSha256: sha256(authority.artifactId),
+              },
+              effect: { route: "register_artifact", registered: true },
+            }
+          : {
+              outcome: "failed",
+              diagnostic: `Artifact registration did not settle: ${value.reason}`,
+              effect: {
+                route: "register_artifact",
+                registered: false,
+                reason: value.reason,
+              },
+            };
+      },
+    );
     const registrationMatches =
       registration.status === "registered" &&
       registration.reason === "artifact_registered" &&
@@ -205,6 +341,80 @@ export class RunWebFetchSaveManager implements WebFetchSaveExecutor {
   }
 }
 
+async function executeSaveOperation<T>(
+  operations: ToolOperationObserver | undefined,
+  descriptor: ToolOperationDescriptor,
+  execute: () => Promise<T>,
+  settlement: (value: T) => ToolOperationSettlement,
+): Promise<T> {
+  const operation = operations?.operation(descriptor);
+  await operation?.proposed();
+  const admission = await operation?.admit();
+  if (admission && !admission.admitted) {
+    throw new Error(
+      admission.reason ?? `Operation ${descriptor.route} was not admitted`,
+    );
+  }
+  await operation?.started();
+  try {
+    const value = await execute();
+    await operation?.settled(settlement(value));
+    return value;
+  } catch (error) {
+    await operation?.settled({
+      outcome: "failed",
+      diagnostic: error,
+      effect: { outcome: "failed", route: descriptor.route },
+    });
+    throw error;
+  }
+}
+
+function saveOperationDescriptor(
+  ordinal: number,
+  route: string,
+  operation: "mutate" | "verify",
+  contribution: "supporting" | "product" | "verification" | "neutral",
+  request: WebFetchSaveRequest,
+): ToolOperationDescriptor {
+  const resourceKey = {
+    kind: route === "retain_source" ? "public-source" : "workspace-path",
+    url: request.url,
+    path: request.path,
+  };
+  const routeBinding = {
+    kind: "web-fetch-save-stage",
+    route,
+    ...(route === "retain_source"
+      ? { origin: publicOrigin(request.url) }
+      : { path: request.path }),
+  };
+  return {
+    ordinal,
+    mode: "pipeline",
+    route,
+    operation,
+    scope: route === "retain_source" ? "run_source" : "workspace",
+    contribution,
+    resourceKey,
+    failureBindings: {
+      target: resourceKey,
+      origin: { kind: "public-origin", origin: publicOrigin(request.url) },
+      route: routeBinding,
+      capability: { kind: "web-fetch-save-stage-capability", route },
+    },
+    failureDomainKey: routeBinding,
+  };
+}
+
+function publicOrigin(url: string): string {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return "invalid";
+  }
+}
+
 function outputOptions() {
   return {
     scope: "Web Fetch",
@@ -213,19 +423,32 @@ function outputOptions() {
   };
 }
 
-function assertPathFormat(path: string, format: WebFetchSourceFormat): void {
+function assertPathFormat(
+  path: string,
+  format: WebFetchSourceFormat,
+  body: Buffer,
+): void {
   const lower = path.toLowerCase();
   const valid =
     format === "pdf"
       ? lower.endsWith(".pdf")
-      : format === "html"
-        ? lower.endsWith(".html") || lower.endsWith(".htm")
-        : format === "markdown"
-          ? lower.endsWith(".md") || lower.endsWith(".markdown")
-          : format === "json"
-            ? lower.endsWith(".json")
-            : lower.endsWith(".txt");
+      : format === "image"
+        ? imagePathMatches(lower, body)
+        : format === "html"
+          ? lower.endsWith(".html") || lower.endsWith(".htm")
+          : format === "markdown"
+            ? lower.endsWith(".md") || lower.endsWith(".markdown")
+            : format === "json"
+              ? lower.endsWith(".json")
+              : lower.endsWith(".txt");
   if (!valid) {
     throw new Error(`Web Fetch save path does not match ${format} content`);
   }
+}
+
+function imagePathMatches(path: string, body: Buffer): boolean {
+  const image = detectWebFetchImage(body);
+  return Boolean(
+    image && image.extensions.some((extension) => path.endsWith(extension)),
+  );
 }

@@ -5,6 +5,7 @@ import type {
   RunFinalizationReserve,
 } from "./run-budget.js";
 import type { ModelTurnWatchdogEvidence } from "./model-turn-deadline.js";
+import type { ModelProviderFailureEvidence } from "./model-turn-deadline.js";
 import type { RunNoProgressEvidence } from "./run-no-progress-policy.js";
 import type { ModelThinkingLoopEvidence } from "./model-thinking-loop-policy.js";
 import {
@@ -17,6 +18,7 @@ export interface RunFailureClassification {
   budgetExhaustion: RunBudgetExhaustion | undefined;
   finalizationReserve: RunFinalizationReserve | undefined;
   modelWatchdog: ModelTurnWatchdogEvidence | undefined;
+  modelProviderFailure: ModelProviderFailureEvidence | undefined;
   toolDeadline: ToolDeadlineEvidence | undefined;
   noProgress: RunNoProgressEvidence | undefined;
   thinkingLoop: ModelThinkingLoopEvidence | undefined;
@@ -69,6 +71,7 @@ export function withSettlementOutcome(
     !failure.budgetExhaustion &&
     !failure.finalizationReserve &&
     !failure.modelWatchdog &&
+    !failure.modelProviderFailure &&
     !failure.toolDeadline &&
     !failure.noProgress &&
     !failure.thinkingLoop

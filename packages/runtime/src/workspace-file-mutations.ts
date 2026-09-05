@@ -11,7 +11,6 @@ import {
 import path from "node:path";
 
 import type {
-  JsonObject,
   WorkspaceFileMutationEvidence,
   WorkspaceFileMutationOperation,
   WorkspaceTrashItem,
@@ -21,7 +20,13 @@ import type {
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
-import type { LocalStore } from "./store.js";
+import { compensateWorkspaceFileMutation } from "./workspace-file-mutation-compensation.js";
+import {
+  appendWorkspaceFileMutationEvidence,
+  createWorkspaceFileMutationEvidence,
+  hasWorkspaceFileMutationEvidence,
+  type WorkspaceFileMutationEventStore,
+} from "./workspace-file-mutation-outcome.js";
 import {
   compareDirectoryEntries,
   createMissingDirectories,
@@ -101,7 +106,7 @@ export interface WorkspaceFileMutationApplyResult {
 }
 
 export interface WorkspaceFileMutationManagerOptions {
-  store: LocalStore;
+  store: WorkspaceFileMutationEventStore;
   workspaceRoot: string;
   dataRoot: string;
   renameEntry?: typeof rename;
@@ -124,10 +129,24 @@ interface WorkspaceFileMutationPlan {
 interface StoredPreview {
   preview: WorkspaceFileMutationPreview;
   request: WorkspaceFileMutationRequest;
+  initiatedBy: WorkspaceFileMutationEvidence["initiatedBy"];
   trashId?: string;
   createdAtMs: number;
 }
 
+/**
+ * Coordinates preview-checked filesystem mutations for one Workspace.
+ *
+ * Planning and commit mechanics remain here beside the path lock boundary.
+ * The outcome module owns evidence construction and Ledger reconciliation.
+ * The compensation module owns verified reversal after a commit failure.
+ * This class keeps those phases ordered under the same path lock.
+ * Preview state is process-local and consumed before filesystem work.
+ * Results follow persistence or a verified compensation attempt.
+ * Reconciled acknowledgements prevent false rollback after commit.
+ *
+ * Agent requests require an active Run; operator recovery remains auditable.
+ */
 export class WorkspaceFileMutationManager {
   private readonly previews = new Map<string, StoredPreview>();
   private readonly workspaceRoot: string;
@@ -161,8 +180,18 @@ export class WorkspaceFileMutationManager {
     request: WorkspaceFileMutationRequest,
     signal?: AbortSignal,
   ): Promise<WorkspaceFileMutationPreview> {
+    return this.createPreview(threadId, runId, request, "agent", signal);
+  }
+
+  private async createPreview(
+    threadId: string,
+    runId: string,
+    request: WorkspaceFileMutationRequest,
+    initiatedBy: WorkspaceFileMutationEvidence["initiatedBy"],
+    signal?: AbortSignal,
+  ): Promise<WorkspaceFileMutationPreview> {
     this.assertReady();
-    this.assertRunOwner(threadId, runId);
+    this.assertRunOwner(threadId, runId, initiatedBy === "agent");
     assertNotAborted(signal, "Workspace file mutation preview was aborted");
     this.prunePreviews();
     const trashId =
@@ -198,6 +227,7 @@ export class WorkspaceFileMutationManager {
     this.previews.set(previewId, {
       preview,
       request: structuredClone(request),
+      initiatedBy,
       ...(trashId ? { trashId } : {}),
       createdAtMs: now.getTime(),
     });
@@ -213,7 +243,7 @@ export class WorkspaceFileMutationManager {
     signal?: AbortSignal,
   ): Promise<WorkspaceFileMutationApplyResult> {
     this.assertReady();
-    this.assertRunOwner(threadId, runId);
+    this.assertRunOwner(threadId, runId, initiatedBy === "agent");
     if (!PREVIEW_ID.test(previewId)) {
       throw new Error("Workspace file mutation preview ID is invalid");
     }
@@ -222,7 +252,8 @@ export class WorkspaceFileMutationManager {
     if (
       !stored ||
       stored.preview.threadId !== threadId ||
-      stored.preview.runId !== runId
+      stored.preview.runId !== runId ||
+      stored.initiatedBy !== initiatedBy
     ) {
       throw new Error("Workspace file mutation preview not found");
     }
@@ -245,6 +276,7 @@ export class WorkspaceFileMutationManager {
       "workspace file mutation",
       async () => {
         assertNotAborted(signal, "Workspace file mutation apply was aborted");
+        this.assertRunOwner(threadId, runId, initiatedBy === "agent");
         const currentPlan = await this.buildPlan(
           stored.request,
           stored.trashId,
@@ -255,25 +287,38 @@ export class WorkspaceFileMutationManager {
           );
         }
         const applied = await this.commitPlan(currentPlan, threadId, runId);
-        const evidence = await this.recordMutation(
+        const evidence = createWorkspaceFileMutationEvidence({
           threadId,
           runId,
           initiatedBy,
-          currentPlan,
+          plan: currentPlan,
           applied,
-        );
-        return {
-          kind: "napier.workspace-file-mutation-result",
-          schemaVersion: 1,
-          ...(currentPlan.sourcePath
-            ? { sourcePath: currentPlan.sourcePath }
-            : {}),
-          ...(currentPlan.destinationPath
-            ? { destinationPath: currentPlan.destinationPath }
-            : {}),
-          ...(applied.trashItem ? { trashItem: applied.trashItem } : {}),
-          evidence,
-        };
+          appliedAt: this.validNow().toISOString(),
+        });
+        try {
+          await appendWorkspaceFileMutationEvidence(
+            this.options.store,
+            evidence,
+          );
+        } catch (error) {
+          if (
+            await hasWorkspaceFileMutationEvidence(this.options.store, evidence)
+          ) {
+            return this.applyResult(currentPlan, applied, evidence);
+          }
+          const reverted = await compensateWorkspaceFileMutation(
+            currentPlan,
+            applied,
+            this.renameEntry,
+          );
+          throw new Error(
+            reverted
+              ? "Workspace file mutation Ledger commit failed; the filesystem mutation was reverted and verified"
+              : "Workspace file mutation applied but neither Ledger persistence nor filesystem rollback could be verified; inspect workspace state before retrying",
+            { cause: error },
+          );
+        }
+        return this.applyResult(currentPlan, applied, evidence);
       },
     );
   }
@@ -308,10 +353,11 @@ export class WorkspaceFileMutationManager {
     if (item.threadId !== threadId) {
       throw new Error("Workspace trash item not found");
     }
-    const preview = await this.preview(
+    const preview = await this.createPreview(
       threadId,
       item.runId,
       { operation: "restore", trashId },
+      "operator",
       signal,
     );
     const result = await this.apply(
@@ -550,77 +596,23 @@ export class WorkspaceFileMutationManager {
     return { ...(after ? { after } : {}), durable };
   }
 
-  private async recordMutation(
-    threadId: string,
-    runId: string,
-    initiatedBy: WorkspaceFileMutationEvidence["initiatedBy"],
+  private applyResult(
     plan: WorkspaceFileMutationPlan,
     applied: {
-      after?: WorkspaceEntrySnapshot;
-      createdDirectoryCount?: number;
       trashItem?: WorkspaceTrashItem;
-      durable: boolean;
     },
-  ): Promise<WorkspaceFileMutationEvidence> {
-    const source = plan.source;
-    const postcondition: WorkspaceFileMutationEvidence["postcondition"] =
-      !applied.durable || !applied.after
-        ? "indeterminate"
-        : !source || source.snapshotSha256 === applied.after.snapshotSha256
-          ? "verified"
-          : "drifted";
-    const observed = applied.after ?? source;
-    const fallbackDirectory =
-      plan.request.operation === "create_directory" && !observed;
-    const content = {
-      kind: "napier.workspace-file-mutation" as const,
-      schemaVersion: 1 as const,
-      id: createId("filemutation"),
-      threadId,
-      runId,
-      operation: plan.request.operation,
-      initiatedBy,
-      ...(observed
-        ? { entryKind: observed.entryKind }
-        : fallbackDirectory
-          ? { entryKind: "directory" as const }
-          : {}),
-      ...(plan.sourcePath ? { sourcePathSha256: sha256(plan.sourcePath) } : {}),
+    evidence: WorkspaceFileMutationEvidence,
+  ): WorkspaceFileMutationApplyResult {
+    return {
+      kind: "napier.workspace-file-mutation-result",
+      schemaVersion: 1,
+      ...(plan.sourcePath ? { sourcePath: plan.sourcePath } : {}),
       ...(plan.destinationPath
-        ? { destinationPathSha256: sha256(plan.destinationPath) }
+        ? { destinationPath: plan.destinationPath }
         : {}),
-      ...(source ? { beforeSha256: source.snapshotSha256 } : {}),
-      ...(applied.after ? { afterSha256: applied.after.snapshotSha256 } : {}),
-      fileCount: observed?.fileCount ?? 0,
-      directoryCount: observed?.directoryCount ?? (fallbackDirectory ? 1 : 0),
-      bytes: observed?.bytes ?? 0,
-      ...(applied.createdDirectoryCount !== undefined
-        ? { createdDirectoryCount: applied.createdDirectoryCount }
-        : {}),
-      ...(plan.trashId ? { trashId: plan.trashId } : {}),
-      reversible: plan.reversible,
-      postcondition,
-      appliedAt: this.validNow().toISOString(),
+      ...(applied.trashItem ? { trashItem: applied.trashItem } : {}),
+      evidence,
     };
-    const evidence: WorkspaceFileMutationEvidence = {
-      ...content,
-      contentSha256: sha256(canonicalJson(content)),
-    };
-    try {
-      await this.options.store.appendEvent({
-        threadId,
-        runId,
-        type: "workspace.file.mutated",
-        category: "tool",
-        visibility: "user",
-        payload: evidence as unknown as JsonObject,
-      });
-    } catch {
-      throw new Error(
-        "Workspace file mutation applied but Ledger evidence could not be persisted; inspect workspace state before retrying",
-      );
-    }
-    return evidence;
   }
 
   private async atomicRename(
@@ -678,14 +670,22 @@ export class WorkspaceFileMutationManager {
     }
   }
 
-  private assertRunOwner(threadId: string, runId: string): void {
+  private assertRunOwner(
+    threadId: string,
+    runId: string,
+    requireActive = false,
+  ): void {
     this.options.store.getThread(threadId);
-    if (
-      !this.options.store.listRuns(threadId).some((run) => run.id === runId)
-    ) {
+    const run = this.options.store
+      .listRuns(threadId)
+      .find((candidate) => candidate.id === runId);
+    if (!run) {
       throw new Error(
         "Workspace file mutation Run does not belong to the Thread",
       );
+    }
+    if (requireActive && run.status !== "queued" && run.status !== "running") {
+      throw new Error("Workspace file mutation requires an active Run");
     }
   }
 

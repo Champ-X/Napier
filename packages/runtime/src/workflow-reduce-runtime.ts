@@ -212,19 +212,13 @@ export class ExecutionPlanWorkflowReduceRuntime {
         },
         options.onEvent,
       );
-      await this.ledger.append(
-        {
-          threadId: options.threadId,
-          runId: leased.run.id,
-          type: "run.completed",
-          category: "lifecycle",
+      const run = await this.store.finishRun(leased.run.id, "completed", {
+        leaseToken: leased.token,
+        terminalEvent: {
           visibility: "debug",
           payload: { status: "completed" },
         },
-        options.onEvent,
-      );
-      const run = await this.store.finishRun(leased.run.id, "completed", {
-        leaseToken: leased.token,
+        onTerminalEvent: options.onEvent,
       });
       settled = true;
       return { run, output };
@@ -243,13 +237,11 @@ export class ExecutionPlanWorkflowReduceRuntime {
                 ? "cancelled"
                 : "reduce_failed";
       const diagnosticSha256 = sha256(errorMessage(error));
-      await this.ledger
-        .append(
-          {
-            threadId: options.threadId,
-            runId: leased.run.id,
-            type: cancelled ? "run.cancelled" : "run.failed",
-            category: "lifecycle",
+      await this.store
+        .finishRun(leased.run.id, cancelled ? "cancelled" : "failed", {
+          error: `Workflow Reduce ${code}`,
+          leaseToken: leased.token,
+          terminalEvent: {
             visibility: "user",
             payload: {
               status: cancelled ? "cancelled" : "failed",
@@ -257,13 +249,7 @@ export class ExecutionPlanWorkflowReduceRuntime {
               diagnosticSha256,
             },
           },
-          options.onEvent,
-        )
-        .catch(() => undefined);
-      await this.store
-        .finishRun(leased.run.id, cancelled ? "cancelled" : "failed", {
-          error: `Workflow Reduce ${code}`,
-          leaseToken: leased.token,
+          onTerminalEvent: options.onEvent,
         })
         .catch(() => undefined);
       if (error instanceof ExecutionPlanWorkflowReduceError) throw error;

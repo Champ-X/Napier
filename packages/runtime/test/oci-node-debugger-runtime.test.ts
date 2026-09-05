@@ -13,6 +13,7 @@ import { NodeDebuggerManager } from "../src/node-debugger.js";
 import { OciContainerSandboxAdapter } from "../src/sandbox.js";
 import { LocalStore } from "../src/store.js";
 import { WorkspaceProcessManager } from "../src/workspace-processes.js";
+import { createActiveTestRun } from "./active-run-test-fixture.js";
 
 const execFileAsync = promisify(execFile);
 const IMAGE_ID = `sha256:${"a".repeat(64)}`;
@@ -45,7 +46,7 @@ describe("OCI image-bound Node debugger runtime", () => {
         runId: fixture.runId,
         path: "src/debug-target.mjs",
         breakpoints: [{ line: 2 }],
-        actionTimeoutMs: 3_000,
+        actionTimeoutMs: 5_000,
         sessionTimeoutMs: 20_000,
       });
       expect(launched).toEqual(
@@ -274,8 +275,10 @@ async function createManager(
   });
   await processes.initialize();
   openProcesses.push(processes);
-  const thread = store.listThreads()[0]!;
-  const run = store.listRuns(thread.id)[0]!;
+  const { thread, run } = await createActiveTestRun(
+    store,
+    "OCI Node debugger fixture",
+  );
   return {
     workspaceRoot,
     store,

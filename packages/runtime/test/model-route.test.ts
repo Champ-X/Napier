@@ -3,16 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
-import {
-  createAssistantMessageEventStream,
-  fauxAssistantMessage,
-  fauxProvider,
-  type Api,
-  type AssistantMessage,
-  type AssistantMessageEvent,
-  type AssistantMessageEventStream,
-  type Model,
-} from "@earendil-works/pi-ai";
+import { fauxProvider } from "@earendil-works/pi-ai";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { canonicalJson, sha256 } from "../src/ed25519.js";
@@ -21,17 +12,32 @@ import {
   classifyRouteFailure,
   ModelRouter,
   routeCanFallback,
+  routeCanRetrySameCandidate,
 } from "../src/model-route.js";
 import { ModelRegistry } from "../src/models.js";
 import { LEDGER_DATABASE_FILENAME } from "../src/sqlite-ledger.js";
 import { LocalStore } from "../src/store.js";
+import {
+  cleanupModelRouteFixtures,
+  collectModelRouteStream as collect,
+  createModelRouteFixture as createFixture,
+  emptyTextFailureStream,
+  openVisibleStream,
+  resolveWithin,
+  terminalStream,
+  thinkingFailureStream,
+  visibleFailureStream,
+} from "./model-route-test-support.js";
 
 const roots: string[] = [];
 
 afterEach(async () => {
-  await Promise.all(
-    roots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
-  );
+  await Promise.all([
+    cleanupModelRouteFixtures(),
+    ...roots
+      .splice(0)
+      .map((root) => rm(root, { recursive: true, force: true })),
+  ]);
 });
 
 describe("Model route failure policy", () => {
@@ -39,6 +45,14 @@ describe("Model route failure policy", () => {
     [{ status: 429, message: "Too many requests" }, "rate_limited"],
     [{ statusCode: 503, message: "Service unavailable" }, "provider_server"],
     [{ code: "ECONNRESET", message: "socket closed" }, "network"],
+    [{ message: "terminated" }, "network"],
+    [{ code: "UND_ERR_SOCKET", message: "other side closed" }, "network"],
+    [{ status: 408, message: "Request Timeout" }, "network"],
+    [{ message: "upstream request timed out" }, "network"],
+    [
+      { message: "Model turn watchdog triggered: first_event_timeout" },
+      "unknown",
+    ],
     [{ message: "context_length_exceeded" }, "context"],
     [{ status: 401, message: "invalid API key" }, "authentication"],
     [{ status: 402, message: "payment required" }, "billing"],
@@ -79,13 +93,49 @@ describe("Model route failure policy", () => {
       ).toBe(false);
     }
   });
+
+  it.each(["network", "provider_server"] as const)(
+    "permits a same-candidate retry for %s failures",
+    (failureClass) => {
+      expect(
+        routeCanRetrySameCandidate({
+          failureClass,
+          visibleOutputProduced: false,
+          sideEffectState: "none",
+          hasRetryAttempt: true,
+          aborted: false,
+        }),
+      ).toBe(true);
+    },
+  );
+
+  it.each([
+    ["HTTP 429", { failureClass: "rate_limited" as const }],
+    ["cancellation", { failureClass: "cancelled" as const }],
+    ["visible text", { visibleOutputProduced: true }],
+    ["a completed write", { sideEffectState: "known" as const }],
+    ["an unresolved write", { sideEffectState: "unknown" as const }],
+  ])("rejects a same-candidate retry after %s", (_reason, override) => {
+    expect(
+      routeCanRetrySameCandidate({
+        failureClass: "network",
+        visibleOutputProduced: false,
+        sideEffectState: "none",
+        hasRetryAttempt: true,
+        aborted: false,
+        ...override,
+      }),
+    ).toBe(false);
+  });
 });
 
 describe("ModelRouteSession", () => {
   it.each(["health", "cursor"] as const)(
     "fails closed on corrupted persisted Model route %s state",
     async (kind) => {
-      const root = await mkdtemp(path.join(tmpdir(), "napier-model-route-corrupt-"));
+      const root = await mkdtemp(
+        path.join(tmpdir(), "napier-model-route-corrupt-"),
+      );
       roots.push(root);
       const options = {
         workspaceRoot: path.join(root, "workspace"),
@@ -100,9 +150,7 @@ describe("ModelRouteSession", () => {
         path.join(options.dataRoot, LEDGER_DATABASE_FILENAME),
       );
       const row = database
-        .prepare(
-          "SELECT state_json FROM workspace_state WHERE singleton = 1",
-        )
+        .prepare("SELECT state_json FROM workspace_state WHERE singleton = 1")
         .get() as { state_json: string };
       const state = JSON.parse(row.state_json) as {
         modelRouteHealth: unknown;
@@ -145,7 +193,9 @@ describe("ModelRouteSession", () => {
   );
 
   it("uses role, endpoint, and credential-pool configuration across restarts", async () => {
-    const root = await mkdtemp(path.join(tmpdir(), "napier-model-route-state-"));
+    const root = await mkdtemp(
+      path.join(tmpdir(), "napier-model-route-state-"),
+    );
     roots.push(root);
     const options = {
       workspaceRoot: path.join(root, "workspace"),
@@ -159,7 +209,11 @@ describe("ModelRouteSession", () => {
         schemaVersion: 2,
         roles: {},
         credentialPools: [
-          { id: "route_pool", providerId: "route-fixture", strategy: "round_robin" },
+          {
+            id: "route_pool",
+            providerId: "route-fixture",
+            strategy: "round_robin",
+          },
         ],
       },
     });
@@ -216,16 +270,16 @@ describe("ModelRouteSession", () => {
     });
     const credentials = new CredentialReferenceStore({
       store,
-      env: { ROUTE_FIRST_KEY: "secret-first", ROUTE_SECOND_KEY: "secret-second" },
+      env: {
+        ROUTE_FIRST_KEY: "secret-first",
+        ROUTE_SECOND_KEY: "secret-second",
+      },
     });
     const registry = new ModelRegistry(credentials);
     registry.registerProvider(
       fauxProvider({
         provider: "route-fixture",
-        models: [
-          { id: agent.model.id },
-          { id: "reasoning", reasoning: true },
-        ],
+        models: [{ id: agent.model.id }, { id: "reasoning", reasoning: true }],
       }).provider,
     );
     const defaultModel = await registry.resolveConfigured({
@@ -234,7 +288,12 @@ describe("ModelRouteSession", () => {
     });
     if (!defaultModel) throw new Error("Route model was not resolved");
     const now = Date.now();
-    const router = new ModelRouter(store, registry, () => now, () => 0);
+    const router = new ModelRouter(
+      store,
+      registry,
+      () => now,
+      () => 0,
+    );
     const session = await router.createSession({
       run,
       primary: defaultModel,
@@ -305,16 +364,20 @@ describe("ModelRouteSession", () => {
       }),
     );
     expect(
-      (await reopened.modelRouteStateRepository.reserveCredential(
-        agent.modelRoute!.credentialPools![0]!,
-        { modelId: "served-reasoning", endpointProfileId: "corp_gateway" },
-      )).id,
+      (
+        await reopened.modelRouteStateRepository.reserveCredential(
+          agent.modelRoute!.credentialPools![0]!,
+          { modelId: "served-reasoning", endpointProfileId: "corp_gateway" },
+        )
+      ).id,
     ).toBe(second.id);
     expect(
-      (await reopened.modelRouteStateRepository.reserveCredential(
-        agent.modelRoute!.credentialPools![0]!,
-        { modelId: "served-reasoning", endpointProfileId: "corp_gateway" },
-      )).id,
+      (
+        await reopened.modelRouteStateRepository.reserveCredential(
+          agent.modelRoute!.credentialPools![0]!,
+          { modelId: "served-reasoning", endpointProfileId: "corp_gateway" },
+        )
+      ).id,
     ).toBe(second.id);
     const persisted = await readFile(
       path.join(options.dataRoot, "workspace.json"),
@@ -404,6 +467,253 @@ describe("ModelRouteSession", () => {
     fixture.store.close();
   });
 
+  it("retries a terminated single candidate without publishing failed thinking", async () => {
+    const fixture = await createFixture({ noRetryDelay: true });
+    const session = await fixture.router.createSession({
+      run: fixture.run,
+      primary: fixture.primary,
+    });
+    const failedThinking = "r".repeat(12_750);
+    let invocationCount = 0;
+    const stream = session.stream({
+      signal: new AbortController().signal,
+      invoke: async (model) => {
+        invocationCount += 1;
+        return invocationCount === 1
+          ? thinkingFailureStream(model, failedThinking, "terminated")
+          : terminalStream(model, "stop", "retry succeeded");
+      },
+    });
+
+    const streamed = await collect(stream);
+    const attempts = (await fixture.store.listEvents(fixture.thread.id)).filter(
+      (event) =>
+        event.runId === fixture.run.id &&
+        (event.type === "route_attempt_started" ||
+          event.type === "route_attempt_ended"),
+    );
+
+    expect(invocationCount).toBe(2);
+    expect(streamed.map((event) => event.type)).toEqual(["start", "done"]);
+    expect(streamed.some((event) => event.type === "thinking_delta")).toBe(
+      false,
+    );
+    expect(JSON.stringify(streamed)).not.toContain(failedThinking);
+    expect(JSON.stringify(streamed)).not.toContain("terminated");
+    expect(attempts[1]?.payload).toEqual(
+      expect.objectContaining({
+        attempt: 1,
+        outcome: "retryable",
+        failureClass: "network",
+        visibleOutputProduced: false,
+        bufferedThinkingBytes: 12_750,
+      }),
+    );
+    expect(attempts[2]?.payload).toEqual(
+      expect.objectContaining({
+        attempt: 2,
+        stepAttempt: 2,
+        retryFromAttempt: 1,
+        retryReason: "network",
+      }),
+    );
+    expect(attempts[3]?.payload).toEqual(
+      expect.objectContaining({
+        attempt: 2,
+        outcome: "success",
+      }),
+    );
+    fixture.store.close();
+  });
+
+  it("does not retry after buffering 32 KiB of thinking", async () => {
+    const fixture = await createFixture({ noRetryDelay: true });
+    const session = await fixture.router.createSession({
+      run: fixture.run,
+      primary: fixture.primary,
+    });
+    const thinking = "r".repeat(32 * 1024);
+    let invocationCount = 0;
+    const stream = session.stream({
+      signal: new AbortController().signal,
+      invoke: async (model) => {
+        invocationCount += 1;
+        return thinkingFailureStream(model, thinking, "terminated");
+      },
+    });
+
+    const streamed = await collect(stream);
+    const attempts = (await fixture.store.listEvents(fixture.thread.id)).filter(
+      (event) =>
+        event.runId === fixture.run.id && event.type === "route_attempt_ended",
+    );
+
+    expect(invocationCount).toBe(1);
+    expect(streamed.map((event) => event.type)).toEqual([
+      "start",
+      "thinking_delta",
+      "error",
+    ]);
+    expect(attempts).toHaveLength(1);
+    expect(attempts[0]?.payload).toEqual(
+      expect.objectContaining({
+        outcome: "terminal",
+        failureClass: "network",
+        visibleOutputProduced: true,
+        bufferedThinkingBytes: 32 * 1024,
+      }),
+    );
+    fixture.store.close();
+  });
+
+  it("settles an interrupted published attempt as cancelled", async () => {
+    const fixture = await createFixture();
+    const session = await fixture.router.createSession({
+      run: fixture.run,
+      primary: fixture.primary,
+    });
+    const stream = session.stream({
+      signal: new AbortController().signal,
+      invoke: async (model) => openVisibleStream(model),
+    });
+    const iterator = stream[Symbol.asyncIterator]();
+
+    const first = await iterator.next();
+    expect(first).toEqual(
+      expect.objectContaining({
+        done: false,
+        value: expect.objectContaining({ type: "start" }),
+      }),
+    );
+    await iterator.return?.();
+
+    const result = await resolveWithin(stream.result(), 500);
+    expect(result).toEqual(
+      expect.objectContaining({
+        provider: "route-fixture",
+        model: "primary",
+        stopReason: "aborted",
+      }),
+    );
+    const ended = (await fixture.store.listEvents(fixture.thread.id)).filter(
+      (event) =>
+        event.runId === fixture.run.id && event.type === "route_attempt_ended",
+    );
+    expect(ended).toHaveLength(1);
+    expect(ended[0]?.payload).toEqual(
+      expect.objectContaining({
+        outcome: "terminal",
+        failureClass: "cancelled",
+        visibleOutputProduced: true,
+      }),
+    );
+    fixture.store.close();
+  });
+
+  it("attributes an aborted fallback retry wait to the fallback model", async () => {
+    const abortController = new AbortController();
+    const fixture = await createFixture({ abortRetryWait: abortController });
+    const session = await fixture.router.createSession({
+      run: fixture.run,
+      primary: fixture.primary,
+      request: {
+        fallbackModels: [{ provider: "route-fixture", id: "fallback" }],
+      },
+    });
+    const invoked: string[] = [];
+    const stream = session.stream({
+      signal: abortController.signal,
+      invoke: async (model) => {
+        invoked.push(model.id);
+        return model.id === "primary"
+          ? terminalStream(model, "error", "HTTP 503 service unavailable")
+          : terminalStream(model, "error", "network error");
+      },
+    });
+
+    const streamed = await collect(stream);
+    const result = await stream.result();
+
+    expect(invoked).toEqual(["primary", "fallback"]);
+    expect(abortController.signal.aborted).toBe(true);
+    expect(streamed.at(-1)).toEqual(
+      expect.objectContaining({
+        type: "error",
+        error: expect.objectContaining({
+          provider: "route-fixture",
+          model: "fallback",
+          stopReason: "aborted",
+        }),
+      }),
+    );
+    expect(result).toEqual(
+      expect.objectContaining({
+        provider: "route-fixture",
+        model: "fallback",
+        stopReason: "aborted",
+      }),
+    );
+    fixture.store.close();
+  });
+
+  it("ignores a completed write from before the current attempt", async () => {
+    const fixture = await createFixture();
+    await fixture.store.appendEvent({
+      threadId: fixture.thread.id,
+      runId: fixture.run.id,
+      type: "tool.started",
+      category: "tool",
+      visibility: "user",
+      payload: {
+        callId: "call_historical",
+        toolName: "apply_patch",
+        effect: "write",
+      },
+    });
+    await fixture.store.appendEvent({
+      threadId: fixture.thread.id,
+      runId: fixture.run.id,
+      type: "tool.completed",
+      category: "tool",
+      visibility: "user",
+      payload: {
+        callId: "call_historical",
+        toolName: "apply_patch",
+      },
+    });
+    const session = await fixture.router.createSession({
+      run: fixture.run,
+      primary: fixture.primary,
+      request: {
+        fallbackModels: [{ provider: "route-fixture", id: "fallback" }],
+      },
+    });
+    const invoked: string[] = [];
+    const stream = session.stream({
+      signal: new AbortController().signal,
+      invoke: async (model) => {
+        invoked.push(model.id);
+        return model.id === "primary"
+          ? terminalStream(model, "error", "HTTP 503 service unavailable")
+          : terminalStream(model, "stop", "served by fallback");
+      },
+    });
+
+    await collect(stream);
+    expect(invoked).toEqual(["primary", "fallback"]);
+    const ended = (await fixture.store.listEvents(fixture.thread.id)).find(
+      (event) =>
+        event.runId === fixture.run.id && event.type === "route_attempt_ended",
+    );
+    expect(ended?.payload).toEqual(
+      expect.objectContaining({
+        outcome: "retryable",
+        sideEffectState: "none",
+      }),
+    );
+    fixture.store.close();
+  });
+
   it("does not treat an empty provider text block as visible output", async () => {
     const fixture = await createFixture();
     const session = await fixture.router.createSession({
@@ -481,7 +791,7 @@ describe("ModelRouteSession", () => {
     fixture.store.close();
   });
 
-  it("never falls back while a write side effect is unresolved", async () => {
+  it("never falls back while a current-attempt write is unresolved", async () => {
     const fixture = await createFixture();
     const session = await fixture.router.createSession({
       run: fixture.run,
@@ -490,23 +800,25 @@ describe("ModelRouteSession", () => {
         fallbackModels: [{ provider: "route-fixture", id: "fallback" }],
       },
     });
-    await fixture.store.appendEvent({
-      threadId: fixture.thread.id,
-      runId: fixture.run.id,
-      type: "tool.started",
-      category: "tool",
-      visibility: "user",
-      payload: {
-        callId: "call_pending",
-        toolName: "apply_patch",
-        effect: "write",
-      },
-    });
     const invoked: string[] = [];
     const stream = session.stream({
       signal: new AbortController().signal,
       invoke: async (model) => {
         invoked.push(model.id);
+        if (model.id === "primary") {
+          await fixture.store.appendEvent({
+            threadId: fixture.thread.id,
+            runId: fixture.run.id,
+            type: "tool.started",
+            category: "tool",
+            visibility: "user",
+            payload: {
+              callId: "call_pending",
+              toolName: "apply_patch",
+              effect: "write",
+            },
+          });
+        }
         return terminalStream(model, "error", "network error");
       },
     });
@@ -526,130 +838,6 @@ describe("ModelRouteSession", () => {
     fixture.store.close();
   });
 });
-
-async function createFixture() {
-  const root = await mkdtemp(path.join(tmpdir(), "napier-model-route-"));
-  roots.push(root);
-  const workspaceRoot = path.join(root, "workspace");
-  await mkdir(workspaceRoot);
-  const store = new LocalStore({
-    workspaceRoot,
-    dataRoot: path.join(root, "data"),
-  });
-  await store.initialize();
-  const agent = store.listAgents()[0]!;
-  const thread = await store.createThread({
-    title: "Model route",
-    agentId: agent.id,
-  });
-  const run = await store.createRun({
-    threadId: thread.id,
-    agentId: agent.id,
-    model: { provider: "route-fixture", id: "primary" },
-  });
-  const registry = new ModelRegistry();
-  registry.registerProvider(
-    fauxProvider({
-      provider: "route-fixture",
-      models: [
-        { id: "primary", reasoning: false },
-        { id: "fallback", reasoning: false },
-      ],
-    }).provider,
-  );
-  const primary = await registry.resolveConfigured({
-    provider: "route-fixture",
-    id: "primary",
-  });
-  if (!primary) throw new Error("Primary route fixture was not resolved");
-  return {
-    store,
-    thread,
-    run,
-    primary,
-    router: new ModelRouter(store, registry),
-  };
-}
-
-function terminalStream(
-  model: Model<Api>,
-  stopReason: "stop" | "error",
-  text: string,
-): AssistantMessageEventStream {
-  const stream = createAssistantMessageEventStream();
-  const message = modelMessage(model, stopReason === "stop" ? text : "", {
-    stopReason,
-    ...(stopReason === "error" ? { errorMessage: text } : {}),
-  });
-  stream.push({ type: "start", partial: message });
-  stream.push(
-    stopReason === "stop"
-      ? { type: "done", reason: "stop", message }
-      : { type: "error", reason: "error", error: message },
-  );
-  return stream;
-}
-
-function visibleFailureStream(
-  model: Model<Api>,
-  diagnostic: string,
-): AssistantMessageEventStream {
-  const stream = createAssistantMessageEventStream();
-  const partial = modelMessage(model, "partial");
-  const failure = modelMessage(model, "", {
-    stopReason: "error",
-    errorMessage: diagnostic,
-  });
-  stream.push({ type: "start", partial });
-  stream.push({ type: "text_start", contentIndex: 0, partial });
-  stream.push({
-    type: "text_delta",
-    contentIndex: 0,
-    delta: "partial",
-    partial,
-  });
-  stream.push({ type: "error", reason: "error", error: failure });
-  return stream;
-}
-
-function emptyTextFailureStream(
-  model: Model<Api>,
-  diagnostic: string,
-): AssistantMessageEventStream {
-  const stream = createAssistantMessageEventStream();
-  const partial = modelMessage(model, "", { stopReason: "partial" });
-  const failure = modelMessage(model, "", {
-    stopReason: "error",
-    errorMessage: diagnostic,
-  });
-  stream.push({ type: "start", partial });
-  stream.push({ type: "text_start", contentIndex: 0, partial });
-  stream.push({ type: "text_end", contentIndex: 0, content: "", partial });
-  stream.push({ type: "error", reason: "error", error: failure });
-  return stream;
-}
-
-function modelMessage(
-  model: Model<Api>,
-  text: string,
-  options: {
-    stopReason?: AssistantMessage["stopReason"];
-    errorMessage?: string;
-  } = {},
-): AssistantMessage {
-  return {
-    ...fauxAssistantMessage(text, options),
-    api: model.api,
-    provider: model.provider,
-    model: model.id,
-  };
-}
-
-async function collect(stream: AssistantMessageEventStream) {
-  const events: AssistantMessageEvent[] = [];
-  for await (const event of stream) events.push(event);
-  return events;
-}
 
 function assertPayloadHash(payload: Record<string, unknown>): void {
   const { contentSha256, ...content } = payload;

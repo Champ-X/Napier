@@ -19,6 +19,11 @@ import type {
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId, nowIso } from "./ids.js";
+import {
+  isPlanArtifactProjectionPayloadValid,
+  PLAN_ARTIFACT_EVENT_PROJECTION_KEYS,
+} from "./plan-artifact-event-projection.js";
+import { runPlanProgressEventPayload } from "./run-progress-plan-state.js";
 import { artifactRequiresEvidence } from "./artifact-status.js";
 import {
   applyPlanStepTransition,
@@ -507,6 +512,7 @@ export function createPlanArtifactEventPayload(
     parallelReadyStepIds: plan.parallelReadyStepIds,
     phaseWaveCount: plan.phaseWaves.length,
     phaseProjectionSha256: plan.phaseProjectionSha256,
+    ...runPlanProgressEventPayload(plan),
     ...(artifact.sha256 ? { sha256: artifact.sha256 } : {}),
     ...(artifact.sizeBytes !== undefined
       ? { sizeBytes: artifact.sizeBytes }
@@ -572,7 +578,7 @@ export function assertPlanArtifactEventBindings({
     ) {
       throw new Error(`${label} plan.artifact event binding mismatch`);
     }
-    if (!isPlanArtifactProjectionPayloadValid(payload)) {
+    if (!isPlanArtifactProjectionPayloadValid(payload, MAX_PLAN_STEPS)) {
       throw new Error(`${label} plan.artifact event binding mismatch`);
     }
   }
@@ -592,15 +598,6 @@ const PLAN_ARTIFACT_EVENT_BINDING_KEYS = new Set([
   ...PLAN_ARTIFACT_EVENT_COMMON_KEYS,
   "pathSha256",
   "evidenceSha256",
-]);
-const PLAN_ARTIFACT_EVENT_PROJECTION_KEYS = new Set([
-  "criticalPathStepIds",
-  "readyStepIds",
-  "blockedStepIds",
-  "activePhaseIndex",
-  "parallelReadyStepIds",
-  "phaseWaveCount",
-  "phaseProjectionSha256",
 ]);
 const PLAN_ARTIFACT_EVENT_ALLOWED_KEYS = new Set([
   ...PLAN_ARTIFACT_EVENT_BINDING_KEYS,
@@ -623,48 +620,6 @@ function normalizePlanArtifactEventPayload(
       .filter((key) => Object.prototype.hasOwnProperty.call(payload, key))
       .map((key) => [key, payload[key]]),
   );
-}
-
-function isPlanArtifactProjectionPayloadValid(
-  payload: Record<string, unknown>,
-): boolean {
-  return (
-    optionalStringArray(payload["criticalPathStepIds"]) &&
-    optionalStringArray(payload["readyStepIds"]) &&
-    optionalStringArray(payload["blockedStepIds"]) &&
-    optionalStringArray(payload["parallelReadyStepIds"]) &&
-    optionalNonNegativeIntegerOrNull(payload["activePhaseIndex"]) &&
-    optionalNonNegativeInteger(payload["phaseWaveCount"]) &&
-    optionalSha256(payload["phaseProjectionSha256"])
-  );
-}
-
-function optionalStringArray(value: unknown): boolean {
-  return (
-    value === undefined ||
-    (Array.isArray(value) &&
-      value.length <= MAX_PLAN_STEPS &&
-      value.every((entry) => typeof entry === "string"))
-  );
-}
-
-function optionalNonNegativeInteger(value: unknown): boolean {
-  return (
-    value === undefined ||
-    (typeof value === "number" && Number.isInteger(value) && value >= 0)
-  );
-}
-
-function optionalNonNegativeIntegerOrNull(value: unknown): boolean {
-  return value === null || optionalNonNegativeInteger(value);
-}
-
-function optionalSha256(value: unknown): boolean {
-  return value === undefined || (typeof value === "string" && isSha256(value));
-}
-
-function isSha256(value: string): boolean {
-  return /^[a-f0-9]{64}$/.test(value);
 }
 
 function objectPayload(value: unknown): Record<string, unknown> | undefined {

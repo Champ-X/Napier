@@ -190,19 +190,13 @@ export class ExecutionPlanWorkflowKernelRun {
       completionRecorded = true;
       const run = await this.store.finishRun(leased.run.id, "completed", {
         leaseToken: leased.token,
-      });
-      settled = true;
-      await this.ledger.append(
-        {
-          threadId: options.threadId,
-          runId: leased.run.id,
-          type: "run.completed",
-          category: "lifecycle",
+        terminalEvent: {
           visibility: "debug",
           payload: { status: "completed" },
         },
-        options.onEvent,
-      );
+        onTerminalEvent: options.onEvent,
+      });
+      settled = true;
       return { run, output: session.output };
     } catch (caught) {
       let error = caught;
@@ -217,36 +211,24 @@ export class ExecutionPlanWorkflowKernelRun {
       }
       if (settled) throw error;
       if (completionRecorded) {
-        let interrupted = false;
         try {
           await this.store.finishRun(leased.run.id, "interrupted", {
             error: `Workflow ${options.language} settlement interrupted`,
             leaseToken: leased.token,
+            terminalEvent: {
+              visibility: "user",
+              payload: {
+                status: "interrupted",
+                errorCode: "settlement_interrupted",
+                diagnosticSha256: sha256(
+                  `Workflow ${options.language} settlement interrupted`,
+                ),
+              },
+            },
+            onTerminalEvent: options.onEvent,
           });
-          interrupted = true;
         } catch {
           // Lease expiry remains the fallback when Store settlement is down.
-        }
-        if (interrupted) {
-          await this.ledger
-            .append(
-              {
-                threadId: options.threadId,
-                runId: leased.run.id,
-                type: "run.interrupted",
-                category: "lifecycle",
-                visibility: "user",
-                payload: {
-                  status: "interrupted",
-                  errorCode: "settlement_interrupted",
-                  diagnosticSha256: sha256(
-                    `Workflow ${options.language} settlement interrupted`,
-                  ),
-                },
-              },
-              options.onEvent,
-            )
-            .catch(() => undefined);
         }
         throw new ExecutionPlanWorkflowKernelError(
           "settlement_interrupted",
@@ -267,13 +249,11 @@ export class ExecutionPlanWorkflowKernelRun {
                 ? "cancelled"
                 : options.fallbackErrorCode;
       const diagnosticSha256 = sha256(errorMessage(error));
-      await this.ledger
-        .append(
-          {
-            threadId: options.threadId,
-            runId: leased.run.id,
-            type: cancelled ? "run.cancelled" : "run.failed",
-            category: "lifecycle",
+      await this.store
+        .finishRun(leased.run.id, cancelled ? "cancelled" : "failed", {
+          error: `Workflow ${options.language} ${code}`,
+          leaseToken: leased.token,
+          terminalEvent: {
             visibility: "user",
             payload: {
               status: cancelled ? "cancelled" : "failed",
@@ -281,13 +261,7 @@ export class ExecutionPlanWorkflowKernelRun {
               diagnosticSha256,
             },
           },
-          options.onEvent,
-        )
-        .catch(() => undefined);
-      await this.store
-        .finishRun(leased.run.id, cancelled ? "cancelled" : "failed", {
-          error: `Workflow ${options.language} ${code}`,
-          leaseToken: leased.token,
+          onTerminalEvent: options.onEvent,
         })
         .catch(() => undefined);
       if (error instanceof ExecutionPlanWorkflowKernelError) throw error;

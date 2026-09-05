@@ -1,4 +1,9 @@
-import type { AgentTool, StreamFn } from "@earendil-works/pi-agent-core";
+import type {
+  AgentTool,
+  AgentToolResult,
+  AfterToolCallResult,
+  StreamFn,
+} from "@earendil-works/pi-agent-core";
 import type {
   Api,
   Context,
@@ -9,9 +14,12 @@ import type {
 import type {
   AgentProfile,
   DelegationLedgerProjection,
+  JsonValue,
   RunRecord,
 } from "@napier/contracts";
 
+import { preserveAgentToolIdentity } from "./agent-tool-metadata.js";
+import { builtInToolHarnessProjection } from "./agent-tool-effects.js";
 import { createEffectiveCapabilitiesPromptBuilder } from "./effective-capabilities-prompt-builder.js";
 import { runAgentStepLifecycleStream } from "./agent-step-lifecycle-stream.js";
 import type { AgentMilestoneContextProjection } from "./agent-milestones.js";
@@ -20,14 +28,34 @@ import type { AgentModelStreamLifecycleInput } from "./agent-model-stream-lifecy
 import { modelAdapterReceipt } from "./model-adapters.js";
 import type { CompiledPromptArtifact } from "./prompt-compiler.js";
 import type { ActiveToolLoopGuard } from "./tool-loop-guard.js";
+import { createToolCallSha256 } from "./tool-loop-guard.js";
 import { createAgentStepCapabilityView } from "./lifecycle-extension-pipeline.js";
 import type { AgentLifecyclePipelineHost } from "./lifecycle-extension-pipeline.js";
 import { modernRunConfiguration } from "./effective-run-profile.js";
 import { formatEditDialectGuidance } from "./edit-dialect-adapter.js";
 import type { ModelHarnessExperimentProfile } from "./model-harness-experiment-profile.js";
 import type { ToolProtocolRegistry } from "./tool-protocol-registry.js";
+import type { LocalStore } from "./store.js";
+import type { EventSink } from "./event-sink.js";
+import { ToolConcurrencyGate } from "./tool-concurrency-gate.js";
+import { executeAdmittedToolCall } from "./tool-execution-admission-service.js";
+import type { ToolOperationJournalOptions } from "./tool-operation-model.js";
 import { formatWorkspaceToolGuidance } from "./workspace-tool-guidance.js";
 import { formatPlanToolGuidance } from "./agent-runtime-utils.js";
+
+export type AgentToolConcurrencyGate = ToolConcurrencyGate;
+
+export function createAgentToolConcurrencyGate(
+  store: Pick<LocalStore, "toolConcurrencyLeaseBackend">,
+  ownerId: string,
+): ToolConcurrencyGate {
+  return new ToolConcurrencyGate({
+    durable: {
+      backend: store.toolConcurrencyLeaseBackend(),
+      ownerId,
+    },
+  });
+}
 
 export function wrapAgentToolsWithLifecycle(input: {
   tools: readonly AgentTool[];
@@ -35,24 +63,163 @@ export function wrapAgentToolsWithLifecycle(input: {
   lifecycles: AgentLifecyclePipelineHost;
   run: Pick<RunRecord, "id" | "threadId">;
   stepIndex: () => number;
+  store: LocalStore;
+  concurrencyGate: ToolConcurrencyGate;
+  journalOptions?: ToolOperationJournalOptions;
+  startedProjection?(
+    toolCallId: string,
+    toolName: string,
+    args: unknown,
+  ): Record<string, JsonValue>;
+  prepareSettlement?(input: {
+    toolCall: { id: string; name: string };
+    result: AgentToolResult<unknown>;
+    isError: boolean;
+  }): Promise<AfterToolCallResult | undefined>;
+  replayTerminal?(
+    toolCallId: string,
+    toolName: string,
+    args: unknown,
+  ): Promise<
+    | {
+        result: AgentToolResult<unknown>;
+        isError: boolean;
+        resultEvidenceSha256?: string;
+      }
+    | undefined
+  >;
+  onEvent?: EventSink;
 }): AgentTool[] {
-  return input.tools.map((tool) => ({
-    ...tool,
-    execute: (toolCallId, args, toolSignal, onUpdate) =>
-      input.lifecycles.tool.execute(
-        {
-          kind: "tool",
-          runId: input.run.id,
-          threadId: input.run.threadId,
-          stepIndex: input.stepIndex(),
-          toolCall: Object.freeze({ id: toolCallId, name: tool.name }),
-          protocol: input.registry.require(tool.name).invocation(args),
-          input: structuredClone(args),
+  return input.tools.map((tool) => {
+    const record = input.registry.require(tool.name);
+    const acquisitionCapable =
+      record.definition.progress.operations.includes("acquire");
+    const opaqueProgress = record.definition.progress.coverage === "opaque";
+    return preserveAgentToolIdentity(tool, {
+      ...tool,
+      // pi-agent emits tool_execution_start before validation/preflight. Force
+      // acquisition-capable batches through ordered admission so a terminal
+      // can update circuits before the next acquisition is considered.
+      ...(acquisitionCapable || opaqueProgress
+        ? { executionMode: "sequential" as const }
+        : {}),
+      execute: async (toolCallId, args, toolSignal, onUpdate) => {
+        const protocol = record.invocation(args);
+        let rawFailure: unknown;
+        const outcome = await executeAdmittedToolCall({
+          store: input.store,
+          run: input.run,
+          callId: toolCallId,
+          toolName: tool.name,
+          args,
+          protocol: record,
+          concurrencyGate: input.concurrencyGate,
+          startedPayload:
+            input.startedProjection?.(toolCallId, tool.name, args) ??
+            defaultStartedProjection(record, tool.name, args),
           ...(toolSignal ? { signal: toolSignal } : {}),
-        },
-        () => tool.execute(toolCallId, args as never, toolSignal, onUpdate),
-      ),
-  }));
+          ...(input.journalOptions
+            ? { journalOptions: input.journalOptions }
+            : {}),
+          ...(input.onEvent ? { onEvent: input.onEvent } : {}),
+          ...(input.replayTerminal
+            ? {
+                replay: {
+                  load: async () => {
+                    const replay = await input.replayTerminal!(
+                      toolCallId,
+                      tool.name,
+                      args,
+                    );
+                    return replay?.resultEvidenceSha256
+                      ? {
+                          result: replay.result,
+                          isError: replay.isError,
+                          resultEvidenceSha256: replay.resultEvidenceSha256,
+                        }
+                      : undefined;
+                  },
+                  restore: (captured) => captured.result,
+                },
+              }
+            : {}),
+          execute: () =>
+            input.lifecycles.tool.execute(
+              {
+                kind: "tool",
+                runId: input.run.id,
+                threadId: input.run.threadId,
+                stepIndex: input.stepIndex(),
+                toolCall: Object.freeze({ id: toolCallId, name: tool.name }),
+                protocol,
+                input: structuredClone(args),
+                ...(toolSignal ? { signal: toolSignal } : {}),
+              },
+              async () => {
+                try {
+                  return await tool.execute(
+                    toolCallId,
+                    args as never,
+                    toolSignal,
+                    onUpdate,
+                  );
+                } catch (error) {
+                  rawFailure = error;
+                  throw error;
+                }
+              },
+            ),
+          settlement: async (result) => {
+            const prepared = await input.prepareSettlement?.({
+              toolCall: { id: toolCallId, name: tool.name },
+              result,
+              isError: false,
+            });
+            return { result, isError: prepared?.isError ?? false };
+          },
+          ...(input.prepareSettlement
+            ? {
+                failureSettlement: async () => {
+                  if (rawFailure === undefined) return undefined;
+                  const result = thrownToolResult(rawFailure);
+                  const prepared = await input.prepareSettlement!({
+                    toolCall: { id: toolCallId, name: tool.name },
+                    result,
+                    isError: true,
+                  });
+                  return { result, isError: prepared?.isError ?? true };
+                },
+              }
+            : {}),
+        });
+        return outcome.value;
+      },
+    });
+  });
+}
+
+function thrownToolResult(error: unknown): AgentToolResult<unknown> {
+  return {
+    content: [
+      {
+        type: "text",
+        text: error instanceof Error ? error.message : String(error),
+      },
+    ],
+    details: {},
+  };
+}
+
+function defaultStartedProjection(
+  record: ReturnType<ToolProtocolRegistry["require"]>,
+  toolName: string,
+  args: unknown,
+): Record<string, JsonValue> {
+  return {
+    callInputSha256: createToolCallSha256(toolName, args),
+    ...builtInToolHarnessProjection(toolName, args),
+    toolProtocol: record.uiProjection("started", args) as unknown as JsonValue,
+  };
 }
 
 export function createLifecycleAgentStepStream(input: {

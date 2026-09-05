@@ -5,8 +5,9 @@ import {
   runLeasesFromStateJson,
   synchronizeRunLeases,
 } from "./sqlite-run-leases.js";
+import { createToolConcurrencyLeaseSchema } from "./sqlite-tool-concurrency-schema.js";
 
-export const LEDGER_SCHEMA_VERSION = 5;
+export const LEDGER_SCHEMA_VERSION = 7;
 
 export function migrateLedgerSchema(
   database: DatabaseSync,
@@ -21,12 +22,39 @@ export function migrateLedgerSchema(
     migrateRunLeases(database, currentVersion);
     createEventQueryIndexes(database);
     migrateEventQueryIndexes(database, currentVersion);
+    createEventIdempotencySchema(database);
+    migrateEventIdempotencySchema(database, currentVersion);
+    createToolConcurrencyLeaseSchema(database);
+    migrateToolConcurrencyLeaseSchema(database, currentVersion);
     database.exec(`PRAGMA user_version = ${LEDGER_SCHEMA_VERSION}`);
     database.exec("COMMIT");
   } catch (error) {
     rollback(database);
     throw error;
   }
+}
+
+function createEventIdempotencySchema(database: DatabaseSync): void {
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS ledger_event_idempotency (
+      thread_id TEXT NOT NULL,
+      run_id TEXT NOT NULL,
+      namespace TEXT NOT NULL CHECK (
+        length(namespace) BETWEEN 1 AND 128
+      ),
+      idempotency_key TEXT NOT NULL CHECK (
+        length(idempotency_key) BETWEEN 1 AND 512
+      ),
+      event_id TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY (thread_id, run_id, namespace, idempotency_key),
+      FOREIGN KEY (event_id) REFERENCES ledger_events(event_id)
+        ON UPDATE RESTRICT ON DELETE RESTRICT
+    ) STRICT;
+
+    CREATE UNIQUE INDEX IF NOT EXISTS ledger_event_idempotency_event
+      ON ledger_event_idempotency (event_id);
+  `);
 }
 
 function createEventQueryIndexes(database: DatabaseSync): void {
@@ -152,6 +180,53 @@ function migrateEventQueryIndexes(
     database,
     5,
     "indexed_event_queries",
+    new Date().toISOString(),
+  );
+}
+
+function migrateEventIdempotencySchema(
+  database: DatabaseSync,
+  currentVersion: number,
+): void {
+  if (currentVersion >= 6) return;
+  database.exec(`
+    INSERT INTO ledger_event_idempotency (
+      thread_id,
+      run_id,
+      namespace,
+      idempotency_key,
+      event_id,
+      created_at
+    )
+    SELECT
+      thread_id,
+      run_id,
+      json_extract(event_json, '$.idempotency.namespace'),
+      json_extract(event_json, '$.idempotency.key'),
+      event_id,
+      created_at
+    FROM ledger_events
+    WHERE json_type(event_json, '$.idempotency') = 'object'
+      AND json_type(event_json, '$.idempotency.namespace') = 'text'
+      AND json_type(event_json, '$.idempotency.key') = 'text';
+  `);
+  recordMigration(
+    database,
+    6,
+    "atomic_event_idempotency",
+    new Date().toISOString(),
+  );
+}
+
+function migrateToolConcurrencyLeaseSchema(
+  database: DatabaseSync,
+  currentVersion: number,
+): void {
+  if (currentVersion >= 7) return;
+  recordMigration(
+    database,
+    7,
+    "durable_tool_concurrency_leases",
     new Date().toISOString(),
   );
 }

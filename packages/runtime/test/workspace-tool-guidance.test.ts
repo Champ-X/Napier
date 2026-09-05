@@ -228,6 +228,7 @@ describe("workspace tool guidance", () => {
 
   it("requires exact Browser Source capture and claim-bound citations", () => {
     const guidance = formatWorkspaceToolGuidance([
+      { name: "web_search" } as AgentTool,
       { name: "web_fetch" } as AgentTool,
       { name: "browser" } as AgentTool,
       { name: "research_source" } as AgentTool,
@@ -237,12 +238,12 @@ describe("workspace tool guidance", () => {
       "Use browser for dynamic public pages through one Run-owned Session",
     );
     expect(guidance).toContain(
-      "web_fetch may automatically use the same controlled read-only Browser",
+      "web_fetch may use the controlled read-only Browser",
     );
     expect(guidance).toContain(
       "do not claim dynamic content was rendered when fallback is unavailable",
     );
-    expect(guidance).toContain("literal find and bounded scroll");
+    expect(guidance).toContain("bounded wait/snapshot/find/scroll");
     expect(guidance).toContain("Default read-only Agents cannot click");
     expect(guidance).toContain(
       "call research_source capture to freeze bounded visible text",
@@ -256,6 +257,13 @@ describe("workspace tool guidance", () => {
     expect(guidance).toContain("capture disconfirming evidence");
     expect(guidance).toContain(
       "call research_source verify_report with its actual complete-file SHA-256",
+    );
+    expect(guidance).toContain("finish with ![alt](https://...)");
+    expect(guidance).toContain(
+      "validate one direct raster URL with web_fetch instead of Browser",
+    );
+    expect(guidance).toContain(
+      "Image search needs a configured image-capable provider",
     );
   });
 });

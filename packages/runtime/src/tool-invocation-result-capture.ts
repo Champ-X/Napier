@@ -5,7 +5,11 @@ import type {
   ToolInvocationResultCapsuleReceipt,
 } from "@napier/contracts";
 
-import type { EventSink } from "./event-sink.js";
+import { emitBestEffort, type EventSink } from "./event-sink.js";
+import {
+  claimRunHeadEvent,
+  IdempotentEventConflictError,
+} from "./event-idempotency.js";
 import { sha256 } from "./ed25519.js";
 import type { LocalStore } from "./store.js";
 import type { ToolInvocationResultCapsuleStore } from "./tool-invocation-result-capsule-store.js";
@@ -28,7 +32,7 @@ export async function captureToolInvocationResult(
       result,
       isError,
     });
-    await append(
+    await appendReceiptOnce(
       store,
       {
         threadId: run.threadId,
@@ -38,10 +42,12 @@ export async function captureToolInvocationResult(
         visibility: "debug",
         payload: JSON.parse(JSON.stringify(receipt)),
       },
+      `${run.id}:${invocation.callId}`,
       onEvent,
     );
     return receipt;
   } catch (error) {
+    if (error instanceof IdempotentEventConflictError) throw error;
     await append(
       store,
       {
@@ -63,6 +69,19 @@ export async function captureToolInvocationResult(
     );
     return undefined;
   }
+}
+
+async function appendReceiptOnce(
+  store: LocalStore,
+  input: Parameters<LocalStore["appendEvent"]>[0],
+  key: string,
+  onEvent?: EventSink,
+): Promise<void> {
+  const receipt = await claimRunHeadEvent(store, input, {
+    namespace: "tool-invocation-result-receipt",
+    key,
+  });
+  if (receipt.appended) await emitBestEffort(onEvent, receipt.event);
 }
 
 async function append(

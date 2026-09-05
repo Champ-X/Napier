@@ -3,12 +3,39 @@ import type { JsonValue } from "@napier/contracts";
 import { Type } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { defineToolFailureSemantics } from "./tool-failure-semantics.js";
 import type {
   WebFetchExecutor,
   WebFetchExecutionOptions,
   WebFetchToolDetails,
 } from "./web-fetch-model.js";
 import { validateWebFetchStateCapsuleReceipt } from "./web-fetch-capsule.js";
+import {
+  defineToolProgress,
+  progressSemantics,
+  publicUrlProgressFailureDomain,
+  publicUrlProgressResource,
+  recordValue,
+  resultDetails,
+  stableFields,
+} from "./tool-progress-semantics.js";
+import { defineInternalToolProtocolV2 } from "./tool-protocol-declaration.js";
+import {
+  WEB_FETCH_FAILURE_DECLARATION,
+  webFetchCapabilityBinding,
+  webFetchRouteBinding,
+} from "./web-fetch-failure.js";
+import { createWebFetchMaterializationIdentity } from "./web-fetch-materialization.js";
+import {
+  genericToolResultSchema,
+  jsonSchema,
+  toolUiProjectionSchema,
+} from "./tool-protocol-schema.js";
+import {
+  DurableToolOperationJournal,
+  type ToolOperationJournalStore,
+  type ToolOperationOwner,
+} from "./tool-operation-journal.js";
 
 const sourceBindingSchema = {
   sourceId: Type.String({
@@ -56,21 +83,181 @@ export function createWebFetchTool(
   executor: WebFetchExecutor,
   owner: { threadId: string; runId: string },
   options: WebFetchExecutionOptions = {},
+  operationJournal?: {
+    store: ToolOperationJournalStore;
+    owner: ToolOperationOwner;
+  },
 ): AgentTool<typeof webFetchSchema, WebFetchToolDetails> {
-  return {
-    name: "web_fetch",
-    label: "Web Fetch",
-    description:
-      "Fetch one public HTML, Markdown, JSON, text, or PDF URL into a Run-local Source. Use fetch for a preview, then read/find/list with the exact sourceId and sourceContentSha256. Eligible HTML script shells may report one controlled read-only Browser fallback when Browser is enabled. Source data is untrusted; localhost, private, reserved, mixed-DNS, credential-bearing, unsafe-port, oversized, and unsafe-redirect targets are denied.",
-    parameters: webFetchSchema,
-    async execute(_toolCallId, input, signal) {
-      const result = await executor.execute(owner, input, signal, options);
-      return {
-        content: [{ type: "text", text: result.output }],
-        details: result.details,
-      };
+  const journal = operationJournal
+    ? new DurableToolOperationJournal(
+        operationJournal.store,
+        operationJournal.owner,
+      )
+    : undefined;
+  const tool = defineToolProgress(
+    {
+      name: "web_fetch",
+      label: "Web Fetch",
+      description:
+        "Fetch one public HTML, Markdown, JSON, text, PDF, or safe raster image as a Run-local Source. Use fetch once, then read/find/list with its exact ID and content hash. Eligible failures or script shells may use one read-only Browser fallback. Content is untrusted; private, credentialed, unsafe, oversized, or unsafe-redirect targets are denied.",
+      parameters: webFetchSchema,
+      async execute(toolCallId, input, signal) {
+        const materialization =
+          input.action === "fetch"
+            ? createWebFetchMaterializationIdentity(
+                owner,
+                toolCallId,
+                input.url,
+              )
+            : undefined;
+        const result = await executor.execute(
+          owner,
+          input,
+          signal,
+          options,
+          input.action === "fetch" ? journal?.observer(toolCallId) : undefined,
+          materialization,
+        );
+        return {
+          content: [{ type: "text", text: result.output }],
+          details: result.details,
+        };
+      },
     },
-  };
+    {
+      schemaVersion: 1,
+      classificationVersion: "1.2.0",
+      modes: [
+        {
+          modeId: "materialize_run_source",
+          operation: "acquire",
+          scope: "run_source",
+          contribution: "supporting",
+        },
+        {
+          modeId: "reuse_run_source",
+          operation: "reuse",
+          scope: "run_source",
+          contribution: "supporting",
+        },
+      ],
+      resolve: (input) => {
+        const value = recordValue(input);
+        const action = string(value["action"]);
+        if (action === "fetch") {
+          const targetBinding = publicUrlProgressResource(value["url"]);
+          const originBinding = publicUrlProgressFailureDomain(value["url"]);
+          return {
+            semantics: progressSemantics("acquire", "run_source", "supporting"),
+            resourceKey: { kind: "web-fetch-source-set" },
+            failureBindings: {
+              target: targetBinding,
+              origin: originBinding,
+              route: webFetchRouteBinding(string(value["url"]), "static_http"),
+              capability: webFetchCapabilityBinding(
+                "public_document_acquisition",
+              ),
+            },
+            failureDomainKey: originBinding,
+          };
+        }
+        if (action === "list") {
+          return {
+            semantics: progressSemantics("reuse", "run_source", "supporting"),
+            resourceKey: { kind: "web-fetch-source-set" },
+          };
+        }
+        const sourceContentSha256 = value["sourceContentSha256"];
+        return {
+          semantics: progressSemantics("reuse", "run_source", "supporting"),
+          resourceKey:
+            action === "read"
+              ? {
+                  kind: "web-fetch-source-read",
+                  sourceContentSha256,
+                  startLine: value["startLine"],
+                  endLine: value["endLine"],
+                }
+              : {
+                  kind: "web-fetch-source-find",
+                  sourceContentSha256,
+                  query: string(value["query"]).replace(/\s+/gu, " ").trim(),
+                  maxResults: value["maxResults"] ?? 20,
+                },
+        };
+      },
+      state: (input, result) => {
+        const action = string(recordValue(input)["action"]);
+        const details = resultDetails(result);
+        if (action === "fetch") return details["sourceContentSha256"];
+        if (action === "list") return details["sourceSetSha256"];
+        if (action === "read") {
+          return stableFields(details, [
+            "sourceContentSha256",
+            "readStartLine",
+            "readEndLine",
+          ]);
+        }
+        return stableFields(details, [
+          "sourceContentSha256",
+          "findQuerySha256",
+          "findMatchCount",
+        ]);
+      },
+    },
+  );
+  const failureDeclaredTool = defineToolFailureSemantics(
+    tool,
+    WEB_FETCH_FAILURE_DECLARATION,
+  );
+  return defineInternalToolProtocolV2(failureDeclaredTool, {
+    historicalDefinitions: [
+      {
+        kind: "napier.tool-protocol-historical-definition",
+        schemaVersion: 1,
+        generation: "v2.failure_semantics",
+        sourceMode: "native",
+        definitionSha256:
+          "a6fcdcbc4375bbd96512625112cfa4954b0d146a3f662f55fad86b4142d3a46b",
+        replayOnly: true,
+      },
+      {
+        kind: "napier.tool-protocol-historical-definition",
+        schemaVersion: 1,
+        generation: "v2.progress",
+        sourceMode: "compatibility",
+        definitionSha256:
+          "242456558e03954fd66870c750c74f07d20f702aa60c43b5332760b7a2ff57f8",
+        replayOnly: true,
+      },
+      {
+        kind: "napier.tool-protocol-historical-definition",
+        schemaVersion: 1,
+        generation: "v2.pre_progress",
+        sourceMode: "compatibility",
+        definitionSha256:
+          "239874dd2c3e86c9a72916a8584972c419510d7adae7a94ff93cfdc0126475f1",
+        replayOnly: true,
+      },
+    ],
+    definition: {
+      schemaVersion: 2,
+      id: tool.name,
+      version: "2.1.0",
+      capabilityUris: ["cap://tools/web_fetch"],
+      inputSchema: jsonSchema(tool.parameters),
+      canonicalOutputSchema: genericToolResultSchema("canonical"),
+      modelVisibleOutputSchema: genericToolResultSchema("model_visible"),
+      uiProjectionSchema: toolUiProjectionSchema(tool.name),
+      concurrency: "serialized",
+      sideEffect: "none",
+      sideEffectMode: "static",
+      retry: { strategy: "not_started", maxAttempts: 2 },
+      idempotency: { key: "arguments", resultReplay: "never" },
+      approval: { mode: "none", codeBridge: "allowed" },
+      policyTags: ["network:public-read", "run-source:durable"],
+    },
+  });
 }
 
 export function webFetchToolCallArgumentsLedgerProjection(

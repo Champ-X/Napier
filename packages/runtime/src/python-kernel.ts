@@ -12,7 +12,6 @@ import {
   parsePythonKernelCodeBridgeRequest,
   type PythonKernelCodeBridgeDispatcher,
 } from "./python-kernel-code-bridge.js";
-import { MAX_PYTHON_KERNEL_BRIDGE_RESPONSE_CHARS } from "./python-kernel-code-bridge-worker.js";
 import {
   parsePythonKernelResult,
   type PythonKernelProtocolResult,
@@ -411,36 +410,35 @@ export class PythonKernelManager {
     },
     call: Parameters<PythonKernelCodeBridgeDispatcher>[0],
   ): Promise<void> {
-    let response: string;
+    let responses: readonly string[];
     try {
       if (!request.codeBridge) {
         throw new Error("Python Code Bridge is unavailable");
       }
       const result = await request.codeBridge(call, request.signal);
-      response = formatPythonKernelCodeBridgeResponse({
+      responses = formatPythonKernelCodeBridgeResponse({
         evaluationId: request.requestId,
         callId: call.callId,
         result,
       });
     } catch (error) {
-      response = formatPythonKernelCodeBridgeResponse({
+      responses = formatPythonKernelCodeBridgeResponse({
         evaluationId: request.requestId,
         callId: call.callId,
         error: error instanceof Error ? error.message : String(error),
       });
     }
-    if (response.length > MAX_PYTHON_KERNEL_BRIDGE_RESPONSE_CHARS) {
-      throw new Error("Python Code Bridge response exceeded its limit");
+    for (const response of responses) {
+      await this.processes.writePrivateProtocolInput({
+        threadId: request.threadId,
+        runId: request.runId,
+        processId: request.processId,
+        text: response,
+        appendNewline: true,
+        initiatedBy: "agent",
+        ...(request.signal ? { signal: request.signal } : {}),
+      });
     }
-    await this.processes.writePrivateProtocolInput({
-      threadId: request.threadId,
-      runId: request.runId,
-      processId: request.processId,
-      text: response,
-      appendNewline: true,
-      initiatedBy: "agent",
-      ...(request.signal ? { signal: request.signal } : {}),
-    });
   }
 }
 

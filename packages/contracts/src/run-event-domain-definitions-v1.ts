@@ -13,11 +13,15 @@ type DomainEventCategory =
 type DomainEventVisibility = "user" | "debug" | "hidden";
 
 function defineEventGroup<
-  const TTypes extends readonly string[],
+  const TActiveTypes extends readonly string[],
+  const TRunAnyTypes extends readonly string[],
+  const TTerminalTransitionTypes extends readonly string[],
   const TCategory extends DomainEventCategory,
   const TVisibility extends DomainEventVisibility,
 >(definition: {
-  types: TTypes;
+  activeRunTypes: TActiveTypes;
+  runAnyTypes: TRunAnyTypes;
+  terminalTransitionTypes: TTerminalTransitionTypes;
   category: TCategory;
   defaultVisibility: TVisibility;
   allowedVisibilities?: readonly DomainEventVisibility[];
@@ -26,6 +30,15 @@ function defineEventGroup<
 }) {
   return {
     ...definition,
+    types: [
+      ...definition.activeRunTypes,
+      ...definition.runAnyTypes,
+      ...definition.terminalTransitionTypes,
+    ] as readonly [
+      ...TActiveTypes,
+      ...TRunAnyTypes,
+      ...TTerminalTransitionTypes,
+    ],
     allowedVisibilities: definition.allowedVisibilities ?? [
       definition.defaultVisibility,
     ],
@@ -35,7 +48,8 @@ function defineEventGroup<
 
 export const RUN_EVENT_DOMAIN_DEFINITION_GROUPS_V1 = [
   defineEventGroup({
-    types: [
+    activeRunTypes: [],
+    runAnyTypes: [
       "artifact.data_profile_verified",
       "artifact.data_profiled",
       "artifact.diff_previewed",
@@ -48,39 +62,47 @@ export const RUN_EVENT_DOMAIN_DEFINITION_GROUPS_V1 = [
       "verification.completed",
       "workspace.inspected",
     ],
+    terminalTransitionTypes: [],
     category: "artifact",
     defaultVisibility: "user",
     owner: "artifact-runtime",
     projectionOwner: "artifact-index",
   }),
   defineEventGroup({
-    types: [
-      "goal.cleared",
-      "goal.continuation.started",
-      "goal.evaluated",
-      "goal.set",
-    ],
+    activeRunTypes: ["goal.continuation.started"],
+    runAnyTypes: ["goal.cleared", "goal.evaluated", "goal.set"],
+    terminalTransitionTypes: [],
     category: "goal",
     defaultVisibility: "user",
     owner: "goal-runtime",
     projectionOwner: "task-summary",
   }),
   defineEventGroup({
-    types: ["goal.evaluation.failed", "goal.evaluation.started"],
+    activeRunTypes: ["goal.evaluation.started"],
+    runAnyTypes: ["goal.evaluation.failed"],
+    terminalTransitionTypes: [],
     category: "goal",
     defaultVisibility: "debug",
     owner: "goal-runtime",
     projectionOwner: "task-summary",
   }),
   defineEventGroup({
-    types: ["goal.continuation.prompt"],
+    activeRunTypes: ["goal.continuation.prompt"],
+    runAnyTypes: [],
+    terminalTransitionTypes: [],
     category: "goal",
     defaultVisibility: "hidden",
     owner: "goal-runtime",
     projectionOwner: "conversation-feed",
   }),
   defineEventGroup({
-    types: [
+    // Coordinator/Plan state owns the synthetic runctl events in this group.
+    // Loop/map child starts stay fenced to their concrete Agent Runs.
+    activeRunTypes: [
+      "workflow.loop.iteration.started",
+      "workflow.map.item.started",
+    ],
+    runAnyTypes: [
       "agent.milestone.recorded",
       "plan.artifact.candidate",
       "plan.artifact.missing",
@@ -98,9 +120,9 @@ export const RUN_EVENT_DOMAIN_DEFINITION_GROUPS_V1 = [
       "plan.step.reopened",
       "plan.step.skipped",
       "plan.step.started",
-      "workflow.approval.requested",
       "workflow.artifacts.failed",
       "workflow.artifacts.settled",
+      "workflow.approval.requested",
       "workflow.blocked",
       "workflow.breakpoint.continued",
       "workflow.breakpoint.reached",
@@ -115,11 +137,9 @@ export const RUN_EVENT_DOMAIN_DEFINITION_GROUPS_V1 = [
       "workflow.loop.completed",
       "workflow.loop.iteration.completed",
       "workflow.loop.iteration.failed",
-      "workflow.loop.iteration.started",
       "workflow.map.completed",
       "workflow.map.item.completed",
       "workflow.map.item.failed",
-      "workflow.map.item.started",
       "workflow.node.completed",
       "workflow.node.failed",
       "workflow.node.reused",
@@ -132,37 +152,45 @@ export const RUN_EVENT_DOMAIN_DEFINITION_GROUPS_V1 = [
       "workflow.started",
       "workflow.waiting",
     ],
+    terminalTransitionTypes: [],
     category: "plan",
     defaultVisibility: "user",
     owner: "workflow-runtime",
     projectionOwner: "task-summary",
   }),
   defineEventGroup({
-    types: [
+    activeRunTypes: [],
+    runAnyTypes: [
       "workflow.node.input_replacement.requested",
       "workflow.node.simulation.requested",
     ],
+    terminalTransitionTypes: [],
     category: "plan",
     defaultVisibility: "hidden",
     owner: "workflow-runtime",
     projectionOwner: "trace-index",
   }),
   defineEventGroup({
-    types: ["workflow.node.prompt"],
+    activeRunTypes: ["workflow.node.prompt"],
+    runAnyTypes: [],
+    terminalTransitionTypes: [],
     category: "plan",
     defaultVisibility: "hidden",
     owner: "workflow-runtime",
     projectionOwner: "conversation-feed",
   }),
   defineEventGroup({
-    types: ["context.memory"],
+    activeRunTypes: ["context.memory"],
+    runAnyTypes: [],
+    terminalTransitionTypes: [],
     category: "memory",
     defaultVisibility: "debug",
     owner: "memory-runtime",
     projectionOwner: "trace-index",
   }),
   defineEventGroup({
-    types: [
+    activeRunTypes: [],
+    runAnyTypes: [
       "memory.approved",
       "memory.archived",
       "memory.proposed",
@@ -171,44 +199,49 @@ export const RUN_EVENT_DOMAIN_DEFINITION_GROUPS_V1 = [
       "memory.restored",
       "memory.stale",
     ],
+    terminalTransitionTypes: [],
     category: "memory",
     defaultVisibility: "user",
     owner: "memory-runtime",
     projectionOwner: "task-summary",
   }),
   defineEventGroup({
-    types: [
+    activeRunTypes: ["memory.extraction.started"],
+    runAnyTypes: [
       "memory.extraction.completed",
       "memory.extraction.failed",
       "memory.extraction.skipped",
-      "memory.extraction.started",
     ],
+    terminalTransitionTypes: [],
     category: "memory",
     defaultVisibility: "debug",
     owner: "memory-runtime",
     projectionOwner: "trace-index",
   }),
   defineEventGroup({
-    types: [
+    activeRunTypes: [
       "subagent.cancel.requested",
+      "subagent.message.delivered",
+      "subagent.outcome.repair.requested",
+      "subagent.output.repair.requested",
+      "subagent.queued",
+      "subagent.started",
+    ],
+    runAnyTypes: [
       "subagent.cancelled",
       "subagent.completed",
       "subagent.failed",
       "subagent.message.accepted",
-      "subagent.message.delivered",
       "subagent.orphaned",
       "subagent.outcome.accepted",
       "subagent.outcome.rejected",
       "subagent.outcome.repair.outcome",
-      "subagent.outcome.repair.requested",
       "subagent.output.accepted",
       "subagent.output.repair.outcome",
-      "subagent.output.repair.requested",
-      "subagent.queued",
-      "subagent.started",
       "subagent.step",
       "subagent.timed_out",
     ],
+    terminalTransitionTypes: [],
     category: "subagent",
     defaultVisibility: "user",
     allowedVisibilities: ["user", "debug"],
@@ -216,20 +249,23 @@ export const RUN_EVENT_DOMAIN_DEFINITION_GROUPS_V1 = [
     projectionOwner: "subagent-roster",
   }),
   defineEventGroup({
-    types: [
+    activeRunTypes: [],
+    runAnyTypes: [
       "credential.reference.checked",
       "credential.reference.created",
       "credential.reference.disabled",
       "credential.reference.enabled",
       "credential.reference.keychain_created",
     ],
+    terminalTransitionTypes: [],
     category: "credential",
     defaultVisibility: "user",
     owner: "credential-runtime",
     projectionOwner: "task-summary",
   }),
   defineEventGroup({
-    types: [
+    activeRunTypes: [],
+    runAnyTypes: [
       "evaluation.adjudication.reviewed",
       "evaluation.casebook.case.curated",
       "evaluation.casebook.case.refreshed",
@@ -275,13 +311,15 @@ export const RUN_EVENT_DOMAIN_DEFINITION_GROUPS_V1 = [
       "receipt_trust.rotation_approval_policy_baseline.imported",
       "receipt_trust.rotation_approval_policy_baseline.promoted",
     ],
+    terminalTransitionTypes: [],
     category: "evaluation",
     defaultVisibility: "user",
     owner: "evaluation-runtime",
     projectionOwner: "validation-matrix",
   }),
   defineEventGroup({
-    types: [
+    activeRunTypes: [],
+    runAnyTypes: [
       "benchmark.browser.confirmed_form.evaluated",
       "benchmark.evaluated",
       "benchmark.goal.no-progress.evaluated",
@@ -291,23 +329,27 @@ export const RUN_EVENT_DOMAIN_DEFINITION_GROUPS_V1 = [
       "benchmark.ux.evaluated",
       "benchmark.workflow.evaluated",
     ],
+    terminalTransitionTypes: [],
     category: "evaluation",
     defaultVisibility: "user",
     owner: "benchmark-kit",
     projectionOwner: "validation-matrix",
   }),
   defineEventGroup({
-    types: [
+    activeRunTypes: [],
+    runAnyTypes: [
       "benchmark.goal.model-responses.observed",
       "benchmark.workflow.model-responses.observed",
     ],
+    terminalTransitionTypes: [],
     category: "evaluation",
     defaultVisibility: "debug",
     owner: "benchmark-kit",
     projectionOwner: "validation-matrix",
   }),
   defineEventGroup({
-    types: [
+    activeRunTypes: [],
+    runAnyTypes: [
       "run.recovery.auto.abandoned",
       "run.recovery.auto.claimed",
       "run.recovery.auto.completed",
@@ -323,13 +365,16 @@ export const RUN_EVENT_DOMAIN_DEFINITION_GROUPS_V1 = [
       "schedule.skipped",
       "schedule.updated",
     ],
+    terminalTransitionTypes: [],
     category: "automation",
     defaultVisibility: "user",
     owner: "automation-runtime",
     projectionOwner: "task-summary",
+    // Schedule and automatic-recovery claims have their own durable CAS tokens.
   }),
   defineEventGroup({
-    types: [
+    activeRunTypes: [],
+    runAnyTypes: [
       "channel.dead_letters.retry_applied",
       "channel.dead_letters.exported",
       "channel.created",
@@ -347,13 +392,16 @@ export const RUN_EVENT_DOMAIN_DEFINITION_GROUPS_V1 = [
       "channel.signature_policy.updated",
       "channel.token.rotated",
     ],
+    terminalTransitionTypes: [],
     category: "channel",
     defaultVisibility: "user",
     owner: "channel-runtime",
     projectionOwner: "task-summary",
+    // Inbound-delivery state, rather than an Agent Run, fences these transitions.
   }),
   defineEventGroup({
-    types: [
+    activeRunTypes: [],
+    runAnyTypes: [
       "extension.approved",
       "extension.connected",
       "extension.disabled",
@@ -385,48 +433,56 @@ export const RUN_EVENT_DOMAIN_DEFINITION_GROUPS_V1 = [
       "skill.package.qualified",
       "skill.package.signed",
     ],
+    terminalTransitionTypes: [],
     category: "extension",
     defaultVisibility: "user",
     owner: "extension-runtime",
     projectionOwner: "trace-index",
   }),
   defineEventGroup({
-    types: [
+    activeRunTypes: [
+      "operator.decision.requested",
+      "run.environment.negotiated",
+    ],
+    runAnyTypes: [
       "agent.rolled_back",
       "agent.updated",
       "operator.decision.answered",
       "operator.decision.cancelled",
       "operator.decision.continued",
-      "operator.decision.requested",
-      "run.environment.negotiated",
       "skill.lifecycle",
       "trace.otlp.exported",
     ],
+    terminalTransitionTypes: [],
     category: "system",
     defaultVisibility: "user",
     owner: "runtime-system",
     projectionOwner: "trace-index",
+    // Answered/continued are terminal-origin audit facts, not new authority.
   }),
   defineEventGroup({
-    types: ["benchmark.workflow.runtime.restarted"],
+    activeRunTypes: [],
+    runAnyTypes: ["benchmark.workflow.runtime.restarted"],
+    terminalTransitionTypes: [],
     category: "system",
     defaultVisibility: "user",
     owner: "benchmark-kit",
     projectionOwner: "trace-index",
   }),
   defineEventGroup({
-    types: [
+    activeRunTypes: ["model.advisor.correction.requested"],
+    runAnyTypes: [
       "context.prompt_variables",
       "context.skills",
       "context.tool_loop_guard",
       "model.advisor.blocked",
       "model.advisor.correction.outcome",
-      "model.advisor.correction.requested",
       "model.advisor.independent.reviewed",
       "model.advisor.notice",
       "model.tool_loop.detected",
       "system.note",
     ],
+    terminalTransitionTypes: [],
     category: "system",
     defaultVisibility: "debug",
     owner: "runtime-system",

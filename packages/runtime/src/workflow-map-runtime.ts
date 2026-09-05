@@ -202,19 +202,13 @@ export class ExecutionPlanWorkflowMapRuntime {
         },
         options.onEvent,
       );
-      await this.ledger.append(
-        {
-          threadId: options.threadId,
-          runId: leased.run.id,
-          type: "run.completed",
-          category: "lifecycle",
+      const run = await this.store.finishRun(leased.run.id, "completed", {
+        leaseToken: leased.token,
+        terminalEvent: {
           visibility: "debug",
           payload: { status: "completed" },
         },
-        options.onEvent,
-      );
-      const run = await this.store.finishRun(leased.run.id, "completed", {
-        leaseToken: leased.token,
+        onTerminalEvent: options.onEvent,
       });
       settled = true;
       return { run, output };
@@ -232,27 +226,20 @@ export class ExecutionPlanWorkflowMapRuntime {
               : cancelled
                 ? "cancelled"
                 : "map_failed";
-      await this.ledger
-        .append(
-          {
-            threadId: options.threadId,
-            runId: leased.run.id,
-            type: cancelled ? "run.cancelled" : "run.failed",
-            category: "lifecycle",
-            visibility: "user",
-            payload: {
-              status: cancelled ? "cancelled" : "failed",
-              errorCode: code,
-              diagnosticSha256: sha256(errorMessage(error)),
-            },
-          },
-          options.onEvent,
-        )
-        .catch(() => undefined);
+      const diagnosticSha256 = sha256(errorMessage(error));
       await this.store
         .finishRun(leased.run.id, cancelled ? "cancelled" : "failed", {
           error: `Workflow Map ${code}`,
           leaseToken: leased.token,
+          terminalEvent: {
+            visibility: "user",
+            payload: {
+              status: cancelled ? "cancelled" : "failed",
+              errorCode: code,
+              diagnosticSha256,
+            },
+          },
+          onTerminalEvent: options.onEvent,
         })
         .catch(() => undefined);
       if (error instanceof ExecutionPlanWorkflowMapError) throw error;

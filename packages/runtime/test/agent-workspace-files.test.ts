@@ -145,10 +145,18 @@ describe("Agent Workspace file lifecycle", () => {
           compatibilityMode: "native",
         }),
       );
-      expect(completed?.payload["toolProtocol"]).toEqual({
-        ...startedProtocol,
-        status: "completed",
-      });
+      expect(completed?.payload["toolProtocol"]).toEqual(
+        toolName === "workspace_file_apply"
+          ? {
+              ...startedProtocol,
+              status: "completed",
+              progress: {
+                ...(startedProtocol?.["progress"] as Record<string, unknown>),
+                stateSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+              },
+            }
+          : { ...startedProtocol, status: "completed" },
+      );
     }
     expect(
       events.filter((event) => event.type === "workspace.file.mutated"),

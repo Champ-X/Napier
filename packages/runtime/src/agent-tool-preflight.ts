@@ -8,7 +8,8 @@ import type { AgentToolResultLifecycle } from "./agent-tool-result-lifecycle.js"
 import type { AgentTurnPipeline } from "./agent-turn-pipeline.js";
 import type { EventSink } from "./event-sink.js";
 import type { RunBudgetTracker } from "./run-budget.js";
-import { progTool, type RunProgressTracker } from "./run-progress-vector.js";
+import { preflightProgressTool } from "./run-progress-tracker-host.js";
+import type { RunProgressTracker } from "./run-progress-vector.js";
 import type { LocalStore } from "./store.js";
 import { unresolvedCapabilityClaim } from "./capability-availability-guard.js";
 import {
@@ -17,6 +18,7 @@ import {
   TOOL_LOOP_GUARD_POLICY_REASON,
   toolLoopGuardBlockReason,
 } from "./tool-loop-guard.js";
+import { policyToolFailureLedgerProjection } from "./tool-failure-semantics.js";
 
 type PolicyContext = Omit<
   Parameters<AgentTurnPipeline["preflightPolicy"]>[0],
@@ -77,6 +79,7 @@ export function createAgentToolPreflight(input: {
       ),
       ...agentToolInputLedgerProjection(toolCall.name, args),
       policyReason: reason,
+      ...policyToolFailureLedgerProjection(reason),
       ...evidence,
     });
     return { block: true, reason };
@@ -92,7 +95,10 @@ export function createAgentToolPreflight(input: {
       args,
       ...(signal ? { signal } : {}),
     });
-    return block ?? progTool(input.progress, input.lifecycle, toolCall, args);
+    return (
+      block ??
+      preflightProgressTool(input.progress, input.lifecycle, toolCall, args)
+    );
   };
   return {
     governed,

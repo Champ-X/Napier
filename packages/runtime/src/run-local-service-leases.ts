@@ -7,6 +7,7 @@ import type {
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { EventSink } from "./event-sink.js";
 import type { RunEventStorePort } from "./run-event-store-port.js";
+import { SerialQueue } from "./serial-queue.js";
 
 type RunLocalServiceLeaseStore = RunEventStorePort;
 
@@ -29,6 +30,7 @@ export interface RunLocalServiceLease {
 
 export class RunLocalServiceLeaseRegistry {
   private readonly leases = new Map<string, RunLocalServiceLease>();
+  private readonly mutations = new SerialQueue();
 
   constructor(
     private readonly store: RunLocalServiceLeaseStore,
@@ -36,26 +38,24 @@ export class RunLocalServiceLeaseRegistry {
   ) {}
 
   async grant(session: WorkspaceProcessSession): Promise<RunLocalServiceLease> {
-    const service = readyService(session);
-    const origin = serviceOrigin(service);
-    const content = {
-      threadId: session.threadId,
-      runId: session.runId,
-      processId: session.id,
-      origin,
-      originSha256: sha256(origin),
-      identitySha256: service.identitySha256,
-      expiresAt: new Date(
-        Date.parse(session.startedAt) + session.timeoutMs,
-      ).toISOString(),
-    };
-    const lease = {
-      ...content,
-      contentSha256: sha256(canonicalJson(content)),
-    };
-    const key = leaseKey(session.threadId, session.runId, session.id);
-    this.leases.set(key, lease);
-    try {
+    return this.mutations.run(async () => {
+      const service = readyService(session);
+      const origin = serviceOrigin(service);
+      const content = {
+        threadId: session.threadId,
+        runId: session.runId,
+        processId: session.id,
+        origin,
+        originSha256: sha256(origin),
+        identitySha256: service.identitySha256,
+        expiresAt: new Date(
+          Date.parse(session.startedAt) + session.timeoutMs,
+        ).toISOString(),
+      };
+      const lease = {
+        ...content,
+        contentSha256: sha256(canonicalJson(content)),
+      };
       await this.record(
         session.threadId,
         session.runId,
@@ -71,11 +71,15 @@ export class RunLocalServiceLeaseRegistry {
           leaseSha256: lease.contentSha256,
         },
       );
-    } catch (error) {
-      this.leases.delete(key);
-      throw error;
-    }
-    return structuredClone(lease);
+      // The in-memory capability is published only after its durable grant
+      // passes Run admission. A concurrent terminal Run therefore cannot use
+      // a lease whose authority event was rejected.
+      this.leases.set(
+        leaseKey(session.threadId, session.runId, session.id),
+        lease,
+      );
+      return structuredClone(lease);
+    });
   }
 
   authorize(
@@ -99,34 +103,40 @@ export class RunLocalServiceLeaseRegistry {
     session: Pick<WorkspaceProcessSession, "threadId" | "runId" | "id">,
     reason: LocalServiceLeaseRevocationReason,
   ): Promise<void> {
-    const key = leaseKey(session.threadId, session.runId, session.id);
-    const lease = this.leases.get(key);
-    this.leases.delete(key);
-    if (lease) await this.recordRevocation(lease, reason);
+    await this.mutations.run(async () => {
+      const key = leaseKey(session.threadId, session.runId, session.id);
+      const lease = this.leases.get(key);
+      this.leases.delete(key);
+      if (lease) await this.recordRevocation(lease, reason);
+    });
   }
 
   async revokeRun(
     owner: { threadId: string; runId: string },
     reason: LocalServiceLeaseRevocationReason = "run_finished",
   ): Promise<void> {
-    const leases = [...this.leases.entries()].filter(
-      ([, lease]) =>
-        lease.threadId === owner.threadId && lease.runId === owner.runId,
-    );
-    for (const [key] of leases) this.leases.delete(key);
-    await Promise.all(
-      leases.map(([, lease]) => this.recordRevocation(lease, reason)),
-    );
+    await this.mutations.run(async () => {
+      const leases = [...this.leases.entries()].filter(
+        ([, lease]) =>
+          lease.threadId === owner.threadId && lease.runId === owner.runId,
+      );
+      for (const [key] of leases) this.leases.delete(key);
+      await Promise.all(
+        leases.map(([, lease]) => this.recordRevocation(lease, reason)),
+      );
+    });
   }
 
   async revokeAll(
     reason: LocalServiceLeaseRevocationReason = "runtime_shutdown",
   ): Promise<void> {
-    const leases = [...this.leases.values()];
-    this.leases.clear();
-    await Promise.all(
-      leases.map((lease) => this.recordRevocation(lease, reason)),
-    );
+    await this.mutations.run(async () => {
+      const leases = [...this.leases.values()];
+      this.leases.clear();
+      await Promise.all(
+        leases.map((lease) => this.recordRevocation(lease, reason)),
+      );
+    });
   }
 
   private recordRevocation(

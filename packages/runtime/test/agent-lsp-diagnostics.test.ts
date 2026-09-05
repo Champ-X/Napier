@@ -101,17 +101,18 @@ describe("Agent LSP diagnostics integration", () => {
         event.payload["toolName"] === "lsp_diagnostics",
     );
     expect(toolEvents.map((event) => event.type)).toEqual([
+      "tool.admitted",
       "tool.started",
       "tool.completed",
     ]);
-    expect(toolEvents[0]?.payload).toEqual(
+    expect(toolEvents[1]?.payload).toEqual(
       expect.objectContaining({
         effect: "read",
         inputRedacted: true,
         inputSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
       }),
     );
-    expect(toolEvents[1]?.payload).toEqual(
+    expect(toolEvents[2]?.payload).toEqual(
       expect.objectContaining({
         outputRedacted: true,
         outputSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),

@@ -42,6 +42,7 @@ import {
   verifyThreadReplayBundle,
 } from "../src/index.js";
 import { acquireWorkspacePathLocks } from "../src/workspace-write-lock.js";
+import { createActiveTestRun } from "./active-run-test-fixture.js";
 
 const temporaryRoots: string[] = [];
 
@@ -138,8 +139,7 @@ async function createHarness(options?: {
     sandbox: options?.sandbox ?? controlled.sandbox,
   });
   await manager.initialize();
-  const thread = store.listThreads()[0]!;
-  const run = store.listRuns(thread.id)[0]!;
+  const { thread, run } = await createActiveTestRun(store, "Process fixture");
   return {
     root,
     workspaceRoot,
@@ -2209,10 +2209,10 @@ describe("Workspace Process Manager", () => {
       true,
     );
     harness.controlled.processes[0]!.stdin.resume();
-    const otherRun = await harness.store.createRun({
-      threadId: harness.thread.id,
-      agentId: harness.store.listAgents()[0]!.id,
-    });
+    const { run: otherRun } = await createActiveTestRun(
+      harness.store,
+      "Foreign process input owner",
+    );
     await expect(
       harness.manager.writeInput({
         threadId: harness.thread.id,

@@ -96,6 +96,7 @@ describe("default Agent web search integration", () => {
           timeRange: "day",
         }),
         expect.any(AbortSignal),
+        expect.objectContaining({ operation: expect.any(Function) }),
       );
       const events = await services.store.listEvents(thread.id);
       expect(

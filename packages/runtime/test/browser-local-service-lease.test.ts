@@ -32,9 +32,19 @@ describe("Browser local-service lease", () => {
       dataRoot: path.join(root, "data"),
     });
     await store.initialize();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Browser local-service lease",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+      model: { provider: "faux", id: "faux-1" },
+    });
     const owner = {
-      threadId: store.listThreads()[0]!.id,
-      runId: store.listRuns(store.listThreads()[0]!.id)[0]!.id,
+      threadId: thread.id,
+      runId: run.id,
     };
     const leases = new RunLocalServiceLeaseRegistry(store);
     const session = localServiceSession(owner);

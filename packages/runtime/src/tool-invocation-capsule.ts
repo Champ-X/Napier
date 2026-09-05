@@ -6,11 +6,13 @@ import type {
   ToolInvocationCapsuleReceipt,
 } from "@napier/contracts";
 
+import { agentToolImplementationSha256 } from "./agent-tool-metadata.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { CORE_STATELESS_READ_TOOL_NAMES } from "./read-only-tool-names.js";
 
 export const MAX_TOOL_INVOCATION_CAPSULE_BYTES = 512 * 1024;
 
+/** Legacy compatibility hints; never sufficient execution authority. */
 export const TOOL_INVOCATION_EXPERIMENT_TOOLS = new Set<string>(
   CORE_STATELESS_READ_TOOL_NAMES,
 );
@@ -48,9 +50,6 @@ export interface CreateToolInvocationCapsuleInput {
 export function createToolInvocationCapsule(
   input: CreateToolInvocationCapsuleInput,
 ): ToolInvocationCapsule {
-  if (!TOOL_INVOCATION_EXPERIMENT_TOOLS.has(input.toolName)) {
-    throw new Error("Tool invocation is not eligible for an experiment");
-  }
   const argumentsValue = normalizeJson(input.arguments);
   const argumentsSha256 = sha256(canonicalJson(argumentsValue));
   const workspaceScope = workspaceScopeFromArguments(argumentsValue);
@@ -104,7 +103,6 @@ export function validateToolInvocationCapsule(
     !callId(value["callId"]) ||
     typeof value["toolName"] !== "string" ||
     !TOOL_NAME.test(value["toolName"]) ||
-    !TOOL_INVOCATION_EXPERIMENT_TOOLS.has(value["toolName"]) ||
     value["effect"] !== "read" ||
     !hash(value["toolDefinitionSha256"]) ||
     !hash(value["argumentsSha256"]) ||
@@ -187,7 +185,6 @@ export function validateToolInvocationCapsuleReceipt(
     !callId(value["callId"]) ||
     typeof value["toolName"] !== "string" ||
     !TOOL_NAME.test(value["toolName"]) ||
-    !TOOL_INVOCATION_EXPERIMENT_TOOLS.has(value["toolName"]) ||
     value["effect"] !== "read" ||
     !hash(value["toolDefinitionSha256"]) ||
     !hash(value["argumentsSha256"]) ||
@@ -225,19 +222,7 @@ export function toolDefinitionSha256(
     "name" | "description" | "parameters" | "prepareArguments" | "execute"
   >,
 ): string {
-  return sha256(
-    canonicalJson({
-      name: tool.name,
-      description: tool.description,
-      parameters: tool.parameters,
-      prepareArgumentsSha256: sha256(
-        tool.prepareArguments
-          ? Function.prototype.toString.call(tool.prepareArguments)
-          : "",
-      ),
-      executeSha256: sha256(Function.prototype.toString.call(tool.execute)),
-    }),
-  );
+  return agentToolImplementationSha256(tool);
 }
 
 export function toolInvocationArgumentsSha256(argumentsValue: unknown): string {

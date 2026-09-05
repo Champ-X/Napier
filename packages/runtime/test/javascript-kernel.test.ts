@@ -20,6 +20,7 @@ import {
   type OsSandboxAdapter,
   WorkspaceProcessManager,
 } from "../src/index.js";
+import { formatJavascriptKernelCodeBridgeResponse } from "../src/javascript-kernel-code-bridge.js";
 
 const temporaryRoots: string[] = [];
 
@@ -32,6 +33,107 @@ afterEach(async () => {
 });
 
 describe("persistent JavaScript kernel", () => {
+  it("reassembles bounded Code Bridge frames larger than one process input message", async () => {
+    const harness = await createHarness();
+    const kernel = await harness.kernels.start({
+      threadId: harness.threadId,
+      runId: harness.runId,
+      timeoutMs: 20_000,
+    });
+    const largePayload = "x".repeat(48 * 1024);
+    const evaluated = await harness.kernels.evaluate({
+      threadId: harness.threadId,
+      runId: harness.runId,
+      processId: kernel.id,
+      code: 'napier.call("large_result",{}).then(result=>result.details.payload.length)',
+      codeBridge: async () => ({
+        content: [],
+        details: { payload: largePayload },
+        isError: false,
+      }),
+    });
+
+    expect(evaluated).toEqual(
+      expect.objectContaining({ status: "ok", preview: "49152" }),
+    );
+    const session = (await harness.processes.list(harness.threadId)).find(
+      ({ id }) => id === kernel.id,
+    );
+    expect(session?.stdinWriteCount).toBeGreaterThanOrEqual(4);
+    await harness.kernels.cancel({
+      threadId: harness.threadId,
+      runId: harness.runId,
+      processId: kernel.id,
+    });
+    await harness.close();
+  }, 20_000);
+
+  it("does not mix reordered, duplicate, or cross-evaluation response frames", async () => {
+    const harness = await createHarness();
+    const kernel = await harness.kernels.start({
+      threadId: harness.threadId,
+      runId: harness.runId,
+      timeoutMs: 20_000,
+    });
+    const largePayload = "v".repeat(24 * 1024);
+    const evaluated = await harness.kernels.evaluate({
+      threadId: harness.threadId,
+      runId: harness.runId,
+      processId: kernel.id,
+      code: 'napier.call("framed_result",{}).then(result=>result.details.payload.length)',
+      codeBridge: async (call) => {
+        const frames = formatJavascriptKernelCodeBridgeResponse({
+          evaluationId: call.evaluationId,
+          callId: call.callId,
+          result: {
+            content: [],
+            details: { payload: largePayload },
+            isError: false,
+          },
+        });
+        const crossEvaluation = formatJavascriptKernelCodeBridgeResponse({
+          evaluationId: "kernelrequest_00000000000000000000",
+          callId: call.callId,
+          result: {
+            content: [],
+            details: { payload: "injected" },
+            isError: false,
+          },
+        })[0]!;
+        for (const frame of [
+          frames[1]!,
+          frames[0]!,
+          crossEvaluation,
+          frames[0]!,
+        ]) {
+          await harness.processes.writePrivateProtocolInput({
+            threadId: harness.threadId,
+            runId: harness.runId,
+            processId: kernel.id,
+            text: frame,
+            appendNewline: true,
+            initiatedBy: "agent",
+          });
+        }
+        return {
+          content: [],
+          details: { payload: largePayload },
+          isError: false,
+        };
+      },
+    });
+
+    expect(evaluated).toEqual(
+      expect.objectContaining({ status: "ok", preview: "24576" }),
+    );
+    await harness.kernels.cancel({
+      threadId: harness.threadId,
+      runId: harness.runId,
+      processId: kernel.id,
+    });
+    await harness.close();
+  }, 20_000);
+
   it("keeps state across evaluations and records only hash-bound process evidence", async () => {
     const harness = await createHarness();
     const kernel = await harness.kernels.start({

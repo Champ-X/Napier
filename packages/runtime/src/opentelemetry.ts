@@ -25,6 +25,10 @@ import {
   SAFE_EVENT_PAYLOAD_ATTRIBUTE_KEYS,
   safePayloadAttributes,
 } from "./opentelemetry-payload-projection.js";
+import {
+  collectToolTraces,
+  type ToolTrace,
+} from "./opentelemetry-tool-traces.js";
 import type { RuntimeStorePort } from "./store-port.js";
 
 export const MAX_OTLP_TRACE_EVENTS = 10_000;
@@ -132,14 +136,6 @@ const BASE_EVENT_ATTRIBUTE_KEYS = new Set([
   "napier.event.usage.input_tokens",
   "napier.event.usage.output_tokens",
 ]);
-
-interface ToolTrace {
-  callId: string;
-  toolName: string;
-  events: RunEvent[];
-  started?: RunEvent;
-  terminal?: RunEvent;
-}
 
 interface EventAnchor {
   id: string;
@@ -675,39 +671,6 @@ function modelLedgerPayloadProjectionValues(
         }
       : {}),
   };
-}
-
-function collectToolTraces(events: RunEvent[]): ToolTrace[] {
-  const traces = new Map<string, ToolTrace>();
-  for (const event of events.filter(
-    (candidate) => candidate.category === "tool",
-  )) {
-    const callId = payloadString(event.payload, "callId") ?? event.id;
-    const key = `${event.runId}:${callId}`;
-    const existing = traces.get(key) ?? {
-      callId,
-      toolName: payloadString(event.payload, "toolName") ?? "unknown",
-      events: [],
-    };
-    existing.events.push(event);
-    if (event.type === "tool.started" && !existing.started) {
-      existing.started = event;
-    }
-    if (
-      (event.type === "tool.completed" ||
-        event.type === "tool.failed" ||
-        event.type === "tool.blocked") &&
-      !existing.terminal
-    ) {
-      existing.terminal = event;
-    }
-    traces.set(key, existing);
-  }
-  return [...traces.values()].sort((left, right) => {
-    const leftSeq = left.events[0]?.seq ?? 0;
-    const rightSeq = right.events[0]?.seq ?? 0;
-    return leftSeq - rightSeq;
-  });
 }
 
 function toolSpan(

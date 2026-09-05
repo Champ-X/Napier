@@ -114,10 +114,11 @@ describe("Agent LSP definition integration", () => {
         event.payload["toolName"] === "lsp_definition",
     );
     expect(toolEvents.map((event) => event.type)).toEqual([
+      "tool.admitted",
       "tool.started",
       "tool.completed",
     ]);
-    expect(toolEvents[1]?.payload["details"]).toEqual(
+    expect(toolEvents[2]?.payload["details"]).toEqual(
       expect.objectContaining({
         kind: "napier.lsp-definition",
         status: "found",

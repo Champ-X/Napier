@@ -1,5 +1,11 @@
 import { PersistentBrowserSession } from "./browser-page-session.js";
 import { BrowserNavigationPolicyError } from "./browser-session-navigation.js";
+import { BrowserSessionInactiveError } from "./browser-session-errors.js";
+import {
+  browserSessionOwnerKey,
+  isBrowserNavigationTimeout,
+  preflightBrowserStartUrl,
+} from "./browser-session-manager-helpers.js";
 import {
   BrowserConfirmationPageChangedError,
   type BrowserConfirmationPageState,
@@ -21,8 +27,6 @@ import {
   type BrowserSessionRequest,
   type RunBrowserSessionManagerOptions,
 } from "./browser-session-model.js";
-import { resolvePublicHost, validatePublicHttpUrl } from "./public-network.js";
-import { localServiceUrl } from "./run-local-service-leases.js";
 import {
   assertBrowserSessionNotAborted,
   shutdownBrowserSessions,
@@ -45,11 +49,14 @@ export class RunBrowserSessionManager {
   constructor(private readonly options: RunBrowserSessionManagerOptions) {}
 
   hasActiveSession(owner: BrowserSessionOwner): boolean {
-    return this.sessions.get(ownerKey(owner))?.healthy === true;
+    return this.sessions.get(browserSessionOwnerKey(owner))?.healthy === true;
   }
 
   hasWorkspacePreview(owner: BrowserSessionOwner): boolean {
-    return this.sessions.get(ownerKey(owner))?.workspacePreviewActive === true;
+    return (
+      this.sessions.get(browserSessionOwnerKey(owner))
+        ?.workspacePreviewActive === true
+    );
   }
 
   async capturePage(
@@ -57,14 +64,14 @@ export class RunBrowserSessionManager {
     maxChars: number,
     signal?: AbortSignal,
   ): Promise<BrowserPageSourceCapture> {
-    const key = ownerKey(owner);
+    const key = browserSessionOwnerKey(owner);
     return this.serialized(
       key,
       async () => {
         assertBrowserSessionNotAborted(signal);
         const session = this.sessions.get(key);
         if (!session || !session.healthy) {
-          throw new Error("Browser Session is not active for this Run");
+          throw new BrowserSessionInactiveError();
         }
         try {
           return await session.capturePage(maxChars, signal);
@@ -82,14 +89,14 @@ export class RunBrowserSessionManager {
     owner: BrowserSessionOwner,
     signal?: AbortSignal,
   ): Promise<{ image: Buffer; receipt: BrowserLiveViewReceipt }> {
-    const key = ownerKey(owner);
+    const key = browserSessionOwnerKey(owner);
     return this.serialized(
       key,
       async () => {
         assertBrowserSessionNotAborted(signal);
         const session = this.sessions.get(key);
         if (!session || !session.healthy) {
-          throw new Error("Browser Session is not active for this Run");
+          throw new BrowserSessionInactiveError();
         }
         const result = await session.execute(
           { action: "screenshot" },
@@ -144,14 +151,14 @@ export class RunBrowserSessionManager {
     snapshot: BrowserSessionOperationResult;
     tabs: BrowserSessionOperationResult;
   }> {
-    const key = ownerKey(owner);
+    const key = browserSessionOwnerKey(owner);
     return this.serialized(
       key,
       async () => {
         assertBrowserSessionNotAborted(signal);
         const session = this.sessions.get(key);
         if (!session || !session.healthy) {
-          throw new Error("Browser Session is not active for this Run");
+          throw new BrowserSessionInactiveError();
         }
         try {
           const snapshot = await session.execute(
@@ -302,7 +309,7 @@ export class RunBrowserSessionManager {
     signal?: AbortSignal,
     preparedUpload?: BrowserPreparedUpload,
   ): Promise<BrowserSessionOperationResult> {
-    const key = ownerKey(owner);
+    const key = browserSessionOwnerKey(owner);
     return this.serialized(
       key,
       async () => {
@@ -330,7 +337,7 @@ export class RunBrowserSessionManager {
           let session: PersistentBrowserSession;
           try {
             if (request.action === "start") {
-              await preflightStartUrl(owner, request.url, this.options);
+              await preflightBrowserStartUrl(owner, request.url, this.options);
             }
             assertBrowserSessionNotAborted(signal);
             session = await PersistentBrowserSession.start(this.options, owner);
@@ -347,6 +354,9 @@ export class RunBrowserSessionManager {
               signal,
             );
           } catch (error) {
+            if (session.healthy && isBrowserNavigationTimeout(request, error)) {
+              throw error;
+            }
             this.sessions.delete(key);
             await session.close();
             throw error;
@@ -358,7 +368,7 @@ export class RunBrowserSessionManager {
             this.sessions.delete(key);
             await session.close();
           }
-          throw new Error("Browser Session is not active for this Run");
+          throw new BrowserSessionInactiveError();
         }
         return this.runOperation(
           key,
@@ -374,10 +384,18 @@ export class RunBrowserSessionManager {
   }
 
   async cancelRun(owner: BrowserSessionOwner): Promise<void> {
-    const key = ownerKey(owner);
-    const session = this.sessions.get(key);
-    this.sessions.delete(key);
-    await session?.close();
+    const key = browserSessionOwnerKey(owner);
+    const keys = owner.sessionLane
+      ? [key]
+      : [...this.sessions.keys()].filter(
+          (candidate) => candidate === key || candidate.startsWith(`${key}\0`),
+        );
+    const sessions = keys.flatMap((candidate) => {
+      const session = this.sessions.get(candidate);
+      this.sessions.delete(candidate);
+      return session ? [session] : [];
+    });
+    await Promise.allSettled(sessions.map((session) => session.close()));
   }
 
   async shutdown(): Promise<void> {
@@ -408,7 +426,8 @@ export class RunBrowserSessionManager {
     } catch (error) {
       if (
         error instanceof BrowserConfirmationPageChangedError ||
-        error instanceof BrowserNavigationPolicyError
+        error instanceof BrowserNavigationPolicyError ||
+        (session.healthy && isBrowserNavigationTimeout(request, error))
       ) {
         throw error;
       }
@@ -446,14 +465,14 @@ export class RunBrowserSessionManager {
     signal: AbortSignal | undefined,
     operation: (session: PersistentBrowserSession, key: string) => Promise<T>,
   ): Promise<T> {
-    const key = ownerKey(owner);
+    const key = browserSessionOwnerKey(owner);
     return await this.serialized(
       key,
       async () => {
         assertBrowserSessionNotAborted(signal);
         const session = this.sessions.get(key);
         if (!session || !session.healthy) {
-          throw new Error("Browser Session is not active for this Run");
+          throw new BrowserSessionInactiveError();
         }
         try {
           return await operation(session, key);
@@ -475,23 +494,4 @@ export class RunBrowserSessionManager {
     for (const [key] of closed) this.sessions.delete(key);
     await Promise.allSettled(closed.map(([, session]) => session.close()));
   }
-}
-
-function ownerKey(owner: BrowserSessionOwner): string {
-  if (!owner.threadId || !owner.runId) {
-    throw new Error("Browser Session owner is invalid");
-  }
-  return `${owner.threadId}\u0000${owner.runId}`;
-}
-
-async function preflightStartUrl(
-  owner: BrowserSessionOwner,
-  value: string,
-  options: RunBrowserSessionManagerOptions,
-): Promise<void> {
-  if (localServiceUrl(options.localServiceLeases, owner, value)) return;
-  const url = validatePublicHttpUrl(value);
-  await resolvePublicHost(url.hostname, {
-    ...(options.lookup ? { lookup: options.lookup } : {}),
-  });
 }

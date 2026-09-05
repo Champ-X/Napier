@@ -1,25 +1,42 @@
+import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type {
   ExecutionPlanWorkflowToolNode,
   JsonValue,
   RunRecord,
 } from "@napier/contracts";
+import type { ToolInvocationProtocolV2 } from "@napier/contracts/tool-protocol";
 import { Check } from "typebox/value";
 
 import type { EventSink } from "./event-sink.js";
 import {
-  agentToolInputLedgerProjection,
-  agentToolOutputLedgerProjection,
-} from "./agent-tool-ledger.js";
-import { builtInToolEffect } from "./agent-tool-effects.js";
+  bindBuiltInToolCompatibilityPolicy,
+  hasBoundAgentToolCompatibilityPolicy,
+} from "./agent-tool-effects.js";
+import { agentToolResultText } from "./agent-tool-result-text.js";
+import { toJsonValue } from "./agent-runtime-utils.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId, createProcessLeaseOwnerId } from "./ids.js";
 import { gitStageMutationManagerFor } from "./git-stage.js";
 import { assessToolCall } from "./policy.js";
 import { createStatelessAgentTools } from "./stateless-agent-tools.js";
+import {
+  createOwnedToolRecordV2,
+  type OwnedToolRecordV2,
+} from "./owned-tool-protocol.js";
 import type { LocalStore } from "./store.js";
+import { ToolConcurrencyGate } from "./tool-concurrency-gate.js";
+import {
+  executeAdmittedToolCall,
+  ToolExecutionRetryLineageError,
+} from "./tool-execution-admission-service.js";
 import { assertWorkflowValue } from "./workflow-schemas.js";
 import { ExecutionPlanWorkflowLedger } from "./workflow-ledger.js";
 import { WORKFLOW_NODE_EXECUTION } from "./workflow-node-execution.js";
+import {
+  workflowToolCallId,
+  workflowToolInputLedgerProjection,
+  workflowToolOutputLedgerProjection,
+} from "./workflow-tool-execution-evidence.js";
 import type { WorkflowRuntimeEnvironment } from "./workflow-runtime-ports.js";
 
 const RUN_LEASE_TTL_MS = 60_000;
@@ -45,6 +62,29 @@ export interface ExecutionPlanWorkflowToolOutcome {
   output: JsonValue;
 }
 
+export function resolveOwnedWorkflowToolEffect(
+  tool: AgentTool,
+  input: unknown,
+):
+  | {
+      effect: "read" | "write";
+      protocol: OwnedToolRecordV2;
+      invocation: ToolInvocationProtocolV2;
+    }
+  | undefined {
+  const protocol = createOwnedToolRecordV2(tool);
+  const invocation = protocol.invocation(input);
+  const trusted =
+    invocation.compatibilityMode === "native" ||
+    hasBoundAgentToolCompatibilityPolicy(tool);
+  if (!trusted) return undefined;
+  return {
+    protocol,
+    invocation,
+    effect: invocation.sideEffect === "none" ? "read" : "write",
+  };
+}
+
 export class ExecutionPlanWorkflowToolError extends Error {
   constructor(
     readonly code: string,
@@ -58,12 +98,20 @@ export class ExecutionPlanWorkflowToolError extends Error {
 
 export class ExecutionPlanWorkflowToolRuntime {
   private readonly workerId = createProcessLeaseOwnerId("workflowtool");
+  private readonly concurrencyGate: ToolConcurrencyGate;
 
   constructor(
     private readonly store: LocalStore,
     private readonly environment: WorkflowRuntimeEnvironment,
     private readonly ledger: ExecutionPlanWorkflowLedger,
-  ) {}
+  ) {
+    this.concurrencyGate = new ToolConcurrencyGate({
+      durable: {
+        backend: store.toolConcurrencyLeaseBackend(),
+        ownerId: this.workerId,
+      },
+    });
+  }
 
   async execute(
     options: ExecuteExecutionPlanWorkflowToolOptions,
@@ -126,7 +174,7 @@ export class ExecutionPlanWorkflowToolRuntime {
         options.onEvent,
       );
 
-      const tool = createStatelessAgentTools({
+      const tools = createStatelessAgentTools({
         store: this.store,
         profile,
         threadId: options.threadId,
@@ -146,7 +194,10 @@ export class ExecutionPlanWorkflowToolRuntime {
         gitBranchScopeId: options.planId,
         gitBranchSwitchScopeId: options.planId,
         gitReviewScopeId: options.planId,
-      }).find((candidate) => candidate.name === options.node.tool);
+      }).map(bindBuiltInToolCompatibilityPolicy);
+      const tool = tools.find(
+        (candidate) => candidate.name === options.node.tool,
+      );
       if (!tool) {
         const errorCode = profile.enabledTools.includes(options.node.tool)
           ? "policy_denied"
@@ -189,8 +240,8 @@ export class ExecutionPlanWorkflowToolRuntime {
         );
       }
       const jsonArgs = toJsonValue(args);
-      const effect = builtInToolEffect(options.node.tool, jsonArgs);
-      if (!effect || effect !== options.node.effect) {
+      const owned = resolveOwnedWorkflowToolEffect(tool, jsonArgs);
+      if (!owned || owned.effect !== options.node.effect) {
         await this.blockTool(options, leased.run, "effect_mismatch");
         throw new ExecutionPlanWorkflowToolError(
           "effect_mismatch",
@@ -198,11 +249,13 @@ export class ExecutionPlanWorkflowToolRuntime {
           leased.run,
         );
       }
+      const { effect, protocol } = owned;
       const decision = assessToolCall(
         profile.toolPolicy,
         options.node.tool,
         jsonArgs,
         this.store.workspaceRoot,
+        owned.invocation,
       );
       if (!decision.allowed) {
         await this.blockTool(options, leased.run, "policy_denied");
@@ -214,53 +267,80 @@ export class ExecutionPlanWorkflowToolRuntime {
       }
 
       executionController.signal.throwIfAborted();
-      toolCallId = createId("toolcall");
+      toolCallId = workflowToolCallId({
+        threadId: options.threadId,
+        planId: options.planId,
+        nodeId: options.node.id,
+        attempt: options.attempt,
+        inputSha256: options.inputSha256,
+      });
       const inputProjection = workflowToolInputLedgerProjection(
         options.node.tool,
         jsonArgs,
       );
-      await this.ledger.append(
-        {
-          threadId: options.threadId,
-          runId: leased.run.id,
-          type: "tool.started",
-          category: "tool",
-          visibility: "user",
-          payload: {
-            ...inputProjection,
-            callId: toolCallId,
-            toolName: options.node.tool,
-            status: "started",
-            effect,
-            workflowPlanId: options.planId,
-            workflowNodeId: options.node.id,
-            workflowAttempt: options.attempt,
+      const admitted = await executeAdmittedToolCall({
+        store: this.store,
+        run: leased.run,
+        callId: toolCallId,
+        toolName: options.node.tool,
+        args,
+        protocol,
+        concurrencyGate: this.concurrencyGate,
+        signal: executionController.signal,
+        retryLineage: {
+          namespace: "workflow.tool-node",
+          binding: {
+            threadId: options.threadId,
+            planId: options.planId,
+            nodeId: options.node.id,
+            inputSha256: options.inputSha256,
           },
+          attempt: options.attempt,
+          maxAttempts: options.node.maxAttempts,
         },
-        options.onEvent,
-      );
-      toolStarted = true;
-      const result = await tool.execute(
-        toolCallId,
-        args as never,
-        executionController.signal,
-      );
+        admissionVisibility: "user",
+        admissionPayload: {
+          workflowPlanId: options.planId,
+          workflowNodeId: options.node.id,
+          workflowAttempt: options.attempt,
+          workflowInputSha256: options.inputSha256,
+        },
+        startedPayload: {
+          ...inputProjection,
+          effect,
+          workflowPlanId: options.planId,
+          workflowNodeId: options.node.id,
+          workflowAttempt: options.attempt,
+          workflowInputSha256: options.inputSha256,
+        },
+        ...(options.onEvent ? { onEvent: options.onEvent } : {}),
+        onStarted: () => {
+          toolStarted = true;
+        },
+        execute: () =>
+          tool.execute(toolCallId!, args as never, executionController.signal),
+        settlement: (result) => {
+          const output = toJsonValue(result.details);
+          try {
+            assertWorkflowValue(
+              options.node.outputSchema,
+              output,
+              `Workflow tool output ${options.node.id}`,
+            );
+          } catch {
+            throw new ExecutionPlanWorkflowToolError(
+              "output_invalid",
+              "Workflow tool output does not match its schema",
+              leased.run,
+            );
+          }
+          return { result, isError: false };
+        },
+      });
+      const result = admitted.value;
       const output = toJsonValue(result.details);
-      try {
-        assertWorkflowValue(
-          options.node.outputSchema,
-          output,
-          `Workflow tool output ${options.node.id}`,
-        );
-      } catch {
-        throw new ExecutionPlanWorkflowToolError(
-          "output_invalid",
-          "Workflow tool output does not match its schema",
-          leased.run,
-        );
-      }
       const outputSha256 = sha256(canonicalJson(output));
-      const outputText = resultText(result);
+      const outputText = agentToolResultText(result);
       const outputProjection = workflowToolOutputLedgerProjection(
         options.node.tool,
         outputText,
@@ -289,19 +369,13 @@ export class ExecutionPlanWorkflowToolRuntime {
         },
         options.onEvent,
       );
-      await this.ledger.append(
-        {
-          threadId: options.threadId,
-          runId: leased.run.id,
-          type: "run.completed",
-          category: "lifecycle",
+      const run = await this.store.finishRun(leased.run.id, "completed", {
+        leaseToken: leased.token,
+        terminalEvent: {
           visibility: "debug",
           payload: { status: "completed" },
         },
-        options.onEvent,
-      );
-      const run = await this.store.finishRun(leased.run.id, "completed", {
-        leaseToken: leased.token,
+        onTerminalEvent: options.onEvent,
       });
       settled = true;
       return { run, output };
@@ -310,15 +384,14 @@ export class ExecutionPlanWorkflowToolRuntime {
       const timedOut = options.wasTimedOut?.() === true;
       const cancelled = options.signal.aborted && !timedOut;
       const code =
-        error instanceof ExecutionPlanWorkflowToolError
-          ? error.code
-          : leaseLost
-            ? "lease_lost"
-            : timedOut
-              ? "timeout"
-              : cancelled
-                ? "cancelled"
-                : "tool_failed";
+        admittedToolErrorCode(error) ??
+        (leaseLost
+          ? "lease_lost"
+          : timedOut
+            ? "timeout"
+            : cancelled
+              ? "cancelled"
+              : "tool_failed");
       const diagnosticSha256 = sha256(errorMessage(error));
       if (toolStarted && toolCallId) {
         await this.ledger
@@ -346,13 +419,11 @@ export class ExecutionPlanWorkflowToolRuntime {
           )
           .catch(() => undefined);
       }
-      await this.ledger
-        .append(
-          {
-            threadId: options.threadId,
-            runId: leased.run.id,
-            type: cancelled ? "run.cancelled" : "run.failed",
-            category: "lifecycle",
+      await this.store
+        .finishRun(leased.run.id, cancelled ? "cancelled" : "failed", {
+          error: `Workflow tool ${code}`,
+          leaseToken: leased.token,
+          terminalEvent: {
             visibility: "user",
             payload: {
               status: cancelled ? "cancelled" : "failed",
@@ -360,13 +431,7 @@ export class ExecutionPlanWorkflowToolRuntime {
               diagnosticSha256,
             },
           },
-          options.onEvent,
-        )
-        .catch(() => undefined);
-      await this.store
-        .finishRun(leased.run.id, cancelled ? "cancelled" : "failed", {
-          error: `Workflow tool ${code}`,
-          leaseToken: leased.token,
+          onTerminalEvent: options.onEvent,
         })
         .catch(() => undefined);
       if (error instanceof ExecutionPlanWorkflowToolError) throw error;
@@ -410,81 +475,13 @@ export class ExecutionPlanWorkflowToolRuntime {
   }
 }
 
-function resultText(result: unknown): string {
-  if (
-    !result ||
-    typeof result !== "object" ||
-    !("content" in result) ||
-    !Array.isArray(result.content)
-  ) {
-    return String(result ?? "");
-  }
-  return result.content
-    .filter((item): item is { type: "text"; text: string } =>
-      Boolean(
-        item &&
-        typeof item === "object" &&
-        item.type === "text" &&
-        typeof item.text === "string",
-      ),
-    )
-    .map((item) => item.text)
-    .join("\n");
-}
-
-function toJsonValue(value: unknown): JsonValue {
-  if (value === undefined) return null;
-  try {
-    return JSON.parse(JSON.stringify(value)) as JsonValue;
-  } catch {
-    return String(value);
-  }
-}
-
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function workflowToolOutputLedgerProjection(
-  toolName: string,
-  output: string,
-  result: unknown,
-): Record<string, JsonValue> {
-  const projection = agentToolOutputLedgerProjection(toolName, output, result);
-  if (
-    projection["outputRedacted"] === true &&
-    typeof projection["outputSha256"] === "string" &&
-    typeof projection["outputBytes"] === "number"
-  ) {
-    return {
-      ...projection,
-      toolOutputRedacted: true,
-      toolOutputBytes: projection["outputBytes"],
-      toolOutputSha256: projection["outputSha256"],
-    };
-  }
-  if (typeof projection["output"] !== "string") return projection;
-  const { output: _output, ...rest } = projection;
-  return {
-    ...rest,
-    toolOutputRedacted: true,
-    toolOutputBytes: Buffer.byteLength(output, "utf8"),
-    toolOutputSha256: sha256(output),
-  };
-}
-
-function workflowToolInputLedgerProjection(
-  toolName: string,
-  input: JsonValue,
-): Record<string, JsonValue> {
-  const projection = agentToolInputLedgerProjection(toolName, input);
-  if (!Object.hasOwn(projection, "input")) return projection;
-  const { input: _input, ...rest } = projection;
-  const encoded = canonicalJson(input);
-  return {
-    ...rest,
-    inputRedacted: true,
-    inputBytes: Buffer.byteLength(encoded, "utf8"),
-    inputSha256: sha256(canonicalJson({ toolName, input })),
-  };
+function admittedToolErrorCode(error: unknown): string | undefined {
+  if (error instanceof ExecutionPlanWorkflowToolError) return error.code;
+  return error instanceof ToolExecutionRetryLineageError
+    ? "retry_unsafe"
+    : undefined;
 }

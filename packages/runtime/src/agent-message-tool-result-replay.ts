@@ -31,7 +31,7 @@ import {
   validateSkillSnapshotForContinuation,
 } from "./skill-load-replay.js";
 import type { SkillSnapshot } from "./standard-skill-snapshot.js";
-import type { OwnedToolRecordV2 } from "./tool-protocol-registry.js";
+import type { OwnedToolRecordV2 } from "./owned-tool-protocol.js";
 
 export const AGENT_MESSAGE_TOOL_RESULT_REPLAY: unique symbol = Symbol(
   "napier.agent-message-tool-result-replay",
@@ -149,9 +149,7 @@ export class FrozenToolResultReplayController {
       !tool ||
       tool.definition.id !== toolName ||
       expected.toolName !== toolName ||
-      (expected.toolDefinitionSha256 !== tool.definitionSha256 &&
-        expected.toolDefinitionSha256 !==
-          tool.definition.compatibility.legacyDefinitionSha256) ||
+      !tool.matchesReplayIdentitySha256(expected.toolDefinitionSha256) ||
       expected.argumentsSha256 !== argumentsSha256 ||
       this.reservations.has(targetCallId)
     ) {

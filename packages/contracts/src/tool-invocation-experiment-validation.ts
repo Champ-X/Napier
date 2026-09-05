@@ -123,7 +123,8 @@ function validToolInvocationPreviewEvidence(
     positiveInteger(value["sourceCapsuleEventSeq"]) &&
     positiveInteger(value["sourceStartedEventSeq"]) &&
     positiveInteger(value["sourceTerminalEventSeq"]) &&
-    value["sourceStartedEventSeq"] < value["sourceCapsuleEventSeq"] &&
+    value["sourceStartedEventSeq"] !== value["sourceCapsuleEventSeq"] &&
+    value["sourceStartedEventSeq"] < value["sourceTerminalEventSeq"] &&
     value["sourceCapsuleEventSeq"] < value["sourceTerminalEventSeq"] &&
     hashFields(value, [
       "sourceToolDefinitionSha256",

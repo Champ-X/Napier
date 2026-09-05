@@ -43,34 +43,20 @@ export async function appendToolExperimentComparison(
   );
 }
 
-export async function appendToolExperimentTerminal(
-  store: LocalStore,
-  threadId: string,
-  runId: string,
+export function toolExperimentTerminalEvent(
   status: ToolInvocationExperimentStatus,
-  onEvent?: EventSink,
   error?: unknown,
-): Promise<void> {
-  await appendToolExperimentEvent(
-    store,
-    {
-      threadId,
-      runId,
-      type:
-        status === "completed"
-          ? "run.completed"
-          : status === "cancelled"
-            ? "run.cancelled"
-            : "run.failed",
-      category: "lifecycle",
-      visibility: "debug",
-      payload: {
-        status,
-        ...(error ? { diagnosticSha256: sha256(errorMessage(error)) } : {}),
-      },
+): {
+  visibility: "debug";
+  payload: Record<string, JsonValue>;
+} {
+  return {
+    visibility: "debug",
+    payload: {
+      status,
+      ...(error ? { diagnosticSha256: sha256(errorMessage(error)) } : {}),
     },
-    onEvent,
-  );
+  };
 }
 
 export async function appendToolExperimentEvent(

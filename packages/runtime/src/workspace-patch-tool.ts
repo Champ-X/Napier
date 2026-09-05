@@ -11,6 +11,12 @@ import type {
   WorkspacePatchInput,
   WorkspacePatchResult,
 } from "./workspace-patch-model.js";
+import {
+  defineToolProgress,
+  progressSemantics,
+  recordValue,
+  resultDetails,
+} from "./tool-progress-semantics.js";
 
 const MAX_PATCH_BYTES = 256 * 1024;
 const MAX_PATCH_EDITS = 32;
@@ -111,7 +117,7 @@ export interface WorkspacePatchToolOptions {
 export function createWorkspacePatchTool(
   options: WorkspacePatchToolOptions,
 ): AgentTool<typeof applyPatchSchema, WorkspacePatchToolDetails> {
-  return {
+  const tool: AgentTool<typeof applyPatchSchema, WorkspacePatchToolDetails> = {
     name: "apply_patch",
     label: "Apply patch",
     description:
@@ -195,6 +201,21 @@ export function createWorkspacePatchTool(
       };
     },
   };
+  return defineToolProgress(tool, {
+    schemaVersion: 1,
+    classificationVersion: "1.0.0",
+    modes: [
+      { modeId: "patch_workspace", operation: "mutate", scope: "workspace", contribution: "product" },
+    ],
+    resolve: (input) => ({
+      semantics: progressSemantics("mutate", "workspace", "product"),
+      resourceKey: {
+        kind: "workspace-path",
+        path: recordValue(input)["path"],
+      },
+    }),
+    state: (_input, result) => resultDetails(result)["afterSha256"],
+  });
 }
 
 export function workspacePatchToolCallArgumentsLedgerProjection(

@@ -12,6 +12,7 @@ import {
 import type { ModelRouteSession } from "./model-route.js";
 import { ENVIRONMENT_DEGRADED_READ_TOOL_NAMES } from "./read-only-tool-names.js";
 import type { LocalStore } from "./store.js";
+import type { ToolConcurrencyGate } from "./tool-concurrency-gate.js";
 import type { SubagentExecutionControl } from "./subagent-execution-control.js";
 import { createSubagentStream } from "./subagent-model-stream.js";
 import { settleSubagentOutcome } from "./subagent-outcome-settlement.js";
@@ -27,6 +28,7 @@ import {
   type DelegationDetails,
 } from "./subagent-task-evidence.js";
 import { SubagentTaskObserver } from "./subagent-task-observer.js";
+import { governSubagentTools } from "./subagent-tool-execution.js";
 import { settleSubagentTypedOutput } from "./subagent-typed-output-runtime.js";
 import { finishSubagentTypedOutput } from "./subagent-typed-output-settlement.js";
 import type { SubagentWorktreeMutationManager } from "./subagent-worktree-mutation.js";
@@ -45,6 +47,7 @@ export class SubagentTaskRunner {
       run: RunRecord;
       limits: SubagentLimits;
       parentSignal: AbortSignal;
+      concurrencyGate: ToolConcurrencyGate;
       worktrees?: SubagentWorktreeMutationManager;
       createInheritedTools?: () => AgentTool[];
       control?: SubagentExecutionControl;
@@ -125,6 +128,19 @@ export class SubagentTaskRunner {
 
     let turnCapped = false;
     let observer: SubagentTaskObserver;
+    const tools = governSubagentTools({
+      tools: createSubagentRoleTools(
+        this.options.store,
+        this.options.worktrees,
+        this.options.createInheritedTools,
+        worktree,
+      ),
+      store: this.options.store,
+      run: this.options.run,
+      taskId: task.id,
+      concurrencyGate: this.options.concurrencyGate,
+      onEvent: this.options.onEvent,
+    });
     const agent = new Agent({
       initialState: {
         systemPrompt: task.outputSchema
@@ -132,12 +148,7 @@ export class SubagentTaskRunner {
           : subagentRoleInstructions(task.role),
         model: this.options.model,
         thinkingLevel: this.options.model.reasoning ? "medium" : "off",
-        tools: mergeSubagentTools(
-          worktree
-            ? this.options.worktrees!.createCoderTools(worktree)
-            : createWorkspaceTools(this.options.store.workspaceRoot),
-          this.options.createInheritedTools?.() ?? [],
-        ),
+        tools,
         messages: [],
       },
       streamFn: createSubagentStream(
@@ -385,4 +396,16 @@ export function mergeSubagentTools(
     }
   }
   return [...merged.values()];
+}
+
+function createSubagentRoleTools(
+  store: LocalStore,
+  worktrees: SubagentWorktreeMutationManager | undefined,
+  createInheritedTools: (() => AgentTool[]) | undefined,
+  worktree: SubagentWorktreeSession | undefined,
+): AgentTool[] {
+  const roleTools = worktree
+    ? worktrees!.createCoderTools(worktree)
+    : createWorkspaceTools(store.workspaceRoot);
+  return mergeSubagentTools(roleTools, createInheritedTools?.() ?? []);
 }

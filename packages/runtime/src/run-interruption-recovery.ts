@@ -1,9 +1,21 @@
 import type { RunEvent } from "@napier/contracts";
 
-import { nowIso, preserveRunLeaseOnStartup } from "./ids.js";
+import { nowIso } from "./ids.js";
+import { lostRunLeaseDisposition } from "./run-lease-loss.js";
 import { interruptPlanRun } from "./plans.js";
-import { cancelPendingRunControlMessages } from "./run-lifecycle-cancellation.js";
+import type { TerminalRunStatus } from "./run-event-admission.js";
+import type { AppendEventInput } from "./run-event-registry.js";
+import { applyOutcome } from "./run-outcomes.js";
+import { runPlanProgressEventPayload } from "./run-progress-plan-state.js";
 import { transitionRunStatus } from "./run-state-machine.js";
+import { liveToolEffectAuthoritiesFromEvents } from "./sqlite-tool-effect-authority.js";
+import { effectIndeterminateEventPayload } from "./tool-effect-indeterminate-event.js";
+import {
+  cancelTerminalRunInteractions,
+  repairRunsFromTerminalEvidence,
+  resetTerminalThreads,
+  RUN_INTERRUPTION_REASON,
+} from "./run-terminal-recovery.js";
 import type {
   StoreRepositoryHost,
   StoreRepositoryState,
@@ -15,16 +27,24 @@ interface InterruptedPlanStep {
   stepId: string;
   runId: string;
   blocker: string;
+  progressPayload: ReturnType<typeof runPlanProgressEventPayload>;
 }
 
 interface InterruptedStateResult {
   changed: boolean;
+  terminalEvents: RunEvent[];
   cancellationEvents: RunEvent[];
   planSteps: InterruptedPlanStep[];
 }
 
-const INTERRUPTION_REASON =
-  "The runtime process exited or its renewable owner lease expired before this run reached a terminal state.";
+interface LostRunRecovery {
+  interruptedRunIds: Set<string>;
+  blockedSafetyRunIds: Set<string>;
+  terminalEvents: RunEvent[];
+}
+
+export const RUN_EFFECT_INDETERMINATE_REASON =
+  "The runtime owner became unavailable after a tool crossed its durable effect boundary; the external effect cannot be safely replayed or asserted complete.";
 
 export async function reconcileInterruptedRuns(
   host: StoreRepositoryHost,
@@ -39,9 +59,14 @@ export async function reconcileInterruptedRuns(
       interruptActiveLeases,
     );
     planSteps = result.planSteps;
-    if (result.changed) await host.persistState(result.cancellationEvents);
+    if (result.changed) {
+      await host.persistState([
+        ...result.terminalEvents,
+        ...result.cancellationEvents,
+      ]);
+    }
   });
-  await appendInterruptedRunEvidence(host, timestamp);
+  await appendOrphanedSubagentRecoveryEvidence(host);
   await appendInterruptedPlanEvidence(host, planSteps);
 }
 
@@ -50,63 +75,173 @@ function reconcileInterruptedState(
   timestamp: string,
   interruptActiveLeases: boolean,
 ): InterruptedStateResult {
-  const interruptedRunIds = interruptExpiredRuns(
-    host.state,
-    timestamp,
-    interruptActiveLeases,
+  const durableTerminalRepairs = repairRunsFromTerminalEvidence(host);
+  const recovery = recoverLostRuns(host, timestamp, interruptActiveLeases);
+  const interruptedRunIds = new Set(recovery.interruptedRunIds);
+  const restartedRunIds = new Set([
+    ...recovery.interruptedRunIds,
+    ...recovery.blockedSafetyRunIds,
+  ]);
+  for (const [runId, repair] of durableTerminalRepairs) {
+    if (repair.status === "interrupted") {
+      interruptedRunIds.add(runId);
+      restartedRunIds.add(runId);
+    }
+  }
+  const terminalStatuses = new Map<string, TerminalRunStatus>(
+    [...durableTerminalRepairs].map(([runId, repair]) => [
+      runId,
+      repair.status,
+    ]),
   );
-  let changed = interruptedRunIds.size > 0;
+  for (const runId of interruptedRunIds) {
+    if (!terminalStatuses.has(runId))
+      terminalStatuses.set(runId, "interrupted");
+  }
+  for (const runId of recovery.blockedSafetyRunIds) {
+    terminalStatuses.set(runId, "failed");
+  }
+  let changed = terminalStatuses.size > 0;
   changed =
-    failInterruptedDeliveries(host.state, interruptedRunIds, timestamp) ||
+    failInterruptedDeliveries(host.state, restartedRunIds, timestamp) ||
     changed;
-  changed =
-    resetInterruptedThreads(host.state, interruptedRunIds, timestamp) ||
-    changed;
-  const cancellationEvents = cancelInterruptedRunMessages(
+  const cancellationEvents = cancelTerminalRunInteractions(
     host,
-    interruptedRunIds,
+    terminalStatuses,
   );
   changed =
-    orphanInterruptedSubagents(host.state, interruptedRunIds, timestamp) ||
+    resetTerminalThreads(
+      host,
+      terminalStatuses,
+      cancellationEvents,
+      timestamp,
+    ) || changed;
+  changed =
+    orphanInterruptedSubagents(host.state, restartedRunIds, timestamp) ||
     changed;
   const interruptedPlans = interruptActivePlanSteps(
     host.state,
-    interruptedRunIds,
+    restartedRunIds,
   );
   changed = interruptedPlans.changed || changed;
   changed = disconnectOpeningExtensions(host.state, timestamp) || changed;
-  return { changed, cancellationEvents, planSteps: interruptedPlans.steps };
+  return {
+    changed,
+    terminalEvents: recovery.terminalEvents,
+    cancellationEvents,
+    planSteps: interruptedPlans.steps,
+  };
 }
 
-function interruptExpiredRuns(
-  state: StoreRepositoryState,
+function recoverLostRuns(
+  host: StoreRepositoryHost,
   timestamp: string,
   interruptActiveLeases: boolean,
-): Set<string> {
+): LostRunRecovery {
   const timestampMs = Date.parse(timestamp);
   const interrupted = new Set<string>();
-  for (const run of state.runs) {
+  const blockedSafety = new Set<string>();
+  const terminalEvents: RunEvent[] = [];
+  for (const run of host.state.runs) {
     if (run.status !== "queued" && run.status !== "running") continue;
-    if (
-      preserveRunLeaseOnStartup(
-        run.lease,
-        Boolean(run.leaseTokenSha256),
-        timestampMs,
-        interruptActiveLeases,
-      )
-    ) {
+    const disposition = lostRunLeaseDisposition(
+      run.lease,
+      Boolean(run.leaseTokenSha256),
+      timestampMs,
+      interruptActiveLeases,
+    );
+    if (!disposition) continue;
+    const liveAuthorities = liveToolEffectAuthoritiesFromEvents(
+      host.requireLedger().listRunEvents(run.id),
+    );
+    if (liveAuthorities.length > 0) {
+      const recoverable = liveAuthorities.filter(
+        (authority) => authority.current && authority.boundaryEvent,
+      );
+      // Corrupt or legacy histories with multiple live generations stay
+      // fenced; recovery never invents authority for a non-current token.
+      if (recoverable.length !== liveAuthorities.length) continue;
+      const operationIds = [
+        ...new Set(recoverable.map((authority) => authority.operationId)),
+      ].sort();
+      const markerInputs: AppendEventInput[] = recoverable.map((authority) => ({
+        threadId: run.threadId,
+        runId: run.id,
+        type: "tool.operation.effect_indeterminate",
+        category: "tool",
+        visibility: "debug",
+        payload: effectIndeterminateEventPayload({
+          boundary: authority.boundaryEvent!,
+          run,
+          disposition,
+          recoveredAt: timestamp,
+        }),
+      }));
+      terminalEvents.push(
+        ...host.appendEventsToThread(
+          host.mutableThread(run.threadId),
+          [
+            ...markerInputs,
+            {
+              threadId: run.threadId,
+              runId: run.id,
+              type: "run.failed",
+              category: "lifecycle",
+              visibility: "user",
+              payload: {
+                status: "failed",
+                outcome: "blocked_safety",
+                reason: "effect_indeterminate",
+                message: RUN_EFFECT_INDETERMINATE_REASON,
+                operationIds,
+              },
+            },
+          ],
+          { createdAt: timestamp },
+        ),
+      );
+      applyOutcome(run, "failed", "blocked_safety");
+      run.finishedAt = timestamp;
+      run.error = RUN_EFFECT_INDETERMINATE_REASON;
+      delete run.lease;
+      delete run.leaseTokenSha256;
+      blockedSafety.add(run.id);
       continue;
     }
+    terminalEvents.push(
+      ...host.appendEventsToThread(
+        host.mutableThread(run.threadId),
+        [
+          {
+            threadId: run.threadId,
+            runId: run.id,
+            type: "run.interrupted",
+            category: "lifecycle",
+            visibility: "user",
+            payload: {
+              status: "interrupted",
+              reason: RUN_INTERRUPTION_REASON,
+              interruptedAt: timestamp,
+            },
+          },
+        ],
+        { createdAt: timestamp },
+      ),
+    );
     transitionRunStatus(run, "interrupted");
     run.interruptedAt = timestamp;
-    run.interruptionReason = INTERRUPTION_REASON;
+    run.interruptionReason = RUN_INTERRUPTION_REASON;
     run.finishedAt = timestamp;
-    run.error = INTERRUPTION_REASON;
+    run.error = RUN_INTERRUPTION_REASON;
     delete run.lease;
     delete run.leaseTokenSha256;
     interrupted.add(run.id);
   }
-  return interrupted;
+  return {
+    interruptedRunIds: interrupted,
+    blockedSafetyRunIds: blockedSafety,
+    terminalEvents,
+  };
 }
 
 function failInterruptedDeliveries(
@@ -135,52 +270,6 @@ function failInterruptedDeliveries(
     changed = true;
   }
   return changed;
-}
-
-function resetInterruptedThreads(
-  state: StoreRepositoryState,
-  interruptedRunIds: Set<string>,
-  timestamp: string,
-): boolean {
-  let changed = false;
-  for (const thread of state.threads) {
-    const currentInterrupted =
-      thread.currentRunId && interruptedRunIds.has(thread.currentRunId);
-    const hasInterruptedRun = thread.runIds.some((runId) =>
-      interruptedRunIds.has(runId),
-    );
-    if (
-      !currentInterrupted &&
-      !(thread.status === "running" && hasInterruptedRun)
-    ) {
-      continue;
-    }
-    if (currentInterrupted) delete thread.currentRunId;
-    thread.status = "waiting";
-    thread.updatedAt = timestamp;
-    changed = true;
-  }
-  return changed;
-}
-
-function cancelInterruptedRunMessages(
-  host: StoreRepositoryHost,
-  interruptedRunIds: Set<string>,
-): RunEvent[] {
-  const events: RunEvent[] = [];
-  for (const runId of interruptedRunIds) {
-    const run = host.mutableRun(runId);
-    const thread = host.mutableThread(run.threadId);
-    events.push(
-      ...cancelPendingRunControlMessages(
-        host,
-        thread,
-        run.id,
-        "run_interrupted_before_delivery",
-      ),
-    );
-  }
-  return events;
 }
 
 function orphanInterruptedSubagents(
@@ -221,14 +310,15 @@ function interruptActivePlanSteps(
         (step) => step.status === "running" && step.runId === runId,
       );
       if (affected.length === 0) continue;
-      updated = interruptPlanRun(updated, runId, INTERRUPTION_REASON);
+      updated = interruptPlanRun(updated, runId, RUN_INTERRUPTION_REASON);
       steps.push(
         ...affected.map((step) => ({
           threadId: updated.threadId,
           planId: updated.id,
           stepId: step.id,
           runId,
-          blocker: INTERRUPTION_REASON,
+          blocker: RUN_INTERRUPTION_REASON,
+          progressPayload: runPlanProgressEventPayload(updated),
         })),
       );
     }
@@ -258,37 +348,19 @@ function disconnectOpeningExtensions(
   return changed;
 }
 
-async function appendInterruptedRunEvidence(
+async function appendOrphanedSubagentRecoveryEvidence(
   host: StoreRepositoryHost,
-  timestamp: string,
 ): Promise<void> {
-  const interruptedRuns = host.state.runs.filter(
-    (run) => run.status === "interrupted",
+  const orphanedRunIds = new Set(
+    host.state.subagents
+      .filter((task) => task.supervisorStatus === "orphaned")
+      .map((task) => task.runId),
   );
-  for (const run of interruptedRuns) {
-    const events = await host.listEvents(run.threadId);
-    if (!hasInterruptedRunEvent(events, run.id)) {
-      await host.appendEvent({
-        threadId: run.threadId,
-        runId: run.id,
-        type: "run.interrupted",
-        category: "lifecycle",
-        visibility: "user",
-        payload: {
-          status: "interrupted",
-          reason: run.interruptionReason ?? INTERRUPTION_REASON,
-          interruptedAt: run.interruptedAt ?? timestamp,
-        },
-      });
-    }
+  for (const run of host.state.runs.filter((candidate) =>
+    orphanedRunIds.has(candidate.id),
+  )) {
     await appendOrphanedSubagentEvidence(host, run.id, run.threadId);
   }
-}
-
-function hasInterruptedRunEvent(events: RunEvent[], runId: string): boolean {
-  return events.some(
-    (event) => event.runId === runId && event.type === "run.interrupted",
-  );
 }
 
 async function appendOrphanedSubagentEvidence(
@@ -352,6 +424,7 @@ async function appendInterruptedPlanEvidence(
         blocker: step.blocker,
         evidence:
           "The step outcome is unknown and must be verified before reopening.",
+        ...step.progressPayload,
       },
     });
   }

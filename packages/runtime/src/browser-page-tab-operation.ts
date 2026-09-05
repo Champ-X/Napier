@@ -2,12 +2,12 @@ import type { Page } from "playwright-core";
 import { BROWSER_TAKEOVER_KEYS } from "@napier/contracts/browser-takeover";
 
 import {
-  BROWSER_NAVIGATION_TIMEOUT_MS,
   BROWSER_VIEWPORT_HEIGHT,
   BROWSER_VIEWPORT_WIDTH,
   type BrowserSessionRequest,
   type BrowserSessionTabDescriptor,
 } from "./browser-session-model.js";
+import { browserNavigationStrategy } from "./browser-navigation-strategy.js";
 import {
   isBrowserPageFileRequest,
   type BrowserPageFileRequest,
@@ -127,14 +127,15 @@ export async function performBrowserPageSpecialOperation(input: {
       request.url,
       request.allowCrossOrigin === true,
     );
+    const strategy = browserNavigationStrategy(url);
     await input.withNetwork(() =>
       input.navigation.run(
         created.page,
         request.allowCrossOrigin === true,
         () =>
           created.page.goto(url.href, {
-            waitUntil: "domcontentloaded",
-            timeout: BROWSER_NAVIGATION_TIMEOUT_MS,
+            waitUntil: strategy.waitUntil,
+            timeout: strategy.timeout,
           }),
       ),
     );

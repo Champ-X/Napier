@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 const PREFIX_PATTERN = /^[a-z][a-z0-9_]{1,15}$/;
+const PROCESS_LEASE_OWNER_PATTERN = /^process:(\d+):/u;
 
 export function createId(prefix: string): string {
   if (!PREFIX_PATTERN.test(prefix)) {
@@ -9,10 +10,23 @@ export function createId(prefix: string): string {
   return `${prefix}_${randomUUID().replaceAll("-", "").slice(0, 20)}`;
 }
 
-const PROCESS_LEASE_OWNER_PATTERN = /^process:(\d+):/u;
-
 export function createProcessLeaseOwnerId(prefix: string): string {
   return `process:${String(process.pid)}:${createId(prefix)}`;
+}
+
+export function preserveRunLeaseOnStartup(
+  lease: { ownerId: string; expiresAt: string } | undefined,
+  hasToken: boolean,
+  timestampMs: number,
+  interruptActiveLeases: boolean,
+): boolean {
+  return Boolean(
+    lease &&
+    hasToken &&
+    Number.isFinite(Date.parse(lease.expiresAt)) &&
+    Date.parse(lease.expiresAt) > timestampMs &&
+    (!interruptActiveLeases || isLeaseOwnerProcessAlive(lease.ownerId)),
+  );
 }
 
 function isLeaseOwnerProcessAlive(ownerId: string): boolean {
@@ -31,21 +45,6 @@ function isLeaseOwnerProcessAlive(ownerId: string): boolean {
       (error as NodeJS.ErrnoException).code === "EPERM"
     );
   }
-}
-
-export function preserveRunLeaseOnStartup(
-  lease: { ownerId: string; expiresAt: string } | undefined,
-  hasToken: boolean,
-  timestampMs: number,
-  interruptActiveLeases: boolean,
-): boolean {
-  return Boolean(
-    lease &&
-    hasToken &&
-    Number.isFinite(Date.parse(lease.expiresAt)) &&
-    Date.parse(lease.expiresAt) > timestampMs &&
-    (!interruptActiveLeases || isLeaseOwnerProcessAlive(lease.ownerId)),
-  );
 }
 
 export function nowIso(): string {

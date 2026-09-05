@@ -12,6 +12,17 @@ import type {
   WorkspaceFileMutationPreview,
   WorkspaceFileMutationRequest,
 } from "./workspace-file-mutations.js";
+import {
+  defineToolProgress,
+  progressSemantics,
+  recordValue,
+  resultDetails,
+  stableFields,
+} from "./tool-progress-semantics.js";
+import {
+  defineWorkspaceFileApplyProtocol,
+  defineWorkspaceFilePreviewProtocol,
+} from "./workspace-file-tool-protocol.js";
 
 const visiblePath = Type.String({
   minLength: 1,
@@ -76,7 +87,7 @@ export function createWorkspaceFilePreviewTool(
   manager: WorkspaceFileMutationManager,
   context: { threadId: string; runId: string },
 ): AgentTool<typeof previewSchema, WorkspaceFileToolDetails> {
-  return {
+  const tool: AgentTool<typeof previewSchema, WorkspaceFileToolDetails> = {
     name: "workspace_file_preview",
     label: "Workspace file preview",
     description:
@@ -121,13 +132,27 @@ export function createWorkspaceFilePreviewTool(
       return previewToolResult(preview);
     },
   };
+  return defineWorkspaceFilePreviewProtocol(defineToolProgress(tool, {
+    schemaVersion: 1,
+    classificationVersion: "1.0.0",
+    modes: [
+      { modeId: "preview_workspace", operation: "observe", scope: "workspace", contribution: "neutral" },
+    ],
+    resolve: (input) => ({
+      semantics: progressSemantics("observe", "workspace", "neutral"),
+      resourceKey: {
+        kind: "workspace-file-preview",
+        action: recordValue(input)["action"],
+      },
+    }),
+  }));
 }
 
 export function createWorkspaceFileApplyTool(
   manager: WorkspaceFileMutationManager,
   context: { threadId: string; runId: string },
 ): AgentTool<typeof applySchema, WorkspaceFileToolDetails> {
-  return {
+  const tool: AgentTool<typeof applySchema, WorkspaceFileToolDetails> = {
     name: "workspace_file_apply",
     label: "Apply workspace file operation",
     description:
@@ -144,6 +169,29 @@ export function createWorkspaceFileApplyTool(
       return applyToolResult(result);
     },
   };
+  return defineWorkspaceFileApplyProtocol(defineToolProgress(tool, {
+    schemaVersion: 1,
+    classificationVersion: "1.0.0",
+    modes: [
+      { modeId: "apply_workspace", operation: "mutate", scope: "workspace", contribution: "product" },
+    ],
+    resolve: (input) => ({
+      semantics: progressSemantics("mutate", "workspace", "product"),
+      resourceKey: {
+        kind: "workspace-file-preview",
+        previewId: recordValue(input)["previewId"],
+      },
+    }),
+    state: (_input, result) =>
+      stableFields(resultDetails(result), [
+        "operation",
+        "sourcePathSha256",
+        "destinationPathSha256",
+        "trashId",
+        "afterSha256",
+        "resultSha256",
+      ]),
+  }));
 }
 
 export function workspaceFileToolCallArgumentsLedgerProjection(

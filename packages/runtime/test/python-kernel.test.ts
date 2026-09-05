@@ -16,6 +16,8 @@ import {
   WorkspaceProcessManager,
 } from "../src/index.js";
 import { MAX_PYTHON_KERNEL_JSON_VALUE_BYTES } from "../src/python-kernel-json-worker.js";
+import { formatPythonKernelCodeBridgeResponse } from "../src/python-kernel-code-bridge.js";
+import { createActiveTestRun } from "./active-run-test-fixture.js";
 
 const temporaryRoots: string[] = [];
 const openProcesses: WorkspaceProcessManager[] = [];
@@ -34,6 +36,95 @@ afterEach(async () => {
 });
 
 describe("persistent Python kernel", () => {
+  it("reassembles bounded Code Bridge frames larger than one process input message", async () => {
+    const fixture = await createFixture();
+    const kernel = await fixture.kernels.start({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      timeoutMs: 20_000,
+    });
+    const largePayload = "x".repeat(48 * 1024);
+    const evaluated = await fixture.kernels.evaluate({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      processId: kernel.id,
+      code: 'len(napier.call("large_result", {})["details"]["payload"])',
+      codeBridge: async () => ({
+        content: [],
+        details: { payload: largePayload },
+        isError: false,
+      }),
+    });
+
+    expect(evaluated).toEqual(
+      expect.objectContaining({ status: "ok", jsonValue: 49_152 }),
+    );
+    const session = (await fixture.processes.list(fixture.threadId)).find(
+      ({ id }) => id === kernel.id,
+    );
+    expect(session?.stdinWriteCount).toBeGreaterThanOrEqual(4);
+  }, 20_000);
+
+  it("does not mix reordered, duplicate, or cross-evaluation response frames", async () => {
+    const fixture = await createFixture();
+    const kernel = await fixture.kernels.start({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      timeoutMs: 20_000,
+    });
+    const largePayload = "v".repeat(24 * 1024);
+    const evaluated = await fixture.kernels.evaluate({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      processId: kernel.id,
+      code: 'len(napier.call("framed_result", {})["details"]["payload"])',
+      codeBridge: async (call) => {
+        const frames = formatPythonKernelCodeBridgeResponse({
+          evaluationId: call.evaluationId,
+          callId: call.callId,
+          result: {
+            content: [],
+            details: { payload: largePayload },
+            isError: false,
+          },
+        });
+        const crossEvaluation = formatPythonKernelCodeBridgeResponse({
+          evaluationId: "pykernelrequest_00000000000000000000",
+          callId: call.callId,
+          result: {
+            content: [],
+            details: { payload: "injected" },
+            isError: false,
+          },
+        })[0]!;
+        for (const frame of [
+          frames[1]!,
+          frames[0]!,
+          crossEvaluation,
+          frames[0]!,
+        ]) {
+          await fixture.processes.writePrivateProtocolInput({
+            threadId: fixture.threadId,
+            runId: fixture.runId,
+            processId: kernel.id,
+            text: frame,
+            appendNewline: true,
+            initiatedBy: "agent",
+          });
+        }
+        return {
+          content: [],
+          details: { payload: largePayload },
+          isError: false,
+        };
+      },
+    });
+
+    expect(evaluated).toEqual(
+      expect.objectContaining({ status: "ok", jsonValue: 24_576 }),
+    );
+  }, 20_000);
+
   it("keeps synchronous state while restricting imports and private access", async () => {
     const fixture = await createFixture();
     const kernel = await fixture.kernels.start({
@@ -309,10 +400,10 @@ describe("persistent Python kernel", () => {
       runId: fixture.runId,
       timeoutMs: 20_000,
     });
-    const otherRun = await fixture.store.createRun({
-      threadId: fixture.threadId,
-      agentId: fixture.agentId,
-    });
+    const { run: otherRun } = await createActiveTestRun(
+      fixture.store,
+      "Foreign Python kernel owner",
+    );
     const [left, right] = await Promise.all([
       fixture.kernels.evaluate({
         threadId: fixture.threadId,
@@ -593,15 +684,17 @@ async function createFixture(): Promise<{
   });
   await processes.initialize();
   openProcesses.push(processes);
-  const thread = store.listThreads()[0]!;
-  const run = store.listRuns(thread.id)[0]!;
+  const { agent, thread, run } = await createActiveTestRun(
+    store,
+    "Python kernel fixture",
+  );
   return {
     store,
     processes,
     kernels: new PythonKernelManager(processes),
     threadId: thread.id,
     runId: run.id,
-    agentId: run.agentId,
+    agentId: agent.id,
   };
 }
 

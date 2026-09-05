@@ -4,6 +4,12 @@ import { Type } from "typebox";
 
 import type { LspCodeActionMutationManager } from "./lsp-code-action-mutation-manager.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
+import {
+  defineToolProgress,
+  progressSemantics,
+  resultDetails,
+  stableFields,
+} from "./tool-progress-semantics.js";
 
 const lspCodeActionApplySchema = Type.Object(
   {
@@ -19,20 +25,38 @@ const lspCodeActionApplySchema = Type.Object(
 export function createLspCodeActionApplyTool(
   manager: LspCodeActionMutationManager,
 ): AgentTool<typeof lspCodeActionApplySchema, LspCodeActionApplyDetails> {
-  return {
-    name: "lsp_code_action_apply",
-    label: "Apply LSP quick fix",
-    description:
-      "Apply exactly one fresh same-Run lsp_code_actions alternative as a coordinated write. Selecting an ID invalidates every sibling alternative from that response. Napier locks and rehashes every target, stages all outputs, attempts verified rollback on commit failure, links bounded before/after diagnostics and relevant tests, and never executes the Code Action command.",
-    parameters: lspCodeActionApplySchema,
-    async execute(_toolCallId, input, signal) {
-      const result = await manager.apply(input.previewId, signal ?? undefined);
-      return {
-        content: [{ type: "text", text: result.summary }],
-        details: result.details,
-      };
+  return defineToolProgress(
+    {
+      name: "lsp_code_action_apply",
+      label: "Apply LSP quick fix",
+      description:
+        "Apply exactly one fresh same-Run lsp_code_actions alternative as a coordinated write. Selecting an ID invalidates every sibling alternative from that response. Napier locks and rehashes every target, stages all outputs, attempts verified rollback on commit failure, links bounded before/after diagnostics and relevant tests, and never executes the Code Action command.",
+      parameters: lspCodeActionApplySchema,
+      async execute(_toolCallId, input, signal) {
+        const result = await manager.apply(
+          input.previewId,
+          signal ?? undefined,
+        );
+        return {
+          content: [{ type: "text", text: result.summary }],
+          details: result.details,
+        };
+      },
     },
-  };
+    {
+      schemaVersion: 1,
+      classificationVersion: "1.0.0",
+      modes: [
+        { modeId: "apply_workspace", operation: "mutate", scope: "workspace", contribution: "product" },
+      ],
+      resolve: (input) => ({
+        semantics: progressSemantics("mutate", "workspace", "product"),
+        resourceKey: { kind: "lsp-code-action-preview", input },
+      }),
+      state: (_input, result) =>
+        stableFields(resultDetails(result), ["resultSha256"]),
+    },
+  );
 }
 
 export function lspCodeActionApplyToolCallArgumentsLedgerProjection(

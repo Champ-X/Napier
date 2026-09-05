@@ -80,6 +80,9 @@ export async function preflightAgentToolPolicy(input: {
       localService,
     ),
   );
+  const protocol = input.toolProtocol
+    ?.get(input.toolCall.name)
+    ?.invocation(input.args);
   const decision = localServiceAllowed
     ? {
         allowed: true as const,
@@ -92,6 +95,7 @@ export async function preflightAgentToolPolicy(input: {
           input.toolCall.name,
           toJsonValue(input.args),
           input.store.workspaceRoot,
+          protocol,
         )
       : (input.extensionManager?.assessToolCall(
           mode,
@@ -103,6 +107,7 @@ export async function preflightAgentToolPolicy(input: {
           input.toolCall.name,
           toJsonValue(input.args),
           input.store.workspaceRoot,
+          protocol,
         ));
   if (!decision.allowed) {
     return recordAgentToolPolicyBlock(
@@ -330,7 +335,9 @@ export async function recordAgentToolPolicyBlock(
       toolName: input.toolCall.name,
     };
     await input.displays.recordInput(owner, input.args).catch(() => undefined);
-    await input.displays.recordOutput(owner, reason, true).catch(() => undefined);
+    await input.displays
+      .recordOutput(owner, reason, true)
+      .catch(() => undefined);
   }
   const event = await input.store.appendEvent({
     threadId: input.run.threadId,

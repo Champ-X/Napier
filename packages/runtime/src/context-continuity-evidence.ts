@@ -26,6 +26,7 @@ export function contextContinuityEvidenceEvents(events: RunEvent[]): RunEvent[] 
       event.type === "run.environment.negotiated" ||
       event.type === "verification.completed" ||
       event.type === "workspace.file.mutated" ||
+      event.type === "workspace.file.recovered" ||
       event.type === "agent.milestone.recorded" ||
       event.type === "goal.evaluated";
   });

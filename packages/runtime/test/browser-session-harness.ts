@@ -255,6 +255,7 @@ export class FakePage {
   blockClicks = false;
   closed = false;
   driftTitleOnNextRead = false;
+  gotoFailure: Error | undefined;
   ariaSnapshotText: string | undefined;
   private currentUrl = "about:blank";
   private scrollY = 0;
@@ -292,6 +293,9 @@ export class FakePage {
   }
 
   async goto(url: string) {
+    const failure = this.gotoFailure;
+    this.gotoFailure = undefined;
+    if (failure) throw failure;
     await this.context.dispatch(url, this);
     const redirect = this.redirects.get(url);
     if (redirect) await this.context.dispatch(redirect, this);

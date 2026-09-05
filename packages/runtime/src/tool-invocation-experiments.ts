@@ -18,8 +18,8 @@ import {
   agentToolInputLedgerProjection,
   agentToolOutputLedgerProjection,
 } from "./agent-tool-ledger.js";
-import { sha256 } from "./ed25519.js";
-import { createId, createProcessLeaseOwnerId } from "./ids.js";
+import { canonicalJson, sha256 } from "./ed25519.js";
+import { createProcessLeaseOwnerId } from "./ids.js";
 import {
   candidateToolInvocationObservation,
   createToolInvocationExperimentComparison,
@@ -27,7 +27,7 @@ import {
 } from "./tool-invocation-experiment-model.js";
 import {
   appendToolExperimentComparison,
-  appendToolExperimentTerminal,
+  toolExperimentTerminalEvent,
   toolExperimentStartedPayload,
   toolResultDetails,
 } from "./tool-invocation-experiment-ledger.js";
@@ -42,6 +42,9 @@ import {
 import { resolveToolInvocationExperimentTool } from "./tool-invocation-experiment-tool.js";
 import type { ToolInvocationCapsuleStore } from "./tool-invocation-capsule-store.js";
 import type { LocalStore } from "./store.js";
+import { ToolConcurrencyGate } from "./tool-concurrency-gate.js";
+import { executeAdmittedToolCall } from "./tool-execution-admission-service.js";
+import { createOwnedToolRecordV2 } from "./owned-tool-protocol.js";
 
 const RUN_LEASE_TTL_MS = 60_000;
 const RUN_LEASE_HEARTBEAT_MS = 20_000;
@@ -63,12 +66,20 @@ export class ToolInvocationExperimentPreviewChangedError extends Error {
 
 export class ToolInvocationExperimentRuntime {
   private readonly workerId = createProcessLeaseOwnerId("toolexperiment");
+  private readonly concurrencyGate: ToolConcurrencyGate;
 
   constructor(
     private readonly store: LocalStore,
     private readonly runtime: AgentRuntime,
     private readonly capsules: ToolInvocationCapsuleStore,
-  ) {}
+  ) {
+    this.concurrencyGate = new ToolConcurrencyGate({
+      durable: {
+        backend: store.toolConcurrencyLeaseBackend(),
+        ownerId: this.workerId,
+      },
+    });
+  }
 
   async preview(
     sourceThreadId: string,
@@ -208,34 +219,43 @@ export class ToolInvocationExperimentRuntime {
         expectedDefinitionSha256: preview.sourceToolDefinitionSha256,
       });
       startedAtMs = Date.now();
-      targetCallId = createId("toolcall");
-      await this.append(
-        {
-          threadId: input.targetThread.id,
-          runId: leased.run.id,
-          type: "tool.started",
-          category: "tool",
-          visibility: "user",
-          payload: {
-            callId: targetCallId,
-            toolName: preview.sourceToolName,
-            status: "started",
-            effect: "read",
-            sourceCallId: preview.sourceCallId,
-            ...agentToolInputLedgerProjection(
-              preview.sourceToolName,
-              input.source.capsule.arguments,
-            ),
-          },
+      targetCallId = experimentToolCallId(leased.run.id, preview.sourceCallId);
+      const protocol = createOwnedToolRecordV2(tool);
+      const admitted = await executeAdmittedToolCall({
+        store: this.store,
+        run: leased.run,
+        callId: targetCallId,
+        toolName: preview.sourceToolName,
+        args: input.source.capsule.arguments,
+        protocol,
+        concurrencyGate: this.concurrencyGate,
+        signal: controller.signal,
+        admissionVisibility: "user",
+        admissionPayload: {
+          sourceCallId: preview.sourceCallId,
+          experimentPreviewSha256: preview.previewSha256,
         },
-        input.onEvent,
-      );
-      toolStarted = true;
-      const toolResult = await tool.execute(
-        targetCallId,
-        input.source.capsule.arguments as never,
-        controller.signal,
-      );
+        startedPayload: {
+          effect: "read",
+          sourceCallId: preview.sourceCallId,
+          ...agentToolInputLedgerProjection(
+            preview.sourceToolName,
+            input.source.capsule.arguments,
+          ),
+        },
+        ...(input.onEvent ? { onEvent: input.onEvent } : {}),
+        onStarted: () => {
+          toolStarted = true;
+        },
+        execute: () =>
+          tool.execute(
+            targetCallId!,
+            input.source.capsule.arguments as never,
+            controller.signal,
+          ),
+        settlement: (result) => ({ result, isError: false }),
+      });
+      const toolResult = admitted.value;
       if (leaseLost) {
         throw new Error("Tool invocation experiment Run lease was lost");
       }
@@ -292,15 +312,10 @@ export class ToolInvocationExperimentRuntime {
         comparison,
         input.onEvent,
       );
-      await appendToolExperimentTerminal(
-        this.store,
-        input.targetThread.id,
-        leased.run.id,
-        "completed",
-        input.onEvent,
-      );
       await this.store.finishRun(leased.run.id, "completed", {
         leaseToken: leased.token,
+        terminalEvent: toolExperimentTerminalEvent("completed"),
+        onTerminalEvent: input.onEvent,
       });
       return validateToolInvocationExperimentResult({
         kind: "napier.tool-invocation-experiment-result",
@@ -359,18 +374,12 @@ export class ToolInvocationExperimentRuntime {
         comparison,
         input.onEvent,
       ).catch(() => undefined);
-      await appendToolExperimentTerminal(
-        this.store,
-        input.targetThread.id,
-        leased.run.id,
-        status,
-        input.onEvent,
-        error,
-      ).catch(() => undefined);
       await this.store
         .finishRun(leased.run.id, status, {
           leaseToken: leased.token,
           ...(status === "failed" ? { error: errorMessage(error) } : {}),
+          terminalEvent: toolExperimentTerminalEvent(status, error),
+          onTerminalEvent: input.onEvent,
         })
         .catch(() => undefined);
       return validateToolInvocationExperimentResult({
@@ -428,4 +437,15 @@ function executionCapability(
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function experimentToolCallId(runId: string, sourceCallId: string): string {
+  return `toolcall_${sha256(
+    canonicalJson({
+      kind: "napier.tool-invocation-experiment-call",
+      schemaVersion: 1,
+      runId,
+      sourceCallId,
+    }),
+  ).slice(0, 32)}`;
 }

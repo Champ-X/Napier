@@ -6,8 +6,11 @@ import {
   type JsonValue,
   type RegisteredRunEventInputFor,
   type RegisteredRunEventType,
+  type RunEventAdmissionPolicyV1,
   type RunEventDefinitionV1,
 } from "@napier/contracts";
+
+import { validToolOperationEventPayload } from "./tool-operation-event-validation.js";
 
 export type RunEventAdmissionPolicy = "run_active";
 
@@ -54,7 +57,7 @@ export interface ResolvedRunEventInput {
   visibility: EventVisibility;
   payload: JsonValue;
   schemaVersion: number;
-  admission?: RunEventAdmissionPolicy;
+  admission: RunEventAdmissionPolicyV1;
 }
 
 export interface RunEventSchemaDefinition extends RunEventDefinitionV1 {
@@ -115,6 +118,10 @@ export function resolveRegisteredEventInput(
   const schemaVersion = input.schemaVersion ?? definition.schemaVersion;
   return {
     ...input,
+    admission:
+      definition.admission === "terminal_transition"
+        ? definition.admission
+        : (input.admission ?? definition.admission),
     visibility,
     schemaVersion: definition.schemaVersion,
     payload: definition.upcast(schemaVersion, input.payload),
@@ -147,7 +154,11 @@ export function resolveExtensionEventInput(
   if (!isJsonObject(input.payload)) {
     throw new Error("Extension event payload must be a JSON object");
   }
-  return { ...input, visibility: input.visibility ?? "debug" };
+  return {
+    ...input,
+    admission: input.admission ?? "run_any",
+    visibility: input.visibility ?? "debug",
+  };
 }
 
 export function resolveCompatibilityEventInput(
@@ -186,6 +197,7 @@ export function resolveCompatibilityEventInput(
   }
   return {
     ...input,
+    admission: input.admission ?? "run_any",
     visibility: input.visibility ?? "debug",
     schemaVersion: input.schemaVersion ?? 1,
   };
@@ -194,6 +206,11 @@ export function resolveCompatibilityEventInput(
 function createRegistry(): Map<string, RunEventSchemaDefinition> {
   const registry = new Map<string, RunEventSchemaDefinition>();
   for (const group of RUN_EVENT_DEFINITION_GROUPS_V1) {
+    assertRunEventAdmissionPartition(group);
+    const activeRunTypes = new Set<string>(group.activeRunTypes);
+    const terminalTransitionTypes = new Set<string>(
+      group.terminalTransitionTypes,
+    );
     for (const type of group.types) {
       if (registry.has(type))
         throw new Error(`Duplicate Run event schema: ${type}`);
@@ -205,6 +222,11 @@ function createRegistry(): Map<string, RunEventSchemaDefinition> {
         allowedVisibilities: group.allowedVisibilities,
         owner: group.owner,
         projectionOwner: group.projectionOwner,
+        admission: activeRunTypes.has(type)
+          ? "run_active"
+          : terminalTransitionTypes.has(type)
+            ? "terminal_transition"
+            : "run_any",
         schemaVersion: group.schemaVersion,
         validate,
         upcast: (schemaVersion, payload) => {
@@ -219,6 +241,63 @@ function createRegistry(): Map<string, RunEventSchemaDefinition> {
     }
   }
   return registry;
+}
+
+/**
+ * Registered event groups must explicitly and exactly partition their event
+ * types. This makes a newly registered authority event fail registry startup
+ * unless its lifecycle policy was deliberately chosen.
+ */
+export function assertRunEventAdmissionPartition(group: {
+  types: readonly string[];
+  activeRunTypes: readonly string[];
+  runAnyTypes: readonly string[];
+  terminalTransitionTypes: readonly string[];
+}): void {
+  const types = uniqueEventTypes(group.types, "types");
+  const active = uniqueEventTypes(group.activeRunTypes, "activeRunTypes");
+  const runAny = uniqueEventTypes(group.runAnyTypes, "runAnyTypes");
+  const terminalTransition = uniqueEventTypes(
+    group.terminalTransitionTypes,
+    "terminalTransitionTypes",
+  );
+  for (const type of active) {
+    if (runAny.has(type) || terminalTransition.has(type)) {
+      throw new Error(`Run event admission partition overlaps: ${type}`);
+    }
+  }
+  for (const type of runAny) {
+    if (terminalTransition.has(type)) {
+      throw new Error(`Run event admission partition overlaps: ${type}`);
+    }
+  }
+  for (const type of [...active, ...runAny, ...terminalTransition]) {
+    if (!types.has(type)) {
+      throw new Error(
+        `Run event admission partition has unknown type: ${type}`,
+      );
+    }
+  }
+  for (const type of types) {
+    if (
+      !active.has(type) &&
+      !runAny.has(type) &&
+      !terminalTransition.has(type)
+    ) {
+      throw new Error(`Run event admission partition omits type: ${type}`);
+    }
+  }
+}
+
+function uniqueEventTypes(
+  values: readonly string[],
+  field: string,
+): Set<string> {
+  const unique = new Set(values);
+  if (unique.size !== values.length) {
+    throw new Error(`Run event admission partition duplicates ${field}`);
+  }
+  return unique;
 }
 
 function payloadValidator(
@@ -280,6 +359,18 @@ function payloadValidator(
       isJsonObject(payload) &&
       typeof payload["callId"] === "string" &&
       typeof payload["toolName"] === "string";
+  }
+  if (
+    type === "tool.operation.proposed" ||
+    type === "tool.operation.admitted" ||
+    type === "tool.operation.effect_indeterminate" ||
+    type === "tool.operation.lease.granted" ||
+    type === "tool.operation.lease.renewed" ||
+    type === "tool.operation.started" ||
+    type === "tool.operation.settled"
+  ) {
+    return (payload): payload is JsonObject =>
+      validToolOperationEventPayload(type, payload);
   }
   return isJsonObject;
 }

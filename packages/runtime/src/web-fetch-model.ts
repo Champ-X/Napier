@@ -4,6 +4,7 @@ import type {
 } from "./browser-session-model.js";
 import type { FixedIpProxySnapshot } from "./fixed-ip-http-proxy.js";
 import type { WebFetchStateCapsuleReceipt } from "./web-fetch-capsule-model.js";
+import type { ToolOperationObserver } from "./tool-operation-journal.js";
 
 export const WEB_FETCH_SOURCE_FORMATS = [
   "html",
@@ -11,6 +12,7 @@ export const WEB_FETCH_SOURCE_FORMATS = [
   "json",
   "text",
   "pdf",
+  "image",
 ] as const;
 
 export type WebFetchSourceFormat = (typeof WEB_FETCH_SOURCE_FORMATS)[number];
@@ -23,6 +25,7 @@ export type WebFetchBrowserFallbackDiagnostic =
   | "browser_unavailable"
   | "browser_render_not_useful"
   | "fallback_limit_reached"
+  | "failure_circuit_open"
   | "login_required"
   | "challenge_detected";
 
@@ -165,12 +168,25 @@ export interface WebFetchResult {
   details: WebFetchToolDetails;
 }
 
+/**
+ * Opaque, content-addressed namespace for materializing one admitted fetch.
+ * The digest binds the Run, durable call identity, and canonical request
+ * without exposing any of those raw identifiers to Source storage.
+ */
+export interface WebFetchMaterializationIdentity {
+  readonly kind: "napier.web-fetch-materialization";
+  readonly schemaVersion: 1;
+  readonly materializationSha256: string;
+}
+
 export interface WebFetchExecutor {
   execute(
     owner: { threadId: string; runId: string },
     request: WebFetchRequest,
     signal?: AbortSignal,
     options?: WebFetchExecutionOptions,
+    operations?: ToolOperationObserver,
+    materialization?: WebFetchMaterializationIdentity,
   ): Promise<WebFetchResult>;
   cancelRun(owner: { threadId: string; runId: string }): Promise<void>;
   prepareRecovery?(

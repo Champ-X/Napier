@@ -72,14 +72,18 @@ export function validateToolInvocationExperimentRunGate(input: {
     !startedEvent ||
     !capsuleEvent ||
     !terminalEvent ||
-    startedEvent.seq >= capsuleEvent.seq ||
-    capsuleEvent.seq >= terminalEvent.seq ||
+    !sourceEvidencePrecedesTerminal(
+      startedEvent.seq,
+      capsuleEvent.seq,
+      terminalEvent.seq,
+    ) ||
     receipt.callId !== execution.sourceCallId ||
     receipt.toolName !== execution.sourceToolName ||
-    toolImplementationSha256(
+    !definitionEvidenceMatches(
       startedEvent,
       receipt.toolDefinitionSha256,
-    ) !== execution.sourceToolDefinitionSha256 ||
+      execution.sourceToolDefinitionSha256,
+    ) ||
     receipt.argumentsSha256 !== execution.sourceArgumentsSha256 ||
     receipt.workspaceScopeSha256 !== execution.sourceWorkspaceScopeSha256 ||
     receipt.capsuleSha256 !== execution.sourceCapsuleSha256 ||
@@ -98,16 +102,34 @@ export function validateToolInvocationExperimentRunGate(input: {
   }
 }
 
-function toolImplementationSha256(
-  event: RunEvent,
-  legacy: string,
-): string {
+function sourceEvidencePrecedesTerminal(
+  startedSeq: number,
+  capsuleSeq: number,
+  terminalSeq: number,
+): boolean {
+  return (
+    startedSeq !== capsuleSeq && Math.max(startedSeq, capsuleSeq) < terminalSeq
+  );
+}
+
+function toolDefinitionSha256(event: RunEvent): string | undefined {
   const payload = record(event.payload);
   const protocol = record(payload?.["toolProtocol"]);
-  const value = protocol?.["implementationSha256"];
+  const value = protocol?.["definitionSha256"];
   return typeof value === "string" && /^[a-f0-9]{64}$/u.test(value)
     ? value
-    : legacy;
+    : undefined;
+}
+
+function definitionEvidenceMatches(
+  startedEvent: RunEvent,
+  receiptDefinitionSha256: string,
+  expectedDefinitionSha256: string,
+): boolean {
+  return (
+    receiptDefinitionSha256 === expectedDefinitionSha256 &&
+    toolDefinitionSha256(startedEvent) === expectedDefinitionSha256
+  );
 }
 
 function record(value: unknown): Record<string, unknown> | undefined {

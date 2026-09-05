@@ -12,6 +12,7 @@ import {
   PythonKernelManager,
   WorkspaceProcessManager,
 } from "../src/index.js";
+import { createActiveTestRun } from "./active-run-test-fixture.js";
 
 const IMAGE_ID = `sha256:${"a".repeat(64)}`;
 const temporaryRoots: string[] = [];
@@ -68,8 +69,10 @@ describe("OCI image-bound Python kernel", () => {
       });
       await processes.initialize();
       processManagers.push(processes);
-      const thread = store.listThreads()[0]!;
-      const run = store.listRuns(thread.id)[0]!;
+      const { thread, run } = await createActiveTestRun(
+        store,
+        "OCI Python kernel fixture",
+      );
       const kernels = new PythonKernelManager(processes);
 
       const session = await kernels.start({

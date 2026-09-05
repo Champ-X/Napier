@@ -33,6 +33,21 @@ describe("Agent Runtime progress guidance", () => {
     expect(guidance).toContain("Do not record milestones after minor actions");
   });
 
+  it("requires dependent plan transitions to wait for prior results", () => {
+    const guidance = formatPlanToolGuidance([
+      { name: "update_plan_step" } as AgentTool,
+    ]);
+
+    expect(guidance).toContain(
+      "Do not batch transitions for dependency-linked steps in the same assistant response",
+    );
+    expect(guidance).toContain("Wait for each update_plan_step result");
+    expect(guidance).toContain("readyStepIds and parallelReadyStepIds");
+    expect(guidance).toContain(
+      "only steps already listed together in parallelReadyStepIds may be batched",
+    );
+  });
+
   it("does not add progress guidance when no tools are active", () => {
     expect(formatPlanToolGuidance([])).toBe("");
   });
@@ -69,6 +84,11 @@ describe("Agent Runtime public model failure recovery", () => {
       "error",
       "503 service temporarily unavailable",
       "The model provider or network failed temporarily. Retry the same Run; select another configured model if the failure persists.",
+    ],
+    [
+      "error",
+      "terminated",
+      "The model response stream ended unexpectedly. Safely resume the Run; select another configured model if the connection keeps failing.",
     ],
     [
       "error",

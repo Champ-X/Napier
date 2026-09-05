@@ -1,46 +1,18 @@
-import type {
-  ToolApprovalPolicyV2,
-  ToolConcurrency,
-  ToolDefinitionV2,
-  ToolIdempotencyPolicyV2,
-  ToolJsonSchema,
-  ToolRetryPolicyV2,
-  ToolSideEffect,
-} from "@napier/contracts/tool-protocol";
+import type { ToolJsonSchema } from "@napier/contracts/tool-protocol";
 import { Value } from "typebox/value";
 
-const NATIVE_TOOL_VERSIONS: Readonly<Record<string, string>> = Object.freeze({
-  browser: "2.0.0",
-  read_file: "2.0.0",
-  workspace_file_apply: "2.0.0",
-  workspace_file_preview: "2.0.0",
-});
-
-export interface NativeToolProfile {
-  version: string;
-  canonicalOutputSchema: ToolJsonSchema;
-  modelVisibleOutputSchema: ToolJsonSchema;
-  uiProjectionSchema: ToolJsonSchema;
-  concurrency: ToolConcurrency;
-  sideEffect: ToolSideEffect;
-  sideEffectMode: ToolDefinitionV2["sideEffectMode"];
-  retry: ToolRetryPolicyV2;
-  idempotency: ToolIdempotencyPolicyV2;
-  approval: ToolApprovalPolicyV2;
-  policyTags: string[];
+export function genericToolResultSchema(
+  surface: "canonical" | "model_visible",
+): ToolJsonSchema {
+  return resultSchema(surface, {});
 }
 
-export function nativeToolProfile(
-  toolName: string,
-): NativeToolProfile | undefined {
-  const version = NATIVE_TOOL_VERSIONS[toolName];
-  if (!version) return undefined;
-  const base = {
-    version,
-    uiProjectionSchema: toolUiProjectionSchema(toolName),
-  };
-  if (toolName === "read_file") {
-    const details = objectSchema(
+export function readFileToolResultSchema(
+  surface: "canonical" | "model_visible",
+): ToolJsonSchema {
+  return resultSchema(
+    surface,
+    objectSchema(
       [
         "startLine",
         "endLine",
@@ -63,85 +35,20 @@ export function nativeToolProfile(
         lineAnchorsTruncated: { type: "boolean" },
         lineAnchorSetSha256: hashSchema(),
       },
-    );
-    return {
-      ...base,
-      canonicalOutputSchema: resultSchema("canonical", details),
-      modelVisibleOutputSchema: resultSchema("model_visible", details),
-      concurrency: "safe",
-      sideEffect: "none",
-      sideEffectMode: "static",
-      retry: { strategy: "not_started", maxAttempts: 2 },
-      idempotency: { key: "arguments", resultReplay: "exact_result_only" },
-      approval: { mode: "none", codeBridge: "allowed" },
-      policyTags: ["workspace:read", "replay:exact-result"],
-    };
-  }
-  if (toolName === "workspace_file_preview") {
-    return {
-      ...base,
-      canonicalOutputSchema: resultSchema(
-        "canonical",
-        workspaceFileDetailsSchema(),
-      ),
-      modelVisibleOutputSchema: resultSchema(
-        "model_visible",
-        workspaceFileDetailsSchema(),
-      ),
-      concurrency: "safe",
-      sideEffect: "none",
-      sideEffectMode: "static",
-      retry: { strategy: "not_started", maxAttempts: 2 },
-      idempotency: { key: "arguments", resultReplay: "never" },
-      approval: { mode: "policy", codeBridge: "allowed" },
-      policyTags: ["workspace:preview", "mutation:reversible"],
-    };
-  }
-  if (toolName === "workspace_file_apply") {
-    return {
-      ...base,
-      canonicalOutputSchema: resultSchema(
-        "canonical",
-        workspaceFileDetailsSchema(),
-      ),
-      modelVisibleOutputSchema: resultSchema(
-        "model_visible",
-        workspaceFileDetailsSchema(),
-      ),
-      concurrency: "exclusive",
-      sideEffect: "reversible",
-      sideEffectMode: "static",
-      retry: { strategy: "not_started", maxAttempts: 2 },
-      idempotency: { key: "preview_token", resultReplay: "never" },
-      approval: { mode: "policy", codeBridge: "allowed" },
-      policyTags: [
-        "workspace:write",
-        "mutation:reversible",
-        "preview:required",
-      ],
-    };
-  }
-  return {
-    ...base,
-    canonicalOutputSchema: resultSchema("canonical", browserDetailsSchema()),
-    modelVisibleOutputSchema: resultSchema(
-      "model_visible",
-      browserDetailsSchema(),
     ),
-    concurrency: "serialized",
-    sideEffect: "unknown",
-    sideEffectMode: "input_dependent",
-    retry: { strategy: "not_started", maxAttempts: 2 },
-    idempotency: { key: "none", resultReplay: "never" },
-    approval: { mode: "explicit", codeBridge: "external_checkpoint" },
-    policyTags: ["browser:session", "effect:input-dependent"],
-  };
+  );
 }
 
-export function genericToolResultSchema(
+export function workspaceFileToolResultSchema(
   surface: "canonical" | "model_visible",
 ): ToolJsonSchema {
-  return resultSchema(surface, {});
+  return resultSchema(surface, workspaceFileDetailsSchema());
+}
+
+export function browserToolResultSchema(
+  surface: "canonical" | "model_visible",
+): ToolJsonSchema {
+  return resultSchema(surface, browserDetailsSchema());
 }
 
 export function toolUiProjectionSchema(toolId: string): ToolJsonSchema {
@@ -152,10 +59,12 @@ export function toolUiProjectionSchema(toolId: string): ToolJsonSchema {
       "toolId",
       "semanticVersion",
       "definitionSha256",
+      "failureDefinitionSha256",
       "implementationSha256",
       "status",
       "sideEffect",
       "concurrency",
+      "progress",
       "compatibilityMode",
     ],
     {
@@ -164,13 +73,79 @@ export function toolUiProjectionSchema(toolId: string): ToolJsonSchema {
       toolId: { const: toolId },
       semanticVersion: { type: "string" },
       definitionSha256: hashSchema(),
+      failureDefinitionSha256: hashSchema(),
       implementationSha256: hashSchema(),
       status: { enum: ["started", "completed", "failed", "blocked"] },
       sideEffect: {
         enum: ["none", "reversible", "irreversible", "unknown"],
       },
       concurrency: { enum: ["safe", "serialized", "exclusive"] },
+      progress: toolProgressReceiptSchema(),
       compatibilityMode: { enum: ["native", "compatibility"] },
+    },
+  );
+}
+
+function toolProgressReceiptSchema(): ToolJsonSchema {
+  return objectSchema(
+    [
+      "kind",
+      "schemaVersion",
+      "availability",
+      "coverage",
+      "operation",
+      "scope",
+      "contribution",
+    ],
+    {
+      kind: { const: "napier.tool-progress-semantics" },
+      schemaVersion: { const: 1 },
+      availability: { enum: ["declared", "unavailable"] },
+      coverage: {
+        enum: ["trusted_declared", "host_observed", "opaque"],
+      },
+      operation: {
+        enum: [
+          "acquire",
+          "reuse",
+          "observe",
+          "mutate",
+          "verify",
+          "coordinate",
+          "neutral",
+        ],
+      },
+      scope: {
+        enum: [
+          "external",
+          "run_source",
+          "workspace",
+          "session",
+          "remote",
+          "control",
+          "neutral",
+        ],
+      },
+      contribution: {
+        enum: ["supporting", "product", "verification", "control", "neutral"],
+      },
+      modeId: { type: "string", pattern: "^[a-z][a-z0-9_.-]{0,63}$" },
+      resourceKeySha256: hashSchema(),
+      failureBindings: {
+        type: "object",
+        properties: {
+          target: hashSchema(),
+          origin: hashSchema(),
+          route: hashSchema(),
+          capability: hashSchema(),
+          session: hashSchema(),
+        },
+        additionalProperties: false,
+        minProperties: 1,
+      },
+      failureDomainKeySha256: hashSchema(),
+      stateSha256: hashSchema(),
+      classificationErrorSha256: hashSchema(),
     },
   );
 }

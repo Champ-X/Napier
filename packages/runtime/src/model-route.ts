@@ -1,10 +1,16 @@
+import { setTimeout as sleep } from "node:timers/promises";
+
 import type {
   Api,
   AssistantMessageEventStream,
   Credential,
   Model,
 } from "@earendil-works/pi-ai";
-import type { AgentProfile, CredentialReference, RunRecord } from "@napier/contracts";
+import type {
+  AgentProfile,
+  CredentialReference,
+  RunRecord,
+} from "@napier/contracts";
 import type {
   ModelRouteCandidate,
   ModelRouteCredentialHealth,
@@ -20,7 +26,10 @@ import { canonicalJson, sha256 } from "./ed25519.js";
 import type { EventSink } from "./event-sink.js";
 import { createId } from "./ids.js";
 import { appendRouteEvent } from "./model-route-evidence.js";
-import { defaultModelRoutePolicy, normalizeModelRoutePolicy } from "./model-route-profile.js";
+import {
+  defaultModelRoutePolicy,
+  normalizeModelRoutePolicy,
+} from "./model-route-profile.js";
 import {
   resolveModelRouteSelection,
   type ModelRouteResolutionSource,
@@ -40,7 +49,11 @@ import type {
 import type { ModelRegistry } from "./models.js";
 import type { LocalStore } from "./store.js";
 
-export { classifyRouteFailure, routeCanFallback } from "./model-route-policy.js";
+export {
+  classifyRouteFailure,
+  routeCanFallback,
+  routeCanRetrySameCandidate,
+} from "./model-route-policy.js";
 export type {
   ModelRouteAttemptContext,
   ResolvedRouteCandidate,
@@ -51,6 +64,13 @@ const RETRYABLE_FAILURES = [
   "provider_server",
   "network",
 ] as const satisfies readonly RouteFailureClass[];
+const HEALTH_AFFECTING_FAILURES = new Set<RouteFailureClass>([
+  "rate_limited",
+  "provider_server",
+  "network",
+  "authentication",
+  "billing",
+]);
 
 export interface CreateModelRouteSessionInput {
   run: RunRecord;
@@ -78,7 +98,9 @@ export class ModelRouter {
     this.routeState = store.modelRouteStateRepository;
   }
 
-  async createSession(input: CreateModelRouteSessionInput): Promise<ModelRouteSession> {
+  async createSession(
+    input: CreateModelRouteSessionInput,
+  ): Promise<ModelRouteSession> {
     const policy = normalizeModelRoutePolicy(
       input.profile?.modelRoute ??
         defaultModelRoutePolicy({
@@ -139,11 +161,15 @@ export class ModelRouter {
     });
   }
 
-  resolveConfigured(ref: import("@napier/contracts").ModelRef): Promise<Model<Api> | undefined> {
+  resolveConfigured(
+    ref: import("@napier/contracts").ModelRef,
+  ): Promise<Model<Api> | undefined> {
     return this.registry.resolveConfigured(ref);
   }
 
-  availableCandidates(candidates: readonly ResolvedRouteCandidate[]): ResolvedRouteCandidate[] {
+  availableCandidates(
+    candidates: readonly ResolvedRouteCandidate[],
+  ): ResolvedRouteCandidate[] {
     const now = this.clock();
     const available = candidates.filter((candidate) => {
       const health = this.routeState.health(candidate.descriptor);
@@ -163,6 +189,9 @@ export class ModelRouter {
       maxBackoffMs: 120_000,
     },
   ): Promise<{ cooldownUntil?: string; backoffMs: number }> {
+    if (!HEALTH_AFFECTING_FAILURES.has(failureClass)) {
+      return { backoffMs: 0 };
+    }
     const duration = Math.max(
       cooldownDurationMs(failureClass),
       hints.retryAfterMs ?? 0,
@@ -194,13 +223,22 @@ export class ModelRouter {
   } {
     const health = this.routeState.health(candidate);
     if (!health) return { credentialHealth: candidate.credentialHealth };
-    if (health.cooldownUntil && Date.parse(health.cooldownUntil) > this.clock()) {
+    if (
+      health.cooldownUntil &&
+      Date.parse(health.cooldownUntil) > this.clock()
+    ) {
       return {
         credentialHealth: "cooling_down",
         cooldownUntil: health.cooldownUntil,
       };
     }
     return { credentialHealth: health.health };
+  }
+
+  async waitBeforeRetry(delayMs: number, signal: AbortSignal): Promise<void> {
+    signal.throwIfAborted();
+    if (delayMs <= 0) return;
+    await sleep(delayMs, undefined, { signal });
   }
 
   private async resolveCandidate(
@@ -210,7 +248,9 @@ export class ModelRouter {
     selectionReason: ModelRouteResolutionSource,
   ): Promise<ResolvedRouteCandidate> {
     const source =
-      primary && primary.provider === target.model.provider && primary.id === target.model.id
+      primary &&
+      primary.provider === target.model.provider &&
+      primary.id === target.model.id
         ? primary
         : await this.registry.resolveConfigured(target.model);
     if (!source) {
@@ -318,7 +358,7 @@ function routePlanContent(
     resolutionSource: selection.source,
     candidates: candidates.map((candidate) => candidate.descriptor),
     retryPolicy: {
-      maxAttemptsPerStep: candidates.length,
+      maxAttemptsPerStep: candidates.length + 1,
       retryableFailureClasses: [...RETRYABLE_FAILURES],
       jitterRatio: policy.retryPolicy!.jitterRatio,
       maxBackoffMs: policy.retryPolicy!.maxBackoffMs,
@@ -327,7 +367,8 @@ function routePlanContent(
       requireNoVisibleOutput: true as const,
       requireNoSideEffects: true as const,
       allowCrossProvider:
-        new Set(candidates.map((candidate) => candidate.model.provider)).size > 1,
+        new Set(candidates.map((candidate) => candidate.model.provider)).size >
+        1,
     },
     evidencePolicy: {
       recordEveryAttempt: true as const,
@@ -391,6 +432,8 @@ function applyEndpointProfile(
   } as Model<Api>;
 }
 
-function apiKeyCredential(credential: Credential | undefined): string | undefined {
+function apiKeyCredential(
+  credential: Credential | undefined,
+): string | undefined {
   return credential?.type === "api_key" ? credential.key : undefined;
 }

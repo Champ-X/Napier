@@ -55,6 +55,23 @@ describe("web fetch content parsing", () => {
     );
   });
 
+  it("recognizes safe raster images from byte signatures", async () => {
+    const parsed = await parseWebFetchBody({
+      body: pngBody(),
+      contentType: "application/octet-stream",
+      finalUrl: "https://example.com/media/official-poster.png",
+    });
+
+    expect(parsed).toEqual(
+      expect.objectContaining({
+        format: "image",
+        title: "official-poster.png",
+        truncated: false,
+      }),
+    );
+    expect(parsed.lines).toEqual([expect.stringContaining("image/png")]);
+  });
+
   it("retains a title-only empty-root application shell for Browser fallback", async () => {
     const parsed = await parseWebFetchBody({
       body: Buffer.from(
@@ -104,6 +121,13 @@ describe("web fetch content parsing", () => {
         finalUrl: "https://example.com/file.bin",
       }),
     ).rejects.toThrow("unsupported");
+    await expect(
+      parseWebFetchBody({
+        body: Buffer.from("not an image"),
+        contentType: "image/png",
+        finalUrl: "https://example.com/fake.png",
+      }),
+    ).rejects.toThrow("unsupported");
   });
 
   it("admits a valid no-text PDF only for raw-byte delivery", async () => {
@@ -132,6 +156,13 @@ describe("web fetch content parsing", () => {
     );
   });
 });
+
+function pngBody(): Buffer {
+  return Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+    "base64",
+  );
+}
 
 function minimalPdf(text: string): Buffer {
   const escaped = text.replace(/[\\()]/gu, "\\$&");

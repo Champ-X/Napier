@@ -23,10 +23,7 @@ describe("Workflow benchmark SQLite evidence", () => {
             payload: {
               ...valid.payload,
               toolProtocol: {
-                ...(valid.payload["toolProtocol"] as Record<
-                  string,
-                  JsonValue
-                >),
+                ...(valid.payload["toolProtocol"] as Record<string, JsonValue>),
                 toolId: "read_file",
               },
             },
@@ -111,10 +108,20 @@ function chartEvent(details: Record<string, JsonValue>): RunEvent {
       toolId: "sqlite_query",
       semanticVersion: "1.0.0-compat.1",
       definitionSha256: "2".repeat(64),
+      failureDefinitionSha256: "4".repeat(64),
       implementationSha256: "3".repeat(64),
       status: "completed",
       sideEffect: "none",
       concurrency: "safe",
+      progress: {
+        kind: "napier.tool-progress-semantics",
+        schemaVersion: 1,
+        availability: "declared",
+        coverage: "opaque",
+        operation: "neutral",
+        scope: "neutral",
+        contribution: "neutral",
+      },
       compatibilityMode: "compatibility",
     },
     resultSha256: sha256(canonicalJson(details)),

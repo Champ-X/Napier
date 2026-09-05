@@ -29,7 +29,7 @@ describe("Agent Run Harness evidence", () => {
     roots.push(root);
     const workspaceRoot = path.join(root, "workspace");
     await mkdir(workspaceRoot, { recursive: true });
-    await writeFile(path.join(workspaceRoot, "evidence.txt"), "evidence\n");
+    await writeFile(path.join(workspaceRoot, "evidence.json"), "{}\n");
     const store = new LocalStore({
       dataRoot: path.join(root, "data"),
       workspaceRoot,
@@ -46,13 +46,14 @@ describe("Agent Run Harness evidence", () => {
     const provider = fauxProvider({ provider: "harness-e2e" });
     provider.setResponses([
       fauxAssistantMessage(
-        fauxToolCall("read_file", { path: "evidence.txt" }),
+        fauxToolCall("read_file", { path: "evidence.json" }),
         { stopReason: "toolUse" },
       ),
       fauxAssistantMessage(
         fauxToolCall("verify_workspace", {
-          command: "test -f evidence.txt",
+          kind: "format",
           cwd: ".",
+          target: "evidence.json",
         }),
         { stopReason: "toolUse" },
       ),
@@ -72,7 +73,6 @@ describe("Agent Run Harness evidence", () => {
       (event) => event.runId === run.id,
     );
     const starts = events.filter((event) => event.type === "tool.started");
-
     expect(starts.map((event) => event.payload)).toEqual([
       expect.objectContaining({
         toolName: "read_file",
@@ -86,6 +86,29 @@ describe("Agent Run Harness evidence", () => {
         callInputSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
       }),
     ]);
+    for (const started of starts) {
+      const callId = started.payload["callId"];
+      const captured = events.find(
+        (event) =>
+          event.type === "context.tool_result" &&
+          event.payload["callId"] === callId,
+      );
+      const settled = events.find(
+        (event) =>
+          event.type === "tool.operation.settled" &&
+          event.payload["parentCallId"] === callId,
+      );
+      const terminal = events.find(
+        (event) =>
+          (event.type === "tool.completed" || event.type === "tool.failed") &&
+          event.payload["callId"] === callId,
+      );
+      if (captured) expect(captured.seq).toBeLessThan(settled!.seq);
+      expect(settled?.seq).toBeLessThan(terminal!.seq);
+    }
+    expect(
+      events.filter((event) => event.type === "context.tool_result"),
+    ).toHaveLength(1);
     const metrics = projectRunHarnessEffectMetrics(
       run,
       events,

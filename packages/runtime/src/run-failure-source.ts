@@ -5,7 +5,9 @@ import {
   type RunFinalizationReserve,
 } from "./run-budget.js";
 import {
+  isModelProviderFailureError,
   isModelTurnWatchdogError,
+  type ModelProviderFailureEvidence,
   type ModelTurnWatchdogEvidence,
 } from "./model-turn-deadline.js";
 import {
@@ -25,6 +27,7 @@ export interface RunFailureSource {
   budgetExhaustion: RunBudgetExhaustion | undefined;
   finalizationReserve: RunFinalizationReserve | undefined;
   modelWatchdog: ModelTurnWatchdogEvidence | undefined;
+  modelProviderFailure: ModelProviderFailureEvidence | undefined;
   toolDeadline: ToolDeadlineEvidence | undefined;
   noProgress: RunNoProgressEvidence | undefined;
   thinkingLoop: ModelThinkingLoopEvidence | undefined;
@@ -43,6 +46,9 @@ export function runFailureSource(
   const modelWatchdog = isModelTurnWatchdogError(error)
     ? error.evidence
     : undefined;
+  const modelProviderFailure = isModelProviderFailureError(error)
+    ? error.evidence
+    : undefined;
   const toolDeadline =
     error instanceof ToolDeadlineError ? error.evidence : undefined;
   const noProgress =
@@ -53,6 +59,7 @@ export function runFailureSource(
     budgetExhaustion,
     finalizationReserve,
     modelWatchdog,
+    modelProviderFailure,
     toolDeadline,
     noProgress,
     thinkingLoop,
@@ -60,6 +67,10 @@ export function runFailureSource(
       budgetExhaustion ||
       finalizationReserve ||
       modelWatchdog ||
+      (modelProviderFailure &&
+        ["rate_limited", "provider_server", "network"].includes(
+          modelProviderFailure.failureClass,
+        )) ||
       toolDeadline ||
       noProgress ||
       thinkingLoop,
@@ -75,6 +86,7 @@ export function failureSourceMessage(
   if (source.modelWatchdog) {
     return `Model turn watchdog triggered deterministic finalization: ${source.modelWatchdog.reason}.`;
   }
+  if (source.modelProviderFailure) return source.modelProviderFailure.message;
   if (source.toolDeadline) {
     return `Tool deadline triggered deterministic finalization: ${source.toolDeadline.toolName} ${source.toolDeadline.state}.`;
   }

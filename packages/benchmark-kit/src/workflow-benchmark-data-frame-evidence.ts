@@ -7,16 +7,13 @@ import type {
   WorkflowBenchmarkLedgerEventReceipt,
 } from "./workflow-benchmark-types.js";
 import { hasExactRunEventEnvelope } from "./run-event-envelope-shape.js";
-import { validCompletedToolProtocolProjection } from "./tool-protocol-event-shape.js";
+import {
+  completedToolEventPayload,
+  completedToolEventPayloadDiagnostics,
+} from "./tool-terminal-event-shape.js";
 
 export type WorkflowBenchmarkDataFrameAction = "inspect_data" | "data_frame";
 
-const PAYLOAD_KEYS = keySet(
-  "callId toolName status outputTextSha256 outputTextBytes outputSha256 outputBytes outputRedacted resultSha256 details toolProtocol",
-);
-const INSPECT_PAYLOAD_KEYS = keySet(
-  "callId toolName status outputTextSha256 outputTextBytes outputSha256 outputBytes outputRedacted details toolProtocol",
-);
 const INSPECT_DETAILS_KEYS = keySet(
   "pathSha256 format sha256 sizeBytes rowCount columnCount truncated columnSetSha256 sampleSha256",
 );
@@ -194,26 +191,22 @@ function dataFrameActionEventDiagnostics(value: unknown): string[] {
     return ["envelope_invalid"];
   }
   const payload = record(value["payload"]) ? value["payload"] : {};
-  const expectedPayloadKeys =
-    payload["toolName"] === "inspect_data"
-      ? INSPECT_PAYLOAD_KEYS
-      : PAYLOAD_KEYS;
-  if (!exactRecord(value["payload"], expectedPayloadKeys)) {
-    const observed = Object.keys(payload);
-    return [
-      "payload_fields_invalid",
-      ...expectedPayloadKeys
-        .filter((key) => !observed.includes(key))
-        .map((key) => `payload_missing_${key}`),
-      ...observed
-        .filter((key) => !expectedPayloadKeys.includes(key))
-        .map((key) => `payload_extra_${key}`),
-    ];
-  }
   const event = value as unknown as RunEvent;
   const action = workflowBenchmarkDataFrameAction(event);
-  const details = record(value["payload"]["details"])
-    ? value["payload"]["details"]
+  const terminalPayload = action
+    ? completedToolEventPayload(payload, {
+        toolId: action,
+        resultSha256: action === "inspect_data" ? "forbidden" : "required",
+      })
+    : undefined;
+  if (!terminalPayload) {
+    return completedToolEventPayloadDiagnostics(payload, {
+      toolId: action ?? "unknown",
+      resultSha256: action === "inspect_data" ? "forbidden" : "required",
+    }).map((diagnostic) => `payload_${diagnostic}`);
+  }
+  const details = record(terminalPayload["details"])
+    ? terminalPayload["details"]
     : {};
   if (
     !(
@@ -229,7 +222,7 @@ function dataFrameActionEventDiagnostics(value: unknown): string[] {
   ) {
     diagnostics.push("identity_invalid");
   }
-  if (!validToolPayload(value["payload"], action)) {
+  if (!validToolPayload(terminalPayload, action)) {
     diagnostics.push("payload_invalid");
   }
   if (
@@ -259,7 +252,6 @@ function validToolPayload(
     nonNegativeInteger(payload["outputBytes"]) &&
     payload["outputRedacted"] === true &&
     typeof action === "string" &&
-    validCompletedToolProtocolProjection(payload["toolProtocol"], action) &&
     record(payload["details"]) !== undefined &&
     (action === "inspect_data" ||
       (digest(payload["resultSha256"]) &&

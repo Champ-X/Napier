@@ -11,6 +11,7 @@ import {
 } from "../src/index.js";
 import { HostDirectSandboxAdapter } from "../src/sandbox-host-direct.js";
 import { workspaceProcessToolResult } from "../src/workspace-process-tool-result.js";
+import { createActiveTestRun } from "./active-run-test-fixture.js";
 
 const temporaryRoots: string[] = [];
 
@@ -39,8 +40,10 @@ describe("Workspace shell Process Session", () => {
     });
     await manager.initialize();
     try {
-      const thread = store.listThreads()[0]!;
-      const run = store.listRuns(thread.id)[0]!;
+      const { thread, run } = await createActiveTestRun(
+        store,
+        "Workspace shell process fixture",
+      );
       const session = await manager.start({
         threadId: thread.id,
         runId: run.id,

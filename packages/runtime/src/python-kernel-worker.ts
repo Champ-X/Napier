@@ -22,6 +22,7 @@ export const PYTHON_KERNEL_WORKER_SOURCE = String.raw`
 import ast
 import base64
 import builtins
+import hashlib
 import json
 import os
 import resource

@@ -6,10 +6,20 @@ import type {
 import { Type } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { createOwnedToolRecordV2 } from "./owned-tool-protocol.js";
+import { ToolProtocolRegistry } from "./tool-protocol-registry.js";
 import {
-  createOwnedToolRecordV2,
-  ToolProtocolRegistry,
-} from "./tool-protocol-registry.js";
+  defineToolProgress,
+  progressSemantics,
+  resultDetails,
+  stableFields,
+} from "./tool-progress-semantics.js";
+import { defineInternalToolProtocolV2 } from "./tool-protocol-declaration.js";
+import {
+  genericToolResultSchema,
+  jsonSchema,
+  toolUiProjectionSchema,
+} from "./tool-protocol-schema.js";
 
 export const CAPABILITY_TOOL_NAME = "capability";
 const CAPABILITY_ROOT_URI = "cap://tools";
@@ -68,9 +78,14 @@ export function createCapabilityCatalogTool(
 ): AgentTool<typeof capabilitySchema, CapabilityCatalogDetails> {
   const descriptors = createCapabilityDescriptors(candidates, registry);
   const catalogSha256 = sha256(
-    canonicalJson(descriptors.map(({ definitionSha256 }) => definitionSha256)),
+    canonicalJson(
+      descriptors.map(({ uri, definitionSha256 }) => ({
+        uri,
+        definitionSha256,
+      })),
+    ),
   );
-  return {
+  const tool: AgentTool<typeof capabilitySchema, CapabilityCatalogDetails> = {
     name: CAPABILITY_TOOL_NAME,
     label: "Capability catalog",
     description:
@@ -101,6 +116,90 @@ export function createCapabilityCatalogTool(
       };
     },
   };
+  const progressed = defineToolProgress(tool, {
+    schemaVersion: 1,
+    classificationVersion: "1.0.0",
+    modes: [
+      {
+        modeId: "observe_capability_catalog",
+        operation: "observe",
+        scope: "control",
+        contribution: "supporting",
+      },
+    ],
+    resolve: (input) => ({
+      semantics: progressSemantics("observe", "control", "supporting"),
+      resourceKey: stableFields(input, ["uri", "query"]),
+    }),
+    state: (_input, result) =>
+      stableFields(resultDetails(result), ["catalogSha256", "matchedCount"]),
+  });
+  return defineInternalToolProtocolV2(progressed, {
+    historicalDefinitions: [
+      {
+        kind: "napier.tool-protocol-historical-definition",
+        schemaVersion: 1,
+        generation: "v2.failure_compatibility",
+        sourceMode: "compatibility",
+        definitionSha256:
+          "62ab9cc950ecdf11d15a5dddb1c31509d54115e7dbda1d1d11a8f35ad8472e53",
+        replayOnly: true,
+      },
+      {
+        kind: "napier.tool-protocol-historical-definition",
+        schemaVersion: 1,
+        generation: "v2.progress_terminal_retry",
+        sourceMode: "compatibility",
+        definitionSha256:
+          "e7377490300e7cb9d565f0bef63e11a3bd9f77df74c2a32c3b25847ae43714ff",
+        replayOnly: true,
+      },
+      {
+        kind: "napier.tool-protocol-historical-definition",
+        schemaVersion: 1,
+        generation: "v2.progress_not_started_retry",
+        sourceMode: "compatibility",
+        definitionSha256:
+          "3225e200b9d8929ce98f872e3b0de46e55a2a09679c995551dad61f18683bb1e",
+        replayOnly: true,
+      },
+      {
+        kind: "napier.tool-protocol-historical-definition",
+        schemaVersion: 1,
+        generation: "v2.pre_progress_terminal_retry",
+        sourceMode: "compatibility",
+        definitionSha256:
+          "700f8f62dff8f67481ec36bd4956e4740c130b1082c66023fd873f5cad2b6547",
+        replayOnly: true,
+      },
+      {
+        kind: "napier.tool-protocol-historical-definition",
+        schemaVersion: 1,
+        generation: "v2.pre_progress",
+        sourceMode: "compatibility",
+        definitionSha256:
+          "6df52e27c9a01bac414fb61b1bdce5db7b000258e3e986d5adbe7f7b23cb9374",
+        replayOnly: true,
+      },
+    ],
+    definition: {
+      schemaVersion: 2,
+      id: progressed.name,
+      version: "2.0.0",
+      capabilityUris: ["cap://tools/capability"],
+      inputSchema: jsonSchema(progressed.parameters),
+      canonicalOutputSchema: genericToolResultSchema("canonical"),
+      modelVisibleOutputSchema: genericToolResultSchema("model_visible"),
+      uiProjectionSchema: toolUiProjectionSchema(progressed.name),
+      concurrency: "safe",
+      sideEffect: "none",
+      sideEffectMode: "static",
+      retry: { strategy: "terminal_failure", maxAttempts: 2 },
+      idempotency: { key: "arguments", resultReplay: "exact_result_only" },
+      approval: { mode: "none", codeBridge: "allowed" },
+      policyTags: ["capability:discovery", "control:read"],
+    },
+  });
 }
 
 export function createCapabilityDescriptors(
@@ -119,7 +218,13 @@ export function createCapabilityDescriptors(
   const descriptors = (registry ?? new ToolProtocolRegistry(candidates))
     .descriptors()
     .filter(({ toolId }) => expected.has(toolId));
-  if (descriptors.length !== expected.size) {
+  const describedToolIds = new Set(
+    descriptors.map((descriptor) => descriptor.toolId),
+  );
+  if (
+    describedToolIds.size !== expected.size ||
+    [...expected].some((toolId) => !describedToolIds.has(toolId))
+  ) {
     throw new Error("Capability Catalog registry does not own every candidate");
   }
   return descriptors;

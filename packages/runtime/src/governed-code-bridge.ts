@@ -6,7 +6,7 @@ import type {
 } from "@earendil-works/pi-agent-core";
 import { validateToolArguments } from "@earendil-works/pi-ai";
 import type { JsonValue, RunEvent, RunRecord } from "@napier/contracts";
-import type { ToolConcurrency } from "@napier/contracts/tool-protocol";
+import type { ToolFailureReceiptV1 } from "@napier/contracts/tool-protocol";
 
 import {
   agentToolGenericDetailsLedgerProjection,
@@ -18,8 +18,14 @@ import type { AgentToolDisplayStore } from "./agent-tool-display-store.js";
 import { agentToolResultText } from "./agent-tool-result-text.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { EventSink } from "./event-sink.js";
+import { createProcessLeaseOwnerId } from "./ids.js";
+import { claimRunHeadEvent } from "./event-idempotency.js";
 import type { GovernedCodeBridgeDispatcher } from "./governed-code-bridge-model.js";
 import type { LocalStore } from "./store.js";
+import { toolOperationSetLedgerProjection } from "./tool-operation-journal.js";
+import { ToolConcurrencyGate } from "./tool-concurrency-gate.js";
+import { executeAdmittedToolCall } from "./tool-execution-admission-service.js";
+import type { ToolOperationJournalOptions } from "./tool-operation-model.js";
 import {
   ToolProtocolRegistry,
   type OwnedToolRecordV2,
@@ -43,11 +49,32 @@ export function createGovernedCodeBridgeDispatcher(input: {
     result: AgentToolResult<unknown>;
     isError: boolean;
   }): Promise<AfterToolCallResult | undefined>;
+  replayTerminal?(
+    toolCallId: string,
+    toolName: string,
+    args: unknown,
+  ): Promise<
+    | {
+        result: AgentToolResult<unknown>;
+        isError: boolean;
+        resultEvidenceSha256?: string;
+      }
+    | undefined
+  >;
   onEvent?: EventSink;
+  concurrencyGate?: ToolConcurrencyGate;
+  journalOptions?: ToolOperationJournalOptions;
 }): GovernedCodeBridgeDispatcher {
   const tools = new Map(input.tools.map((tool) => [tool.name, tool]));
   const registry = input.registry ?? new ToolProtocolRegistry(input.tools);
-  const concurrency = new ToolConcurrencyGate();
+  const concurrency =
+    input.concurrencyGate ??
+    new ToolConcurrencyGate({
+      durable: {
+        backend: input.store.toolConcurrencyLeaseBackend(),
+        ownerId: createProcessLeaseOwnerId("codebridge"),
+      },
+    });
   return async (request, signal) => {
     const tool = tools.get(request.toolId);
     if (!tool) {
@@ -68,8 +95,13 @@ export function createGovernedCodeBridgeDispatcher(input: {
       await appendBlocked(input, request, tool.name, reason, protocol);
       throw new Error(reason);
     }
-    return concurrency.run(invocation.concurrency, signal, () =>
-      dispatchGovernedTool(input, request, tool, protocol, signal),
+    return dispatchGovernedTool(
+      input,
+      request,
+      tool,
+      protocol,
+      concurrency,
+      signal,
     );
   };
 }
@@ -130,6 +162,7 @@ async function dispatchGovernedTool(
   request: Parameters<GovernedCodeBridgeDispatcher>[0],
   tool: AgentTool,
   protocol: OwnedToolRecordV2,
+  concurrencyGate: ToolConcurrencyGate,
   signal?: AbortSignal,
 ) {
   const callId = `codebridge_${request.evaluationId}_${String(request.callId)}`;
@@ -160,85 +193,120 @@ async function dispatchGovernedTool(
   const block = await input.preflight(toolCall, args, signal);
   if (block?.block)
     throw new Error(block.reason || "Code Bridge call was blocked");
-  await append(input, "code_bridge.authorized", toolCall, {
-    nestedDispatch: true,
-    parentEvaluationId: request.evaluationId,
-    inputSha256: sha256(canonicalJson(request.input)),
-    definitionSha256: protocol.definitionSha256,
-    toolVersionSha256: protocol.implementationSha256,
-    semanticVersion: invocation.semanticVersion,
-    concurrency: invocation.concurrency,
-    sideEffect: invocation.sideEffect,
-    retryStrategy: invocation.retry.strategy,
-    idempotencyKey: invocation.idempotency.key,
-    approvalMode: invocation.approval.mode,
-    compatibilityMode: invocation.compatibilityMode,
-    validationChecked: true,
-    policyChecked: true,
-    workspaceBoundaryChecked: true,
-    budgetChecked: true,
-    sandboxDelegated: true,
-  });
-  await append(input, "tool.started", toolCall, {
-    status: "started",
+  const startedPayload = {
     nestedDispatch: true,
     parentEvaluationId: request.evaluationId,
     inputSha256: sha256(canonicalJson(request.input)),
     ...builtInToolHarnessProjection(tool.name, args),
     ...agentToolInputLedgerProjection(tool.name, args),
     toolProtocol: protocol.uiProjection("started", args) as never,
-  });
-  let result: AgentToolResult<unknown>;
-  let isError = false;
-  try {
-    result = await tool.execute(callId, args, signal);
-  } catch (error) {
-    isError = true;
-    result = {
-      content: [
-        {
-          type: "text",
-          text: error instanceof Error ? error.message : String(error),
-        },
-      ],
-      details: {},
-    };
-  }
-  const override = await input.finalize({ toolCall, result, isError });
-  const presented = applyPresentation(result, isError, override);
-  const output = agentToolResultText(presented.result);
-  const outputProjection = agentToolOutputLedgerProjection(
-    tool.name,
-    output,
-    presented.result,
-  );
-  await append(
-    input,
-    presented.isError ? "tool.failed" : "tool.completed",
-    toolCall,
-    {
-      status: presented.isError ? "failed" : "completed",
+  };
+  const outcome = await executeAdmittedToolCall({
+    store: input.store,
+    run: input.run,
+    callId,
+    toolName: tool.name,
+    args,
+    protocol,
+    concurrencyGate,
+    startedPayload,
+    ...(signal ? { signal } : {}),
+    ...(input.journalOptions ? { journalOptions: input.journalOptions } : {}),
+    admissionVisibility: "user" as const,
+    admissionPayload: {
       nestedDispatch: true,
       parentEvaluationId: request.evaluationId,
-      outputTextSha256: sha256(output),
-      outputTextBytes: Buffer.byteLength(output, "utf8"),
-      ...outputProjection,
-      ...agentToolGenericDetailsLedgerProjection(
-        tool.name,
-        outputProjection,
-        presented.result.details,
-      ),
-      toolProtocol: protocol.uiProjection(
-        presented.isError ? "failed" : "completed",
-        args,
-      ) as never,
     },
+    ...(input.onEvent ? { onEvent: input.onEvent } : {}),
+    ...(input.replayTerminal
+      ? {
+          replay: {
+            load: async () => {
+              const replay = await input.replayTerminal!(
+                callId,
+                tool.name,
+                args,
+              );
+              return replay?.resultEvidenceSha256
+                ? {
+                    result: replay.result,
+                    isError: replay.isError,
+                    resultEvidenceSha256: replay.resultEvidenceSha256,
+                  }
+                : undefined;
+            },
+            restore: async (captured) => {
+              const override = await input.finalize({
+                toolCall,
+                result: captured.result,
+                isError: captured.isError,
+              });
+              return withFailureReceipt(
+                protocol,
+                args,
+                applyPresentation(captured.result, captured.isError, override),
+              );
+            },
+          },
+        }
+      : {}),
+    onAuthorized: () =>
+      append(input, "code_bridge.authorized", toolCall, {
+        nestedDispatch: true,
+        parentEvaluationId: request.evaluationId,
+        inputSha256: sha256(canonicalJson(request.input)),
+        definitionSha256: protocol.definitionSha256,
+        toolVersionSha256: protocol.implementationSha256,
+        semanticVersion: invocation.semanticVersion,
+        concurrency: invocation.concurrency,
+        sideEffect: invocation.sideEffect,
+        retryStrategy: invocation.retry.strategy,
+        idempotencyKey: invocation.idempotency.key,
+        approvalMode: invocation.approval.mode,
+        compatibilityMode: invocation.compatibilityMode,
+        validationChecked: true,
+        policyChecked: true,
+        workspaceBoundaryChecked: true,
+        budgetChecked: true,
+        sandboxDelegated: true,
+      }).then(() => undefined),
+    execute: async () => {
+      let result: AgentToolResult<unknown>;
+      let isError = false;
+      let failure: ToolFailureReceiptV1 | undefined;
+      try {
+        result = await tool.execute(callId, args, signal);
+      } catch (error) {
+        isError = true;
+        failure = protocol.failure(args, error);
+        result = {
+          content: [
+            {
+              type: "text",
+              text: error instanceof Error ? error.message : String(error),
+            },
+          ],
+          details: {},
+        };
+      }
+      const override = await input.finalize({ toolCall, result, isError });
+      return withFailureReceipt(
+        protocol,
+        args,
+        applyPresentation(result, isError, override),
+        failure,
+      );
+    },
+    settlement: (presented) => presented,
+  });
+  return finishGovernedResult(
+    input,
+    request,
+    tool,
+    protocol,
+    args,
+    outcome.value,
   );
-  return {
-    content: structuredClone(presented.result.content),
-    details: structuredClone(presented.result.details),
-    isError: presented.isError,
-  };
 }
 
 export function createGovernedCodeBridgeBinding(): {
@@ -258,70 +326,66 @@ export function createGovernedCodeBridgeBinding(): {
   };
 }
 
-class ToolConcurrencyGate {
-  private activeSafe = 0;
-  private activeSerialized = 0;
-  private activeExclusive = false;
-  private readonly queue: Array<{
-    mode: ToolConcurrency;
-    signal?: AbortSignal;
-    start(): void;
-  }> = [];
-
-  async run<T>(
-    mode: ToolConcurrency,
-    signal: AbortSignal | undefined,
-    operation: () => Promise<T>,
-  ): Promise<T> {
-    await new Promise<void>((resolve, reject) => {
-      if (signal?.aborted) {
-        reject(signal.reason ?? new Error("Code Bridge call was cancelled"));
-        return;
-      }
-      const entry = {
-        mode,
-        ...(signal ? { signal } : {}),
-        start: () => {
-          signal?.removeEventListener("abort", abort);
-          if (mode === "safe") this.activeSafe += 1;
-          else if (mode === "serialized") this.activeSerialized += 1;
-          else this.activeExclusive = true;
-          resolve();
-        },
-      };
-      const abort = () => {
-        const index = this.queue.indexOf(entry);
-        if (index >= 0) this.queue.splice(index, 1);
-        reject(signal?.reason ?? new Error("Code Bridge call was cancelled"));
-        this.drain();
-      };
-      signal?.addEventListener("abort", abort, { once: true });
-      this.queue.push(entry);
-      this.drain();
-    });
-    try {
-      return await operation();
-    } finally {
-      if (mode === "safe") this.activeSafe -= 1;
-      else if (mode === "serialized") this.activeSerialized -= 1;
-      else this.activeExclusive = false;
-      this.drain();
-    }
-  }
-
-  private drain(): void {
-    if (this.activeExclusive || this.queue.length === 0) return;
-    const next = this.queue[0]!;
-    if (next.mode === "exclusive") {
-      if (this.activeSafe === 0 && this.activeSerialized === 0) {
-        this.queue.shift()!.start();
-      }
-      return;
-    }
-    if (next.mode === "serialized" && this.activeSerialized > 0) return;
-    this.queue.shift()!.start();
-    this.drain();
-  }
+async function finishGovernedResult(
+  input: Parameters<typeof createGovernedCodeBridgeDispatcher>[0],
+  request: Parameters<GovernedCodeBridgeDispatcher>[0],
+  tool: AgentTool,
+  protocol: OwnedToolRecordV2,
+  args: unknown,
+  presented: {
+    result: AgentToolResult<unknown>;
+    isError: boolean;
+    failure?: ToolFailureReceiptV1;
+  },
+) {
+  const callId = `codebridge_${request.evaluationId}_${String(request.callId)}`;
+  const output = agentToolResultText(presented.result);
+  const outputProjection = agentToolOutputLedgerProjection(
+    tool.name,
+    output,
+    presented.result,
+  );
+  const operationSetProjection = await toolOperationSetLedgerProjection(
+    input.store,
+    { threadId: input.run.threadId, runId: input.run.id },
+    callId,
+  );
+  await append(
+    input,
+    presented.isError ? "tool.failed" : "tool.completed",
+    { id: callId, name: tool.name },
+    {
+      status: presented.isError ? "failed" : "completed",
+      nestedDispatch: true,
+      parentEvaluationId: request.evaluationId,
+      outputTextSha256: sha256(output),
+      outputTextBytes: Buffer.byteLength(output, "utf8"),
+      ...operationSetProjection,
+      ...outputProjection,
+      ...agentToolGenericDetailsLedgerProjection(
+        tool.name,
+        outputProjection,
+        presented.result.details,
+      ),
+      ...(presented.isError
+        ? {
+            toolFailure: (presented.failure ??
+              protocol.failure(args, presented.result)) as unknown as JsonValue,
+          }
+        : {}),
+      toolProtocol: protocol.uiProjection(
+        presented.isError ? "failed" : "completed",
+        args,
+        presented.result,
+        presented.isError,
+      ) as never,
+    },
+  );
+  return {
+    content: structuredClone(presented.result.content),
+    details: structuredClone(presented.result.details),
+    isError: presented.isError,
+  };
 }
 
 function applyPresentation(
@@ -346,6 +410,24 @@ function applyPresentation(
   };
 }
 
+function withFailureReceipt(
+  protocol: OwnedToolRecordV2,
+  args: unknown,
+  presented: { result: AgentToolResult<unknown>; isError: boolean },
+  failure?: ToolFailureReceiptV1,
+): {
+  result: AgentToolResult<unknown>;
+  isError: boolean;
+  failure?: ToolFailureReceiptV1;
+} {
+  return presented.isError
+    ? {
+        ...presented,
+        failure: failure ?? protocol.failure(args, presented.result),
+      }
+    : presented;
+}
+
 function bridgeArguments(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new Error("Code Bridge tool input must be an object");
@@ -368,16 +450,27 @@ async function append(
   toolCall: { id: string; name: string },
   payload: Record<string, JsonValue>,
 ): Promise<void> {
-  const event = await input.store.appendEvent({
+  const eventInput = {
     threadId: input.run.threadId,
     runId: input.run.id,
     type,
     category: "tool",
     visibility: "user",
     payload: { callId: toolCall.id, toolName: toolCall.name, ...payload },
+  } as const;
+  const phase =
+    type === "tool.completed" ||
+    type === "tool.failed" ||
+    type === "tool.blocked"
+      ? "terminal"
+      : type;
+  const receipt = await claimRunHeadEvent(input.store, eventInput, {
+    namespace: "code-bridge-tool-phase",
+    key: `${toolCall.id}:${phase}`,
   });
+  if (!receipt.appended) return;
   try {
-    await input.onEvent?.(event as RunEvent);
+    await input.onEvent?.(receipt.event as RunEvent);
   } catch {
     // Durable nested-dispatch evidence survives a disconnected observer.
   }

@@ -12,6 +12,8 @@ import type { ModelRouteRequest } from "@napier/contracts/model-route";
 import { Type } from "typebox";
 
 import { DEFAULT_SUBAGENT_LIMITS, normalizeSubagentLimits } from "./agents.js";
+import { preserveAgentToolIdentity } from "./agent-tool-metadata.js";
+import { AsyncSemaphore } from "./async-semaphore.js";
 import {
   delegationFailureContextSha256,
   delegationIntentSha256,
@@ -19,6 +21,7 @@ import {
 } from "./delegation-ledger.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
 import type { LocalStore } from "./store.js";
+import { ToolConcurrencyGate } from "./tool-concurrency-gate.js";
 import { InProcessSubagentProvider } from "./in-process-subagent-provider.js";
 import { ModelRouter } from "./model-route.js";
 import { resolveModelRouteSelection } from "./model-route-resolution.js";
@@ -92,35 +95,16 @@ export interface SubagentCoordinatorOptions {
   sandbox: OsSandboxAdapter;
   processes?: WorkspaceProcessManager | undefined;
   createInheritedTools?: () => AgentTool[];
+  concurrencyGate?: ToolConcurrencyGate;
   worktreeOwnerId: string;
   parentSignal: AbortSignal;
   onEvent?: EventSink;
 }
 
-class Semaphore {
-  private active = 0;
-  private readonly queue: Array<() => void> = [];
-
-  constructor(private readonly limit: number) {}
-
-  async run<T>(operation: () => Promise<T>): Promise<T> {
-    if (this.active >= this.limit) {
-      await new Promise<void>((resolve) => this.queue.push(resolve));
-    }
-    this.active += 1;
-    try {
-      return await operation();
-    } finally {
-      this.active -= 1;
-      this.queue.shift()?.();
-    }
-  }
-}
-
 export class SubagentCoordinator {
   private readonly limits: SubagentLimits;
   private readonly enabledRoles: Set<SubagentRole>;
-  private readonly semaphore: Semaphore;
+  private readonly semaphore: AsyncSemaphore;
   private readonly worktrees?: SubagentWorktreeMutationManager;
   private readonly supervisor: SubagentSupervisor;
   private readonly reservedIntentSha256 = new Set<string>();
@@ -172,7 +156,15 @@ export class SubagentCoordinator {
         ...(tests ? { tests } : {}),
       });
     }
-    this.semaphore = new Semaphore(this.limits.maxConcurrent);
+    this.semaphore = new AsyncSemaphore(this.limits.maxConcurrent);
+    const concurrencyGate =
+      options.concurrencyGate ??
+      new ToolConcurrencyGate({
+        durable: {
+          backend: options.store.toolConcurrencyLeaseBackend(),
+          ownerId: options.worktreeOwnerId,
+        },
+      });
     this.supervisor = new SubagentSupervisor(
       new InProcessSubagentProvider({
         store: options.store,
@@ -183,6 +175,7 @@ export class SubagentCoordinator {
         run: options.run,
         limits: this.limits,
         parentSignal: options.parentSignal,
+        concurrencyGate,
         schedule: (operation) => this.semaphore.run(operation),
         ...(this.worktrees ? { worktrees: this.worktrees } : {}),
         ...(options.createInheritedTools
@@ -218,7 +211,7 @@ export class SubagentCoordinator {
       collectResult: collectedSupervisorToolResult,
     }).map((tool) =>
       tool.name === "subagent_collect"
-        ? ({
+        ? preserveAgentToolIdentity(tool, {
             ...tool,
             [TOOL_MINIMUM_DEADLINE_MS]: this.delegationDeadlineMs(),
           } as AgentTool & ToolMinimumDeadline)

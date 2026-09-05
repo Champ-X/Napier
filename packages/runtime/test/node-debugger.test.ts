@@ -16,6 +16,7 @@ import { createPrivateWorkspaceNodeDebuggerProcesses } from "../src/node-debugge
 import type { OsSandboxAdapter, SandboxedProcess } from "../src/sandbox.js";
 import type { PrivateWorkspaceProcessLaunchRequest } from "../src/workspace-process-launch.js";
 import { WorkspaceProcessManager } from "../src/workspace-processes.js";
+import { createActiveTestRun } from "./active-run-test-fixture.js";
 
 const temporaryRoots: string[] = [];
 const openProcesses: WorkspaceProcessManager[] = [];
@@ -781,10 +782,10 @@ describe("Run-owned Node debugger", () => {
   it("supports explicit cancellation and isolates Run ownership", async () => {
     const fixture = await createFixture(debugSource());
     const launched = await launch(fixture);
-    const otherRun = await fixture.store.createRun({
-      threadId: fixture.threadId,
-      agentId: fixture.agentId,
-    });
+    const { run: otherRun } = await createActiveTestRun(
+      fixture.store,
+      "Foreign debugger owner",
+    );
     await expect(
       fixture.debuggerManager.stackTrace({
         threadId: fixture.threadId,
@@ -916,8 +917,10 @@ async function createFixture(source: string): Promise<{
   });
   await processes.initialize();
   openProcesses.push(processes);
-  const thread = store.listThreads()[0]!;
-  const run = store.listRuns(thread.id)[0]!;
+  const { agent, thread, run } = await createActiveTestRun(
+    store,
+    "Node debugger fixture",
+  );
   return {
     root,
     workspaceRoot,
@@ -927,7 +930,7 @@ async function createFixture(source: string): Promise<{
     debuggerManager: new NodeDebuggerManager(processes, workspaceRoot),
     threadId: thread.id,
     runId: run.id,
-    agentId: run.agentId,
+    agentId: agent.id,
   };
 }
 

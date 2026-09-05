@@ -10,6 +10,7 @@ import type {
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { workflowSchemaSha256 } from "./workflow-schemas.js";
 import { executionPlanRequestFromBlueprint } from "./workflow-blueprints.js";
+import { runPlanProgressEventPayload } from "./run-progress-plan-state.js";
 
 export function workflowNodePrompt(
   manifest: ExecutionPlanWorkflowManifest,
@@ -87,6 +88,7 @@ export function workflowPlanCreatedPayload(
     phaseWaveCount: plan.phaseWaves.length,
     phaseProjectionSha256: plan.phaseProjectionSha256,
     workflowManifestSha256,
+    ...runPlanProgressEventPayload(plan),
   };
 }
 
@@ -108,6 +110,7 @@ export function workflowPlanStepPayload(
     phaseWaveCount: plan.phaseWaves.length,
     phaseProjectionSha256: plan.phaseProjectionSha256,
     evidence: step.evidence,
+    ...runPlanProgressEventPayload(plan),
     ...(step.blocker ? { blocker: step.blocker } : {}),
     ...(step.runId ? { runId: step.runId } : {}),
   };

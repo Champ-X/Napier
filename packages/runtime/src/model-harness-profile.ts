@@ -25,7 +25,6 @@ export type {
 } from "./model-harness-receipt.js";
 export {
   formatModelHarnessPrompt,
-  inferModelHarnessTaskPhases,
   resolveModelHarnessProfile,
   resolveModelHarnessResolution,
 } from "./model-harness-resolution.js";

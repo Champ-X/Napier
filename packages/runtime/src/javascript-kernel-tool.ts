@@ -17,6 +17,11 @@ import {
   MAX_JAVASCRIPT_KERNEL_EVALUATION_TIMEOUT_MS,
 } from "./javascript-kernel-worker.js";
 import type { JavascriptKernelCodeBridgeDispatcher } from "./javascript-kernel-code-bridge.js";
+import {
+  defineToolProgress,
+  progressSemantics,
+  recordValue,
+} from "./tool-progress-semantics.js";
 
 export const MAX_JAVASCRIPT_KERNEL_TOOL_OUTPUT_BYTES = 32 * 1024;
 
@@ -91,7 +96,10 @@ export function createJavascriptKernelTool(
   context: { threadId: string; runId: string },
   codeBridge?: JavascriptKernelCodeBridgeDispatcher,
 ): AgentTool<typeof javascriptKernelSchema, JavascriptKernelToolDetails> {
-  return {
+  const tool: AgentTool<
+    typeof javascriptKernelSchema,
+    JavascriptKernelToolDetails
+  > = {
     name: "javascript_kernel",
     label: "JavaScript kernel",
     description:
@@ -176,6 +184,41 @@ export function createJavascriptKernelTool(
       );
     },
   };
+  return defineToolProgress(tool, {
+    schemaVersion: 1,
+    classificationVersion: "1.1.0",
+    modes: [
+      {
+        modeId: "javascript_kernel_session",
+        operation: "coordinate",
+        scope: "session",
+        contribution: "neutral",
+      },
+    ],
+    resolve(input) {
+      const value = recordValue(input);
+      const processId = value["processId"];
+      const resourceKey =
+        typeof processId === "string"
+          ? { kind: "javascript-kernel-session", processId }
+          : { kind: "javascript-kernel-manager", runId: context.runId };
+      return {
+        semantics: progressSemantics("coordinate", "session", "neutral"),
+        resourceKey,
+        failureBindings: {
+          target: resourceKey,
+          route: {
+            kind: "kernel-route",
+            runtime: "javascript",
+            action: value["action"],
+          },
+          capability: { kind: "kernel-capability", runtime: "javascript" },
+          session: resourceKey,
+        },
+        failureDomainKey: resourceKey,
+      };
+    },
+  });
 }
 
 export function javascriptKernelToolCallArgumentsLedgerProjection(

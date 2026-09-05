@@ -5,6 +5,7 @@ import type {
 } from "@earendil-works/pi-agent-core";
 import type { JsonObject, RunEvent, RunRecord } from "@napier/contracts";
 
+import { preserveAgentToolIdentity } from "./agent-tool-metadata.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { EventSink } from "./event-sink.js";
 import type { ModelRegistry } from "./models.js";
@@ -59,11 +60,11 @@ export class ToolDeadlineManager {
 
   private wrapTool(tool: AgentTool): AgentTool {
     const execute = tool.execute.bind(tool);
-    return {
+    return preserveAgentToolIdentity(tool, {
       ...tool,
       execute: (callId, args, signal, onUpdate) =>
         this.execute(tool, execute, callId, args, signal, onUpdate),
-    };
+    });
   }
 
   private async execute(
@@ -90,16 +91,32 @@ export class ToolDeadlineManager {
       : controller.signal;
     let acceptingUpdates = true;
     let timeout: ReturnType<typeof setTimeout> | undefined;
+    let graceTimeout: ReturnType<typeof setTimeout> | undefined;
     let resolveDeadline: (reason: ToolDeadlineReason) => void = () => undefined;
+    let resolveGrace: () => void = () => undefined;
+    let deadlineTriggered = false;
     const deadline = new Promise<ToolDeadlineReason>((resolve) => {
       resolveDeadline = resolve;
     });
-    const onParentAbort = (): void => resolveDeadline("parent_cancelled");
+    const forcedFinalization = new Promise<{ type: "grace" }>((resolve) => {
+      resolveGrace = () => resolve({ type: "grace" });
+    });
+    const triggerDeadline = (reason: ToolDeadlineReason): void => {
+      if (deadlineTriggered) return;
+      deadlineTriggered = true;
+      resolveDeadline(reason);
+      graceTimeout = setTimeout(
+        resolveGrace,
+        this.context.policy.settlementGraceMs,
+      );
+      graceTimeout.unref?.();
+    };
+    const onParentAbort = (): void => triggerDeadline("parent_cancelled");
     if (parentSignal?.aborted) onParentAbort();
     else parentSignal?.addEventListener("abort", onParentAbort, { once: true });
     timeout = setTimeout(() => {
       controller.abort(new Error("Tool deadline exceeded"));
-      resolveDeadline("deadline_exceeded");
+      triggerDeadline("deadline_exceeded");
     }, timeoutMs);
     timeout.unref?.();
     const starting = this.startOperation(
@@ -120,13 +137,13 @@ export class ToolDeadlineManager {
       deadline.then((reason) => ({ type: "deadline" as const, reason })),
     ]);
     if (start.type === "error") {
-      this.clear(timeout, parentSignal, onParentAbort);
+      this.clear(timeout, graceTimeout, parentSignal, onParentAbort);
       throw start.error;
     }
     if (start.type === "deadline") {
       controller.abort(new Error(`Tool ${start.reason}`));
       acceptingUpdates = false;
-      this.clear(timeout, parentSignal, onParentAbort);
+      this.clear(timeout, graceTimeout, parentSignal, onParentAbort);
       const evidence = await this.record(
         tool,
         callId,
@@ -146,20 +163,15 @@ export class ToolDeadlineManager {
       deadline.then((reason) => ({ type: "deadline" as const, reason })),
     ]);
     if (first.type !== "deadline") {
-      this.clear(timeout, parentSignal, onParentAbort);
+      this.clear(timeout, graceTimeout, parentSignal, onParentAbort);
       await operation.startedJournal;
       await this.journal(tool, callId, args, "completed", operation.attempt);
       return unwrap(first);
     }
     controller.abort(new Error(`Tool ${first.reason}`));
     acceptingUpdates = false;
-    const grace = await Promise.race([
-      operation.settled,
-      wait(this.context.policy.settlementGraceMs).then(() => ({
-        type: "grace" as const,
-      })),
-    ]);
-    this.clear(timeout, parentSignal, onParentAbort);
+    const grace = await Promise.race([operation.settled, forcedFinalization]);
+    this.clear(timeout, graceTimeout, parentSignal, onParentAbort);
     await operation.startedJournal;
     const evidence = await this.record(
       tool,
@@ -338,10 +350,12 @@ export class ToolDeadlineManager {
 
   private clear(
     timeout: ReturnType<typeof setTimeout> | undefined,
+    graceTimeout: ReturnType<typeof setTimeout> | undefined,
     parentSignal: AbortSignal | undefined,
     onParentAbort: () => void,
   ): void {
     if (timeout) clearTimeout(timeout);
+    if (graceTimeout) clearTimeout(graceTimeout);
     parentSignal?.removeEventListener("abort", onParentAbort);
   }
 }
@@ -422,13 +436,6 @@ function unwrap(
 ): AgentToolResult<unknown> {
   if (value.type === "error") throw value.error;
   return value.result;
-}
-
-function wait(milliseconds: number): Promise<void> {
-  return new Promise((resolve) => {
-    const timer = setTimeout(resolve, milliseconds);
-    timer.unref?.();
-  });
 }
 
 async function emit(

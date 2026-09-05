@@ -15,7 +15,7 @@ import {
 import { recommendedCapabilityUpdate } from "./default-agent-capability-contract.js";
 import { createId, nowIso } from "./ids.js";
 import { createRunConfigurationFingerprint } from "./run-config.js";
-import { appendRegisteredEventsToThread } from "./run-event-writer.js";
+import { appendWorkspaceSeedEventsToThread } from "./run-event-writer.js";
 
 export interface WorkspaceSeed {
   agent: AgentProfile;
@@ -59,7 +59,7 @@ export function createWorkspaceSeed(): WorkspaceSeed {
     runIds: [runId],
   };
   const events: RunEvent[] = [
-    ...appendRegisteredEventsToThread(
+    ...appendWorkspaceSeedEventsToThread(
       thread,
       [
         {
@@ -73,7 +73,7 @@ export function createWorkspaceSeed(): WorkspaceSeed {
       ],
       { createdAt: timestamp },
     ),
-    ...appendRegisteredEventsToThread(thread, [
+    ...appendWorkspaceSeedEventsToThread(thread, [
       {
         threadId,
         runId,

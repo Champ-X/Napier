@@ -5,7 +5,7 @@ import path from "node:path";
 import { PassThrough } from "node:stream";
 
 import { fauxAssistantMessage, fauxProvider, fauxText, fauxToolCall } from "@earendil-works/pi-ai";
-import type { RunEvent, Usage } from "@napier/contracts";
+import type { RunEvent } from "@napier/contracts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AgentRuntime } from "../src/agent-runtime.js";
@@ -16,7 +16,12 @@ import { exportThreadReplayBundle } from "../src/replay.js";
 import type { OsSandboxAdapter, SandboxLaunchRequest } from "../src/sandbox.js";
 import { LocalStore } from "../src/store.js";
 import { verifyThreadReplayBundle } from "../src/thread-bundles.js";
-import { processReadyAgentRuntime as processReadyRuntime, processReadySandbox } from "./process-run-readiness-test-fixture.js";
+import {
+  processReadyAgentRuntime as processReadyRuntime,
+  processReadySandbox,
+} from "./process-run-readiness-test-fixture.js";
+import { hasLedgerEventUsage, ledgerEventUsage } from "./agent-runtime-event-usage-test-support.js";
+
 const temporaryRoots: string[] = [];
 
 function fauxMessageWithUsage(content: string, input: number, output: number, cacheRead = 0, cacheWrite = 0) {
@@ -37,34 +42,6 @@ function fauxMessageWithUsage(content: string, input: number, output: number, ca
       },
     },
   };
-}
-
-function ledgerEventUsage(event: RunEvent): Usage {
-  if (!event.payload || Array.isArray(event.payload) || typeof event.payload !== "object") {
-    throw new Error(`Missing usage payload on ${event.type}`);
-  }
-  const usage = event.payload["usage"];
-  if (!usage || Array.isArray(usage) || typeof usage !== "object") {
-    throw new Error(`Missing usage payload on ${event.type}`);
-  }
-  return {
-    inputTokens: Number(usage["inputTokens"]),
-    outputTokens: Number(usage["outputTokens"]),
-    cacheReadTokens: Number(usage["cacheReadTokens"]),
-    cacheWriteTokens: Number(usage["cacheWriteTokens"]),
-    costUsd: Number(usage["costUsd"]),
-  };
-}
-
-function hasLedgerEventUsage(event: RunEvent): boolean {
-  return Boolean(
-    event.payload &&
-    !Array.isArray(event.payload) &&
-    typeof event.payload === "object" &&
-    event.payload["usage"] &&
-    !Array.isArray(event.payload["usage"]) &&
-    typeof event.payload["usage"] === "object",
-  );
 }
 
 afterEach(async () => {
@@ -432,8 +409,20 @@ describe("AgentRuntime demo path", () => {
       expect.objectContaining({
         toolName: "read_file",
         status: "blocked",
-        inputSha256: expect.stringMatching(/^[a-f0-9]{64}$/u), loopGuardTriggerSha256: trigger?.payload["contentSha256"],
-        toolProtocol: expect.objectContaining({ kind: "napier.tool-ui-projection", schemaVersion: 2, toolId: "read_file", semanticVersion: "2.0.0", definitionSha256: expect.stringMatching(/^[a-f0-9]{64}$/u), implementationSha256: expect.stringMatching(/^[a-f0-9]{64}$/u), status: "blocked", sideEffect: "none", concurrency: "safe", compatibilityMode: "native" }),
+        inputSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        loopGuardTriggerSha256: trigger?.payload["contentSha256"],
+        toolProtocol: expect.objectContaining({
+          kind: "napier.tool-ui-projection",
+          schemaVersion: 2,
+          toolId: "read_file",
+          semanticVersion: "2.0.0",
+          definitionSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+          implementationSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+          status: "blocked",
+          sideEffect: "none",
+          concurrency: "safe",
+          compatibilityMode: "native",
+        }),
       }),
     );
     expect(blocked?.payload).not.toHaveProperty("input");
@@ -1260,7 +1249,8 @@ describe("AgentRuntime demo path", () => {
     expect(run).toEqual(
       expect.objectContaining({
         status: "failed",
-        error: "The model provider call failed. Verify the selected provider and model with Doctor, then retry or choose another configured model.",
+        error:
+          "The model provider call failed. Verify the selected provider and model with Doctor, then retry or choose another configured model.",
       }),
     );
     const events = await store.listEvents(thread.id);
@@ -1276,7 +1266,8 @@ describe("AgentRuntime demo path", () => {
     expect(events.find((event) => event.type === "run.failed")?.payload).toEqual(
       expect.objectContaining({
         status: "failed",
-        message: "The model provider call failed. Verify the selected provider and model with Doctor, then retry or choose another configured model.",
+        message:
+          "The model provider call failed. Verify the selected provider and model with Doctor, then retry or choose another configured model.",
       }),
     );
     expect(JSON.stringify(events)).not.toContain(diagnostic);
@@ -2108,7 +2099,8 @@ describe("AgentRuntime demo path", () => {
 
     expect(originRun.status).toBe("completed");
     expect(faux.state.callCount).toBe(1);
-    expect(store.getThread(thread.id).status).toBe("waiting"); expect(store.getThread(thread.id).title).toBe("Implement the next product slice.");
+    expect(store.getThread(thread.id).status).toBe("waiting");
+    expect(store.getThread(thread.id).title).toBe("Implement the next product slice.");
     const pending = (await store.listOperatorDecisions(thread.id))[0]!;
     expect(pending).toEqual(
       expect.objectContaining({
@@ -2188,27 +2180,14 @@ describe("AgentRuntime demo path", () => {
         expect(context.systemPrompt).toContain("isolated research subagent");
         const toolNames = context.tools?.map((tool) => tool.name) ?? [];
         expect(toolNames).toEqual(
-          expect.arrayContaining([
-            "list_files",
-            "web_search",
-            "web_fetch",
-            "browser",
-            "research_source",
-          ]),
+          expect.arrayContaining(["list_files", "web_search", "web_fetch", "browser", "research_source"]),
         );
-        expect(toolNames).not.toEqual(
-          expect.arrayContaining([
-            "apply_patch",
-            "delegate_task",
-            "web_fetch_save",
-          ]),
-        );
+        expect(toolNames).not.toEqual(expect.arrayContaining(["apply_patch", "delegate_task", "web_fetch_save"]));
         expect(JSON.stringify(context.messages)).toContain("Inspect packages/runtime only");
         expect(JSON.stringify(context.messages)).not.toContain("Coordinate a repository review");
         return fauxAssistantMessage(
           JSON.stringify({
-            summary:
-              "The subagent inherits parent research tools without mutation or delegation authority.",
+            summary: "The subagent inherits parent research tools without mutation or delegation authority.",
             items: [
               {
                 kind: "finding",
@@ -2231,9 +2210,7 @@ describe("AgentRuntime demo path", () => {
         expect(context.systemPrompt).toContain('"description":"Inspect runtime boundaries"');
         expect(context.systemPrompt).toContain('"status":"completed"');
         expect(context.systemPrompt).toContain('"outcomeSha256":"');
-        expect(context.systemPrompt).not.toContain(
-          "inherits parent research tools",
-        );
+        expect(context.systemPrompt).not.toContain("inherits parent research tools");
         return fauxAssistantMessage("Verified: delegated work ran in an isolated, read-only context.");
       },
       fauxAssistantMessage('{"facts":[]}'),
@@ -3740,15 +3717,15 @@ describe("AgentRuntime demo path", () => {
         typeof event.payload === "object" &&
         event.payload["toolName"] === "run_command",
     );
-    expect(commandEvents.map((event) => event.type)).toEqual(["tool.started", "tool.completed"]);
-    expect(commandEvents[0]?.payload).toEqual(
+    expect(commandEvents.map((event) => event.type)).toEqual(["tool.admitted", "tool.started", "tool.completed"]);
+    expect(commandEvents[1]?.payload).toEqual(
       expect.objectContaining({
         effect: "read",
         inputRedacted: true,
         inputSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
-    expect(commandEvents[1]?.payload).toEqual(
+    expect(commandEvents[2]?.payload).toEqual(
       expect.objectContaining({
         outputRedacted: true,
         outputSha256: expect.stringMatching(/^[a-f0-9]{64}$/),

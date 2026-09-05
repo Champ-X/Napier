@@ -34,17 +34,18 @@ afterEach(async () => {
 describe("Agent message checkpoint experiments", () => {
   it("re-executes one historical message in a read-only Branch and compares it", async () => {
     const fixture = await createFixture();
-    const prior = await sourceRun(fixture, "Create prior context.");
-    await fixture.store.appendEvent({
-      threadId: fixture.sourceThreadId,
-      runId: prior.runId,
-      type: "goal.continuation.prompt",
-      category: "goal",
-      visibility: "hidden",
-      payload: {
-        role: "user",
-        text: "PRIVATE_GOAL_CONTINUATION_CONTEXT",
-      },
+    await sourceRun(fixture, "Create prior context.", async (runId) => {
+      await fixture.store.appendEvent({
+        threadId: fixture.sourceThreadId,
+        runId,
+        type: "goal.continuation.prompt",
+        category: "goal",
+        visibility: "hidden",
+        payload: {
+          role: "user",
+          text: "PRIVATE_GOAL_CONTINUATION_CONTEXT",
+        },
+      });
     });
     const source = await sourceRun(fixture, "PRIVATE_SOURCE_MESSAGE");
     let targetTools: string[] = [];
@@ -561,8 +562,18 @@ async function createFixture(): Promise<Fixture> {
 async function sourceRun(
   fixture: Fixture,
   prompt: string,
+  whileActive?: (runId: string) => Promise<void>,
 ): Promise<{ runId: string; messageSeq: number }> {
-  fixture.provider.setResponses([fauxAssistantMessage("source answer")]);
+  fixture.provider.setResponses([
+    async () => {
+      const run = fixture.store
+        .listRuns(fixture.sourceThreadId)
+        .find((candidate) => candidate.status === "running");
+      if (!run) throw new Error("Expected an active source Run");
+      await whileActive?.(run.id);
+      return fauxAssistantMessage("source answer");
+    },
+  ]);
   const run = await fixture.runtime.runPrompt({
     threadId: fixture.sourceThreadId,
     text: prompt,
