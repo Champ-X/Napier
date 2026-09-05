@@ -188,7 +188,13 @@ describe("partial Run recovery HTTP", () => {
     const recovery = fauxProvider({ provider: "faux-partial-recovery" });
     recovery.setResponses([
       (context) => {
-        recoveryPrompt = JSON.stringify(context.messages);
+        recoveryPrompt = context.messages
+          .map((message) =>
+            typeof message.content === "string"
+              ? message.content
+              : JSON.stringify(message.content),
+          )
+          .join("\n");
         return fauxAssistantMessage("Continued from the partial checkpoint.");
       },
       fauxAssistantMessage('{"facts":[]}'),
@@ -212,7 +218,7 @@ describe("partial Run recovery HTTP", () => {
     const frames = parseSseFrames(await response.text());
     expect(recoveryPrompt).toContain("<run-recovery>");
     expect(recoveryPrompt).toContain("<recovery-plan-context>");
-    expect(recoveryPrompt).not.toContain("partial-report.md");
+    expect(recoveryPrompt).toContain('"path":"partial-report.md"');
     const done = frames.at(-1);
     expect(done?.type).toBe("done");
     if (!done || done.type !== "done") throw new Error("Missing done frame");

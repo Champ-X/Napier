@@ -47,8 +47,15 @@ describe("Workspace file recovery HTTP API", () => {
     const services = await createServices({ workspaceRoot, dataRoot });
     openServices.push(services);
     const app = createApp(services);
-    const thread = services.store.listThreads()[0]!;
-    const run = services.store.listRuns(thread.id)[0]!;
+    const agent = services.store.listAgents()[0]!;
+    const thread = await services.store.createThread({
+      title: "Workspace recovery",
+      agentId: agent.id,
+    });
+    const run = await services.store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
     const source = path.join(workspaceRoot, "recover.txt");
     await writeFile(source, "recoverable\n");
     const preview = await services.workspaceFileMutations.preview(
@@ -57,6 +64,7 @@ describe("Workspace file recovery HTTP API", () => {
       { operation: "trash", path: "recover.txt" },
     );
     await services.workspaceFileMutations.apply(thread.id, run.id, preview.id);
+    await services.store.finishRun(run.id, "completed");
 
     const listResponse = await app.request(
       `/api/threads/${thread.id}/workspace-trash`,
@@ -113,6 +121,11 @@ describe("Workspace file recovery HTTP API", () => {
       }),
     );
     expect(await readFile(source, "utf8")).toBe("recoverable\n");
+    expect(
+      (await services.store.listEvents(thread.id)).some(
+        (event) => event.type === "workspace.file.recovered",
+      ),
+    ).toBe(true);
 
     const invalidResponse = await app.request(
       `/api/threads/${thread.id}/workspace-trash/not-valid/restore`,

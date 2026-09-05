@@ -294,6 +294,7 @@ describe("Napier one-shot CLI", () => {
         provider: "auto",
       }),
       expect.any(AbortSignal),
+      expect.objectContaining({ operation: expect.any(Function) }),
     );
     const frames = parseFrames(stdout.text());
     const events = frames.flatMap((frame) =>

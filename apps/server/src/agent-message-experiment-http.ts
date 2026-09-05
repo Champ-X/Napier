@@ -149,6 +149,7 @@ export async function executeAgentMessageExperimentHttp(
       if (!eventWriter) {
         throw new Error("Agent experiment target stream is unavailable");
       }
+      await eventWriter.reconcile(detail.events);
       await eventWriter.finish(detail.thread.eventCount);
       const snapshot = streamSnapshotFrame(detail);
       const resultFrame = createAgentMessageExperimentResultFrame(

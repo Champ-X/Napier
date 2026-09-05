@@ -105,8 +105,12 @@ describe("LSP diagnostics HTTP Agent path", () => {
         typeof event.payload === "object" &&
         event.payload["toolName"] === "lsp_diagnostics",
     );
-    expect(toolEvents).toHaveLength(2);
-    expect(toolEvents[1]?.payload["details"]).toEqual(
+    expect(toolEvents.map((event) => event.type)).toEqual([
+      "tool.admitted",
+      "tool.started",
+      "tool.completed",
+    ]);
+    expect(toolEvents.at(-1)?.payload["details"]).toEqual(
       expect.objectContaining({
         diagnosticCount: 1,
         errorCount: 1,

@@ -2,7 +2,11 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai";
+import {
+  fauxAssistantMessage,
+  fauxProvider,
+  fauxToolCall,
+} from "@earendil-works/pi-ai";
 import type {
   ExecutionPlanWorkflowManifest,
   WorkflowObjectSchema,
@@ -621,34 +625,18 @@ describe("Workflow experiment HTTP path", () => {
   }, 20_000);
 
   it("returns a no-mutation conflict until write-effect evidence is confirmed", async () => {
-    const fixture = await createFixture();
-    const reportRunId = fixture.sourceRunIds[1]!;
-    await fixture.services.store.appendEvent({
-      threadId: fixture.sourceThreadId,
-      runId: reportRunId,
-      type: "tool.started",
-      category: "tool",
-      visibility: "user",
-      payload: {
-        callId: "call_http_write",
-        toolName: "apply_patch",
-        status: "started",
-        effect: "write",
-      },
-    });
-    await fixture.services.store.appendEvent({
-      threadId: fixture.sourceThreadId,
-      runId: reportRunId,
-      type: "tool.completed",
-      category: "tool",
-      visibility: "user",
-      payload: {
-        callId: "call_http_write",
-        toolName: "apply_patch",
-        status: "completed",
-        effect: "write",
-      },
-    });
+    const fixture = await createFixture({ sourceReportWrite: true });
+    expect(
+      (await fixture.services.store.listEvents(fixture.sourceThreadId))
+        .filter((event) => event.runId === fixture.sourceRunIds[1])
+        .filter((event) => event.type.startsWith("tool."))
+        .map((event) => ({ type: event.type, payload: event.payload })),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: "tool.started" }),
+        expect.objectContaining({ type: "tool.completed" }),
+      ]),
+    );
     const app = createApp(fixture.services);
     const endpoint = `/api/threads/${fixture.sourceThreadId}/workflows/${fixture.sourcePlanId}/experiments`;
     const threadCount = fixture.services.store.listThreads().length;
@@ -711,7 +699,9 @@ interface Fixture {
   alternate: ReturnType<typeof fauxProvider>;
 }
 
-async function createFixture(): Promise<Fixture> {
+async function createFixture(
+  options: { sourceReportWrite?: boolean } = {},
+): Promise<Fixture> {
   const root = await mkdtemp(path.join(tmpdir(), "napier-http-experiment-"));
   temporaryRoots.push(root);
   const workspaceRoot = path.join(root, "workspace");
@@ -723,6 +713,12 @@ async function createFixture(): Promise<Fixture> {
   });
   openServices.push(services);
   const blueprintThread = services.store.listThreads()[0]!;
+  if (options.sourceReportWrite) {
+    await services.store.updateAgent(blueprintThread.agentId, {
+      toolPolicy: "workspace",
+      enabledTools: ["apply_patch"],
+    });
+  }
   const blueprintPlan = await services.store.createPlan(blueprintThread.id, {
     objective: "Create an HTTP experiment report.",
     steps: [
@@ -803,6 +799,19 @@ async function createFixture(): Promise<Fixture> {
   });
   primary.setResponses([
     fauxAssistantMessage('{"summary":"HTTP source","count":1}'),
+    ...(options.sourceReportWrite
+      ? [
+          fauxAssistantMessage(
+            fauxToolCall("apply_patch", {
+              operation: "create",
+              path: "source-write-effect.txt",
+              expectedSha256: null,
+              content: "source workflow write evidence\n",
+            }),
+            { stopReason: "toolUse" },
+          ),
+        ]
+      : []),
     fauxAssistantMessage('{"report":"HTTP source","approved":true}'),
   ]);
   const source = await services.workflows.run({

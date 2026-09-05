@@ -149,6 +149,7 @@ export async function executeModelInvocationExperimentHttp(
           "Model invocation experiment target stream is unavailable",
         );
       }
+      await eventWriter.reconcile(detail.events);
       await eventWriter.finish(detail.thread.eventCount);
       const snapshot = streamSnapshotFrame(detail);
       const resultFrame = createModelInvocationExperimentResultFrame(
