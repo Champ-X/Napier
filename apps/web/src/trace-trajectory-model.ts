@@ -8,6 +8,7 @@ import {
   attachTraceTrajectoryEventDurations,
   traceTrajectoryCallKey,
   traceTrajectoryTerminalEvent,
+  traceTrajectoryStartEvent,
 } from "./trace-trajectory-events";
 import {
   createTraceTrajectoryEventIndex,
@@ -110,7 +111,15 @@ export function createTraceTrajectoryModel(
         sourceIndex.callOrdinalByKey.get(traceTrajectoryCallKey(event) ?? ""),
       ),
     ),
-  );
+  ).map((event) => {
+    if (!traceTrajectoryStartEvent(event.event)) return event;
+    const terminal = sourceIndex.callPairs.terminalByCall.get(
+      traceTrajectoryCallKey(event.event) ?? "",
+    );
+    return terminal && terminal.seq > event.event.seq
+      ? { ...event, status: segmentStatus(terminal) }
+      : event;
+  });
   const startedAtMs = sourceIndex.startedAtMs;
   const endedAtMs = sourceIndex.endedAtMs;
   const durationMs = Math.max(1, endedAtMs - startedAtMs);
@@ -205,6 +214,15 @@ export function traceTrajectoryMatches(
 ): boolean {
   const normalized = query.trim().toLocaleLowerCase();
   if (!normalized) return true;
+  const payload = record(event.event.payload);
+  const displayKeys = [
+    ...(payload?.["displaySchemaVersion"] === 1
+      ? ["displayInput", "displayOutput", "displayError"]
+      : []),
+    ...(payload?.["localDisplaySchemaVersion"] === 1
+      ? ["localDisplayText", "localDisplayThinking"]
+      : []),
+  ];
   return [
     event.event.type,
     event.event.category,
@@ -213,6 +231,9 @@ export function traceTrajectoryMatches(
     event.role,
     event.event.runId,
     String(event.event.seq),
+    ...displayKeys.flatMap((key) =>
+      typeof payload?.[key] === "string" ? [payload[key]] : [],
+    ),
   ].some((value) => value.toLocaleLowerCase().includes(normalized));
 }
 

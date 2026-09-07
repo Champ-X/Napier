@@ -50,9 +50,16 @@ export function TraceTrajectoryOverview({
     <section className="trace-overview" aria-label={copy.timelineMap}>
       <div className="trace-overview-axis" aria-hidden="true">
         <span>{copy.timelineMap}</span>
-        {axisLabels(model, metric).map((label, index) => (
-          <small key={`${label}:${String(index)}`}>{label}</small>
-        ))}
+        <div className="trace-axis-ticks">
+          {axisLabels(model, metric).map((label, index) => (
+            <small
+              key={`${label}:${String(index)}`}
+              style={{ left: `${index * 25}%` }}
+            >
+              {label}
+            </small>
+          ))}
+        </div>
       </div>
       <TraceTimeline
         model={model}
@@ -109,9 +116,10 @@ function TraceTimeline({
     );
   };
   const startDrag = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
     if (
       event.target instanceof Element &&
-      event.target.closest(".trace-segment")
+      event.target.closest(".trace-segment, .trace-lane-label")
     ) {
       return;
     }
@@ -148,6 +156,10 @@ function TraceTimeline({
   };
   const moveRange = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.target !== event.currentTarget) return;
+    if (event.key === "Escape") {
+      onRange(undefined);
+      return;
+    }
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
     event.preventDefault();
     const delta = event.key === "ArrowLeft" ? -0.02 : 0.02;
@@ -187,6 +199,10 @@ function TraceTimeline({
         originRef.current = undefined;
       }}
       onKeyDown={moveRange}
+      onContextMenu={(event) => {
+        event.preventDefault();
+        onRange(undefined);
+      }}
     >
       {TRACE_TRAJECTORY_LANES.map((lane) => (
         <TrajectoryLane
@@ -288,12 +304,21 @@ function TrajectoryLane({
       <div
         className="trace-lane-track"
         ref={lane.id === "input" ? overviewTrackRef : undefined}
+        style={{ height: Math.max(24, 10 + Math.min(layout.rowCount, 4) * 8) }}
       >
         {layout.items.map(({ segment, left, width, row }) => {
           const concurrency =
             layout.rowCount > 1
               ? ` · ${copy.track} ${formatNumber(row + 1)}/${formatNumber(layout.rowCount)}`
               : "";
+          const timing =
+            segment.endMs > segment.startMs
+              ? ` · ${formatTraceDuration(segment.endMs - segment.startMs)}`
+              : "";
+          const location =
+            segment.turnIndex > 0
+              ? ` · ${copy.turn} ${segment.turnIndex}`
+              : ` · ${copy.setup}`;
           return (
             <button
               type="button"
@@ -304,11 +329,11 @@ function TrajectoryLane({
               )}
               style={{
                 left: `${String(left)}%`,
-                top: `${String(4 + (row % 2) * 5)}px`,
+                top: `${String(5 + (row % 4) * 8)}px`,
                 width: `${String(width)}%`,
               }}
-              title={`${segment.label} · ${copy.statuses[segment.status]}${concurrency}`}
-              aria-label={`${segment.label}, ${copy.statuses[segment.status]}${concurrency}`}
+              title={`${segment.label} · ${copy.statuses[segment.status]}${timing}${location}${concurrency}`}
+              aria-label={`${segment.label}, ${copy.statuses[segment.status]}${timing}${location}${concurrency}`}
               key={segment.id}
               onClick={() => onSelect(segment.eventId, segment.label)}
             >

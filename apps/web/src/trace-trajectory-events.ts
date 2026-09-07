@@ -3,15 +3,20 @@ import type { RunEvent } from "@napier/contracts";
 interface TraceEventProjection {
   event: RunEvent;
   durationMs?: number;
+  status?: string;
 }
 
 export function traceTrajectoryIsKeyEvent(
   event: TraceEventProjection,
 ): boolean {
   const type = event.event.type;
+  if (event.status === "failed") return true;
   if (type === "message.user" || type === "message.assistant") return true;
   if (type === "model.response") return true;
-  if (type.startsWith("route_")) return true;
+  if (type.startsWith("route_")) {
+    return keyRouteEvent(event);
+  }
+  if (type === "tool.started" && event.status === "active") return true;
   if (
     type === "tool.completed" ||
     type === "tool.failed" ||
@@ -36,6 +41,16 @@ export function traceTrajectoryIsKeyEvent(
     type.startsWith("subagent.") ||
     type.startsWith("operator.decision.") ||
     type.startsWith("goal.")
+  );
+}
+
+function keyRouteEvent(event: TraceEventProjection): boolean {
+  if (event.status === "active") return true;
+  const payload = record(event.event.payload);
+  return (
+    (event.event.type === "route_attempt_ended" &&
+      payload?.["outcome"] === "terminal") ||
+    Boolean(payload?.["failureClass"] || payload?.["fallbackReason"])
   );
 }
 

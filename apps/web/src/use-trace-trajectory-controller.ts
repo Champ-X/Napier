@@ -23,6 +23,7 @@ export function useTraceTrajectoryController(model: TraceTrajectoryModel) {
   );
   const [query, setQuery] = useState("");
   const [selectedEventId, setSelectedEventId] = useState<string>();
+  const revealSelectionRef = useRef(false);
   const [range, setRangeState] = useState<TraceTrajectoryRange>();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const overviewTrackRef = useRef<HTMLDivElement>(null);
@@ -51,10 +52,11 @@ export function useTraceTrajectoryController(model: TraceTrajectoryModel) {
     : undefined;
 
   useOverviewTrackWidth(overviewTrackRef, setOverviewTrackWidth);
-  useSelectedEventScroll(selectedEventId, visibleEventIds);
+  useSelectedEventScroll(selectedEventId, visibleEventIds, revealSelectionRef);
   useTrajectorySearchShortcut(searchInputRef);
 
   function selectOverviewEvent(eventId: string, segmentLabel: string): void {
+    revealSelectionRef.current = true;
     const event = model.index.byId.get(eventId);
     if (event && !traceTrajectoryIsKeyEvent(event)) setViewMode("all");
     if (event && !activeLanes.includes(event.lane)) {
@@ -72,6 +74,13 @@ export function useTraceTrajectoryController(model: TraceTrajectoryModel) {
       setQuery("");
     }
     setSelectedEventId(eventId);
+  }
+
+  function selectLedgerEvent(
+    next: React.SetStateAction<string | undefined>,
+  ): void {
+    revealSelectionRef.current = false;
+    setSelectedEventId(next);
   }
 
   function setRange(next: TraceTrajectoryRange | undefined): void {
@@ -115,7 +124,7 @@ export function useTraceTrajectoryController(model: TraceTrajectoryModel) {
     query,
     setQuery,
     selectedEventId,
-    setSelectedEventId,
+    setSelectedEventId: selectLedgerEvent,
     selectedEvent,
     searchInputRef,
     overviewTrackRef,
@@ -150,17 +159,25 @@ function useOverviewTrackWidth(
 function useSelectedEventScroll(
   selectedEventId: string | undefined,
   visibleEventIds: Set<string>,
+  revealSelectionRef: React.RefObject<boolean>,
 ): void {
   useEffect(() => {
-    if (!selectedEventId) return;
-    const node = document.getElementById(`trace-event-${selectedEventId}`);
-    if (!node) return;
-    // Honor reduced-motion: never drive a JS smooth scroll (design §9.4).
-    node.scrollIntoView({
-      block: "nearest",
-      behavior: motionScrollBehavior(),
+    if (!selectedEventId || !revealSelectionRef.current) return;
+    revealSelectionRef.current = false;
+    // Only timeline/related-event navigation reveals a row. Clicking an already
+    // visible row keeps the page still, including when the inspector stacks.
+    const frame = requestAnimationFrame(() => {
+      const node = document.getElementById(`trace-event-${selectedEventId}`);
+      if (!node) return;
+      const bounds = node.getBoundingClientRect();
+      if (bounds.top >= 0 && bounds.bottom <= window.innerHeight) return;
+      node.scrollIntoView({
+        block: "nearest",
+        behavior: motionScrollBehavior(),
+      });
     });
-  }, [selectedEventId, visibleEventIds]);
+    return () => cancelAnimationFrame(frame);
+  }, [selectedEventId, visibleEventIds, revealSelectionRef]);
 }
 
 function useTrajectorySearchShortcut(

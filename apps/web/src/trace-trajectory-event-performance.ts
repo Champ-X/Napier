@@ -61,6 +61,9 @@ export function traceTrajectoryRequestMetrics(
   );
   const duration = requestDurationMs(request) ?? event.durationMs;
   return [
+    metric("inputTokens", values.get("inputTokens")),
+    metric("outputTokens", values.get("outputTokens")),
+    metric("cacheReadTokens", values.get("cacheReadTokens")),
     metric("totalTokens", values.get("totalTokens")),
     metric("reasoningBytes", values.get("reasoningBytes")),
     metric("contentBytes", values.get("contentBytes")),

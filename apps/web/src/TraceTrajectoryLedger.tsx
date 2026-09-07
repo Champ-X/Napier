@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronRight, Layers } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronDown,
+  ChevronRight,
+  Layers,
+} from "lucide-react";
 
 import type {
   TraceTrajectoryEvent,
@@ -8,7 +14,8 @@ import type {
 } from "./trace-trajectory-model";
 import { getLocale } from "./locale";
 import { traceTrajectoryCopy } from "./trace-trajectory-copy";
-import { traceTrajectoryReadableSummary } from "./trace-trajectory-presentation";
+import { traceTrajectoryRowPresentation } from "./trace-trajectory-presentation";
+import { traceTrajectoryUsage } from "./trace-trajectory-insights";
 import {
   buildTraceRunSemanticCollection,
   type TraceSemanticFoldRow,
@@ -26,6 +33,7 @@ export interface TraceTrajectoryRunSectionProps {
   visibleEventIds: Set<string>;
   forceOpen: boolean;
   latest: boolean;
+  foldEvents?: boolean;
   onSelect: (eventId: string) => void;
 }
 
@@ -35,6 +43,7 @@ export function TraceTrajectoryRunSection({
   visibleEventIds,
   forceOpen,
   latest,
+  foldEvents = true,
   onSelect,
 }: TraceTrajectoryRunSectionProps) {
   const [collapsed, setCollapsed] = useState(
@@ -53,9 +62,20 @@ export function TraceTrajectoryRunSection({
     [run.turns, visibleEventIds],
   );
   const collection = useMemo(
-    () => buildTraceRunSemanticCollection(matchingTurns, { selectedEventId }),
-    [matchingTurns, selectedEventId],
+    () =>
+      buildTraceRunSemanticCollection(matchingTurns, {
+        selectedEventId,
+        ...(foldEvents ? {} : { minFoldRun: Number.MAX_SAFE_INTEGER }),
+      }),
+    [matchingTurns, selectedEventId, foldEvents],
   );
+  useEffect(() => {
+    if (
+      selectedEventId &&
+      run.events.some((event) => event.event.id === selectedEventId)
+    )
+      setCollapsed(false);
+  }, [run.events, selectedEventId]);
   const open = forceOpen ? true : !collapsed;
   if (matchingTurns.length === 0) return null;
   return (
@@ -289,7 +309,11 @@ function TraceTrajectoryEventRow({
   selected: boolean;
   onSelect: (eventId: string) => void;
 }) {
-  const readableSummary = traceTrajectoryReadableSummary(event);
+  const content = traceTrajectoryRowPresentation(event);
+  const usage =
+    event.event.type === "model.response"
+      ? traceTrajectoryUsage(event.event.payload)
+      : undefined;
   return (
     <div
       id={`trace-event-${event.event.id}`}
@@ -309,16 +333,22 @@ function TraceTrajectoryEventRow({
         aria-expanded={selected}
         onClick={() => onSelect(event.event.id)}
       >
+        <span className="trace-event-sequence" title={event.event.type}>
+          {String(event.event.seq).padStart(3, "0")}
+        </span>
         <span className="trace-event-identity">
           <span className="trace-event-role">{event.role}</span>
-          <span className="trace-event-sequence">
-            #{String(event.event.seq).padStart(3, "0")}
-          </span>
+          {event.callOrdinal !== undefined ? (
+            <small>C{event.callOrdinal}</small>
+          ) : null}
         </span>
         <span className="trace-event-copy">
-          <strong>{readableSummary}</strong>
-          {readableSummary !== event.label ? (
-            <small>{event.label}</small>
+          <strong title={content.summary}>
+            {content.subject ? <b>{content.subject}</b> : null}
+            {content.summary}
+          </strong>
+          {content.detail !== content.summary ? (
+            <small title={content.detail}>{content.detail}</small>
           ) : null}
         </span>
         <span className="trace-event-meta">
@@ -328,9 +358,28 @@ function TraceTrajectoryEventRow({
           {event.durationMs !== undefined ? (
             <strong>{formatTraceDuration(event.durationMs)}</strong>
           ) : null}
-          <time dateTime={event.event.createdAt}>
-            {formatTimestamp(event.event.createdAt)}
-          </time>
+          {usage &&
+          (usage.inputTokens !== undefined ||
+            usage.outputTokens !== undefined) ? (
+            <span className="trace-event-tokens">
+              {usage.inputTokens !== undefined ? (
+                <span title={traceTrajectoryCopy.detail.fields.inputTokens}>
+                  <ArrowUp size={11} aria-hidden="true" />
+                  {formatNumber(usage.inputTokens)}
+                </span>
+              ) : null}
+              {usage.outputTokens !== undefined ? (
+                <span title={traceTrajectoryCopy.detail.fields.outputTokens}>
+                  <ArrowDown size={11} aria-hidden="true" />
+                  {formatNumber(usage.outputTokens)}
+                </span>
+              ) : null}
+            </span>
+          ) : (
+            <time dateTime={event.event.createdAt}>
+              {formatTimestamp(event.event.createdAt)}
+            </time>
+          )}
           <ChevronRight size={13} aria-hidden="true" />
         </span>
       </button>

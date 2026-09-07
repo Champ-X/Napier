@@ -5,9 +5,9 @@ import type {
 
 export const TRACE_VIRTUAL_OVERSCAN_PX = 120;
 export const TRACE_VIRTUAL_VIEWPORT_PX = 560;
-const TURN_HEADER_HEIGHT_PX = 28;
-export const TRACE_EVENT_ROW_HEIGHT_PX = 48;
-export const TRACE_COMPACT_EVENT_ROW_HEIGHT_PX = 52;
+const TURN_HEADER_HEIGHT_PX = 32;
+export const TRACE_EVENT_ROW_HEIGHT_PX = 64;
+export const TRACE_COMPACT_EVENT_ROW_HEIGHT_PX = 72;
 const FOLD_ROW_HEIGHT_PX = 36;
 
 export type TraceVirtualItem = TraceVirtualTurnItem | TraceVirtualRowItem;

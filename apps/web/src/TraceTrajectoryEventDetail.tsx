@@ -10,6 +10,7 @@ import { ArrowRight, ShieldAlert, X } from "lucide-react";
 
 import type { TraceTrajectoryEvent } from "./trace-trajectory-model";
 import { traceTrajectoryCopy } from "./trace-trajectory-copy";
+import { TraceTrajectoryPreview } from "./TraceTrajectoryPreview";
 import { traceTrajectoryEventDetailView } from "./trace-trajectory-event-detail-view";
 import {
   traceTrajectoryEventHighlights,
@@ -178,13 +179,32 @@ export function TraceTrajectoryEventDetail({
         ) : null}
         {tab === "summary" ? (
           <div className="trace-event-detail-summary">
-            <p className="trace-event-detail-narrative">{readableSummary}</p>
+            {preview.some((section) => section.id !== "summary") ? (
+              <TraceTrajectoryPreview
+                key={event.event.id}
+                sections={preview}
+                compact
+              />
+            ) : (
+              <p className="trace-event-detail-narrative">{readableSummary}</p>
+            )}
             {detail.metrics.length > 0 ? (
-              <MetricStrip fields={detail.metrics} />
+              <MetricStrip
+                fields={[
+                  ...detail.metrics.filter(
+                    (field) =>
+                      !["reasoningBytes", "contentBytes"].includes(field.key),
+                  ),
+                  ...detail.timing.filter((field) =>
+                    ["ttft", "throughput"].includes(field.key),
+                  ),
+                ]}
+              />
             ) : null}
-            <DetailSection title={copy.eventFields}>
+            <details className="trace-detail-disclosure">
+              <summary>{copy.eventFields}</summary>
               <DetailGrid fields={highlights} />
-            </DetailSection>
+            </details>
             <div className="trace-event-detail-keypath">
               <header>
                 <strong>{copy.keyPath}</strong>
@@ -202,7 +222,7 @@ export function TraceTrajectoryEventDetail({
         ) : null}
         {tab === "preview" ? (
           preview.length > 0 ? (
-            <PreviewPanel sections={preview} />
+            <TraceTrajectoryPreview key={event.event.id} sections={preview} />
           ) : (
             <p className="trace-event-detail-empty">{copy.previewEmpty}</p>
           )
@@ -227,33 +247,6 @@ export function TraceTrajectoryEventDetail({
         {tab === "raw" ? <RawEventPanel event={event} /> : null}
       </div>
     </section>
-  );
-}
-
-function PreviewPanel({
-  sections,
-}: {
-  sections: ReturnType<typeof traceTrajectoryEventPreview>;
-}) {
-  const copy = traceTrajectoryCopy.detail;
-  return (
-    <div className="trace-event-preview">
-      {sections.map((section) => (
-        <section key={section.id}>
-          <header>
-            <h4>{section.label}</h4>
-            {section.localOnly ? <span>{copy.localOnly}</span> : null}
-          </header>
-          {section.code ? (
-            <pre>
-              <code>{section.value}</code>
-            </pre>
-          ) : (
-            <p>{section.value}</p>
-          )}
-        </section>
-      ))}
-    </div>
   );
 }
 
@@ -338,7 +331,11 @@ function MetricStrip({
       {fields.map((item) => (
         <div key={item.key}>
           <dt>{fieldLabel(item.key)}</dt>
-          <dd>{item.value}</dd>
+          <dd>
+            {/^\d+$/u.test(item.value)
+              ? new Intl.NumberFormat().format(Number(item.value))
+              : item.value}
+          </dd>
         </div>
       ))}
     </dl>

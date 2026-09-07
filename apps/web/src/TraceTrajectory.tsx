@@ -13,9 +13,9 @@ import { traceTrajectoryCopy } from "./trace-trajectory-copy";
 import type { TraceTrajectoryModel } from "./trace-trajectory-model";
 import { TraceTrajectoryControls } from "./TraceTrajectoryControls";
 import { TraceTrajectoryEventDetail } from "./TraceTrajectoryEventDetail";
-import { formatTraceDuration } from "./TraceTrajectoryLedger";
 import { TraceTrajectoryOverview } from "./TraceTrajectoryOverview";
 import { TraceTrajectoryRunIndex } from "./TraceTrajectoryRunIndex";
+import { TraceTrajectorySummary } from "./TraceTrajectorySummary";
 import { useTraceTrajectoryController } from "./use-trace-trajectory-controller";
 import { useTraceTrajectoryModel } from "./use-trace-trajectory-model";
 import "./trace-trajectory.css";
@@ -107,34 +107,7 @@ function ProjectedTrajectory({
   if (state.model.events.length === 0) return <EmptyTrajectory />;
   return (
     <section className="trace-trajectory" aria-labelledby="trajectory-title">
-      <div className="trace-trajectory-summary-strip">
-        <span className={`trace-trajectory-state ${running ? "is-live" : ""}`}>
-          <i aria-hidden="true" />
-          {running ? copy.trace.plotting : copy.trace.recorded}
-        </span>
-        <h3 id="trajectory-title">{copy.trace.title}</h3>
-        <dl
-          className="trace-trajectory-stats"
-          aria-label={traceTrajectoryCopy.metricSummary}
-        >
-          <Stat
-            label={copy.trace.elapsed}
-            value={formatTraceDuration(state.model.durationMs)}
-          />
-          <Stat
-            label={copy.trace.turns}
-            value={formatNumber(state.model.turnCount)}
-          />
-          <Stat
-            label={copy.trace.calls}
-            value={formatNumber(state.model.callCount)}
-          />
-          <Stat
-            label={copy.trace.keyActions}
-            value={formatNumber(state.keyEventCount)}
-          />
-        </dl>
-      </div>
+      <TraceTrajectorySummary model={state.model} running={running} />
       <TraceTrajectoryControls
         events={state.model.events}
         activeLanes={state.activeLanes}
@@ -185,7 +158,9 @@ function ProjectedTrajectory({
                     <TraceTrajectoryEventDetail
                       event={state.selectedEvent}
                       events={state.model.events}
-                      onSelectEvent={state.setSelectedEventId}
+                      onSelectEvent={(eventId) =>
+                        state.selectOverviewEvent(eventId, "")
+                      }
                       embedded
                     />
                   ),
@@ -232,15 +207,6 @@ function EmptyTrajectory() {
         <p>{copy.trace.empty}</p>
       </div>
     </section>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt>{label}</dt>
-      <dd>{value}</dd>
-    </div>
   );
 }
 

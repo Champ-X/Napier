@@ -38,6 +38,27 @@ export interface TraceTrajectoryPreviewSection {
   localOnly?: boolean;
 }
 
+export function traceTrajectoryRowPresentation(event: TraceTrajectoryEvent) {
+  const payload = record(event.event.payload);
+  const summary = traceTrajectoryReadableSummary(event);
+  const tool = event.event.type.startsWith("tool.")
+    ? text(payload?.["toolName"])
+    : undefined;
+  const input = tool ? text(payload?.["displayInput"]) : undefined;
+  const output = tool
+    ? (text(payload?.["displayError"]) ?? text(payload?.["displayOutput"]))
+    : undefined;
+  const model =
+    event.event.type === "model.response"
+      ? text(payload?.["model"])
+      : undefined;
+  return {
+    subject: tool,
+    summary: input ? displaySummary(input, 280) : summary,
+    detail: output ? displaySummary(output, 280) : (model ?? event.label),
+  };
+}
+
 /** A compact operator-facing sentence, with hashes kept as a fallback only. */
 export function traceTrajectoryReadableSummary(
   event: TraceTrajectoryEvent,
@@ -212,9 +233,16 @@ function displaySummary(value: string, maximum: number): string {
         "action",
         "target",
         "title",
+        "queries",
+        "urls",
+        "paths",
       ];
       const facts = preferred.flatMap((key) => {
-        const candidate = parsedRecord[key];
+        const candidate = Array.isArray(parsedRecord[key])
+          ? (parsedRecord[key] as unknown[])
+              .filter((part) => typeof part === "string")
+              .join(", ")
+          : parsedRecord[key];
         if (
           typeof candidate !== "string" &&
           typeof candidate !== "number" &&
@@ -222,7 +250,7 @@ function displaySummary(value: string, maximum: number): string {
         ) {
           return [];
         }
-        return [`${humanizeKey(key)}: ${String(candidate)}`];
+        return [String(candidate)];
       });
       if (facts.length > 0)
         return oneLine(facts.slice(0, 3).join(" · "), maximum);
@@ -230,7 +258,18 @@ function displaySummary(value: string, maximum: number): string {
   } catch {
     // Plain text tool output is the normal case.
   }
-  return oneLine(value, maximum);
+  const lines = value.split(/\r?\n/u);
+  const readable = lines.filter((line) => {
+    const trimmed = line.trim();
+    return (
+      trimmed &&
+      !/^(?:Web Source|Content SHA-?256|SHA-?256|LIVE WEB SEARCH|Source:|Search snippets are untrusted|Retrieved at:)/iu.test(
+        trimmed,
+      ) &&
+      !/^[a-f0-9]{32,}$/iu.test(trimmed)
+    );
+  });
+  return oneLine(readable.join(" · ") || value, maximum);
 }
 
 function toolCallNames(value: unknown): string[] {
@@ -264,13 +303,6 @@ function oneLine(value: string, maximum: number): string {
   return normalized.length <= maximum
     ? normalized
     : `${normalized.slice(0, Math.max(1, maximum - 1)).trimEnd()}…`;
-}
-
-function humanizeKey(value: string): string {
-  return value
-    .replace(/([a-z0-9])([A-Z])/gu, "$1 $2")
-    .replaceAll("_", " ")
-    .replace(/^./u, (character) => character.toLocaleUpperCase());
 }
 
 function text(value: unknown): string | undefined {

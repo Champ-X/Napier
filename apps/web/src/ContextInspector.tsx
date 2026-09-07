@@ -55,9 +55,9 @@ export function ContextInspector({
           ? null
           : (document.activeElement as HTMLElement | null);
       openerRef.current = active;
-      regionRef.current?.focus();
+      regionRef.current?.focus({ preventScroll: true });
     } else if (!open && wasOpenRef.current) {
-      openerRef.current?.focus();
+      openerRef.current?.focus({ preventScroll: true });
       openerRef.current = null;
     }
     wasOpenRef.current = open;

@@ -149,6 +149,69 @@ describe("trajectory Chinese copy", () => {
     );
   });
 
+  it("makes every event inspectable when the all-events view is requested", async () => {
+    const container = installChineseDom();
+    const { TraceTrajectoryRunSection } =
+      await import("../src/TraceTrajectoryLedger");
+    const events = [
+      trajectoryEvent(),
+      lowValueEvent(2),
+      lowValueEvent(3),
+      lowValueEvent(4),
+    ];
+    render(
+      <TraceTrajectoryRunSection
+        run={{
+          id: "run_all",
+          ordinal: 1,
+          status: "completed",
+          durationMs: 1000,
+          events,
+          turns: [{ index: 1, label: "Turn 1", events }],
+        }}
+        selectedEventId={undefined}
+        visibleEventIds={new Set(events.map((item) => item.event.id))}
+        forceOpen
+        latest
+        foldEvents={false}
+        onSelect={vi.fn()}
+      />,
+      container,
+    );
+    expect(container.querySelector(".trace-fold-row")).toBeNull();
+    expect(container.querySelectorAll('[role="listitem"]')).toHaveLength(4);
+  });
+
+  it("shows tool inputs and outputs in the summary without opening another tab", async () => {
+    const container = installChineseDom();
+    const { TraceTrajectoryEventDetail } =
+      await import("../src/TraceTrajectoryEventDetail");
+    const event = trajectoryEvent();
+    event.event.type = "tool.completed";
+    event.event.payload = {
+      toolName: "run_command",
+      displaySchemaVersion: 1,
+      displayInput: '{"command":"npm test"}',
+      displayOutput: "42 checks passed",
+      privateOutput: "HIDDEN_VALUE",
+    };
+    render(<TraceTrajectoryEventDetail event={event} />, container);
+    expect(
+      container.querySelector('[role="tab"][aria-selected="true"]')
+        ?.textContent,
+    ).toBe("摘要");
+    expect(
+      container.querySelector(".trace-preview-input")?.textContent,
+    ).toContain("npm test");
+    expect(
+      container.querySelector(".trace-preview-output")?.textContent,
+    ).toContain("42 checks passed");
+    expect(container.textContent).not.toContain("HIDDEN_VALUE");
+    expect(
+      container.querySelector('[aria-label="复制内容 · 输出"]'),
+    ).not.toBeNull();
+  });
+
   it("renders the compact event inspector with bounded source evidence", async () => {
     const container = installChineseDom();
     const { TraceTrajectoryEventDetail } =

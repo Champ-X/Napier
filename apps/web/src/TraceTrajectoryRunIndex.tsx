@@ -33,16 +33,27 @@ export function TraceTrajectoryRunIndex({
   return (
     <div className="trace-run-index">
       <header className="trace-ledger-columns">
+        <span>#</span>
         <span>{copy.audit.role}</span>
-        <strong>
+        <strong
+          title={
+            viewMode === "key" ? copy.insights.keyHint : copy.everyRecordedEvent
+          }
+        >
           {viewMode === "key" ? copy.whatAgentDid : copy.everyRecordedEvent}
         </strong>
+        <span>{copy.insights.performance}</span>
+      </header>
+      <div className="trace-ledger-caption">
+        <span>
+          {viewMode === "key" ? copy.insights.keyHint : copy.everyRecordedEvent}
+        </span>
         <output aria-live="polite">
           {query
             ? `${formatNumber(visibleCount)} ${copy.matches}`
             : `${formatNumber(visibleCount)} / ${formatNumber(model.eventCount)} ${copy.filtered}`}
         </output>
-      </header>
+      </div>
       {visibleRuns.map((run, index) => (
         <TraceTrajectoryRunSection
           key={run.id}
@@ -51,6 +62,7 @@ export function TraceTrajectoryRunIndex({
           visibleEventIds={visibleEventIds}
           forceOpen={Boolean(query)}
           latest={index === visibleRuns.length - 1}
+          foldEvents={viewMode !== "all"}
           onSelect={onSelect}
         />
       ))}
