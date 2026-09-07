@@ -48,7 +48,10 @@ import { createSqliteQueryTool } from "./sqlite-query-tool.js";
 import type { LocalStore } from "./store.js";
 import { createWorkspaceTools } from "./tools.js";
 import { createTypescriptAstTools } from "./typescript-ast-tool.js";
-import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
+import {
+  assertWorkspaceOutputReplacement,
+  type WorkspaceFileMutationManager,
+} from "./workspace-file-mutations.js";
 import {
   createWorkspaceFileApplyTool,
   createWorkspaceFilePreviewTool,
@@ -153,6 +156,13 @@ export function createStatelessAgentTools(
     includeWriteTools: processAllowed,
     dataRoot: options.store.dataRoot,
     beforeWorkspaceWrite: options.beforeWorkspaceWrite,
+    authorizePatch: (path, beforeSha256) =>
+      assertWorkspaceOutputReplacement(
+        options.store,
+        options.threadId,
+        path,
+        beforeSha256,
+      ),
     ...(patchObserver ? { patchObserver } : {}),
   }).filter((tool) => profile.enabledTools.includes(tool.name));
   appendDataTools(tools, profile, options.store.workspaceRoot);

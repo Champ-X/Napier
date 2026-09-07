@@ -29,6 +29,7 @@ describe("WorkspaceFileInspector", () => {
       sizeBytes: 30,
       sha256: "a".repeat(64),
       text: "<main>Workspace preview</main>",
+      previewUrl: "/api/workspace/preview/site/slides.html",
     }));
 
     await act(async () => {
@@ -49,6 +50,15 @@ describe("WorkspaceFileInspector", () => {
     expect(elements(container, "iframe")[0]?.getAttribute("sandbox")).toBe(
       "allow-scripts",
     );
+    expect(elements(container, "iframe")[0]?.getAttribute("src")).toBe(
+      "/api/workspace/preview/site/slides.html",
+    );
+    expect(elements(container, "iframe")[0]?.getAttribute("srcdoc")).toBeNull();
+    const external = elements(container, "a")[0];
+    expect(external?.getAttribute("href")).toBe(
+      "/api/workspace/preview/site/slides.html",
+    );
+    expect(external?.getAttribute("rel")).toBe("noopener noreferrer");
     await act(async () => button(container, "Raw source").click());
     expect(elements(container, "iframe")).toHaveLength(0);
     expect(container.textContent).toContain("Workspace preview");

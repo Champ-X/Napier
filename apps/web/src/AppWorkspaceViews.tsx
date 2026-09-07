@@ -120,9 +120,7 @@ export function AppWorkspaceViews({
         return;
       }
       setArtifactInspection(undefined);
-      setWorkspaceFilePath(
-        absoluteWorkspacePath(bootstrap.workspace.root, path),
-      );
+      setWorkspaceFilePath(path);
     },
     [bootstrap.workspace.root, vm.detail],
   );
@@ -326,6 +324,7 @@ function AppWorkspaceEvidenceSurfaces({
       {workspaceFilePath ? (
         <WorkspaceFileInspector
           path={workspaceFilePath}
+          {...(vm.detail ? { threadId: vm.detail.thread.id } : {})}
           onClose={onCloseWorkspaceFile}
         />
       ) : null}

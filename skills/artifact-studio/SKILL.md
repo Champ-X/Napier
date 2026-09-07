@@ -12,6 +12,12 @@ Treat the artifact as the product, not as an attachment to a chat response.
    optional polish.
 2. For substantial delivery work, create one durable Plan with concrete steps
    and declare every required file or directory artifact before writing it.
+   Put new standalone deliverables in a new subdirectory of the Thread output
+   directory given by the runtime (`outputs/<threadId>/`). Keep HTML, scripts,
+   styles, assets, and verification evidence together. Never overwrite another
+   task's `index.html`, report, or screenshots. To adapt an earlier deliverable,
+   copy it into this Thread's output directory first. Normal edits to existing
+   project source remain at the project's paths.
 3. Build the information hierarchy first. Keep facts, interpretation, decisions,
    and unresolved questions distinct; include provenance for external claims.
 4. Write through the active workspace mutation tools. Re-read existing files

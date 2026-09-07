@@ -9,15 +9,19 @@ import {
 } from "./artifact-file-api";
 import type { ConversationArtifact } from "./conversation-artifact-view-model";
 import { conversationDetailCopy } from "./conversation-detail-copy";
+import { HtmlArtifactPreview } from "./HtmlArtifactPreview";
+import { previewWorkspaceFile } from "./workspace-directory-api";
 
 export function ArtifactInlinePreview({
   item,
   onInspect,
   peekArtifact = peekPlanArtifactText,
+  previewFile = previewWorkspaceFile,
 }: {
   item: ConversationArtifact;
   onInspect?(inspection: ArtifactInspection): void;
   peekArtifact?: typeof peekPlanArtifactText;
+  previewFile?: typeof previewWorkspaceFile;
 }) {
   const [preview, setPreview] = useState<PlanArtifactTextPeek>();
   const [error, setError] = useState<string>();
@@ -77,10 +81,10 @@ export function ArtifactInlinePreview({
         </small>
       </header>
       {preview ? (
-        <iframe
-          sandbox=""
-          srcDoc={thumbnailDocument(preview.text)}
-          title={`${copy.previewLabel}: ${item.artifact.path}`}
+        <HtmlArtifactPreview
+          path={item.artifact.path}
+          sha256={preview.sha256}
+          previewFile={previewFile}
         />
       ) : (
         <div className="artifact-inline-preview-placeholder" aria-hidden="true">
@@ -107,15 +111,4 @@ function isAvailable(item: ConversationArtifact): boolean {
 
 function fileName(path: string): string {
   return path.split("/").at(-1) ?? path;
-}
-
-function thumbnailDocument(text: string): string {
-  const policy =
-    "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; img-src data: blob:; font-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'\">";
-  const inert = text
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/giu, "")
-    .replace(/\s+on[a-z][\w:-]*\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/giu, "");
-  return /<head(?:\s[^>]*)?>/iu.test(inert)
-    ? inert.replace(/<head((?:\s[^>]*)?)>/iu, `<head$1>${policy}`)
-    : `${policy}${inert}`;
 }

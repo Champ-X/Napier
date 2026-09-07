@@ -23,6 +23,7 @@ describe("ArtifactInspector", () => {
     await act(async () => {
       render(
         <ArtifactInspector
+          previewFile={previewFile}
           inspection={htmlInspection()}
           onClose={() => undefined}
         />,
@@ -30,12 +31,16 @@ describe("ArtifactInspector", () => {
       );
     });
 
+    await waitFor(() => elements(container, "iframe").length === 1);
     const frame = elements(container, "iframe")[0];
     expect(frame?.getAttribute("sandbox")).toBe("allow-scripts");
     expect(frame?.getAttribute("sandbox")).not.toContain("allow-same-origin");
     expect(frame?.getAttribute("sandbox")).not.toContain("allow-popups");
     expect(frame?.getAttribute("title")).toBe("HTML artifact preview");
-    expect(frame?.getAttribute("srcdoc")).toContain("Next");
+    expect(frame?.getAttribute("src")).toBe(
+      "/api/workspace/preview/site/slides.html",
+    );
+    expect(frame?.getAttribute("srcdoc")).toBeNull();
   });
 
   it("switches between preview, source, and recorded changes in place", async () => {
@@ -49,6 +54,7 @@ describe("ArtifactInspector", () => {
     await act(async () => {
       render(
         <ArtifactInspector
+          previewFile={previewFile}
           inspection={htmlInspection()}
           onClose={() => undefined}
           onLedgerChanged={onLedgerChanged}
@@ -77,11 +83,9 @@ describe("ArtifactInspector", () => {
     await click(button(container, "Preview"));
     await waitFor(() => elements(container, "iframe").length === 1);
     const frame = elements(container, "iframe")[0];
-    expect(
-      frame?.getAttribute("srcdoc") ??
-        frame?.getAttribute("srcDoc") ??
-        (frame as HTMLIFrameElement | undefined)?.srcdoc,
-    ).toBe("<main>refreshed</main>");
+    expect(frame?.getAttribute("src")).toBe(
+      "/api/workspace/preview/site/slides.html",
+    );
     expect(frame?.getAttribute("sandbox")).toBe("allow-scripts");
   });
 
@@ -95,6 +99,7 @@ describe("ArtifactInspector", () => {
     await act(async () => {
       render(
         <ArtifactInspector
+          previewFile={previewFile}
           inspection={inspection}
           onClose={() => undefined}
           onLedgerChanged={onLedgerChanged}
@@ -111,6 +116,7 @@ describe("ArtifactInspector", () => {
       "plan_1",
       "slides",
     );
+    await waitFor(() => elements(container, "iframe").length === 1);
     expect(elements(container, "iframe")).toHaveLength(1);
     expect(onLedgerChanged).toHaveBeenCalledOnce();
 
@@ -118,6 +124,7 @@ describe("ArtifactInspector", () => {
     await act(async () => {
       render(
         <ArtifactInspector
+          previewFile={previewFile}
           inspection={inspection}
           onClose={() => undefined}
           onLedgerChanged={nextOnLedgerChanged}
@@ -131,6 +138,18 @@ describe("ArtifactInspector", () => {
     expect(nextOnLedgerChanged).not.toHaveBeenCalled();
   });
 });
+
+async function previewFile(path: string) {
+  return {
+    path,
+    filename: "slides.html",
+    contentType: "text/html",
+    blob: new Blob([]),
+    sizeBytes: 71,
+    sha256: "b".repeat(64),
+    previewUrl: "/api/workspace/preview/site/slides.html",
+  };
+}
 
 function diffReceipt() {
   return {

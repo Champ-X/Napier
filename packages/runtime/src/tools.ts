@@ -26,8 +26,9 @@ import {
 import { isProtectedWorkspacePathSegment } from "./workspace-file-scope.js";
 import {
   createWorkspacePatchTool,
-  type WorkspacePatchObserver,
+  type CreateWorkspaceToolsOptions,
 } from "./workspace-patch-tool.js";
+export type { CreateWorkspaceToolsOptions } from "./workspace-patch-tool.js";
 import type {
   WorkspacePatchInput,
   WorkspacePatchResult,
@@ -258,12 +259,6 @@ export interface WorkspaceReadDetails {
   lineAnchorSetSha256: string;
 }
 
-export interface CreateWorkspaceToolsOptions {
-  includeWriteTools?: boolean;
-  dataRoot?: string;
-  patchObserver?: WorkspacePatchObserver;
-  beforeWorkspaceWrite?: (() => Promise<void>) | undefined;
-}
 async function resolveWorkspacePath(
   workspaceRoot: string,
   candidate: string,
@@ -977,6 +972,7 @@ export async function applyWorkspacePatch(
   workspaceRoot: string,
   dataRoot: string,
   input: WorkspacePatchInput,
+  authorize?: (path: string, beforeSha256: string | null) => Promise<void>,
 ): Promise<WorkspacePatchResult> {
   const relativePath = normalizeWritablePath(input.path);
   const canonicalTarget = path.join(
@@ -984,6 +980,7 @@ export async function applyWorkspacePatch(
     relativePath,
   );
   return withWorkspacePathLock(dataRoot, canonicalTarget, async () => {
+    await authorize?.(relativePath, input.expectedSha256);
     let createdParentDirectories: string[] = [];
     let committed = false;
     let source = "";
@@ -1758,7 +1755,8 @@ export function createWorkspaceTools(
       createWorkspacePatchTool({
         workspaceRoot,
         dataRoot: options.dataRoot,
-        applyPatch: applyWorkspacePatch,
+        applyPatch: (root, dataRoot, input) =>
+          applyWorkspacePatch(root, dataRoot, input, options.authorizePatch),
         beforeWrite: options.beforeWorkspaceWrite,
         ...(options.patchObserver ? { observer: options.patchObserver } : {}),
       }),

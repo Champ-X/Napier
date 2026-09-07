@@ -41,6 +41,7 @@ import { ToolConcurrencyGate } from "./tool-concurrency-gate.js";
 import { executeAdmittedToolCall } from "./tool-execution-admission-service.js";
 import type { ToolOperationJournalOptions } from "./tool-operation-model.js";
 import { formatWorkspaceToolGuidance } from "./workspace-tool-guidance.js";
+import { formatThreadOutputGuidance } from "./workspace-thread-outputs.js";
 import { formatPlanToolGuidance } from "./agent-runtime-utils.js";
 
 export type AgentToolConcurrencyGate = ToolConcurrencyGate;
@@ -322,6 +323,7 @@ export function createRuntimeCompiledPromptBuilder(input: {
       effectiveCapabilities,
       workspaceToolGuidance: [
         formatWorkspaceToolGuidance(requestContext.tools ?? []),
+        formatThreadOutputGuidance(input.run.threadId),
         formatEditDialectGuidance({
           model: requestModel,
           availableToolNames: activeToolNames,

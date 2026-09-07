@@ -18,7 +18,7 @@ afterEach(async () => {
 });
 
 describe("ArtifactInlinePreview", () => {
-  it("renders an inert HTML thumbnail that opens the full inspector", async () => {
+  it("renders a directory-scoped sandboxed thumbnail that opens the full inspector", async () => {
     const container = installDom();
     const onInspect = vi.fn();
     await act(async () => {
@@ -26,6 +26,15 @@ describe("ArtifactInlinePreview", () => {
         <ArtifactInlinePreview
           item={artifact()}
           onInspect={onInspect}
+          previewFile={async (path) => ({
+            path,
+            filename: "report.html",
+            contentType: "text/html",
+            blob: new Blob([]),
+            sizeBytes: 100,
+            sha256: "b".repeat(64),
+            previewUrl: "/api/workspace/preview/site/report.html",
+          })}
           peekArtifact={async () => ({
             kind: "napier.plan-artifact-text-peek",
             schemaVersion: 1,
@@ -48,12 +57,11 @@ describe("ArtifactInlinePreview", () => {
     await waitFor(() => elements(container, "iframe").length === 1);
 
     const frame = elements(container, "iframe")[0]!;
-    const source =
-      frame.getAttribute("srcdoc") ?? frame.getAttribute("srcDoc") ?? "";
-    expect(frame.getAttribute("sandbox")).toBe("");
-    expect(source).not.toContain("<script");
-    expect(source).not.toContain("onclick");
-    expect(source).toContain("Content-Security-Policy");
+    expect(frame.getAttribute("sandbox")).toBe("allow-scripts");
+    expect(frame.getAttribute("src")).toBe(
+      "/api/workspace/preview/site/report.html",
+    );
+    expect(frame.getAttribute("srcdoc")).toBeNull();
 
     await act(async () => {
       (elements(container, "button")[0] as HTMLElement).click();

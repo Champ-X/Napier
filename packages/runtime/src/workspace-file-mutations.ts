@@ -46,6 +46,8 @@ import {
   writeJsonExclusive,
 } from "./workspace-file-scope.js";
 import { withWorkspacePathLocks } from "./workspace-write-lock.js";
+import { assertOutputMutationPaths } from "./workspace-thread-outputs.js";
+export { assertWorkspaceOutputReplacement } from "./workspace-thread-outputs.js";
 
 export const MAX_WORKSPACE_FILE_MUTATION_PREVIEWS = 64;
 export const WORKSPACE_FILE_MUTATION_PREVIEW_TTL_MS = 5 * 60_000;
@@ -135,16 +137,9 @@ interface StoredPreview {
 }
 
 /**
- * Coordinates preview-checked filesystem mutations for one Workspace.
- *
- * Planning and commit mechanics remain here beside the path lock boundary.
- * The outcome module owns evidence construction and Ledger reconciliation.
- * The compensation module owns verified reversal after a commit failure.
- * This class keeps those phases ordered under the same path lock.
- * Preview state is process-local and consumed before filesystem work.
- * Results follow persistence or a verified compensation attempt.
- * Reconciled acknowledgements prevent false rollback after commit.
- *
+ * Preview-checked, locked Workspace mutations with durable evidence.
+ * Process-local previews are consumed before mutation. Results follow Ledger
+ * persistence or verified compensation, avoiding false rollback after commit.
  * Agent requests require an active Run; operator recovery remains auditable.
  */
 export class WorkspaceFileMutationManager {
@@ -197,6 +192,7 @@ export class WorkspaceFileMutationManager {
     const trashId =
       request.operation === "trash" ? createId("trash") : undefined;
     const plan = await this.buildPlan(request, trashId);
+    if (initiatedBy === "agent") assertOutputMutationPaths(threadId, plan);
     assertNotAborted(signal, "Workspace file mutation preview was aborted");
     const now = this.validNow();
     const previewId = createId("filepreview");
@@ -281,6 +277,8 @@ export class WorkspaceFileMutationManager {
           stored.request,
           stored.trashId,
         );
+        if (initiatedBy === "agent")
+          assertOutputMutationPaths(threadId, currentPlan);
         if (currentPlan.planSha256 !== stored.preview.planSha256) {
           throw new Error(
             "Workspace file mutation preview is stale; preview the operation again",

@@ -3,6 +3,13 @@ import path from "node:path";
 
 import { Hono } from "hono";
 
+import { registerWorkspaceHtmlPreviewHttp } from "./workspace-html-preview-http.js";
+import {
+  resolveThreadOutputFile,
+  type WorkspaceFilePreview,
+} from "./workspace-file-preview.js";
+export type { WorkspaceFilePreview } from "./workspace-file-preview.js";
+
 import {
   errorMessage,
   jsonError,
@@ -54,15 +61,6 @@ class DirectoryListingError extends Error {
     super(message);
     this.name = "DirectoryListingError";
   }
-}
-
-export interface WorkspaceFilePreview {
-  path: string;
-  filename: string;
-  contentType: string;
-  contents: Buffer;
-  sizeBytes: number;
-  sha256: string;
 }
 
 /**
@@ -319,6 +317,11 @@ export function registerWorkspaceDirectoriesHttp(
     pickWorkspaceDirectory(),
   workspaceRoot?: () => string,
 ): void {
+  const createHtmlPreview = registerWorkspaceHtmlPreviewHttp(
+    app,
+    () => workspaceRoot?.(),
+    readWorkspaceFilePreview,
+  );
   let pickerInFlight = false;
   app.get("/api/workspace/directories", async (context) => {
     let listing: WorkspaceDirectoryListing;
@@ -346,10 +349,19 @@ export function registerWorkspaceDirectoriesHttp(
     }
     let preview: WorkspaceFilePreview;
     try {
-      preview = await readWorkspaceFilePreview(
-        context.req.query("path"),
+      const threadId = context.req.query("threadId");
+      if (
+        threadId !== undefined &&
+        !/^thread_[A-Za-z0-9_-]+$/u.test(threadId)
+      ) {
+        throw new DirectoryListingError("Invalid output Thread ID", 400);
+      }
+      const requestedPath = await resolveThreadOutputFile(
         activeRoot,
+        context.req.query("path"),
+        threadId,
       );
+      preview = await readWorkspaceFilePreview(requestedPath, activeRoot);
     } catch (error) {
       if (error instanceof DirectoryListingError) {
         return jsonError(context, error.message, error.status);
@@ -358,6 +370,17 @@ export function registerWorkspaceDirectoriesHttp(
     }
     context.header("Cache-Control", "no-store");
     context.header("Content-Type", preview.contentType);
+    context.header(
+      "X-Napier-Workspace-File-Path",
+      encodeURIComponent(preview.path),
+    );
+    if (preview.contentType.startsWith("text/html")) {
+      context.header(
+        "X-Napier-Workspace-Preview-Url",
+        createHtmlPreview(activeRoot, preview),
+      );
+      context.header("Content-Security-Policy", "sandbox allow-scripts");
+    }
     context.header(
       "Content-Disposition",
       `inline; filename="${safeFilenameSegment(preview.filename, "workspace-file")}"`,
@@ -436,6 +459,9 @@ const WORKSPACE_FILE_CONTENT_TYPES: Readonly<Record<string, string>> = {
   ".tsx": "text/plain; charset=utf-8",
   ".txt": "text/plain; charset=utf-8",
   ".webp": "image/webp",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+  ".ttf": "font/ttf",
   ".xml": "application/xml; charset=utf-8",
   ".yaml": "text/yaml; charset=utf-8",
   ".yml": "text/yaml; charset=utf-8",

@@ -21,6 +21,8 @@ import {
 import type { ArtifactInspection } from "./artifact-inspection";
 import { artifactInspectorCopy as copy } from "./artifact-inspector-copy";
 import { MessageMarkdown } from "./message-markdown";
+import { HtmlArtifactPreview } from "./HtmlArtifactPreview";
+import { previewWorkspaceFile } from "./workspace-directory-api";
 import {
   type ArtifactInspectorView,
   useArtifactInspectorView,
@@ -32,6 +34,7 @@ export interface ArtifactInspectorProps {
   onLedgerChanged?(): void | Promise<void>;
   previewArtifact?: typeof previewPlanArtifactText;
   previewDiff?: typeof previewPlanArtifactDiff;
+  previewFile?: typeof previewWorkspaceFile;
 }
 
 export function ArtifactInspector({
@@ -40,6 +43,7 @@ export function ArtifactInspector({
   onLedgerChanged,
   previewArtifact = previewPlanArtifactText,
   previewDiff = previewPlanArtifactDiff,
+  previewFile = previewWorkspaceFile,
 }: ArtifactInspectorProps) {
   const inspectorRef = useRef<HTMLElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -184,6 +188,8 @@ export function ArtifactInspector({
       ) : null}
       <div className="artifact-inspector-content" key={view}>
         <ArtifactInspectionContent
+          path={inspection.artifact.path}
+          previewFile={previewFile}
           extension={fileExtension(inspection.artifact.path)}
           view={view}
           preview={preview}
@@ -195,11 +201,15 @@ export function ArtifactInspector({
 }
 
 function ArtifactInspectionContent({
+  path,
+  previewFile,
   extension,
   view,
   preview,
   diff,
 }: {
+  path: string;
+  previewFile: typeof previewWorkspaceFile;
   extension: string;
   view: ArtifactInspectorView;
   preview: PlanArtifactTextPreview | PlanArtifactTextPreviewReceipt | undefined;
@@ -209,9 +219,18 @@ function ArtifactInspectionContent({
     return <SourcePreview text={diff?.text || copy.noDiff} diff />;
   }
   const text = preview?.text ?? "";
-  if (view === "preview" && (extension === "html" || extension === "htm")) {
+  if (
+    preview &&
+    view === "preview" &&
+    (extension === "html" || extension === "htm")
+  ) {
     return (
-      <HtmlArtifactPreview key={preview?.textSha256 ?? "empty"} text={text} />
+      <HtmlArtifactPreview
+        key={preview.textSha256}
+        path={path}
+        sha256={preview.sha256}
+        previewFile={previewFile}
+      />
     );
   }
   if (
@@ -225,26 +244,6 @@ function ArtifactInspectionContent({
     );
   }
   return <SourcePreview text={text} />;
-}
-
-function HtmlArtifactPreview({ text }: { text: string }) {
-  const frameRef = useRef<HTMLIFrameElement>(null);
-
-  useEffect(() => {
-    const frame = frameRef.current;
-    if (!frame) return;
-    frame.srcdoc = text;
-  }, [text]);
-
-  return (
-    <iframe
-      className="artifact-inspector-frame"
-      ref={frameRef}
-      sandbox="allow-scripts"
-      srcDoc={text}
-      title={copy.htmlTitle}
-    />
-  );
 }
 
 function SourcePreview({

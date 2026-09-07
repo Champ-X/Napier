@@ -3,6 +3,7 @@ import {
   Code2,
   Download,
   Eye,
+  ExternalLink,
   FileCode2,
   RotateCw,
 } from "lucide-react";
@@ -19,6 +20,7 @@ import { workspaceEvidenceCopy as workspaceCopy } from "./workspace-evidence-cop
 
 export interface WorkspaceFileInspectorProps {
   path: string;
+  threadId?: string;
   onClose(): void;
   previewFile?: typeof previewWorkspaceFile;
 }
@@ -27,6 +29,7 @@ type WorkspaceFileView = "preview" | "source";
 
 export function WorkspaceFileInspector({
   path,
+  threadId,
   onClose,
   previewFile = previewWorkspaceFile,
 }: WorkspaceFileInspectorProps) {
@@ -42,7 +45,10 @@ export function WorkspaceFileInspector({
     setLoading(true);
     setError(undefined);
     setPreview(undefined);
-    void previewFile(path, controller.signal)
+    const request = threadId
+      ? previewFile(path, controller.signal, threadId)
+      : previewFile(path, controller.signal);
+    void request
       .then((result) => {
         if (!controller.signal.aborted) setPreview(result);
       })
@@ -55,7 +61,7 @@ export function WorkspaceFileInspector({
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [path, previewFile, reload]);
+  }, [path, threadId, previewFile, reload]);
 
   useEffect(() => {
     const restoreFocus =
@@ -157,6 +163,17 @@ export function WorkspaceFileInspector({
         >
           <Download size={15} aria-hidden="true" />
         </button>
+        {preview?.previewUrl ? (
+          <a
+            href={preview.previewUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={copy.openInTab}
+            title={copy.openInTab}
+          >
+            <ExternalLink size={15} aria-hidden="true" />
+          </a>
+        ) : null}
         <button
           ref={closeRef}
           type="button"
@@ -170,7 +187,7 @@ export function WorkspaceFileInspector({
         </button>
       </header>
       <div className="artifact-inspector-meta">
-        <span title={path}>{path}</span>
+        <span title={preview?.path ?? path}>{preview?.path ?? path}</span>
         <span>
           {loading
             ? copy.refreshing
@@ -221,7 +238,9 @@ function WorkspaceFileContent({
       <iframe
         className="artifact-inspector-frame"
         sandbox="allow-scripts"
-        srcDoc={preview.text ?? ""}
+        referrerPolicy="no-referrer"
+        src={preview.previewUrl}
+        srcDoc={preview.previewUrl ? undefined : (preview.text ?? "")}
         title={copy.htmlTitle}
       />
     );

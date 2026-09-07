@@ -37,6 +37,7 @@ export interface WorkspaceFilePreview {
   sizeBytes: number;
   sha256: string;
   text?: string;
+  previewUrl?: string;
 }
 
 export function pickWorkspaceDirectory(): Promise<WorkspaceDirectoryPickerResult> {
@@ -58,8 +59,13 @@ export function listWorkspaceEntries(
 export async function previewWorkspaceFile(
   path: string,
   signal?: AbortSignal,
+  threadId?: string,
 ): Promise<WorkspaceFilePreview> {
-  const endpoint = `/api/workspace/file?${new URLSearchParams({ path }).toString()}`;
+  const query = new URLSearchParams({
+    path,
+    ...(threadId ? { threadId } : {}),
+  });
+  const endpoint = `/api/workspace/file?${query.toString()}`;
   const response = await fetch(endpoint, signal ? { signal } : undefined);
   return readFilePreviewResponse(response, endpoint, path);
 }
@@ -100,12 +106,19 @@ export async function readFilePreviewResponse(
   const filename =
     contentDispositionFilename(response) ?? basename(path) ?? "workspace-file";
   return {
-    path,
+    path: response.headers.get("X-Napier-Workspace-File-Path")
+      ? decodeURIComponent(
+          response.headers.get("X-Napier-Workspace-File-Path")!,
+        )
+      : path,
     filename,
     contentType,
     blob,
     sizeBytes,
     sha256,
+    ...(response.headers.get("X-Napier-Workspace-Preview-Url")
+      ? { previewUrl: response.headers.get("X-Napier-Workspace-Preview-Url")! }
+      : {}),
     ...(workspaceFileIsText(contentType)
       ? { text: new TextDecoder().decode(bytes) }
       : {}),

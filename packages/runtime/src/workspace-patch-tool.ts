@@ -114,6 +114,16 @@ export interface WorkspacePatchToolOptions {
   observer?: WorkspacePatchObserver;
 }
 
+export interface CreateWorkspaceToolsOptions {
+  includeWriteTools?: boolean;
+  dataRoot?: string;
+  patchObserver?: WorkspacePatchObserver;
+  beforeWorkspaceWrite?: (() => Promise<void>) | undefined;
+  authorizePatch?:
+    | ((path: string, beforeSha256: string | null) => Promise<void>)
+    | undefined;
+}
+
 export function createWorkspacePatchTool(
   options: WorkspacePatchToolOptions,
 ): AgentTool<typeof applyPatchSchema, WorkspacePatchToolDetails> {
@@ -205,7 +215,12 @@ export function createWorkspacePatchTool(
     schemaVersion: 1,
     classificationVersion: "1.0.0",
     modes: [
-      { modeId: "patch_workspace", operation: "mutate", scope: "workspace", contribution: "product" },
+      {
+        modeId: "patch_workspace",
+        operation: "mutate",
+        scope: "workspace",
+        contribution: "product",
+      },
     ],
     resolve: (input) => ({
       semantics: progressSemantics("mutate", "workspace", "product"),
