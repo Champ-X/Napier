@@ -56,7 +56,11 @@ making the execution model visible.
   browse a compact file tree, and open linked files or produced artifacts from
   the answer.
 - **Artifact inspection** — preview supported workspace outputs beside the
-  conversation and retain their verification evidence.
+  conversation and retain their verification evidence. HTML previews load
+  local assets through a directory-scoped sandbox.
+- **Thread-owned deliverables** — keep generated sites, reports, and assets
+  under `outputs/<threadId>/` so later tasks can reuse them without silently
+  overwriting another thread's output.
 - **Image-aware composer** — attach images for models that advertise vision
   input support.
 - **Operator decisions** — pause safely for a bounded choice, record the
@@ -86,8 +90,10 @@ npm install
 npm run dev
 ```
 
-Open [http://127.0.0.1:5173](http://127.0.0.1:5173). The development command
-builds the shared Contracts and Runtime first, then watches Contracts, Runtime,
+Open the **Local** URL printed by Vite, starting at
+[http://127.0.0.1:5173](http://127.0.0.1:5173). Vite tries the next port if it
+is occupied. The development command builds the shared Contracts and Runtime
+first, then watches Contracts, Runtime,
 Server, and Web together. Its bootstrap is compilation-only; publishable builds
 through `npm run build` retain the fail-closed release source-attestation gate.
 The API listens on `127.0.0.1:8787` by default.
@@ -100,10 +106,11 @@ explore the product flow. Configure a live provider for real model work.
 ### Add a live model
 
 ```bash
-cp .env.example .env
+cp -n .env.example .env
 ```
 
-Set one or more supported environment variables in `.env`:
+The copy command keeps an existing `.env`. Set one or more supported
+environment variables in it:
 
 ```dotenv
 OPENAI_API_KEY=
@@ -120,6 +127,11 @@ You can also open **Settings → Agent & Model → Evidence** and register the
 matching environment reference. Napier persists the reference and status, not
 the secret value; the value remains inside the Server process.
 
+DeepSeek V4 Flash (`deepseek/deepseek-v4-flash`) is the preferred setup model
+when DeepSeek is configured and active. Explicit Agent model choices are
+preserved. For workspace selection, search credentials, HTML previews, and
+task recovery, see [Local development](./docs/local-development.md).
+
 ## CLI and other interfaces
 
 The Web app, CLI/TUI, HTTP/SSE server, local RPC process, and TypeScript SDK all
@@ -127,36 +139,46 @@ sit on the same Runtime and Ledger contracts.
 
 ### CLI
 
+Build the local CLI once, then use its development entry point. Rebuild the
+relevant packages after changing source:
+
 ```bash
-# Diagnose model, browser, network, and sandbox readiness
-npm run napier -- doctor --workspace .
-
-# Interactive sessions
-npm run napier -- chat --workspace .
-npm run napier -- tui --workspace .
-
-# One-shot run
-npm run napier -- run --workspace . --prompt "Inspect this project"
-
-# Continue a waiting or interrupted thread
-npm run napier -- resume --workspace . --thread <thread-id>
-
-# Execute a typed workflow manifest
-npm run napier -- workflow --workspace . --manifest path/to/workflow.json
+npm run build:core:development
+npm run build -w @napier/cli
 ```
 
-Run `npm run napier -- --help` for branching, capability presets, Browser Use,
+```bash
+# Diagnose model, browser, network, and sandbox readiness
+npm run napier:dev -- doctor --workspace .
+
+# Interactive sessions
+npm run napier:dev -- chat --workspace .
+npm run napier:dev -- tui --workspace .
+
+# One-shot run
+npm run napier:dev -- run --workspace . --prompt "Inspect this project"
+
+# Continue a waiting or interrupted thread
+npm run napier:dev -- resume --workspace . --thread <thread-id>
+
+# Execute a typed workflow manifest
+npm run napier:dev -- workflow --workspace . --manifest path/to/workflow.json
+```
+
+Run `npm run napier:dev -- --help` for branching, capability presets, Browser Use,
 read-only experiments, provider setup, plugins, and JSONL streaming options.
+The `npm run napier -- …` wrapper also rebuilds the CLI, but first runs the
+release source-attestation gate; see [development checks](./docs/local-development.md#development-checks).
 
 ### Interface map
 
-| Interface      | Entry point           | Best for                                                                    |
-| -------------- | --------------------- | --------------------------------------------------------------------------- |
-| Web workbench  | `npm run dev`         | Interactive desktop work, artifacts, approvals, and visual trace inspection |
-| CLI / TUI      | `npm run napier -- …` | Terminal-native tasks, recovery, automation, and JSONL consumers            |
-| HTTP + SSE     | `apps/server`         | Local integrations and live run streams                                     |
-| stdio RPC      | `napier rpc`          | Long-lived JSON-RPC 2.0 embedding                                           |
-| TypeScript SDK | `@napier/sdk`         | Store-free typed clients and management integrations                        |
+| Interface      | Entry point               | Best for                                                                    |
+| -------------- | ------------------------- | --------------------------------------------------------------------------- |
+| Web workbench  | `npm run dev`             | Interactive desktop work, artifacts, approvals, and visual trace inspection |
+| CLI / TUI      | `npm run napier:dev -- …` | Terminal-native tasks, recovery, automation, and JSONL consumers            |
+| HTTP + SSE     | `apps/server`             | Local integrations and live run streams                                     |
+| stdio RPC      | `napier rpc`              | Long-lived JSON-RPC 2.0 embedding                                           |
+| TypeScript SDK | `@napier/sdk`             | Store-free typed clients and management integrations                        |
 
 ## Architecture
 
@@ -237,13 +259,19 @@ observes the same ordered events.
 ## Development
 
 ```bash
-npm run typecheck          # Type-check every workspace
+npm run build:core:development # Compile shared packages for local checks
+npm run typecheck -w @napier/web # Type-check a relevant workspace
 npm test                   # Root contract tests + workspace suites
-npm run build              # Build all packages and applications
 npm run check:web-design   # Frontend design-system and boundary checks
-npm run check:web-ui-e2e   # Deterministic desktop UI scenarios and layout baseline
+npm run check:web-ui-e2e    # Deterministic desktop UI scenarios and layout baseline
+npm run build              # Publishable build, including source attestation
+npm run typecheck          # All-workspace typecheck, including release-gated build
 npm run check              # Full release gate, including retained artifacts and host checks
 ```
+
+See [Local development](./docs/local-development.md#development-checks) for
+build prerequisites and focused checks. The [current gap matrix](./docs/next-stage-gap-matrix.md)
+records known architecture and release-evidence failures at its review baseline.
 
 The architecture gate constrains dependency direction, file size, complexity,
 fan-out, public exports, and strongly connected components. Release artifacts
@@ -252,13 +280,17 @@ source-bound check pass.
 
 ## Documentation
 
-| Document                                                                                             | What it covers                                                                            |
-| ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| [Architecture](./docs/architecture.md)                                                               | Event contract, persistence, runtime boundaries, safety, replay, and capability reference |
-| [Workbench V2 design](./docs/napier-workbench-v2-design.md)                                          | Product model and workbench information architecture                                      |
-| [Frontend optimization design](./docs/web-frontend-optimization-design-2026-08-24.zh-CN.md)          | Desktop Web design system, interaction targets, and acceptance criteria                   |
-| [Harness optimization design](./docs/agent-harness-optimization-design-2026-08-22.zh-CN.md)          | Model-harness routing and optimization design                                             |
-| [Harness acceptance matrix](./docs/agent-harness-optimization-acceptance-matrix-2026-08-23.zh-CN.md) | Evaluation scenarios and evidence expectations                                            |
+| Document                                         | What it covers                                                                    |
+| ------------------------------------------------ | --------------------------------------------------------------------------------- |
+| [Documentation index](./docs/README.md)          | Current guides, historical records, and evidence ownership                        |
+| [Local development](./docs/local-development.md) | Setup, credentials, workspaces, previews, recovery, and checks                    |
+| [Design system](./DESIGN.md)                     | Current Web visual rules and canonical generated-token contract                   |
+| [Architecture](./docs/architecture.md)           | Event contract, persistence, runtime boundaries, safety, replay, and capabilities |
+| [Current gaps](./docs/next-stage-gap-matrix.md)  | Open issues and dated verification limits                                         |
+| [Changelog](./CHANGELOG.md)                      | Recent changes and earlier history                                                |
+
+Superseded UI proposals and dated Harness/Phase 0 snapshots are listed in the
+[documentation archive](./docs/archive/README.md).
 
 ## Project status
 

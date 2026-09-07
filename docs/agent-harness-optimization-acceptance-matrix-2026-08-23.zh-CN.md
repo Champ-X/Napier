@@ -1,5 +1,9 @@
 # Napier Agent Harness 优化验收矩阵
 
+> 历史验收快照（标记于 2026-09-07）。文件名保留建档日期，实际验收日期为下列 2026-08-27。
+> 本文的 verified / blocked、测试数量与源码身份只适用于当时记录的基线，
+> 本次文档整理没有重新验收这些结论。当前状态见 [维护中的缺口矩阵](next-stage-gap-matrix.md)。
+
 > 验收日期：2026-08-27<br>
 > 唯一设计依据：`docs/agent-harness-optimization-design-2026-08-22.zh-CN.md`  
 > 产品版本：`0.1.3`  

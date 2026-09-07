@@ -1,5 +1,9 @@
 # Napier Agent Harness 优化设计
 
+> 历史设计快照（标记于 2026-09-07）。本文的缺口与建议基于下列评审基线，
+> 不代表当前实现状态。后续记录见 [2026-08-27 验收快照](agent-harness-optimization-acceptance-matrix-2026-08-23.zh-CN.md)，
+> 当前缺口见 [维护中的矩阵](next-stage-gap-matrix.md)。原始基线与分析保留如下。
+
 > 状态：设计评审稿  
 > 分析日期：2026-08-22  
 > Napier 基线：`3c9b76d`，并包含当前工作区中尚未提交的在研改动  

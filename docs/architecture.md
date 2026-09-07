@@ -1,5 +1,11 @@
 # Napier Architecture
 
+For setup and troubleshooting, start with [Local development](local-development.md).
+The [documentation index](README.md) distinguishes current guides from historical
+proposals and evidence. Selected workspace, search, preview, and recovery flows
+below were reviewed on 2026-09-07 against `f5a5937b`; this is not a new validation
+of every historical acceptance result in this reference.
+
 ## Product Thesis
 
 Most agent products treat chat as the source of truth and bolt traces,
@@ -4609,6 +4615,20 @@ writes before claiming checks passed. The protocol is prompt guidance only;
 policy enforcement still comes from the tool allowlist, sandbox, hash
 preconditions, Ledger events, and Advisor freshness checks.
 
+The live workspace protocol also identifies `outputs/<threadId>/` as the
+current Thread's generated-output directory. New standalone deliverables use
+separate subdirectories with their supporting assets; follow-up edits continue
+the same deliverable in place. Existing application source maintenance stays
+at its requested project paths.
+
+`workspace-thread-outputs.ts` enforces Thread ownership for output paths in
+patch and file lifecycle operations. Patch authorization runs inside the write
+lock. For legacy standalone files outside normal code projects, another
+Thread's durable patch receipt can prevent replacement of its current bytes.
+Reusing that output requires a copy into the current Thread's directory.
+These are tool-level ownership checks, not filesystem isolation from unrelated
+host processes.
+
 When Plan tools are enabled, the runtime similarly injects a concise
 `plan_tool_protocol` derived from the assembled tool set. It steers Agents to
 create one focused durable plan for multi-step or artifact delivery work,
@@ -5022,7 +5042,8 @@ Session:
 ```text
 Fresh default Agent includes web_search under observe policy
   -> normalize bounded query/category/time/language/region/site/count/safety
-  -> choose configured Brave, then Tavily, then keyless Bing RSS/DDG HTML
+  -> choose available/category-compatible Firecrawl, Brave, then Tavily
+  -> fall back to keyless Bing RSS/DDG HTML
   -> validate credential-free HTTP(S) URL and ports
   -> resolve every DNS answer and reject mixed or non-public results
   -> pin the request connection to one validated address
@@ -5055,14 +5076,21 @@ This boundary currently discovers sources only. It does not fetch source
 bodies or prove citation accuracy. Fetch and progressive Source reading use the
 following sibling capability.
 
+When direct image search is unavailable, general search can return explicitly
+typed `image_page_candidates`. These are candidate pages, not verified image
+URLs. Search completion and readable Source evidence are separate outcomes.
+The Web projection reads retained operation metadata and reports missing
+evidence separately from a failed search.
+
 ### Web Fetch and Progressive Source Flow
 
 ```text
 Agent calls web_fetch fetch with one public URL
   -> reuse PublicHttpClient DNS pinning, redirect validation, timeout, and bytes
-  -> detect HTML/Markdown/JSON/text/PDF from MIME, extension, and safe sniffing
+  -> detect HTML/Markdown/JSON/text/PDF/image from MIME, extension, and safe sniffing
   -> lazy-load Readability/DOM or PDF.js only for the selected format
   -> remove active HTML, normalize readable text, or extract bounded PDF pages
+  -> represent recognized image bytes with image-source metadata, without OCR
   -> for one eligible successful client-rendered HTML shell:
      -> require default Browser capability and <=1,000 static normalized chars
      -> require document.write or an empty root/app mount plus executable app script
@@ -5093,10 +5121,10 @@ Run settles
   -> cancel active/queued fetches and drop every Source body from memory
 ```
 
-`web-fetch-content.ts` owns format detection plus bounded HTML/JSON/text/PDF
-normalization. Mozilla Readability and LinkeDOM are lazy imports; PDF.js is
-also lazy and uses only downloaded bytes, so no parser performs an independent
-network request. `web-fetch-browser-shell.ts` owns conservative
+`web-fetch-content.ts` owns format detection, bounded HTML/JSON/text/PDF
+normalization, and image-source metadata. Mozilla Readability and LinkeDOM are
+lazy imports; PDF.js is also lazy and uses only downloaded bytes, so no parser
+performs an independent network request. `web-fetch-browser-shell.ts` owns conservative
 `document.write` and empty app-mount admission.
 `web-fetch-browser-fallback.ts` owns exact rendered-capture/semantic-control
 validation and the internal start/wait/capture/close adapter over the ordinary
@@ -5175,6 +5203,12 @@ Agent selects Browser capability
   -> retain action, Session reuse, counts, sizes, and hashes in Ledger/Trace
   -> close context, browser, proxy, tunnels, and temporary HOME on settlement
 ```
+
+Locator timeouts from target actions are scoped failures when the Browser
+Session remains healthy. They return correction guidance without closing that Session.
+Inspect the current page before retrying: an action can take effect before its
+wait times out. Session or transport failures are classified separately by
+`browser-session-errors.ts` and `browser-tool-failure.ts`.
 
 Under `observe`, `AgentCapabilityRuntime` requests a read-only Browser tool
 whose schema contains only `start`, `navigate`, `back`, `wait`, `find`,
@@ -6149,6 +6183,35 @@ claiming distributed isolation. Permanent deletion, overwrite requests,
 permission changes, root moves, symlink lifecycle, and arbitrary/root-wide
 Process Session writes remain outside this capability. The separate Process
 protocol below grants only preview-bound writes to explicit existing scopes.
+
+### Workspace HTML Preview Flow
+
+The Web file inspector has a separate HTML preview path from the Agent's
+`workspace_file_preview` mutation plan:
+
+```text
+inspect one workspace HTML file
+  -> resolve relative conversation links against the current Thread's outputs
+  -> keep explicit absolute file-tree selections bound to their chosen target
+  -> validate workspace path and, for an artifact, its inspected content hash
+  -> create a random directory-scoped preview session with pinned HTML bytes
+  -> serve the HTML and local assets below /api/workspace/preview/:session/*
+  -> render in an opaque iframe with sandbox="allow-scripts"
+```
+
+`workspace-file-preview.ts` resolves Thread-relative paths;
+`workspace-html-preview-http.ts` owns sessions, assets, and response policy.
+Relative CSS, images, modules, and fonts can load within the preview directory.
+Google Fonts CSS/font hosts are allowed. Parent application access, app APIs,
+traversal, dotfiles, symlinks, `node_modules`, and arbitrary external scripts
+or API calls remain blocked. Previewing a site does not grant it the
+workbench's same-origin authority.
+
+Sessions expire after one hour, are invalidated by workspace changes or Server
+restart, and are bounded to 256 entries / 64 MiB of retained HTML. Reopening
+the preview creates a session for the newly inspected HTML. Local assets are
+served from their validated paths; pinning the HTML is not a snapshot of the
+entire asset tree.
 
 ## Sandboxed Command Flow
 
@@ -7490,9 +7553,14 @@ abandoned with hash-only failure evidence and no recovery Run is created.
 Manual Resume remains available because an operator can inspect the drift and
 decide how to proceed.
 
-Manual Resume remains available regardless of automatic eligibility and keeps
-the existing unknown-side-effect warning. Recovery prompts are hidden
-lifecycle evidence rather than new user messages, while
+For eligible ordinary Agent Runs, Manual Resume remains available even when
+automatic recovery is ineligible. It preserves the original Run's context,
+model, and capability configuration and keeps the unknown-side-effect warning.
+The latest Run must be interrupted, or settled with a resumable `paused_budget`
+or `partial` outcome; Workflow and experiment ownership exclusions still apply.
+Manual Browser recovery with its linked parent may request operator
+confirmation, while restricted automatic recovery cannot use that path.
+Recovery prompts are hidden lifecycle evidence rather than new user messages, while
 `run.recovery.started/completed/failed` and
 `run.recovery.auto.*` control evidence remain visible in Trace. Reopening the
 store repeatedly is idempotent; the worker backfills missing hash-only control
@@ -9714,57 +9782,15 @@ third-party code.
 
 ## Capability Roadmap
 
-The current priority and acceptance state is maintained in
-[`next-stage-gap-matrix.md`](next-stage-gap-matrix.md). Distributed work stays
-deferred until the local P0-P9 product loop is stable.
+Current open issues and verification limits are maintained in
+[`next-stage-gap-matrix.md`](next-stage-gap-matrix.md), with a review baseline
+and closure criteria. Completed slices and older proposals are retained in the
+[documentation archive](archive/README.md).
 
-### Layer 1: Local execution and architecture
-
-- extend bounded Workspace Process Sessions beyond identity-checked observed
-  descendant cleanup with kernel-enforced rapid double-fork containment,
-  cross-restart reattachment, and remote scoped-write backends;
-- extend restricted Python into package-backed data/Notebook sessions and add
-  managed tool callbacks without weakening Run ownership or Sandbox boundaries;
-- hard CPU/memory/process quotas through managed OCI or equivalent isolation;
-- domain extraction from the oversized Server and Store modules;
-- extend the checked local CLI/Runtime/tool/1,000-event/SQLite performance
-  budget to external Providers, HTTP, browser sessions, 10,000-event Threads,
-  and enforced process resource quotas.
-
-### Layer 2: Coding and workflow
-
-- broader Code Action kinds, Node attach/multi-thread DAP, inline or bundled
-  source-map coverage and debugger UX, broader multi-node AST transforms,
-  richer cross-package build/test configuration, coding outcome benchmarks,
-  coder directory lifecycle, and child package-script/Python/persistent
-  execution;
-- extend typed Agent/Deterministic/JavaScript/Python/Tool/Approval DAG execution
-  with package-backed Python/Notebook Sessions, cross-node handles,
-  graph-level branch pruning, write-capable Map/Loop, compensation,
-  write/session side-effect simulation, external Agent adapters, and a visual
-  builder;
-- extend controlled Workflow, user-message, model-call, and stateless read-only
-  tool-call re-execution with stateful/write checkpoints and result simulation,
-  Prompt/Skill/Memory/environment replacement, batch experiments, interactive
-  root-cause views, and evaluation promotion.
-
-### Layer 3: Product and outcome proof
-
-- add authenticated remote transport, a full-screen TUI, ACP, Desktop,
-  persistent browser UX, and broader data/research capability slices over the
-  same Runtime and Ledger;
-- add explicit dynamic catalog refresh, subscription login UX, custom
-  OpenAI-compatible Provider manifests, local-server discovery, and
-  evaluation-backed routing over the pinned Pi Provider core;
-- stable Extension developer APIs, ecosystem discovery, and compatibility
-  tests;
-- broaden fixed Capability & Outcome benchmarks across task success, recovery,
-  cost, latency, security, installation, and Web onboarding UX.
-
-### Deferred: team and distributed
-
-- Postgres, distributed workers, cross-host leases, multi-user RBAC, and
-  collaboration begin only after the local acceptance gates hold.
+This reference does not maintain a second feature backlog. For example, the
+full-screen TUI is already implemented; see the [CLI guide](../README.md#cli).
+The contracts and source-bound acceptance requirements below remain relevant
+when reviewing capability upgrades or preparing a release.
 
 ### Capability contract upgrades preserve explicit ownership
 

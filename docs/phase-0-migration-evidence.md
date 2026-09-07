@@ -1,8 +1,14 @@
 # Phase 0 migration evidence
 
+> Historical measurement snapshot, labeled on 2026-09-07. Counts, timings,
+> hashes, and pass results below refer to the Phase 0 migration, not the current
+> checkout. See the [documentation index](README.md) and
+> [current gaps](next-stage-gap-matrix.md) for maintained references.
+
 This document records reproducible, non-release measurements for the Phase 0
-cleanup. Canonical release receipts remain under `docs/artifacts` and are not
-rewritten until the Phase 0 exit-gate refresh.
+cleanup. Canonical release receipts remain under `docs/artifacts`; the original
+snapshot deferred their refresh to the Phase 0 exit gate. This documentation
+review does not change those receipts.
 
 ## Phase 0-D: non-production workspace extraction
 
