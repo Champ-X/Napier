@@ -91,6 +91,8 @@ builds the shared Contracts and Runtime first, then watches Contracts, Runtime,
 Server, and Web together. Its bootstrap is compilation-only; publishable builds
 through `npm run build` retain the fail-closed release source-attestation gate.
 The API listens on `127.0.0.1:8787` by default.
+Creating, editing, or removing the root `.env` automatically restarts the
+development services, including the Web API proxy when `NAPIER_PORT` changes.
 
 The deterministic `napier/demo` model needs no credentials and is enough to
 explore the product flow. Configure a live provider for real model work.
@@ -111,7 +113,10 @@ GEMINI_API_KEY=
 OPENROUTER_API_KEY=
 ```
 
-Restart `npm run dev`, then open **Settings → Agent & Model → Evidence** and register the
+With `npm run dev` running, save `.env` and wait for the services to reload.
+Open the provider setup card and choose **Check again**, then enable the detected
+provider. Other launch modes require a server restart after environment changes.
+You can also open **Settings → Agent & Model → Evidence** and register the
 matching environment reference. Napier persists the reference and status, not
 the secret value; the value remains inside the Server process.
 

@@ -18,10 +18,7 @@ import type {
 } from "@napier/contracts";
 import { recommendedDefaultRunModel } from "@napier/contracts/default-run-model";
 
-import {
-  DEEPSEEK_VISION_MODEL_ID,
-  withDeepSeekVisionModel,
-} from "./deepseek-vision-provider.js";
+import { withDeepSeekVisionModel } from "./deepseek-vision-provider.js";
 import { createModelAdapterModels } from "./model-adapters.js";
 import type { ModelTurnDeadlinePolicy } from "./model-turn-deadline.js";
 import type { ToolDeadlinePolicy } from "./tool-deadline-policy.js";
@@ -160,7 +157,7 @@ export class ModelRegistry {
 function modelSelectionPriority(
   model: Pick<ModelSummary, "provider" | "id">,
 ): number {
-  return model.provider === "deepseek" && model.id === DEEPSEEK_VISION_MODEL_ID
+  return model.provider === "deepseek" && model.id === "deepseek-v4-flash"
     ? -1
     : 0;
 }

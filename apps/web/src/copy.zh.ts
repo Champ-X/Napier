@@ -450,7 +450,8 @@ export const zh: LocaleOverride<typeof en> = {
     setupBody:
       "每个工作区独立保存模型授权。选择提供方即可在这里启用；只会保存凭证位置。",
     setupMissingTitle: "尚未启用实时模型",
-    setupMissingBody: "请先在“智能体与模型”设置中添加提供方凭证。",
+    setupMissingBody:
+      "请在 .env 中填写密钥，或前往模型设置添加凭证。开发模式会自动重载 .env，其他启动方式需重启服务，然后点击“重新检查”。",
     enable: "启用",
     enabling: "正在启用……",
     retrySetup: "重新检查",

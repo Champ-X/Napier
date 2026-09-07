@@ -46,7 +46,7 @@ describe("Provider setup", () => {
           environmentVariable: "DEEPSEEK_API_KEY",
           model: {
             provider: "deepseek",
-            id: "deepseek-v4-flash-vision-exp",
+            id: "deepseek-v4-flash",
           },
           status: "available",
         }),
@@ -77,7 +77,7 @@ describe("Provider setup", () => {
           providerId: "deepseek",
           model: {
             provider: "deepseek",
-            id: "deepseek-v4-flash-vision-exp",
+            id: "deepseek-v4-flash",
           },
           status: "ready",
           action: "created",

@@ -7,7 +7,7 @@ export const STANDARD_PROVIDER_SETUP_DEFINITIONS = [
     credentialLabel: "DeepSeek key",
     model: {
       provider: "deepseek",
-      id: "deepseek-v4-flash-vision-exp",
+      id: "deepseek-v4-flash",
     },
   },
   {

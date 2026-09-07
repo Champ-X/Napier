@@ -410,7 +410,7 @@ export const desktopWorkbenchCopy = {
       "This workspace keeps its own model permissions. Enable a provider to use its models here; only the credential location is saved.",
     setupMissingTitle: "No live model is enabled",
     setupMissingBody:
-      "Add a provider credential in Agent & Model settings, then check again.",
+      "Add a provider key to .env or configure a credential in Model settings. Development mode reloads .env automatically; other launch modes need a server restart. Then check again.",
     enable: "Enable",
     enabling: "Enabling…",
     retrySetup: "Check again",

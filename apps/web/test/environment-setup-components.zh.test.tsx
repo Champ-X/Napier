@@ -3,6 +3,12 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { SandboxSetupPreview } from "@napier/contracts/sandbox-setup";
+import type { ProviderSetupPreview } from "@napier/contracts/provider-setup";
+
+vi.mock("lucide-react", () => {
+  const Icon = (props: Record<string, unknown>) => <svg {...props} />;
+  return { Check: Icon, KeyRound: Icon, RefreshCw: Icon, ShieldCheck: Icon };
+});
 
 let container: HTMLElement | undefined;
 let root: Root | undefined;
@@ -14,6 +20,7 @@ describe("environment setup Chinese UI", () => {
     root = undefined;
     container = undefined;
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
     vi.resetModules();
   });
 
@@ -48,7 +55,67 @@ describe("environment setup Chinese UI", () => {
     expect(container.textContent).toContain("napier-sandbox:0.1.0");
     expect(container.textContent).not.toContain("Build required");
   });
+
+  it("lets users recheck missing server credentials and enable a newly detected provider", async () => {
+    container = installChineseDom();
+    const api = await import("../src/provider-setup-api");
+    const preview = providerPreview();
+    const load = vi
+      .spyOn(api, "getProviderSetupPreview")
+      .mockResolvedValueOnce(preview)
+      .mockResolvedValueOnce({
+        ...preview,
+        availableCount: 1,
+        candidates: preview.candidates.map((candidate) => ({
+          ...candidate,
+          status: "available",
+        })),
+      });
+    const apply = vi.spyOn(api, "applyProviderSetup");
+    const { ProviderSetupCard } = await import("../src/ProviderSetupCard");
+    root = createRoot(container);
+    root.render(
+      <ProviderSetupCard threadId={undefined} onBootstrapUpdated={vi.fn()} />,
+    );
+    await vi.waitFor(() => {
+      expect(container?.textContent).toContain("当前服务尚未检测到 API Key");
+    });
+    expect(container.textContent).toContain("开发模式会自动重载");
+    expect(container.textContent).not.toContain("b".repeat(12));
+    const refresh = [...container.querySelectorAll("button")].find(
+      (button) => button.textContent === "重新检查",
+    );
+    expect(refresh?.disabled).toBe(false);
+    refresh?.dispatchEvent(new window.Event("click", { bubbles: true }));
+    await vi.waitFor(() => {
+      expect(container?.textContent).toContain("启用 DeepSeek");
+    });
+    expect(load).toHaveBeenCalledTimes(2);
+    expect(apply).not.toHaveBeenCalled();
+    expect(container.textContent).not.toContain("当前服务尚未检测到 API Key");
+  });
 });
+
+function providerPreview(): ProviderSetupPreview {
+  return {
+    kind: "napier.provider-setup-preview",
+    schemaVersion: 1,
+    candidates: [
+      {
+        providerId: "deepseek",
+        providerName: "DeepSeek",
+        environmentVariable: "DEEPSEEK_API_KEY",
+        model: { provider: "deepseek", id: "deepseek-v4-flash" },
+        status: "missing",
+      },
+    ],
+    candidateCount: 1,
+    readyCount: 0,
+    availableCount: 0,
+    candidateSetSha256: "a".repeat(64),
+    contentSha256: "b".repeat(64),
+  };
+}
 
 function installChineseDom(): HTMLElement {
   vi.resetModules();

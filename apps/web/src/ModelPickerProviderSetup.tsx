@@ -150,12 +150,15 @@ export function ModelPickerProviderSetup({
       ) : null}
       {!loading && available.length === 0 ? (
         <span className="model-picker-setup-actions">
-          {error ? (
-            <button type="button" onClick={() => void loadPreview()}>
-              <RefreshCw size={13} aria-hidden="true" />
-              {labels.retrySetup}
-            </button>
-          ) : config.onOpenSettings ? (
+          <button
+            type="button"
+            disabled={Boolean(busyProviderId)}
+            onClick={() => void loadPreview()}
+          >
+            <RefreshCw size={13} aria-hidden="true" />
+            {labels.retrySetup}
+          </button>
+          {config.onOpenSettings ? (
             <button type="button" onClick={config.onOpenSettings}>
               <Settings2 size={13} aria-hidden="true" />
               {labels.openSettings}

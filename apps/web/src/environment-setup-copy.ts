@@ -13,6 +13,11 @@ export const environmentSetupCopyEn = {
     enable: "Enable",
     noLocator: "No locator available",
     retry: "Retry provider check",
+    refresh: "Check again",
+    refreshing: "Checking…",
+    serverEnvironment: "Server-side configuration",
+    missingHelp:
+      "No API keys were detected in the running server. Add a provider key to the project's .env file. Development mode reloads it automatically; other launch modes need a server restart. Then check again.",
     checking: "Checking standard environment locators…",
     statuses: {
       ready: {
@@ -26,7 +31,8 @@ export const environmentSetupCopyEn = {
       },
       missing: {
         label: "Not found",
-        detail: "Set this environment variable before enabling the provider.",
+        detail:
+          "This variable is empty or has not been loaded by the server yet.",
       },
       conflict: {
         label: "Review",
@@ -128,6 +134,11 @@ export const environmentSetupCopyZh: LocaleOverride<
     enable: "启用",
     noLocator: "没有可用定位器",
     retry: "重新检查提供商",
+    refresh: "重新检查",
+    refreshing: "正在检查……",
+    serverEnvironment: "服务端配置",
+    missingHelp:
+      "当前服务尚未检测到 API Key。请在项目 .env 中填写密钥；开发模式会自动重载，其他启动方式需重启服务，然后点击“重新检查”。",
     checking: "正在检查标准环境定位器……",
     statuses: {
       ready: {
@@ -140,7 +151,7 @@ export const environmentSetupCopyZh: LocaleOverride<
       },
       missing: {
         label: "未找到",
-        detail: "请先设置此环境变量，再启用提供商。",
+        detail: "此环境变量为空，或尚未被当前服务加载。",
       },
       conflict: {
         label: "需检查",

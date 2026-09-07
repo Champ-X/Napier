@@ -50,7 +50,7 @@ export function ProviderSetupCard({
 
   useEffect(() => {
     void loadPreview();
-  }, [loadPreview]);
+  }, [loadPreview, threadId]);
 
   const enableCandidate = preview
     ? providerSetupEnableCandidate(preview)
@@ -88,6 +88,7 @@ export function ProviderSetupCard({
     <section
       className={`provider-setup-card ${readyCandidate ? "is-ready" : ""}`}
       aria-labelledby="provider-setup-title"
+      aria-busy={Boolean(busy)}
     >
       <header>
         <div className="provider-setup-mark" aria-hidden="true">
@@ -121,29 +122,49 @@ export function ProviderSetupCard({
               />
             ))}
           </div>
+          {!enableCandidate &&
+          !readyCandidate &&
+          preview.candidates.some(
+            (candidate) => candidate.status === "missing",
+          ) ? (
+            <p className="provider-setup-hint" role="status">
+              {providerCopy.missingHelp}
+            </p>
+          ) : null}
           <footer>
             <span className="provider-setup-proof">
-              {providerCopy.preview} {preview.contentSha256.slice(0, 12)}
+              {providerCopy.serverEnvironment}
             </span>
-            {readyCandidate ? (
-              <span className="provider-setup-ready" role="status">
-                <Check size={13} aria-hidden="true" />
-                {readyCandidate.providerName} {providerCopy.readySuffix}
-              </span>
-            ) : (
+            <div className="provider-setup-actions">
               <button
+                className="provider-setup-refresh"
                 type="button"
-                aria-busy={busy === "applying"}
-                disabled={!enableCandidate || busy === "applying"}
-                onClick={() => void enable()}
+                disabled={Boolean(busy)}
+                onClick={() => void loadPreview()}
               >
-                {busy === "applying"
-                  ? providerCopy.applying
-                  : enableCandidate
-                    ? `${providerCopy.enable} ${enableCandidate.providerName}`
-                    : providerCopy.noLocator}
+                <RefreshCw size={13} aria-hidden="true" />
+                {busy === "loading"
+                  ? providerCopy.refreshing
+                  : providerCopy.refresh}
               </button>
-            )}
+              {readyCandidate ? (
+                <span className="provider-setup-ready" role="status">
+                  <Check size={13} aria-hidden="true" />
+                  {readyCandidate.providerName} {providerCopy.readySuffix}
+                </span>
+              ) : enableCandidate ? (
+                <button
+                  type="button"
+                  aria-busy={busy === "applying"}
+                  disabled={Boolean(busy)}
+                  onClick={() => void enable()}
+                >
+                  {busy === "applying"
+                    ? providerCopy.applying
+                    : `${providerCopy.enable} ${enableCandidate.providerName}`}
+                </button>
+              ) : null}
+            </div>
           </footer>
         </>
       ) : error ? (

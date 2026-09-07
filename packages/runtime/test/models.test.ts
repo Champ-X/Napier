@@ -260,7 +260,7 @@ describe("Model registry", () => {
       ),
     ).resolves.toEqual({
       provider: "deepseek",
-      id: DEEPSEEK_VISION_MODEL_ID,
+      id: "deepseek-v4-flash",
     });
     expect(agent.model).toEqual({ provider: "napier", id: "demo" });
   });
