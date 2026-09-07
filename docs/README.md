@@ -18,15 +18,23 @@ for operational questions; use the architecture reference for individual flows.
 Its latest review updates selected flows and does not revalidate every retained
 measurement or historical acceptance claim.
 
+## Learning references
+
+[The architecture learning guide (Chinese)](napier-architecture-learning-guide.zh-CN.md)
+walks through execution, persistence, tool governance, recovery, and model
+routing, with diagrams and interview exercises. Its source review and test
+results are dated 2026-09-07.
+
+[The earlier interview deep dive](napier-interview-deep-dive.zh-CN.md) has its
+own source baseline. Both documents are learning references; use the current
+guides above for product behavior and setup.
+
 ## Historical material
 
 [The archive index](archive/README.md) lists superseded UI proposals, completed
 implementation records, the legacy changelog, and dated Harness/Phase 0
 snapshots. Their original dates, hashes, and results describe the recorded
 baseline. They do not establish the status of the latest source.
-
-[The interview deep dive](napier-interview-deep-dive.zh-CN.md) is a dated learning
-reference with its own source baseline, rather than a product contract.
 
 ## Machine-readable checks and evidence
 

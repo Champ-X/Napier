@@ -33,6 +33,8 @@ original version/date heading preserved.
 - Archive superseded UI proposals and accumulated implementation logs,
   label dated acceptance snapshots, and replace the old backlog with a
   concise review of current gaps.
+- Add a Chinese architecture learning and interview guide with source links,
+  diagrams, and a dated verification record; link it from the documentation index.
 
 The documentation review date is 2026-09-07. These entries do not declare a new
 package release or revalidate historical release evidence.
