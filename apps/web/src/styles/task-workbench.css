@@ -494,6 +494,26 @@
   justify-items: end;
 }
 
+.recovery-error {
+  margin-top: 6px;
+  font-size: var(--text-xs);
+}
+
+.recovery-error summary {
+  width: fit-content;
+  cursor: pointer;
+}
+
+.recovery-error p {
+  margin-top: 4px;
+  max-height: 160px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font-family: var(--mono);
+  color: var(--color-gray-30);
+}
+
 .recovery-actions p {
   max-width: 180px;
   margin: 0;

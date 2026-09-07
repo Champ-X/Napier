@@ -1,17 +1,12 @@
 import type { RunRecord, ThreadStatus } from "@napier/contracts";
-import {
-  isManuallyResumableRun,
-  manualRunRecoverySettlementMatches,
-} from "@napier/contracts/manual-run-recovery";
+import { isManuallyResumableRun } from "@napier/contracts/manual-run-recovery";
 
 export function latestManuallyResumableRun(
   threadStatus: ThreadStatus,
   runs: RunRecord[],
 ): RunRecord | undefined {
-  const latestSettlement = runs
-    .slice()
-    .reverse()
-    .find((run) => manualRunRecoverySettlementMatches(threadStatus, run));
+  // A later run supersedes the previous checkpoint, including a successful recovery.
+  const latestSettlement = runs.at(-1);
   return latestSettlement &&
     isManuallyResumableRun(threadStatus, latestSettlement)
     ? latestSettlement

@@ -1,6 +1,9 @@
 import { PersistentBrowserSession } from "./browser-page-session.js";
 import { BrowserNavigationPolicyError } from "./browser-session-navigation.js";
-import { BrowserSessionInactiveError } from "./browser-session-errors.js";
+import {
+  BrowserSessionInactiveError,
+  BrowserTargetTimeoutError,
+} from "./browser-session-errors.js";
 import {
   browserSessionOwnerKey,
   isBrowserNavigationTimeout,
@@ -427,7 +430,9 @@ export class RunBrowserSessionManager {
       if (
         error instanceof BrowserConfirmationPageChangedError ||
         error instanceof BrowserNavigationPolicyError ||
-        (session.healthy && isBrowserNavigationTimeout(request, error))
+        (session.healthy &&
+          (error instanceof BrowserTargetTimeoutError ||
+            isBrowserNavigationTimeout(request, error)))
       ) {
         throw error;
       }
@@ -477,7 +482,11 @@ export class RunBrowserSessionManager {
         try {
           return await operation(session, key);
         } catch (error) {
-          if (error instanceof BrowserConfirmationPageChangedError) throw error;
+          if (
+            error instanceof BrowserConfirmationPageChangedError ||
+            (session.healthy && error instanceof BrowserTargetTimeoutError)
+          )
+            throw error;
           this.sessions.delete(key);
           await session.close();
           throw error;

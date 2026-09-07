@@ -101,6 +101,7 @@ import {
   type UnresolvedCapabilityClaim,
 } from "./capability-availability-guard.js";
 import { createCapabilityCatalogTool } from "./capability-catalog.js";
+import { canConfirmBrowserInteraction } from "./browser-run-interaction-policy.js";
 import { ToolProtocolRegistry } from "./tool-protocol-registry.js";
 import { createGovernedCodeBridgeBinding } from "./governed-code-bridge.js";
 import { PrivateSourceModelContentBoundary } from "./private-source-model-content.js";
@@ -1227,7 +1228,8 @@ export class AgentRuntime {
       restrictedReadOnlyExecution,
       advisorCorrection,
       browserInteractionConfirmationAllowed:
-        run.source === "user" && !environmentDegradedExecution,
+        canConfirmBrowserInteraction(run, restrictedReadOnlyExecution) &&
+        !environmentDegradedExecution,
       codeBridge: codeBridge.dispatcher,
     }).map(bindBuiltInToolCompatibilityPolicy);
     let pendingOperatorDecisionId: string | undefined;

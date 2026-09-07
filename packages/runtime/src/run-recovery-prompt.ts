@@ -292,6 +292,8 @@ function recoveryPlanHint(plans: ExecutionPlan[]): string {
   if (current.length === 0) return "";
   return [
     "Current durable Plan targets are listed below. Reinspect current state, then use update_plan_step reopen/complete and update_plan_artifact as appropriate; an expected artifact must be recorded produced before verify. Do not create a duplicate Plan.",
+    'If a required Plan tool is not in the active schema, activate it with capability({"uri":"cap://tools/update_plan_step"}) or capability({"uri":"cap://tools/update_plan_artifact"}). A capability query only lists candidates; it does not activate them. Use an exact returned URI instead of repeating discovery queries.',
+    "After checking existing files, record supported Plan and artifact progress promptly before extended rechecks. Resume the remaining steps; do not redo completed research or rebuild valid output. Completion still requires evidence for the stated outcome.",
     `<recovery-plan-context>${JSON.stringify({ plans: current })}</recovery-plan-context>`,
   ].join("\n");
 }

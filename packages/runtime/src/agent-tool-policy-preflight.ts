@@ -13,6 +13,7 @@ import {
   isBrowserInteractionAction,
 } from "./browser-interaction-confirmations.js";
 import { browserInteractionConfirmationPreview } from "./browser-tool.js";
+import { canConfirmBrowserInteraction } from "./browser-run-interaction-policy.js";
 import type { BrowserSessionPauseManager } from "./browser-session-pause.js";
 import type { BrowserSessionRequest } from "./browser-session-model.js";
 import type {
@@ -127,10 +128,12 @@ export async function preflightAgentToolPolicy(input: {
   ) {
     return undefined;
   }
-  if (input.run.source !== "user") {
+  if (
+    !canConfirmBrowserInteraction(input.run, input.restrictedReadOnlyExecution)
+  ) {
     return recordAgentToolPolicyBlock(
       input,
-      "Browser interaction confirmation is available only for user Runs",
+      "Browser interaction confirmation is available only for user Runs or manually resumed Runs",
       "capability_block",
     );
   }

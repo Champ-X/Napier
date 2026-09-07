@@ -295,121 +295,147 @@ describe("Agent Browser Session integration", () => {
     ).toEqual(["read", "read", "read"]);
   });
 
-  it("executes one confirmed Browser interaction in the same Run Session", async () => {
-    const fixture = await createFixture("workspace");
-    const operations: string[] = [];
-    const browserSessions = withBrowserConfirmationState({
-      execute: vi.fn(
-        async (
-          _owner: { threadId: string; runId: string },
-          request: { action: BrowserSessionDetails["action"] },
-        ) => {
-          operations.push(request.action);
-          return {
-            output: `CONFIRMED_${request.action}`,
-            details: browserOperationDetails(request.action, operations.length),
-          };
+  it.each(["user", "manual recovery"])(
+    "executes one confirmed Browser interaction in the same Run Session during %s",
+    async (entry) => {
+      const fixture = await createFixture("workspace");
+      const operations: string[] = [];
+      const browserSessions = withBrowserConfirmationState({
+        execute: vi.fn(
+          async (
+            _owner: { threadId: string; runId: string },
+            request: { action: BrowserSessionDetails["action"] },
+          ) => {
+            operations.push(request.action);
+            return {
+              output: `CONFIRMED_${request.action}`,
+              details: browserOperationDetails(
+                request.action,
+                operations.length,
+              ),
+            };
+          },
+        ),
+        cancelRun: vi.fn(async () => undefined),
+        hasActiveSession: vi.fn(() => true),
+      }) as unknown as RunBrowserSessionManager;
+      const provider = fauxProvider({ provider: "faux-browser-confirmed" });
+      provider.setResponses([
+        fauxAssistantMessage(
+          fauxToolCall("browser", {
+            action: "start",
+            url: "https://example.com/",
+          }),
+          { stopReason: "toolUse" },
+        ),
+        fauxAssistantMessage(
+          fauxToolCall("browser", {
+            action: "click",
+            target: { ref: "e1" },
+          }),
+          { stopReason: "toolUse" },
+        ),
+        fauxAssistantMessage("Confirmed Browser click completed."),
+        fauxAssistantMessage('{"facts":[]}'),
+      ]);
+      fixture.registry.registerProvider(provider.provider);
+      const confirmations = new BrowserInteractionConfirmationManager(
+        fixture.store,
+        { available: true, timeoutMs: 5_000 },
+      );
+      const runtime = new AgentRuntime(
+        fixture.store,
+        fixture.registry,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        browserSessions,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        {},
+        confirmations,
+      );
+      let interruptedId: string | undefined;
+      if (entry === "manual recovery") {
+        const interrupted = await fixture.store.createRun({
+          threadId: fixture.threadId,
+          agentId: fixture.store.getThread(fixture.threadId).agentId,
+          source: "user",
+        });
+        interruptedId = interrupted.id;
+        await fixture.store.finishRun(interrupted.id, "failed", {
+          outcome: "partial",
+          error: "Browser target timed out.",
+        });
+      }
+      const running = interruptedId
+        ? runtime.resumeInterruptedRun({
+            threadId: fixture.threadId,
+            runId: interruptedId,
+            model: { provider: "faux-browser-confirmed", id: "faux-1" },
+          })
+        : runtime.runPrompt({
+            threadId: fixture.threadId,
+            text: "Start the Browser and click the confirmed target.",
+            model: { provider: "faux-browser-confirmed", id: "faux-1" },
+          });
+      let pending:
+        | ReturnType<BrowserInteractionConfirmationManager["list"]>[number]
+        | undefined;
+      await vi.waitFor(() => {
+        const run = fixture.store.listRuns(fixture.threadId).at(-1);
+        expect(run).toBeDefined();
+        pending = confirmations.list({
+          threadId: fixture.threadId,
+          runId: run!.id,
+        })[0];
+        expect(pending?.action).toBe("click");
+      });
+      expect(operations).toEqual(["start"]);
+      const runId = fixture.store.listRuns(fixture.threadId).at(-1)!.id;
+      await confirmations.decide(
+        { threadId: fixture.threadId, runId },
+        pending!.id,
+        {
+          decision: "approve",
+          expectedRequestSha256: pending!.requestSha256,
         },
-      ),
-      cancelRun: vi.fn(async () => undefined),
-      hasActiveSession: vi.fn(() => true),
-    }) as unknown as RunBrowserSessionManager;
-    const provider = fauxProvider({ provider: "faux-browser-confirmed" });
-    provider.setResponses([
-      fauxAssistantMessage(
-        fauxToolCall("browser", {
-          action: "start",
-          url: "https://example.com/",
-        }),
-        { stopReason: "toolUse" },
-      ),
-      fauxAssistantMessage(
-        fauxToolCall("browser", {
-          action: "click",
-          target: { ref: "e1" },
-        }),
-        { stopReason: "toolUse" },
-      ),
-      fauxAssistantMessage("Confirmed Browser click completed."),
-      fauxAssistantMessage('{"facts":[]}'),
-    ]);
-    fixture.registry.registerProvider(provider.provider);
-    const confirmations = new BrowserInteractionConfirmationManager(
-      fixture.store,
-      { available: true, timeoutMs: 5_000 },
-    );
-    const runtime = new AgentRuntime(
-      fixture.store,
-      fixture.registry,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      browserSessions,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      {},
-      confirmations,
-    );
-    const running = runtime.runPrompt({
-      threadId: fixture.threadId,
-      text: "Start the Browser and click the confirmed target.",
-      model: { provider: "faux-browser-confirmed", id: "faux-1" },
-    });
-    let pending:
-      | ReturnType<BrowserInteractionConfirmationManager["list"]>[number]
-      | undefined;
-    await vi.waitFor(() => {
-      const run = fixture.store.listRuns(fixture.threadId)[0];
-      expect(run).toBeDefined();
-      pending = confirmations.list({
-        threadId: fixture.threadId,
-        runId: run!.id,
-      })[0];
-      expect(pending?.action).toBe("click");
-    });
-    const runId = fixture.store.listRuns(fixture.threadId)[0]!.id;
-    await confirmations.decide(
-      { threadId: fixture.threadId, runId },
-      pending!.id,
-      {
-        decision: "approve",
-        expectedRequestSha256: pending!.requestSha256,
-      },
-    );
+      );
 
-    const run = await running;
+      const run = await running;
 
-    expect(run.status, run.error).toBe("completed");
-    expect(operations).toEqual(["start", "click"]);
-    expect(browserSessions.execute).toHaveBeenNthCalledWith(
-      2,
-      { threadId: fixture.threadId, runId: run.id },
-      { action: "click", target: { ref: "e1" } },
-      expect.any(AbortSignal),
-    );
-    const events = await fixture.store.listEvents(fixture.threadId);
-    expect(
-      events
-        .filter((event) =>
-          event.type.startsWith("browser.interaction_confirmation."),
-        )
-        .map((event) => event.type),
-    ).toEqual([
-      "browser.interaction_confirmation.pending",
-      "browser.interaction_confirmation.approved",
-    ]);
-    expect(
-      events.some(
-        (event) =>
-          event.type === "tool.completed" &&
-          record(event.payload)?.["toolName"] === "browser" &&
-          record(record(event.payload)?.["details"])?.["action"] === "click",
-      ),
-    ).toBe(true);
-  });
+      expect(run.status, run.error).toBe("completed");
+      expect(operations).toEqual(["start", "click"]);
+      expect(browserSessions.execute).toHaveBeenNthCalledWith(
+        2,
+        { threadId: fixture.threadId, runId: run.id },
+        { action: "click", target: { ref: "e1" } },
+        expect.any(AbortSignal),
+      );
+      const events = await fixture.store.listEvents(fixture.threadId);
+      expect(
+        events
+          .filter((event) =>
+            event.type.startsWith("browser.interaction_confirmation."),
+          )
+          .map((event) => event.type),
+      ).toEqual([
+        "browser.interaction_confirmation.pending",
+        "browser.interaction_confirmation.approved",
+      ]);
+      expect(
+        events.some(
+          (event) =>
+            event.type === "tool.completed" &&
+            record(event.payload)?.["toolName"] === "browser" &&
+            record(record(event.payload)?.["details"])?.["action"] === "click",
+        ),
+      ).toBe(true);
+    },
+  );
 
   it("pauses after the current Browser action and resumes the next in the same Run Session", async () => {
     const fixture = await createFixture("workspace");

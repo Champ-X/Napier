@@ -7,6 +7,10 @@ import type { RunRecord } from "@napier/contracts";
 
 import { RecoveryBanner } from "../src/RecoveryBanner";
 
+vi.mock("lucide-react", () => ({
+  RotateCcw: (props: Record<string, unknown>) => <svg {...props} />,
+}));
+
 const containers: HTMLElement[] = [];
 
 afterEach(async () => {
@@ -39,13 +43,38 @@ describe("RecoveryBanner", () => {
       "This task has preserved partial work.",
     );
     expect(container.textContent).toContain(
-      "A normal message starts a new run instead.",
+      "Your plan and existing results are saved.",
     );
     expect(container.textContent).not.toContain("interrupted");
     const button = findButton(container);
     expect(button.textContent).toContain("Continue this task");
     button.click();
     expect(onResume).toHaveBeenCalledOnce();
+    expect(container.querySelector("details")).toBeNull();
+  });
+
+  it("makes the failure reason available as escaped, collapsed text", async () => {
+    const container = installDom();
+    const error =
+      'Run made no measurable progress. <script>alert("unsafe")</script>';
+    await act(async () => {
+      render(
+        <RecoveryBanner
+          run={{ ...run("partial"), error }}
+          running={false}
+          modelConfigured
+          onResume={vi.fn()}
+        />,
+        container,
+      );
+    });
+    const details = container.querySelector("details");
+    expect(details?.hasAttribute("open")).toBe(false);
+    expect(details?.querySelector("summary")?.textContent).toBe(
+      "Why this run stopped",
+    );
+    expect(details?.querySelector("p")?.textContent).toBe(error);
+    expect(details?.querySelector("script")).toBeNull();
   });
 
   it("preserves the paused-budget recovery action", async () => {

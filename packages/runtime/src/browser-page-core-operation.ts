@@ -20,6 +20,7 @@ import {
   captureBrowserPageState,
 } from "./browser-page-state.js";
 import { performBrowserPageUpload } from "./browser-page-upload.js";
+import { withBrowserTargetActionFailure } from "./browser-target-action.js";
 
 type BrowserCoreRequest = Extract<
   BrowserSessionRequest,
@@ -94,24 +95,33 @@ export async function performBrowserPageCoreOperation(input: {
     case "click":
       await input.withNetwork(() =>
         input.navigation.run(page, request.allowCrossOrigin === true, () =>
-          browserPageLocator(page, request.target).click({
-            timeout: BROWSER_ACTION_TIMEOUT_MS,
-          }),
+          withBrowserTargetActionFailure(() =>
+            browserPageLocator(page, request.target).click({
+              timeout: BROWSER_ACTION_TIMEOUT_MS,
+            }),
+          ),
         ),
       );
       break;
     case "type":
       await input.withNetwork(() =>
-        browserPageLocator(page, request.target).fill(request.text, {
-          timeout: BROWSER_ACTION_TIMEOUT_MS,
-        }),
+        withBrowserTargetActionFailure(() =>
+          browserPageLocator(page, request.target).fill(request.text, {
+            timeout: BROWSER_ACTION_TIMEOUT_MS,
+          }),
+        ),
       );
       break;
     case "select":
       await input.withNetwork(() =>
-        browserPageLocator(page, request.target).selectOption(request.values, {
-          timeout: BROWSER_ACTION_TIMEOUT_MS,
-        }),
+        withBrowserTargetActionFailure(() =>
+          browserPageLocator(page, request.target).selectOption(
+            request.values,
+            {
+              timeout: BROWSER_ACTION_TIMEOUT_MS,
+            },
+          ),
+        ),
       );
       break;
     case "upload": {

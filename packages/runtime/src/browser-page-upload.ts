@@ -1,4 +1,5 @@
 import type { Locator, Page } from "playwright-core";
+import { withBrowserTargetActionFailure } from "./browser-target-action.js";
 
 import {
   assertBrowserUploadCurrent,
@@ -24,15 +25,17 @@ export async function performBrowserPageUpload(input: {
     input.prepared ??
     (await inspectBrowserUpload(input.workspaceRoot, input.path));
   await input.withNetwork(() =>
-    input.locator(input.page, input.target).setInputFiles(
-      input.prepared
-        ? {
-            name: input.prepared.name,
-            mimeType: input.prepared.mimeType,
-            buffer: input.prepared.buffer,
-          }
-        : file.target,
-      { timeout: BROWSER_ACTION_TIMEOUT_MS },
+    withBrowserTargetActionFailure(() =>
+      input.locator(input.page, input.target).setInputFiles(
+        input.prepared
+          ? {
+              name: input.prepared.name,
+              mimeType: input.prepared.mimeType,
+              buffer: input.prepared.buffer,
+            }
+          : file.target,
+        { timeout: BROWSER_ACTION_TIMEOUT_MS },
+      ),
     ),
   );
   if (!input.prepared) await assertBrowserUploadCurrent(file);

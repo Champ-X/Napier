@@ -31,6 +31,12 @@ export function RecoveryBanner({
         <code>
           {recoveryCopy.run}: {run.id}
         </code>
+        {run.error ? (
+          <details className="recovery-error">
+            <summary>{copy.recovery.failureReason}</summary>
+            <p>{run.error}</p>
+          </details>
+        ) : null}
       </div>
       <div className="recovery-actions">
         {!modelConfigured ? (

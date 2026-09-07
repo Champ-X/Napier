@@ -1,13 +1,16 @@
 import type { ToolFailureModeV1 } from "@napier/contracts/tool-protocol";
 
 import { BrowserConfirmationPageChangedError } from "./browser-confirmed-action.js";
-import { BrowserSessionInactiveError } from "./browser-session-errors.js";
+import {
+  BrowserSessionInactiveError,
+  BrowserTargetTimeoutError,
+} from "./browser-session-errors.js";
 import { BrowserNavigationPolicyError } from "./browser-session-navigation.js";
 import {
   publicUrlProgressFailureDomain,
-  publicUrlProgressResource,
   recordValue,
 } from "./tool-progress-semantics.js";
+import { resolveBrowserToolProgress } from "./browser-tool-progress.js";
 import {
   declaredFailureMode,
   structuredTransportFailureClass,
@@ -21,6 +24,7 @@ const MODES = [
   mode("capability_unsupported", "unsupported", "capability", "terminal"),
   mode("navigation_policy", "policy", "invocation", "correct_input"),
   mode("page_changed", "session_state", "target", "correct_input"),
+  mode("target_timeout", "timeout", "target", "correct_input"),
   mode("session_inactive", "session_state", "session", "recover_state", true),
   mode("origin_timeout", "timeout", "origin", "alternate_route"),
   mode("origin_network", "network", "origin", "alternate_route"),
@@ -32,7 +36,7 @@ const MODES = [
 
 export const BROWSER_TOOL_FAILURE_DECLARATION: ToolFailureDeclaration = {
   schemaVersion: 1,
-  classificationVersion: "1.0.0",
+  classificationVersion: "1.1.0",
   modes: MODES,
   resolve(input, failure) {
     const signal = toolFailureSignal(failure);
@@ -79,6 +83,7 @@ function knownBrowserFailureMode(
   transport: ReturnType<typeof structuredTransportFailureClass>,
 ): (typeof MODES)[number]["modeId"] | undefined {
   if (failure instanceof BrowserSessionInactiveError) return "session_inactive";
+  if (failure instanceof BrowserTargetTimeoutError) return "target_timeout";
   if (failure instanceof BrowserNavigationPolicyError)
     return "navigation_policy";
   if (failure instanceof BrowserConfirmationPageChangedError)
@@ -108,21 +113,12 @@ function browserFailureBinding(
     return publicUrlProgressFailureDomain(value["url"]);
   }
   if (scope === "target") {
-    const publicUrl = publicUrlProgressResource(value["url"]);
-    if (publicUrl) return publicUrl;
-    if (
-      [
-        "click",
-        "type",
-        "select",
-        "upload",
-        "visual_click",
-        "keypress",
-      ].includes(action)
-    ) {
-      return { kind: "browser-session-target", action };
-    }
-    return { kind: "browser-session", action };
+    return (
+      resolveBrowserToolProgress(input).failureBindings?.target ?? {
+        kind: "browser-session",
+        action,
+      }
+    );
   }
   return { kind: "browser-route", route: "interactive_navigation" };
 }

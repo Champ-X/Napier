@@ -25,6 +25,16 @@ describe("manual Run recovery view model", () => {
     expect(latestManuallyResumableRun("idle", [partial])).toEqual(partial);
   });
 
+  it.each([
+    run("completed", "run_recovered"),
+    run("failed", "run_terminal_failure"),
+  ])("does not revive an older checkpoint after $id", (latest) => {
+    const partial = run("failed", "run_partial", { outcome: "partial" });
+    expect(
+      latestManuallyResumableRun("idle", [partial, latest]),
+    ).toBeUndefined();
+  });
+
   it("does not fall back past a latest Workflow-owned settlement", () => {
     const ordinary = run("failed", "run_ordinary", {
       outcome: "paused_budget",

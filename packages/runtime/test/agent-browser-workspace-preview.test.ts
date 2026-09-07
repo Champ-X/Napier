@@ -28,103 +28,125 @@ afterEach(async () => {
 });
 
 describe("Agent Browser workspace preview", () => {
-  it("interacts with ordinary offline controls without confirmation", async () => {
-    const root = await mkdtemp(path.join(tmpdir(), "napier-agent-preview-"));
-    roots.push(root);
-    const workspaceRoot = path.join(root, "workspace");
-    await mkdir(workspaceRoot);
-    const store = new LocalStore({
-      workspaceRoot,
-      dataRoot: path.join(root, "data"),
-    });
-    await store.initialize();
-    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
-      toolPolicy: "workspace",
-      enabledTools: ["browser"],
-    });
-    const thread = await store.createThread({
-      title: "Agent workspace preview",
-      agentId: agent.id,
-    });
-    const registry = new ModelRegistry();
-    const operations: string[] = [];
-    const browserSessions = withBrowserConfirmationState({
-      execute: vi.fn(
-        async (
-          _owner: { threadId: string; runId: string },
-          request: { action: BrowserSessionDetails["action"] },
-        ) => {
-          operations.push(request.action);
-          return {
-            output: `PREVIEW_${request.action}`,
-            details: details(request.action, operations.length),
-          };
-        },
-      ),
-      cancelRun: vi.fn(async () => undefined),
-      hasActiveSession: vi.fn(() => true),
-      hasWorkspacePreview: vi.fn(() =>
-        operations.includes("preview_workspace"),
-      ),
-    }) as unknown as RunBrowserSessionManager;
-    const provider = fauxProvider({ provider: "faux-browser-preview" });
-    provider.setResponses([
-      fauxAssistantMessage(
-        fauxToolCall("browser", {
-          action: "preview_workspace",
-          path: "site/index.html",
+  it.each(["user", "manual recovery"])(
+    "interacts with ordinary offline controls without confirmation during %s",
+    async (entry) => {
+      const root = await mkdtemp(path.join(tmpdir(), "napier-agent-preview-"));
+      roots.push(root);
+      const workspaceRoot = path.join(root, "workspace");
+      await mkdir(workspaceRoot);
+      const store = new LocalStore({
+        workspaceRoot,
+        dataRoot: path.join(root, "data"),
+      });
+      await store.initialize();
+      const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+        toolPolicy: "workspace",
+        enabledTools: ["browser"],
+      });
+      const thread = await store.createThread({
+        title: "Agent workspace preview",
+        agentId: agent.id,
+      });
+      const registry = new ModelRegistry();
+      const operations: string[] = [];
+      const browserSessions = withBrowserConfirmationState({
+        execute: vi.fn(
+          async (
+            _owner: { threadId: string; runId: string },
+            request: { action: BrowserSessionDetails["action"] },
+          ) => {
+            operations.push(request.action);
+            return {
+              output: `PREVIEW_${request.action}`,
+              details: details(request.action, operations.length),
+            };
+          },
+        ),
+        cancelRun: vi.fn(async () => undefined),
+        hasActiveSession: vi.fn(() => true),
+        hasWorkspacePreview: vi.fn(() =>
+          operations.includes("preview_workspace"),
+        ),
+      }) as unknown as RunBrowserSessionManager;
+      const provider = fauxProvider({ provider: "faux-browser-preview" });
+      provider.setResponses([
+        fauxAssistantMessage(
+          fauxToolCall("browser", {
+            action: "preview_workspace",
+            path: "site/index.html",
+          }),
+          { stopReason: "toolUse" },
+        ),
+        fauxAssistantMessage(
+          fauxToolCall("browser", {
+            action: "click",
+            target: { ref: "e1" },
+          }),
+          { stopReason: "toolUse" },
+        ),
+        fauxAssistantMessage(fauxToolCall("browser", { action: "console" }), {
+          stopReason: "toolUse",
         }),
-        { stopReason: "toolUse" },
-      ),
-      fauxAssistantMessage(
-        fauxToolCall("browser", {
-          action: "click",
-          target: { ref: "e1" },
-        }),
-        { stopReason: "toolUse" },
-      ),
-      fauxAssistantMessage(fauxToolCall("browser", { action: "console" }), {
-        stopReason: "toolUse",
-      }),
-      fauxAssistantMessage("Workspace preview verified."),
-      fauxAssistantMessage('{"facts":[]}'),
-    ]);
-    registry.registerProvider(provider.provider);
-    const confirmations = new BrowserInteractionConfirmationManager(store, {
-      available: true,
-      timeoutMs: 5_000,
-    });
-    const runtime = new AgentRuntime(
-      store,
-      registry,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      browserSessions,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      {},
-      confirmations,
-    );
+        fauxAssistantMessage("Workspace preview verified."),
+        fauxAssistantMessage('{"facts":[]}'),
+      ]);
+      registry.registerProvider(provider.provider);
+      const confirmations = new BrowserInteractionConfirmationManager(store, {
+        available: true,
+        timeoutMs: 5_000,
+      });
+      const runtime = new AgentRuntime(
+        store,
+        registry,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        browserSessions,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        {},
+        confirmations,
+      );
 
-    const run = await runtime.runPrompt({
-      threadId: thread.id,
-      text: "Preview the local artifact and test its ordinary control.",
-      model: { provider: "faux-browser-preview", id: "faux-1" },
-    });
+      let interruptedId: string | undefined;
+      if (entry === "manual recovery") {
+        const interrupted = await store.createRun({
+          threadId: thread.id,
+          agentId: agent.id,
+          source: "user",
+        });
+        interruptedId = interrupted.id;
+        await store.finishRun(interrupted.id, "failed", {
+          outcome: "partial",
+          error: "Preview control timed out.",
+        });
+      }
+      const run = interruptedId
+        ? await runtime.resumeInterruptedRun({
+            threadId: thread.id,
+            runId: interruptedId,
+            model: { provider: "faux-browser-preview", id: "faux-1" },
+          })
+        : await runtime.runPrompt({
+            threadId: thread.id,
+            text: "Preview the local artifact and test its ordinary control.",
+            model: { provider: "faux-browser-preview", id: "faux-1" },
+          });
 
-    expect(run.status, run.error).toBe("completed");
-    expect(operations).toEqual(["preview_workspace", "click", "console"]);
-    expect(
-      (await store.listEvents(thread.id)).some((event) =>
-        event.type.startsWith("browser.interaction_confirmation."),
-      ),
-    ).toBe(false);
-    store.close();
-  });
+      expect(run.status, run.error).toBe("completed");
+      expect(operations).toEqual(["preview_workspace", "click", "console"]);
+      expect(
+        (await store.listEvents(thread.id)).some((event) =>
+          event.type.startsWith("browser.interaction_confirmation."),
+        ),
+      ).toBe(false);
+      store.close();
+    },
+  );
 });
 
 function details(
