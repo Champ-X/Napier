@@ -19,30 +19,38 @@
 }
 
 .brand-lockup {
-  min-height: 40px;
+  min-height: var(--space-12);
   gap: var(--space-2);
-  padding: 0 var(--space-2) var(--space-2);
+  padding: 0 calc(var(--control-target) + var(--space-2)) var(--space-2)
+    var(--space-2);
 }
 
-.brand-mark-frame {
-  display: block;
-  width: 34px;
-  height: 34px;
+.brand-lockup .brand-mark-frame {
+  position: relative;
+  display: flex;
+  width: var(--space-10);
+  height: var(--space-10);
   flex: 0 0 auto;
-  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  overflow: visible;
 }
 
 .brand-mark {
   display: block;
-  width: 58px;
-  height: 58px;
+  /* The PNG includes transparent margins around the complete portrait. */
+  width: calc(var(--space-12) + var(--space-2));
+  height: calc(var(--space-12) + var(--space-2));
   object-fit: contain;
   background: transparent;
   border-radius: 0;
-  transform: translate(-12px, -12px);
+  transform: none;
 }
 
 .brand-lockup strong {
+  min-width: 0;
+  flex: 1;
   overflow: hidden;
   font-family:
     "Martina Plantijn", "Plantijn", "Iowan Old Style", Baskerville,
@@ -56,7 +64,7 @@
 }
 
 .ledger-collapse-button {
-  top: 2px;
+  top: var(--space-1);
   width: var(--control-target);
   height: var(--control-target);
   background: transparent;
@@ -65,8 +73,8 @@
 }
 
 .new-ledger-button {
-  min-height: 36px;
-  margin: 0 0 var(--space-4);
+  min-height: var(--control-target-primary);
+  margin: 0 0 var(--space-1);
   padding-inline: var(--space-3);
   font-size: var(--text-sm);
   font-weight: var(--font-weight-medium);
@@ -83,14 +91,14 @@
 }
 
 .ledger-search {
-  margin: calc(var(--space-2) * -1) 0 var(--space-4);
+  margin: 0 0 var(--space-4);
 }
 
 .ledger-search label,
 .ledger-search > button {
   display: flex;
   width: 100%;
-  min-height: 34px;
+  min-height: var(--control-target-primary);
   align-items: center;
   gap: var(--space-2);
   padding-inline: var(--space-3);
@@ -294,8 +302,13 @@ body.is-resizing-workspace {
 }
 
 .ledger-nav.is-collapsed .brand-lockup {
-  min-height: var(--control-target);
-  padding: 0 0 var(--space-4);
+  width: var(--control-target-primary);
+  min-height: var(--space-10);
+  flex: 0 0 var(--space-10);
+  flex-direction: row;
+  justify-content: center;
+  margin-block-end: var(--space-2);
+  padding: 0;
 }
 
 .ledger-nav.is-collapsed .brand-mark-frame,
@@ -304,20 +317,25 @@ body.is-resizing-workspace {
   display: none;
 }
 
+.ledger-nav.is-collapsed .ledger-collapse-button {
+  width: var(--control-target-primary);
+  height: var(--control-target-primary);
+}
+
 .ledger-nav.is-collapsed .new-ledger-button,
 .ledger-nav.is-collapsed .ledger-search,
 .ledger-nav.is-collapsed .ledger-search > button {
-  width: var(--control-target);
-  min-width: var(--control-target);
+  width: var(--control-target-primary);
+  min-width: var(--control-target-primary);
   margin-inline: 0;
 }
 
 .ledger-nav.is-collapsed .new-ledger-button {
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-1);
 }
 
 .ledger-nav.is-collapsed .ledger-search {
-  margin-block: 0 var(--space-2);
+  margin-block: 0 var(--space-1);
 }
 
 .ledger-nav.is-collapsed .ledger-search > button {
@@ -326,8 +344,43 @@ body.is-resizing-workspace {
 }
 
 .ledger-nav.is-collapsed .workspace-control-buttons {
-  width: 100%;
+  width: var(--control-target-primary);
   border-top: 0;
+}
+
+.ledger-nav.is-collapsed .workspace-settings-button {
+  width: var(--control-target-primary);
+  min-height: var(--control-target-primary);
+  margin-inline: auto;
+}
+
+.ledger-nav.is-collapsed .workspace-settings-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.app-shell:has(.ledger-nav.is-mobile-open) {
+  grid-template-columns: var(--shell-nav-compact-width) 0 minmax(0, 1fr);
+}
+
+.ledger-nav.is-mobile-open {
+  position: fixed;
+  z-index: 81;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: min(var(--layout-sidebar-expanded), calc(100vw - var(--space-12)));
+  box-shadow: var(--shadow-modal);
+}
+
+.app-shell:has(.ledger-nav.is-mobile-open) .ledger-nav-backdrop {
+  position: fixed;
+  z-index: 80;
+  inset: 0;
+  display: block;
+  padding: 0;
+  background: color-mix(in srgb, var(--color-fg) 20%, transparent);
+  border: 0;
+  border-radius: 0;
 }
 
 .status-dot {

@@ -113,9 +113,7 @@ describe("Workbench layout", () => {
     expect(navigation).toContain("?.click()");
     expect(navigation).toContain('openInspector("files")');
     expect(app).toContain("artifactInspectionForPath(");
-    expect(app).toContain(
-      "absoluteWorkspacePath(bootstrap.workspace.root, path)",
-    );
+    expect(app).toContain("setWorkspaceFilePath(path)");
     expect(app).toContain("<WorkspaceFileInspector");
     expect(app).toContain("onOpenArtifact={openArtifact}");
     expect(app).toContain("onOpenWorkspaceFile={openArtifact}");

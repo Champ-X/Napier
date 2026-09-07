@@ -16,8 +16,8 @@
   min-height: 0;
   overflow: hidden;
   color: var(--color-fg);
-  background: color-mix(in srgb, var(--color-canvas) 96%, var(--color-surface));
-  border-inline-start: 1px solid var(--color-border-subtle);
+  background: transparent;
+  border-inline-start: 0;
 }
 
 .workspace-evidence-rail[hidden] {
@@ -33,7 +33,7 @@
   height: 100%;
   align-content: start;
   gap: var(--space-3);
-  padding: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   overflow: hidden auto;
   scrollbar-width: thin;
 }
@@ -41,8 +41,8 @@
 .workspace-card,
 .workspace-evidence-results {
   overflow: hidden;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: transparent;
+  border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-md);
 }
 
@@ -361,7 +361,7 @@ button.workspace-file-tree-row:hover {
   inset: var(--layout-command-bar) 0 0 auto;
   display: block;
   width: min(360px, calc(100vw - 48px));
-  background: var(--color-canvas);
+  background: var(--color-surface);
   box-shadow: -20px 0 48px
     color-mix(in srgb, var(--color-blue-16) 24%, transparent);
   animation: workspace-evidence-enter 160ms ease-out both;

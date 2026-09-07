@@ -1,6 +1,6 @@
 import {
-  ChevronLeft,
-  ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
   MessageCirclePlus,
   Loader2,
   Search,
@@ -88,13 +88,14 @@ export const LedgerNavigation = memo(function LedgerNavigation({
             className="ledger-collapse-button"
             type="button"
             aria-label={visuallyCollapsed ? "展开会话导航" : "收起会话导航"}
+            title={visuallyCollapsed ? "展开会话导航" : "收起会话导航"}
             aria-pressed={visuallyCollapsed}
             onClick={toggleSidebar}
           >
             {visuallyCollapsed ? (
-              <ChevronRight size={14} aria-hidden="true" />
+              <PanelLeftOpen size={18} aria-hidden="true" />
             ) : (
-              <ChevronLeft size={14} aria-hidden="true" />
+              <PanelLeftClose size={18} aria-hidden="true" />
             )}
           </button>
         </div>
@@ -103,6 +104,7 @@ export const LedgerNavigation = memo(function LedgerNavigation({
           className="new-ledger-button"
           type="button"
           aria-label={copy.newThread}
+          title={visuallyCollapsed ? copy.newThread : undefined}
           aria-busy={newThreadBusy}
           disabled={newThreadBusy}
           onClick={() => {
@@ -111,17 +113,22 @@ export const LedgerNavigation = memo(function LedgerNavigation({
           }}
         >
           {newThreadBusy ? (
-            <Loader2 size={17} aria-hidden="true" className="spin" />
+            <Loader2 size={18} aria-hidden="true" className="spin" />
           ) : (
-            <MessageCirclePlus size={17} aria-hidden="true" />
+            <MessageCirclePlus size={18} aria-hidden="true" />
           )}
           <span>{copy.newThread}</span>
         </button>
 
         <div className="ledger-search">
           {visuallyCollapsed ? (
-            <button type="button" aria-label={t.search} onClick={openSearch}>
-              <Search size={17} aria-hidden="true" />
+            <button
+              type="button"
+              aria-label={t.search}
+              title={t.search}
+              onClick={openSearch}
+            >
+              <Search size={18} aria-hidden="true" />
             </button>
           ) : (
             <label>
@@ -160,6 +167,7 @@ export const LedgerNavigation = memo(function LedgerNavigation({
             className="workspace-settings-button workbench-settings workbench-developer"
             type="button"
             aria-label={copy.developerWorkbench.open}
+            title={visuallyCollapsed ? copy.developerWorkbench.open : undefined}
             onClick={() => {
               onOpenDeveloperWorkbench();
               closeSidebar();
@@ -172,6 +180,7 @@ export const LedgerNavigation = memo(function LedgerNavigation({
             className="workspace-settings-button workbench-settings"
             type="button"
             aria-label={copy.settings}
+            title={visuallyCollapsed ? copy.settings : undefined}
             onClick={() => {
               onOpenSettings();
               closeSidebar();
