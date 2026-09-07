@@ -1,4 +1,4 @@
-import type { RunEvent } from "@napier/contracts";
+import type { JsonObject, RunEvent } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -45,6 +45,33 @@ describe("Conversation network activities", () => {
     expect(JSON.stringify(activities)).not.toContain("PRIVATE_QUERY");
   });
 
+  it("accepts older search receipts and keeps zero results distinct from missing evidence", () => {
+    const details: JsonObject = {
+      ...searchDetails(),
+      resultCount: 0,
+    };
+    for (const key of [
+      "operationJournalVersion",
+      "operationCount",
+      "settledOperationCount",
+      "operationSetSha256",
+    ])
+      delete details[key];
+    expect(
+      conversationNetworkActivity(
+        event(3, "tool.completed", {
+          callId: "call_search",
+          toolName: "web_search",
+          details,
+        }),
+      ),
+    ).toMatchObject({
+      status: "completed",
+      resultCount: 0,
+      provider: "duckduckgo",
+    });
+  });
+
   it("projects fetch format, size shape, and Browser fallback recovery", () => {
     expect(
       conversationNetworkActivity(
@@ -73,6 +100,156 @@ describe("Conversation network activities", () => {
       redirectCount: 1,
       retrievedAt: "2026-08-08T00:00:02.000Z",
     });
+  });
+
+  it("keeps image search page candidates distinct from direct image results", () => {
+    const activity = conversationNetworkActivity(
+      event(3, "tool.completed", {
+        callId: "call_images",
+        toolName: "web_search",
+        details: {
+          ...searchDetails(),
+          provider: "firecrawl",
+          category: "images",
+          resolvedCategory: "general",
+          resolutionMode: "image_page_candidates",
+          resultCount: 15,
+        },
+      }),
+    );
+    expect(activity).toMatchObject({
+      status: "completed",
+      provider: "firecrawl",
+      resultCount: 15,
+      category: "images",
+      resolutionMode: "image_page_candidates",
+    });
+  });
+
+  it("projects successfully fetched image evidence", () => {
+    expect(
+      conversationNetworkActivity(
+        event(3, "tool.completed", {
+          callId: "call_image",
+          toolName: "web_fetch",
+          details: fetchDetails({
+            sourceFormat: "image",
+            sourceLineCount: 1,
+            sourceRenderMode: "static",
+            browserFallbackStatus: "not_needed",
+          }),
+        }),
+      ),
+    ).toMatchObject({
+      status: "completed",
+      action: "fetch",
+      format: "image",
+      lineCount: 1,
+    });
+  });
+
+  it("retains the requested action and typed timeout without reading private errors", () => {
+    const activities = conversationNetworkActivities([
+      event(1, "tool.started", {
+        callId: "call_timeout",
+        toolName: "web_fetch",
+        action: "fetch",
+      }),
+      event(2, "tool.failed", {
+        callId: "call_timeout",
+        toolName: "web_fetch",
+        details: {
+          kind: "napier.web-fetch",
+          schemaVersion: 1,
+          action: "unknown",
+        },
+        error: "PRIVATE_NETWORK_ERROR",
+        toolFailure: failureReceipt(),
+      }),
+    ]);
+    expect(activities).toEqual([
+      expect.objectContaining({
+        status: "failed",
+        action: "fetch",
+        failureClass: "timeout",
+      }),
+    ]);
+    expect(JSON.stringify(activities)).not.toContain("PRIVATE");
+  });
+
+  it("explains circuit rejection from operation receipts, scoped to the same run and call", () => {
+    const rejected = event(2, "tool.operation.admitted", {
+      kind: "napier.tool-operation",
+      schemaVersion: 1,
+      parentCallId: "call_fetch",
+      admission: "rejected",
+      admissionSource: "failure_circuit",
+      circuitStatus: "open",
+      circuitKeySha256: "a".repeat(64),
+      circuitPolicySha256: "b".repeat(64),
+    });
+    const failed = event(3, "tool.failed", {
+      callId: "call_fetch",
+      toolName: "web_fetch",
+      toolFailure: failureReceipt({
+        class: "policy",
+        scope: "invocation",
+        disposition: "terminal",
+      }),
+    });
+    const activities = conversationNetworkActivities([
+      rejected,
+      failed,
+      { ...failed, id: "other_run_failure", runId: "run_2", seq: 4 },
+    ]);
+    expect(activities).toHaveLength(2);
+    expect(activities[0]).toMatchObject({ failureClass: "circuit_open" });
+    expect(activities[1]).toMatchObject({ failureClass: "policy" });
+    const recovered = conversationNetworkActivities([
+      rejected,
+      failed,
+      event(4, "tool.completed", {
+        callId: "call_fetch",
+        toolName: "web_fetch",
+        details: fetchDetails(),
+      }),
+    ]);
+    expect(recovered[0]).toMatchObject({ status: "completed" });
+    expect(recovered[0]).not.toHaveProperty("failureClass");
+  });
+
+  it.each([
+    { operationSetSha256: "invalid" },
+    { settledOperationCount: 2 },
+    { resolutionMode: "image_page_candidates" },
+    { resolvedCategory: "general", resolutionMode: "PRIVATE_MODE" },
+  ])("rejects malformed search extensions: %j", (overrides) => {
+    expect(
+      conversationNetworkActivity(
+        event(3, "tool.completed", {
+          callId: "call_search",
+          toolName: "web_search",
+          details: { ...searchDetails(), ...overrides },
+        }),
+      ),
+    ).not.toHaveProperty("resultCount");
+  });
+
+  it.each([
+    { class: "PRIVATE_CLASS" },
+    { schemaVersion: 2 },
+    { coverage: "invalid_declared" },
+    { diagnosticSha256: "invalid" },
+  ])("keeps an unrecognized failure generic: %j", (overrides) => {
+    expect(
+      conversationNetworkActivity(
+        event(3, "tool.failed", {
+          callId: "call_fetch",
+          toolName: "web_fetch",
+          toolFailure: failureReceipt(overrides),
+        }),
+      ),
+    ).not.toHaveProperty("failureClass");
   });
 
   it("fails closed on private or malformed receipts but preserves terminal status", () => {
@@ -153,6 +330,27 @@ function searchDetails() {
     querySha256: "a".repeat(64),
     resultSetSha256: "b".repeat(64),
     retrievedAt: "2026-08-08T00:00:01.000Z",
+    operationJournalVersion: 1,
+    operationCount: 1,
+    settledOperationCount: 1,
+    operationSetSha256: "c".repeat(64),
+  };
+}
+
+function failureReceipt(overrides: Record<string, unknown> = {}) {
+  return {
+    kind: "napier.tool-failure-semantics",
+    schemaVersion: 1,
+    class: "timeout",
+    scope: "origin",
+    disposition: "alternate_route",
+    fatalToSession: false,
+    coverage: "trusted_declared",
+    modeId: "origin_timeout",
+    failureDefinitionSha256: "a".repeat(64),
+    bindingSha256: "b".repeat(64),
+    diagnosticSha256: "c".repeat(64),
+    ...overrides,
   };
 }
 

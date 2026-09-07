@@ -76,19 +76,36 @@ function activitySummary(activity: ConversationNetworkActivity): string {
       : `${copy.reading}${activity.action ? ` · ${copy.actions[activity.action]}` : ""}`;
   }
   if (activity.status === "failed") {
-    return activity.kind === "search" ? copy.searchFailed : copy.fetchFailed;
+    const label =
+      activity.kind === "search" ? copy.searchFailed : copy.fetchFailed;
+    return activity.failureClass
+      ? `${label} · ${copy.failureReasons[activity.failureClass]}`
+      : label;
   }
   if (activity.kind === "search") {
     if (activity.resultCount === undefined || !activity.provider) {
-      return `${copy.searchCompleted} · ${copy.evidenceUnavailable}`;
+      return `${copy.searchCompleted} · ${summaryAvailability(activity)}`;
     }
-    return `${copy.found} ${formatNumber(activity.resultCount)} ${copy.resultsVia} ${activity.provider}`;
+    const resultsVia =
+      activity.resolutionMode === "image_page_candidates"
+        ? copy.imagePagesVia
+        : copy.resultsVia;
+    return `${copy.found} ${formatNumber(activity.resultCount)} ${resultsVia} ${activity.provider}`;
   }
+  if (activity.action === "fetch" && activity.format === "image")
+    return copy.imageReadCompleted;
   return activity.action === "fetch" && activity.format && activity.lineCount
     ? `${copy.readCompleted} ${activity.format.toUpperCase()} · ${formatNumber(activity.lineCount)} ${copy.lines}`
-    : activity.action === "fetch"
-      ? `${copy.fetchCompleted} · ${copy.evidenceUnavailable}`
-      : copy.completedActions[activity.action ?? "fetch"];
+    : activity.action === "fetch" || !activity.action
+      ? `${copy.fetchCompleted} · ${summaryAvailability(activity)}`
+      : copy.completedActions[activity.action];
+}
+
+function summaryAvailability(activity: ConversationNetworkActivity): string {
+  const copy = conversationActivityCopy.network;
+  return activity.display?.output
+    ? copy.detailsAvailable
+    : copy.summaryUnavailable;
 }
 
 function activityDetails(
@@ -104,6 +121,14 @@ function activityDetails(
           ...(activity.category
             ? [
                 [copy.labels.category, copy.categories[activity.category]] as [
+                  string,
+                  string,
+                ],
+              ]
+            : []),
+          ...(activity.resolutionMode === "image_page_candidates"
+            ? [
+                [copy.labels.resultMode, copy.imagePageCandidates] as [
                   string,
                   string,
                 ],
@@ -145,13 +170,15 @@ function activityDetails(
             : []),
           ...(activity.format
             ? [
-                [copy.labels.format, activity.format.toUpperCase()] as [
-                  string,
-                  string,
-                ],
+                [
+                  copy.labels.format,
+                  activity.format === "image"
+                    ? copy.imageFormat
+                    : activity.format.toUpperCase(),
+                ] as [string, string],
               ]
             : []),
-          ...(activity.lineCount !== undefined
+          ...(activity.lineCount !== undefined && activity.format !== "image"
             ? [
                 [copy.labels.lines, formatNumber(activity.lineCount)] as [
                   string,

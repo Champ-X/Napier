@@ -4,6 +4,12 @@ import {
   mergeConversationToolDisplay,
   type ConversationToolDisplay,
 } from "./conversation-tool-display-view-model";
+import {
+  networkCircuitRejectionKey,
+  networkFailureClass,
+  validSearchReceiptMetadata,
+  type NetworkFailureClass,
+} from "./conversation-network-receipt-metadata";
 
 export type ConversationNetworkActivity =
   | {
@@ -15,11 +21,13 @@ export type ConversationNetworkActivity =
       status: "working" | "completed" | "failed";
       provider?: string;
       category?: "general" | "news" | "images";
+      resolutionMode?: "image_page_candidates";
       resultCount?: number;
       attemptedProviderCount?: number;
       failedProviderCount?: number;
       unavailableProviderCount?: number;
       retrievedAt?: string;
+      failureClass?: NetworkFailureClass;
       display?: ConversationToolDisplay;
     }
   | {
@@ -30,7 +38,7 @@ export type ConversationNetworkActivity =
       createdAt: string;
       status: "working" | "completed" | "failed";
       action?: "fetch" | "read" | "find" | "list";
-      format?: "html" | "markdown" | "json" | "text" | "pdf";
+      format?: "html" | "markdown" | "json" | "text" | "pdf" | "image";
       lineCount?: number;
       pageCount?: number;
       sourceCount?: number;
@@ -44,6 +52,7 @@ export type ConversationNetworkActivity =
         | "challenge_detected";
       redirectCount?: number;
       retrievedAt?: string;
+      failureClass?: NetworkFailureClass;
       display?: ConversationToolDisplay;
     };
 
@@ -62,6 +71,8 @@ const SEARCH_DETAIL_KEYS = new Set([
   "schemaVersion",
   "provider",
   "category",
+  "resolvedCategory",
+  "resolutionMode",
   "resultCount",
   "attemptedProviderCount",
   "failedProviderCount",
@@ -69,6 +80,10 @@ const SEARCH_DETAIL_KEYS = new Set([
   "querySha256",
   "resultSetSha256",
   "retrievedAt",
+  "operationJournalVersion",
+  "operationCount",
+  "settledOperationCount",
+  "operationSetSha256",
 ]);
 const FETCH_DETAIL_KEYS = new Set([
   "kind",
@@ -124,16 +139,31 @@ export function conversationNetworkActivities(
   limit = 8,
 ): ConversationNetworkActivity[] {
   const latest = new Map<string, ConversationNetworkActivity>();
+  const circuitRejections = new Set<string>();
   for (const event of events) {
+    const rejectionKey = networkCircuitRejectionKey(event);
+    if (rejectionKey) circuitRejections.add(rejectionKey);
     const activity = conversationNetworkActivity(event);
     if (activity) {
-      const prior = latest.get(activity.callId);
+      const key = `${event.runId}\0${activity.callId}`;
+      if (activity.status === "working") circuitRejections.delete(key);
+      const prior = latest.get(key);
       const display = mergeConversationToolDisplay(
         prior?.display,
         activity.display,
       );
-      latest.set(activity.callId, {
+      const retainedAction =
+        activity.kind === "fetch" && prior?.kind === "fetch"
+          ? (activity.action ?? prior.action)
+          : undefined;
+      latest.set(key, {
         ...activity,
+        ...(retainedAction ? { action: retainedAction } : {}),
+        ...(activity.status === "failed" &&
+        activity.failureClass === "policy" &&
+        circuitRejections.has(key)
+          ? { failureClass: "circuit_open" as const }
+          : {}),
         ...(display ? { display } : {}),
       });
     }
@@ -164,12 +194,17 @@ export function conversationNetworkActivity(
         ? "completed"
         : "failed";
   const display = conversationToolDisplay(payload);
+  const failureClass =
+    status === "failed"
+      ? networkFailureClass(payload["toolFailure"])
+      : undefined;
   const base = {
     id: event.id,
     callId,
     seq: event.seq,
     createdAt: event.createdAt,
     status,
+    ...(failureClass ? { failureClass } : {}),
     ...(display ? { display } : {}),
   } as const;
   if (toolName === "web_search") {
@@ -178,7 +213,9 @@ export function conversationNetworkActivity(
     return { kind: "search", ...base, ...(details ?? {}) };
   }
   if (status !== "completed") {
-    const action = fetchAction(payload["action"]);
+    const action =
+      fetchAction(payload["action"]) ??
+      fetchAction(record(payload["details"])?.["action"]);
     return { kind: "fetch", ...base, ...(action ? { action } : {}) };
   }
   const details = fetchDetails(payload["details"]);
@@ -214,13 +251,17 @@ function searchDetails(value: unknown) {
     failedProviderCount + unavailableProviderCount > attemptedProviderCount ||
     !sha256(details["querySha256"]) ||
     !sha256(details["resultSetSha256"]) ||
-    !retrievedAt
+    !retrievedAt ||
+    !validSearchReceiptMetadata(details)
   ) {
     return undefined;
   }
   return {
     provider,
     category,
+    ...(details["resolutionMode"] === "image_page_candidates"
+      ? { resolutionMode: "image_page_candidates" as const }
+      : {}),
     resultCount,
     attemptedProviderCount,
     failedProviderCount,
@@ -359,12 +400,13 @@ function fetchAction(
 
 function sourceFormat(
   value: unknown,
-): "html" | "markdown" | "json" | "text" | "pdf" | undefined {
+): "html" | "markdown" | "json" | "text" | "pdf" | "image" | undefined {
   return value === "html" ||
     value === "markdown" ||
     value === "json" ||
     value === "text" ||
-    value === "pdf"
+    value === "pdf" ||
+    value === "image"
     ? value
     : undefined;
 }
