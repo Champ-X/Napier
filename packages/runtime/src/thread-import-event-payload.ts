@@ -40,6 +40,16 @@ export function remapImportedEventPayload(
       ? structuredClone(payload["input"])
       : undefined;
   const remapped = remapJsonValue(payload, idMap);
+  // Generated summary text is original model evidence, even when a complete
+  // field happens to equal a Run/Thread ID that is being remapped.
+  if (
+    type === "context.run_compaction.completed" &&
+    record(payload) &&
+    record(remapped) &&
+    payload["summary"] !== undefined
+  ) {
+    remapped["summary"] = structuredClone(payload["summary"]);
+  }
   if (
     simulationOutput !== undefined &&
     record(remapped) &&

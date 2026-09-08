@@ -5,6 +5,7 @@ import type {
   SimpleStreamOptions,
 } from "@earendil-works/pi-ai";
 import type { CompiledPromptArtifact } from "./prompt-compiler.js";
+import type { RunContextCompactionPort } from "./run-context-compaction-types.js";
 
 import {
   agentModelStreamLife,
@@ -26,6 +27,7 @@ export interface AgentModelCallPatch {
 export interface AgentModelCallFinalization extends AgentModelCallPreparation {
   compiledPrompt: CompiledPromptArtifact;
   recoveryAttempt: 0 | 1;
+  runContextCompaction?: RunContextCompactionPort;
 }
 
 export interface AgentModelCallExtension {

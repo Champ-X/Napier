@@ -50,5 +50,7 @@ export interface ContextProjectionReceiptV1 {
   contextWindowTokens: number;
   pruningReceiptSha256: string;
   tokenPressureReceiptSha256: string;
+  /** Optional additive binding for a durable within-Run working-set projection. */
+  runCompactionReceiptSha256?: string;
   contentSha256: string;
 }

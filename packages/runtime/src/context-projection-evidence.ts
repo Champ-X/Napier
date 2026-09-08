@@ -16,6 +16,7 @@ export function projectionSourceReceiptsMatch(
     pressure["status"] === "unavailable"
       ? "unavailable"
       : Number(pruning["replacementCount"]) > 0 ||
+          Boolean(receipt.runCompactionReceiptSha256) ||
           pressure["status"] === "projected"
         ? "projected"
         : "within_budget";

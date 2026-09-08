@@ -27,6 +27,7 @@ export function createContextProjectionReceipt(input: {
   compiledPrompt: CompiledPromptArtifact;
   prepared: ContextProjectionPreparationReceipt;
   pressure: ModelContextTokenPressureReceipt;
+  runCompactionReceiptSha256?: string;
 }): ContextProjectionReceiptV1 {
   const promptSources = input.compiledPrompt.layers.flatMap((layer) =>
     layer.sources.map((source) => ({
@@ -37,6 +38,7 @@ export function createContextProjectionReceipt(input: {
     })),
   );
   const projected =
+    Boolean(input.runCompactionReceiptSha256) ||
     input.prepared.pruning.replacementCount > 0 ||
     input.pressure.status === "projected";
   const content = {
@@ -106,6 +108,9 @@ export function createContextProjectionReceipt(input: {
     contextWindowTokens: input.pressure.contextWindowTokens,
     pruningReceiptSha256: input.prepared.pruning.contentSha256,
     tokenPressureReceiptSha256: input.pressure.contentSha256,
+    ...(input.runCompactionReceiptSha256
+      ? { runCompactionReceiptSha256: input.runCompactionReceiptSha256 }
+      : {}),
   };
   return validateContextProjectionReceipt({
     ...content,
@@ -210,7 +215,14 @@ export function validateContextProjectionReceipt(
   const receipt = input as unknown as ContextProjectionReceiptV1;
   const { contentSha256, ...content } = receipt;
   if (
-    !exactKeys(input, RECEIPT_KEYS) ||
+    !exactKeys(input, [
+      ...RECEIPT_KEYS,
+      ...(receipt.runCompactionReceiptSha256 !== undefined
+        ? ["runCompactionReceiptSha256"]
+        : []),
+    ]) ||
+    (receipt.runCompactionReceiptSha256 !== undefined &&
+      !hash(receipt.runCompactionReceiptSha256)) ||
     !validIdentity(receipt) ||
     !validScalars(receipt, contentSha256) ||
     !validCounts(receipt) ||
@@ -301,14 +313,16 @@ function componentState(
 function validProjectionState(receipt: ContextProjectionReceiptV1): boolean {
   const pruned = receipt.prunedToolResultCount > 0;
   const pressure = receipt.removedMessageCount > 0;
+  const compacted = Boolean(receipt.runCompactionReceiptSha256);
   return (
     (receipt.toolResultPruning === "applied") === pruned &&
     receipt.prunedToolResultBytes > 0 === pruned &&
     (receipt.tokenProjection === "oldest_complete_units_removed") ===
       pressure &&
     (pressure || receipt.removedUnitCount === 0) &&
-    (receipt.status !== "within_budget" || (!pruned && !pressure)) &&
-    (receipt.status !== "projected" || pruned || pressure) &&
+    (receipt.status !== "within_budget" ||
+      (!pruned && !pressure && !compacted)) &&
+    (receipt.status !== "projected" || pruned || pressure || compacted) &&
     (receipt.status === "unavailable" ||
       receipt.activeEstimatedTotalTokens <= receipt.contextWindowTokens)
   );

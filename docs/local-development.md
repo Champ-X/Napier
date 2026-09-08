@@ -167,6 +167,13 @@ tools remain available during acquisition convergence. See the
 [interruption investigation](investigations/2026-09-08-run-progress-interruptions.md)
 for the evidence, bounds, and regression coverage.
 
+Within a Run, the final context projection can also checkpoint older completed
+execution steps before the model window fills. It retains user messages and
+recent complete tool batches, persists source-bound summaries, and charges
+compaction to the existing Run budget. Provider overflow retries require an
+actually smaller request. See the [rolling context design](investigations/2026-09-08-run-context-compaction.md)
+for thresholds, upstream references, evidence bindings, and recovery limits.
+
 Automatic recovery is a separate, opt-in path with restricted read-only
 capabilities and eligibility checks. It does not replay unresolved tool calls.
 Manual browser recovery can request an operator confirmation; restricted

@@ -20,6 +20,7 @@ import {
   validateAutomaticRecoveryAttempt,
 } from "./automatic-recovery.js";
 import { createId, nowIso } from "./ids.js";
+import { rebindImportedRunContextCompaction } from "./run-context-compaction-import.js";
 import type { StoreRepositoryHost } from "./store-repository-host.js";
 import {
   rebindSubagentOutcomeRepairOutcome,
@@ -382,6 +383,7 @@ export class ThreadReplayImportRepository {
           idMap,
         );
       }
+      rebindImportedRunContextCompaction(events);
       const importedStatus: ThreadStatus =
         activeRunIds.size > 0 || bundle.thread.status === "waiting"
           ? "waiting"

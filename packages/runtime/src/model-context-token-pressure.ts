@@ -14,6 +14,7 @@ import {
 } from "./model-context-token-meter.js";
 import type { CompiledPromptArtifact } from "./prompt-compiler.js";
 import type { TokenMeterRegistry } from "./token-meter-provider.js";
+import { completeContextUnits } from "./run-context-compaction-boundary.js";
 
 export interface ModelContextTokenPressureReceipt {
   kind: "napier.model-context-token-pressure";
@@ -147,12 +148,16 @@ export async function projectModelContextTokenPressureWithProvider(
     compiledPrompt: CompiledPromptArtifact;
     modelAttempt: number;
     recoveryAttempt: 0 | 1;
+    /** Set only after a bound working-set checkpoint reduced the failed request. */
+    recoveryContextReduced?: boolean;
+    /** Checkpoint output contains pinned intent and the retained execution tail. */
+    preserveUserMessages?: boolean;
   },
   registry: TokenMeterRegistry,
 ): Promise<ModelContextTokenPressureProjection> {
   const original = await measureModelContextWithProvider(input, registry);
   if (
-    input.recoveryAttempt === 0 &&
+    (input.recoveryAttempt === 0 || input.recoveryContextReduced) &&
     original.estimatedTotalTokens <= original.contextWindowTokens
   ) {
     return {
@@ -161,13 +166,17 @@ export async function projectModelContextTokenPressureWithProvider(
     };
   }
   const units = completeMessageUnits(input.context.messages);
-  const protectedUnitIndex = latestUserUnitIndex(units);
+  const protectedUnitIndex = input.preserveUserMessages
+    ? 0
+    : latestUserUnitIndex(units);
   let removedUnitCount = 0;
   let removedMessageCount = 0;
   let active = original;
   while (
     (active.estimatedTotalTokens > active.contextWindowTokens ||
-      (input.recoveryAttempt === 1 && removedUnitCount === 0)) &&
+      (input.recoveryAttempt === 1 &&
+        !input.recoveryContextReduced &&
+        removedUnitCount === 0)) &&
     removedUnitCount < protectedUnitIndex
   ) {
     removedMessageCount += units[removedUnitCount]!.length;
@@ -185,7 +194,9 @@ export async function projectModelContextTokenPressureWithProvider(
   }
   const status =
     active.estimatedTotalTokens <= active.contextWindowTokens &&
-    (input.recoveryAttempt === 0 || removedUnitCount > 0)
+    (input.recoveryAttempt === 0 ||
+      input.recoveryContextReduced ||
+      removedUnitCount > 0)
       ? "projected"
       : "unavailable";
   return {
@@ -273,34 +284,12 @@ function receipt(
 function completeMessageUnits(messages: readonly Message[]): Message[][] {
   const units: Message[][] = [];
   let unit: Message[] = [];
-  for (let index = 0; index < messages.length; index += 1) {
-    const message = messages[index]!;
-    if (message.role === "toolResult") {
-      throw new Error("Model context contains an orphan tool result");
-    }
-    if (message.role === "user") {
+  for (const complete of completeContextUnits(messages)) {
+    if (complete.user) {
       if (unit.length > 0) units.push(unit);
-      unit = [message];
-      continue;
+      unit = [];
     }
-    const calls = message.content.filter((item) => item.type === "toolCall");
-    if (calls.length === 0) {
-      unit.push(message);
-      continue;
-    }
-    unit.push(message);
-    for (const call of calls) {
-      const result = messages[index + 1];
-      if (
-        result?.role !== "toolResult" ||
-        result.toolCallId !== call.id ||
-        result.toolName !== call.name
-      ) {
-        throw new Error("Model context tool exchange is incomplete");
-      }
-      unit.push(result);
-      index += 1;
-    }
+    unit.push(...messages.slice(complete.start, complete.end));
   }
   if (unit.length > 0) units.push(unit);
   return units;

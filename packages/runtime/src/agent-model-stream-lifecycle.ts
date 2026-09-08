@@ -31,6 +31,8 @@ import { recoverModelContextOverflow } from "./model-context-overflow-recovery.j
 import { mapModelUsage } from "./agent-model-projection.js";
 import { createUsageAccounting } from "./token-accounting.js";
 import type { ModelHarnessExperimentProfile } from "./model-harness-experiment-profile.js";
+import { RunContextCompactor } from "./run-context-compaction.js";
+import type { RunContextCompactionPort } from "./run-context-compaction-types.js";
 
 export interface AgentModelCallPreparation {
   run: RunRecord;
@@ -76,6 +78,7 @@ export interface AgentModelStreamLifecycleInput {
     call: AgentModelCallPreparation & {
       compiledPrompt: CompiledPromptArtifact;
       recoveryAttempt: 0 | 1;
+      runContextCompaction?: RunContextCompactionPort;
     },
   ): PreparedAgentModelCall | Promise<PreparedAgentModelCall>;
   invokeCall?(
@@ -88,6 +91,13 @@ export interface AgentModelStreamLifecycleInput {
 export function agentModelStreamLife(
   input: AgentModelStreamLifecycleInput,
 ): StreamFn {
+  const runContextCompaction = new RunContextCompactor(
+    input.host,
+    input.run,
+    input.budget,
+    input.nextTurnIndex,
+    input.onEvent,
+  );
   const cancellation = streamCtx(
     input.host,
     input.budget,
@@ -162,6 +172,7 @@ export function agentModelStreamLife(
                   options: preparedCall.options,
                   compiledPrompt,
                   recoveryAttempt,
+                  runContextCompaction,
                   ...(input.harnessExperimentProfile
                     ? {
                         harnessExperimentProfile:
@@ -274,7 +285,9 @@ function mergeRouteStreamOptions(
 ): SimpleStreamOptions {
   const onResponse =
     base.onResponse || route.onResponse
-      ? async (...args: Parameters<NonNullable<SimpleStreamOptions["onResponse"]>>) => {
+      ? async (
+          ...args: Parameters<NonNullable<SimpleStreamOptions["onResponse"]>>
+        ) => {
           await base.onResponse?.(...args);
           await route.onResponse?.(...args);
         }

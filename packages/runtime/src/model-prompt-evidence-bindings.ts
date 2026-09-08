@@ -1,4 +1,5 @@
 import type { RunEvent } from "@napier/contracts";
+import { assertRunContextProjectionBinding } from "./run-context-projection-evidence.js";
 
 import {
   COMPILED_PROMPT_PACKAGE_EVENT,
@@ -116,6 +117,7 @@ function assertProjectionSourceBinding(
     event.runId,
     "model.context.token_pressure",
   );
+  assertRunContextProjectionBinding(events, event, receipt, pruning, pressure);
   if (
     !validProjectionSourceSequence(event, pruning, pressure) ||
     !projectionSourceReceiptsMatch(receipt, pruning?.payload, pressure?.payload)

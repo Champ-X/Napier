@@ -28,8 +28,10 @@ import type { ModelInvocationCapsuleStore } from "./model-invocation-capsule-sto
 import type { CompiledPromptArtifact } from "./prompt-compiler.js";
 import type { LocalStore } from "./store.js";
 
+type ModelInvocationCaptureStore = Pick<LocalStore, "appendEvent">;
+
 export async function captureCompiledModelInvocation(input: {
-  store: LocalStore;
+  store: ModelInvocationCaptureStore;
   capsules: ModelInvocationCapsuleStore;
   run: RunRecord;
   model: Model<Api>;
@@ -81,7 +83,7 @@ export async function captureCompiledModelInvocation(input: {
 }
 
 async function captureModelInvocation(
-  store: LocalStore,
+  store: ModelInvocationCaptureStore,
   capsules: ModelInvocationCapsuleStore,
   run: RunRecord,
   model: Model<Api>,
@@ -172,7 +174,7 @@ async function captureModelInvocation(
 }
 
 async function append(
-  store: LocalStore,
+  store: ModelInvocationCaptureStore,
   input: Parameters<LocalStore["appendEvent"]>[0],
   onEvent?: EventSink,
 ): Promise<void> {

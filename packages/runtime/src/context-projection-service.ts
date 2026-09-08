@@ -1,4 +1,5 @@
 import type { RunRecord } from "@napier/contracts";
+import type { Context } from "@earendil-works/pi-ai";
 
 import { toJsonValue } from "./agent-runtime-utils.js";
 import type { AgentModelCallPreparation } from "./agent-model-stream-lifecycle.js";
@@ -31,10 +32,16 @@ export const CONTEXT_PROJECTION_PREPARE_EXTENSION_ID =
   "napier.context-projection-service.prepare";
 export const CONTEXT_PROJECTION_EXTENSION_OWNER = "kernel.context";
 
+interface PreparedContextProjection {
+  receipt: ContextProjectionPreparationReceipt;
+  sourceContext: Context;
+  prunedContext: Context;
+}
+
 export class ContextProjectionService {
   private readonly preparations = new WeakMap<
     RunRecord,
-    Map<string, ContextProjectionPreparationReceipt>
+    Map<string, PreparedContextProjection>
   >();
 
   constructor(
@@ -68,19 +75,23 @@ export class ContextProjectionService {
   private async prepare(call: Readonly<AgentModelCallPreparation>) {
     const pruning = pruneToolResultContext(call.context, call.attempt);
     this.preparationMap(call.run).set(projectionKey(call), {
-      durableMessageCount: call.context.messages.length,
-      durableMessageSetSha256: modelContextMessageSetSha256(
-        call.context.messages,
-      ),
-      prePruningMessageCount: call.context.messages.length,
-      prePruningMessageSetSha256: modelContextMessageSetSha256(
-        call.context.messages,
-      ),
-      postPruningMessageCount: pruning.context.messages.length,
-      postPruningMessageSetSha256: modelContextMessageSetSha256(
-        pruning.context.messages,
-      ),
-      pruning: pruning.receipt,
+      sourceContext: call.context,
+      prunedContext: pruning.context,
+      receipt: {
+        durableMessageCount: call.context.messages.length,
+        durableMessageSetSha256: modelContextMessageSetSha256(
+          call.context.messages,
+        ),
+        prePruningMessageCount: call.context.messages.length,
+        prePruningMessageSetSha256: modelContextMessageSetSha256(
+          call.context.messages,
+        ),
+        postPruningMessageCount: pruning.context.messages.length,
+        postPruningMessageSetSha256: modelContextMessageSetSha256(
+          pruning.context.messages,
+        ),
+        pruning: pruning.receipt,
+      },
     });
     await appendProjectionEvent(
       this.store,
@@ -97,14 +108,27 @@ export class ContextProjectionService {
       throw new Error("Context Projection preparation is unavailable");
     }
     await hydrateTokenCalibrationRegistry(this.store, this.tokenMeters);
+    const working = await call.runContextCompaction?.project({
+      sourceContext: prepared.sourceContext,
+      prunedContext: prepared.prunedContext,
+      context: call.context,
+      model: call.model,
+      options: call.options,
+      compiledPrompt: call.compiledPrompt,
+      tokenMeters: this.tokenMeters,
+      modelAttempt: call.attempt,
+      recoveryAttempt: call.recoveryAttempt,
+    });
     const projection = await projectModelContextTokenPressureWithProvider(
       {
         model: call.model,
-        context: call.context,
+        context: working?.context ?? call.context,
         options: call.options,
         compiledPrompt: call.compiledPrompt,
         modelAttempt: call.attempt,
         recoveryAttempt: call.recoveryAttempt,
+        recoveryContextReduced: working?.recoveryReduced ?? false,
+        preserveUserMessages: working?.preserveUserMessages ?? false,
       },
       this.tokenMeters,
     );
@@ -124,8 +148,11 @@ export class ContextProjectionService {
         call.context.tools ?? [],
       ),
       compiledPrompt: call.compiledPrompt,
-      prepared,
+      prepared: prepared.receipt,
       pressure: projection.receipt,
+      ...(working?.receiptSha256
+        ? { runCompactionReceiptSha256: working.receiptSha256 }
+        : {}),
     });
     await appendProjectionEvent(
       this.store,
@@ -141,10 +168,10 @@ export class ContextProjectionService {
 
   private preparationMap(
     run: RunRecord,
-  ): Map<string, ContextProjectionPreparationReceipt> {
+  ): Map<string, PreparedContextProjection> {
     const current = this.preparations.get(run);
     if (current) return current;
-    const created = new Map<string, ContextProjectionPreparationReceipt>();
+    const created = new Map<string, PreparedContextProjection>();
     this.preparations.set(run, created);
     return created;
   }
