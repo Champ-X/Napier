@@ -1,4 +1,5 @@
 import type { JsonObject } from "@napier/contracts";
+import { hasRunActivityLease } from "./run-progress-activity.js";
 
 import type {
   RunConvergencePolicy,
@@ -176,6 +177,7 @@ function validateNoProgressRequest(
     vector.stagnantElapsedMs >= policy.noProgressElapsedMs;
   if (
     vector.progressed ||
+    hasRunActivityLease(vector, policy) ||
     value["kind"] !== "napier.run-progress-reroute" ||
     value["status"] !== "requested" ||
     value["strategy"] !== "summarize_and_converge" ||

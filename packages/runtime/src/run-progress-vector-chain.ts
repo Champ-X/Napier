@@ -1,6 +1,7 @@
 import type { RunEvent } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { projectRunProgressActivity } from "./run-progress-activity.js";
 import {
   fail,
   integerValue,
@@ -11,7 +12,10 @@ import {
 import type { ValidatedRunProgressVector } from "./run-progress-payload-types.js";
 import { DIMENSIONS } from "./run-progress-vector-codec-common.js";
 import { upcastLegacyRunProgressVectorV1 } from "./run-progress-vector-v1-codec.js";
-import { decodeRunProgressVectorV2 } from "./run-progress-vector-v2-codec.js";
+import {
+  decodeRunProgressVectorV2,
+  decodeRunProgressVectorV3,
+} from "./run-progress-vector-v2-codec.js";
 
 /** Validates hashes, completed-turn binding, predecessor links and monotonic cursors. */
 export function projectValidatedVectorChain(
@@ -26,30 +30,36 @@ export function projectValidatedVectorChain(
   );
   const vectors: ValidatedRunProgressVector[] = [];
   const projectionIds = new Set<string>();
-  let currentProtocolStarted = false;
+  let highestProtocolVersion = 1;
   for (const event of ordered) {
     if (event.type !== "run.progress.vector") continue;
     validateEnvelopeSchema(event);
     const payload = object(event.payload, event.seq);
     const schemaVersion = payload["schemaVersion"];
-    if (schemaVersion === 1 && currentProtocolStarted) {
+    if (
+      typeof schemaVersion === "number" &&
+      schemaVersion < highestProtocolVersion
+    ) {
       fail(
         "vector_chain",
-        "Run progress vector protocol cannot downgrade from v2 to legacy v1",
+        "Run progress vector protocol cannot downgrade",
         event.seq,
       );
     }
-    if (schemaVersion === 2) currentProtocolStarted = true;
+    if (typeof schemaVersion === "number")
+      highestProtocolVersion = schemaVersion;
     const decoded =
-      schemaVersion === 2
-        ? decodeRunProgressVectorV2(payload, { runId, eventSeq: event.seq })
-        : schemaVersion === 1
-          ? upcastLegacyRunProgressVectorV1(payload, { eventSeq: event.seq })
-          : fail(
-              "payload_schema",
-              `Unsupported Run progress vector schema ${String(schemaVersion)}`,
-              event.seq,
-            );
+      schemaVersion === 3
+        ? decodeRunProgressVectorV3(payload, { runId, eventSeq: event.seq })
+        : schemaVersion === 2
+          ? decodeRunProgressVectorV2(payload, { runId, eventSeq: event.seq })
+          : schemaVersion === 1
+            ? upcastLegacyRunProgressVectorV1(payload, { eventSeq: event.seq })
+            : fail(
+                "payload_schema",
+                `Unsupported Run progress vector schema ${String(schemaVersion)}`,
+                event.seq,
+              );
     const vector = normalizeLegacyVectorBaseline(decoded, vectors.at(-1));
     if (
       vector.turnCompletedSeq >= event.seq ||
@@ -108,7 +118,7 @@ function validateVectorSuccessor(
       current.eventSeq,
     );
   }
-  if (previous.sourceSchemaVersion === 2 && current.sourceSchemaVersion === 2) {
+  if (previous.sourceSchemaVersion >= 2 && current.sourceSchemaVersion >= 2) {
     for (const key of [
       "workspaceMutationCount",
       "supportCount",
@@ -209,7 +219,18 @@ function validateVectorDerivedTransition(
       current.eventSeq,
     );
   }
-  if (current.sourceSchemaVersion !== 2) return;
+  if (
+    current.sourceSchemaVersion === 3 &&
+    canonicalJson(current.activity) !==
+      canonicalJson(projectRunProgressActivity(current, previous))
+  ) {
+    fail(
+      "vector_monotonicity",
+      "Run progress activity disagrees with its evidence transition",
+      current.eventSeq,
+    );
+  }
+  if (current.sourceSchemaVersion < 2) return;
   const dimensions = current.rawPayload["dimensions"] as Record<
     string,
     unknown

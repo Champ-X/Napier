@@ -11,9 +11,13 @@ import {
   RunConvergenceController,
   type RunConvergenceSnapshot,
 } from "./run-convergence-controller.js";
-import { canonicalJson, sha256 } from "./ed25519.js";
+import { sha256 } from "./ed25519.js";
 import { emitBestEffort, type EventSink } from "./event-sink.js";
 import { RunProgressEvidenceProjector } from "./run-progress-evidence-projector.js";
+import {
+  vectorProjectionId,
+  withRunProgressActivity,
+} from "./run-progress-activity.js";
 import type { RunConvergenceEventStore } from "./run-convergence-event-writer.js";
 import {
   emptyProgressDimensions,
@@ -33,6 +37,12 @@ import { ConcurrentRunEventHeadError } from "./sqlite-ledger-errors.js";
 import { ToolProtocolRegistry } from "./tool-protocol-registry.js";
 
 export type { RunProgressDimension } from "./run-progress-ledger-projection.js";
+
+type ActiveProgressVector = ReturnType<
+  typeof withRunProgressActivity<
+    ReturnType<typeof projectRunProgressVectorContent>
+  >
+>;
 
 interface RunProgressContext {
   store: RunProgressStore;
@@ -60,6 +70,7 @@ export class RunProgressTracker {
   private firstWorkspaceMutationElapsedMs: number | undefined;
   private lastProgressElapsedMs = 0;
   private previousContentSha256 = "";
+  private previousActivityVector: RunConvergenceSnapshot | undefined;
   private previousDimensions: RunProgressDimensionHashes =
     emptyProgressDimensions();
   private previousPlanProductScore = 0;
@@ -195,7 +206,7 @@ export class RunProgressTracker {
     this.recordFirstWorkspaceMutation(delta, elapsedMs);
     this.updateStagnation(delta, transition.progressed, elapsedMs);
     const metrics = this.evidence.metrics();
-    const payload = projectRunProgressVectorContent({
+    const content = projectRunProgressVectorContent({
       projectionId: vectorProjectionId(this.context.run.id, completed.seq),
       turnIndex: this.turnIndex,
       turnCompletedSeq: completed.seq,
@@ -252,6 +263,10 @@ export class RunProgressTracker {
           }
         : {}),
     });
+    const payload = withRunProgressActivity(
+      content,
+      this.previousActivityVector,
+    );
     let event: RunEvent;
     try {
       event = await this.appendVector(payload, expectedRunHeadSeq);
@@ -307,6 +322,7 @@ export class RunProgressTracker {
       events.filter((event) => event.seq <= projectedThroughSeq),
     );
     this.projectedThroughSeq = projectedThroughSeq;
+    this.previousActivityVector = latest;
     const hydration = projectRunProgressHydration(
       latest ? normalizedRunProgressHydrationPayload(latest) : undefined,
     );
@@ -386,7 +402,7 @@ export class RunProgressTracker {
   }
 
   private appendVector(
-    payload: ReturnType<typeof projectRunProgressVectorContent>,
+    payload: ActiveProgressVector,
     expectedRunHeadSeq: number,
   ): Promise<RunEvent> {
     return this.context.store
@@ -428,6 +444,7 @@ export class RunProgressTracker {
     this.firstWorkspaceMutationElapsedMs = undefined;
     this.lastProgressElapsedMs = 0;
     this.previousContentSha256 = "";
+    this.previousActivityVector = undefined;
     this.previousDimensions = emptyProgressDimensions();
     this.previousPlanProductScore = 0;
     this.previousPlanAcceptanceScore = 0;
@@ -441,13 +458,14 @@ export class RunProgressTracker {
 
   private commitVectorState(
     completedSeq: number,
-    payload: ReturnType<typeof projectRunProgressVectorContent>,
+    payload: ActiveProgressVector,
     plan: { productScore: number; acceptanceScore: number },
     artifact: { productScore: number; acceptanceScore: number },
   ): void {
     this.projectedThroughSeq = completedSeq;
     this.previousDimensions = payload.dimensions;
     this.previousContentSha256 = payload.contentSha256;
+    this.previousActivityVector = payload;
     this.previousPlanProductScore = plan.productScore;
     this.previousPlanAcceptanceScore = plan.acceptanceScore;
     this.previousArtifactProductScore = artifact.productScore;
@@ -467,17 +485,6 @@ export class RunProgressTracker {
     }
     if (recoveredVectors) await this.recoverFromLedger();
   }
-}
-
-function vectorProjectionId(runId: string, turnCompletedSeq: number): string {
-  return sha256(
-    canonicalJson({
-      kind: "napier.run-progress-vector",
-      schemaVersion: 2,
-      runId,
-      turnCompletedSeq,
-    }),
-  );
 }
 
 class RunProgressVectorHeadConflict extends Error {

@@ -1,6 +1,12 @@
 import type { RunLimits } from "@napier/contracts";
+import {
+  hasRunActivityLease,
+  type RunProgressActivity,
+} from "./run-progress-activity.js";
 
 export interface RunConvergenceSnapshot {
+  /** Present in v3; historical v1/v2 decisions retain their original policy. */
+  activity?: RunProgressActivity;
   turnIndex: number;
   elapsedMs: number;
   progressed: boolean;
@@ -99,6 +105,19 @@ export function evaluateRunConvergence(
   policy: Readonly<RunConvergencePolicy> = DEFAULT_RUN_CONVERGENCE_POLICY,
 ): RunConvergenceReason | undefined {
   if (vector.productProgressed || vector.acceptanceProgressed) return undefined;
+  const limitPressure = Math.max(
+    vector.turnIndex / limits.maxTurns,
+    vector.elapsedMs / limits.timeoutMs,
+  );
+  // Internal fallback failures are not independent agent strategy attempts.
+  // Keep per-domain circuits, but allow the agent to choose an alternate route
+  // before closing acquisition globally. Actual limit pressure still wins.
+  if (
+    vector.activity &&
+    vector.activity.acquisitionTurnCountSinceProgress < 2 &&
+    limitPressure < policy.limitPressureRatio
+  )
+    return undefined;
   const marginalYield =
     phase.attempts > 0 ? phase.advances / phase.attempts : 1;
   if (
@@ -120,10 +139,6 @@ export function evaluateRunConvergence(
   ) {
     return "support_phase";
   }
-  const limitPressure = Math.max(
-    vector.turnIndex / limits.maxTurns,
-    vector.elapsedMs / limits.timeoutMs,
-  );
   if (
     phase.attempts >= policy.zeroYieldMinimumAttempts + 1 &&
     vector.acquisitionStagnantTurnCount >= 1 &&
@@ -144,6 +159,7 @@ export function hasRunNoProgressPressure(
     phase.attempts === 0 || vector.acquisitionStagnantTurnCount >= 2;
   return (
     acquisitionIsNotAdvancing &&
+    !hasRunActivityLease(vector, policy) &&
     (vector.stagnantTurnCount >= policy.noProgressTurnThreshold ||
       vector.stagnantElapsedMs >= policy.noProgressElapsedMs)
   );
@@ -162,7 +178,7 @@ export function runNoProgressMessage(vector: RunConvergenceSnapshot): string {
   return [
     "Internal convergence redirect: the Run has made no measurable product or acceptance progress.",
     `Bound vector ${vector.contentSha256}; turn ${String(vector.turnIndex)}; stagnant turns ${String(vector.stagnantTurnCount)}; stagnant ms ${String(vector.stagnantElapsedMs)}.`,
-    "Perform one smallest safe operation that advances the product or its verification, or produce the best concrete partial result now.",
-    "If this turn still makes no measurable progress, deterministic finalization will stop the Run.",
+    "Advance the product or its verification, using the necessary inspection and setup steps, or produce the best concrete partial result now.",
+    "New evidence and changed product states permit bounded follow-through; repeated observations, unsupported claims, and endless changes do not renew that window.",
   ].join("\n");
 }

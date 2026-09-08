@@ -158,6 +158,15 @@ repeating it. A browser locator timeout does not by itself mean Chrome or the
 session has died: inspect the current page before retrying, since the action
 may have taken effect. A healthy session remains usable.
 
+Run progress vectors v3 distinguish execution activity from semantic progress
+and delivery readiness. New inspection evidence or changed artifact states
+allow bounded follow-through, including multi-step verification; duplicate
+observations do not renew it. This activity window survives tracker recovery
+and cannot override the semantic-stall deadline or Run budgets. Plan control
+tools remain available during acquisition convergence. See the
+[interruption investigation](investigations/2026-09-08-run-progress-interruptions.md)
+for the evidence, bounds, and regression coverage.
+
 Automatic recovery is a separate, opt-in path with restricted read-only
 capabilities and eligibility checks. It does not replay unresolved tool calls.
 Manual browser recovery can request an operator confirmation; restricted

@@ -28,7 +28,7 @@ describe("Run progress vector product effects", () => {
     expect(empty.payload).toEqual(
       expect.objectContaining({
         kind: "napier.run-progress-vector",
-        schemaVersion: 2,
+        schemaVersion: 3,
         progressed: false,
         productProgressed: false,
         acceptanceProgressed: false,

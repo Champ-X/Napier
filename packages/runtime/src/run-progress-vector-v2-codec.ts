@@ -89,20 +89,35 @@ export function decodeRunProgressVectorV2(
   payload: JsonValue,
   context: { runId: string; eventSeq: number },
 ): ValidatedRunProgressVector {
+  return decodeVector(payload, context, 2);
+}
+
+export function decodeRunProgressVectorV3(
+  payload: JsonValue,
+  context: { runId: string; eventSeq: number },
+): ValidatedRunProgressVector {
+  return decodeVector(payload, context, 3);
+}
+
+function decodeVector(
+  payload: JsonValue,
+  context: { runId: string; eventSeq: number },
+  schemaVersion: 2 | 3,
+): ValidatedRunProgressVector {
   const value = object(payload, context.eventSeq);
   exactKeys(
     value,
-    VECTOR_V2_REQUIRED_KEYS,
+    [...VECTOR_V2_REQUIRED_KEYS, ...(schemaVersion === 3 ? ["activity"] : [])],
     OPTIONAL_MUTATION_KEYS,
     context.eventSeq,
   );
   if (
     value["kind"] !== "napier.run-progress-vector" ||
-    value["schemaVersion"] !== 2
+    value["schemaVersion"] !== schemaVersion
   ) {
     fail(
       "payload_schema",
-      "Run progress vector is not current v2",
+      `Run progress vector is not v${String(schemaVersion)}`,
       context.eventSeq,
     );
   }
@@ -115,7 +130,7 @@ export function decodeRunProgressVectorV2(
   const expectedProjectionId = sha256(
     canonicalJson({
       kind: "napier.run-progress-vector",
-      schemaVersion: 2,
+      schemaVersion,
       runId: context.runId,
       turnCompletedSeq,
     }),
@@ -237,8 +252,42 @@ export function decodeRunProgressVectorV2(
     context.eventSeq,
   );
   validateOptionalMutationPair(value, context.eventSeq);
-  return normalizedVector(value, 2, context.eventSeq, turnCompletedSeq, {
-    projectionId: expectedProjectionId,
-    predecessor,
-  });
+  if (schemaVersion === 3)
+    validateActivity(value["activity"], context.eventSeq);
+  return normalizedVector(
+    value,
+    schemaVersion,
+    context.eventSeq,
+    turnCompletedSeq,
+    {
+      projectionId: expectedProjectionId,
+      predecessor,
+    },
+  );
+}
+
+function validateActivity(
+  payload: JsonValue | undefined,
+  eventSeq: number,
+): void {
+  const activity = object(payload, eventSeq, "activity");
+  exactKeys(
+    activity,
+    [
+      "progressed",
+      "stagnantTurnCount",
+      "stagnantElapsedMs",
+      "acquisitionTurnCountSinceProgress",
+    ],
+    [],
+    eventSeq,
+  );
+  boolean(activity["progressed"], "activity.progressed", eventSeq);
+  for (const key of [
+    "stagnantTurnCount",
+    "stagnantElapsedMs",
+    "acquisitionTurnCountSinceProgress",
+  ]) {
+    nonNegativeInteger(activity[key], `activity.${key}`, eventSeq);
+  }
 }

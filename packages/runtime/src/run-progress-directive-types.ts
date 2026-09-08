@@ -18,6 +18,8 @@ export type RunConvergenceDirectiveState =
 interface NoProgressRequest {
   directiveId: string;
   turnIndex: number;
+  /** V3 binds one final working window to the original redirect timestamp. */
+  elapsedMs?: number;
   failureDomainBaseline: number;
   unclassifiedActivityBaseline: number;
   rerouteContentSha256: string;

@@ -1,4 +1,5 @@
 import type { JsonObject, RunEvent } from "@napier/contracts";
+import { hasRunActivityLease } from "./run-progress-activity.js";
 
 import type { RunConvergencePolicy } from "./run-convergence-policy.js";
 import type { RunDirectiveState } from "./run-progress-directive-types.js";
@@ -196,6 +197,9 @@ function applyNoProgressRequest(
     contentSha256: decoded.contentSha256,
     delivered: false,
     requestedTurn: Number(value["requestedTurn"]),
+    ...(vector.sourceSchemaVersion === 3
+      ? { requestedElapsedMs: vector.elapsedMs }
+      : {}),
     failureDomainBaseline: Number(value["failureDomainBaseline"]),
     unclassifiedActivityBaseline: Number(value["unclassifiedActivityBaseline"]),
     instructionSha256: String(value["instructionSha256"]),
@@ -329,6 +333,17 @@ function validateNoProgressVector(
       value["leaseThroughTurn"] !==
         vector.turnIndex + policy.unclassifiedActivityLeaseTurns) ||
     (kind === "no_progress_halt" &&
+      hasRunActivityLease(
+        vector,
+        policy,
+        noProgress.requestedElapsedMs !== undefined
+          ? {
+              turnIndex: noProgress.requestedTurn,
+              elapsedMs: noProgress.requestedElapsedMs,
+            }
+          : undefined,
+      )) ||
+    (kind === "no_progress_halt" &&
       noProgress.phase === "observability_degraded" &&
       vector.turnIndex < (noProgress.leaseThroughTurn ?? Infinity))
   ) {
@@ -383,6 +398,9 @@ function materializeNoProgress(
   const request = {
     directiveId: input.id,
     turnIndex: input.requestedTurn,
+    ...(input.requestedElapsedMs !== undefined
+      ? { elapsedMs: input.requestedElapsedMs }
+      : {}),
     failureDomainBaseline: input.failureDomainBaseline,
     unclassifiedActivityBaseline: input.unclassifiedActivityBaseline,
     rerouteContentSha256: input.contentSha256,

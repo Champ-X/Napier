@@ -16,6 +16,7 @@ import { Type } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createPlanArtifactEventPayload } from "./plans.js";
+import { definePlanToolProgress } from "./plan-tool-progress.js";
 import {
   appendPlanCreatedEvent,
   appendPlanReplannedEvent,
@@ -361,8 +362,7 @@ export function createPlanTools(
       );
     },
   };
-
-  return [createPlan, transitionStep, updateArtifact, replanPlan];
+  return [createPlan, transitionStep, updateArtifact, replanPlan].map(definePlanToolProgress);
 }
 
 async function buildArtifactUpdate(

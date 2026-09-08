@@ -1,4 +1,5 @@
 import type { RunEvent, RunLimits } from "@napier/contracts";
+import { hasRunActivityLease } from "./run-progress-activity.js";
 
 import {
   DEFAULT_RUN_CONVERGENCE_POLICY,
@@ -43,7 +44,7 @@ export function nextRunDirectiveDecision(input: {
 }): RunDirectiveDecision | undefined {
   const { state, vector } = input;
   if (state.controlEpochVectorSha256 === vector.contentSha256) return undefined;
-  const noProgress = nextActiveNoProgressDecision(state, vector);
+  const noProgress = nextActiveNoProgressDecision(state, vector, input.policy);
   if (noProgress.stop) return noProgress.decision;
   const convergence = nextConvergenceDecision(input);
   if (convergence.stop) return convergence.decision;
@@ -64,8 +65,22 @@ interface DirectiveEvaluation {
 function nextActiveNoProgressDecision(
   state: RunDirectiveState,
   vector: RunConvergenceSnapshot,
+  policy: Readonly<RunConvergencePolicy>,
 ): DirectiveEvaluation {
   const noProgress = state.noProgress;
+  if (
+    noProgress.phase !== "idle" &&
+    noProgress.phase !== "halted" &&
+    !vector.progressed &&
+    hasRunActivityLease(
+      vector,
+      policy,
+      noProgress.elapsedMs !== undefined
+        ? { turnIndex: noProgress.turnIndex, elapsedMs: noProgress.elapsedMs }
+        : undefined,
+    )
+  )
+    return { stop: true };
   if (
     noProgress.phase === "requested" &&
     vector.turnIndex > noProgress.turnIndex

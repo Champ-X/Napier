@@ -34,7 +34,7 @@ export class RunProgressPayloadValidationError extends Error {
 }
 
 export interface ValidatedRunProgressVector extends RunConvergenceSnapshot {
-  sourceSchemaVersion: 1 | 2;
+  sourceSchemaVersion: 1 | 2 | 3;
   /** Legacy vectors are hydration baselines, never inputs to current policy. */
   decisionEligible: boolean;
   eventSeq: number;
@@ -93,6 +93,7 @@ export type CodecNoProgressState =
       delivered: boolean;
       requestedTurn: number;
       failureDomainBaseline: number;
+      requestedElapsedMs?: number;
       unclassifiedActivityBaseline: number;
       instructionSha256: string;
       phaseTurn: number;

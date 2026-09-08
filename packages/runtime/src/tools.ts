@@ -17,6 +17,7 @@ import path from "node:path";
 
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { Type } from "typebox";
+import { defineWorkspaceDiscoveryProgress } from "./workspace-discovery-progress.js";
 import { isPathInsideWorkspace } from "./policy.js";
 import {
   inspectStructuredData,
@@ -1737,11 +1738,10 @@ export function createWorkspaceTools(
       };
     },
   };
-
   const tools: AgentTool[] = [
-    listFiles,
+    defineWorkspaceDiscoveryProgress(listFiles, "directory"),
     readTextFile,
-    searchFiles,
+    defineWorkspaceDiscoveryProgress(searchFiles, "search"),
     listSymbols,
     inspectData,
     inspectCode,

@@ -2,6 +2,7 @@ import type { JsonObject, JsonValue } from "@napier/contracts";
 
 import { canonicalJson } from "./ed25519.js";
 import type { RunConvergenceSnapshot } from "./run-convergence-policy.js";
+import type { RunProgressActivity } from "./run-progress-activity.js";
 import {
   exactKeys,
   fail,
@@ -38,7 +39,7 @@ export const OPTIONAL_MUTATION_KEYS = [
 
 export function normalizedVector(
   value: JsonObject,
-  sourceSchemaVersion: 1 | 2,
+  sourceSchemaVersion: 1 | 2 | 3,
   eventSeq: number,
   turnCompletedSeq: number,
   input: {
@@ -50,7 +51,10 @@ export function normalizedVector(
   const snapshot = input.snapshot ?? {};
   return {
     sourceSchemaVersion,
-    decisionEligible: sourceSchemaVersion === 2,
+    decisionEligible: sourceSchemaVersion >= 2,
+    ...(sourceSchemaVersion === 3
+      ? { activity: value["activity"] as unknown as RunProgressActivity }
+      : {}),
     eventSeq,
     turnCompletedSeq,
     ...(input.projectionId ? { projectionId: input.projectionId } : {}),
