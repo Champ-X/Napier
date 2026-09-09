@@ -1,31 +1,37 @@
-# Documentation Archive
+# Documentation History
 
-These records explain earlier decisions and measurements. Use the
-[current documentation index](../README.md) for present behavior and setup.
+Historical narratives are preserved in Git instead of duplicated in the working
+tree. Use the [current documentation index](../README.md) for active behavior
+and constraints. Cleanup date: **2026-09-09**.
 
-## Archived on 2026-09-07
+The links below are pinned to `02ff34a551c2179a1edfaa785e539d1e4de9047f`, the source immediately before cleanup.
+Original dates, measurements and acceptance claims remain bound to that history.
 
-| Record                                                                                             | Why it is historical                                                                        | Current reference                           |
-| -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| [Workbench V2 design](napier-workbench-v2-design.md)                                               | Earlier dark sidebar and blue execution-spine proposal                                      | [DESIGN.md](../../DESIGN.md)                |
-| [Frontend optimization proposal, 2026-08-24](web-frontend-optimization-design-2026-08-24.zh-CN.md) | Describes the earlier v1.1 design and pending page migration                                | [DESIGN.md](../../DESIGN.md)                |
-| [Implemented slices](implemented-slices-through-2026-09-07.md)                                     | Accumulated implementation and acceptance reports formerly presented as the current backlog | [Current gaps](../next-stage-gap-matrix.md) |
-| [Legacy changelog](changelog-through-2026-09-07.md)                                                | All prior entries accumulated under one version/date heading                                | [Current changelog](../../CHANGELOG.md)     |
+| Record                                                                                                                                                                                           | Status / replacement                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| [Detailed architecture narrative](https://github.com/Champ-X/Napier/blob/02ff34a551c2179a1edfaa785e539d1e4de9047f/docs/architecture.md)                                                          | Current [architecture](../architecture.md)                                       |
+| [Workbench V2 proposal](https://github.com/Champ-X/Napier/blob/02ff34a551c2179a1edfaa785e539d1e4de9047f/docs/archive/napier-workbench-v2-design.md)                                              | Replaced by [DESIGN.md](../../DESIGN.md)                                         |
+| [Frontend optimization proposal, 2026-08-24](https://github.com/Champ-X/Napier/blob/02ff34a551c2179a1edfaa785e539d1e4de9047f/docs/archive/web-frontend-optimization-design-2026-08-24.zh-CN.md)  | Replaced by [DESIGN.md](../../DESIGN.md)                                         |
+| [Harness design, 2026-08-22](https://github.com/Champ-X/Napier/blob/02ff34a551c2179a1edfaa785e539d1e4de9047f/docs/agent-harness-optimization-design-2026-08-22.zh-CN.md)                         | Dated proposal; current [architecture](../architecture.md)                       |
+| [Harness acceptance, assessed 2026-08-27](https://github.com/Champ-X/Napier/blob/02ff34a551c2179a1edfaa785e539d1e4de9047f/docs/agent-harness-optimization-acceptance-matrix-2026-08-23.zh-CN.md) | Historical source-bound acceptance narrative                                     |
+| [Phase 0 migration evidence](https://github.com/Champ-X/Napier/blob/02ff34a551c2179a1edfaa785e539d1e4de9047f/docs/phase-0-migration-evidence.md)                                                 | Historical development-host measurements                                         |
+| [Earlier interview deep dive](https://github.com/Champ-X/Napier/blob/02ff34a551c2179a1edfaa785e539d1e4de9047f/docs/napier-interview-deep-dive.zh-CN.md)                                          | Replaced by the [learning guide](../napier-architecture-learning-guide.zh-CN.md) |
+| [Implemented slices through 2026-09-07](https://github.com/Champ-X/Napier/blob/02ff34a551c2179a1edfaa785e539d1e4de9047f/docs/archive/implemented-slices-through-2026-09-07.md)                   | Completed work; current [gaps](../next-stage-gap-matrix.md)                      |
+| [Changelog through 2026-09-07](https://github.com/Champ-X/Napier/blob/02ff34a551c2179a1edfaa785e539d1e4de9047f/docs/archive/changelog-through-2026-09-07.md)                                     | Earlier history; current [changelog](../../CHANGELOG.md)                         |
+| [Super Design UI memory, 2026-08-19](https://github.com/Champ-X/Napier/blob/02ff34a551c2179a1edfaa785e539d1e4de9047f/.claude/super-design/ui-memory.md)                                          | Obsolete generated component log; no current developer rules                     |
 
-Archive dates describe the documentation move, not a release date or a new
-verification run. Original claims are retained. Relative links in the frontend
-proposal were adjusted for its new location; its removed auto-scroll source
-file links to the last revision before deletion.
+The same records are available offline from this checkout:
 
-## Dated snapshots retained at their original paths
+```bash
+git show 02ff34a551c2179a1edfaa785e539d1e4de9047f:docs/architecture.md
+```
 
-| Record                                                                                                         | Scope                                                                                         |
-| -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| [Harness design, 2026-08-22](../agent-harness-optimization-design-2026-08-22.zh-CN.md)                         | Review proposal against its recorded source and external comparison baselines                 |
-| [Harness acceptance, assessed 2026-08-27](../agent-harness-optimization-acceptance-matrix-2026-08-23.zh-CN.md) | Implementation and release-evidence snapshot; the filename records the original document date |
-| [Phase 0 migration evidence](../phase-0-migration-evidence.md)                                                 | Development-host measurements and package-extraction results from that migration              |
+Replace the path after `:` with the path in the relevant link. This reads the
+historical content without restoring old requirements into the working tree.
 
-Recorded test counts, source identities, and release conclusions remain bound
-to those snapshots. Check the current source and owning verifier before using
-them as acceptance evidence. Machine-readable receipts remain under
-[docs/artifacts](../artifacts/).
+Machine-readable evidence remains under [docs/artifacts](../artifacts/). Old
+path names in signed/hash-bound inventories and evidence-verifier exclusion
+lists describe historical inputs, and their original values are preserved.
+Source comparisons against those snapshots can fail on a later checkout; see
+the [current verification limits](../next-stage-gap-matrix.md). This index does
+not refresh the receipts or assert that the current tree matches their source.

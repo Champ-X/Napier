@@ -271,7 +271,8 @@ npm run check              # Full release gate, including retained artifacts and
 
 See [Local development](./docs/local-development.md#development-checks) for
 build prerequisites and focused checks. The [current gap matrix](./docs/next-stage-gap-matrix.md)
-records known architecture and release-evidence failures at its review baseline.
+records known architecture, public API and release-evidence failures at its
+review baseline.
 
 The architecture gate constrains dependency direction, file size, complexity,
 fan-out, public exports, and strongly connected components. Release artifacts
@@ -289,8 +290,8 @@ source-bound check pass.
 | [Current gaps](./docs/next-stage-gap-matrix.md)  | Open issues and dated verification limits                                         |
 | [Changelog](./CHANGELOG.md)                      | Recent changes and earlier history                                                |
 
-Superseded UI proposals and dated Harness/Phase 0 snapshots are listed in the
-[documentation archive](./docs/archive/README.md).
+Superseded designs, implementation logs and dated acceptance narratives are
+preserved in Git and listed in the [history index](./docs/archive/README.md).
 
 ## Project status
 

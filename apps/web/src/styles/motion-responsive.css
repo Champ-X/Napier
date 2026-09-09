@@ -36,13 +36,6 @@
   }
 }
 
-/*
- * Design §13/§18.1 narrow reflow ladder (320–719px). The shell keeps 普通文本、
- * 导航、表单 free of page-level horizontal scrolling; only 图表、表格、diff、代码
- * keep their own overflow:auto containers. The command bar drops its fixed side
- * columns so it can never force the page wider than the 320px floor.
- */
-
 @media (forced-colors: active) {
   .message-copy-action {
     outline: var(--control-focus-offset) solid ButtonText;

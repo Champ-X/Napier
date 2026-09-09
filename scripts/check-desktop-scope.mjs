@@ -14,21 +14,17 @@ export async function auditDesktopScope(repoRoot = process.cwd()) {
     collectDesktopScope(repoRoot),
   ]);
   const errors = [];
-  if (
-    observed.narrowViewportMediaBlocks >
-    baseline.desktopScope.maximumNarrowViewportMediaBlocks
-  ) {
-    errors.push(
-      `narrow viewport media blocks ${String(observed.narrowViewportMediaBlocks)} exceed ${String(baseline.desktopScope.maximumNarrowViewportMediaBlocks)}`,
-    );
-  }
-  if (
-    JSON.stringify(observed.supportedViewports) !==
-    JSON.stringify(baseline.desktopScope.supportedViewports)
-  ) {
-    errors.push(
-      "Web UI E2E viewports must be exactly 1280x900, 1440x900, and 1920x1080",
-    );
+  const declared = new Set(
+    observed.supportedViewports.map(
+      ({ width, height }) => `${width}x${height}`,
+    ),
+  );
+  for (const { width, height } of baseline.desktopScope.supportedViewports) {
+    if (!declared.has(`${width}x${height}`)) {
+      errors.push(
+        `Web UI E2E is missing required desktop viewport ${width}x${height}`,
+      );
+    }
   }
   return { ok: errors.length === 0, errors, observed };
 }
@@ -43,7 +39,7 @@ async function main() {
     return;
   }
   console.log(
-    `Desktop-scope audit passed: ${String(result.observed.narrowViewportMediaBlocks)} reviewed narrow media blocks; 3 desktop viewports`,
+    "Desktop-scope audit passed: required desktop viewports retained; additional reflow cases allowed",
   );
 }
 

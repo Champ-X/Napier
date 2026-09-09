@@ -188,19 +188,6 @@ export async function collectDuplicateStatistics(repoRoot = process.cwd()) {
 }
 
 export async function collectDesktopScope(repoRoot = process.cwd()) {
-  const cssFiles = await collectFiles(
-    path.join(repoRoot, "apps/web/src"),
-    /\.css$/u,
-  );
-  let narrowViewportMediaBlocks = 0;
-  for (const file of cssFiles) {
-    const source = await readFile(file, "utf8");
-    for (const match of source.matchAll(
-      /@media[^{}]*\(\s*max-width\s*:\s*(\d+)px\s*\)/gu,
-    )) {
-      if (Number(match[1]) < 1_280) narrowViewportMediaBlocks += 1;
-    }
-  }
   const contractSource = await readFile(
     path.join(repoRoot, "scripts/web-ui-e2e-contract.mjs"),
     "utf8",
@@ -211,7 +198,7 @@ export async function collectDesktopScope(repoRoot = process.cwd()) {
     width: Number(match[1].replaceAll("_", "")),
     height: Number(match[2].replaceAll("_", "")),
   }));
-  return { narrowViewportMediaBlocks, supportedViewports };
+  return { supportedViewports };
 }
 
 export async function collectDependencyOwnershipIssues(

@@ -9,7 +9,7 @@ released versions remain stable.
 ## 0. Meta
 
 ```yaml
-version: 2.1.0
+version: 2.2.0
 contract_status: evolving
 framework:
   css: plain-css
@@ -23,8 +23,11 @@ source: DESIGN.md#canonical-dtcg-token-source
 
 Napier is desktop-primary in this phase. The product baselines remain 1280×900,
 1440×900, and 1920×1080. Browser zoom and narrow desktop windows must still
-reflow down to 320 CSS px without document-level horizontal overflow. This is a
-reflow guarantee, not a commitment to a full mobile or touch product.
+reflow down to 320 CSS px without document-level horizontal overflow. Reflow is
+an acceptance requirement; it does not establish a full mobile or touch product.
+`check:desktop-scope` checks declared desktop viewport coverage and permits
+additional pressure cases and responsive CSS. Actual reflow needs browser
+verification at the sizes in Section 9.
 
 ## 1. Brand
 
@@ -718,12 +721,14 @@ double box-shadow above.
 
 ## 9. Layout
 
-- Sidebar: 252px default, 232px to 272px adjustable, and 56px compact.
-- Center column: 640px hard floor.
+- Sidebar: 252px default, 232px to 480px adjustable, and 56px compact.
+- Center column: reserve 640px when calculating desktop rail widths; narrow
+  layouts must still fit the viewport.
 - Reading axis: 760px target and 820px maximum.
-- Artifact inspector: 760px target and 820px maximum on wide screens. It may
-  compress to 360px only to preserve the 640px center-column floor; below
-  1280px it overlays the conversation instead of shrinking that floor.
+- Artifact inspector: 760px default and 360px minimum in the desktop rail.
+  Its upper bound is the smaller of half the viewport and the space remaining
+  after navigation and the 640px center reservation. Below the rail threshold
+  (252 + 640 + 360 = 1252px), it overlays the conversation.
 - The inspector toolbar exposes Preview and Source for every text file, Changes
   when a recorded diff is available, plus refresh, download, and close. HTML
   preview remains sandboxed with scripts only; Source is always inert text.
@@ -739,13 +744,12 @@ Page shells use desktop viewport queries where needed. Reusable components use
 container queries or intrinsic `minmax()`/`clamp()` layout. No document-level
 horizontal overflow is permitted.
 
-The layout concession order is deterministic:
-
-1. Preserve the 640px center floor.
-2. Shrink Evidence to 320px.
-3. Auto-close Evidence while keeping an explicit reopen control.
-4. Collapse Sidebar to 56px.
-5. Below 720px, move Sidebar and Evidence into modal sheets.
+The current [layout controller](apps/web/src/use-workspace-layout.ts) clamps
+operator-selected widths to the available viewport and remembers the desktop
+preferences. Below 1252px, evidence uses an overlay; below 720px, navigation
+collapses and can be opened as a sheet. Returning to desktop restores the
+operator's selection. The [inspector CSS](apps/web/src/styles/artifact-inspector.css)
+owns the rail and overlay geometry.
 
 Tables, timelines, code, terminal output, and diffs may scroll horizontally
 inside their own bounded surfaces. Ordinary text, navigation, forms, and the
@@ -754,9 +758,8 @@ application shell may not.
 ### 9.1 Arena workbench shell tokens
 
 The shell uses a warm-white navigator, a white conversation canvas, and an
-optional bordered evidence inspector. The familiar token names remain available
-through the v2.0 migration so existing Task and Trajectory surfaces can adopt the
-new system without a flag day:
+optional bordered evidence inspector. Shared tokens cover Conversation, Task,
+and Trajectory:
 
 - `--color-navigation-bg`, `--color-navigation-surface`,
   `--color-navigation-surface-hover`, `--color-navigation-border`,
@@ -778,15 +781,19 @@ materially rewritten components must:
 
 - reference semantic/component variables only;
 - export their Props interface;
-- stay at or below 300 LOC, 80 LOC per function, JSX depth 6, and 10 hooks;
+- keep responsibilities focused and follow the shared
+  [architecture budgets](docs/architecture-budget.json); source size and
+  complexity limits have one owner, `check:architecture`;
 - implement applicable interaction states, keyboard semantics, `focus-visible`,
   forced colors, and reduced motion;
 - keep user-visible copy in the i18n layer;
 - validate at the three product baselines and four pressure cases;
 - preserve reflow at 320 CSS px without claiming a full mobile product.
 
-Any new primitive, semantic role, trajectory allowlist entry, or target visual
-baseline requires an explicit reviewed change to this contract.
+Update this contract with changes to primitives, semantic roles, trajectory
+colors, or target visual baselines. `check:web-design` verifies generated tokens,
+contrast, CSS variables, and literal-color/text-size debt; keyboard behavior,
+component states, and reflow require interaction and visual checks.
 
 ## 11. Versioning and Migration
 
@@ -800,20 +807,8 @@ baseline requires an explicit reviewed change to this contract.
 - Feature CSS may consume semantic, layout, control, and component variables.
   Primitive color values remain unavailable outside this source file.
 
-### 11.1 v1.1 to v2.0 map
-
-| v1.1 role                         | v2.0 role                         | Migration                                                                                                                           |
-| --------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Blue primary action and focus     | Deep ink primary action and focus | Existing `--color-accent*` names resolve to the new ink values.                                                                     |
-| Dark persistent navigator         | Warm-white persistent navigator   | Existing `--color-navigation-*` names resolve to light surfaces and dark text.                                                      |
-| Blue conversation execution spine | Neutral disclosure rows           | Keep spine tokens for Task and Trajectory; new conversation CSS removes the visual rail.                                            |
-| 240px navigator                   | 252px navigator                   | Existing `--layout-sidebar-*` names adopt the new bounds.                                                                           |
-| 340px evidence rail               | 760px artifact inspector          | `--layout-evidence-rail*` and `--component-inspector-width` now define a wide preview; compact drawers use `--layout-utility-rail`. |
-| 800–880px reading axis            | 760–820px reading axis            | Existing `--layout-reading-*` names narrow the central document flow.                                                               |
-
-### 11.2 v2.0 to v2.1 map
-
-| v2.0 behavior                    | v2.1 behavior                       | Migration                                                                                                 |
-| -------------------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Inspector mode fixed at open     | In-place Preview / Source / Changes | The inspector owns view selection and refreshes through existing artifact preview APIs.                   |
-| Tool rows expose two title lines | One compact activity phrase         | Preserve full evidence inside the disclosure; keep failed and blocked rows expanded for immediate review. |
+The v2.2 cleanup aligns layout prose with existing tokens and controller
+behavior, and consolidates code-size rules under the architecture budget.
+The v2.1-to-v2.2 token map is an identity mapping: every token name and value
+remains unchanged, so regeneration produces identical CSS. Earlier visual
+migration maps are retained in the [Git history index](docs/archive/README.md).

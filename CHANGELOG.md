@@ -1,10 +1,19 @@
 # Changelog
 
 Recent changes are recorded here. Earlier accumulated entries remain in the
-[legacy changelog](docs/archive/changelog-through-2026-09-07.md), with their
-original version/date heading preserved.
+[Git history index](docs/archive/README.md), with their original dates and
+source baselines preserved.
 
 ## Unreleased
+
+### Runtime
+
+- Separate semantic progress from execution activity so ongoing inspection,
+  implementation and verification receive bounded continuation windows; keep
+  plan control tools available during acquisition convergence. Commit: `9b90593c`.
+- Compact older complete execution units within the same Run at model request
+  boundaries, preserving user messages and binding checkpoints to model context
+  receipts. Commit: `02ff34a5`.
 
 ### Development and models
 
@@ -26,15 +35,19 @@ original version/date heading preserved.
 - Render available search evidence, label image-page candidates, and show
   specific read/network failure diagnostics. Commit: `f5a5937b`.
 
-### Documentation
+### Documentation and developer checks
 
-- Add a current documentation index and local development/troubleshooting
-  guide; update configuration, preview, search, and recovery references.
-- Archive superseded UI proposals and accumulated implementation logs,
-  label dated acceptance snapshots, and replace the old backlog with a
-  concise review of current gaps.
-- Add a Chinese architecture learning and interview guide with source links,
-  diagrams, and a dated verification record; link it from the documentation index.
+- Consolidate current architecture, including Run progress and incremental
+  context compaction, into a concise source-linked reference.
+- Remove superseded design proposals, duplicate historical logs, redirect-only
+  pages and obsolete Super Design UI memory; preserve fixed Git references in
+  the history index.
+- Reconcile layout prose with the existing tokens and controller; centralize
+  quantitative source-size rules in the architecture budget.
+- Permit responsive CSS and additional viewport coverage while retaining the
+  required desktop baselines in `check:desktop-scope`.
+- Refresh the documentation index and current gap matrix, including the existing
+  public API and release-source failures.
 
-The documentation review date is 2026-09-07. These entries do not declare a new
-package release or revalidate historical release evidence.
+Documentation cleanup: 2026-09-09. This entry does not declare a package release
+or refresh historical acceptance evidence.

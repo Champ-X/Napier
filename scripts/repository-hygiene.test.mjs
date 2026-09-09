@@ -62,7 +62,7 @@ describe("repository hygiene gates", () => {
     );
   }, 30_000);
 
-  it("keeps the exact three supported desktop viewports", async () => {
+  it("retains the required desktop viewport coverage", async () => {
     const result = await auditDesktopScope();
 
     expect(result).toMatchObject({
@@ -74,6 +74,34 @@ describe("repository hygiene gates", () => {
           { width: 1_920, height: 1_080 },
         ],
       },
+    });
+  });
+
+  it("allows narrow reflow CSS and additional viewport coverage", async () => {
+    const root = await createDesktopScopeFixture([
+      { width: 320, height: 900 },
+      { width: 1_920, height: 1_080 },
+      { width: 390, height: 844 },
+      { width: 1_280, height: 900 },
+      { width: 1_440, height: 900 },
+    ]);
+
+    expect(await auditDesktopScope(root)).toMatchObject({
+      ok: true,
+      errors: [],
+    });
+  });
+
+  it("rejects viewport coverage that drops a required desktop baseline", async () => {
+    const root = await createDesktopScopeFixture([
+      { width: 320, height: 900 },
+      { width: 1_280, height: 900 },
+      { width: 1_920, height: 1_080 },
+    ]);
+
+    expect(await auditDesktopScope(root)).toMatchObject({
+      ok: false,
+      errors: ["Web UI E2E is missing required desktop viewport 1440x900"],
     });
   });
 
@@ -200,6 +228,35 @@ describe("repository hygiene gates", () => {
     ).toBe(before);
   });
 });
+
+async function createDesktopScopeFixture(viewports) {
+  const root = await mkdtemp(path.join(tmpdir(), "napier-desktop-scope-"));
+  temporaryRoots.push(root);
+  await Promise.all(
+    ["apps/web/src", "docs", "scripts"].map((directory) =>
+      mkdir(path.join(root, directory), { recursive: true }),
+    ),
+  );
+  const baseline = await readHygieneBaseline();
+  const entries = viewports
+    .map(({ width, height }) => `  { width: ${width}, height: ${height} },`)
+    .join("\n");
+  await Promise.all([
+    writeFile(
+      path.join(root, "docs/repository-hygiene-baseline.json"),
+      JSON.stringify(baseline),
+    ),
+    writeFile(
+      path.join(root, "scripts/web-ui-e2e-contract.mjs"),
+      `export const WEB_UI_E2E_VIEWPORTS = [\n${entries}\n];\n`,
+    ),
+    writeFile(
+      path.join(root, "apps/web/src/reflow.css"),
+      "@media (max-width: 320px) { .shell { min-width: 0; } }\n",
+    ),
+  ]);
+  return root;
+}
 
 async function createPublicApiFixture() {
   const root = await mkdtemp(path.join(tmpdir(), "napier-public-api-"));
