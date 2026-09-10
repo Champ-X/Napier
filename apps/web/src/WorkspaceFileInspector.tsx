@@ -203,7 +203,11 @@ export function WorkspaceFileInspector({
       ) : null}
       <div className="artifact-inspector-content" key={activeView}>
         {preview ? (
-          <WorkspaceFileContent preview={preview} view={activeView} />
+          <WorkspaceFileContent
+            preview={preview}
+            view={activeView}
+            {...(threadId ? { threadId } : {})}
+          />
         ) : null}
       </div>
     </aside>
@@ -213,7 +217,9 @@ export function WorkspaceFileInspector({
 function WorkspaceFileContent({
   preview,
   view,
+  threadId,
 }: {
+  threadId?: string;
   preview: WorkspaceFilePreview;
   view: WorkspaceFileView;
 }) {
@@ -251,7 +257,13 @@ function WorkspaceFileContent({
   ) {
     return (
       <article className="artifact-inspector-markdown">
-        <MessageMarkdown text={preview.text} />
+        <MessageMarkdown
+          text={preview.text}
+          workspaceDocument={{
+            path: preview.path,
+            ...(threadId ? { threadId } : {}),
+          }}
+        />
       </article>
     );
   }

@@ -39,6 +39,7 @@ export {
 } from "./message-markdown-parser";
 
 export interface MessageMarkdownProps {
+  workspaceDocument?: MessageInlineContext["workspaceDocument"];
   text: string;
   workspaceLinks?: readonly MessageWorkspaceLink[];
   skillResourceLinks?: readonly MessageSkillResourceLink[];
@@ -49,6 +50,7 @@ export interface MessageMarkdownProps {
 }
 
 export function MessageMarkdown({
+  workspaceDocument,
   text,
   workspaceLinks = [],
   skillResourceLinks = [],
@@ -58,6 +60,7 @@ export function MessageMarkdown({
   onOpenSkillResource,
 }: MessageMarkdownProps) {
   const inlineContext = createMessageInlineContext({
+    ...(workspaceDocument ? { workspaceDocument } : {}),
     workspaceLinks,
     skillResourceLinks,
     citationLinks,

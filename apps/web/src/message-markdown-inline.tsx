@@ -9,6 +9,7 @@ import type {
 } from "./message-markdown-types";
 
 export interface MessageInlineContext {
+  workspaceDocument?: { path: string; threadId?: string };
   workspaceTargets: ReadonlyMap<string, MessageWorkspaceLink>;
   skillResourceTargets: ReadonlyMap<string, MessageSkillResourceLink>;
   citationTargets: ReadonlyMap<string, MessageCitationLink>;
@@ -26,6 +27,7 @@ export const INLINE_TOKEN =
   /(!\[[^\]\n]*\]\([^\s)]+\)|`[^`\n]+`|\*\*[^*\n]+\*\*|\[[^\]\n]+\]\([^\s)]+\)|\[citation:citation_[a-z0-9]{8,80}\])/gu;
 
 export function createMessageInlineContext(input: {
+  workspaceDocument?: MessageInlineContext["workspaceDocument"];
   workspaceLinks: readonly MessageWorkspaceLink[];
   skillResourceLinks: readonly MessageSkillResourceLink[];
   citationLinks: readonly MessageCitationLink[];
@@ -34,6 +36,9 @@ export function createMessageInlineContext(input: {
   onOpenSkillResource?: (reference: MessageSkillResourceLink) => void;
 }): MessageInlineContext {
   return {
+    ...(input.workspaceDocument
+      ? { workspaceDocument: input.workspaceDocument }
+      : {}),
     workspaceTargets: new Map(
       input.workspaceLinks.map((link) => [link.path, link]),
     ),
@@ -87,7 +92,7 @@ function renderInlineToken(
   directoryContext: DirectoryContext | undefined,
   context: MessageInlineContext,
 ): ReactNode {
-  if (token.startsWith("![")) return renderImageToken(token, start);
+  if (token.startsWith("![")) return renderImageToken(token, start, context);
   if (token.startsWith("[citation:")) {
     return renderCitationToken(token, start, context);
   }
@@ -104,11 +109,17 @@ function renderInlineToken(
   return renderLinkToken(token, start, source, directoryContext, context);
 }
 
-function renderImageToken(token: string, start: number): ReactNode {
+function renderImageToken(
+  token: string,
+  start: number,
+  context: MessageInlineContext,
+): ReactNode {
   const image = token.match(/^!\[([^\]]*)\]\(([^)]+)\)$/u);
   const source = image?.[2];
   const imageLabel = image?.[1]?.trim() ?? "";
-  const imageSource = source ? messageImageSource(source) : undefined;
+  const imageSource = source
+    ? messageImageSource(source, context.workspaceDocument)
+    : undefined;
   if (!imageSource) return token;
   return (
     <span className="message-rich-image" key={`${start}-image`}>
@@ -429,10 +440,34 @@ function safeExternalHref(value: string): boolean {
   }
 }
 
-export function messageImageSource(value: string): string | undefined {
+export function messageImageSource(
+  value: string,
+  document?: MessageInlineContext["workspaceDocument"],
+): string | undefined {
   if (safeExternalHref(value)) return value;
-  if (!isWorkspaceImageReference(value)) return undefined;
-  return `/api/workspace/file?${new URLSearchParams({ path: value }).toString()}`;
+  const reference = normalizeWorkspaceReference(value);
+  let imagePath = reference;
+  if (
+    document &&
+    !reference.startsWith("/") &&
+    !/^[a-z][a-z0-9+.-]*:/iu.test(reference)
+  ) {
+    const parts = normalizeWorkspaceReference(document.path)
+      .split("/")
+      .slice(0, -1);
+    for (const part of reference.split("/")) {
+      if (!part || part === ".") continue;
+      if (part === "..") {
+        if (parts.length === 0 || parts.at(-1) === "") return undefined;
+        parts.pop();
+      } else parts.push(part);
+    }
+    imagePath = parts.join("/");
+  }
+  if (!isWorkspaceImageReference(imagePath)) return undefined;
+  const query = new URLSearchParams({ path: imagePath });
+  if (document?.threadId) query.set("threadId", document.threadId);
+  return `/api/workspace/file?${query.toString()}`;
 }
 
 const WORKSPACE_IMAGE_EXTENSION = /\.(?:avif|bmp|gif|ico|jpe?g|png|webp)$/iu;

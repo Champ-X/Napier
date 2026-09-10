@@ -189,6 +189,7 @@ export function ArtifactInspector({
       <div className="artifact-inspector-content" key={view}>
         <ArtifactInspectionContent
           path={inspection.artifact.path}
+          threadId={inspection.threadId}
           previewFile={previewFile}
           extension={fileExtension(inspection.artifact.path)}
           view={view}
@@ -202,6 +203,7 @@ export function ArtifactInspector({
 
 function ArtifactInspectionContent({
   path,
+  threadId,
   previewFile,
   extension,
   view,
@@ -209,6 +211,7 @@ function ArtifactInspectionContent({
   diff,
 }: {
   path: string;
+  threadId: string;
   previewFile: typeof previewWorkspaceFile;
   extension: string;
   view: ArtifactInspectorView;
@@ -239,7 +242,7 @@ function ArtifactInspectionContent({
   ) {
     return (
       <article className="artifact-inspector-markdown">
-        <MessageMarkdown text={text} />
+        <MessageMarkdown text={text} workspaceDocument={{ path, threadId }} />
       </article>
     );
   }

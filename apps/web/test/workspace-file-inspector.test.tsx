@@ -15,6 +15,45 @@ afterEach(async () => {
 });
 
 describe("WorkspaceFileInspector", () => {
+  it("resolves Markdown images relative to the document in its thread workspace", async () => {
+    const { container } = installDom();
+    const root = createRoot(container);
+    roots.push(root);
+    const text = [
+      "![Local](assets/original.jpg)",
+      "![Sibling](../shared/photo.png)",
+      "![External](https://example.test/photo.png)",
+      "![Escape](../../../outside.jpg)",
+    ].join("\n\n");
+    const previewFile = vi.fn(async (path: string) => ({
+      path,
+      filename: "report.md",
+      contentType: "text/markdown",
+      blob: new Blob([text]),
+      sizeBytes: text.length,
+      sha256: "c".repeat(64),
+      text,
+    }));
+    await act(async () =>
+      root.render(
+        <WorkspaceFileInspector
+          path="outputs/task/report.md"
+          threadId="thread_fixture"
+          onClose={() => undefined}
+          previewFile={previewFile}
+        />,
+      ),
+    );
+    await waitFor(() => elements(container, "img").length === 3);
+    expect(
+      elements(container, "img").map((image) => image.getAttribute("src")),
+    ).toEqual([
+      "/api/workspace/file?path=outputs%2Ftask%2Fassets%2Foriginal.jpg&threadId=thread_fixture",
+      "/api/workspace/file?path=outputs%2Fshared%2Fphoto.png&threadId=thread_fixture",
+      "https://example.test/photo.png",
+    ]);
+  });
+
   it("loads a workspace HTML file and switches to its source", async () => {
     const { container } = installDom();
     const root = createRoot(container);
