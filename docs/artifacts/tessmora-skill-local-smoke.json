@@ -1,0 +1,77 @@
+{
+  "kind": "napier.tessmora-skill-local-smoke",
+  "result": "passed",
+  "verifiedAt": "2026-09-10T09:45:42.967Z",
+  "upstreamRepository": "https://github.com/Champ-X/MMA-RAG",
+  "upstreamCommit": "df10c1d5b4e066ccd6a986708ffa95d7c27186da",
+  "skillDirectory": ".agents/skills/mma-rag",
+  "agentId": "agent_napier",
+  "model": "deepseek/deepseek-v4-flash",
+  "endpoint": "http://127.0.0.1:8000",
+  "executionProvider": "host-direct",
+  "threadId": "thread_113914ab0a144776841a",
+  "runId": "run_7cea4980fffc47f0b33f",
+  "skillLoadReceipt": {
+    "kind": "napier.skill-load-receipt",
+    "operation": "skill.load",
+    "agentToolName": "skill_load",
+    "state": "loaded",
+    "name": "mma-rag",
+    "requestedNameSha256": "b0708732ebaea641357666215cb830c24d54996087f2bfb69068efc1a2eca0b5",
+    "relativePath": ".agents/skills/mma-rag/SKILL.md",
+    "sizeBytes": 3578,
+    "lineCount": 63,
+    "rawContentSha256": "6e8cf24ee1ec45f02726d71c1658e965eb25cde2a56b815c02edd21dbb97b23e",
+    "invocationSha256": "d5cb811bca90674260d2e96955583455ec9ddfa7490de837f439b2e1aab6d1bf",
+    "catalogSha256": "567a2921940df1fee0ec0fe70c27cd1d7a81738593b3317fffa60b5ac78f43d1",
+    "snapshotManifestSha256": "3cf18fd15c0cebe6a661eeb47ea54ab3c005f01f2777779be135f1239c8912f7",
+    "schemaVersion": 2,
+    "source": "project",
+    "rootKind": "project_standard",
+    "contentSha256": "784f8c7581abd10a77300f6fc02ac831a0fe4138d210fb2523909420fed1f0dc"
+  },
+  "commands": {
+    "file.list": {
+      "status": "succeeded",
+      "exitCode": 0,
+      "durationMs": 294,
+      "commandSha256": "500d2116b5473857e9b72183f80bf2a7b82a073523a70782e7ffb60a7201283d",
+      "stdoutSha256": "9354466ad5d6e3d9244974cbd4c981c575da969c6a848a7857f247ea1addd46e"
+    },
+    "search": {
+      "status": "succeeded",
+      "exitCode": 0,
+      "durationMs": 86603,
+      "commandSha256": "24ea170b2f4cc91a553d94783aac85cb47bc606183e4ce07db51b6d0b620530c",
+      "stdoutSha256": "bfdd989de0a3e164720bf53e5d5e52a602ef08d09a2b5544eb22cbad9f6c7cc9"
+    },
+    "health": {
+      "status": "succeeded",
+      "exitCode": 0,
+      "durationMs": 214,
+      "commandSha256": "59d8884aa97e0245e7bfce7f4b78aa55edb95e43fc8af3e0d813470e9cd43634",
+      "stdoutSha256": "f5bbaa944d0165819ca447bbf89bab2dbac244b6dddaed5af590ddd78e7b6051"
+    },
+    "kb.list": {
+      "status": "succeeded",
+      "exitCode": 0,
+      "durationMs": 287,
+      "commandSha256": "9f0c21d4245241a694809e5426c05a512cb92bf5619d757fe0966d2ac4c9a4a3",
+      "stdoutSha256": "140833f3bb6e0dfb8b9d074c14b94ee73dea8d876305344d49b459be9102500c"
+    }
+  },
+  "observations": {
+    "fileCount": 6,
+    "retrievalResultCount": 5,
+    "retrievalProcessingSeconds": 86.36605,
+    "service": "Tessmora",
+    "knowledgeBaseCount": 1
+  },
+  "rawRunSha256": "ecefcfbccb8128b1a71ae802beeff62228bb26b1778716b25bef4c2c8ceeaed2",
+  "scope": "Read-only health, catalog, file listing, retrieval, and Agent synthesis. No ingestion or Tessmora ask tested.",
+  "limitations": [
+    "Retrieval returned null page numbers.",
+    "Retrieval source knowledge_base_id differed from the knowledge-base catalog ID; document file IDs matched."
+  ],
+  "followup": "Corrected documentation-only skill_resource field names after the run; final Skill validation and persisted capability readiness passed."
+}

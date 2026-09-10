@@ -195,6 +195,87 @@ current user's host authority **without OS isolation**. The workbench surfaces
 that mode. See the [sandbox architecture](architecture.md#sandboxed-command-flow)
 for the execution boundary.
 
+## Tessmora knowledge service
+
+The [Tessmora Skill source](../integrations/tessmora/SKILL.md) connects to the
+locally running [Tessmora](https://github.com/Champ-X/MMA-RAG) backend at
+`http://127.0.0.1:8000`. Python 3 must be on PATH. The upstream Python CLI is
+retained unchanged, with a Node launcher for Napier's `run_command` tool.
+
+Install the shared user Skill from the Napier application checkout:
+
+```bash
+node scripts/install-tessmora-skill.mjs
+```
+
+The installer writes `~/.agents/skills/mma-rag` and resolves an absolute launcher
+path, so the Skill can run from any selected workspace. It can be rerun to
+update this installation. Do not also copy it into a workspace's `skills/` or
+`.agents/skills/`: Napier rejects ambiguous project/user definitions.
+
+Skill installation and Agent enablement have separate scopes. Each workspace
+has its own `<workspace>/.napier` Agent profiles; enabling a Skill in the Napier
+source checkout does not enable it in another folder. In the **active workspace**,
+add `mma-rag` to the selected Agent's enabled Skills. With the server running,
+the following example updates the active default Agent through its API and
+prints the workspace being configured:
+
+```bash
+node -e '
+(async () => {
+  const base = "http://127.0.0.1:8788"; // Use your configured NAPIER_PORT.
+  const bootstrap = await (await fetch(base + "/api/bootstrap")).json();
+  console.log("Workspace:", bootstrap.workspace.root);
+  const agent = bootstrap.agents[0];
+  const response = await fetch(base + "/api/agents/" + agent.id, {
+    method: "PUT", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ enabledSkills: [...new Set([...agent.enabledSkills, "mma-rag"])] }),
+  });
+  if (!response.ok) throw new Error(await response.text());
+  console.log("Enabled mma-rag for", agent.id);
+})();'
+```
+
+Composer permission levels (`read_only`, `safe_automation`, `full_access`)
+preserve the Agent's configured Skills. Named task presets such as `research`
+and `coding` still choose their own Skill sets. Command execution requires a
+process-capable permission level and a provider that can reach the backend;
+this local setup uses `NAPIER_HOST_DIRECT_SANDBOX=1`. An offline container cannot
+reach the host service at its own loopback address. Arbitrary `.env` values are
+not inherited by command processes; pass `--base-url http://HOST:PORT` before
+the CLI command to change the endpoint.
+
+Direct smoke checks, from any workspace:
+
+```bash
+node "$HOME/.agents/skills/mma-rag/scripts/mma-rag.mjs" health
+node "$HOME/.agents/skills/mma-rag/scripts/mma-rag.mjs" kb list
+```
+
+Test the real Web flow with a live model: “在知识库中查询，给出申请本科成绩单的办理流程，最好有配图。”
+Verify the run's effective Skills include `mma-rag`, its `skill_load` receipt is
+`loaded`, and the CLI returns evidence used in the answer. Retrieval can take
+several minutes; the Skill uses a 600-second command timeout. Creating knowledge
+bases and uploading files require an authorized user request.
+
+Historical runs retain their original configuration. After fixing a missing
+Skill, cancel the obsolete missing-Skill decision and submit a new message in
+the same thread; continuing the old decision deliberately reuses its original
+Agent revision and cannot acquire newly enabled capabilities.
+
+The [initial local smoke-test receipt](artifacts/tessmora-skill-local-smoke.json)
+records the original project-scoped test. It predates the shared installation
+and permission-preset fix.
+
+The Skill retains retrieval evidence through workspace patches and completes
+verified plan steps before further expensive acquisition. Opaque command output
+alone is not product progress; the runtime no-progress guard remains enabled.
+The Node launcher's `image fetch` extension resolves original images through
+Tessmora's reference-image API and saves local bytes with source/hash receipts.
+Extracted image IDs are not document IDs and do not work with document stream
+routes. See the [CLI reference](../integrations/tessmora/references/cli-reference.md)
+for its output, deadline, and endpoint options.
+
 ## Development checks
 
 For a local source checkout, compile shared dependencies before running the
