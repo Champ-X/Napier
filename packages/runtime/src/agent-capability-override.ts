@@ -26,7 +26,7 @@ export function applyAgentCapabilityPresetOverride(
   }
   return {
     ...structuredClone(profile),
-    ...agentCapabilityPresetUpdate(presetId),
+    ...agentCapabilityPresetUpdate(presetId, profile),
   };
 }
 

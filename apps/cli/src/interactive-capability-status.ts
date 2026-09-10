@@ -13,7 +13,7 @@ export function interactiveCapabilityStatus(
 ): AgentCapabilityStatus {
   const status = agentCapabilityStatus(
     presetId
-      ? { ...profile, ...agentCapabilityPresetUpdate(presetId) }
+      ? { ...profile, ...agentCapabilityPresetUpdate(presetId, profile) }
       : profile,
   );
   return {

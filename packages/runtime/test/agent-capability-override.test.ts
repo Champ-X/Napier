@@ -52,6 +52,28 @@ describe("temporary Agent capability preset overrides", () => {
     );
     expect(research.enabledTools).toContain("skill_load");
     expect(research.enabledSkills).toEqual(["research-brief", "data-analysis"]);
+    const customProfile = { ...profile, enabledSkills: ["private-knowledge"] };
+    for (const preset of [
+      "read_only",
+      "safe_automation",
+      "full_access",
+    ] as const) {
+      const effective = applyAgentCapabilityPresetOverride(
+        customProfile,
+        preset,
+        "user",
+      );
+      expect(effective.enabledSkills).toEqual(["private-knowledge"]);
+      expect(effective.toolPolicy).toBe(
+        agentCapabilityPresetUpdate(preset).toolPolicy,
+      );
+      effective.enabledSkills.push("mutation");
+      expect(customProfile.enabledSkills).toEqual(["private-knowledge"]);
+    }
+    expect(
+      applyAgentCapabilityPresetOverride(customProfile, "research", "user")
+        .enabledSkills,
+    ).toEqual(["research-brief", "data-analysis"]);
     expect(research.revision).toBe(7);
     expect(JSON.stringify(profile)).toBe(before);
     expect(

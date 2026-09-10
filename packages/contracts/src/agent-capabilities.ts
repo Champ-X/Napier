@@ -196,7 +196,7 @@ export const AGENT_CAPABILITY_PRESETS: readonly AgentCapabilityPreset[] = [
     "observe",
     FULL_CAPABILITY_TOOLS,
     FULL_CAPABILITY_SKILLS,
-    FULL_CAPABILITY_SUBAGENTS,
+    FULL_CAPABILITY_SUBAGENTS.filter((role) => role !== "coder"),
   ),
   preset(
     "full_access",
@@ -219,6 +219,7 @@ export function agentCapabilityPreset(
 
 export function agentCapabilityPresetUpdate(
   id: AgentCapabilityPresetId,
+  profile?: Pick<AgentProfile, "enabledSkills">,
 ): Pick<
   AgentProfile,
   "toolPolicy" | "enabledTools" | "enabledSkills" | "enabledSubagents"
@@ -227,7 +228,14 @@ export function agentCapabilityPresetUpdate(
   return {
     toolPolicy: value.toolPolicy,
     enabledTools: [...value.enabledTools],
-    enabledSkills: [...value.enabledSkills],
+    // Composer permission levels change execution permissions, not the user's
+    // Skill selection. Named task presets still select their own Skill set.
+    enabledSkills: [
+      ...(profile &&
+      (id === "read_only" || id === "safe_automation" || id === "full_access")
+        ? profile.enabledSkills
+        : value.enabledSkills),
+    ],
     enabledSubagents: [...value.enabledSubagents],
   };
 }

@@ -44,6 +44,7 @@ export function AgentCapabilityPresetControl({
             onChange(
               agentCapabilityPresetUpdate(
                 event.target.value as AgentCapabilityPresetId,
+                profile,
               ),
             );
           }}

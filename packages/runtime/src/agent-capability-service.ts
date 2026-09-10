@@ -68,7 +68,7 @@ export class AgentCapabilityService {
       presetId
         ? {
             ...profile,
-            ...agentCapabilityPresetUpdate(presetId),
+            ...agentCapabilityPresetUpdate(presetId, profile),
           }
         : profile,
       presetId,
@@ -86,7 +86,7 @@ export class AgentCapabilityService {
       this.store.workspaceRoot,
     ).assertProfile(
       presetId
-        ? { ...profile, ...agentCapabilityPresetUpdate(presetId) }
+        ? { ...profile, ...agentCapabilityPresetUpdate(presetId, profile) }
         : profile,
       signal,
     );

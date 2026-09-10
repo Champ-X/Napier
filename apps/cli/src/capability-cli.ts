@@ -70,14 +70,14 @@ export async function executeCapabilities(
     const projected = preset
       ? ({
           ...current,
-          ...agentCapabilityPresetUpdate(preset.id),
+          ...agentCapabilityPresetUpdate(preset.id, current),
         } as AgentProfile)
       : current;
     const agent =
       preset && options.apply
         ? await services.store.updateAgent(
             current.id,
-            agentCapabilityPresetUpdate(preset.id),
+            agentCapabilityPresetUpdate(preset.id, current),
           )
         : projected;
     const { projection, action } = await resolveCapabilityOperation(

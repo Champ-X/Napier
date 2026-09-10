@@ -391,6 +391,47 @@ describe("Agent capability presets", () => {
     await services.shutdown();
   });
 
+  it.each(["read_only", "safe_automation", "full_access"])(
+    "preserves configured Skills when applying permission preset %s",
+    async (preset) => {
+      const fixture = await createFixture();
+      const options = {
+        workspaceRoot: fixture.workspaceRoot,
+        dataRoot: fixture.dataRoot,
+        sandbox: new UnsupportedSandboxAdapter("capability-inspect"),
+      };
+      let services = await createLocalAgentRuntime(options);
+      await services.store.updateAgent("agent_napier", {
+        enabledSkills: ["private-knowledge"],
+      });
+      await services.shutdown();
+      const stderr = new CaptureWritable();
+      expect(
+        await runCli(
+          [
+            "capabilities",
+            "--workspace",
+            fixture.workspaceRoot,
+            "--data-root",
+            fixture.dataRoot,
+            "--preset",
+            preset,
+            "--apply",
+            "--jsonl",
+          ],
+          cliIo(fixture.root, new CaptureWritable(), stderr),
+          dependencies(),
+        ),
+        stderr.text(),
+      ).toBe(0);
+      services = await createLocalAgentRuntime(options);
+      expect(services.store.getAgent("agent_napier").enabledSkills).toEqual([
+        "private-knowledge",
+      ]);
+      await services.shutdown();
+    },
+  );
+
   it("previews and applies a recommendation restore with exact CAS inputs", async () => {
     const fixture = await createFixture();
     await runCli(

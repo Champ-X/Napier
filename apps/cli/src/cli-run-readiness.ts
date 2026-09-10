@@ -49,7 +49,10 @@ export async function assertCliRunReadiness(
   dependencies: CliRunReadinessDependencies = {},
 ): Promise<void> {
   if (!presetId) return;
-  const effective = { ...profile, ...agentCapabilityPresetUpdate(presetId) };
+  const effective = {
+    ...profile,
+    ...agentCapabilityPresetUpdate(presetId, profile),
+  };
   if (!agentCapabilityStatus(effective).processExecution) return;
   const result = await (dependencies.processSandbox ?? probeShellRuntime)(
     services.workspaceRoot,
